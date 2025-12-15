@@ -1,0 +1,1 @@
+my skeleton theme is based on the [Skeleton](http://getskeleton.com/) framework.
