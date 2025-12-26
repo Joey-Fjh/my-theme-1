@@ -24,12 +24,11 @@
     
     .color-{{ scheme.id }} {
       --color-background: {{ scheme.settings.background_color.red }}, {{ scheme.settings.background_color.green }}, {{ scheme.settings.background_color.blue }};
-      
-      {%- if scheme.setings.background_gradient != empty -%}
+      {% if scheme.setings.background_gradient != empty %}
         --gradient-background: {{ scheme.settings.background_gradient_color }};
-      {%- else -%}
+      {% else %}
         --gradient-background: {{ scheme.settings.background_color }};
-      {%- endif -%}
+      {% endif %}
 
       {% # Automatically calculate a high-contrast auxiliary color based on background brightness to avoid elements becoming unclear when the background is too dark or too light. %}
       {%- liquid
@@ -45,7 +44,7 @@
         endif
       -%}
 
-      --color-foreground: {{ scheme.settings.text.red }}, {{ scheme.settings.text.green }}, {{ scheme.settings.text.blue }};
+      --color-foreground: {{ scheme.settings.text_color.red }}, {{ scheme.settings.text_color.green }}, {{ scheme.settings.text_color.blue }};
       --color-background-constrast: {{ background_color_constrast.red }}, {{ background_color_constrast.green }}, {{ background_color_constrast.blue}}
       --color-primary-button: {{ scheme.settings.primary_button_background_color.red }}, {{ scheme.settings.primary_button_background_color.green }}, {{ scheme.settings.primary_button_background_color.blue }}
       --color-primary-button-text: {{ scheme.settings.primary_button_label_color.red }}, {{ scheme.settings.primary_button_label_color.green }}, {{ scheme.settings.primary_button_label_color.blue }}
@@ -55,7 +54,7 @@
   {%- endfor -%}
 
   {% # last result: body, .color-sheme-1{}, .color-sheme-2{} ... %}
-  {{ scheme_classes | prepend: 'body' }}{
+  {{ scheme_classes | prepend: 'body' }} {
     color: rgba(var(--color-foreground));
     background-color: rgba(var(--color-background));
   }
