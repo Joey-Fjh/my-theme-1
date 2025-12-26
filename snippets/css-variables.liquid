@@ -16,12 +16,10 @@
   {% # color schemes (last result: :root, .color-scheme-1{} .color-scheme-2{} ...)%}
   {%- assign scheme_classes = '' -%}
   {%- for scheme in settings.color_schemes -%}
+    {% assign scheme_classes = scheme_classes | append: ', .color-' | append: scheme.id %}
     {%- if forloop.index == 1 -%}
       :root,
-    {% else %}
-      {%- assign scheme_classes = scheme_classes | append:', .color-' | append: scheme.id -%}
     {%- endif -%}
-    
     .color-{{ scheme.id }} {
       --color-background: {{ scheme.settings.background_color.red }}, {{ scheme.settings.background_color.green }}, {{ scheme.settings.background_color.blue }};
       {% if scheme.setings.background_gradient != empty %}
