@@ -13,7 +13,7 @@
   {{ body_font_bold_italic | font_face: font_display: 'swap' }}
   {{ settings.type_header_font | font_face: font_display: 'swap' }}
 
-  {% # color schemes (last result: :root, .color-scheme-1{} .color-scheme-2{} ...)%}
+  {% comment %} color schemes (last result: :root, .color-scheme-1{} .color-scheme-2{} ...) {% endcomment %}
   {%- assign scheme_classes = '' -%}
   {%- for scheme in settings.color_schemes -%}
     {% assign scheme_classes = scheme_classes | append: ', .color-' | append: scheme.id %}
@@ -22,15 +22,15 @@
     {%- endif -%}
     .color-{{ scheme.id }} {
       --color-background: {{ scheme.settings.background_color.red }}, {{ scheme.settings.background_color.green }}, {{ scheme.settings.background_color.blue }};
-      {% if scheme.setings.background_gradient != empty %}
-        --gradient-background: {{ scheme.settings.background_gradient_color }};
+      {% if scheme.settings.background_gradient_color != empty %}
+      --gradient-background: {{ scheme.settings.background_gradient_color }};
       {% else %}
-        --gradient-background: {{ scheme.settings.background_color }};
+      --gradient-background: {{ scheme.settings.background_color }};
       {% endif %}
 
-      {% # Automatically calculate a high-contrast auxiliary color based on background brightness to avoid elements becoming unclear when the background is too dark or too light. %}
+      {% comment %} Automatically calculate a high-contrast auxiliary color based on background brightness to avoid elements becoming unclear when the background is too dark or too light. {% endcomment %}
       {%- liquid
-        assign background_color = scheme.settings.background_color;
+        assign background_color = scheme.settings.background_color
         assign background_color_brightness = background_color | color_brightness
 
         if background_color_brightness <= 26
@@ -43,26 +43,26 @@
       -%}
 
       --color-foreground: {{ scheme.settings.text_color.red }}, {{ scheme.settings.text_color.green }}, {{ scheme.settings.text_color.blue }};
-      --color-background-constrast: {{ background_color_constrast.red }}, {{ background_color_constrast.green }}, {{ background_color_constrast.blue}}
-      --color-primary-button: {{ scheme.settings.primary_button_background_color.red }}, {{ scheme.settings.primary_button_background_color.green }}, {{ scheme.settings.primary_button_background_color.blue }}
-      --color-primary-button-text: {{ scheme.settings.primary_button_label_color.red }}, {{ scheme.settings.primary_button_label_color.green }}, {{ scheme.settings.primary_button_label_color.blue }}
-      --color-secondary-button: {{ scheme.settings.secondary_button_background_color.red }}, {{ scheme.settings.secondary_button_background_color.green }}, {{ scheme.settings.secondary_button_background_color.blue }}
-      --color-secondary-button-text: {{ scheme.settings.secondary_button_label_color.red }}, {{ scheme.settings.secondary_button_label_color.green }}, {{ scheme.settings.secondary_button_label_color.blue }}
+      --color-background-constrast: {{ background_color_constrast.red }}, {{ background_color_constrast.green }}, {{ background_color_constrast.blue}};
+      --color-primary-button: {{ scheme.settings.primary_button_background_color.red }}, {{ scheme.settings.primary_button_background_color.green }}, {{ scheme.settings.primary_button_background_color.blue }};
+      --color-primary-button-text: {{ scheme.settings.primary_button_label_color.red }}, {{ scheme.settings.primary_button_label_color.green }}, {{ scheme.settings.primary_button_label_color.blue }};
+      --color-secondary-button: {{ scheme.settings.secondary_button_background_color.red }}, {{ scheme.settings.secondary_button_background_color.green }}, {{ scheme.settings.secondary_button_background_color.blue }};
+      --color-secondary-button-text: {{ scheme.settings.secondary_button_label_color.red }}, {{ scheme.settings.secondary_button_label_color.green }}, {{ scheme.settings.secondary_button_label_color.blue }};
     }
   {%- endfor -%}
 
-  {% # last result: body, .color-sheme-1{}, .color-sheme-2{} ... %}
+  {% comment %} last result: body, .color-sheme-1{}, .color-sheme-2{} ... {% endcomment %}
   {{ scheme_classes | prepend: 'body' }} {
     color: rgba(var(--color-foreground));
     background-color: rgba(var(--color-background));
   }
 
   :root {
-    {% # page Variables%}
+    {% comment %} page Variables {% endcomment %}
     --page-width: {{ settings.page_width }}px;
     --page-margin: {{ settings.page_margin }}px;
 
-    {% # font Variables %}
+    {% comment %} font Variables {% endcomment %}
     --font-body-family: {{ settings.type_body_font.family }}, {{ settings.type_body_font.fallback_families }};
     --font-body-style: {{ settings.type_body_font.style }};
     --font-body-weight: {{ settings.type_body_font.weight }};
@@ -73,6 +73,6 @@
     --font-heading-weight: {{ settings.type_header_font.weight }};
 
     --font-body-scale: {{ settings.body_scale | divided_by: 100.0 }};
-    --font-heading-scale: {{ settings.heading_scale | times: 1.0 | divided_by: settings.body_scale }}
+    --font-heading-scale: {{ settings.heading_scale | times: 1.0 | divided_by: settings.body_scale }};
   }
 {% endstyle %}
