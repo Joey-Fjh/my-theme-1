@@ -1,10 +1,8 @@
-{%- liquid
-  # Loads all font variantions with display: swap
+{% liquid
   assign body_font_bold = settings.type_body_font | font_modify: 'weight', 'bold'
   assign body_font_italic = settings.type_body_font | font_modify: 'style', 'italic'
   assign body_font_bold_italic = body_font_bold | font_modify: 'style', 'italic'
-
--%}
+%}
 
 {% style %}
   {{ settings.type_body_font | font_face: font_display: 'swap' }}
@@ -14,12 +12,12 @@
   {{ settings.type_header_font | font_face: font_display: 'swap' }}
 
   {% comment %} color schemes (last result: :root, .color-scheme-1{} .color-scheme-2{} ...) {% endcomment %}
-  {%- assign scheme_classes = '' -%}
-  {%- for scheme in settings.color_schemes -%}
+  {% assign scheme_classes = '' %}
+  {% for scheme in settings.color_schemes %}
     {% assign scheme_classes = scheme_classes | append: ', .color-' | append: scheme.id %}
-    {%- if forloop.index == 1 -%}
+    {% if forloop.index == 1 %}
       :root,
-    {%- endif -%}
+    {% endif %}
     .color-{{ scheme.id }} {
       --color-background: {{ scheme.settings.background_color.red }}, {{ scheme.settings.background_color.green }}, {{ scheme.settings.background_color.blue }};
       {% if scheme.settings.background_gradient_color != empty %}
@@ -29,7 +27,7 @@
       {% endif %}
 
       {% comment %} Automatically calculate a high-contrast auxiliary color based on background brightness to avoid elements becoming unclear when the background is too dark or too light. {% endcomment %}
-      {%- liquid
+      {% liquid
         assign background_color = scheme.settings.background_color
         assign background_color_brightness = background_color | color_brightness
 
@@ -40,7 +38,7 @@
         else
           assign background_color_constrast = background_color | color_darken: 25
         endif
-      -%}
+      %}
 
       --color-foreground: {{ scheme.settings.text_color.red }}, {{ scheme.settings.text_color.green }}, {{ scheme.settings.text_color.blue }};
       --color-background-constrast: {{ background_color_constrast.red }}, {{ background_color_constrast.green }}, {{ background_color_constrast.blue}};
@@ -49,7 +47,7 @@
       --color-secondary-button: {{ scheme.settings.secondary_button_background_color.red }}, {{ scheme.settings.secondary_button_background_color.green }}, {{ scheme.settings.secondary_button_background_color.blue }};
       --color-secondary-button-text: {{ scheme.settings.secondary_button_label_color.red }}, {{ scheme.settings.secondary_button_label_color.green }}, {{ scheme.settings.secondary_button_label_color.blue }};
     }
-  {%- endfor -%}
+  {% endfor %}
 
   {% comment %} last result: body, .color-sheme-1{}, .color-sheme-2{} ... {% endcomment %}
   {{ scheme_classes | prepend: 'body' }} {
