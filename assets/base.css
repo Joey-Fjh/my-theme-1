@@ -56,16 +56,27 @@ p:empty {
 }
 
 /** Theme styles below */
+html{
+  font-size: calc(var(--font-body-scale) * 62.5%);
+}
+
 body {
   display: grid;
   grid-template-rows: auto auto 1fr auto;
   grid-template-columns: 100%;
   min-height: 100%;
   margin: 0;
+  font-size: 1.5rem;
   line-height: calc(1 + 0.8 / var(--font-body-scale));
   font-family: var(--font-body-family);
   font-style: var(--font-body-style);
   font-weight: var(--font-body-weight);
+}
+
+@media screen and (min-width: 768px) {
+  body{
+    font-size: 1.6rem;
+  }
 }
 
 input,
@@ -162,7 +173,6 @@ h6,
   }
 }
 
-
 /** Section layout utilities */
 
 /**
@@ -177,14 +187,12 @@ h6,
  * the entire viewport.
  */
 .shopify-section {
-  /* Container width: uses fixed width minus margins on large screens, and full viewport width minus margins on small screens to prevent overflow. */
-  --content-width: min(calc(var(--page-width) - var(--page-margin) * 2) , calc(100% - var(--page-margin) * 2));
-  --content-margin: minmax(var(--page-margin), 1fr);
-  --content-grid: var(--content-margin) var(--content-width) var(--content-margin);
-
   /* This is required to make <img> elements work as background images */
   position: relative;
-  grid-template-columns: var(--content-grid);
+  grid-template-columns: 
+    minmax(var(--page-margin),1fr)
+    minmax(0 , var(--page-width))
+    minmax(var(--page-margin),1fr);
   display: grid;
   width: 100%;
 }
@@ -197,4 +205,13 @@ h6,
 /* Child elements that use the full-width utility class span the entire viewport. */
 .shopify-section > .full-width {
   grid-column: 1 / -1;
+}
+
+
+.announcement-bar__cols-3 {
+  grid-template-areas: "social-icons announcements language-currency";
+}
+
+.announcement-bar__cols-2 {
+  grid-template-areas: "social-icons language-currency";
 }

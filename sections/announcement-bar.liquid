@@ -1,3 +1,16 @@
+{%- liquid
+  assign social_icons = true
+  if settings.social_facebook_link == blank and settings.social_instagram_link == blank and settings.social_youtube_link == blank and settings.social_tiktok_link == blank and settings.social_twitter_link == blank and settings.social_pinterest_link == blank and settings.social_snapchat_link == blank and settings.social_tumblr_link == blank and settings.social_vimeo_link == blank
+    assign social_icons = false
+  endif
+  if section.settings.enable_country_selector or section.settings.enable_language_selector
+    assign language_country_selector = true
+  endif
+  if section.blocks.size > 0
+    assign announcement_bar = true
+  endif
+-%}
+
 <div 
   class="full-width color-{{ section.settings.color_scheme }}"
   data-section-id="{{ section.id }}" 
@@ -5,42 +18,47 @@
   data-change-play-speed="{{ section.settings.change_play_speed }}"
   data-init="false"
 >
-  <div
-    class="shopify-section"
-  >
-    <div class="flex items-center px-4 py-2 text-sm">
-      <div class="flex items-center shrink-0 mr-6">
-        {%- if section.settings.show_social -%}
-          {%- render 'social-icons', size: 'small' -%}
-        {%- endif -%}
-      </div>
-
-      <div class="flex-1 overflow-hidden text-center shrink-0">
-        {%- if section.blocks.size > 0 -%}
-          <div class="swiper-container">
-            <div class="swiper-wrapper">
-              {%- for block in section.blocks -%}
-                <div class="swiper-slide" {{ block.shopify_attributes }}>
-                  {%- if block.settings.link != blank -%}
-                    <a href="{{ block.settings.link }}" class="inline-block hover:underlink">
-                      {{ block.settings.text }}
-                    </a>
-                  {%- else -%}
-                    <span>{{ block.settings.text }}</span>
-                  {%- endif -%}
-                </div>
-              {%- endfor -%}
+  <div class="container-page">
+    <div class="grid grid-cols-1 
+      {% if announcement_bar and language_country_selector or section.settings.show_social and social_icons %} 
+        grid-cols-3 announcement-bar__cols-3
+      {% elsif language_country_selector or section.settings.show_social and social_icons %} 
+        grid-cols-2 announcement-bar__cols-2
+      {% endif %}"
+    >
+      {%- if section.settings.show_social -%}
+        {%- render 'social-icons' -%}
+      {%- endif -%}
+      
+      {%- if announcement_bar -%}
+        <div class="text-center overflow-hidden" style="grid-area: announcements">
+          {%- if section.blocks.size > 0 -%}
+            <div class="swiper-container">
+              <div class="swiper-wrapper">
+                {%- for block in section.blocks -%}
+                  <div class="swiper-slide" {{ block.shopify_attributes }}>
+                    {%- if block.settings.link != blank -%}
+                      <a href="{{ block.settings.link }}" class="inline-block hover:underlink">
+                        {{ block.settings.text }}
+                      </a>
+                    {%- else -%}
+                      <span>{{ block.settings.text }}</span>
+                    {%- endif -%}
+                  </div>
+                {%- endfor -%}
+              </div>
             </div>
-          </div>
-        {%- endif -%}
-      </div>
+          {%- endif -%}
+        </div>
+      {%- endif -%}
 
-      <div class="flex items-center shrink-0 ml-6 space-x-4">
+      <div class="flex items-center gap-2 justify-end" style="grid-area: language-currency">
         {%- if section.settings.enable_country_selector -%}
           <div class="country-selector">
             <span>Country/Region</span>
           </div>
         {%- endif -%}
+
         {%- if section.settings.enable_language_selector -%}
           <div class="language-selector">
             <span>English</span>
