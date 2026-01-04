@@ -19,11 +19,11 @@
   data-init="false"
 >
   <div class="container-page">
-    <div class="grid grid-cols-1 
+    <div class="grid grid-cols-1 py-3
       {% if announcement_bar and language_country_selector or section.settings.show_social and social_icons %} 
-        grid-cols-3 announcement-bar__cols-3
+        pc:grid-cols-3 announcement-bar__cols-3
       {% elsif language_country_selector or section.settings.show_social and social_icons %} 
-        grid-cols-2 announcement-bar__cols-2
+        pc:grid-cols-2 announcement-bar__cols-2
       {% endif %}"
     >
       {%- if section.settings.show_social -%}
@@ -31,7 +31,7 @@
       {%- endif -%}
       
       {%- if announcement_bar -%}
-        <div class="text-center overflow-hidden" style="grid-area: announcements">
+        <div class="text-center overflow-hidden break-all" style="grid-area: announcements">
           {%- if section.blocks.size > 0 -%}
             <div class="swiper-container">
               <div class="swiper-wrapper">
@@ -52,7 +52,7 @@
         </div>
       {%- endif -%}
 
-      <div class="flex items-center gap-2 justify-end" style="grid-area: language-currency">
+      <div class="flex items-center gap-2 justify-end max-pc:hidden" style="grid-area: language-currency">
         {%- if section.settings.enable_country_selector -%}
           <div class="country-selector">
             <span>Country/Region</span>
@@ -101,6 +101,18 @@
     });
   });
 </script>
+
+<style>
+  [data-section-id="{{ section.id }}"]{
+    .announcement-bar__cols-3 {
+      grid-template-areas: "social-icons announcements language-currency";
+    }
+
+    .announcement-bar__cols-2 {
+      grid-template-areas: "social-icons language-currency";
+    }
+  }
+</style>
 
 {% schema %}
   {
