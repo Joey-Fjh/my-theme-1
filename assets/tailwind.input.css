@@ -1,8 +1,12 @@
 @import "tailwindcss";
 
+/* base */
+
 @layer base{
     @import "./base.css";    
 }
+
+/* theme variables */
 
 @theme {
     --breakpoint-*: initial;
@@ -10,15 +14,92 @@
     --breakpoint-fw: 80rem; /* full-width */
 }
 
+/* components */
+
+@layer components {
+    .localization-switcher {
+        @apply fonts-body surface;
+        position: relative;
+        display: inline-block;
+        
+        .localization-toggle {
+            @apply px-4 py-2 flex items-center gap-1 cursor-pointer;
+        }
+        
+        .localization-menu {
+            @apply surface absolute z-1 mt-1 overflow-hidden;
+            top: 100%;
+            left: 0;
+            
+            .localization-item {
+                @apply first:border-t-0 border-t;
+                
+                .localization-link {
+                    @apply px-4 py-3 whitespace-nowrap;
+                    display: flex;
+                    justify-content: flex-end;
+                    align-items: center;
+                    gap: 0.5rem;
+                }
+            }
+        }
+    }
+}
+
+/* utilities */
+
 @utility container-page {
     @apply relative grid w-full;
-
+    
     grid-template-columns: 
-        minmax(var(--page-margin),1fr)
-        minmax(0 , var(--page-width))
-        minmax(var(--page-margin),1fr);
-
+    minmax(var(--page-margin),1fr)
+    minmax(0 , var(--page-width))
+    minmax(var(--page-margin),1fr);
+    
     & > * {
         @apply col-2;
     }
+}
+
+@utility surface{
+    color: var(--color-foreground);
+    background: rgb(var(--color-background));
+    background: var(--gradient-background);
+}
+
+@utility icons{
+    color: var(--color-icons);
+}
+
+@utility links{
+    color: var(--color-links);
+    @apply hover:underline;
+}
+
+@utility fonts-header{
+    font-family: var(--font-heading-family);
+    font-style: var(--font-heading-style);
+    font-weight: var(--font-heading-weight);
+}
+
+@utility fonts-body{
+    font-family: var(--font-body-family);
+    font-style: var(--font-body-style);
+    font-weight: var(--font-body-weight);
+}
+
+@utility primary-button{
+    color: var(--color-primary-button-text);
+    background-color: var(--color-primary-button);
+    border-color: var(--color-primary-button-border);
+    @apply px-4 py-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2;
+    @apply fonts-body;
+}
+
+@utility secondary-button{ 
+    color: var(--color-secondary-button-text);
+    background-color: var(--color-secondary-button);
+    border-color: var(--color-secondary-button-border);
+    @apply px-4 py-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2;
+    @apply fonts-body;
 }

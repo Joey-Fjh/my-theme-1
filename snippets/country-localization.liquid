@@ -1,0 +1,101 @@
+{%- comment -%}
+  Renders the country picker using Alpine.js (like language switcher)
+  Accepts:
+    - localPosition: used for form ID
+{%- endcomment -%}
+
+{%- liquid
+  assign currencies = localization.available_countries | map: 'currency' | map: 'iso_code' | uniq
+  assign popular_countries = localization.available_countries | where: 'popular?' | sort: 'name'
+
+  assign show_popular_countries = false
+  if localization.available_countries.size > 9 and popular_countries.size > 1
+    assign show_popular_countries = true
+  endif
+
+  assign show_currencies = false
+  if currencies.size > 1
+    assign show_currencies = true
+  endif
+%}
+
+{%- assign current_country = localization.country.iso_code -%}
+{%- assign available_countries = localization.available_countries -%}
+
+<div x-data="{ open: false }" @click.away="open = false" class="localization-switcher">
+  {% form 'localization', id: localPosition %}
+    <button 
+      type="button"
+      @click="open = !open"
+      :aria-expanded="open"
+      aria-haspopup="true"
+      class="localization-toggle"
+    >
+      <span>{{ localization.country.name }}</span>
+      {% if show_currencies %}
+        &nbsp;|&nbsp;{{ localization.country.currency.iso_code }} {{ localization.country.currency.symbol }}
+      {% endif %}
+    </button>
+
+    <div 
+      x-show="open" 
+      x-cloak
+      x-transition:enter="transition ease-out duration-200"
+      x-transition:enter-start="opacity-0 scale-95"
+      x-transition:enter-end="opacity-100 scale-100"
+      x-transition:leave="transition ease-in duration-150"
+      x-transition:leave-start="opacity-100 scale-100"
+      x-transition:leave-end="opacity-0 scale-95"
+      class="localization-menu"
+    >
+      {%- if show_popular_countries -%}
+        <div>
+          <div>Popular countries/regions</div>
+          {%- for country in popular_countries -%}
+            <div class="localization-item">
+              <button
+                name="country_code"
+                type="submit"
+                value="{{ country.iso_code }}"
+                class="localization-link w-full"
+                {%- if country.iso_code == current_country %} aria-current="true" {%- endif -%}
+              >
+                {%- if country.iso_code == current_country -%}
+                  <span>✓</span>
+                {%- endif -%}
+                <span>{{ country.name }}</span>
+                {%- if show_currencies -%}
+                  <span>{{ country.currency.iso_code }} {{ country.currency.symbol }}</span>
+                {%- endif -%}
+              </button>
+            </div>
+          {%- endfor -%}
+        </div>
+      {%- endif -%}
+
+      <div>
+        {%- for country in available_countries -%}
+          {%- unless popular_countries contains country -%}
+            <div class="localization-item">
+              <button
+                name="country_code"
+                type="submit"
+                value="{{ country.iso_code }}"
+                class="localization-link w-full"
+                {%- if country.iso_code == current_country %} aria-current="true" {%- endif -%}
+              >
+                {%- if country.iso_code == current_country -%}
+                  <span>✓</span>
+                {%- endif -%}
+                <span>{{ country.name }}</span>
+                {%- if show_currencies -%}
+                  <span>{{ country.currency.iso_code }} {{ country.currency.symbol }}</span>
+                {%- endif -%}
+              </button>
+            </div>
+          {%- endunless -%}
+        {%- endfor -%}
+      </div>
+    </div>
+  {% endform %}
+</div>

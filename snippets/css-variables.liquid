@@ -26,26 +26,15 @@
       --gradient-background: {{ scheme.settings.background_color }};
       {% endif %}
 
-      {% comment %} Automatically calculate a high-contrast auxiliary color based on background brightness to avoid elements becoming unclear when the background is too dark or too light. {% endcomment %}
-      {% liquid
-        assign background_color = scheme.settings.background_color
-        assign background_color_brightness = background_color | color_brightness
-
-        if background_color_brightness <= 26
-          assign background_color_constrast = background_color | color_lighten: 50
-        elsif background_color_brightness <= 65
-          assign background_color_constrast = background_color | color_lighten: 5
-        else
-          assign background_color_constrast = background_color | color_darken: 25
-        endif
-      %}
-
       --color-foreground: {{ scheme.settings.text_color.red }}, {{ scheme.settings.text_color.green }}, {{ scheme.settings.text_color.blue }};
-      --color-background-constrast: {{ background_color_constrast.red }}, {{ background_color_constrast.green }}, {{ background_color_constrast.blue}};
+      --color-icons: {{ scheme.settings.icons_color.red }}, {{ scheme.settings.icons_color.green }}, {{ scheme.settings.icons_color.blue }};
+      --color-links: {{ scheme.settings.links_color.red }}, {{ scheme.settings.links_color.green }}, {{ scheme.settings.links_color.blue }};
       --color-primary-button: {{ scheme.settings.primary_button_background_color.red }}, {{ scheme.settings.primary_button_background_color.green }}, {{ scheme.settings.primary_button_background_color.blue }};
       --color-primary-button-text: {{ scheme.settings.primary_button_label_color.red }}, {{ scheme.settings.primary_button_label_color.green }}, {{ scheme.settings.primary_button_label_color.blue }};
+      --color-primary-button-border: {{ scheme.settings.primary_button_border_color.red }}, {{ scheme.settings.primary_button_border_color.green }}, {{ scheme.settings.primary_button_border_color.blue }};
       --color-secondary-button: {{ scheme.settings.secondary_button_background_color.red }}, {{ scheme.settings.secondary_button_background_color.green }}, {{ scheme.settings.secondary_button_background_color.blue }};
       --color-secondary-button-text: {{ scheme.settings.secondary_button_label_color.red }}, {{ scheme.settings.secondary_button_label_color.green }}, {{ scheme.settings.secondary_button_label_color.blue }};
+      --color-secondary-button-border: {{ scheme.settings.secondary_button_border_color.red }}, {{ scheme.settings.secondary_button_border_color.green }}, {{ scheme.settings.secondary_button_border_color.blue }};
     }
   {% endfor %}
 
@@ -64,7 +53,6 @@
     --font-body-family: {{ settings.type_body_font.family }}, {{ settings.type_body_font.fallback_families }};
     --font-body-style: {{ settings.type_body_font.style }};
     --font-body-weight: {{ settings.type_body_font.weight }};
-    --font-body-weight-bold: {{ settings.type_body_font.weight | plus: 300 | at_most: 1000 }};
     
     --font-heading-family: {{ settings.type_header_font.family }}, {{ settings.type_header_font.fallback_families }};
     --font-heading-style: {{ settings.type_header_font.style }};
