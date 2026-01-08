@@ -6,14 +6,36 @@
   <div class="container-page">
     <div class="grid py-3 header__cols-3">
       <div style="grid-area: logo">
-        logo
+        {%- assign logo_alt = settings.logo.alt | default: shop.name | escape -%}
+        {%- assign logo_height = settings.logo_width | divided_by: settings.logo.aspect_ratio -%}
+        {%- capture sizes -%}
+          (max-width: {{ settings.logo_width | times: 2 }}px) 50vw, {{ settings.logo_width }}px
+        {%- endcapture -%}
+        {%- capture widths -%}
+          {{ settings.logo_width }},{{ settings.logo_width | times: 1.5 | round }},{{ settings.logo_width | times:2 }}
+        {%- endcapture -%}
+
+        {%- if settings.logo -%}
+          {% render 'image',
+            image: settings.logo,
+            width: settings.logo_width,
+            height: logo_height,
+            alt: logo_alt,
+            url:  routes.root_url,
+            sizes: sizes,
+            widths: widths,
+            loading: 'eager'
+          %}
+        {%- else -%}  
+          <a class="links links-underline h2" href="{{ routes.root_url }}">{{ shop.name }}</a>
+        {%- endif -%}
       </div>
 
       <div style="grid-area: menu">
         menu
       </div>
 
-      <div style="grid-area:navigation">
+      <div class="flex justify-end" style="grid-area:navigation">
         icon navigation
       </div>
     </div>

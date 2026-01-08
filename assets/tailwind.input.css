@@ -12,6 +12,23 @@
     --breakpoint-*: initial;
     --breakpoint-pc: 48rem; /* desktop */
     --breakpoint-fw: 80rem; /* full-width */
+
+
+    --animate-icon-breathe: icon-breathe 0.9s ease-in-out infinite;
+    @keyframes icon-breathe{
+        0% {
+            transform: translateY(0) scale(1) rotate(0deg);
+            opacity: 1;
+        }
+        50% {
+            transform: translateY(-2px) scale(1.08) rotate(1.5deg);
+            opacity: 0.85;
+        }
+        100% {
+            transform: translateY(0) scale(1) rotate(0deg);
+            opacity: 1;
+        }
+    }
 }
 
 /* components */
@@ -69,11 +86,45 @@
 
 @utility icons{
     color: var(--color-icons);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: 
+        transform 0.25s cubic-bezier(.4,0,.2,1),
+        opacity 0.25s cubic-bezier(.4,0,.2,1); 
+}
+
+@utility icons-animate{
+    will-change: transform, opacity;
+
+    &:hover{
+        animation: var(--animate-icon-breathe);
+        animation-delay: calc(var(--i,0) * 60ms);
+    }
 }
 
 @utility links{
+    @apply no-underline transition-colors duration-300;
     color: var(--color-links);
-    @apply hover:underline;
+    position: relative;
+}
+
+@utility links-underline{
+    &::after{
+        content:"";
+        position: absolute;
+        left: 50%;
+        bottom: -2px;
+        width: 0;
+        height: 2px;
+        background-color: currentColor;
+        transition: all 0.3s ease;
+    }
+
+    &:hover::after{
+        left: 0;
+        width: 100%;
+    }
 }
 
 @utility fonts-header{
@@ -89,17 +140,17 @@
 }
 
 @utility primary-button{
+    @apply px-4 py-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2;
+    @apply fonts-body;
     color: var(--color-primary-button-text);
     background-color: var(--color-primary-button);
     border-color: var(--color-primary-button-border);
-    @apply px-4 py-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2;
-    @apply fonts-body;
 }
 
 @utility secondary-button{ 
+    @apply px-4 py-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2;
+    @apply fonts-body;
     color: var(--color-secondary-button-text);
     background-color: var(--color-secondary-button);
     border-color: var(--color-secondary-button-border);
-    @apply px-4 py-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2;
-    @apply fonts-body;
 }

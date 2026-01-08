@@ -14,6 +14,7 @@
     --default-transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
     --default-font-family: var(--font-sans);
     --default-mono-font-family: var(--font-mono);
+    --animate-icon-breathe: icon-breathe 0.9s ease-in-out infinite;
   }
 }
 @layer base {
@@ -171,6 +172,22 @@
   .visible {
     visibility: visible;
   }
+  .links-underline {
+    &::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: -2px;
+      width: 0;
+      height: 2px;
+      background-color: currentColor;
+      transition: all 0.3s ease;
+    }
+    &:hover::after {
+      left: 0;
+      width: 100%;
+    }
+  }
   .container-page {
     position: relative;
     display: grid;
@@ -179,6 +196,16 @@
     & > * {
       grid-column: 2;
     }
+  }
+  .links {
+    text-decoration-line: none;
+    transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to;
+    transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
+    transition-duration: var(--tw-duration, var(--default-transition-duration));
+    --tw-duration: 300ms;
+    transition-duration: 300ms;
+    color: var(--color-links);
+    position: relative;
   }
   .absolute {
     position: absolute;
@@ -197,6 +224,13 @@
     @media (width >= 80rem) {
       max-width: 80rem;
     }
+  }
+  .icons {
+    color: var(--color-icons);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.25s cubic-bezier(.4,0,.2,1), opacity 0.25s cubic-bezier(.4,0,.2,1);
   }
   .block {
     display: block;
@@ -261,6 +295,13 @@
   .transform {
     transform: var(--tw-rotate-x,) var(--tw-rotate-y,) var(--tw-rotate-z,) var(--tw-skew-x,) var(--tw-skew-y,);
   }
+  .icons-animate {
+    will-change: transform, opacity;
+    &:hover {
+      animation: var(--animate-icon-breathe);
+      animation-delay: calc(var(--i,0) * 60ms);
+    }
+  }
   .resize {
     resize: both;
   }
@@ -297,17 +338,6 @@
   }
   .break-all {
     word-break: break-all;
-  }
-  .links {
-    color: var(--color-links);
-    &:hover {
-      @media (hover: hover) {
-        text-decoration-line: underline;
-      }
-    }
-  }
-  .icons {
-    color: var(--color-icons);
   }
   .capitalize {
     text-transform: capitalize;
@@ -561,6 +591,10 @@
     }
   }
 }
+@property --tw-duration {
+  syntax: "*";
+  inherits: false;
+}
 @property --tw-scale-x {
   syntax: "*";
   inherits: false;
@@ -719,17 +753,28 @@
   syntax: "*";
   inherits: false;
 }
-@property --tw-duration {
-  syntax: "*";
-  inherits: false;
-}
 @property --tw-ease {
   syntax: "*";
   inherits: false;
 }
+@keyframes icon-breathe {
+  0% {
+    transform: translateY(0) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(-2px) scale(1.08) rotate(1.5deg);
+    opacity: 0.85;
+  }
+  100% {
+    transform: translateY(0) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
 @layer properties {
   @supports ((-webkit-hyphens: none) and (not (margin-trim: inline))) or ((-moz-orient: inline) and (not (color:rgb(from red r g b)))) {
     *, ::before, ::after, ::backdrop {
+      --tw-duration: initial;
       --tw-scale-x: 1;
       --tw-scale-y: 1;
       --tw-scale-z: 1;
@@ -766,7 +811,6 @@
       --tw-drop-shadow-color: initial;
       --tw-drop-shadow-alpha: 100%;
       --tw-drop-shadow-size: initial;
-      --tw-duration: initial;
       --tw-ease: initial;
     }
   }

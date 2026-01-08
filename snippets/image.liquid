@@ -9,23 +9,60 @@
 
   @param {image} image - The image to be rendered
   @param {string} [url] - An optional destination URL for the image
+  @param {string} [wrapper] - An optional wrapper element, either 'a' or 'div'. If not provided, it will be 'a' if url is provided, otherwise 'div'.
   @param {string} [class] - Optional class to be added to the image wrapper
+  @param {string} [img_class] - Optional class to be added to the img tag
   @param {number} [width] - The highest resolution width of the image to be rendered
   @param {number} [height] - The highest resolution height of the image to be rendered
   @param {string} [crop] - The crop position of the image
+  @param {string} [widths] - Optional widths for srcset generation (comma-separated list of numbers)
+  @param {string} [sizes] - Optional sizes attribute for responsive images
+  @param {string} [loading] - Optional loading attribute for the img tag ('lazy' or 'eager')
+  @param {string} [decoding] - Optional decoding attribute for the img tag ('async', 'sync' or 'auto')
+  @param {string} [alt] - Optional alt text for the image
+  @param {string} [aspect_ratio] - Optional aspect ratio for the image (e.g. '16:9') 
 
   @example
   {% render 'image', image: product.featured_image %}
   {% render 'image', image: product.featured_image, url: product.url %}
   {% render 'image',
-    class: 'product__image',
     image: product.featured_image,
     url: product.url,
-    width: 1200,
-    height: 800,
-    crop: 'center',
+    sizes: '(min-width: 1024px) 33vw,50vw'
+  %}
+  {% render 'image',
+    image: product.featured_image,
+    sizes: '100vw',
+    loading: 'eager',
   %}
 {% enddoc %}
+
+{%- liquid
+  if wrapper == blank
+    if url ! = blank
+      assign wrapper = 'a'
+    else
+      assign wrapper = 'div'
+    endif
+  endif
+
+  if width == blank
+    assign width = 1440
+  endif
+
+  assign widths = widths | default: '165,360,535,750,1100,1500,2000'
+  assign sizes = sizes | default: '100vw'
+
+  assign loading = loading | default: 'lazy'
+  assign decoding = decoding | default: 'async'
+  assign aspect_ratio = aspect_ratio
+  if aspect_ratio == blank and image != blank and image.width and image.height
+    assign aspect_ratio = image.width | append: '/' | append: image.height    
+  endif
+
+  assign class = class | default: ''
+  assign img_class = img_class | default: 'image_img' 
+-%}
 
 {% liquid
   unless height
@@ -40,12 +77,21 @@
 %}
 
 <{{ wrapper }}
-  class="image {{ class }}"
-  {% if url %}
-    href="{{ url }}"
-  {% endif %}
+  class="image {%- if class -%} {{ class }} {%- endif -%}"
+  {% if url %} href="{{ url }}" {% endif %}
+  {%- if aspect_ratio -%} style="--aspect-ratio: {{ aspect_ratio }}" {%- endif -%}
 >
-  {{ image | image_url: width: width, height: height, crop: crop | image_tag }}
+  {{ 
+    image 
+    | image_url: width: width, height: height, crop: crop 
+    | image_tag:
+      class: img_class,
+      alt: alt,
+      widths: widths, 
+      sizes: sizes,
+      loading: loading,
+      decoding: decoding,
+  }}
 </{{ wrapper }}>
 
 {% stylesheet %}
@@ -54,11 +100,14 @@
     position: relative;
     overflow: hidden;
     width: 100%;
+    aspect-ratio: var(--aspect-ratio);
     height: auto;
   }
 
-  .image > img {
+  .image > .image_img {
     width: 100%;
-    height: auto;
+    height: 100%;
+    object-fit: cover;
+    display: block;
   }
 {% endstylesheet %}
