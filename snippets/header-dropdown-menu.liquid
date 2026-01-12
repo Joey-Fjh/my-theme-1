@@ -5,85 +5,93 @@
   {% render 'header-dropdown-menu' %}
 {% endcomment %}
 
-<nav class="header-dropdown-menu">
-    <ul class="flex items-center gap-6" role="list">
-      {%- for link in section.settings.menu.links  -%}
-        <li class="relative">
-          {%- if link.links != blank -%}
-            <details class="dropdown">
-              <summary
-                class="dropdown-trigger flex items-center gap-1"
-                id="HeaderMenu-{{ link.handle }}"
-              >
-                <span class="links {% if link.child_active %} header_active-menu-item {% endif %}">
-                  {{ link.title | escape }}
-                </span>
-                <span class="icons">
-                  {{ 'icon-caret.svg' | inline_asset_content }}
-                </span>
-              </summary>
-
-              <ul class="dropdown-panel mt-2 min-w-48 rounded-md color-{{ section.settings.menu_color_scheme }}"
-                role="list"
-                tabindex="-1"
-              >
-                {%- for childlink in link.links -%}
-                  <li>
-                    {%- if childlink.links == blank -%}
-                      <a 
-                        href="{{ childlink.url }}"
-                        class="links block px-4 py-2 {% if childlink.current %} font-medium {% endif %}"
-                        {%- if childlink.current -%}
-                          aria-current="page"
-                        {%- endif -%}
-                      >
-                        {{ childlink.title | escape }}
-                      </a>
-                    {%- else -%}
-                      <details class="dropdown">
-                        <summary class="dropdown-trigger flex items-center justify-between px-4 py-2">
-                          <span class="links">
-                            {{ childlink.title | escape }}
-                          </span>
-                          <span class="icons">
-                            {{ 'icon-caret.svg' | inline_asset_content }}
-                          </span>
-                        </summary>
-                      
-                        <ul class="dropdown-panel ml-2 mt-1 top-0 left-full color-{{ section.settings.menu_color_scheme }}" role="list">
-                          {%- for grandChildLink in childlink.links -%}
-                            <li>
-                              <a 
-                                href="{{ grandChildLink.url }}"
-                                class="links block px-4 py-2 {% if grandChildLink.current %} font-medium {% endif %}"
-                                {%- if grandChildLink.current -%}
-                                  aria-current="page"
-                                {%- endif -%}
-                              >
-                                {{ grandChildLink.title | escape }}
-                              </a>
-                            </li>
-                          {%- endfor -%}
-                        </ul>
-                      </details>
-                    {%- endif -%}
-                  </li>
-                {%- endfor -%}
-              </ul>
-            </details>
-          {%- else -%}
-            <a
-              href = "{{ link.url }}"
-              class="links" 
-              {%- if link.current -%}
-                aria-current="page"
-              {%- endif -%}
+<nav 
+  class="header-dropdown-menu"
+  x-data="dropdownGroup"
+  @click.outside="closeAll()"
+>
+  <ul class="flex items-center gap-6" role="list">
+    {%- for link in section.settings.menu.links  -%}
+      <li class="relative">
+        {%- if link.links != blank -%}
+          <details class="dropdown" x-ref="menu">
+            <summary
+              class="dropdown-trigger flex items-center gap-1"
+              id="HeaderMenu-{{ link.handle }}"
+              @click.prevent="toggle($refs.menu)"
             >
-              {{ link.title | escape }}
-            </a>
-          {%- endif -%}
-        </li>
-      {%- endfor -%}
-    </ul>
-</nav>
+              <span class="links {% if link.child_active %} header_active-menu-item {% endif %}">
+                {{ link.title | escape }}
+              </span>
+              <span class="icons">
+                {{ 'icon-caret.svg' | inline_asset_content }}
+              </span>
+            </summary>
 
+            <ul class="dropdown-panel dropdown-open mt-2 rounded-md color-{{ section.settings.menu_color_scheme }}"
+              role="list"
+              tabindex="-1"
+            >
+              {%- for childlink in link.links -%}
+                <li>
+                  {%- if childlink.links == blank -%}
+                    <a 
+                      href="{{ childlink.url }}"
+                      class="links block px-4 py-2 {% if childlink.current %} font-medium {% endif %}"
+                      {%- if childlink.current -%}
+                        aria-current="page"
+                      {%- endif -%}
+                    >
+                      {{ childlink.title | escape }}
+                    </a>
+                  {%- else -%}
+                    <details class="dropdown" x-ref="subMenu">
+                      <summary 
+                        class="dropdown-trigger flex items-center justify-between px-4 py-2"
+                        id="HeaderMenu-{{ childlink.handle }}"
+                        @click.prevent="toggle($refs.subMenu)"
+                      >
+                        <span class="links">
+                          {{ childlink.title | escape }}
+                        </span>
+                        <span class="icons">
+                          {{ 'icon-caret.svg' | inline_asset_content }}
+                        </span>
+                      </summary>
+                    
+                      <ul class="dropdown-panel dropdown-open ml-2 mt-1 top-0 left-full color-{{ section.settings.menu_color_scheme }}" role="list">
+                        {%- for grandChildLink in childlink.links -%}
+                          <li>
+                            <a 
+                              href="{{ grandChildLink.url }}"
+                              class="links block px-4 py-2 {% if grandChildLink.current %} font-medium {% endif %}"
+                              {%- if grandChildLink.current -%}
+                                aria-current="page"
+                              {%- endif -%}
+                            >
+                              {{ grandChildLink.title | escape }}
+                            </a>
+                          </li>
+                        {%- endfor -%}
+                      </ul>
+                    </details>
+                  {%- endif -%}
+                </li>
+              {%- endfor -%}
+            </ul>
+          </details>
+        {%- else -%}
+          <a
+            href = "{{ link.url }}"
+            class="links" 
+            {%- if link.current -%}
+              aria-current="page"
+            {%- endif -%}
+          >
+            {{ link.title | escape }}
+          </a>
+        {%- endif -%}
+      </li>
+    {%- endfor -%}
+  </ul>
+</nav>

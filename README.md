@@ -9,3 +9,14 @@ my skeleton theme is based on the [Skeleton](http://getskeleton.com/) framework.
 | GSAP      | v3.14.1 | `gsap.js`                   | https://cdn.jsdelivr.net/npm/gsap@3.14.1/dist/gsap.min.js |
 
 > 💡 Always update this file when replacing or upgrading a library.
+
+# Svgo Icons Usage
+
+This theme uses SVGO to normalize and clean SVG icons before they are used in Shopify.
+
+The goal is to ensure that all icons:
+
+- Are styleable via CSS (color, width, height)
+- Inherit color from their parent (currentColor)
+- Have consistent, predictable markup
+- Stay lightweight and maintainable

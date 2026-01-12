@@ -59,7 +59,30 @@ class Main {
     
     static initAlpine(){
         document.addEventListener('alpine:init', () => {
-            window.Alpine.store("test","Hello World!");
+            const alpine = window.Alpine;
+            
+            alpine.data('dropdownGroup', () => ({
+                openEl: null,
+                toggle(target) {
+                    if (this.openEl && this.openEl !== target) {
+                        this.openEl.removeAttribute('open')
+                    }
+                    
+                    if (target.hasAttribute('open')) {
+                        target.removeAttribute('open')
+                        this.openEl = null
+                    } else {
+                        target.setAttribute('open', '')
+                        this.openEl = target
+                    }
+                },
+                closeAll() {
+                    if (this.openEl) {
+                        this.openEl.removeAttribute('open')
+                        this.openEl = null
+                    }
+                }
+            }));
         })
     }
 }
