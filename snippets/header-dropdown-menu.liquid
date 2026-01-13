@@ -7,18 +7,23 @@
 
 <nav 
   class="header-dropdown-menu"
-  x-data="dropdownGroup"
-  @click.outside="closeAll()"
+  x-data="dropdown"
+  @click.outside="close()"
+  @keydown.escape.window="close()"
 >
   <ul class="flex items-center gap-6" role="list">
     {%- for link in section.settings.menu.links  -%}
       <li class="relative">
         {%- if link.links != blank -%}
-          <details class="dropdown" x-ref="menu">
+          <details 
+            class="dropdown"
+            data-dropdown
+            data-deep="1"
+          >
             <summary
               class="dropdown-trigger flex items-center gap-1"
               id="HeaderMenu-{{ link.handle }}"
-              @click.prevent="toggle($refs.menu)"
+              @click.stop.prevent="toggle($el.parentElement)"
             >
               <span class="links {% if link.child_active %} header_active-menu-item {% endif %}">
                 {{ link.title | escape }}
@@ -45,11 +50,15 @@
                       {{ childlink.title | escape }}
                     </a>
                   {%- else -%}
-                    <details class="dropdown" x-ref="subMenu">
+                    <details 
+                      class="dropdown"
+                      data-dropdown
+                      data-deep="2"
+                    >
                       <summary 
                         class="dropdown-trigger flex items-center justify-between px-4 py-2"
                         id="HeaderMenu-{{ childlink.handle }}"
-                        @click.prevent="toggle($refs.subMenu)"
+                        @click.stop.prevent="toggle($el.parentElement)"
                       >
                         <span class="links">
                           {{ childlink.title | escape }}

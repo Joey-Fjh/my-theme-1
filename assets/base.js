@@ -61,29 +61,50 @@ class Main {
         document.addEventListener('alpine:init', () => {
             const alpine = window.Alpine;
             
-            alpine.data('dropdownGroup', () => ({
-                openEl: null,
-                toggle(target) {
-                    if (this.openEl && this.openEl !== target) {
-                        this.openEl.removeAttribute('open')
-                    }
-                    
-                    if (target.hasAttribute('open')) {
-                        target.removeAttribute('open')
-                        this.openEl = null
-                    } else {
-                        target.setAttribute('open', '')
-                        this.openEl = target
-                    }
-                },
-                closeAll() {
-                    if (this.openEl) {
-                        this.openEl.removeAttribute('open')
-                        this.openEl = null
+            AlpineComponents.init(alpine);
+        })
+    }
+}
+
+class AlpineComponents {
+    static init(alpine){
+        alpine.data('dropdown',this.dropdown);
+    }
+    
+    static dropdown(){
+        return {
+            openEls: [],
+            
+            toggle(target) {
+                const current = target.closest('[data-dropdown]');
+
+                if(!current) return;
+
+                const deep = Number(current.dataset.deep);
+
+                if(this.openEls[deep] === current){
+                    this.close(deep);
+                    return;
+                }
+
+                this.close(deep);
+
+                current.setAttribute('open','');
+                this.openEls[deep] = current;
+            },
+            
+            close(from = 0) {
+                for(let i = from;i < this.openEls.length; i++){
+                    const el = this.openEls[i];
+
+                    if(el){
+                        el.removeAttribute('open');
                     }
                 }
-            }));
-        })
+                
+                this.openEls.length = from;
+            }
+        };
     }
 }
 
