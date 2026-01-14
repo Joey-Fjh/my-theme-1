@@ -1,22 +1,145 @@
-<div>slides show</div>
+<div 
+  class="full-width relative h-screen overflow-hidden"
+  data-section-id="{{ section.id }}"
+  data-init="false"
+  data-auto-slide="{{ section.settings.is_auto_slide }}"
+  data-slide-delay="{{ section.settings.slide_delay }}"
+>
+  <div class="swiper w-full h-full">
+    <div class="swiper-wrapper">
+      {%- for block in section.blocks -%}
+        <div class="swiper-slide" {{ block.shopify_attributes }}>
+          {%- if block.settings.slide_image != blank -%}
+            {%- capture sizes -%}
+              (min-width: 80rem) 100vw, (min-width: 48rem) 1280px, 768px
+            {%- endcapture -%}
+            
+            {%- capture widths -%}
+              400,768,1280,1536,2560
+            {%- endcapture -%}
+
+            {%- assign image_loading = 'lazy' -%}
+            {%- if forloop.first -%}
+              {%- assign image_loading = 'eager' -%}
+            {%- endif -%}
+
+            {%- render 'image',
+                image: block.settings.slide_image,
+                alt: block.settings.slide_image.alt | default: shop.name | escape,
+                width: block.settings.slide_image.width,
+                sizes: sizes,
+                widths: widths,
+                loading: image_loading
+            -%}
+          {%- endif -%}
+        </div>
+      {%- endfor -%}
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const slidesShow = document.querySelector('[data-section-id="{{ section.id }}"]');
+    
+    if(!slidesShow || slidesShow.dataset.init === 'true') return;
+    
+    slidesShow.dataset.init = 'true';
+
+    const autoSlide = slidesShow.dataset.autoSlide === 'true'; 
+    const slideDelay = slidesShow.dataset.slideDelay;
+
+    const swiperContainer = slidesShow.querySelector('.swiper');
+
+    if(!swiperContainer || typeof Swiper === 'undefined') return;
+
+    new Swiper(swiperContainer, {
+      loop: true,
+      autoplay: autoSlide ? {
+        delay: slideDelay * 1000,
+        disableOnInteraction: false
+      } : false,
+      slidesPerView: 1,
+      allowTouchMove: false,
+      effect: 'fade',
+      fadeEffect: {
+        crossFade: true
+      },
+      pagination: false,
+      navigation: false
+    })
+  });
+</script>
+
+<style>
+  [data-section-id="{{ section.id }}"] {
+    
+  }
+</style>
 
 {% schema %}
-  {
-    "name": "Slides Show",
-    "tag": "section",
-    "class": "section",
-    "disabled_on": {
-        "groups": ["header","footer"]
+{
+  "name": "Slides Show",
+  "tag": "section",
+  "class": "section",
+  "disabled_on": {
+    "groups": ["header","footer"]
+  },
+  "settings": [
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "label": "Color Scheme",
+      "default":"color-scheme-1"
     },
-    "settings": [
-      
-    ],
-    "presets": [
-      {
-        "name": "Slides Show",
-        "settings": {
+    {
+      "type": "header",
+      "content": "Slide Setting"
+    },
+    {
+      "type": "checkbox",
+      "id": "is_auto_slide",
+      "label": "Auto Slide",
+      "default": true
+    },
+    {
+      "type": "range",
+      "id": "slide_delay",
+      "min": 3,
+      "max": 10,
+      "step": 1,
+      "unit": "s",
+      "label": "Slide Delay",
+      "default": 5
+    }
+  ],
+  "blocks": [
+    {
+      "type": "slide",
+      "name": "Slide",
+      "settings": [
+        {
+          "type": "color_scheme",
+          "id": "color_scheme",
+          "label": "Color Scheme",
+          "default":"color-scheme-1"
+        },
+        {
+          "type": "header",
+          "content": "Slide Image"
+        },
+        {
+          "type": "image_picker",
+          "id": "slide_image",
+          "label": "Slide Image"
         }
-      }
-    ]
-  }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Slides Show"
+    }
+  ]
+}
 {% endschema %}

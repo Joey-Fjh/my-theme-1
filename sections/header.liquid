@@ -14,7 +14,7 @@
         {%- capture widths -%}
           {{ settings.logo_width }},{{ settings.logo_width | times: 1.5 | round }},{{ settings.logo_width | times:2 }}
         {%- endcapture -%}
-
+        
         {%- if settings.logo -%}
           {% render 'image',
             image: settings.logo,
@@ -27,39 +27,47 @@
             loading: 'eager'
           %}
         {%- else -%}  
-          <a class="links links-underline h2" href="{{ routes.root_url }}">{{ shop.name }}</a>
-        {%- endif -%}
-      </div>
-
-      <div class="flex justify-center items-center" style="grid-area: menu">
-        {%- render 'header-dropdown-menu' -%}
-      </div>
-
-      <div class="flex justify-end items-center gap-3" style="grid-area:navigation">
-        {%- assign size_class = 'w-12 h-12' -%}
-
+        <a class="links links-underline h2" href="{{ routes.root_url }}">{{ shop.name }}</a>
+      {%- endif -%}
+    </div>
+    
+    <div class="flex justify-center items-center" style="grid-area: menu">
+      {%- render 'header-dropdown-menu' -%}
+    </div>
+    
+    <div class="flex justify-end items-center gap-3" style="grid-area:navigation">
+      {%- assign size_class = 'w-12 h-12' -%}
+      
+      <div class="flex items-center gap-2 border-b-2">
         <span class="{{ size_class }} inline-block icons">
           {{ 'icon-search.svg' | inline_asset_content }}
         </span>
-
-        <span class="{{ size_class }} inline-block icons">
-          {{ 'icon-cart.svg' | inline_asset_content }}
-        </span>
-
-        <span class="w-10 h-10 inline-block icons">
-          {{ 'icon-account.svg' | inline_asset_content }}
-        </span>
+        <input 
+          name="q"
+          type="search"
+          placeholder="Search"
+          class="flex-1 bg-transparent outline-none" 
+        >
       </div>
+      
+      <span class="{{ size_class }} inline-block icons">
+        {{ 'icon-cart.svg' | inline_asset_content }}
+      </span>
+      
+      <span class="w-10 h-10 inline-block icons">
+        {{ 'icon-account.svg' | inline_asset_content }}
+      </span>
     </div>
-  </div>  
+  </div>
+</div>  
 </header>
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     const header = document.querySelector('[data-section-id="{{ section.id }}"]');
-  
+    
     if(!header || header.dataset.init === 'true') return;
-   
+    
     header.dataset.init = 'true';
   });
 </script>
@@ -68,7 +76,7 @@
   [data-section-id="{{ section.id }}"] {
     --section-padding-top: {{ section.settings.padding_top }}px;
     --section-padding-bottom: {{ section.settings.padding_bottom }}px;
-
+    
     .header__cols-3{
       grid-template-areas: "logo menu navigation";
     }
