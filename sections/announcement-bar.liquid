@@ -73,6 +73,7 @@
 
     announcementBar.dataset.init = 'true';
 
+    const slides = announcementBar.querySelectorAll('.swiper-slide');
     const autoPlay = announcementBar.dataset.autoPlay === 'true';
     const changePlaySpeed = parseInt(announcementBar.dataset.changePlaySpeed) || 5;
 
@@ -81,7 +82,7 @@
     if(!swiperContainer || typeof Swiper === 'undefined') return;
 
     new Swiper(swiperContainer, {
-      loop: true,
+      loop: slides.length > 1,
       autoplay: autoPlay ? {
         delay: changePlaySpeed * 1000,
         disableOnInteraction: false
@@ -99,6 +100,11 @@
 </script>
 
 <style>
+  .announcement-bar{
+    position: absolute;
+    z-index:20;
+  }
+
   [data-section-id="{{ section.id }}"]{
     .announcement-bar__cols-3 {
       grid-template-areas: "social-icons announcements language-currency";
@@ -120,7 +126,8 @@
   {
     "name": "Announcement Bar",
     "tag": "section",
-    "class": "section",
+    "class": "section announcement-bar",
+    "limit": 1,
     "max_blocks": 6,
     "enabled_on": {
       "groups": ["header"]

@@ -1,7 +1,13 @@
 <header
-  class="full-width layout color-{{ section.settings.color_scheme }}"
+  class="full-width layout color-{{ section.settings.color_scheme }} transition-all duration-300 ease-out"
   data-section-id = "{{ section.id }}"
   data-init="false"
+  x-data="stickyHeader"
+  :class="{
+    'is-top': isTop,
+    'is-hidden' : isHidden,
+    'is-scrolled': !isTop
+  }"
 >
   <div class="container-page">
     <div class="grid py-3 header__cols-3">
@@ -73,6 +79,27 @@
 </script>
 
 <style>
+  .header{
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: var(--announcement-bar-height);
+    z-index: 10;
+  }
+
+  .header > header.is-top{
+    background-color: transparent;
+  }
+
+  .header > header.is-hidden{
+    transform: translateY(calc(-100% - var(--announcement-bar-height)));
+  }
+
+  .header > header.is-scrolled{
+    background-color: rgba(var(--color-background));
+    box-shadow: 0 1px 10px rgba(0,0,0,.06);
+  }
+
   [data-section-id="{{ section.id }}"] {
     --section-padding-top: {{ section.settings.padding_top }}px;
     --section-padding-bottom: {{ section.settings.padding_bottom }}px;
@@ -126,6 +153,12 @@
 {% schema %}
 {
   "name": "t:general.header",
+  "tag": "section",
+  "class": "section header",
+  "limit": 1,
+  "enabled_on": {
+    "groups": ["header"]
+  },
   "settings": [
     {
       "type": "header",

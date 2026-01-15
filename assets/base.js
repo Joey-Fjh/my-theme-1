@@ -67,8 +67,14 @@ class Main {
 }
 
 class AlpineComponents {
+
+    static register(name,cb){
+        alpine.data(name,cb);
+    }
+
     static init(alpine){
-        alpine.data('dropdown',this.dropdown);
+        this.register('dropdown',this.dropdown);
+        alpine.data('stickyHeader',this.stickyHeader);
     }
     
     static dropdown(){
@@ -77,18 +83,18 @@ class AlpineComponents {
             
             toggle(target) {
                 const current = target.closest('[data-dropdown]');
-
+                
                 if(!current) return;
-
+                
                 const deep = Number(current.dataset.deep);
-
+                
                 if(this.openEls[deep] === current){
                     this.close(deep);
                     return;
                 }
-
+                
                 this.close(deep);
-
+                
                 current.setAttribute('open','');
                 this.openEls[deep] = current;
             },
@@ -96,7 +102,7 @@ class AlpineComponents {
             close(from = 0) {
                 for(let i = from;i < this.openEls.length; i++){
                     const el = this.openEls[i];
-
+                    
                     if(el){
                         el.removeAttribute('open');
                     }
@@ -105,6 +111,68 @@ class AlpineComponents {
                 this.openEls.length = from;
             }
         };
+    }
+    
+    static stickyHeader(){
+        return {
+            lastY: window.scrollY,
+            isHidden: false,
+            isTop: true,
+            isAnnouncementVisible: true,
+            announcementHeight: 0,
+            
+            init() {
+                this.initObserver();
+                this.updateAnnouncementBarHeight();
+                
+                window.addEventListener('resize',this.updateAnnouncementBarHeight);
+                document.addEventListener('shopify:section:load', this.updateAnnouncementBarHeight);
+                document.addEventListener('shopify:section:reorder', this.updateAnnouncementBarHeight);
+                
+                window.addEventListener('scroll',()=> this.onScroll(),false);
+            },
+            
+            initObserver(){
+                const observer = new IntersectionObserver(([entry]) => {
+                    this.isAnnouncementVisible = entry.isIntersecting;
+                });
+
+                observer.observe(document.querySelector('.announcement-bar'));
+            },
+
+            updateAnnouncementBarHeight() {
+                const bar = document.querySelector('.announcement-bar');
+                const h = bar ? bar.offsetHeight : 0;
+                
+                this.announcementHeight = h;
+                document.documentElement.style.setProperty('--announcement-bar-height', `${h}px`);
+            },
+
+            onScroll(){
+                requestAnimationFrame(()=>{
+                    const y = window.scrollY;
+                    
+                    document.documentElement.style.setProperty('--announcement-bar-height', `${this.isAnnouncementVisible ? this.announcementHeight : 0}px`);
+
+                    if( y < 10 ){
+                        // Top
+                        this.isTop = true;
+                        this.isHidden = false;
+                    }
+                    else if( y > this.lastY ){
+                        // Scroll Down
+                        this.isTop = false;
+                        this.isHidden = true;
+                    }else if( !this.isAnnouncementVisible && y < this.lastY){
+                        // Scroll Up
+                        this.isTop = false;
+                        this.isHidden = false;
+                    }
+                    
+                    this.lastY = y <= 0 ? 0 : y;
+                });
+            }
+        }
     }
 }
 

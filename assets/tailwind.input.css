@@ -12,7 +12,7 @@
     --breakpoint-*: initial;
     --breakpoint-pc: 48rem; /* desktop */
     --breakpoint-fw: 80rem; /* full-width */
-
+    
     --animate-icon-breathe: icon-breathe 0.9s ease-in-out infinite;
     @keyframes icon-breathe{
         0% {
@@ -62,6 +62,83 @@
             }
         }
     }
+    
+    .dropdown {
+        position: relative;
+        
+        .dropdown-trigger{
+            cursor: pointer;
+            list-style: none;
+        }
+        
+        .dropdown-panel {
+            position: absolute;
+            z-index: 20;
+            
+            min-width: max-content;
+            
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            
+            transform: translateY(-12px) scale(0.98);
+            
+            transition:
+            opacity 0.25s ease,
+            transform 0.25s cubic-bezier(.22,1,.36,1),
+            visibility 0s linear 0.25s;
+        }
+        
+        .dropdown-open {
+            /* details open */
+            details[open] > & {
+                opacity: 1;
+                visibility: visible;
+                pointer-events: auto;
+                transform: translateY(0) scale(1);
+                transition-delay: 0s;
+            }
+            
+            /* hover (desktop only) */
+            @media (hover: hover) and (pointer: fine) {
+                details.dropdown:hover > & {
+                    opacity: 1;
+                    visibility: visible;
+                    pointer-events: auto;
+                    transform: translateY(0) scale(1);
+                    transition-delay: 0s;
+                }
+            }
+            
+            /* aria / js control */
+            [aria-expanded="true"] > &,
+            .is-open > & {
+                opacity: 1;
+                visibility: visible;
+                pointer-events: auto;
+                transform: translateY(0) scale(1);
+                transition-delay: 0s;
+            }
+        }
+        
+        .dropdown-icon {
+            display: inline-block;
+            align-items: center;
+            justify-content: center;
+            
+            transition:
+            transform 0.24s cubic-bezier(.22,1,.36,1),
+            opacity 0.24s ease;
+        }
+        
+        .dropdown-icon--down{
+            transform: rotate(0deg);
+        }
+        
+        &[open] > summary .dropdown-icon--down {
+            transform: rotate(180deg);
+        }
+    }
 }
 
 /* ============================= */
@@ -93,13 +170,13 @@
     align-items: center;
     justify-content: center;
     transition: 
-        transform 0.25s cubic-bezier(.4,0,.2,1),
-        opacity 0.25s cubic-bezier(.4,0,.2,1); 
+    transform 0.25s cubic-bezier(.4,0,.2,1),
+    opacity 0.25s cubic-bezier(.4,0,.2,1); 
 }
 
 @utility icons-animate-*{
     will-change: transform, opacity;
-
+    
     &:hover{
         animation: --value(--animate-icon-*);
         animation-delay: calc(var(--i,0) * 60ms);
@@ -123,7 +200,7 @@
         background-color: currentColor;
         transition: all 0.3s ease;
     }
-
+    
     &:hover::after{
         left: 0;
         width: 100%;
@@ -156,86 +233,5 @@
     color: var(--color-secondary-button-text);
     background-color: var(--color-secondary-button);
     border-color: var(--color-secondary-button-border);
-}
-
-/* ============================= */
-/* Utilities – Interactive Patterns */
-/* ============================= */
-
-@utility dropdown {
-  position: relative;
-}
-
-@utility dropdown-trigger {
-  cursor: pointer;
-  list-style: none;
-}
-
-@utility dropdown-panel {
-  position: absolute;
-  z-index: 20;
-
-  min-width: max-content;
-
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-
-  transform: translateY(-12px) scale(0.98);
-
-  transition:
-    opacity 0.25s ease,
-    transform 0.25s cubic-bezier(.22,1,.36,1),
-    visibility 0s linear 0.25s;
-}
-
-@utility dropdown-open {
-  /* details open */
-  details[open] > & {
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
-    transform: translateY(0) scale(1);
-    transition-delay: 0s;
-  }
-
-  /* hover (desktop only) */
-  @media (hover: hover) and (pointer: fine) {
-    details.dropdown:hover > & {
-      opacity: 1;
-      visibility: visible;
-      pointer-events: auto;
-      transform: translateY(0) scale(1);
-      transition-delay: 0s;
-    }
-  }
-
-  /* aria / js control */
-  [aria-expanded="true"] > &,
-  .is-open > & {
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
-    transform: translateY(0) scale(1);
-    transition-delay: 0s;
-  }
-}
-
-@utility dropdown-icon {
-    display: inline-block;
-    align-items: center;
-    justify-content: center;
-
-    transition:
-        transform 0.24s cubic-bezier(.22,1,.36,1),
-        opacity 0.24s ease;
-}
-
-@utility dropdown-icon--down{
-    transform: rotate(0deg);
-}
-
-details[open] > summary .dropdown-icon--down {
-    transform: rotate(180deg);
 }
 
