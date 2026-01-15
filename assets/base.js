@@ -67,13 +67,8 @@ class Main {
 }
 
 class AlpineComponents {
-
-    static register(name,cb){
-        alpine.data(name,cb);
-    }
-
     static init(alpine){
-        this.register('dropdown',this.dropdown);
+        alpine.data('dropdown',this.dropdown);
         alpine.data('stickyHeader',this.stickyHeader);
     }
     
