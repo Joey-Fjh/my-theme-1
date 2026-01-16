@@ -60,18 +60,65 @@ class Main {
     static initAlpine(){
         document.addEventListener('alpine:init', () => {
             const alpine = window.Alpine;
-            
-            AlpineComponents.init(alpine);
+            AlpineComponentsFactory.init(alpine);
+
+            AlpineComponentsFactory.register(AlpineComponents.DROPDOWN, AlpineComponents.dropdown);
+            AlpineComponentsFactory.register(AlpineComponents.STICKY_HEADER, AlpineComponents.stickyHeader);
         })
     }
 }
 
-class AlpineComponents {
+class AlpineComponentsFactory {
+    static #alpine;
+    static #registeredNames = new Set();
+
     static init(alpine){
-        alpine.data('dropdown',this.dropdown);
-        alpine.data('stickyHeader',this.stickyHeader);
+        this.#alpine = alpine;
     }
-    
+
+    static register(name,cb){
+        if (!this.#alpine) throw new Error('AlpineComponentsFactory not initialized');
+        if (typeof name !== 'string' || !name.trim()) throw new Error('Component name must be a non-empty string');
+
+        name = name.trim();
+
+        if (this.#registeredNames.has(name)) {
+            console.warn(`Component "${name}" already registered, skipping`);
+            return;
+        }
+        
+        this.#alpine.data(name,cb);
+        this.#registeredNames.add(name);
+    }
+
+    static useDisposable(){
+        const disposers = [];
+
+        return {
+            on(target,event,handler,options){
+                target.addEventListener(event,handler,options);
+                disposers.push(()=>target.removeEventListener(event, handler, options));
+            },
+
+            observe(observer,el){
+                if (!el) return;
+
+                observer.observe(el);
+                disposers.push(()=>observer.disconnect());
+            },
+
+            dispose(){
+                disposers.forEach(disposer=>disposer());
+                disposers.length = 0;
+            }
+        };
+    }
+}
+
+class AlpineComponents {
+    static DROPDOWN = 'dropdown';
+    static STICKY_HEADER = 'stickyHeader';
+
     static dropdown(){
         return {
             openEls: [],
@@ -107,68 +154,70 @@ class AlpineComponents {
             }
         };
     }
-    
+
     static stickyHeader(){
-        return {
-            lastY: window.scrollY,
-            isHidden: false,
-            isTop: true,
-            isAnnouncementVisible: true,
-            announcementHeight: 0,
-            
-            init() {
-                this.initObserver();
-                this.updateAnnouncementBarHeight();
-                
-                window.addEventListener('resize',this.updateAnnouncementBarHeight);
-                document.addEventListener('shopify:section:load', this.updateAnnouncementBarHeight);
-                document.addEventListener('shopify:section:reorder', this.updateAnnouncementBarHeight);
-                
-                window.addEventListener('scroll',()=> this.onScroll(),false);
-            },
-            
-            initObserver(){
-                const observer = new IntersectionObserver(([entry]) => {
-                    this.isAnnouncementVisible = entry.isIntersecting;
-                });
+		return {
+			...AlpineComponentsFactory.useDisposable(),
+			lastY: window.scrollY,
+			isHidden: false,
+			isTop: true,
+			isAnnouncementVisible: true,
+			announcementHeight: 0,
+			
+			init() {
+				this.updateAnnouncementBarHeight();
 
-                observer.observe(document.querySelector('.announcement-bar'));
-            },
+				this.on(window, 'resize', this.updateAnnouncementBarHeight.bind(this));
+				this.on(window, 'scroll', this.onScroll.bind(this),false);
+				this.on(document,'shopify:section:load', this.updateAnnouncementBarHeight.bind(this));
+				this.on(document,'shopify:section:reorder', this.updateAnnouncementBarHeight.bind(this));
 
-            updateAnnouncementBarHeight() {
+				const observer = new IntersectionObserver(([entry]) => {
+					this.isAnnouncementVisible = entry.isIntersecting;
+				});
+
                 const bar = document.querySelector('.announcement-bar');
-                const h = bar ? bar.offsetHeight : 0;
-                
-                this.announcementHeight = h;
-                document.documentElement.style.setProperty('--announcement-bar-height', `${h}px`);
-            },
+				if(bar) this.observe(observer, bar);
+			},
+			
+			updateAnnouncementBarHeight() {
+				const bar = document.querySelector('.announcement-bar');
+				const h = bar ? bar.offsetHeight : 0;
+				
+				this.announcementHeight = h;
+				document.documentElement.style.setProperty('--announcement-bar-height', `${h}px`);
+			},
+			
+			onScroll(){
+				requestAnimationFrame(()=>{
+					const y = window.scrollY;
+					
+					document.documentElement.style.setProperty('--announcement-bar-height', `${this.isAnnouncementVisible ? this.announcementHeight : 0}px`);
+					
+					if( y < 10 ){
+						// Top
+						this.isTop = true;
+						this.isHidden = false;
+					}
+					else if( y > this.lastY ){
+						// Scroll Down
+						this.isTop = false;
+						this.isHidden = true;
+					}else if( !this.isAnnouncementVisible && y < this.lastY){
+						// Scroll Up
+						this.isTop = false;
+						this.isHidden = false;
+					}
+					
+					this.lastY = y <= 0 ? 0 : y;
+				});
+			},
 
-            onScroll(){
-                requestAnimationFrame(()=>{
-                    const y = window.scrollY;
-                    
-                    document.documentElement.style.setProperty('--announcement-bar-height', `${this.isAnnouncementVisible ? this.announcementHeight : 0}px`);
-
-                    if( y < 10 ){
-                        // Top
-                        this.isTop = true;
-                        this.isHidden = false;
-                    }
-                    else if( y > this.lastY ){
-                        // Scroll Down
-                        this.isTop = false;
-                        this.isHidden = true;
-                    }else if( !this.isAnnouncementVisible && y < this.lastY){
-                        // Scroll Up
-                        this.isTop = false;
-                        this.isHidden = false;
-                    }
-                    
-                    this.lastY = y <= 0 ? 0 : y;
-                });
+            destroy() {
+                this.dispose();
             }
-        }
-    }
+		}
+	};
 }
 
 Main.main();
