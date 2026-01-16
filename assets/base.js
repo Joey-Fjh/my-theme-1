@@ -52,11 +52,68 @@ class Utils {
     }
 }
 
+class Base {
+    static initialized = false;
+
+    static announcementBar = null; 
+    static header = null;  
+
+    static setCSSVar(name,value){
+        document.documentElement.style.setProperty(name,value);
+    }
+
+    static init(){
+        if (this.initialized) return;
+        this.initialized = true;
+
+        this.announcementBar = document.querySelector('.announcement-bar');
+        this.header = document.querySelector('.header');
+
+        this.updateLayout();
+
+        const throttledUpdate = Utils.throttle(this.updateLayout.bind(this), 100);
+
+        window.addEventListener('resize', throttledUpdate);
+        window.addEventListener('scroll', throttledUpdate);
+
+        [
+            'shopify:section:load',
+            'shopify:section:reorder',
+            'shopify:section:unload'
+        ].forEach(evt =>
+            document.addEventListener(evt, throttledUpdate)
+        );
+    }
+
+    static updateLayout(){
+        this.updateAnnouncementBarHeight();
+        this.updateHeaderHeight();
+    }
+
+    static updateAnnouncementBarHeight(){
+        if (!this.announcementBar) return this.setCSSVar('--announcement-bar-height', `0px`);
+
+        const rect = this.announcementBar.getBoundingClientRect();
+        const announcementHeight = Math.max(0, Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0));
+        
+        this.setCSSVar('--announcement-bar-height', `${announcementHeight}px`);    
+    }
+
+    static updateHeaderHeight(){ 
+        const headerHeight = this.header
+            ? this.header.offsetHeight
+            : 0;
+
+        this.setCSSVar('--header-height', `${headerHeight}px`);
+    }
+}
+
 class Main {
     static main(){
+        Base.init(); 
         this.initAlpine();
     } 
-    
+
     static initAlpine(){
         document.addEventListener('alpine:init', () => {
             const alpine = window.Alpine;
@@ -162,37 +219,14 @@ class AlpineComponents {
 			isHidden: false,
 			isTop: true,
 			isAnnouncementVisible: true,
-			announcementHeight: 0,
 			
 			init() {
-				this.updateAnnouncementBarHeight();
-
-				this.on(window, 'resize', this.updateAnnouncementBarHeight.bind(this));
 				this.on(window, 'scroll', this.onScroll.bind(this),false);
-				this.on(document,'shopify:section:load', this.updateAnnouncementBarHeight.bind(this));
-				this.on(document,'shopify:section:reorder', this.updateAnnouncementBarHeight.bind(this));
-
-				const observer = new IntersectionObserver(([entry]) => {
-					this.isAnnouncementVisible = entry.isIntersecting;
-				});
-
-                const bar = document.querySelector('.announcement-bar');
-				if(bar) this.observe(observer, bar);
-			},
-			
-			updateAnnouncementBarHeight() {
-				const bar = document.querySelector('.announcement-bar');
-				const h = bar ? bar.offsetHeight : 0;
-				
-				this.announcementHeight = h;
-				document.documentElement.style.setProperty('--announcement-bar-height', `${h}px`);
 			},
 			
 			onScroll(){
 				requestAnimationFrame(()=>{
 					const y = window.scrollY;
-					
-					document.documentElement.style.setProperty('--announcement-bar-height', `${this.isAnnouncementVisible ? this.announcementHeight : 0}px`);
 					
 					if( y < 10 ){
 						// Top
@@ -203,7 +237,7 @@ class AlpineComponents {
 						// Scroll Down
 						this.isTop = false;
 						this.isHidden = true;
-					}else if( !this.isAnnouncementVisible && y < this.lastY){
+					}else if(y < this.lastY){
 						// Scroll Up
 						this.isTop = false;
 						this.isHidden = false;
