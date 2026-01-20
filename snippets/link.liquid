@@ -1,0 +1,44 @@
+{% doc %}
+    Renders a global reusable link.
+
+    @param {string} [text] - The text content of the link
+    @param {string} [href] - The URL the link points to
+    @param {string} [class] - The class attribute   
+    @param {string} [variant] - The variant of the link (e.g. 'underline', etc.)
+    @param {string} [id] - Optional id attribute
+    @param {string} [aria_label] - Optional aria-label for accessibility
+    @param {string} [target] - Optional target (for example, '_blank')
+    @param {string} [attributes] - Extra HTML attributes to be output directly on the <a> element
+    @param {string} [content] - Optional full inner HTML for the link. If provided, `text` and `icon` are ignored and `content` is rendered as-is.
+ 
+    @example {%- render 'link', text: product.title, url: product.url -%}
+{% enddoc %}
+
+{% liquid
+  assign link_href = href | default: 'javascript:void(0)'
+  assign link_variant_class = ''
+
+  if variant
+    assign link_variant_class = variant | prepend: 'links-'
+  else
+    assign link_variant_class = 'links-default'
+  endif
+%}
+
+<a 
+    href="{{ link_href }}" 
+    class="links
+        {{ link_variant_class }}
+        {{ class }}
+    "
+    {% if id %}id="{{ id | escape }}"{% endif %}
+    {% if aria_label %}aria-label="{{ aria_label | escape }}"{% endif %}
+    {% if target %}target="{{ target | escape }}"{% endif %}
+    {{ attributes }}
+>
+    {%- if content -%}
+        {{ content }}
+    {%- else -%}
+        {{ text }}
+    {%- endif -%}
+</a>

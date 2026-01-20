@@ -42,15 +42,17 @@ Usage:
               {%- for childlink in link.links -%}
                 <li>
                   {%- if childlink.links == blank -%}
-                    <a 
-                      href="{{ childlink.url }}"
-                      class="links links-underline block px-4 py-2 {% if childlink.current %} font-medium {% endif %}"
+                    {% capture childlink_classes %}
+                      block px-4 py-2
+                      {% if childlink.current %} font-medium{% endif %}
+                    {% endcapture %}
+                    {%- capture childlink_attributes -%}
                       {%- if childlink.current -%}
                         aria-current="page"
                       {%- endif -%}
-                    >
-                      {{ childlink.title | escape }}
-                    </a>
+                    {%- endcapture -%}
+
+                    {%- render 'link', text: childlink.title | escape , class: childlink_classes, href: childlink.url, variant: "underline", attributes: childlink_attributes -%}
                   {%- else -%}
                     <details 
                       class="dropdown"
@@ -62,26 +64,30 @@ Usage:
                         id="HeaderMenu-{{ childlink.handle }}"
                         @click.stop.prevent="toggle($el.parentElement)"
                       >
-                        <span class="links links-underline">
-                          {{ childlink.title | escape }}
-                        </span>
-                        <span class="icons">
-                          {{ 'icon-caret.svg' | inline_asset_content }}
-                        </span>
+                        <div class="links links-underline flex items-center gap-3">
+                          <span class="links links-underline">
+                            {{ childlink.title | escape }}
+                          </span>
+                          <span class="w-6 h-6 inline-block icons dropdown-icon dropdown-icon--tilt">
+                            {{ 'icon-arrow1.svg' | inline_asset_content }}
+                          </span>
+                        </div>
                       </summary>
                       
                       <ul class="dropdown-panel dropdown-open ml-2 mt-1 p-3 top-0 left-full color-{{ section.settings.menu_color_scheme }}" role="list">
                         {%- for grandChildLink in childlink.links -%}
                           <li>
-                            <a 
-                              href="{{ grandChildLink.url }}"
-                              class="links links-underline block px-4 py-2 {% if grandChildLink.current %} font-medium {% endif %}"
+                            {%- capture grandChildLink_classes -%}
+                              block px-4 py-2 
+                              {% if grandChildLink.current %} font-medium {% endif %}
+                            {%- endcapture -%}
+                            {%- capture grandChildLink_attributes -%}
                               {%- if grandChildLink.current -%}
                                 aria-current="page"
                               {%- endif -%}
-                            >
-                              {{ grandChildLink.title | escape }}
-                            </a>
+                            {%- endcapture -%}
+
+                            {%- render 'link', text: grandChildLink.title | escape, class: grandChildLink_classes, href: grandChildLink.url, variant: "underline", attributes: grandChildLink_attributes -%}
                           </li>
                         {%- endfor -%}
                       </ul>
@@ -92,15 +98,13 @@ Usage:
             </ul>
           </details>
         {%- else -%}
-          <a
-            href = "{{ link.url }}"
-            class="links links-underline" 
+          {%- capture link_attributes -%}
             {%- if link.current -%}
               aria-current="page"
             {%- endif -%}
-          >
-            {{ link.title | escape }}
-          </a>
+          {%- endcapture -%}
+
+          {%- render 'link', text: link.title | escape, href: link.url, variant: "underline", attributes: link_attributes -%}
         {%- endif -%}
       </li>
     {%- endfor -%}

@@ -33,8 +33,43 @@
             -%}
           {%- endif -%}
 
-          <div class="content-container container-page absolute">
-            <div>content</div>
+          <div class="content-container container-page absolute inset-0">
+            <div class="inset-0 grid grid-cols-3 grid-rows-3">
+              <div 
+                class="{{ block.settings.heading_position }} flex items-center h-full w-full"
+              >
+                <hxl class="font-bold tracking-tight leading-tight">
+                  {{ block.settings.headline }}
+                </hxl>
+              </div>
+
+              <div
+                class="{{ block.settings.caption_position }} flex flex-col h-full w-full justify-around"
+              >
+                <p class="font-light leading-relaxed">
+                  {{ block.settings.year }}
+                </p>
+
+                <div class="mt-2 leading-tight font-light">
+                  {{ block.settings.description }}
+                </div>
+                
+                {%- capture link_content -%}
+                  <span>{{ block.settings.cta_text }}</span>
+                  <span class="inline-block w-6 h-6 ml-3">
+                    {{- 'icon-arrow2.svg' | inline_asset_content -}}
+                  </span>
+                {%- endcapture -%}
+                {%- render 'link', href:block.settings.cta_link,content: link_content,variant: 'underline' -%}
+              </div>
+              
+              <div
+                class="{{ block.settings.badge_position }} flex flex-col h-full w-full justify-around items-center"
+              >
+                <div>{{ block.settings.badge_text }}</div>
+                <div>{{ block.settings.badge_counter }}</div>
+              </div>
+            </div>
           </div>
         </div>
       {%- endfor -%}
@@ -125,12 +160,6 @@
       "name": "Slide",
       "settings": [
         {
-          "type": "color_scheme",
-          "id": "color_scheme",
-          "label": "Color Scheme",
-          "default":"color-scheme-1"
-        },
-        {
           "type": "header",
           "content": "Slide Image"
         },
@@ -138,7 +167,134 @@
           "type": "image_picker",
           "id": "slide_image",
           "label": "Slide Image"
-        }
+        },
+        {
+          "type": "header",
+          "content": "Slide Content"
+        },
+        {
+          "type": "color_scheme",
+          "id": "color_scheme",
+          "label": "Color Scheme",
+          "default":"color-scheme-1"
+        },
+        {
+          "type": "header",
+          "content": "Headline"
+        },
+        {
+          "type": "paragraph",
+          "content": "Configure the main heading and its position on the slide."
+        },
+        {
+          "type": "select",
+          "id": "heading_position",
+          "label": "Heading Position",
+          "options": [
+            { "value": "place-top-left", "label": "Top Left" },
+            { "value": "place-top-center", "label": "Top Center" },
+            { "value": "place-top-right", "label": "Top Right" },
+            { "value": "place-center-left", "label": "Center Left" },
+            { "value": "place-center", "label": "Center" },
+            { "value": "place-center-right", "label": "Center Right" },
+            { "value": "place-bottom-left", "label": "Bottom Left" },
+            { "value": "place-bottom-center", "label": "Bottom Center" },
+            { "value": "place-bottom-right", "label": "Bottom Right" }
+          ],
+          "default": "place-bottom-left"
+        },
+        {
+          "type": "richtext",
+          "id": "headline",
+          "label": "Headline",
+          "default": "<p>Precision Vision,Timeless Style.</p>"
+        },
+        {
+          "type": "header",
+          "content": "Caption"
+        },
+        {
+          "type": "paragraph",
+          "content": "Add supporting text such as a short description or brand message. This appears as secondary content on the slide."
+        },
+        {
+          "type": "select",
+          "id": "caption_position",
+          "label": "Caption Position",
+          "options": [
+            { "value": "place-top-left", "label": "Top Left" },
+            { "value": "place-top-center", "label": "Top Center" },
+            { "value": "place-top-right", "label": "Top Right" },
+            { "value": "place-center-left", "label": "Center Left" },
+            { "value": "place-center", "label": "Center" },
+            { "value": "place-center-right", "label": "Center Right" },
+            { "value": "place-bottom-left", "label": "Bottom Left" },
+            { "value": "place-bottom-center", "label": "Bottom Center" },
+            { "value": "place-bottom-right", "label": "Bottom Right" }
+          ],
+          "default": "place-top-left"
+        },
+        {
+          "type": "text",
+          "id": "year",
+          "label": "Year & Copyright",
+          "default": "2026©"
+        },
+        {
+          "type": "richtext",
+          "id": "description",
+          "label": "Description",
+          "default": "<p>Personalized with AI insight. Personalized with AI insight. Personalized with AI insight.</p>"
+        },
+        {
+          "type": "text",
+          "id": "cta_text",
+          "label": "Call to Action Text",
+          "default": "See Our New Product"
+        },
+        {
+          "type": "url",
+          "id": "cta_link",
+          "label": "Link URL",
+          "default": "/collections"
+        },
+        {
+          "type": "header",
+          "content": "Badge"
+        },
+        {
+          "type": "paragraph",
+          "content": "Display a small label like 'AI' or a sequence number (e.g., 002/12). Customize its text, position, and colors below."
+        },
+        {
+          "type": "select",
+          "id": "badge_position",
+          "label": "Badge Position",
+          "options": [
+            { "value": "place-top-left", "label": "Top Left" },
+            { "value": "place-top-center", "label": "Top Center" },
+            { "value": "place-top-right", "label": "Top Right" },
+            { "value": "place-center-left", "label": "Center Left" },
+            { "value": "place-center", "label": "Center" },
+            { "value": "place-center-right", "label": "Center Right" },
+            { "value": "place-bottom-left", "label": "Bottom Left" },
+            { "value": "place-bottom-center", "label": "Bottom Center" },
+            { "value": "place-bottom-right", "label": "Bottom Right" }
+          ],
+          "default": "place-bottom-right"
+        },
+        {
+          "type": "text",
+          "id": "badge_text",
+          "label": "Badge Text",
+          "default": "Personalize insight."
+        },
+        {
+          "type": "text",
+          "id": "badge_counter",
+          "label": "Counter Number",
+          "default": "002/12"
+        },
       ]
     }
   ],
