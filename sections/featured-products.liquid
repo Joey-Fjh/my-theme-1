@@ -1,13 +1,65 @@
-<div class="color-{{ section.settings.color_scheme }} relative overflow-hidden"
+<div class="full-width layout color-{{ section.settings.color_scheme }} relative overflow-hidden"
     data-section-id="{{ section.id }}"
     data-init="false"
 >
-    <div>
-        <!-- Tab Navigation -->
-        <div>Tab Navigation</div>
-        
-        <!-- Product Grid -->
-        <div>Product grid</div>
+    <div class="container-page">
+        {%- capture tab_header -%}
+            {%- for block in section.blocks -%}
+                <div 
+                    role="tab" 
+                    x-data="{ index: null }"
+                    x-init="index = registerTab($el)"
+                    :id="`tab-${index}`"
+                    :aria-controls="`panel-${index}`"
+                    @click="setActive(index)"
+                    :tabindex="isActive(index) ? 0 : -1"
+                    :aria-selected="isActive(index)"
+                    :class="isActive(index)
+                        ? 'opacity-100'
+                        : 'opacity-20 hover:opacity-60 focus:opacity-60'"
+                    class="cursor-pointer h1 transition-opacity focus:outline-none"
+                >
+                    <span>                        
+                        {%- if block.settings.collection_heading != blank -%}
+                            {{ block.settings.collection_heading }}
+                        {%- else -%}
+                            {{ block.settings.collection.title }}
+                        {%- endif -%}
+                    </span>
+                </div>
+            {%- endfor -%}
+        {%- endcapture -%}
+
+        {%- capture tab_content -%}
+            {%- for block in section.blocks -%}
+                <div
+                    role="tabpanel"
+                    x-data="{ index: null }"
+                    x-init="index = registerPanel($el)"
+                    :id="`panel-${index}`"
+                    :aria-labelledby="`tab-${index}`"
+                    x-show="isActive(index)"
+                    x-cloak
+                    x-transition:enter="tab-enter"
+                    x-transition:enter-start="tab-enter-start"
+                    x-transition:enter-end="tab-enter-end"
+                    x-transition:leave="tab-leave"
+                    x-transition:leave-start="tab-leave-start"
+                    x-transition:leave-end="tab-leave-end"
+                >
+                    <div>
+                        {%- if block.settings.collection_content != blank -%}
+                            <p>{{ block.settings.collection_content }}</p>
+                        {%- endif -%}
+                    </div>
+                    <div>
+                        product list(grid)
+                    </div>
+                </div>
+            {% endfor %}
+        {%- endcapture -%}
+
+        {%- render 'tab-control',tab_header: tab_header, tab_content: tab_content %}
     </div>
 </div>
 
@@ -22,7 +74,11 @@
 </script>
 
 <style>
-    [data-section-id="{{ section.id }}"] {  
+    [data-section-id="{{ section.id }}"] { 
+        --section-padding-top: {{ section.settings.padding_top }}px;
+        --section-padding-bottom: {{ section.settings.padding_bottom }}px;
+        
+        
     }
 </style>
 
@@ -35,6 +91,65 @@
         "groups": ["header","footer"]
     },
     "settings": [
+        {
+            "type": "header",
+            "content": "General"
+        },
+        {
+            "type":"color_scheme",
+            "id": "color_scheme",
+            "label": "Color Scheme",
+            "default":"color-scheme-1"
+        },
+        {
+            "type": "header",
+            "content": "Products Settings"
+        },
+        {
+            "type": "range",
+            "id": "max_items",
+            "min": 2,
+            "max": 12,
+            "step": 1,
+            "default":8,
+            "label": "Maximum items"
+        },
+        {
+            "type": "range",
+            "id": "pc_items",
+            "label": "Items per row on desktop",
+            "min": 2,
+            "max": 4,
+            "step": 1,
+            "default": 4,
+        },
+        {
+            "type": "range",
+            "id": "mobile_items",
+            "label": "Items pre row on mobile",
+            "min": 1,
+            "max": 2,
+            "step": 0.1,
+            "default": 1,
+        },
+        {
+            "type": "checkbox",
+            "id": "show_navigation",
+            "label": "Show Navigation",
+            "default": false
+        },
+        {
+            "type": "checkbox",
+            "id": "show_pagination",
+            "label": "Show Pagination",
+            "default": false
+        },
+        {
+            "type": "checkbox",
+            "id": "show_all",
+            "label": "Show View All Button",
+            "default": false
+        },
         {
             "type": "header",
             "content": "Padding"
@@ -58,6 +173,31 @@
             "unit": "px",
             "label": "Padding Bottom",
             "default": 0
+        }
+    ],
+    "blocks": [
+        {
+            "type": "collection",
+            "name": "Collection",
+            "settings": [
+                {
+                    "type": "collection",
+                    "id": "collection",
+                    "label": "Select Collection"
+                },
+                {
+                    "type": "text",
+                    "id": "collection_heading",
+                    "label": "Collection Heading",
+                    "default": "Featured Collection"
+                },
+                {
+                    "type": "inline_richtext",
+                    "id": "collection_content",
+                    "label": "Collection Content",
+                    "default": "Featured collection description goes here.",
+                }
+            ]
         }
     ],
     "presets": [

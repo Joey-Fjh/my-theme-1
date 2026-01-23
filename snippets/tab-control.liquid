@@ -1,0 +1,46 @@
+{% doc %}
+    Renders a tab panel with header and content.
+
+    @param {string} [type] - Optional. The type of the tab panel.
+    @param {string} tab_header - The header HTML for the tab panel. Should include tab triggers.
+    @param {string} tab_content - The content HTML for the tab panel. Should include one or more tab panels.
+
+    The `tab-header` and `tab-content` HTML must follow these conventions:
+        - Tab header wrapper uses `role="tablist"`.
+            - Each tab header:
+                - `role="tab"`
+                - unique `id`
+                - `aria-controls` pointing to the panel `id`
+        - Tab content wrapper:
+            - Each tab content:
+                - `role="tabpanel"`
+                - `id` referenced by the trigger `aria-controls`
+                - `aria-labelledby` pointing to the trigger `id`
+{% enddoc %}
+
+{%- liquid
+    assign type = type | default: "default"
+
+    assign tab_control_class = "tab-control-default"
+    assign tab_header_class = "tab-header-default"
+    assign tab_content_class = "tab-content-default"
+
+-%}
+
+<div 
+    class="{{ tab_control_class }}"
+    x-data="tabControl"
+>
+    <div
+        role="tablist"
+        aria-label="Tab Control" 
+        class="{{ tab_header_class }}"
+    >
+        {{ tab_header }}
+    </div>
+    <div 
+        class="{{ tab_content_class }}"
+    >
+        {{ tab_content }}
+    </div>
+</div>

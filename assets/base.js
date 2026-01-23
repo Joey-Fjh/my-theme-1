@@ -4,7 +4,6 @@
 * - binding Shopify global behaviors（ Cart etc. ）
 * - support util functions
 * - init third-party scripts
-*
 */
 
 class Utils {
@@ -121,6 +120,7 @@ class Main {
 
             AlpineComponentsFactory.register(AlpineComponents.DROPDOWN, AlpineComponents.dropdown);
             AlpineComponentsFactory.register(AlpineComponents.STICKY_HEADER, AlpineComponents.stickyHeader);
+            AlpineComponentsFactory.register(AlpineComponents.TABCONTROL, AlpineComponents.tabControl);
         })
     }
 }
@@ -175,6 +175,7 @@ class AlpineComponentsFactory {
 class AlpineComponents {
     static DROPDOWN = 'dropdown';
     static STICKY_HEADER = 'stickyHeader';
+    static TABCONTROL = 'tabControl';
 
     static dropdown(){
         return {
@@ -250,8 +251,55 @@ class AlpineComponents {
             destroy() {
                 this.dispose();
             }
-		}
-	};
+		};
+	}
+
+    static tabControl(){
+        return {
+            tabs: [],
+            panels: [],
+            activeIndex: 0,
+            
+            init() {
+                this.$nextTick(() => {
+                    if (this.tabs.length === 0) return;
+
+                    if (this.activeIndex < 0 || this.activeIndex >= this.tabs.length) {
+                        this.activeIndex = 0;
+                    }
+                });
+            },
+
+            registerTab(tab) {
+                this.tabs.push(tab);
+                return this.tabs.length - 1;
+            },
+
+            registerPanel(panel) {
+                this.panels.push(panel);
+                return this.panels.length - 1;
+            },
+
+            setActive(index) {
+                if (index < 0 || index >= this.tabs.length) return;
+                this.activeIndex = index;
+            },
+
+            isActive(index) {
+                return this.activeIndex === index;
+            },
+
+            next() {
+                this.setActive((this.activeIndex + 1) % this.tabs.length);
+            },
+
+            prev() {
+                this.setActive(
+                    (this.activeIndex - 1 + this.tabs.length) % this.tabs.length
+                );
+            }
+        };
+    }
 }
 
 Main.main();
