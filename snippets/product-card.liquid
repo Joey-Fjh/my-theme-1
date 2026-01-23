@@ -1,8 +1,95 @@
 {% doc %}
     Renders a product card item used in product grids and sliders.
 
-    @param {}
-    
-    @example 
+    @param {product} product - The product object to render in the card
+    @param {number} pc_items - items per row on desktop
+    @param {number} mobile_items - items per row on mobile 
+    @param {string} [class] - Optional extra CSS class names applied to the card
+    @param {string} [image_ratio] - Optional image ratio or class used to control image aspect ratio
+
+    @example
     {% render 'product-card', product: product, class: 'my-product-card' %}
+
+    {% render 'product-card',
+        product: product,
+        class: 'product-card--featured',
+        show_vendor: true,
+        show_badges: true,
+        show_secondary_image: true,
+        show_rating: true,
+        show_quick_add: true,
+        image_ratio: 'ratio-4-5'
+  %}
 {% enddoc %}
+
+{%- liquid
+   
+-%}
+
+<div
+    class="{{ class }} relative p-4 bg-white"
+    x-data="{ hover: false }"
+    x-on:mouseenter="hover = true"
+    x-on:mouseleave="hover = false"
+>
+    <!-- Category & Settings -->
+    <div class="mb-2 flex items-center justify-between">
+        <span class="text-xs tracking-wider text-gray-500">{{ product.type | upcase }}</span>
+        <button class="text-gray-400 hover:text-gray-600" aria-label="Product options">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="1" />
+            <circle cx="12" cy="5" r="1" />
+            <circle cx="12" cy="19" r="1" />
+            </svg>
+        </button>
+    </div>
+
+    <!-- Product Image Container -->
+    <div class="relative mb-4 aspect-square">
+        <!-- Product Image -->
+        {%- capture sizes -%}
+            (min-width: 48rem) calc(100vw / pc_items), calc(100vw / mobile_items)
+        {%- endcapture -%}
+            
+        {%- capture widths -%}
+            200,320,480,640,800
+        {%- endcapture -%}
+
+        {%- render 'image',
+            image: product.featured_image,
+            url: product.url,
+            alt: product.featured_image.alt | default: product.title,
+            width: product.featured_image.width,
+            sizes: sizes,
+            widths: widths
+        -%}
+
+        <!-- Hover Actions -->
+        <div
+            class="absolute inset-x-0 bottom-0 flex flex-col gap-2 transition-opacity duration-300"
+            :class="hover ? 'opacity-100' : 'opacity-0'"
+        >
+            <button 
+                class="w-full border border-gray-300 bg-white py-2 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-50"
+                data-product-handle="{{ product.handle }}"
+            >
+            Quick View
+            </button>
+            <button 
+                class="w-full bg-[#4a5d23] py-2 text-sm font-medium text-white transition-colors hover:bg-[#3d4d1c]"
+                data-variant-id="{{ product.selected_or_first_available_variant.id }}"
+            >
+            Add to Cart
+            </button>
+        </div>
+    </div>
+
+    <!-- Product Info -->
+    <div class="flex items-center justify-between">
+        <a href="{{ product.url }}" class="text-sm font-medium text-gray-800 hover:underline">
+            {{ product.vendor }}
+        </a>
+        <span class="text-sm font-medium text-gray-800">{{ product.price | money }}</span>
+    </div>
+</div>
+    

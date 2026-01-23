@@ -18,6 +18,7 @@
                         ? 'opacity-100'
                         : 'opacity-20 hover:opacity-60 focus:opacity-60'"
                     class="cursor-pointer h1 transition-opacity focus:outline-none"
+                    {{ block.shopify_attributes }}
                 >
                     <span>                        
                         {%- if block.settings.collection_heading != blank -%}
@@ -25,6 +26,7 @@
                         {%- else -%}
                             {{ block.settings.collection.title }}
                         {%- endif -%}
+                        <sup class="sup-badge">({{ block.settings.collection.products_count }})</sup>
                     </span>
                 </div>
             {%- endfor -%}
@@ -46,14 +48,28 @@
                     x-transition:leave="tab-leave"
                     x-transition:leave-start="tab-leave-start"
                     x-transition:leave-end="tab-leave-end"
+                    class="flex flex-col gap-8 items-center"
+                    {{ block.shopify_attributes }}
                 >
-                    <div>
-                        {%- if block.settings.collection_content != blank -%}
-                            <p>{{ block.settings.collection_content }}</p>
-                        {%- endif -%}
-                    </div>
-                    <div>
-                        product list(grid)
+                    {%- if block.settings.collection_content != blank -%}
+                        <p>{{ block.settings.collection_content }}</p>
+                    {%- endif -%}
+                    
+                    <div 
+                        class="product-grid"
+                        style="
+                            --product-grid-columns: {{ section.settings.pc_items }};
+                            --product-grid-columns-mobile: {{ section.settings.mobile_items }};
+                        "
+                    >
+                        {%- assign products = block.settings.collection.products | slice: 0, section.settings.max_items -%}
+                        {%- for product in products -%}
+                            {%- render 'product-card', 
+                                product: product ,
+                                pc_items: {{ section.settings.pc_items }},
+                                mobile_items: {{ section.settings.mobile_items }}
+                            -%}
+                        {%- endfor -%}
                     </div>
                 </div>
             {% endfor %}
@@ -78,7 +94,17 @@
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
         
-        
+        .product-grid{
+            display: grid;
+            grid-template-columns: repeat(var(--product-grid-columns), minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .product-grid {
+                --product-grid-columns: var(--product-grid-columns-mobile, minmax(0, 1fr));
+            }
+        }
     }
 </style>
 
