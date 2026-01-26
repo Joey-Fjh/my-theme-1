@@ -1,6 +1,7 @@
 {% doc %}
     Renders a tab panel with header and content.
 
+    @param {string} [initialTabStrategy] - Optional. Defines which tab is active on initial render. Default is 'first'. Possible values: 'first', 'middle'.
     @param {string} [type] - Optional. The type of the tab panel.
     @param {string} tab_header - The header HTML for the tab panel. Should include tab triggers.
     @param {string} tab_content - The content HTML for the tab panel. Should include one or more tab panels.
@@ -19,17 +20,17 @@
 {% enddoc %}
 
 {%- liquid
+    assign initial_tab_strategy = initialTabStrategy | default: "first"
     assign type = type | default: "default"
 
     assign tab_control_class = "tab-control-default"
     assign tab_header_class = "tab-header-default"
     assign tab_content_class = "tab-content-default"
-
 -%}
 
 <div 
     class="{{ tab_control_class }}"
-    x-data="tabControl"
+    x-data="tabControl('{{ initial_tab_strategy }}')"
 >
     <div
         role="tablist"

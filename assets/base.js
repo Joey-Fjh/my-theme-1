@@ -254,7 +254,7 @@ class AlpineComponents {
 		};
 	}
 
-    static tabControl(){
+    static tabControl(initialStrategy = 'first'){
         return {
             tabs: [],
             panels: [],
@@ -262,11 +262,10 @@ class AlpineComponents {
             
             init() {
                 this.$nextTick(() => {
-                    if (this.tabs.length === 0) return;
+                    const count = this.tabs.length;
+                    if (count === 0) return;
 
-                    if (this.activeIndex < 0 || this.activeIndex >= this.tabs.length) {
-                        this.activeIndex = 0;
-                    }
+                    this.activeIndex = initialStrategy === 'first' ? 0 : Math.floor(count / 2);
                 });
             },
 
