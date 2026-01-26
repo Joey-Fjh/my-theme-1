@@ -62,12 +62,13 @@
                             --product-grid-columns-mobile: {{ section.settings.mobile_items }};
                         "
                     >
-                        {%- assign products = block.settings.collection.products | slice: 0, section.settings.max_items -%}
-                        {%- for product in products -%}
+                        {%- assign products = block.settings.collection.products -%}  
+                        {%- assign max_items = section.settings.max_items -%}
+
+                        {% # theme-check-disable-next-line LiquidHTMLSyntaxError %}
+                        {%- for product in products limit: max_items -%}
                             {%- render 'product-card', 
-                                product: product ,
-                                pc_items: {{ section.settings.pc_items }},
-                                mobile_items: {{ section.settings.mobile_items }}
+                                product: product
                             -%}
                         {%- endfor -%}
                     </div>
