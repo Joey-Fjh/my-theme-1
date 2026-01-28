@@ -2,11 +2,103 @@
     data-section-id="{{ section.id }}"
     data-init="false"
 >
-    <div>
-        skins
-    </div>
-    <div class="container-page">
-        products
+    <div class="bg-[#F9FAFB]">
+        {%- render 'image',
+            image: section.settings.image,
+            alt: section.settings.image.alt,
+            width: section.settings.image.width,
+            sizes: '100vw',
+            loading: 'lazy'
+        -%}
+
+        <div class="container-page layout bg-[#263D29]">
+            {%- assign collection = section.settings.collection -%}
+
+            <div class="flex flex-col gap-16">
+                <div class="flex justify-between items-center">
+                    <div>
+                        {%- capture link_content -%}
+                            <h1 class="font-bold">
+                                {%- if section.settings.heading != blank -%}
+                                    {{ section.settings.heading }}
+                                {%- else -%}
+                                    {{ collection.title }}
+                                {%- endif -%}
+
+                                {%- if collection != nil and collection.products_count > 0 -%}
+                                    <sup class="sup-badge">({{ collection.products_count }})</sup>
+                                {%- endif -%}
+                            </h1>
+                        {%- endcapture -%}
+                        {%- render 'link', href: collection.url, content: link_content,variant: 'underline' -%}
+                    </div>
+                    <div>
+                        {{ section.settings.description }}
+                    </div>
+                </div>
+
+                <div>
+                    {%- assign max_items = section.settings.max_items -%}
+
+                    {% # theme-check-disable-next-line LiquidHTMLSyntaxError %}
+                    {%- for product in collection.products limit: max_items -%}
+                        <a 
+                            class="flex justify-between items-center p-8 transition-colors duration-300" 
+                            href="{{ product.url }}"
+                            x-data="{hover:false}"
+                            @mouseenter="hover = true"
+                            @mouseleave="hover = false"
+                            :class=" hover ? 'bg-[#D5FF83]  text-[#263D29]':'' "
+                        >
+                            <div>
+                                {{ product.type | default: "Momonise" }} 
+                            </div>
+
+                            <div class="relative flex gap-3 items-center">
+                                <h0>{{ product.title }}</h0>
+
+                                {%- capture sizes -%}
+                                    100px
+                                {%- endcapture -%}
+
+                                <div 
+                                    class="absolute 
+                                        top-1/2 
+                                        -right-3
+                                        translate-x-full
+                                        -translate-y-1/2
+                                        transition-all duration-300 ease-out
+                                        opacity-0 scale-95
+                                        pointer-events-none"
+                                    :class="hover ? 'opacity-100 scale-100' : ''"
+                                >
+                                    {%- render 'image',
+                                        class: 'product-image', 
+                                        image: product.featured_image,
+                                        alt: product.featured_image.alt,
+                                        width: 100,
+                                        sizes: sizes,
+                                    -%}
+                                </div>
+                            </div>
+
+                            <div>
+                                {{ product.price | money }}
+                            </div>
+                        </a>
+                    {%- endfor -%}
+                </div>
+
+                <div class="self-center flex flex-col items-center justify-center text-center">
+                    <span class="inline-block w-6 h-6">
+                        {{- 'icon-eyeglasses.svg' | inline_asset_content -}}
+                    </span>
+                    <div>
+                        {{ section.settings.caption }}
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -24,6 +116,11 @@
     [data-section-id="{{ section.id }}"] { 
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
+
+        .product-image{
+            width: 100px;
+            height: 72px;
+        }
     }
 </style>
 
@@ -41,6 +138,15 @@
             "id": "color_scheme",
             "label": "Color Scheme",
             "default":"color-scheme-1"
+        },
+        {
+            "type": "range",
+            "id": "max_items",
+            "min": 4,
+            "max": 8,
+            "step": 1,
+            "default":4,
+            "label": "Maximum items"
         },
         {
             "type": "image_picker",
@@ -68,6 +174,30 @@
             "id": "caption",
             "label": "Caption",
             "default": "<p>Add a caption to your category.</p>"
+        },
+        {
+            "type": "header",
+            "content": "Padding"
+        },
+        {
+            "type": "range",
+            "id": "padding_top",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "Padding Top",
+            "default": 0
+        },
+        {
+            "type": "range",
+            "id": "padding_bottom",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "Padding Bottom",
+            "default": 0
         }
     ],
     "presets": [
