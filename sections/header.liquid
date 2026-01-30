@@ -1,7 +1,10 @@
 <header
-  class="full-width color-{{ section.settings.color_scheme }} transition-all duration-300 ease-in-out"
   data-section-id = "{{ section.id }}"
-  data-init="false"
+  class="header-section full-width color-{{ section.settings.color_scheme }} transition-all duration-300 ease-in-out"
+  style="
+    --section-padding-top: {{ section.settings.padding_top }}px;
+    --section-padding-bottom: {{ section.settings.padding_bottom }}px;
+  "
   x-data="stickyHeader"
   :class="{
     'is-top': isTop,
@@ -69,17 +72,7 @@
 </div>  
 </header>
 
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const header = document.querySelector('[data-section-id="{{ section.id }}"]');
-    
-    if(!header || header.dataset.init === 'true') return;
-    
-    header.dataset.init = 'true';
-	});
-</script>
-
-<style>
+{%  stylesheet  %}  
   .header{
     position: fixed;
     left: 0;
@@ -100,16 +93,13 @@
     background-color: transparent;
     box-shadow: 0 1px 10px rgba(0,0,0,.06);
   }
-  
-  [data-section-id="{{ section.id }}"] {
-    --section-padding-top: {{ section.settings.padding_top }}px;
-    --section-padding-bottom: {{ section.settings.padding_bottom }}px;
-    
+
+  .header-section {
     .header__cols-3{
       grid-template-areas: "logo menu navigation";
     }
   }
-</style>
+{% endstylesheet %}
 
 <script type="application/ld+json">
   {

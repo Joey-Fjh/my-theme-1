@@ -1,7 +1,13 @@
 <div 
-  class="full-width color-{{ section.settings.color_scheme }} layout h-screen"
   data-section-id="{{ section.id }}"
-  data-init="false"
+  class="slides-show-section full-width color-{{ section.settings.color_scheme }} layout h-screen"
+  style="
+    --section-padding-top: {{ section.settings.padding_top }}px;
+    --section-padding-bottom: {{ section.settings.padding_bottom }}px;
+  "
+  data-component-kind="section"
+  data-component-type="slides-show"
+  data-component-id="{{ section.id }}"
   data-auto-slide="{{ section.settings.is_auto_slide }}"
   data-slide-delay="{{ section.settings.slide_delay }}"
 >
@@ -77,49 +83,59 @@
   </div>
 </div>
 
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const slidesShow = document.querySelector('[data-section-id="{{ section.id }}"]');
-    
-    if(!slidesShow || slidesShow.dataset.init === 'true') return;
-    
-    slidesShow.dataset.init = 'true';
+{% javascript %}
+  (function() {
+    if (!window.$components) return;
 
-    const slides = slidesShow.querySelectorAll('.swiper-slide');
-    const autoSlide = slidesShow.dataset.autoSlide === 'true'; 
-    const slideDelay = slidesShow.dataset.slideDelay;
+    $components.register('slides-show', {
+      init(el){
+        const slides = el.querySelectorAll('.swiper-slide');
+        const autoSlide = el.getAttribute('data-auto-slide') === 'true';
+        const slideDelay = parseInt(el.getAttribute('data-slide-delay'), 10) || 5;
 
-    const swiperContainer = slidesShow.querySelector('.swiper');
+        const swiperContainer = el.querySelector('.swiper');
 
-    if(!swiperContainer || typeof Swiper === 'undefined') return;
+        if(!swiperContainer || typeof Swiper === 'undefined') return;
 
-    new Swiper(swiperContainer, {
-      loop: slides.length > 1,
-      autoplay: autoSlide ? {
-        delay: slideDelay * 1000,
-        disableOnInteraction: false
-      } : false,
-      slidesPerView: 1,
-      effect: 'fade',
-      fadeEffect: {
-        crossFade: true
+        const swiper = new Swiper(swiperContainer, {
+          loop: slides.length > 1,
+          autoplay: autoSlide ? {
+            delay: slideDelay * 1000,
+            disableOnInteraction: false
+          } : false,
+          slidesPerView: 1,
+          effect: 'fade',
+          fadeEffect: {
+            crossFade: true
+          },
+          pagination: false,
+          navigation: false
+        });
+
+        return { swiper };
       },
-      pagination: false,
-      navigation: false
-    })
-  });
-</script>
 
-<style>
-  [data-section-id="{{ section.id }}"] {
-    --section-padding-top: {{ section.settings.padding_top }}px;
-    --section-padding-bottom: {{ section.settings.padding_bottom }}px;
+      destroy(el, state){
+        if(!state || !state.swiper) return;
 
+        if(typeof state.swiper.destroy === 'function'){
+          state.swiper.destroy(true, true);
+        }
+      }
+    }),{
+      lazy: true
+    };
+  })();
+{% endjavascript %}
+
+{% stylesheet %}
+  .slides-show-section{
     .content-container{
       top: calc(var(--announcement-bar-height) + var(--header-height));
     }
   }
-</style>
+{% endstylesheet %}
+
 
 {% schema %}
 {
