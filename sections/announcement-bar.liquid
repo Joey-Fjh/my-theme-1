@@ -71,47 +71,49 @@
   (function () {
     if (!window.$components) return;
 
-    $components.register('announcement-bar', {
-      init(el) {
-        const autoPlay = el.getAttribute('data-auto-play') === 'true';
-        const changePlaySpeed = parseInt(el.getAttribute('data-change-play-speed'), 10) || 5;
+    $components.register(
+      'announcement-bar', 
+      {
+        init(el) {
+          const autoPlay = el.getAttribute('data-auto-play') === 'true';
+          const changePlaySpeed = parseInt(el.getAttribute('data-change-play-speed'), 10) || 5;
 
-        const swiperContainer = el.querySelector('.swiper');
-        if (!swiperContainer || typeof Swiper === 'undefined') return null;
+          const swiperContainer = el.querySelector('.swiper');
+          if (!swiperContainer || typeof Swiper === 'undefined') return null;
 
-        const slides = el.querySelectorAll('.swiper-slide');
+          const slides = el.querySelectorAll('.swiper-slide');
 
-        const swiper = new Swiper(swiperContainer, {
-          loop: slides.length > 1,
-          autoplay: autoPlay
-            ? {
-                delay: changePlaySpeed * 1000,
-                disableOnInteraction: false
-              }
-            : false,
-          slidesPerView: 1,
-          allowTouchMove: false,
-          effect: 'fade',
-          fadeEffect: {
-            crossFade: true
-          },
-          pagination: false,
-          navigation: false
-        });
+          const swiper = new Swiper(swiperContainer, {
+            loop: slides.length > 1,
+            autoplay: autoPlay
+              ? {
+                  delay: changePlaySpeed * 1000,
+                  disableOnInteraction: false
+                }
+              : false,
+            slidesPerView: 1,
+            allowTouchMove: false,
+            effect: 'fade',
+            fadeEffect: {
+              crossFade: true
+            },
+            pagination: false,
+            navigation: false
+          });
 
-        return { swiper };
-      },
+          return { swiper };
+        },
 
-      destroy(el, state) {
-        if (!state || !state.swiper) return;
+        destroy(el, state) {
+          if (!state || !state.swiper) return;
 
-        if (typeof state.swiper.destroy === 'function') {
-          state.swiper.destroy(true, true);
+          if (typeof state.swiper.destroy === 'function') {
+            state.swiper.destroy(true, true);
+          }
         }
-      }
-    },{
-      lazy: true
-    });
+      },
+      { lazy: true}
+    );
   })();
 {% endjavascript %}
 

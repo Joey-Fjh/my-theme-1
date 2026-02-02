@@ -15,29 +15,27 @@
     <div class="swiper-wrapper">
       {%- for block in section.blocks -%}
         <div class="swiper-slide" {{ block.shopify_attributes }}>
-          {%- if block.settings.slide_image != blank -%}
-            {%- capture sizes -%}
-              (min-width: 80rem) 100vw, (min-width: 48rem) 1280px, 768px
-            {%- endcapture -%}
-            
-            {%- capture widths -%}
-              400,768,1280,1536,2560
-            {%- endcapture -%}
+          {%- capture sizes -%}
+            (min-width: 80rem) 100vw, (min-width: 48rem) 1280px, 768px
+          {%- endcapture -%}
+          
+          {%- capture widths -%}
+            400,768,1280,1536,2560
+          {%- endcapture -%}
 
-            {%- assign image_loading = 'lazy' -%}
-            {%- if forloop.first -%}
-              {%- assign image_loading = 'eager' -%}
-            {%- endif -%}
-
-            {%- render 'image',
-                image: block.settings.slide_image,
-                alt: block.settings.slide_image.alt | default: shop.name | escape,
-                width: block.settings.slide_image.width,
-                sizes: sizes,
-                widths: widths,
-                loading: image_loading
-            -%}
+          {%- assign image_loading = 'lazy' -%}
+          {%- if forloop.first -%}
+            {%- assign image_loading = 'eager' -%}
           {%- endif -%}
+
+          {%- render 'image',
+              image: block.settings.slide_image,
+              alt: block.settings.slide_image.alt | default: shop.name | escape,
+              width: block.settings.slide_image.width,
+              sizes: sizes,
+              widths: widths,
+              loading: image_loading
+          -%}
 
           <div class="content-container container-page absolute inset-0">
             <div class="inset-0 grid grid-cols-3 grid-rows-3">
@@ -87,44 +85,46 @@
   (function() {
     if (!window.$components) return;
 
-    $components.register('slides-show', {
-      init(el){
-        const slides = el.querySelectorAll('.swiper-slide');
-        const autoSlide = el.getAttribute('data-auto-slide') === 'true';
-        const slideDelay = parseInt(el.getAttribute('data-slide-delay'), 10) || 5;
+    $components.register(
+      'slides-show', 
+      {
+        init(el){
+          const slides = el.querySelectorAll('.swiper-slide');
+          const autoSlide = el.getAttribute('data-auto-slide') === 'true';
+          const slideDelay = parseInt(el.getAttribute('data-slide-delay'), 10) || 5;
 
-        const swiperContainer = el.querySelector('.swiper');
+          const swiperContainer = el.querySelector('.swiper');
 
-        if(!swiperContainer || typeof Swiper === 'undefined') return;
+          if(!swiperContainer || typeof Swiper === 'undefined') return;
 
-        const swiper = new Swiper(swiperContainer, {
-          loop: slides.length > 1,
-          autoplay: autoSlide ? {
-            delay: slideDelay * 1000,
-            disableOnInteraction: false
-          } : false,
-          slidesPerView: 1,
-          effect: 'fade',
-          fadeEffect: {
-            crossFade: true
-          },
-          pagination: false,
-          navigation: false
-        });
+          const swiper = new Swiper(swiperContainer, {
+            loop: slides.length > 1,
+            autoplay: autoSlide ? {
+              delay: slideDelay * 1000,
+              disableOnInteraction: false
+            } : false,
+            slidesPerView: 1,
+            effect: 'fade',
+            fadeEffect: {
+              crossFade: true
+            },
+            pagination: false,
+            navigation: false
+          });
 
-        return { swiper };
-      },
+          return { swiper };
+        },
 
-      destroy(el, state){
-        if(!state || !state.swiper) return;
+        destroy(el, state){
+          if(!state || !state.swiper) return;
 
-        if(typeof state.swiper.destroy === 'function'){
-          state.swiper.destroy(true, true);
+          if(typeof state.swiper.destroy === 'function'){
+            state.swiper.destroy(true, true);
+          }
         }
-      }
-    }),{
-      lazy: true
-    };
+      },
+      { lazy: true }
+    );
   })();
 {% endjavascript %}
 

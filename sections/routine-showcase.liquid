@@ -1,15 +1,166 @@
 <div 
   data-section-id="{{ section.id }}"
-  class="routine-showcase-section full-width layout h-screen"
+  class="routine-showcase-section full-width layout"
   style="
     --section-padding-top: {{ section.settings.padding_top }}px;
     --section-padding-bottom: {{ section.settings.padding_bottom }}px;
   "
+  data-component-kind="section"
+  data-component-type="routine-showcase"
+  data-component-id="{{ section.id }}"
 >
+  <div class="w-full h-full relative">
+    {%- capture sizes -%}
+      (min-width: 80rem) 100vw, (min-width: 48rem) 1280px, 768px
+    {%- endcapture -%}
+    
+    {%- capture widths -%}
+      400,768,1280,1440,1536,2560
+    {%- endcapture -%}
 
+    {%- render 'image', 
+      image: section.settings.bg_img,
+      alt: section.settings.bg_img.alt | default: "Background Image",
+      width: section.settings.bg_img.width,
+      sizes: sizes,
+      widths: widths
+    -%}
+
+    <div class="absolute container-page inset-0">
+      <div class="grid h-full grid-cols-2 grid-rows-[1fr_auto] gap-8">
+        <div class="swiper">
+          <div class="swiper-wrapper">
+            {%- assign products = section.settings.collection.products -%}  
+
+            {%- for product in products -%}
+              <div class="swiper-slide">
+                <a class="relative block">
+                  {%- render 'image', 
+                    aspect_ratio: '342/198',
+                    class: 'product-image',
+                    image: product.featured_image,
+                    alt: product.title | escape,
+                    width: product.featured_image.width,
+                    sizes: '25vw'                  
+                  -%}
+
+                  <div class="absolute bottom-0 left-0 right-0 text-xl flex justify-between 
+                    p-4 bg-[#F8F8F8] text-[#0D1400]"
+                  >
+                    <div class="font-medium">{{ product.title }}</div>
+                    <div class="opacity-20">
+                      {% if forloop.index < 10 %}
+                        {% assign display_index = forloop.index | prepend: '0' %}
+                      {% else %}
+                        {% assign display_index = forloop.index %}
+                      {% endif %}
+
+                      {{ display_index }}
+                    </div>
+                  </div>
+                </a>
+              </div>
+            {%- endfor -%}
+          </div>
+
+          <div class="swiper-button-prev"></div>
+          <div class="swiper-button-next"></div>
+        </div>
+
+        <div class=" bg-white text-[#263D29] flex flex-col justify-between p-3">
+          <div>{{ section.settings.eyebrow }}</div>
+
+          <div class="gap-2">
+            <h3>{{ section.settings.heading }}</h3>
+            <div class="opacity-60">{{ section.settings.description }}</div>
+          </div>
+          
+          {%- capture link_content -%}
+            <span>{{ section.settings.cta_text }}</span>
+            <span class="inline-block w-6 h-6 ml-3">
+              {{- 'icon-arrow2.svg' | inline_asset_content -}}
+            </span>
+          {%- endcapture -%}
+          {%- render 'link', href: section.settings.cta_link, content: link_content, variant: "underline" -%}
+        </div>
+        
+        <div class="text-xl text-[#263D29] opacity-80">
+          {{ section.settings.badge_counter }}
+        </div>
+
+        <div>
+          circle
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
+{%- javascript -%}
+  (function(){
+    if(!window.$components) return;
+
+    $components.register(
+      'routine-showcase',
+      {
+        init(el){
+          const swiperContainer = el.querySelector('.swiper');
+
+          if(!swiperContainer || typeof Swiper === 'undefined') return;
+
+          const swiper = new Swiper(swiperContainer, {
+            direction: window.innerWidth <= 760 ? 'horizontal' : 'vertical',
+            slidesPerView: 4,
+            autoHeight: true,
+            spaceBetween: 12,
+            speed: 300,
+            loop: false,
+            allowTouchMove: false,
+            navigation: {
+              nextEl: '.swiper-button-next',
+              prevEl: '.swiper-button-prev',
+              top:"20px",
+              bottom:"20px"
+            },
+            on: {
+              resize() {
+                swiper.changeDirection(
+                  window.innerWidth <= 760 ? 'horizontal' : 'vertical'
+                );
+              }
+            }
+          });
+
+          return { swiper };
+        },
+
+        destroy(el,state){
+          if(!state || !state.swiper) return;
+
+          if(typeof state.swiper.destroy === 'function'){
+            state.swiper.destroy(true, true);
+          }
+        }
+      },
+      { lazy: true}
+    );
+  })()
+{%- endjavascript -%}
+
 {% stylesheet %}
+  .routine-showcase-section{
+    .product-image{
+      height: 198px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .swiper-button-prev,
+    .swiper-button-next{
+      --swiper-navigation-size: 18px;
+      --swiper-navigation-color: #000;
+    }
+  }
 {% endstylesheet %}
 
 {% schema %}
@@ -21,7 +172,76 @@
       "groups": ["header","footer"]
     },
     "settings": [
-      
+      {
+        "type": "image_picker",
+        "id": "bg_img",
+        "label": "Background Image"
+      },
+      {
+        "type": "collection",
+        "id": "collection",
+        "label": "Select Collection",
+      },
+      {
+        "type": "text",
+        "id": "eyebrow",
+        "label": "Eyebrow",
+        "default": "2026©"
+      },
+      {
+        "type": "inline_richtext",
+        "id": "heading",
+        "label": "Heading",
+        "default": "Personalized with AI insight."
+      },
+      {
+        "type": "richtext",
+        "id": "description",
+        "label": "Description",
+        "default": "<p>Personalized with AI insight.</p><p>Personalized with AI insight.</p>"
+      },
+      {
+        "type": "text",
+        "id": "cta_text",
+        "label": "Call to Action Text",
+        "default": "See Our New Product"
+      },
+      {
+        "type": "url",
+        "id": "cta_link",
+        "label": "Link URL",
+        "default": "/collections"
+      },
+      {
+        "type": "text",
+        "id": "badge_counter",
+        "label": "Counter Number",
+        "default": "002/12"
+      },
+      {
+        "type": "header",
+        "content": "Padding"
+      },
+      {
+        "type": "range",
+        "id": "padding_top",
+        "min": 0,
+        "max": 100,
+        "step": 4,
+        "unit": "px",
+        "label": "Padding Top",
+        "default": 0
+      },
+      {
+        "type": "range",
+        "id": "padding_bottom",
+        "min": 0,
+        "max": 100,
+        "step": 4,
+        "unit": "px",
+        "label": "Padding Bottom",
+        "default": 0
+      }
     ],
     "presets": [
       {
