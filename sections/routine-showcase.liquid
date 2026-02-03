@@ -9,7 +9,7 @@
   data-component-type="routine-showcase"
   data-component-id="{{ section.id }}"
 >
-  <div class="relative">
+  <div class="relative h-screen">
     {%- capture sizes -%}
       (min-width: 80rem) 100vw, (min-width: 48rem) 1280px, 768px
     {%- endcapture -%}
@@ -24,50 +24,55 @@
       width: section.settings.bg_img.width,
       sizes: sizes,
       widths: widths
-    -%}
+    -%} 
 
     <div class="absolute container-page inset-0">
       <div class="grid grid-cols-2 grid-rows-[1fr_auto] gap-8 p-4">
-        <div class="swiper flex-1" style="margin-left:0;">
-          <div class="swiper-wrapper">
-            {%- assign products = section.settings.collection.products -%}  
-
-            {%- for product in products -%}
-              <div class="swiper-slide">
-                <a class="relative block" href="{{ product.url }}">
-                  {%- render 'image', 
-                    aspect_ratio: '342/198',
-                    class: 'product-image',
-                    image: product.featured_image,
-                    alt: product.title | escape,
-                    width: product.featured_image.width,
-                    sizes: '25vw'                  
-                  -%}
-
-                  <div class="absolute bottom-0 left-0 right-0 text-xl flex justify-between 
-                    p-4 bg-[#F8F8F8] text-[#0D1400]"
-                  >
-                    <div class="font-medium">{{ product.title }}</div>
-                    <div class="opacity-20">
-                      {% if forloop.index < 10 %}
-                        {% assign display_index = forloop.index | prepend: '0' %}
-                      {% else %}
-                        {% assign display_index = forloop.index %}
-                      {% endif %}
-
-                      {{ display_index }}
-                    </div>
-                  </div>
-                </a>
-              </div>
-            {%- endfor -%}
-          </div>
-
+        <div class="flex flex-col justify-between w-fit gap-3">
           <div class="swiper-button-prev"></div>
+          <div class="swiper flex-1" style="margin-left:0;">
+            <div class="swiper-wrapper">
+              {%- assign products = section.settings.collection.products -%}  
+
+              {%- for product in products -%}
+                <div class="swiper-slide">
+                  <a class="relative block h-full" 
+                    href="{{ product.url }}"
+                    x-data="{ hover: false }"
+                    @mouseenter="hover = true"
+                    @mouseleave="hover = false"
+                  >
+                    {%- render 'image', 
+                      aspect_ratio: '342/198',
+                      class: 'product-image',
+                      image: product.featured_image,
+                      alt: product.title | escape,
+                      width: product.featured_image.width            
+                    -%}
+
+                    <div class="absolute bottom-0 left-0 right-0 text-xl flex justify-between 
+                      p-4"
+                      :class=" hover ? 'bg-[#263D29] text-[#D5FF83]':'bg-[#F8F8F8] text-[#0D1400]' "
+                    >
+                      <div class="font-medium">{{ product.title }}</div>
+                      <div class="opacity-20">
+                        {% if forloop.index < 10 %}
+                          {% assign display_index = forloop.index | prepend: '0' %}
+                        {% else %}
+                          {% assign display_index = forloop.index %}
+                        {% endif %}
+                        {{ display_index }}
+                      </div>
+                    </div>
+                  </a>
+                </div>
+              {%- endfor -%}
+            </div>
+          </div>
           <div class="swiper-button-next"></div>
         </div>
 
-        <div class="h-fit w-fit bg-white text-[#263D29] flex flex-col justify-between p-3">
+        <div class="h-fit w-fit bg-white text-[#263D29] flex flex-col p-6 gap-12 justify-self-end self-center">
           <div>{{ section.settings.eyebrow }}</div>
 
           <div class="gap-2">
@@ -89,7 +94,7 @@
         </div>
 
         <div>
-          circle
+          {%- render 'rotating-badge' -%}
         </div>
       </div>
     </div>
@@ -112,15 +117,13 @@
             direction: window.innerWidth <= 760 ? 'horizontal' : 'vertical',
             slidesPerView: 4,
             autoHeight: true,
-            spaceBetween: 3,
+            spaceBetween: 8,
             speed: 300,
             loop: false,
             allowTouchMove: false,
             navigation: {
               nextEl: '.swiper-button-next',
-              prevEl: '.swiper-button-prev',
-              top:"20px",
-              bottom:"20px"
+              prevEl: '.swiper-button-prev'
             },
             on: {
               resize() {
@@ -159,6 +162,15 @@
     .swiper-button-next{
       --swiper-navigation-size: 18px;
       --swiper-navigation-color: #000;
+
+      position: relative;
+      top: 0;
+      margin-top: 0;
+    }
+
+    .swiper-button-prev{
+      transform: rotate(90deg);
+      margin: 0 auto;
     }
   }
 {% endstylesheet %}
