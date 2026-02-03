@@ -2,8 +2,11 @@
     Renders a rotating circular badge with animated text on scroll into view.
 
     @param {string} unique_id - Unique identifier for SVG IDs.
+    @param {number} [size] - The size of the circle
     @param {string} [badge_text] - Text that rotates around the circle.
+    @param {string} [badge_class] - class that rotates around the circle.
     @param {string} [center_text] - Bold text shown in the center.
+    @param {string} [center_class] - class shown in the center. 
 
     @example
     {% render 'rotating-badge',
@@ -13,39 +16,46 @@
 {% enddoc %}
 
 {%- liquid
-  assign badge_text = badge_text | default: 'ORGANIC · ETHICALLY SOURCED ·'
-  assign center_text = center_text | default: '100%'
+    assign badge_size = size | default: 100
+    assign badge_text = badge_text | default: 'ORGANIC · ETHICALLY SOURCED ·'
+    assign center_text = center_text | default: '100%'
+
+    assign badge_class = badge_class | default:'text-white'
+    assign center_class = center_class | default:'text-white'
 -%}
 
 <div
     x-data="{ inView: false }"
-    x-intersect:enter="inView = true"
-    x-intersect:leave="inView = false"
-    class="flex items-center relative w-25 h-25"
+    x-intersect.once="inView = true"
+    class="relative justify-self-center"
+    style="width: {{ badge_size }}px; height: {{ badge_size }}px;"
 >
     <svg
-        :class="inView ? 'animate-spin-slow-running' : 'animate-spin-slow-paused'"
-        class="absolute inset-0 w-full h-full"
+        :class="inView && 'is-running'"
+        class="absolute inset-0 w-full h-full {{ badge_class }} origin-center animate-spin-slow is-paused"
         viewBox="0 0 100 100"
     >
         <defs>
             <path
                 id="circlePath-{{ unique_id }}"
-                d="M 50,50 m -37,0 a 37,37 0 1,1 74,0 a 37,37 0 1,1 -74,0"
+                d="
+                    M 50,50
+                    m -45,0
+                    a 45,45 0 1,1 90,0
+                    a 45,45 0 1,1 -90,0
+                "
             />
         </defs>
         
         <text 
             xml:space="preserve" 
-            class="font-semibold uppercase tracking-widest"
+            class="fill-current font-semibold uppercase tracking-widest"
             text-anchor="middle"
             dominant-baseline="central"
         >
             <textPath 
                 href="#circlePath-{{ unique_id }}" 
                 startOffset="50%"
-                textLength="auto"
-                lengthAdjust="spacingAndGlyphs"
             >
                 {{ badge_text  }}
             </textPath>
@@ -53,7 +63,7 @@
     </svg>
     
     <div class="absolute inset-0 flex items-center justify-center">
-        <span>
+        <span class="{{ center_class }}">
             {{ center_text }}
         </span>
     </div>
