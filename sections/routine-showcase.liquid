@@ -9,7 +9,7 @@
   data-component-type="routine-showcase"
   data-component-id="{{ section.id }}"
 >
-  <div class="relative h-screen">
+  <div class="relative">
     {%- capture sizes -%}
       (min-width: 80rem) 100vw, (min-width: 48rem) 1280px, 768px
     {%- endcapture -%}
@@ -93,9 +93,11 @@
           {{ section.settings.badge_counter }}
         </div>
 
-        <div>
-          {%- render 'rotating-badge' -%}
-        </div>
+        {%- render 'rotating-badge', 
+          unique_id: section.id,
+          badge_text: section.settings.rotate_badge_text , 
+          center_text: section.settings.rotate_badge_percent  
+        -%}
       </div>
     </div>
   </div>
@@ -153,7 +155,7 @@
 {% stylesheet %}
   .routine-showcase-section{
     .product-image{
-      height: 198px;
+      width: 342px;
       object-fit: cover;
       display: block;
     }
@@ -229,6 +231,18 @@
         "id": "badge_counter",
         "label": "Counter Number",
         "default": "002/12"
+      },
+      {
+        "type": "text",
+        "id": "rotate_badge_text",
+        "label": "Rotate Badge Text",
+        "default":"PRODUCT GUARANTEE NATURAL"
+      },
+      {
+        "type": "text",
+        "id": "rotate_badge_percent",
+        "label": "Rotate Badge Percent",
+        "default":"100%"
       },
       {
         "type": "header",

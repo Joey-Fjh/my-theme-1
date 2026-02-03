@@ -1,12 +1,60 @@
 {% doc %}
-    Renders .
+    Renders a rotating circular badge with animated text on scroll into view.
 
-   @param {} 
+    @param {string} unique_id - Unique identifier for SVG IDs.
+    @param {string} [badge_text] - Text that rotates around the circle.
+    @param {string} [center_text] - Bold text shown in the center.
 
     @example
-    {% render 'rotating-badge' %}
+    {% render 'rotating-badge',
+        badge_text: 'ORGANIC · ETHICALLY SOURCED ·',
+        center_text: '99%'
+    %}
 {% enddoc %}
 
-<div>
-    123
+{%- liquid
+  assign badge_text = badge_text | default: 'ORGANIC · ETHICALLY SOURCED ·'
+  assign center_text = center_text | default: '100%'
+-%}
+
+<div
+    x-data="{ inView: false }"
+    x-intersect:enter="inView = true"
+    x-intersect:leave="inView = false"
+    class="flex items-center relative w-25 h-25"
+>
+    <svg
+        :class="inView ? 'animate-spin-slow-running' : 'animate-spin-slow-paused'"
+        class="absolute inset-0 w-full h-full"
+        viewBox="0 0 100 100"
+    >
+        <defs>
+            <path
+                id="circlePath-{{ unique_id }}"
+                d="M 50,50 m -37,0 a 37,37 0 1,1 74,0 a 37,37 0 1,1 -74,0"
+            />
+        </defs>
+        
+        <text 
+            xml:space="preserve" 
+            class="font-semibold uppercase tracking-widest"
+            text-anchor="middle"
+            dominant-baseline="central"
+        >
+            <textPath 
+                href="#circlePath-{{ unique_id }}" 
+                startOffset="50%"
+                textLength="auto"
+                lengthAdjust="spacingAndGlyphs"
+            >
+                {{ badge_text  }}
+            </textPath>
+        </text>
+    </svg>
+    
+    <div class="absolute inset-0 flex items-center justify-center">
+        <span>
+            {{ center_text }}
+        </span>
+    </div>
 </div>
