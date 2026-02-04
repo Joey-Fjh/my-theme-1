@@ -26,6 +26,7 @@
   @param {string} [aspect_ratio] - Optional aspect ratio for the image (e.g. '16:9') 
   @param {string} [placeholder_key] - Optional placeholder key for nil image
   @param {string} [placeholder_class] - Optional placeholder class for nil image
+  @param {string} [extra_attributes] - Additional raw HTML attributes applied to the <img> element
 
   @example
   {% render 'image', image: product.featured_image, url: product.url %}
@@ -61,7 +62,8 @@
   endif
 
   assign class = class | default: ''
-  assign img_class = img_class | default: 'image_img' 
+  assign img_class = img_class | default: 'image_img'
+  assign extra_attributes = extra_attributes | default: '' 
 -%}
 
 {% liquid
@@ -85,17 +87,25 @@
   {%- if aspect_ratio -%} style="--aspect-ratio: {{ aspect_ratio }}" {%- endif -%}
 >
   {%- if image != blank -%}
-    {{ 
-      image 
-      | image_url: width: width, height: height, crop: crop 
-      | image_tag:
-        class: img_class,
-        alt: alt,
-        widths: widths, 
-        sizes: sizes,
-        loading: loading,
-        decoding: decoding
-    }}
+    {%- capture image_tag_html -%}
+      {{ 
+        image 
+        | image_url: width: width, height: height, crop: crop 
+        | image_tag:
+          class: img_class,
+          alt: alt,
+          widths: widths, 
+          sizes: sizes,
+          loading: loading,
+          decoding: decoding
+      }}  
+    {%- endcapture -%}
+
+    {%- if extra_attributes != blank -%}
+      {{ image_tag_html | replace_first: '>', ' ' | append: extra_attributes | append: '>' }}
+    {%- else -%}
+      {{ image_tag_html }}
+    {%- endif -%}
   {%- else -%}
     {{ placeholder_key | placeholder_svg_tag: class: placeholder_class }}
   {%- endif -%}

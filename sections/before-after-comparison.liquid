@@ -1,0 +1,170 @@
+<div
+    data-section-id="{{ section.id }}"
+    class="before-after-comparison-section full-width layout"
+    style="
+        --section-padding-top: {{ section.settings.padding_top }}px;
+        --section-padding-bottom: {{ section.settings.padding_bottom }}px;
+    " 
+>
+    <div class="container-page">
+        <div class="text-center flex flex-col gap-6 text-[#263D29]">
+            <h3 class="opacity-80">
+                {{ section.settings.sub_heading }}
+            </h3>
+            <h1 class="font-bold">
+                {{ section.settings.heading }}
+            </h1>
+        </div>
+
+        <div 
+            class="mt-25"
+            x-data="beforeAfterComparison()"
+        >
+            <div
+                class="relative aspect-video overflow-hidden rounded-lg cursor-ew-resize select-none"
+                x-ref="container"
+                @mousedown="startDrag($event)"
+                @touchstart.passive="startDrag($event)"
+                @mousemove="onDrag($event)"
+                @touchmove.passive="onDrag($event)"
+                @mouseup="endDrag()"
+                @touchend="endDrag()"
+                @mouseleave="endDrag()"
+                x-intersect:enter.once="animateToCenter()"
+            >
+                {% comment %} After Image (Background) {% endcomment %}
+                <div class="absolute inset-0 w-full h-full">
+                    {%- render 'image', 
+                        image: section.settings.after_img,
+                        alt: section.settings.after_img.alt,
+                        width: section.settings.after_img.width,
+                        extra_attributes: 'draggable="false"'
+                    -%}
+                </div>
+
+                {% comment %} Before Image (Clipped) {% endcomment %}
+                <div class="absolute inset-0 w-full h-full"
+                    :style="`clip-path: inset(0 ${100 - position}% 0 0)`"
+                >
+                    {%- render 'image', 
+                        image: section.settings.before_img,
+                        alt: section.settings.after_img.alt,
+                        width: section.settings.after_img.width,
+                        extra_attributes: 'draggable="false"'
+                    -%}
+                </div>
+
+                {% comment %} Silder Line {% endcomment %}
+                <div
+                    class="absolute top-0 bottom-0 w-0.5 bg-white/90 -translate-x-1/2 z-10 transition-[left] duration-75 ease-out"
+                    :class="{'transition-none' : isDragging }"
+                    :style="`left: ${position}%`"
+                >
+                    {% comment %} Handle {% endcomment %}
+                    <div
+                        class="cursor-grab active:cursor-grabbing absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center
+                            gap-0 hover:scale-110 transition-transform duration-200 focus:outline-none focus:ring-2 focus:ring-white/50"
+                        @mousedown.stop="startDrag($event)"
+                        @touchstart.stop.passive="startDrag($event)"
+                        aria-label="Drag to compare images"
+                    >
+                        <svg class="w-5 h-5 text-neutral-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M15 18L9 12L15 6"/>
+                        </svg>
+                        <svg class="w-5 h-5 text-neutral-700 -ml-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 18L15 12L9 6"/>
+                        </svg>
+                    </div>
+                </div>
+
+                {% comment %} Before Label {% endcomment %}
+                <div class="absolute bottom-4 left-4 px-3 py-1.5 text-xs font-medium tracking-wider text-white bg-black/60 backdrop-blur-sm rounded z-10">
+                    {{ section.settings.before_label }}
+                </div>
+
+                {% comment %} After Label {% endcomment %}
+                <div class="absolute bottom-4 right-4 px-3 py-1.5 text-xs font-medium tracking-wider text-white bg-black/60 backdrop-blur-sm rounded z-10">
+                    {{ section.settings.after_label }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% schema %}
+  {
+    "name": "Before After Comparison",
+    "tag": "section",
+    "class": "section",
+    "disabled_on": {
+        "groups": ["header","footer"]
+    },
+    "settings": [
+        {
+            "type": "inline_richtext",
+            "id": "sub_heading",
+            "label": "Sub Heading",
+            "default": "Lorem Ipsum"
+        },
+        {
+            "type": "inline_richtext",
+            "id": "heading",
+            "label": "Heading",
+            "default": "Up To 50% Off Everything"
+        },
+        {
+            "type": "image_picker",
+            "id": "before_img",
+            "label": "Before Image"
+        },
+        {
+            "type": "image_picker",
+            "id": "after_img",
+            "label": "After Image"
+        },
+        {
+            "type": "text",
+            "id": "before_label",
+            "label": "Before Label",
+            "default": "BEFORE"
+        },
+        {
+            "type": "text",
+            "id": "after_label",
+            "label": "After Label",
+            "default": "AFTER"
+        },
+        {
+            "type": "header",
+            "content": "Padding"
+        },
+        {
+            "type": "range",
+            "id": "padding_top",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "Padding Top",
+            "default": 0
+        },
+        {
+            "type": "range",
+            "id": "padding_bottom",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "Padding Bottom",
+            "default": 0
+        }
+    ],
+    "presets": [
+      {
+        "name": "Before After Comparison",
+        "settings": {
+        }
+      }
+    ]
+  }
+{% endschema %}

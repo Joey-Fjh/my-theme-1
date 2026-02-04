@@ -480,6 +480,7 @@ class AlpineComponents {
     static DROPDOWN = 'dropdown';
     static STICKY_HEADER = 'stickyHeader';
     static TABCONTROL = 'tabControl';
+    static BEFOREAFTERCOMPARISON = 'beforeAfterComparison';
 
     static dropdown(){
         return {
@@ -603,6 +604,81 @@ class AlpineComponents {
             }
         };
     }
+
+    static beforeAfterComparison(){
+        return {
+            ...AlpineComponentsFactory.useDisposable(),
+            position: 0,
+            isDragging: false,
+            
+            init() {
+                this.on(document,'mouseup',() => this.endDrag());
+                this.on(document,'touchend',() => this.endDrag());
+                this.on(document,'mousemove',(e) => {
+                    if(this.isDragging) this.updatePosition(e);
+                });
+                this.on(document,'touchmove',(e) => { 
+                    if(this.isDragging) this.updatePosition(e);
+                },{ passive:true });
+            },
+
+            animateToCenter(){
+                const start = 0;
+                const end = 50;
+                const duration = 800;
+                const startTime = performance.now();
+
+                const animate = (currentTime) => {
+                    const elapsed = currentTime - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    // Ease out cubic
+                    const easeOut = 1 - Math.pow(1 - progress, 3);
+                    this.position = start + (end - start) * easeOut;
+
+                    if(progress < 1){
+                        requestAnimationFrame(animate);
+                    }
+                };
+
+                requestAnimationFrame(animate);
+            },
+
+            startDrag(e){
+                this.isDragging = true;
+                this.updatePosition(e);
+            },
+
+            onDrag(e){
+                if(!this.isDragging) return;
+                this.updatePosition(e);
+            },
+
+            endDrag(){ 
+                this.isDragging = false;
+            },
+
+            updatePosition(e){
+                const container = this.$refs.container;
+                if(!container) return;
+
+                const rect = container.getBoundingClientRect();
+                const clientX = e.type.includes('touch')
+                    ? (e.touches?.[0]?.clientX ?? e.changedTouches?.[0]?.clientX)
+                    : e.clientX;
+
+                if(clientX == undefined) return;
+
+                const x =  clientX - rect.left;
+                const percentage = Math.max(0,Math.min(100,(x / rect.width) * 100));
+                
+                this.position = percentage;
+            },
+
+            destroy(){
+                this.dispose();
+            }
+        };
+    }
 }
 
 class Main {
@@ -620,6 +696,7 @@ class Main {
             AlpineComponentsFactory.register(AlpineComponents.DROPDOWN, AlpineComponents.dropdown);
             AlpineComponentsFactory.register(AlpineComponents.STICKY_HEADER, AlpineComponents.stickyHeader);
             AlpineComponentsFactory.register(AlpineComponents.TABCONTROL, AlpineComponents.tabControl);
+            AlpineComponentsFactory.register(AlpineComponents.BEFOREAFTERCOMPARISON,AlpineComponents.beforeAfterComparison);
         })
     }
 }
