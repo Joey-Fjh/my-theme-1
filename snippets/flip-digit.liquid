@@ -1,0 +1,43 @@
+{% comment %}
+  Usage:
+
+    <div x-data>
+      {% render 'flip-digit', value: hours, length: hours.toString().length, unit: 'hour' %}
+    </div>
+{% endcomment %}
+
+<template x-for="(digit, i) in $data.getValue('{{ value }}').split('')" :key="`{{ unit }}-${i}`">
+  <div 
+    class="relative w-12 h-20 md:w-20 md:h-32 lg:w-24 lg:h-36 perspective-[1000px]" 
+    x-data="{ prev: digit, oldDigit: digit }" 
+    x-effect="if (digit !== oldDigit) { prev = oldDigit; oldDigit = digit; }"
+  >
+
+    <!-- upper half -->
+    <div class="absolute inset-x-0 top-0 h-1/2 overflow-hidden rounded-t-sm
+                bg-[#2d3b2d] border-b border-[#1a231a]
+                transition-transform duration-500 origin-bottom"
+      :class="{ '-rotate-x-90': prev !== digit }"
+      style="transform-style: preserve-3d;"
+    >
+      <span class="absolute inset-0 flex items-center justify-center
+                   text-4xl md:text-6xl lg:text-7xl font-bold text-[#c8e650]" x-text="prev"></span>
+    </div>
+
+    <!-- lower half -->
+    <div class="absolute inset-x-0 bottom-0 h-1/2 overflow-hidden rounded-b-sm
+                bg-[#354435]
+                transition-transform duration-500 origin-top delay-150">
+      <span class="absolute inset-0 flex items-center justify-center
+                   text-4xl md:text-6xl lg:text-7xl font-bold text-[#c8e650]" x-text="digit"></span>
+    </div>
+
+    <!-- center line -->
+    <div class="absolute top-1/2 left-0 right-0 h-px bg-[#1a231a]"></div>
+
+    <!-- Border decoration -->
+    <div class="absolute top-1/2 -translate-y-1/2 left-0 w-1 h-2 bg-[#1a231a] rounded-r-sm"></div>
+    <div class="absolute top-1/2 -translate-y-1/2 right-0 w-1 h-2 bg-[#1a231a] rounded-l-sm"></div>
+
+  </div>
+</template>

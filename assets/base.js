@@ -481,6 +481,7 @@ class AlpineComponents {
     static STICKY_HEADER = 'stickyHeader';
     static TABCONTROL = 'tabControl';
     static BEFOREAFTERCOMPARISON = 'beforeAfterComparison';
+    static COUNTDOWNTIMER = 'countdownTimer';
 
     static dropdown(){
         return {
@@ -679,6 +680,65 @@ class AlpineComponents {
             }
         };
     }
+
+    static countdownTimer(endDate){
+        return {
+            ...AlpineComponentsFactory.useDisposable(),
+            endDate,
+            interval: null,
+            days: 0,
+            hours: 0,
+            minutes: 0,
+            seconds: 0,    
+
+            getValue(key) {
+                return this[key]?.toString() || '0';
+            },
+
+            init(){
+                this.calculateTime();
+                this.interval = setInterval(() => {
+                    this.calculateTime();
+                }, 1000);    
+            },
+
+            calculateTime(){
+                const end = new Date(this.endDate).getTime();
+                const now = Date.now();
+                const distance = end - now;
+
+                if(distance <= 0){
+                    this.reset();
+                    this.clear();
+                    return;
+                }
+
+                this.days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                this.hours = Math.floor((distance / (1000 * 60 * 60)) % 24);
+                this.minutes = Math.floor((distance / (1000 * 60)) % 60);
+                this.seconds = Math.floor((distance / 1000) % 60);
+            },
+
+            reset(){
+                this.days = 0;
+                this.hours = 0;
+                this.minutes = 0;
+                this.seconds = 0;
+            },
+
+            clear(){
+                if(this.interval){
+                    clearInterval(this.interval);
+                    this.interval = null;
+                }
+            },
+
+            destroy(){
+                this.clear();
+                this.dispose();
+            }
+        };
+    }
 }
 
 class Main {
@@ -697,6 +757,7 @@ class Main {
             AlpineComponentsFactory.register(AlpineComponents.STICKY_HEADER, AlpineComponents.stickyHeader);
             AlpineComponentsFactory.register(AlpineComponents.TABCONTROL, AlpineComponents.tabControl);
             AlpineComponentsFactory.register(AlpineComponents.BEFOREAFTERCOMPARISON,AlpineComponents.beforeAfterComparison);
+            AlpineComponentsFactory.register(AlpineComponents.COUNTDOWNTIMER,AlpineComponents.countdownTimer);
         })
     }
 }
