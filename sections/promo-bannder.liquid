@@ -1,0 +1,229 @@
+<div 
+    data-section-id="{{ section.id }}"
+    class="promo-banner-section full-width layout"
+    style="
+        --section-padding-top: {{ section.settings.padding_top }}px;
+        --section-padding-bottom: {{ section.settings.padding_bottom }}px;
+    "
+>
+    <div class="container-page">
+        {% comment %} Hero Banner {% endcomment %}
+        <div class="relative aspect-16/7 fw:aspect-16/6 overflow-hidden mb-2">
+            {%- render 'image', 
+                image: section.settings.hero_image,
+                alt: section.settings.hero_image.alt,
+                width: section.settings.hero_image.width,
+                loading: 'eager' 
+            -%}
+
+            {%- if section.settings.show_badge -%}
+                {%- render 'rotating-badge'
+                    unique_id: section.id,
+                    size: 100,
+                    badge_text: section.settings.badge_text,
+                    center_text: section.settings.badge_value
+                -%}
+            {%- endif -%}
+
+            <div class="absolute inset-0 flex flex-col justify-end p-6 pc:p-10 fw:p-14">
+                {%- if section.settings.hero_subtitle != blank -%}
+                    <p class="text-white/80 text-xs pc:text-sm tracking-wide mb-1 pc:mb-2">
+                        {{ section.settings.hero_subtitle }}
+                    </p>
+                {%- endif -%}
+
+                {%- if section.setting.hero_heading != blank -%}
+                    <h2 class="text-white font-light tracking-tight mb-3 pc:mb-4 max-w-xl">
+                        {{ section.settings.hero_heading }}
+                    </h2>
+                {%- endif -%}
+
+                {%- if section.settings.hero_link != blank -%}
+                    {%- capture link_content -%}
+                        <span>{{ section.settings.hero_link_text }}</span>
+                        <span class="inline-block w-6 h-6 ml-3">
+                            {{- 'icon-arrow2.svg' | inline_asset_content -}}
+                        </span>
+                    {%- endcapture -%}
+                    {%- render 'link', href: section.settings.hero_link, content: link_content, variant: "underline" -%}
+                {%- endif -%}
+            </div>
+        </div>
+
+        {% comment %} Two Column Cards {% endcomment %}
+        <div class="grid grid-cols-1 pc:grid-cols-2 gap-2">
+            {%- for block in section.blocks -%}
+                <div
+                    class="relative aspect-4/3 pc:aspect-4/3.5 overflow-hidden"
+                    {{ block.shopify_attributes }}
+                >
+                    {%- render 'image', 
+                        image: block.settings.image,
+                        alt: block.settings.image.alt,
+                        width: block.settings.image.width,
+                        sizes: '(max-width: 768px) 100vw, 50vw',
+                        loading: 'lazy' 
+                    -%}
+
+                    <div class="absolute inset-0 flex flex-col justify-end p-6 pc:p-8">
+                        {%- if block.settings.subtitle != blank -%}
+                            <p class="text-white/80 text-xs pc:text-sm tracking-wide mb-1">
+                                {{ block.settings.subtitle }}
+                            </p>
+                        {%- endif -%}
+
+                        {%- if block.settings.heading != blank -%}
+                            <h3 class="text-white font-light tracking-tight mb-2 pc:mb-3">
+                                {{ block.settings.heading }}
+                            </h3>
+                        {%- endif -%}
+
+                        {%- if block.settings.link != blank -%}
+                            {%- capture link_content -%}
+                                <span>{{ block.settings.link_text }}</span>
+                                <span class="inline-block w-6 h-6 ml-3">
+                                    {{- 'icon-arrow2.svg' | inline_asset_content -}}
+                                </span>
+                            {%- endcapture -%}
+                            {%- render 'link', href: block.settings.link, content: link_content, variant: "underline" -%}
+                        {%- endif -%}
+                    </div>
+                </div>
+            {%- endfor -%}
+        </div> 
+    </div>
+</div>
+
+{% schema %}
+  {
+    "name": "Promo Banner",
+    "tag": "section",
+    "class": "section",
+    "disabled_on": {
+        "groups": ["header","footer"]
+    },
+    "settings": [
+        {
+            "type": "header",
+            "content": "Hero Banner"
+        },
+        {
+            "type": "image_picker",
+            "id": "hero_image",
+            "label": "Hero Image"
+        },
+        {
+            "type": "inline_richtext",
+            "id": "hero_subtitle",
+            "label": "Subtitle",
+            "default": "Lorem Ipsum"
+        },
+        {
+            "type": "inline_richtext",
+            "id": "hero_heading",
+            "label": "Heading",
+            "default": "Up To 50% Off Everything"
+        },
+        {
+            "type": "url",
+            "id": "hero_link",
+            "label": "Link"
+        },
+        {
+            "type": "text",
+            "id": "hero_link_text",
+            "label": "Link Text",
+            "default": "Watch Now"
+        },
+        {
+            "type": "header",
+            "content": "Badge"
+        },
+        {
+            "type": "checkbox",
+            "id": "show_badge",
+            "label": "Show Badge",
+            "default": true
+        },
+        {
+            "type": "text",
+            "id": "badge_text",
+            "label": "Badge Text",
+            "default": "PRODUCT GUARANTEE • NATURAL •"
+        },
+        {
+            "type": "text",
+            "id": "badge_value",
+            "label": "Badge Value",
+            "default": "100%"
+        },
+        {
+            "type": "header",
+            "content": "Padding"
+        },
+        {
+            "type": "range",
+            "id": "padding_top",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "Padding Top",
+            "default": 0
+        },
+        {
+            "type": "range",
+            "id": "padding_bottom",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "Padding Bottom",
+            "default": 0
+        }
+    ],
+    "blocks": [
+        {
+            "type": "card",
+            "name": "Card",
+            "settings": [
+                {
+                    "type": "image_picker",
+                    "id": "image",
+                    "label": "Image"
+                },
+                {
+                    "type": "inline_richtext",
+                    "id": "subtitle",
+                    "label": "Subtitle",
+                    "default": "Lorem Ipsum"
+                },
+                {
+                    "type": "inline_richtext",
+                    "id": "heading",
+                    "label": "Heading",
+                    "default": "Lorem Ipsum"
+                },
+                {
+                    "type": "url",
+                    "id": "link",
+                    "label": "Link"
+                },
+                {
+                    "type": "text",
+                    "id": "link_text",
+                    "label": "Link Text",
+                    "default": "Watch Now"
+                }
+            ]
+        }
+    ],
+    "presets": [
+      {
+        "name": "Promo Banner",
+        "settings": {
+        }
+      }
+    ]
+  }
+{% endschema %}
