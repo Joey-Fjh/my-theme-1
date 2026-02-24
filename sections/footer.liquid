@@ -1,6 +1,8 @@
 <footer
   data-section-id = "{{ section.id }}"
-  class="footer-section relative full-width bg-[#0D1400]"
+  class="footer-section relative full-width
+   bg-[#0D1400]
+  "
   x-data="{ 
     visible:false,
     scrollToTop() {
@@ -19,110 +21,112 @@
     width: section.settings.bg_image.width
   %}
 
-  <div class="container-page relative p-12 overflow-hidden">
-    {% comment %} Top Content Area {% endcomment %}
-    <div 
-      class="z-10 flex flex-col gap-12 pc:mb-24 pc:flex-row pc:justify-between transition-all duration-700 ease-out"
-      :class="visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'"
-    >
-      {%- comment -%} Navigation Link Columns {%- endcomment -%}
-      <div class="flex flex-wrap gap-16 pc:gap-20 fw:gap-28">
-        {% for block in section.blocks %}
-          {% if block.type == 'link_column' %}
-            <div {{ block.shopify_attributes }}>
-              <h2 class="mb-10 font-medium tracking-wider">
-                {{ block.settings.heading }}
-              </h2>
-              <ul class="flex flex-col gap-3">
-                {% assign links_menu = block.settings.menu %}
-                {% if links_menu != blank %}
-                  {% for link in linklists[links_menu].links %}
-                    <li>
-                      {% render 'link', text: link.title ,class:"h4", variant: "underline",href: link.url %}
-                    </li>
-                  {% endfor %}
-                {% else %}
-                  {% assign fallback_links = block.settings.heading | downcase %}
-                  {% for i in (1..4) %}
-                    <li>
-                      {% render 'link', text: 'Link ' | append: i ,class:"h4", variant: "underline",href: "#" %}
-                    </li>
-                  {% endfor %}
-                {% endif %}
-              </ul>
-            </div>
-          {% endif %}
-        {% endfor %}
-      </div>
-      
-      {%- comment -%} Right Content Block {%- endcomment -%}
-      <div class="flex flex-col gap-15 max-w-2xl">
-        {% if section.settings.content_heading != blank %}
-          <h3 class="font-medium">
-            {{ section.settings.content_heading }}
-          </h3>
-        {% endif %}
-        {% if section.settings.content_text != blank %}
-          <p class="leading-relaxed">
-            {{ section.settings.content_text }}
-          </p>
-        {% endif %}
-        {% if section.settings.content_link != blank %}
-          {%- capture link_content -%}
-            <span>{{ section.settings.content_link_text }}</span>
-            <span class="inline-block w-6 h-6 ml-3">
-                {{- 'icon-arrow2.svg' | inline_asset_content -}}
-            </span>
-          {%- endcapture -%}
-          {%- render 'link', href: section.settings.content_link, content: link_content, variant: "underline" -%}
-        {% endif %}
-      </div>
-    </div>
-
-    {%- comment -%} Large Brand Name with Brush Texture {%- endcomment -%}
-    <div 
-      class="z-0 mb-8 select-none pc:mb-12 transtion-all duration-1000 ease-out delay-300"
-      :class="visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'"
-    >
-      {%- comment -%} Brush stroke decoration {%- endcomment -%}
-      {% if section.settings.brush_image != blank %}
-        <div class="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none">
-          {% render 'image'
-            class: '!h-fit object-contain mix-blend-lighten',
-            image: section.settings.brush_image,
-            alt: section.settings.brush_image.alt,
-            width: section.settings.brush_image.width
-          %}
-        </div>
-
-        <h1 class="text-center text-[12vw] pc:text-[10vw] font-bold leading-none tracking-tighter">
-          {{ section.settings.brand_name | default: 'Eccenova®' }}
-        </h1>
-      {% endif %}
-    </div>
-
-    {%- comment -%} Bottom Bar {%- endcomment -%}
-    <div
-      class="z-10 flex flex-col items-center justify-between gap-4 border-t border-lime-300/10 pt-4 
-            pc:flex-row pc:gap-0 transition-all duration-700 ease-out delay-500"
-      :class="visible ? 'opacity-100' : 'opacity-0'"
-    >
-      <span class="text-xl text-lime-300/40">
-        {{ section.settings.location | default: 'Shibuya, JP' }}
-      </span>
-      <span class="text-xl text-lime-300/40">
-        {{ 'now' | date: '%Y' }}© {{ section.settings.brand_name | default: 'Eccenova' }}® allright reserved.
-      </span>
-      <button
-        type="button"
-        @click="scrollToTop()"
-        class="cursor-pointer flex items-center gap-1 text-xl text-lime-300/40 transition-colors hover:text-lime-300"
+  <div class="container-page">
+    <div class="relative p-12 overflow-hidden">
+      {% comment %} Top Content Area {% endcomment %}
+      <div 
+        class="z-10 flex flex-col gap-12 pc:mb-24 pc:flex-row pc:justify-between transition-all duration-700 ease-out"
+        :class="visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'"
       >
-        <span>Back to Top</span>
-        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7" />
-        </svg>
-      </button>
+        {%- comment -%} Navigation Link Columns {%- endcomment -%}
+        <div class="flex flex-wrap gap-16 pc:gap-20 fw:gap-28">
+          {% for block in section.blocks %}
+            {% if block.type == 'link_column' %}
+              <div {{ block.shopify_attributes }}>
+                <h2 class="mb-10 font-medium tracking-wider">
+                  {{ block.settings.heading }}
+                </h2>
+                <ul class="flex flex-col gap-3">
+                  {% assign links_menu = block.settings.menu %}
+                  {% if links_menu != blank %}
+                    {% for link in linklists[links_menu].links %}
+                      <li>
+                        {% render 'link', text: link.title ,class:"h4", variant: "underline",href: link.url %}
+                      </li>
+                    {% endfor %}
+                  {% else %}
+                    {% assign fallback_links = block.settings.heading | downcase %}
+                    {% for i in (1..4) %}
+                      <li>
+                        {% render 'link', text: 'Link ' | append: i ,class:"h4", variant: "underline",href: "#" %}
+                      </li>
+                    {% endfor %}
+                  {% endif %}
+                </ul>
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+        
+        {%- comment -%} Right Content Block {%- endcomment -%}
+        <div class="flex flex-col gap-15 max-w-2xl">
+          {% if section.settings.content_heading != blank %}
+            <h3 class="font-medium">
+              {{ section.settings.content_heading }}
+            </h3>
+          {% endif %}
+          {% if section.settings.content_text != blank %}
+            <p class="leading-relaxed">
+              {{ section.settings.content_text }}
+            </p>
+          {% endif %}
+          {% if section.settings.content_link != blank %}
+            {%- capture link_content -%}
+              <span>{{ section.settings.content_link_text }}</span>
+              <span class="inline-block w-6 h-6 ml-3">
+                  {{- 'icon-arrow2.svg' | inline_asset_content -}}
+              </span>
+            {%- endcapture -%}
+            {%- render 'link', href: section.settings.content_link, content: link_content, variant: "underline" -%}
+          {% endif %}
+        </div>
+      </div>
+
+      {%- comment -%} Large Brand Name with Brush Texture {%- endcomment -%}
+      <div 
+        class="z-0 mb-8 select-none pc:mb-12 transtion-all duration-1000 ease-out delay-300"
+        :class="visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'"
+      >
+        {%- comment -%} Brush stroke decoration {%- endcomment -%}
+        {% if section.settings.brush_image != blank %}
+          <div class="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none">
+            {% render 'image'
+              class: '!h-fit object-contain mix-blend-lighten',
+              image: section.settings.brush_image,
+              alt: section.settings.brush_image.alt,
+              width: section.settings.brush_image.width
+            %}
+          </div>
+
+          <h1 class="text-center text-[16vw] pc:text-[18vw] tracking-[0.01em] pc:tracking-[0.03em] font-bold leading-none">
+            {{ section.settings.brand_name | replace: '®', '<sup class="text-[0.4em] relative top-[-0.9em] font-sans tracking-normal font-normal">®</sup>' }}
+          </h1>
+        {% endif %}
+      </div>
+
+      {%- comment -%} Bottom Bar {%- endcomment -%}
+      <div
+        class="z-10 flex flex-col items-center justify-between gap-4 border-t border-lime-300/10 pt-4 
+              pc:flex-row pc:gap-0 transition-all duration-700 ease-out delay-500"
+        :class="visible ? 'opacity-100' : 'opacity-0'"
+      >
+        <span class="text-xl text-lime-300/40">
+          {{ section.settings.location | default: 'Shibuya, JP' }}
+        </span>
+        <span class="text-xl text-lime-300/40">
+          {{ 'now' | date: '%Y' }}© {{ section.settings.brand_name | default: 'Eccenova' }}® allright reserved.
+        </span>
+        <button
+          type="button"
+          @click="scrollToTop()"
+          class="cursor-pointer flex items-center gap-1 text-xl text-lime-300/40 transition-colors hover:text-lime-300"
+        >
+          <span>Back to Top</span>
+          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7" />
+          </svg>
+        </button>
+      </div>
     </div>
   </div>
 </footer>
