@@ -11,12 +11,14 @@
     - settings.pagination_font_size      : font size in px
     - settings.pagination_border_radius  : border radius in px
 
-  Usage (no params needed):
+  Usage (must pass a paginate object from within a `{% paginate %}` block):
 
     {% paginate collection.products by 24 %}
       <!-- your list -->
-      {% render 'pagination' %}
+      {% render 'pagination', paginate_obj: paginate %}
     {% endpaginate %}
+
+  @param {paginate} paginate_obj - Paginate object from a surrounding `{% paginate %}` tag.
 {% enddoc %}
 
 {%- liquid
@@ -26,18 +28,19 @@
   assign pagination_current_text  = settings.pagination_current_text | default: '#ffffff'
   assign pagination_font_size     = settings.pagination_font_size    | default: 13
   assign pagination_border_radius = settings.pagination_border_radius | default: 4
+
+  assign pagination_data = paginate_obj
 -%}
 
-{%- if paginate.pages > 1 -%}
+{%- if pagination_data and pagination_data.pages > 1 -%}
   <nav
     class="pagination flex items-center justify-center gap-1 py-10"
     role="navigation"
-    {% comment %} aria-label="{{ 'components.pagination.aria_label' | t }}" {% endcomment %}
   >
     {%- comment -%} PREVIOUS {%- endcomment -%}
-    {%- if paginate.previous -%}
+    {%- if pagination_data.previous -%}
       <a
-        href="{{ paginate.previous.url }}"
+        href="{{ pagination_data.previous.url }}"
         class="
           pagination__prev
           inline-flex items-center gap-1 px-2 h-8
@@ -59,10 +62,10 @@
             border-color: rgba(0,0,0,0.12);
           {% endif %}
         "
-        {% comment %} aria-label="{{ 'components.pagination.previous_page' | t }}" {% endcomment %}
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-        {% comment %} <span>{{ 'components.pagination.previous' | t }}</span> {% endcomment %}
+        {% comment %} <span>{{ 'pagination.previous' | t }}</span> {% endcomment %}
+        <span>Previous</span>
       </a>
     {%- else -%}
       <span
@@ -85,12 +88,11 @@
         aria-disabled="true"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-        {% comment %} <span>{{ 'components.pagination.previous' | t }}</span> {% endcomment %}
       </span>
     {%- endif -%}
 
     {%- comment -%} PAGES {%- endcomment -%}
-    {%- for part in paginate.parts -%}
+    {%- for part in pagination_data.parts -%}
       {%- if part.is_link -%}
         <a
           href="{{ part.url }}"
@@ -115,12 +117,11 @@
               border-color: rgba(0,0,0,0.12);
             {% endif %}
           "
-          {% comment %} aria-label="{{ 'components.pagination.page_number' | t: page: part.title }}" {% endcomment %}
         >
           {{- part.title -}}
         </a>
       {%- else -%}
-        {%- if part.title == paginate.current_page -%}
+        {%- if part.title == pagination_data.current_page -%}
           <span
             class="
               pagination__page pagination__page--current
@@ -144,7 +145,6 @@
               border-radius: {{ pagination_border_radius }}px;
             "
             aria-current="page"
-            {% comment %} aria-label="{{ 'components.pagination.current_page' | t: page: part.title }}" {% endcomment %}
           >
             {{- part.title -}}
           </span>
@@ -166,9 +166,9 @@
     {%- endfor -%}
 
     {%- comment -%} NEXT {%- endcomment -%}
-    {%- if paginate.next -%}
+    {%- if pagination_data.next -%}
       <a
-        href="{{ paginate.next.url }}"
+        href="{{ pagination_data.next.url }}"
         class="
           pagination__next
           inline-flex items-center gap-1 px-2 h-8
@@ -190,9 +190,9 @@
             border-color: rgba(0,0,0,0.12);
           {% endif %}
         "
-        {% comment %} aria-label="{{ 'components.pagination.next_page' | t }}" {% endcomment %}
       >
-        {% comment %} <span>{{ 'components.pagination.next' | t }}</span> {% endcomment %}
+        {% comment %} <span>{{ 'pagination.next' | t }}</span> {% endcomment %}
+        <span>Next</span>
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
       </a>
     {%- else -%}
@@ -215,7 +215,6 @@
         "
         aria-disabled="true"
       >
-        {% comment %} <span>{{ 'components.pagination.next' | t }}</span> {% endcomment %}
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
       </span>
     {%- endif -%}
