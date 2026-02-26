@@ -11,86 +11,86 @@
 >
     <div class="layout container-page bg-[#F3F3F3] text-[#263D29]">
         {%- comment -%} Main Content: Image + Form {%- endcomment -%}
-        <div class="relative z-10 max-w-5xl mx-auto px-6 md:px-10">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-0 bg-white rounded-lg overflow-hidden shadow-[0_4px_40px_rgba(0,0,0,0.06)]">
+        <div class="relative z-10 max-w-5/6 mx-auto">
+            <div class="grid grid-cols-1 pc:grid-cols-2 gap-0 bg-white rounded-lg overflow-hidden shadow-[0_4px_40px_rgba(0,0,0,0.06)]">
                 {%- comment -%} Left: Image {%- endcomment -%}
-                <div class="relative aspect-4/5 md:aspect-auto overflow-hidden opacity-0 -translate-x-7.5" data-gsap-image>
-                    {% comment %} {%- if section.settings.image != blank -%}
-                    <img
-                        src="{{ section.settings.image | image_url: width: 800 }}"
-                        srcset="
-                        {{ section.settings.image | image_url: width: 400 }} 400w,
-                        {{ section.settings.image | image_url: width: 600 }} 600w,
-                        {{ section.settings.image | image_url: width: 800 }} 800w
-                        "
-                        sizes="(max-width: 768px) 100vw, 50vw"
-                        alt="{{ section.settings.image_alt | default: 'Contact us' | escape }}"
-                        loading="eager"
-                        class="w-full h-full object-cover"
-                    >
-                    {%- else -%}
-                    {{ 'lifestyle-1' | placeholder_svg_tag: 'w-full h-full object-cover' }}
-                    {%- endif -%} {% endcomment %}
+                <div class="relative aspect-528/582 pc:aspect-auto overflow-hidden opacity-0 -translate-x-7.5" data-gsap-image>
+                    {% capture sizes %}
+                        (max-width: 768px) 100vw, 50vw    
+                    {% endcapture %}
+
+                    {% capture widths %}
+                        400,600,800
+                    {% endcapture %}
+                    
+                    {% render 'image',
+                        image: section.settings.image,
+                        alt: section.settings.image.image_alt | default: 'Contact us' | escape,
+                        width: section.settings.image.width,
+                        sizes: sizes,
+                        widths: widths,
+                        loading: 'eager'
+                    %}
 
                     {%- comment -%} hCaptcha Notice {%- endcomment -%}
-                    <p class="absolute bottom-4 left-4 right-4 text-[11px] leading-snug text-white/80">
+                    <p class="absolute bottom-4 left-4 right-4 leading-snug text-white/80">
                         This site is protected by hCaptcha and the hCaptcha<br>
                         <a href="https://www.hcaptcha.com/privacy" class="underline hover:text-white" target="_blank" rel="noopener">Privacy Policy</a>
                         and <a href="https://www.hcaptcha.com/terms" class="underline hover:text-white" target="_blank" rel="noopener">Terms of Service</a> apply.
                     </p>
                 </div>
                 {%- comment -%} Right: Form {%- endcomment -%}
-                <div class="flex flex-col justify-center px-6 py-10 md:px-10 lg:px-12 opacity-0 translate-x-7.5" data-gsap-form>
-                    <h1 class="text-[clamp(1.75rem,4vw,2.5rem)] font-bold italic text-[#2d3a2e] text-center leading-tight">
+                <div class="flex flex-col justify-center px-6 py-10 pc:px-10 fw:px-12 opacity-0 translate-x-7.5" data-gsap-form>
+                    <h1 class="font-bold text-center leading-tight">
                         {{ section.settings.heading | default: 'Reach Us For Radiance' }}
                     </h1>
-                    <p class="mt-3 text-sm text-[#5a5a5a] text-center leading-relaxed max-w-sm mx-auto">
+                    <p class="mt-3 opacity-80 text-center leading-relaxed">
                         {{ section.settings.description | default: 'Unlock personalized experiences with our AI technology. Get insights that evolve with your preferences.' }}
                     </p>
 
-                    {%- form 'contact', class: 'mt-8 flex flex-col gap-5' -%}
+                    {%- form 'contact', class: 'mt-8 flex flex-col gap-10' -%}
                         {%- if form.posted_successfully? -%}
-                            <div class="p-4 rounded bg-green-50 text-green-800 text-sm text-center">
+                            <div class="p-4 rounded bg-green-50 text-green-800 text-xl text-center">
                                 {{ section.settings.success_message | default: 'Thank you for your message. We will get back to you soon.' }}
                             </div>
                         {%- endif -%}
 
                         {%- if form.errors -%}
-                            <div class="p-4 rounded bg-red-50 text-red-700 text-sm">
+                            <div class="p-4 rounded bg-red-50 text-red-700 text-xl">
                                 {{ form.errors | default_errors }}
                             </div>
                         {%- endif -%}
 
                         {%- comment -%} First name & Last name {%- endcomment -%}
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <div class="grid grid-cols-1 pc:grid-cols-2 gap-5">
                             <div class="flex flex-col gap-1.5">
-                                <label for="ContactFirstName" class="text-sm font-medium text-[#1a1a1a]">First name</label>
+                                <label for="ContactFirstName" class="text-xl font-medium opacity-80">First name</label>
                                 <input
                                     type="text"
                                     id="ContactFirstName"
                                     name="contact[first_name]"
                                     placeholder="Enter your first name"
                                     autocomplete="given-name"
-                                    class="w-full h-11 px-4 text-sm text-[#1a1a1a] placeholder-[#9a9a9a] bg-[#f5f4f0] border border-[#e5e4e0] rounded outline-none transition-colors focus:border-[#2d3a2e] focus:ring-1 focus:ring-[#2d3a2e]"
+                                    class="w-full h-18 px-4 text-xl opacity-40 placeholder-[#9a9a9a] bg-[#f5f4f0] border border-[#e5e4e0] rounded outline-none transition-colors focus:border-[#2d3a2e] focus:ring-1 focus:ring-[#2d3a2e]"
                                 >
                             </div>
                             <div class="flex flex-col gap-1.5">
-                                <label for="ContactLastName" class="text-sm font-medium text-[#1a1a1a]">Last name</label>
+                                <label for="ContactLastName" class="text-xl font-medium opacity-80">Last name</label>
                                 <input
                                     type="text"
                                     id="ContactLastName"
                                     name="contact[last_name]"
                                     placeholder="Enter your last name"
                                     autocomplete="family-name"
-                                    class="w-full h-11 px-4 text-sm text-[#1a1a1a] placeholder-[#9a9a9a] bg-[#f5f4f0] border border-[#e5e4e0] rounded outline-none transition-colors focus:border-[#2d3a2e] focus:ring-1 focus:ring-[#2d3a2e]"
+                                    class="w-full h-18 px-4 text-xl opacity-40 placeholder-[#9a9a9a] bg-[#f5f4f0] border border-[#e5e4e0] rounded outline-none transition-colors focus:border-[#2d3a2e] focus:ring-1 focus:ring-[#2d3a2e]"
                                 >
                             </div>
                         </div>
 
                         {%- comment -%} Email & Phone {%- endcomment -%}
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <div class="grid grid-cols-1 pc:grid-cols-2 gap-5">
                             <div class="flex flex-col gap-1.5">
-                                <label for="ContactEmail" class="text-sm font-medium text-[#1a1a1a]">Email</label>
+                                <label for="ContactEmail" class="text-xl font-medium opacity-80">Email</label>
                                 <input
                                     type="email"
                                     id="ContactEmail"
@@ -98,38 +98,38 @@
                                     placeholder="Enter your email address"
                                     autocomplete="email"
                                     required
-                                    class="w-full h-11 px-4 text-sm text-[#1a1a1a] placeholder-[#9a9a9a] bg-[#f5f4f0] border border-[#e5e4e0] rounded outline-none transition-colors focus:border-[#2d3a2e] focus:ring-1 focus:ring-[#2d3a2e]"
+                                    class="w-full h-18 px-4 text-xl opacity-40 placeholder-[#9a9a9a] bg-[#f5f4f0] border border-[#e5e4e0] rounded outline-none transition-colors focus:border-[#2d3a2e] focus:ring-1 focus:ring-[#2d3a2e]"
                                 >
                             </div>
                             <div class="flex flex-col gap-1.5">
-                                <label for="ContactPhone" class="text-sm font-medium text-[#1a1a1a]">Phone</label>
+                                <label for="ContactPhone" class="text-xl font-medium opacity-80">Phone</label>
                                 <input
                                     type="tel"
                                     id="ContactPhone"
                                     name="contact[phone]"
                                     placeholder="Enter your phone number"
                                     autocomplete="tel"
-                                    class="w-full h-11 px-4 text-sm text-[#1a1a1a] placeholder-[#9a9a9a] bg-[#f5f4f0] border border-[#e5e4e0] rounded outline-none transition-colors focus:border-[#2d3a2e] focus:ring-1 focus:ring-[#2d3a2e]"
+                                    class="w-full h-18 px-4 text-xl opacity-40 placeholder-[#9a9a9a] bg-[#f5f4f0] border border-[#e5e4e0] rounded outline-none transition-colors focus:border-[#2d3a2e] focus:ring-1 focus:ring-[#2d3a2e]"
                                 >
                             </div>
                         </div>
 
                         {%- comment -%} Message {%- endcomment -%}
                         <div class="flex flex-col gap-1.5">
-                            <label for="ContactMessage" class="text-sm font-medium text-[#1a1a1a]">Message</label>
+                            <label for="ContactMessage" class="text-xl font-medium opacity-80">Message</label>
                             <textarea
                                 id="ContactMessage"
                                 name="contact[body]"
                                 placeholder="Enter your message"
                                 rows="4"
-                                class="w-full px-4 py-3 text-sm text-[#1a1a1a] placeholder-[#9a9a9a] bg-[#f5f4f0] border border-[#e5e4e0] rounded outline-none resize-none transition-colors focus:border-[#2d3a2e] focus:ring-1 focus:ring-[#2d3a2e]"
+                                class="w-full px-4 py-3 text-xl opacity-40 placeholder-[#9a9a9a] bg-[#f5f4f0] border border-[#e5e4e0] rounded outline-none resize-none transition-colors focus:border-[#2d3a2e] focus:ring-1 focus:ring-[#2d3a2e]"
                             ></textarea>
                         </div>
 
                         {%- comment -%} Submit {%- endcomment -%}
                         <button
                             type="submit"
-                            class="w-full h-12 text-sm font-medium text-white bg-[#2d3a2e] rounded transition-colors hover:bg-[#3d4d3f] active:bg-[#222c23] cursor-pointer"
+                            class="w-full h-24 text-2xl font-medium text-white bg-[#243A27] rounded transition-colors hover:bg-[#3d4d3f] active:bg-[#222c23] cursor-pointer"
                         >
                             {{ section.settings.button_text | default: 'Send' }}
                         </button>
@@ -139,9 +139,9 @@
         </div>
 
         {%- comment -%} Brand Watermark {%- endcomment -%}
-        <div class="absolute bottom-0 right-0 z-0 overflow-hidden pointer-events-none select-none" aria-hidden="true">
+        <div class="absolute left-0 bottom-0 right-0 z-0 overflow-hidden pointer-events-none select-none" aria-hidden="true">
             <span
-                class="block text-[clamp(6rem,18vw,16rem)] font-bold leading-none text-[#e4e3df] translate-x-[5%] translate-y-[20%]"
+                class="block text-[clamp(16vw,18vw,20vw)] tracking-wide font-bold leading-none text-[#e4e3df] translate-x-[10%] translate-y-[10%]"
                 data-gsap-watermark
             >
                 {{ section.settings.watermark_text | default: 'Eccenova®' }}
@@ -178,7 +178,7 @@
                         x: 60
                     }, {
                         opacity: 1,
-                        x: 0,
+                        x: 30,
                         duration: 1,
                         ease: 'power3.out'
                     }, '-=0.3');
