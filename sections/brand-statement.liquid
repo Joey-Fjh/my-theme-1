@@ -1,0 +1,131 @@
+<div
+    data-section-id="{{ section.id }}"
+    class="brand-statement-section full-width"
+    style="
+        --section-padding-top: {{ section.settings.padding_top }}px;
+        --section-padding-bottom: {{ section.settings.padding_bottom }}px;
+    "
+    data-component-kind="section"
+    data-component-type="brand-statement"
+    data-component-id="{{ section.id }}"
+>
+    {% comment %} Decorative brushstroke {% endcomment %}
+    <div class="opacity-0 translate-x-15" data-gsap-brush>
+        {%- render 'image', 
+            image: section.settings.brushstroke_image,
+            alt: section.settings.brushstroke_image.image_alt | default: 'Brushstroke' | escape,
+            width: section.settings.brushstroke_image.width 
+        -%}
+    </div>
+    <div class="layout container-page absolute inset-0">
+        {% comment %} Statement Text {% endcomment %}
+        <div class="max-w-2/3 mx-auto">
+            <p 
+                class="hxl font-bold leading-[1.2] text-[#2d3a2e] text-center text-balance opacity-0 translate-y-100"
+                data-gsap-text
+            >
+                {{ section.settings.statement }}
+            </p>
+        </div>
+    </div>
+</div>
+
+{%- javascript -%}
+    (function(){
+        if (!window.$components || typeof gsap === 'undefined') return;
+
+        $components.register(
+            'brand-statement',
+            {
+                init(el){
+                    const ctx = gsap.context(() => { 
+                        const brush = el.querySelector('[data-gsap-brush]');
+                        const text = el.querySelector('[data-gsap-text]'); 
+                    
+                        if (!brush || !text) return;
+
+                        const tl = gsap.timeline({
+                            scrollTrigger: {
+                                trigger: el,
+                                start: 'top 75%',
+                                once: true
+                            },
+                            defaults: { ease: 'power2.out' }
+                        });
+
+                        tl.to(brush, {
+                            opacity: 1, y: 0, duration: 0.9
+                        });
+
+                        tl.to(text, {
+                            opacity: 1, x: 0, duration: 1
+                        }, '-=0.5');
+                    }, el);
+
+                    return { ctx };
+                },
+
+                destroy(el, state){
+                    if (state?.ctx) {
+                        state.ctx.revert();
+                    }
+                }
+            }
+        );
+    })();
+{%- endjavascript -%}
+
+{%- stylesheet -%}
+{%- endstylesheet -%}
+
+{% schema %}
+  {
+    "name": "Brand Statement",
+    "tag": "section",
+    "class": "section",
+    "settings": [
+        {
+            "type": "textarea",
+            "id": "statement",
+            "default": "Eccenova brings together innovation, transparency, and quality to redefine the skincare shopping experience.",
+            "label": "Statement text"
+        },
+        {
+            "type": "image_picker",
+            "id": "brushstroke_image",
+            "label": "Brushstroke decoration image"
+        },
+        {
+            "type": "header",
+            "content": "Padding"
+        },
+        {
+            "type": "range",
+            "id": "padding_top",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "Padding Top",
+            "default": 0
+        },
+        {
+            "type": "range",
+            "id": "padding_bottom",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "Padding Bottom",
+            "default": 0
+        }
+    ],
+    "presets": [
+      {
+        "name": "Brand Statement",
+        "settings": {
+        }
+      }
+    ]
+  }
+{% endschema %}
