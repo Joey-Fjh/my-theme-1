@@ -10,16 +10,24 @@
     {% # Load and preload the CSS %} 
     {{ 'tailwind.output.css' | asset_url | stylesheet_tag: preload: true}}
 
-    {% comment %} first loaded (base) {% endcomment %}
-    <script src="{{ 'base.js' | asset_url }}" defer></script>
-
-    {% # Load and defer the third js lib %}
-    <script src="{{ 'alpine-intersect.js' | asset_url }}" defer></script>
-    <script src="{{ 'alpine.js' | asset_url }}" defer></script>
+    {% comment %} --- 1. Third-party animation/UI libraries (No external dependencies) --- {% endcomment %}
     <script src="{{ 'gsap.js' | asset_url }}" defer></script>
     <script src="{{ 'gsap-ScrollTrigger.js' | asset_url }}" defer></script>
     <script src="{{ 'swiper.js' | asset_url }}" defer></script>
-    
+
+    {% comment %} --- 2. Core utility classes (No external dependencies) --- {% endcomment %}
+    <script src="{{ 'utils.js' | asset_url }}" defer></script>
+
+    {% comment %} --- 3. Business component definitions (Depends on Utils) --- {% endcomment %}
+    <script src="{{ 'alpine.components.js' | asset_url }}" defer></script>
+
+    {% comment %} --- 4. Core dispatcher & entry point (Depends on Utils, AlpineComponents, and third-party libs) --- {% endcomment %}
+    <script src="{{ 'base.js' | asset_url }}" defer></script>
+
+    {% comment %} --- 5. Alpine.js framework initialization (Must be loaded last) --- {% endcomment %}
+    <script src="{{ 'alpine-intersect.js' | asset_url }}" defer></script>
+    <script src="{{ 'alpine.js' | asset_url }}" defer></script>
+  
     {{ content_for_header }}
   </head>
 

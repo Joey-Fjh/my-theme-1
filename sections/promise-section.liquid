@@ -29,49 +29,11 @@
                     </h0>
                 </div>
                 {% comment %} Accordion {% endcomment %}
-                <div
-                    x-data="{active:0}"
-                    class="flex flex-col gap-8"
-                >
-                    {%- for block in section.blocks -%}
-                        <div class="border-t border-[#d4d4d4] first:border-t-0" {{ block.shopify_attributes }}>
-                            <button
-                                type="button"
-                                @click="active = active === {{ forloop.index0 }} ? null : {{ forloop.index0 }}"
-                                class="flex w-full items-center justify-between py-5 text-left cursor-pointer"
-                            >
-                                <h2
-                                    class="font-bold text-[#2d3a2e]"
-                                    :class="{ 'text-[#2d3a2e]': active === {{ forloop.index0 }}, 'text-[#5a5a5a]': active !== {{ forloop.index0 }} }"
-                                >
-                                    {{ block.settings.title }}
-                                </h2>
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    width="20"
-                                    height="20"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="1.5"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    class="shrink-0 ml-4 text-[#5a5a5a] transition-transform duration-300"
-                                    :class="{ 'rotate-180': active === {{ forloop.index0 }} }"
-                                >
-                                    <polyline points="6 9 12 15 18 9"></polyline>
-                                </svg>
-                            </button>
-                            <div
-                                x-show="active === {{ forloop.index0 }}"
-                            >
-                                <p class="pb-5 text-[#6b6b6b] leading-relaxed pr-8">
-                                    {{ block.settings.text }}
-                                </p>
-                            </div>
-                        </div>
-                    {%- endfor -%}
-                </div> 
+                {%- render 'accordion', 
+                    blocks: section.blocks,
+                    initial_active: 0,
+                    icon_type: 'chevron'
+                -%}
             </div>
         </div>
     </div>
