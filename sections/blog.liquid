@@ -1,33 +1,167 @@
-{% comment %}
-  This section is used in the blog template to render the blog page listing all
-  articles within a blog.
-{% endcomment %}
+<div
+  data-section-id="{{ section.id }}"
+  data-section-pagination-url="{{ blog.url }}"
+  x-data="sectionPagination('{{ section.id }}', '{{ blog.url }}')"
+  class="blog-section full-width"
+  style="
+    --section-padding-top: {{ section.settings.padding_top }}px;
+    --section-padding-bottom: {{ section.settings.padding_bottom }}px;
+  "
+>
+  <div class="layout container-page bg-[#EBE4D1] text-[#263D29]">
+    {%- comment -%} Hero Header {%- endcomment -%}
+    <div class="relative px-6 pt-10 pb-8 pc:px-12 pc:pt-16 pc:pb-12">
+      <div class="flex items-start justify-between">
+        <div class="opacity-0 -translate-x-7.5" data-gsap-hero>
+          <h1 class="font-bold leading-none mb-4">
+            {{ section.settings.header | default: 'Blog' }}
+          </h1>
+          <p class="opacity-80 leading-relaxed max-w-xl">
+            {{ section.settings.description | default: 'Tailored experiences powered by AI intelligence. Discover insights that adapt to your needs.' }}
+          </p>
+        </div>
 
-<h1>{{ blog.title }}</h1>
-
-{% paginate blog.articles by 5 %}
-  {% for article in blog.articles %}
-    <div>
-      {% if article.image %}
-        {{ article.image | image_url: width: 1000 | image_tag }}
-      {% endif %}
-      <h2>
-        {{ article.title | link_to: article.url }}
-      </h2>
-      {% assign date = article.published_at | time_tag: format: 'date' %}
-      <p>{{ 'blog.article_metadata_html' | t: date: date, author: article.author }}</p>
-      <p>{{ article.excerpt }}</p>
+        {%- comment -%} Rotating badge {%- endcomment -%}
+        {%- render 'rotating-badge',
+          classes: 'relative justify-self-center',
+          badge_class:"text-[#000000]",
+          center_class:"text-[#1B2608]",
+          unique_id: section.id,
+          size: 100,
+          badge_text: section.settings.rotate_badge_text,
+          center_text: section.settings.rotate_badge_percent
+        -%}
+      </div>
     </div>
-  {% endfor %}
+  </div>
+  <div class="container-page bg-[#FBFBFB] text-[#263D29]">
+    {%- comment -%} Tab + Sort bar {%- endcomment -%}
+    <div class="flex items-center justify-between pb-4 mb-8">
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+        {% capture tab_header %}
+          <div
+            role="tab"
+            x-data="{index:null}"
+            x-init="index = registerTab($el)"
+            :id="`tab-${index}`"
+            :aria-controls="`panel-${index}`"
+            @click="setActive(index)"
+            :tabindex="isActive(index) ? 0 : -1"
+            :aria-selected="isActive(index)"
+            :class="isActive(index)
+                ? 'opacity-100'
+                : 'opacity-20 hover:opacity-60 focus:opacity-60'"
+            class="cursor-pointer h1 transition-opacity focus:outline-none"
+          >
+            <a
+              href="{{ blog.url }}"
+            >
+              All
+              <sup class="sup-badge">({{ blog.articles_count }})</sup>
+            </a>
+            {%- for tag in blog.all_tags -%}
+              <a
+                href="{{ blog.url }}/tagged/{{ tag | handle }}"
+              >
+                {{ tag }}
+                <sup class="sup-badge">({{ blog.articles_count }})</sup>
+              </a>
+            {%- endfor -%}
+          </div>
+        {% endcapture %}
 
-  {%- if paginate.pages > 1 -%}
-    {{- paginate | default_pagination -}}
-  {%- endif -%}
-{% endpaginate %}
+        {% capture tab_content %}
+          
+        {% endcapture %}
+        
+        {%- render 'tab-control',tab_header: tab_header, tab_content: tab_content %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% javascript %}
+{% endjavascript %}
+
+{%- stylesheet -%}
+  .shopify-section.is-loading {
+    pointer-events: none;
+    opacity: 0.6;
+    transition: opacity 0.2s ease;
+  }
+{%- endstylesheet -%}
 
 {% schema %}
 {
   "name": "t:general.blog",
-  "settings": []
+  "tag": "section",
+  "class": "section",
+  "enabled_on": {
+    "templates": ["blog"]
+  },
+  "settings": [
+    {
+      "type": "text",
+      "id": "header",
+      "default":"Blog",
+      "label": "Header"
+    },
+    {
+      "type": "textarea",
+      "id": "description",
+      "default": "Tailored experiences powered by AI intelligence. Discover insights that adapt to your needs.",
+      "label": "Description"
+    },
+    {
+      "type": "range",
+      "id": "articles_per_page",
+      "min": 3,
+      "max": 24,
+      "step": 3,
+      "default": 12,
+      "label": "Articles per page"
+    },
+    {
+      "type": "text",
+      "id": "rotate_badge_text",
+      "label": "Rotate Badge Text",
+      "default":"PRODUCT GUARANTEE NATURAL"
+    },
+    {
+      "type": "text",
+      "id": "rotate_badge_percent",
+      "label": "Rotate Badge Percent",
+      "default":"100%"
+    },
+    {
+      "type": "header",
+      "content": "Padding"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Top",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Bottom",
+      "default": 0
+    }
+  ],
+  "presets": [
+    {
+      "name":"t:general.blog"
+    }
+  ]
 }
 {% endschema %}
