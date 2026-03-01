@@ -1,4 +1,29 @@
+(function() {
+'use strict';
+
 class Utils {
+    static rafThrottle(fn) {
+        let ticking = false;
+        let lastArgs = null;
+        let rafId = null;
+        const wrapper = function(...args){
+            lastArgs = args;
+            if (!ticking){
+                ticking = true;
+                rafId = requestAnimationFrame(()=>{
+                    fn.apply(this, lastArgs);
+                    ticking = false;
+                });
+            }
+        };
+        wrapper.dispose = () => {
+            if (rafId) cancelAnimationFrame(rafId);
+            ticking = false;
+            lastArgs = null;
+        };
+        return wrapper;
+    }
+
     static throttle(func, delay = 300){
         let timeoutId;
         let lastExecTime = 0;
@@ -42,3 +67,7 @@ class Utils {
         };
     }
 }
+
+window.__Theme__ = window.__Theme__ || {};
+window.__Theme__.Utils = Utils;
+})();

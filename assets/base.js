@@ -1,3 +1,6 @@
+(function() {
+'use strict';
+
 class Base {
     static initialized = false;
 
@@ -17,17 +20,17 @@ class Base {
 
         this.updateLayout();
 
-        const throttledUpdate = Utils.throttle(this.updateLayout.bind(this), 100);
+        this.rafUpdateLayout = window.__Theme__.Utils.rafThrottle(this.updateLayout.bind(this));
 
-        window.addEventListener('resize', throttledUpdate);
-        window.addEventListener('scroll', throttledUpdate);
+        window.addEventListener('resize', this.rafUpdateLayout);
+        window.addEventListener('scroll', this.rafUpdateLayout, { passive: true });
 
         [
             'shopify:section:load',
             'shopify:section:reorder',
             'shopify:section:unload'
         ].forEach(evt =>
-            document.addEventListener(evt, throttledUpdate)
+            document.addEventListener(evt, this.rafUpdateLayout)
         );
     }
 
@@ -201,8 +204,8 @@ class Components {
          * Stop observing element if it was waiting for lazy init.
          * Prevents memory leaks during Theme Editor reload cycles.
          */
-        if(this.io && el.__componentObserved){
-            this.io.unobserve(el);
+        if (this.io && el.__componentObserved) {
+            try { this.io.unobserve(el); } catch (_) { /* ignore */ }
             delete el.__componentObserved;
         }
 
@@ -351,9 +354,9 @@ class Components {
 
         this.lifecycleSetup = true;
         this.setupIntersectionObserver();
-        this.setupMutationObserver();
 
         document.addEventListener('DOMContentLoaded', () => {
+            this.setupMutationObserver();
             this.initAll(document);
         });
 
@@ -376,6 +379,82 @@ class Components {
     }
 }
 
+/**
+ * ThemeRequest
+ * ----------------------------------------
+ * Fetch utilities for Section Rendering API.
+ */
+class ThemeRequest {
+    static async fetchWithTimeout(url, options = {}) {
+        const timeout = options.timeout ?? 8000;
+        const ctrl = new AbortController();
+        const tid = setTimeout(() => ctrl.abort(), timeout);
+        try {
+            const res = await fetch(url, { ...options, signal: ctrl.signal });
+            return res;
+        } finally {
+            clearTimeout(tid);
+        }
+    }
+
+    static async getJSON(url, options = {}) {
+        const headers = {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            ...options.headers
+        };
+        const res = await this.fetchWithTimeout(url, { ...options, headers });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+    }
+}
+
+/**
+ * SectionRefresher
+ * ----------------------------------------
+ * Local refresh engine for Shopify Section Rendering API.
+ */
+class SectionRefresher {
+    constructor(options = {}) {
+        this.sectionIds = Array.isArray(options.sectionIds) ? options.sectionIds : [];
+        this.beforeReplace = typeof options.beforeReplace === 'function' ? options.beforeReplace : () => {};
+        this.afterReplace = typeof options.afterReplace === 'function' ? options.afterReplace : () => {};
+        this.onLoading = typeof options.onLoading === 'function' ? options.onLoading : () => {};
+    }
+
+    async refresh(targetUrl, updateHistory = true) {
+        this.onLoading(true);
+        try {
+            const sep = targetUrl.includes('?') ? '&' : '?';
+            const fetchUrl = targetUrl + sep + 'sections=' + encodeURIComponent(this.sectionIds.join(','));
+            const data = await ThemeRequest.getJSON(fetchUrl);
+            const sectionsData = data?.sections ?? data;
+
+            this.beforeReplace(sectionsData);
+
+            for (const id of this.sectionIds) {
+                const el = document.getElementById('shopify-section-' + id);
+                const html = sectionsData[id];
+                if (el && html != null) {
+                    el.innerHTML = html;
+                    window.__Theme__?.Components?.initAll?.(el);
+                }
+            }
+
+            this.afterReplace();
+            window.dispatchEvent(new Event('resize'));
+
+            if (updateHistory && targetUrl) {
+                window.history.pushState({ path: targetUrl }, '', targetUrl);
+            }
+        } catch (err) {
+            if (targetUrl) window.location.href = targetUrl;
+        } finally {
+            this.onLoading(false);
+        }
+    }
+}
+
 class Main {
     static main(){
         Components.setupLifecycle();
@@ -385,17 +464,23 @@ class Main {
 
     static initAlpine(){
         document.addEventListener('alpine:init', () => {
-            const alpine = window.Alpine;
-            AlpineComponentsFactory.init(alpine);
+            const Factory = window.__Theme__?.AlpineComponentsFactory;
+            const Comps = window.__Theme__?.AlpineComponents;
+            if (!Factory || !Comps) return;
 
-            AlpineComponentsFactory.register(AlpineComponents.DROPDOWN, AlpineComponents.dropdown);
-            AlpineComponentsFactory.register(AlpineComponents.STICKY_HEADER, AlpineComponents.stickyHeader);
-            AlpineComponentsFactory.register(AlpineComponents.TABCONTROL, AlpineComponents.tabControl);
-            AlpineComponentsFactory.register(AlpineComponents.BEFOREAFTERCOMPARISON,AlpineComponents.beforeAfterComparison);
-            AlpineComponentsFactory.register(AlpineComponents.COUNTDOWNTIMER,AlpineComponents.countdownTimer);
-        })
+            Factory.init?.(window.Alpine);
+            Factory.register?.(Comps.DROPDOWN, Comps.dropdown);
+            Factory.register?.(Comps.STICKY_HEADER, Comps.stickyHeader);
+            Factory.register?.(Comps.TABCONTROL, Comps.tabControl);
+            Factory.register?.(Comps.BEFOREAFTERCOMPARISON, Comps.beforeAfterComparison);
+            Factory.register?.(Comps.COUNTDOWNTIMER, Comps.countdownTimer);
+            Factory.register?.('sectionPagination', Comps.sectionPagination);
+        });
     }
 }
 
-window.$components = Components;
+window.__Theme__ = window.__Theme__ || {};
+window.__Theme__.Components = Components;
+window.__Theme__.SectionRefresher = SectionRefresher;
 Main.main();
+})();

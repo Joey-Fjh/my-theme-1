@@ -1,3 +1,6 @@
+(function() {
+'use strict';
+
 class AlpineComponentsFactory {
     static #alpine;
     static #registeredNames = new Set();
@@ -26,12 +29,13 @@ class AlpineComponentsFactory {
 
         return {
             on(target,event,handler,options){
+                if (!target || typeof target.addEventListener !== 'function') return;
                 target.addEventListener(event,handler,options);
                 disposers.push(()=>target.removeEventListener(event, handler, options));
             },
 
             observe(observer,el){
-                if (!el) return;
+                if (!el || !observer?.observe) return;
 
                 observer.observe(el);
                 disposers.push(()=>observer.disconnect());
@@ -228,18 +232,20 @@ class AlpineComponents {
             },
 
             updatePosition(e){
-                const container = this.$refs.container;
-                if(!container) return;
+                const container = this.$refs?.container;
+                if (!container) return;
 
                 const rect = container.getBoundingClientRect();
+                if (!rect || rect.width <= 0) return;
+
                 const clientX = e.type.includes('touch')
                     ? (e.touches?.[0]?.clientX ?? e.changedTouches?.[0]?.clientX)
                     : e.clientX;
 
-                if(clientX == undefined) return;
+                if (clientX == undefined) return;
 
-                const x =  clientX - rect.left;
-                const percentage = Math.max(0,Math.min(100,(x / rect.width) * 100));
+                const x = clientX - rect.left;
+                const percentage = Math.max(0, Math.min(100, (x / rect.width) * 100));
                 
                 this.position = percentage;
             },
@@ -308,4 +314,46 @@ class AlpineComponents {
             }
         };
     }
+
+    static sectionPagination(sectionId) {
+        return {
+            ...(window.__Theme__?.AlpineComponentsFactory?.useDisposable?.() || {}),
+            isLoading: false,
+            refresher: null,
+            init() {
+                const RefresherClass = window.__Theme__?.SectionRefresher;
+                if (!RefresherClass || !sectionId) return;
+
+                this.refresher = new RefresherClass({
+                    sectionIds: [sectionId],
+                    onLoading: (state) => { this.isLoading = state; },
+                    afterReplace: () => {
+                        if (typeof window.ScrollTrigger !== 'undefined') {
+                            setTimeout(() => window.ScrollTrigger.refresh(), 100);
+                        }
+                    }
+                });
+                if (this.on) {
+                    this.on(window, 'popstate', this.handlePopState.bind(this));
+                }
+            },
+            handlePopState(event) {
+                if (event.state?.path && this.refresher) {
+                    this.refresher.refresh(event.state.path, false);
+                }
+            },
+            loadUrl(url) {
+                if (!url || this.isLoading || !this.refresher) return;
+                this.refresher.refresh(url, true);
+            },
+            destroy() {
+                if (this.dispose) this.dispose();
+            }
+        };
+    }
 }
+
+window.__Theme__ = window.__Theme__ || {};
+window.__Theme__.AlpineComponentsFactory = AlpineComponentsFactory;
+window.__Theme__.AlpineComponents = AlpineComponents;
+})();
