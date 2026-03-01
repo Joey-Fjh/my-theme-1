@@ -20,7 +20,29 @@ class AlpineComponentsFactory {
             return;
         }
         
-        this.#alpine.data(name,cb);
+        const enhancedCb = function(...args) {
+            const componentDefinition = cb.apply(this, args);
+
+            if (typeof componentDefinition.dispose !== 'function') {
+                return componentDefinition;
+            }
+
+            const originalInit = componentDefinition.init;
+
+            componentDefinition.init = function() {
+                if (this.$el && typeof this.on === 'function' && typeof this.destroy === 'function') {
+                    this.on(this.$el, 'unmount', this.destroy.bind(this));
+                }
+
+                if (originalInit) {
+                    originalInit.apply(this, arguments);
+                }
+            };
+
+            return componentDefinition;
+        };
+
+        this.#alpine.data(name, enhancedCb);
         this.#registeredNames.add(name);
     }
 

@@ -301,18 +301,27 @@ class Components {
 
         this.observer = new MutationObserver((mutations) => {
             const toDestroy = new Set();
+            const unmountEvent = new CustomEvent('unmount', { bubbles: false });
 
             mutations.forEach((m) => {
                 m.removedNodes.forEach((node) => {
                     if (!(node instanceof HTMLElement)) return;
                     
+                    // Handle standard components
                     if (node.matches?.(this.SELECTOR)) {
                         toDestroy.add(node);
                     }
-
                     node
                         .querySelectorAll?.(this.SELECTOR)
                         .forEach((el) => toDestroy.add(el));
+
+                    // Handle Alpine components by dispatching a custom event
+                    node.querySelectorAll?.('[x-data]').forEach(el => {
+                        el.dispatchEvent(unmountEvent);
+                    });
+                    if (node.hasAttribute?.('x-data')) {
+                        node.dispatchEvent(unmountEvent);
+                    }
                 });
             });
 
