@@ -1,15 +1,17 @@
 <div
   data-section-id="{{ section.id }}"
-  data-section-pagination-url="{{ blog.url }}"
   x-data="sectionPagination('{{ section.id }}', '{{ blog.url }}')"
-  class="blog-section full-width"
+  class="blog-section full-width relative"
   style="
     --section-padding-top: {{ section.settings.padding_top }}px;
     --section-padding-bottom: {{ section.settings.padding_bottom }}px;
   "
+  data-component-kind="section"
+  data-component-type="blog"
+  data-component-id="{{ section.id }}"
 >
-  <div class="layout container-page bg-[#EBE4D1] text-[#263D29]">
-    {%- comment -%} Hero Header {%- endcomment -%}
+  <div class="layout pb-0 container-page bg-[#EBE4D1] text-[#263D29]">
+    {%- comment -%} Hero {%- endcomment -%}
     <div class="relative px-6 pt-10 pb-8 pc:px-12 pc:pt-16 pc:pb-12">
       <div class="flex items-start justify-between">
         <div class="opacity-0 -translate-x-7.5" data-gsap-hero>
@@ -21,11 +23,10 @@
           </p>
         </div>
 
-        {%- comment -%} Rotating badge {%- endcomment -%}
         {%- render 'rotating-badge',
           classes: 'relative justify-self-center',
-          badge_class:"text-[#000000]",
-          center_class:"text-[#1B2608]",
+          badge_class: 'text-[#000000]',
+          center_class: 'text-[#1B2608]',
           unique_id: section.id,
           size: 100,
           badge_text: section.settings.rotate_badge_text,
@@ -34,54 +35,115 @@
       </div>
     </div>
   </div>
-  <div class="container-page bg-[#FBFBFB] text-[#263D29]">
-    {%- comment -%} Tab + Sort bar {%- endcomment -%}
-    <div class="flex items-center justify-between pb-4 mb-8">
-      <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+
+  <div class="layout-special container-page bg-[#FBFBFB] text-[#263D29]">
+    <div class="flex items-center justify-between gap-6 pt-8">
+      {%- comment -%} Tab Header (Router Trigger) + Tab Content (fetch replace) {%- endcomment -%}
+      <div class="min-w-0 flex-1">
         {% capture tab_header %}
-          <div
+          <a
+            href="{{ blog.url }}"
             role="tab"
-            x-data="{index:null}"
+            x-data="{ index: null }"
             x-init="index = registerTab($el)"
             :id="`tab-${index}`"
-            :aria-controls="`panel-${index}`"
-            @click="setActive(index)"
+            aria-controls="blog-panel"
+            @click.prevent="loadUrl($el.href); setActive(index)"
             :tabindex="isActive(index) ? 0 : -1"
             :aria-selected="isActive(index)"
-            :class="isActive(index)
-                ? 'opacity-100'
-                : 'opacity-20 hover:opacity-60 focus:opacity-60'"
-            class="cursor-pointer h1 transition-opacity focus:outline-none"
+            :class="isActive(index) ? 'opacity-100' : 'opacity-20 hover:opacity-60'"
+            class="cursor-pointer h2 transition-opacity focus:outline-none flex flex-wrap items-center gap-x-4 gap-y-2"
           >
+            All <sup class="sup-badge">({{ blog.articles_count }})</sup>
+          </a>
+          {%- for tag in blog.all_tags -%}
             <a
-              href="{{ blog.url }}"
+              href="{{ blog.url }}/tagged/{{ tag | handle }}"
+              role="tab"
+              x-data="{ index: null }"
+              x-init="index = registerTab($el)"
+              :id="`tab-${index}`"
+              aria-controls="blog-panel"
+              @click.prevent="loadUrl($el.href); setActive(index)"
+              :tabindex="isActive(index) ? 0 : -1"
+              :aria-selected="isActive(index)"
+              :class="isActive(index) ? 'opacity-100' : 'opacity-20 hover:opacity-60'"
+              class="cursor-pointer h2 transition-opacity focus:outline-none flex flex-wrap items-center gap-x-4 gap-y-2"
             >
-              All
-              <sup class="sup-badge">({{ blog.articles_count }})</sup>
+              {{ tag }} <sup class="sup-badge">({{ blog.articles_count }})</sup>
             </a>
-            {%- for tag in blog.all_tags -%}
-              <a
-                href="{{ blog.url }}/tagged/{{ tag | handle }}"
-              >
-                {{ tag }}
-                <sup class="sup-badge">({{ blog.articles_count }})</sup>
-              </a>
-            {%- endfor -%}
-          </div>
+          {%- endfor -%}
         {% endcapture %}
 
         {% capture tab_content %}
-          
+          <div
+            role="tabpanel"
+            id="blog-panel"
+            x-data="{ index: null }"
+            x-init="index = registerPanel($el)"
+            class="relative w-full"
+          >
+            {% render 'loading', overlay: true, size: 'large', spinner_color: 'border-[#263D29]' %}
+
+            {% paginate blog.articles by section.settings.articles_per_page %}
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-8 pb-10">
+                {% for article in blog.articles %}
+                  <div class="article-placeholder p-6 border border-dashed border-gray-400 text-[#263D29]">
+                    卡片占位：{{ article.title }}
+                  </div>
+                {% endfor %}
+              </div>
+
+              <div
+                class="blog-pagination-wrapper"
+                @click="if ($event.target.closest('nav.pagination') && $event.target.tagName === 'A') { $event.preventDefault(); loadUrl($event.target.href); }"
+              >
+                {% render 'pagination', paginate_obj: paginate %}
+              </div>
+            {% endpaginate %}
+          </div>
         {% endcapture %}
-        
-        {%- render 'tab-control',tab_header: tab_header, tab_content: tab_content %}
+
+        {%- render 'tab-control', custom_class:'items-start',tab_header: tab_header,header_class:'flex-wrap gap-9',tab_content: tab_content -%}
       </div>
+      
+      {% comment %} Sort by  {% endcomment %}
+      <div class="h2 shrink-0 self-start">Sorted By</div>
     </div>
   </div>
 </div>
 
-{% javascript %}
-{% endjavascript %}
+{%- javascript -%}
+  (function () {
+    const Components = window.__Theme__?.Components;
+    if (!Components) return;
+
+    Components.register(
+      'blog',
+      {
+        init(el) {
+          // 1. 初始化 GSAP 动画或获取 DOM
+          // TODO: 这里是我后续注入 AI 动画交互代码的插槽
+          // const heroText = el.querySelector('[data-gsap-hero]');
+
+          // 2. 返回 state 供销毁时使用
+          return {
+            // 比如：animation: gsapTimeline
+          };
+        },
+
+        destroy(el, state) {
+          // 清理所有的 GSAP 实例、ScrollTrigger 或原生事件监听
+          // if (state?.animation) state.animation.kill();
+          if (typeof window.ScrollTrigger !== 'undefined') {
+            window.ScrollTrigger.refresh();
+          }
+        }
+      },
+      { lazy: true }
+    );
+  })();
+{%- endjavascript -%}
 
 {%- stylesheet -%}
   .shopify-section.is-loading {
@@ -103,7 +165,7 @@
     {
       "type": "text",
       "id": "header",
-      "default":"Blog",
+      "default": "Blog",
       "label": "Header"
     },
     {
@@ -125,13 +187,13 @@
       "type": "text",
       "id": "rotate_badge_text",
       "label": "Rotate Badge Text",
-      "default":"PRODUCT GUARANTEE NATURAL"
+      "default": "PRODUCT GUARANTEE NATURAL"
     },
     {
       "type": "text",
       "id": "rotate_badge_percent",
       "label": "Rotate Badge Percent",
-      "default":"100%"
+      "default": "100%"
     },
     {
       "type": "header",
@@ -160,7 +222,7 @@
   ],
   "presets": [
     {
-      "name":"t:general.blog"
+      "name": "t:general.blog"
     }
   ]
 }

@@ -55,6 +55,27 @@ class Base {
 
         this.setCSSVar('--header-height', `${headerHeight}px`);
     }
+
+    static destroy(){
+        if (!this.initialized) return;
+
+        window.removeEventListener('resize', this.rafUpdateLayout);
+        window.removeEventListener('scroll', this.rafUpdateLayout, { passive: true });
+
+        [
+            'shopify:section:load',
+            'shopify:section:reorder',
+            'shopify:section:unload'
+        ].forEach(evt =>
+            document.removeEventListener(evt, this.rafUpdateLayout)
+        );
+
+        if (typeof this.rafUpdateLayout?.dispose === 'function') {
+            this.rafUpdateLayout.dispose();
+        }
+
+        this.initialized = false;
+    }
 }
 
 /**
