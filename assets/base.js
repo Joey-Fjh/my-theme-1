@@ -60,7 +60,7 @@ class Base {
         if (!this.initialized) return;
 
         window.removeEventListener('resize', this.rafUpdateLayout);
-        window.removeEventListener('scroll', this.rafUpdateLayout, { passive: true });
+        window.removeEventListener('scroll', this.rafUpdateLayout);
 
         [
             'shopify:section:load',
@@ -178,7 +178,11 @@ class Components {
         const handlers = this.registry.get(meta.type);
 
         if (!handlers || !handlers.init) return;
-        if (this.instances.has(meta.instanceKey)) return;
+        if (this.instances.has(meta.instanceKey)) {
+            const existing = this.instances.get(meta.instanceKey);
+            if (existing.el === el) return;
+            this.destroyElement(existing.el);
+        }
         
         if (el.__componentInited) {
             delete el.__componentInited;
@@ -210,6 +214,7 @@ class Components {
         const record = this.instances.get(meta.instanceKey);
         
         if (!record) return;
+        if (record.el !== el) return;
 
         try {
             if (typeof record.destroy === 'function') {
@@ -369,7 +374,7 @@ class Components {
                 this.io.unobserve(el);
                 delete el.__componentObserved;
             });
-        });
+        }, { rootMargin: '200px' });
     }
 
     /**
@@ -409,15 +414,16 @@ class Components {
 /**
  * ThemeRequest
  * ----------------------------------------
- * 统一局部渲染引擎 - 灵活网络层。
- * 处理 Section Rendering API (GET ?sections=id) 与 Cart Ajax API (POST /cart/add.js 等)
- * 返回的 JSON；支持通过 AbortSignal 取消前序重复请求。
+ * Unified partial-rendering network layer.
+ * Handles Section Rendering API (GET ?sections=id) and Cart Ajax API (POST /cart/add.js etc.)
+ * JSON responses. Supports AbortSignal-based cancellation of superseded requests.
  */
 class ThemeRequest {
     /**
-     * 带超时与外部取消的 Fetch。外部传入 signal 时，前序请求可被取消。
+     * Fetch with timeout and external abort support.
+     * When an external signal is provided, prior requests can be cancelled.
      * @param {string} url
-     * @param {Object} options - fetch options；可含 signal (AbortSignal)、timeout (ms)
+     * @param {Object} options - fetch options; may include signal (AbortSignal), timeout (ms)
      * @returns {Promise<Response>}
      */
     static async fetchWithTimeout(url, options = {}) {
@@ -446,11 +452,11 @@ class ThemeRequest {
     }
 
     /**
-     * 请求 JSON，适用于 SRA 与 Cart API 的 JSON 响应。
-     * 传入 options.signal 可在新请求发起时取消前序请求（如防抖式取消）。
+     * Request JSON, suitable for SRA and Cart API JSON responses.
+     * Pass options.signal to cancel superseded requests (e.g. debounce-based cancellation).
      * @param {string} url
      * @param {Object} options - { signal?: AbortSignal, timeout?: number, headers?: Object, method?: string, body?: string }
-     * @returns {Promise<Object>} Shopify 返回的 JSON（含 sections 或 cart 等）
+     * @returns {Promise<Object>} Shopify JSON payload (sections, cart, etc.)
      */
     static async getJSON(url, options = {}) {
         const headers = {
@@ -467,43 +473,43 @@ class ThemeRequest {
 /**
  * SectionRefresher
  * ----------------------------------------
- * 统一局部渲染引擎 — 全能替换调度器 + 纯数据更新助手。
+ * Unified partial-rendering engine — full-featured DOM replacement dispatcher + data-binding helper.
  *
- * 设计原则：
- * 1. 不硬编码 shopify-section-xxx，目标容器完全由外部 domMap 配置决定。
- * 2. 使用 DOMParser 在内存中解析 HTML，严禁直接赋值 innerHTML 整段原始字符串。
- * 3. 支持精准子节点替换（innerSelectors）和整体内层替换（剥离外壳防嵌套）。
- * 4. 兼容双向更新：render() 处理 HTML 替换，updateText() 处理 JSON 数据绑定。
+ * Design principles:
+ * 1. No hard-coded shopify-section-xxx; target containers are fully driven by the external domMap config.
+ * 2. HTML is parsed in-memory via DOMParser; raw innerHTML assignment of the full response is forbidden.
+ * 3. Supports precise child-node replacement (innerSelectors) and full inner-content replacement (shell-stripping to prevent nesting).
+ * 4. Dual-mode updates: render() for HTML replacement, updateText() for JSON data binding.
  */
 class SectionRefresher {
     /**
      * @typedef {Object} DomMapConfig
-     * @property {string}   [targetSelector]  - 真实 DOM 目标的 CSS 选择器。
-     *                                          未提供则降级到 #shopify-section-${key}。
-     * @property {string[]} [innerSelectors]  - 精准替换的 CSS 选择器数组
-     *                                          （如 ['.tab-content', '.pagination']）。
-     *                                          未提供或空数组 → 整体替换目标容器的 innerHTML。
+     * @property {string}   [targetSelector]  - CSS selector for the real DOM target.
+     *                                          Falls back to #shopify-section-${key} if omitted.
+     * @property {string[]} [innerSelectors]  - Array of CSS selectors for precise child replacement
+     *                                          (e.g. ['.tab-content', '.pagination']).
+     *                                          If omitted or empty → full innerHTML replacement of the target.
      */
 
     /**
-     * 全能替换调度器。
+     * Full-featured DOM replacement dispatcher.
      *
-     * 流程：
-     *   1. 遍历 htmlMap 的 keys
-     *   2. 从 domMap 读取当前 key 的配置 { targetSelector, innerSelectors }
-     *   3. 确定真实 DOM 目标：config.targetSelector ?? `#shopify-section-${key}`
-     *   4. DOMParser 解析 HTML → 虚拟 Document
-     *   5. 在虚拟 Document 中定位"源元素"：
-     *      - 优先 doc.querySelector(targetSelector)，匹配到则以该节点为源
-     *      - 降级 doc.body.firstElementChild（SRA 返回的 HTML 是单根节点）
-     *   6. 替换策略：
-     *      - 有 innerSelectors → 只 replaceWith 这些子节点，最小化重绘
-     *      - 无 innerSelectors → 取源元素的 innerHTML 替换目标容器的 innerHTML
-     *        （剥离外壳，避免 <div id="shopify-section-xxx"> 无限嵌套）
-     *   7. 对受影响的目标元素调用 Components.initAll 唤醒 Alpine/GSAP 组件
+     * Pipeline:
+     *   1. Iterate over htmlMap keys
+     *   2. Read config { targetSelector, innerSelectors } from domMap for the current key
+     *   3. Resolve the real DOM target: config.targetSelector ?? `#shopify-section-${key}`
+     *   4. Parse HTML via DOMParser → virtual Document
+     *   5. Locate the virtual source element:
+     *      - Prefer doc.querySelector(targetSelector) if it matches
+     *      - Fallback to doc.body.firstElementChild (SRA responses are single-root)
+     *   6. Replacement strategy:
+     *      - With innerSelectors → replaceWith only matching children (minimal repaint)
+     *      - Without innerSelectors → copy virtualSourceEl.innerHTML into the target
+     *        (shell-stripping prevents <div id="shopify-section-xxx"> infinite nesting)
+     *   7. Call Components.initAll on each affected target to reinitialize Alpine/GSAP components
      *
-     * @param {Object.<string, string>} htmlMap  - Shopify 返回的 sections 映射 { "sectionId": "<html>" }
-     * @param {Object.<string, DomMapConfig>} [domMap={}] - 业务层配置的规则字典，键与 htmlMap 对应
+     * @param {Object.<string, string>} htmlMap  - Shopify sections map { "sectionId": "<html>" }
+     * @param {Object.<string, DomMapConfig>} [domMap={}] - Business-layer config dict, keys match htmlMap
      */
     static render(htmlMap, domMap = {}) {
         if (!htmlMap || typeof htmlMap !== 'object') return;
@@ -515,7 +521,7 @@ class SectionRefresher {
 
             const config = domMap[key] || {};
 
-            /* ---- 1. 确定真实 DOM 目标 ---- */
+            /* ---- 1. Resolve real DOM target ---- */
             const targetSelector =
                 (typeof config.targetSelector === 'string' && config.targetSelector.trim())
                     ? config.targetSelector.trim()
@@ -524,29 +530,29 @@ class SectionRefresher {
             const targetEl = document.querySelector(targetSelector);
             if (!targetEl) continue;
 
-            /* ---- 2. DOMParser 解析虚拟 DOM ---- */
+            /* ---- 2. Parse virtual DOM via DOMParser ---- */
             const doc = new DOMParser().parseFromString(html, 'text/html');
 
             /*
-             * 定位虚拟源元素：
-             *   优先用 targetSelector 在虚拟 Document 中查找
-             *   （适配 #cart-drawer 等非标准 ID）。
-             *   降级到 body 的第一个子元素（SRA 返回的 HTML 是单根结构）。
+             * Locate virtual source element:
+             *   Prefer targetSelector lookup in the virtual Document
+             *   (supports non-standard IDs like #cart-drawer).
+             *   Fallback to body.firstElementChild (SRA responses are single-root).
              */
             const virtualSourceEl =
                 doc.querySelector(targetSelector) || doc.body.firstElementChild;
             if (!virtualSourceEl) continue;
 
-            /* ---- 3. 执行替换 ---- */
+            /* ---- 3. Execute replacement ---- */
             const innerSelectors = Array.isArray(config.innerSelectors)
                 ? config.innerSelectors
                 : [];
 
             if (innerSelectors.length > 0) {
                 /*
-                 * 精准替换：只更新 innerSelectors 匹配的子节点。
-                 * 从虚拟源元素提取新节点，replaceWith 替换真实 DOM 中的旧节点。
-                 * cloneNode(true) 确保脱离虚拟 Document 的引用。
+                 * Precise replacement: only update children matching innerSelectors.
+                 * Extract new nodes from virtual source, replaceWith into the real DOM.
+                 * cloneNode(true) ensures detachment from the virtual Document.
                  */
                 for (const sel of innerSelectors) {
                     if (typeof sel !== 'string' || !sel.trim()) continue;
@@ -558,14 +564,14 @@ class SectionRefresher {
                 }
             } else {
                 /*
-                 * 整体内层替换：取虚拟源元素的 innerHTML 写入真实目标。
-                 * 只搬运"内层"，不搬运外壳节点本身，
-                 * 避免 <div id="shopify-section-xxx"> 在目标容器内重复嵌套。
+                 * Full inner-content replacement: write virtualSourceEl.innerHTML into the real target.
+                 * Only the inner content is transferred, not the wrapper element itself,
+                 * preventing <div id="shopify-section-xxx"> from nesting inside the target.
                  */
                 targetEl.innerHTML = virtualSourceEl.innerHTML;
             }
 
-            /* ---- 4. 重载组件 ---- */
+            /* ---- 4. Reinitialize components ---- */
             window.__Theme__?.Components?.initAll?.(targetEl);
         }
 
@@ -573,8 +579,8 @@ class SectionRefresher {
     }
 
     /**
-     * 纯数据更新助手：用 JSON 数据安全更新页面文本节点。
-     * 典型场景：Cart API 返回 item_count / total_price 后批量更新角标和价格。
+     * Pure data-binding helper: safely update page text nodes with JSON data.
+     * Typical use case: batch-update cart badges and prices after Cart API returns item_count / total_price.
      *
      * @param {Array<{selector: string, text: string|number}>} updates
      * @example

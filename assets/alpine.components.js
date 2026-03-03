@@ -60,7 +60,7 @@ class AlpineComponentsFactory {
                 if (!el || !observer?.observe) return;
 
                 observer.observe(el);
-                disposers.push(()=>observer.disconnect());
+                disposers.push(()=>observer.unobserve(el));
             },
 
             dispose(){
@@ -121,7 +121,6 @@ class AlpineComponents {
 			lastY: window.scrollY,
 			isHidden: false,
 			isTop: true,
-			isAnnouncementVisible: true,
 			
 			init() {
 				this.on(window, 'scroll', this.onScroll.bind(this),false);
@@ -339,12 +338,12 @@ class AlpineComponents {
     }
 
     /**
-     * 业务粘合层：博客等列表页的局部刷新。
+     * Business glue layer: partial refresh for list pages (blog, collections, etc.).
      *
-     * 并发安全策略（双保险）：
-     *   1. debounce 200ms — 快速切 Tab 只以最后一次点击发起请求
-     *   2. AbortController — debounce 后仍有请求在途时，立即 abort 旧连接
-     *   3. activeController 引用守卫 — 被 abort 的请求 finally 不会误清新请求的状态
+     * Concurrency safety (triple guard):
+     *   1. debounce 200ms — rapid tab switching only fires the last click
+     *   2. AbortController — aborts in-flight request when a new one is issued post-debounce
+     *   3. activeController reference guard — prevents a stale finally block from clearing new request state
      *
      * @param {string} sectionId
      * @param {string[]|null} [selectors=null]
@@ -394,8 +393,8 @@ class AlpineComponents {
             },
 
             /**
-             * 核心 Fetch-Render-Push 管线。
-             * 被 debounce 包装（loadUrl）或直接调用（popstate）。
+             * Core Fetch → Render → Push pipeline.
+             * Called via debounce wrapper (loadUrl) or directly (popstate).
              * @param {string} url
              * @param {boolean} updateHistory
              */
@@ -422,7 +421,7 @@ class AlpineComponents {
                             window.history.pushState({ path: url }, '', url);
                         }
                         if (typeof window.ScrollTrigger !== 'undefined') {
-                            setTimeout(() => window.ScrollTrigger.refresh(), 100);
+                            requestAnimationFrame(() => window.ScrollTrigger.refresh());
                         }
                     })
                     .catch((err) => {
@@ -438,8 +437,8 @@ class AlpineComponents {
             },
 
             /**
-             * 公共入口：立即显示 loading，防抖 200ms 后真正发请求。
-             * 不阻塞重复调用 — 每次点击都接受，由 debounce 吃掉中间的。
+             * Public entry point: show loading immediately, debounce 200ms before fetching.
+             * Accepts every call without blocking — debounce absorbs intermediate invocations.
              */
             loadUrl(url) {
                 if (!url || !this.sectionId) return;
@@ -452,8 +451,8 @@ class AlpineComponents {
             },
 
             /**
-             * 浏览器前进/后退：取消待执行的 debounce，立即发请求。
-             * 降级：state 为空时使用当前 href，解决退回初始页不发请求的问题。
+             * Browser back/forward: cancel pending debounce and fetch immediately.
+             * Fallback: uses current href when state is empty, ensuring the initial page is refreshed on return.
              */
             handlePopState(event) {
                 const path = event.state?.path || window.location.href;
@@ -461,6 +460,17 @@ class AlpineComponents {
                 if (this._debouncedFetch?.dispose) this._debouncedFetch.dispose();
                 this.isLoading = true;
                 this._executeFetch(path, false);
+            },
+
+            /**
+             * Compare current pathname against a target href (trailing-slash and case insensitive).
+             * @param {string} targetHref
+             * @returns {boolean}
+             */
+            isUrlMatch(targetHref) {
+                const normalize = (p) => p.replace(/\/$/, '').toLowerCase();
+                return normalize(window.location.pathname) ===
+                    normalize(new URL(targetHref, window.location.origin).pathname);
             },
 
             destroy() {
