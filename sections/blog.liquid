@@ -1,11 +1,11 @@
 <div
   data-section-id="{{ section.id }}"
-  x-data="sectionPagination('{{ section.id }}', '{{ blog.url }}')"
   class="blog-section full-width relative"
   style="
     --section-padding-top: {{ section.settings.padding_top }}px;
     --section-padding-bottom: {{ section.settings.padding_bottom }}px;
   "
+  x-data="sectionPagination('{{ section.id }}', ['[role=&quot;tabpanel&quot;]','.sup-badge'])"
   data-component-kind="section"
   data-component-type="blog"
   data-component-id="{{ section.id }}"
@@ -23,15 +23,17 @@
           </p>
         </div>
 
-        {%- render 'rotating-badge',
-          classes: 'relative justify-self-center',
-          badge_class: 'text-[#000000]',
-          center_class: 'text-[#1B2608]',
-          unique_id: section.id,
-          size: 100,
-          badge_text: section.settings.rotate_badge_text,
-          center_text: section.settings.rotate_badge_percent
-        -%}
+        <div class="opacity-0 scale-50" data-gsap-badge>
+          {%- render 'rotating-badge',
+            classes: 'relative justify-self-center',
+            badge_class: 'text-[#000000]',
+            center_class: 'text-[#1B2608]',
+            unique_id: section.id,
+            size: 100,
+            badge_text: section.settings.rotate_badge_text,
+            center_text: section.settings.rotate_badge_percent
+          -%}
+        </div>
       </div>
     </div>
   </div>
@@ -40,15 +42,30 @@
     <div class="flex items-center justify-between gap-6 pt-8">
       {%- comment -%} Tab Header (Router Trigger) + Tab Content (fetch replace) {%- endcomment -%}
       <div class="min-w-0 flex-1">
+        {%- liquid
+          assign active_tab_index = 0
+          if current_tags != blank
+            for tag in blog.all_tags
+              if current_tags contains tag
+                assign active_tab_index = forloop.index
+                break
+              endif
+            endfor
+          endif
+        -%}
+    
         {% capture tab_header %}
+          <span class="hidden" x-init="$nextTick(() => { setActive({{ active_tab_index }}) })"></span>
+
           <a
             href="{{ blog.url }}"
             role="tab"
             x-data="{ index: null }"
-            x-init="index = registerTab($el)"
+            x-init="index = registerTab($el);"
             :id="`tab-${index}`"
             aria-controls="blog-panel"
             @click.prevent="loadUrl($el.href); setActive(index)"
+            @popstate.window="window.location.pathname.replace(/\/$/, '').toLowerCase() === new URL($el.href, window.location.origin).pathname.replace(/\/$/, '').toLowerCase() && setActive(index)"
             :tabindex="isActive(index) ? 0 : -1"
             :aria-selected="isActive(index)"
             :class="isActive(index) ? 'opacity-100' : 'opacity-20 hover:opacity-60'"
@@ -61,16 +78,17 @@
               href="{{ blog.url }}/tagged/{{ tag | handle }}"
               role="tab"
               x-data="{ index: null }"
-              x-init="index = registerTab($el)"
+              x-init="index = registerTab($el);"
               :id="`tab-${index}`"
               aria-controls="blog-panel"
               @click.prevent="loadUrl($el.href); setActive(index)"
+              @popstate.window="window.location.pathname.replace(/\/$/, '').toLowerCase() === new URL($el.href, window.location.origin).pathname.replace(/\/$/, '').toLowerCase() && setActive(index)"
               :tabindex="isActive(index) ? 0 : -1"
               :aria-selected="isActive(index)"
               :class="isActive(index) ? 'opacity-100' : 'opacity-20 hover:opacity-60'"
               class="cursor-pointer h2 transition-opacity focus:outline-none flex flex-wrap items-center gap-x-4 gap-y-2"
             >
-              {{ tag }} <sup class="sup-badge">({{ blog.articles_count }})</sup>
+              {{ tag }}
             </a>
           {%- endfor -%}
         {% endcapture %}
@@ -83,20 +101,66 @@
             x-init="index = registerPanel($el)"
             class="relative w-full"
           >
-            {% render 'loading', overlay: true, size: 'large', spinner_color: 'border-[#263D29]' %}
+            {% render 'loading', overlay: true, size: 'large' %}
 
             {% paginate blog.articles by section.settings.articles_per_page %}
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-8 pb-10">
+              <div 
+                class="grid grid-cols-1 pc:grid-cols-3 gap-8 pb-10"
+                data-component-kind="component"
+                data-component-type="article-grid"
+                data-component-id="{{ section.id }}-grid"
+              >
                 {% for article in blog.articles %}
-                  <div class="article-placeholder p-6 border border-dashed border-gray-400 text-[#263D29]">
-                    卡片占位：{{ article.title }}
-                  </div>
+                  <article class="group opacity-0 translate-y-7.5" data-gsap-card>
+                    <div class="block aspect-4/3 overflow-hidden rounded-sm mb-4">
+                      {% comment %} Image {% endcomment %}
+                      {%- capture sizes -%}
+                        (max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw
+                      {%- endcapture -%}
+                      
+                      {%- capture widths -%}
+                        400, 700
+                      {%- endcapture -%}
+
+                      {%- render 'image', 
+                        url: article.url,
+                        img_class:'w-full h-full transition-transform duration-[600ms] ease-[cubic-bezier(0.25,0.46,0.45,0.94)] group-hover:scale-105',
+                        image: article.image,
+                        alt: article.title,
+                        width: article.image.width,
+                        sizes: sizes,
+                        widths: widths
+                      -%}
+                    </div>
+
+                    <h4 class="mb-3 opacity-80">
+                      {{ article.tags | first }}
+                    </h4>
+                    <h3 class="mb-3">
+                      <a href="{{ article.url }}">{{ article.title }}</a>
+                    </h3>
+                    {%- if article.url !=blank -%}
+                      {%- capture link_content -%}
+                        <span>{{ section.settings.link_text }}</span>
+                        <span class="inline-block w-6 h-6 ml-3">
+                          {{- 'icon-arrow2.svg' | inline_asset_content -}}
+                        </span>
+                        {%- endcapture -%}
+                      {%- render 'link', class: 'opacity-80', href: article.url, content: link_content, variant: "underline" -%}
+                    {%- endif -%}
+                  </article>
                 {% endfor %}
               </div>
 
               <div
                 class="blog-pagination-wrapper"
-                @click="if ($event.target.closest('nav.pagination') && $event.target.tagName === 'A') { $event.preventDefault(); loadUrl($event.target.href); }"
+                @click="
+                  let link = $event.target.closest('nav.pagination a');
+                  if (link) { 
+                    $event.preventDefault(); 
+                    loadUrl(link.href); 
+                  }
+                "
               >
                 {% render 'pagination', paginate_obj: paginate %}
               </div>
@@ -122,22 +186,80 @@
       'blog',
       {
         init(el) {
-          // 1. 初始化 GSAP 动画或获取 DOM
-          // TODO: 这里是我后续注入 AI 动画交互代码的插槽
-          // const heroText = el.querySelector('[data-gsap-hero]');
+          if (typeof gsap === 'undefined') return;
+          if (typeof ScrollTrigger === 'undefined') return;
 
-          // 2. 返回 state 供销毁时使用
-          return {
-            // 比如：animation: gsapTimeline
-          };
+          gsap.registerPlugin(ScrollTrigger);
+
+          const heroEl = el.querySelector('[data-gsap-hero]');
+          const badgeEl = el.querySelector('[data-gsap-badge]');
+
+          const ctx = gsap.context(() => {
+            if (heroEl) {
+              gsap.to(heroEl, {
+                opacity: 1,
+                x: 0,
+                duration: 0.8,
+                ease: 'power2.out'
+              });
+            }
+
+            if (badgeEl) {
+              gsap.to(badgeEl, {
+                opacity: 1,
+                scale: 1,
+                duration: 0.6,
+                delay: 0.3,
+                ease: 'back.out(1.7)'
+              });
+            }
+          }, el);
+
+          return { ctx };
         },
 
         destroy(el, state) {
-          // 清理所有的 GSAP 实例、ScrollTrigger 或原生事件监听
-          // if (state?.animation) state.animation.kill();
-          if (typeof window.ScrollTrigger !== 'undefined') {
-            window.ScrollTrigger.refresh();
+          if (state?.ctx) {
+            state.ctx.revert();
           }
+        }
+      },
+      { lazy: true }
+    );
+
+    Components.register(
+      'article-grid',
+      {
+        init(el) {
+          if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
+          gsap.registerPlugin(ScrollTrigger);
+
+          const cards = el.querySelectorAll('[data-gsap-card]');
+
+          const ctx = gsap.context(() => {
+            if (cards.length) {
+              gsap.set(cards, { opacity: 0, y: 30 }); 
+              
+              gsap.to(cards, {
+                opacity: 1,
+                y: 0,
+                duration: 0.5,
+                stagger: { amount: 0.6, from: 'start' },
+                ease: 'power2.out',
+                scrollTrigger: {
+                  trigger: el,
+                  start: 'top 85%',
+                  once: true
+                }
+              });
+            }
+          }, el);
+
+          return { ctx };
+        },
+        
+        destroy(el, state) {
+          if (state?.ctx) state.ctx.revert();
         }
       },
       { lazy: true }
@@ -146,11 +268,6 @@
 {%- endjavascript -%}
 
 {%- stylesheet -%}
-  .shopify-section.is-loading {
-    pointer-events: none;
-    opacity: 0.6;
-    transition: opacity 0.2s ease;
-  }
 {%- endstylesheet -%}
 
 {% schema %}
@@ -175,15 +292,6 @@
       "label": "Description"
     },
     {
-      "type": "range",
-      "id": "articles_per_page",
-      "min": 3,
-      "max": 24,
-      "step": 3,
-      "default": 12,
-      "label": "Articles per page"
-    },
-    {
       "type": "text",
       "id": "rotate_badge_text",
       "label": "Rotate Badge Text",
@@ -194,6 +302,21 @@
       "id": "rotate_badge_percent",
       "label": "Rotate Badge Percent",
       "default": "100%"
+    },
+    {
+      "type": "range",
+      "id": "articles_per_page",
+      "min": 3,
+      "max": 24,
+      "step": 3,
+      "default": 12,
+      "label": "Articles per page"
+    },
+    {
+      "type": "text",
+      "id": "link_text",
+      "label": "Link Text",
+      "default": "Read More"
     },
     {
       "type": "header",

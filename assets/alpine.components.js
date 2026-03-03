@@ -77,6 +77,7 @@ class AlpineComponents {
     static TABCONTROL = 'tabControl';
     static BEFOREAFTERCOMPARISON = 'beforeAfterComparison';
     static COUNTDOWNTIMER = 'countdownTimer';
+    static SECTIONPAGINATION = 'sectionPagination';
 
     static dropdown(){
         return {
@@ -337,38 +338,134 @@ class AlpineComponents {
         };
     }
 
-    static sectionPagination(sectionId) {
+    /**
+     * 业务粘合层：博客等列表页的局部刷新。
+     *
+     * 并发安全策略（双保险）：
+     *   1. debounce 200ms — 快速切 Tab 只以最后一次点击发起请求
+     *   2. AbortController — debounce 后仍有请求在途时，立即 abort 旧连接
+     *   3. activeController 引用守卫 — 被 abort 的请求 finally 不会误清新请求的状态
+     *
+     * @param {string} sectionId
+     * @param {string[]|null} [selectors=null]
+     */
+    static sectionPagination(sectionId, selectors = null) {
         return {
             ...(window.__Theme__?.AlpineComponentsFactory?.useDisposable?.() || {}),
             isLoading: false,
-            refresher: null,
-            init() {
-                const RefresherClass = window.__Theme__?.SectionRefresher;
-                if (!RefresherClass || !sectionId) return;
+            sectionId: sectionId || null,
+            /** @type {string[]} */
+            selectors: Array.isArray(selectors) ? selectors : (selectors ? [selectors] : []),
+            abortController: null,
+            /** @type {Function|null} debounced wrapper, created in init */
+            _debouncedFetch: null,
 
-                this.refresher = new RefresherClass({
-                    sectionIds: [sectionId],
-                    onLoading: (state) => { this.isLoading = state; },
-                    afterReplace: () => {
-                        if (typeof window.ScrollTrigger !== 'undefined') {
-                            setTimeout(() => window.ScrollTrigger.refresh(), 100);
-                        }
-                    }
-                });
+            init() {
+                if (!this.sectionId) return;
+
+                if (!window.history.state || !window.history.state.path) {
+                    window.history.replaceState(
+                        { path: window.location.href },
+                        '',
+                        window.location.href
+                    );
+                }
+
+                const Utils = window.__Theme__?.Utils;
+                if (Utils) {
+                    this._debouncedFetch = Utils.debounce(
+                        (url) => this._executeFetch(url, true),
+                        200
+                    );
+                }
                 if (this.on) {
                     this.on(window, 'popstate', this.handlePopState.bind(this));
                 }
             },
-            handlePopState(event) {
-                if (event.state?.path && this.refresher) {
-                    this.refresher.refresh(event.state.path, false);
+
+            buildDomMap() {
+                const config = {
+                    targetSelector: `#shopify-section-${this.sectionId}`
+                };
+                if (this.selectors.length > 0) {
+                    config.innerSelectors = this.selectors;
+                }
+                return { [this.sectionId]: config };
+            },
+
+            /**
+             * 核心 Fetch-Render-Push 管线。
+             * 被 debounce 包装（loadUrl）或直接调用（popstate）。
+             * @param {string} url
+             * @param {boolean} updateHistory
+             */
+            _executeFetch(url, updateHistory) {
+                const ThemeRequest = window.__Theme__?.ThemeRequest;
+                const SectionRefresher = window.__Theme__?.SectionRefresher;
+                if (!ThemeRequest || !SectionRefresher) return;
+
+                if (this.abortController) this.abortController.abort();
+                this.abortController = new AbortController();
+                const activeController = this.abortController;
+
+                const sep = url.includes('?') ? '&' : '?';
+                const fetchUrl = url + sep + 'sections=' + encodeURIComponent(this.sectionId);
+
+                ThemeRequest.getJSON(fetchUrl, { signal: activeController.signal })
+                    .then((data) => {
+                        const sections = data?.sections ?? data;
+                        if (!sections || typeof sections !== 'object') return;
+
+                        SectionRefresher.render(sections, this.buildDomMap());
+
+                        if (updateHistory) {
+                            window.history.pushState({ path: url }, '', url);
+                        }
+                        if (typeof window.ScrollTrigger !== 'undefined') {
+                            setTimeout(() => window.ScrollTrigger.refresh(), 100);
+                        }
+                    })
+                    .catch((err) => {
+                        if (err?.name === 'AbortError') return;
+                        if (updateHistory) window.location.href = url;
+                    })
+                    .finally(() => {
+                        if (this.abortController === activeController) {
+                            this.isLoading = false;
+                            this.abortController = null;
+                        }
+                    });
+            },
+
+            /**
+             * 公共入口：立即显示 loading，防抖 200ms 后真正发请求。
+             * 不阻塞重复调用 — 每次点击都接受，由 debounce 吃掉中间的。
+             */
+            loadUrl(url) {
+                if (!url || !this.sectionId) return;
+                this.isLoading = true;
+                if (this._debouncedFetch) {
+                    this._debouncedFetch(url);
+                } else {
+                    this._executeFetch(url, true);
                 }
             },
-            loadUrl(url) {
-                if (!url || this.isLoading || !this.refresher) return;
-                this.refresher.refresh(url, true);
+
+            /**
+             * 浏览器前进/后退：取消待执行的 debounce，立即发请求。
+             * 降级：state 为空时使用当前 href，解决退回初始页不发请求的问题。
+             */
+            handlePopState(event) {
+                const path = event.state?.path || window.location.href;
+                if (!path || !this.sectionId) return;
+                if (this._debouncedFetch?.dispose) this._debouncedFetch.dispose();
+                this.isLoading = true;
+                this._executeFetch(path, false);
             },
+
             destroy() {
+                if (this._debouncedFetch?.dispose) this._debouncedFetch.dispose();
+                if (this.abortController) this.abortController.abort();
                 if (this.dispose) this.dispose();
             }
         };

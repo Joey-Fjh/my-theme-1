@@ -97,7 +97,6 @@ class Base {
  * Optional:
  *   data-component-kind="section|block"
  */
-
 class Components {
     /** Registered component */
     static registry = new Map();
@@ -328,7 +327,6 @@ class Components {
                 m.removedNodes.forEach((node) => {
                     if (!(node instanceof HTMLElement)) return;
                     
-                    // Handle standard components
                     if (node.matches?.(this.SELECTOR)) {
                         toDestroy.add(node);
                     }
@@ -336,7 +334,6 @@ class Components {
                         .querySelectorAll?.(this.SELECTOR)
                         .forEach((el) => toDestroy.add(el));
 
-                    // Handle Alpine components by dispatching a custom event
                     node.querySelectorAll?.('[x-data]').forEach(el => {
                         el.dispatchEvent(unmountEvent);
                     });
@@ -412,21 +409,49 @@ class Components {
 /**
  * ThemeRequest
  * ----------------------------------------
- * Fetch utilities for Section Rendering API.
+ * 统一局部渲染引擎 - 灵活网络层。
+ * 处理 Section Rendering API (GET ?sections=id) 与 Cart Ajax API (POST /cart/add.js 等)
+ * 返回的 JSON；支持通过 AbortSignal 取消前序重复请求。
  */
 class ThemeRequest {
+    /**
+     * 带超时与外部取消的 Fetch。外部传入 signal 时，前序请求可被取消。
+     * @param {string} url
+     * @param {Object} options - fetch options；可含 signal (AbortSignal)、timeout (ms)
+     * @returns {Promise<Response>}
+     */
     static async fetchWithTimeout(url, options = {}) {
         const timeout = options.timeout ?? 8000;
         const ctrl = new AbortController();
         const tid = setTimeout(() => ctrl.abort(), timeout);
+        const externalSignal = options.signal;
+        const onAbort = () => {
+            clearTimeout(tid);
+            ctrl.abort();
+        };
+        if (externalSignal) {
+            if (externalSignal.aborted) {
+                clearTimeout(tid);
+                throw new DOMException('Aborted', 'AbortError');
+            }
+            externalSignal.addEventListener('abort', onAbort, { once: true });
+        }
         try {
             const res = await fetch(url, { ...options, signal: ctrl.signal });
             return res;
         } finally {
             clearTimeout(tid);
+            if (externalSignal) externalSignal.removeEventListener('abort', onAbort);
         }
     }
 
+    /**
+     * 请求 JSON，适用于 SRA 与 Cart API 的 JSON 响应。
+     * 传入 options.signal 可在新请求发起时取消前序请求（如防抖式取消）。
+     * @param {string} url
+     * @param {Object} options - { signal?: AbortSignal, timeout?: number, headers?: Object, method?: string, body?: string }
+     * @returns {Promise<Object>} Shopify 返回的 JSON（含 sections 或 cart 等）
+     */
     static async getJSON(url, options = {}) {
         const headers = {
             'Accept': 'application/json',
@@ -442,45 +467,130 @@ class ThemeRequest {
 /**
  * SectionRefresher
  * ----------------------------------------
- * Local refresh engine for Shopify Section Rendering API.
+ * 统一局部渲染引擎 — 全能替换调度器 + 纯数据更新助手。
+ *
+ * 设计原则：
+ * 1. 不硬编码 shopify-section-xxx，目标容器完全由外部 domMap 配置决定。
+ * 2. 使用 DOMParser 在内存中解析 HTML，严禁直接赋值 innerHTML 整段原始字符串。
+ * 3. 支持精准子节点替换（innerSelectors）和整体内层替换（剥离外壳防嵌套）。
+ * 4. 兼容双向更新：render() 处理 HTML 替换，updateText() 处理 JSON 数据绑定。
  */
 class SectionRefresher {
-    constructor(options = {}) {
-        this.sectionIds = Array.isArray(options.sectionIds) ? options.sectionIds : [];
-        this.beforeReplace = typeof options.beforeReplace === 'function' ? options.beforeReplace : () => {};
-        this.afterReplace = typeof options.afterReplace === 'function' ? options.afterReplace : () => {};
-        this.onLoading = typeof options.onLoading === 'function' ? options.onLoading : () => {};
+    /**
+     * @typedef {Object} DomMapConfig
+     * @property {string}   [targetSelector]  - 真实 DOM 目标的 CSS 选择器。
+     *                                          未提供则降级到 #shopify-section-${key}。
+     * @property {string[]} [innerSelectors]  - 精准替换的 CSS 选择器数组
+     *                                          （如 ['.tab-content', '.pagination']）。
+     *                                          未提供或空数组 → 整体替换目标容器的 innerHTML。
+     */
+
+    /**
+     * 全能替换调度器。
+     *
+     * 流程：
+     *   1. 遍历 htmlMap 的 keys
+     *   2. 从 domMap 读取当前 key 的配置 { targetSelector, innerSelectors }
+     *   3. 确定真实 DOM 目标：config.targetSelector ?? `#shopify-section-${key}`
+     *   4. DOMParser 解析 HTML → 虚拟 Document
+     *   5. 在虚拟 Document 中定位"源元素"：
+     *      - 优先 doc.querySelector(targetSelector)，匹配到则以该节点为源
+     *      - 降级 doc.body.firstElementChild（SRA 返回的 HTML 是单根节点）
+     *   6. 替换策略：
+     *      - 有 innerSelectors → 只 replaceWith 这些子节点，最小化重绘
+     *      - 无 innerSelectors → 取源元素的 innerHTML 替换目标容器的 innerHTML
+     *        （剥离外壳，避免 <div id="shopify-section-xxx"> 无限嵌套）
+     *   7. 对受影响的目标元素调用 Components.initAll 唤醒 Alpine/GSAP 组件
+     *
+     * @param {Object.<string, string>} htmlMap  - Shopify 返回的 sections 映射 { "sectionId": "<html>" }
+     * @param {Object.<string, DomMapConfig>} [domMap={}] - 业务层配置的规则字典，键与 htmlMap 对应
+     */
+    static render(htmlMap, domMap = {}) {
+        if (!htmlMap || typeof htmlMap !== 'object') return;
+        if (!domMap || typeof domMap !== 'object') domMap = {};
+
+        for (const key of Object.keys(htmlMap)) {
+            const html = htmlMap[key];
+            if (html == null || typeof html !== 'string') continue;
+
+            const config = domMap[key] || {};
+
+            /* ---- 1. 确定真实 DOM 目标 ---- */
+            const targetSelector =
+                (typeof config.targetSelector === 'string' && config.targetSelector.trim())
+                    ? config.targetSelector.trim()
+                    : `#shopify-section-${key}`;
+
+            const targetEl = document.querySelector(targetSelector);
+            if (!targetEl) continue;
+
+            /* ---- 2. DOMParser 解析虚拟 DOM ---- */
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+
+            /*
+             * 定位虚拟源元素：
+             *   优先用 targetSelector 在虚拟 Document 中查找
+             *   （适配 #cart-drawer 等非标准 ID）。
+             *   降级到 body 的第一个子元素（SRA 返回的 HTML 是单根结构）。
+             */
+            const virtualSourceEl =
+                doc.querySelector(targetSelector) || doc.body.firstElementChild;
+            if (!virtualSourceEl) continue;
+
+            /* ---- 3. 执行替换 ---- */
+            const innerSelectors = Array.isArray(config.innerSelectors)
+                ? config.innerSelectors
+                : [];
+
+            if (innerSelectors.length > 0) {
+                /*
+                 * 精准替换：只更新 innerSelectors 匹配的子节点。
+                 * 从虚拟源元素提取新节点，replaceWith 替换真实 DOM 中的旧节点。
+                 * cloneNode(true) 确保脱离虚拟 Document 的引用。
+                 */
+                for (const sel of innerSelectors) {
+                    if (typeof sel !== 'string' || !sel.trim()) continue;
+                    const newChild = virtualSourceEl.querySelector(sel);
+                    const oldChild = targetEl.querySelector(sel);
+                    if (newChild && oldChild) {
+                        oldChild.replaceWith(newChild.cloneNode(true));
+                    }
+                }
+            } else {
+                /*
+                 * 整体内层替换：取虚拟源元素的 innerHTML 写入真实目标。
+                 * 只搬运"内层"，不搬运外壳节点本身，
+                 * 避免 <div id="shopify-section-xxx"> 在目标容器内重复嵌套。
+                 */
+                targetEl.innerHTML = virtualSourceEl.innerHTML;
+            }
+
+            /* ---- 4. 重载组件 ---- */
+            window.__Theme__?.Components?.initAll?.(targetEl);
+        }
+
+        window.dispatchEvent(new Event('resize'));
     }
 
-    async refresh(targetUrl, updateHistory = true) {
-        this.onLoading(true);
-        try {
-            const sep = targetUrl.includes('?') ? '&' : '?';
-            const fetchUrl = targetUrl + sep + 'sections=' + encodeURIComponent(this.sectionIds.join(','));
-            const data = await ThemeRequest.getJSON(fetchUrl);
-            const sectionsData = data?.sections ?? data;
-
-            this.beforeReplace(sectionsData);
-
-            for (const id of this.sectionIds) {
-                const el = document.getElementById('shopify-section-' + id);
-                const html = sectionsData[id];
-                if (el && html != null) {
-                    el.innerHTML = html;
-                    window.__Theme__?.Components?.initAll?.(el);
-                }
-            }
-
-            this.afterReplace();
-            window.dispatchEvent(new Event('resize'));
-
-            if (updateHistory && targetUrl) {
-                window.history.pushState({ path: targetUrl }, '', targetUrl);
-            }
-        } catch (err) {
-            if (targetUrl) window.location.href = targetUrl;
-        } finally {
-            this.onLoading(false);
+    /**
+     * 纯数据更新助手：用 JSON 数据安全更新页面文本节点。
+     * 典型场景：Cart API 返回 item_count / total_price 后批量更新角标和价格。
+     *
+     * @param {Array<{selector: string, text: string|number}>} updates
+     * @example
+     * SectionRefresher.updateText([
+     *     { selector: '.cart-count', text: cartData.item_count },
+     *     { selector: '.cart-total', text: cartData.total_price }
+     * ]);
+     */
+    static updateText(updates = []) {
+        if (!Array.isArray(updates)) return;
+        for (const item of updates) {
+            if (!item || typeof item.selector !== 'string' || !item.selector.trim()) continue;
+            const text = item.text != null ? String(item.text) : '';
+            document.querySelectorAll(item.selector).forEach((el) => {
+                el.textContent = text;
+            });
         }
     }
 }
@@ -496,6 +606,7 @@ class Main {
         document.addEventListener('alpine:init', () => {
             const Factory = window.__Theme__?.AlpineComponentsFactory;
             const Comps = window.__Theme__?.AlpineComponents;
+            
             if (!Factory || !Comps) return;
 
             Factory.init?.(window.Alpine);
@@ -504,13 +615,14 @@ class Main {
             Factory.register?.(Comps.TABCONTROL, Comps.tabControl);
             Factory.register?.(Comps.BEFOREAFTERCOMPARISON, Comps.beforeAfterComparison);
             Factory.register?.(Comps.COUNTDOWNTIMER, Comps.countdownTimer);
-            Factory.register?.('sectionPagination', Comps.sectionPagination);
+            Factory.register?.(Comps.SECTIONPAGINATION, Comps.sectionPagination);
         });
     }
 }
 
 window.__Theme__ = window.__Theme__ || {};
 window.__Theme__.Components = Components;
+window.__Theme__.ThemeRequest = ThemeRequest;
 window.__Theme__.SectionRefresher = SectionRefresher;
 Main.main();
 })();
