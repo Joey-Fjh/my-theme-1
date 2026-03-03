@@ -1,0 +1,39 @@
+{% comment %}
+  Generic loading indicator. Parent must provide Alpine scope with `isLoading`.
+  @param {boolean} [overlay] - If true, render semi-transparent overlay and center spinner.
+  @param {string} [overlay_class] - Tailwind background class for overlay.
+  @param {string} [spinner_color] - Tailwind border color class for spinner (e.g. 'border-[#263D29]', 'border-black').
+  @param {string} [size] - 'small' | 'medium' | 'large' for spinner size.
+{% endcomment %}
+{%- liquid
+  assign use_overlay = overlay | default: false
+  assign overlay_class = overlay_class | default: 'bg-white/60 backdrop-blur-sm'
+  assign color_class = spinner_color | default: 'border-[#263D29]'
+  assign size_key = size | default: 'medium'
+
+  case size_key
+    when 'small'
+      assign size_class = 'w-6 h-6 border-2'
+    when 'large'
+      assign size_class = 'w-12 h-12 border-2'
+    else
+      assign size_class = 'w-10 h-10 border-2'
+  endcase
+-%}
+<div
+  x-show="isLoading"
+  x-transition:enter="transition ease-out duration-200"
+  x-transition:enter-start="opacity-0"
+  x-transition:enter-end="opacity-100"
+  x-transition:leave="transition ease-in duration-150"
+  x-transition:leave-start="opacity-100"
+  x-transition:leave-end="opacity-0"
+  class="{% if use_overlay %}absolute inset-0 z-20 flex items-center justify-center {{ overlay_class }} {% else %}inline-flex items-center justify-center{% endif %}"
+  aria-hidden="true"
+>
+  <div
+    class="{{ size_class }} {{ color_class }} border-t-transparent rounded-full animate-spin"
+    role="status"
+    aria-label="Loading"
+  ></div>
+</div>

@@ -48,23 +48,28 @@ class Utils {
     static debounce(func, wait = 300, immediate = false){
         let timeout;
         
-        return function(...args){
+        const wrapper = function(...args){
             const context = this;
             
             const later = () => {
                 timeout = null;
-                
                 if(!immediate) func.apply(context,args);
-            }
+            };
             
             const callNow = immediate && !timeout;
             
             clearTimeout(timeout);
-            
             timeout = setTimeout(later, wait);
             
             if(callNow) func.apply(context,args);
         };
+
+        wrapper.dispose = () => {
+            clearTimeout(timeout);
+            timeout = null;
+        };
+
+        return wrapper;
     }
 }
 

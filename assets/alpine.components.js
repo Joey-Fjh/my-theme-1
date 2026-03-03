@@ -60,7 +60,7 @@ class AlpineComponentsFactory {
                 if (!el || !observer?.observe) return;
 
                 observer.observe(el);
-                disposers.push(()=>observer.disconnect());
+                disposers.push(()=>observer.unobserve(el));
             },
 
             dispose(){
@@ -77,6 +77,7 @@ class AlpineComponents {
     static TABCONTROL = 'tabControl';
     static BEFOREAFTERCOMPARISON = 'beforeAfterComparison';
     static COUNTDOWNTIMER = 'countdownTimer';
+    static SECTIONPAGINATION = 'sectionPagination';
 
     static dropdown(){
         return {
@@ -120,7 +121,6 @@ class AlpineComponents {
 			lastY: window.scrollY,
 			isHidden: false,
 			isTop: true,
-			isAnnouncementVisible: true,
 			
 			init() {
 				this.on(window, 'scroll', this.onScroll.bind(this),false);
@@ -337,38 +337,145 @@ class AlpineComponents {
         };
     }
 
-    static sectionPagination(sectionId) {
+    /**
+     * Business glue layer: partial refresh for list pages (blog, collections, etc.).
+     *
+     * Concurrency safety (triple guard):
+     *   1. debounce 200ms — rapid tab switching only fires the last click
+     *   2. AbortController — aborts in-flight request when a new one is issued post-debounce
+     *   3. activeController reference guard — prevents a stale finally block from clearing new request state
+     *
+     * @param {string} sectionId
+     * @param {string[]|null} [selectors=null]
+     */
+    static sectionPagination(sectionId, selectors = null) {
         return {
             ...(window.__Theme__?.AlpineComponentsFactory?.useDisposable?.() || {}),
             isLoading: false,
-            refresher: null,
-            init() {
-                const RefresherClass = window.__Theme__?.SectionRefresher;
-                if (!RefresherClass || !sectionId) return;
+            sectionId: sectionId || null,
+            /** @type {string[]} */
+            selectors: Array.isArray(selectors) ? selectors : (selectors ? [selectors] : []),
+            abortController: null,
+            /** @type {Function|null} debounced wrapper, created in init */
+            _debouncedFetch: null,
 
-                this.refresher = new RefresherClass({
-                    sectionIds: [sectionId],
-                    onLoading: (state) => { this.isLoading = state; },
-                    afterReplace: () => {
-                        if (typeof window.ScrollTrigger !== 'undefined') {
-                            setTimeout(() => window.ScrollTrigger.refresh(), 100);
-                        }
-                    }
-                });
+            init() {
+                if (!this.sectionId) return;
+
+                if (!window.history.state || !window.history.state.path) {
+                    window.history.replaceState(
+                        { path: window.location.href },
+                        '',
+                        window.location.href
+                    );
+                }
+
+                const Utils = window.__Theme__?.Utils;
+                if (Utils) {
+                    this._debouncedFetch = Utils.debounce(
+                        (url) => this._executeFetch(url, true),
+                        200
+                    );
+                }
                 if (this.on) {
                     this.on(window, 'popstate', this.handlePopState.bind(this));
                 }
             },
-            handlePopState(event) {
-                if (event.state?.path && this.refresher) {
-                    this.refresher.refresh(event.state.path, false);
+
+            buildDomMap() {
+                const config = {
+                    targetSelector: `#shopify-section-${this.sectionId}`
+                };
+                if (this.selectors.length > 0) {
+                    config.innerSelectors = this.selectors;
+                }
+                return { [this.sectionId]: config };
+            },
+
+            /**
+             * Core Fetch → Render → Push pipeline.
+             * Called via debounce wrapper (loadUrl) or directly (popstate).
+             * @param {string} url
+             * @param {boolean} updateHistory
+             */
+            _executeFetch(url, updateHistory) {
+                const ThemeRequest = window.__Theme__?.ThemeRequest;
+                const SectionRefresher = window.__Theme__?.SectionRefresher;
+                if (!ThemeRequest || !SectionRefresher) return;
+
+                if (this.abortController) this.abortController.abort();
+                this.abortController = new AbortController();
+                const activeController = this.abortController;
+
+                const sep = url.includes('?') ? '&' : '?';
+                const fetchUrl = url + sep + 'sections=' + encodeURIComponent(this.sectionId);
+
+                ThemeRequest.getJSON(fetchUrl, { signal: activeController.signal })
+                    .then((data) => {
+                        const sections = data?.sections ?? data;
+                        if (!sections || typeof sections !== 'object') return;
+
+                        SectionRefresher.render(sections, this.buildDomMap());
+
+                        if (updateHistory) {
+                            window.history.pushState({ path: url }, '', url);
+                        }
+                        if (typeof window.ScrollTrigger !== 'undefined') {
+                            requestAnimationFrame(() => window.ScrollTrigger.refresh());
+                        }
+                    })
+                    .catch((err) => {
+                        if (err?.name === 'AbortError') return;
+                        if (updateHistory) window.location.href = url;
+                    })
+                    .finally(() => {
+                        if (this.abortController === activeController) {
+                            this.isLoading = false;
+                            this.abortController = null;
+                        }
+                    });
+            },
+
+            /**
+             * Public entry point: show loading immediately, debounce 200ms before fetching.
+             * Accepts every call without blocking — debounce absorbs intermediate invocations.
+             */
+            loadUrl(url) {
+                if (!url || !this.sectionId) return;
+                this.isLoading = true;
+                if (this._debouncedFetch) {
+                    this._debouncedFetch(url);
+                } else {
+                    this._executeFetch(url, true);
                 }
             },
-            loadUrl(url) {
-                if (!url || this.isLoading || !this.refresher) return;
-                this.refresher.refresh(url, true);
+
+            /**
+             * Browser back/forward: cancel pending debounce and fetch immediately.
+             * Fallback: uses current href when state is empty, ensuring the initial page is refreshed on return.
+             */
+            handlePopState(event) {
+                const path = event.state?.path || window.location.href;
+                if (!path || !this.sectionId) return;
+                if (this._debouncedFetch?.dispose) this._debouncedFetch.dispose();
+                this.isLoading = true;
+                this._executeFetch(path, false);
             },
+
+            /**
+             * Compare current pathname against a target href (trailing-slash and case insensitive).
+             * @param {string} targetHref
+             * @returns {boolean}
+             */
+            isUrlMatch(targetHref) {
+                const normalize = (p) => p.replace(/\/$/, '').toLowerCase();
+                return normalize(window.location.pathname) ===
+                    normalize(new URL(targetHref, window.location.origin).pathname);
+            },
+
             destroy() {
+                if (this._debouncedFetch?.dispose) this._debouncedFetch.dispose();
+                if (this.abortController) this.abortController.abort();
                 if (this.dispose) this.dispose();
             }
         };
