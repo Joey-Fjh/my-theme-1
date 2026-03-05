@@ -508,12 +508,23 @@ class SectionRefresher {
      *        (shell-stripping prevents <div id="shopify-section-xxx"> infinite nesting)
      *   7. Call Components.initAll on each affected target to reinitialize Alpine/GSAP components
      *
-     * @param {Object.<string, string>} htmlMap  - Shopify sections map { "sectionId": "<html>" }
-     * @param {Object.<string, DomMapConfig>} [domMap={}] - Business-layer config dict, keys match htmlMap
+     * @param {Object.<string, string>|string} data  - Shopify sections map { "sectionId": "<html>" } or a single HTML string
+     * @param {Object.<string, DomMapConfig>} [domMap={}] - Business-layer config dict, keys match data
      */
-    static render(htmlMap, domMap = {}) {
-        if (!htmlMap || typeof htmlMap !== 'object') return;
+    static render(data, domMap = {}) {
+        if (!data) return;
         if (!domMap || typeof domMap !== 'object') domMap = {};
+
+        let htmlMap;
+        if (typeof data === 'string') {
+            const sectionKey = Object.keys(domMap)[0];
+            if (!sectionKey) return;
+            htmlMap = { [sectionKey]: data };
+        } else if (typeof data === 'object') {
+            htmlMap = data;
+        } else {
+            return;
+        }
 
         for (const key of Object.keys(htmlMap)) {
             const html = htmlMap[key];
