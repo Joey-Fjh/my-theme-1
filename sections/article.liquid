@@ -5,7 +5,6 @@
     --section-padding-top: {{ section.settings.padding_top }}px;
     --section-padding-bottom: {{ section.settings.padding_bottom }}px;
   "
-  x-data="sectionPagination('{{ section.id }}', [])"
   data-component-kind="section"
   data-component-type="article"
   data-component-id="{{ section.id }}"
@@ -51,15 +50,18 @@
   <div class="layout-special container-page bg-[#FBFBFB] text-[#263D29]">
     <div class="flex flex-col pc:flex-row gap-30 pc:gap-60">
       {% comment %} Aside Bar {% endcomment %}
-      <aside class="pc:w-55 shrink-0 opacity-0 -translate-x-7.5" data-gsap-sidebar>
+      <aside class="shrink-0 opacity-0 -translate-x-7.5 h2" data-gsap-sidebar>
         <nav class="pc:sticky">
-          <ul class="flex flex-row pc:flex-col gap-4 overflow-x-auto pc:overflow-x-hidden pb-4 pc:pb-0">
+          <ul 
+            id="toc-container" 
+            class="flex flex-row pc:flex-col gap-9 overflow-x-auto pc:overflow-x-hidden"
+          >
             {% # theme-check-disable-next-line LiquidHTMLSyntaxError %}
             {%- for a in blog.articles limit: section.settings.max_items -%}
-              <li class="min-w-45 pc:min-w-0">
+              <li>
                 <a 
                   href="{{ a.url }}"
-                  class="block leading-snug transition-colors duration-200 
+                  class="block leading-snug transition-colors duration-200 border-b
                   {% if a.id == article.id %} 
                     text-[#2d3a2e] 
                   {% else %}
@@ -75,18 +77,18 @@
       </aside>  
 
       {% comment %} Article  {% endcomment %}
-      <article class="flex-1 min-w-0 opacity-0 translate-y-7.5" data-gsap-content>
-        <div class="flex justify-between items-center border-b border-[#e5e5e5]">
+      <article class="flex-1 min-w-0 opacity-0 translate-y-7.5 article-content" data-gsap-content>
+        <div class="flex justify-between items-center border-b border-[#e5e5e5] pb-3">
           <h1>{{ article.title }}</h1>
           {%- assign date = article.published_at | time_tag: format: 'date' -%}
           <p>{{ 'blog.article_metadata_html' | t: date: date, author: article.author }}</p>
         </div>
-        <div>
+        <div class="py-10">
           {{ article.content }}
         </div>
-        <div class="flex flex-col gap-3 border-t border-[#e5e5e5]">
+        <div class="flex flex-col gap-3 border-t border-[#e5e5e5] pt-3">
           {%- if section.settings.show_social -%}
-            {%- render 'social-icons' -%}
+            {%- render 'social-icons',type:'name',class:'self-end' -%}
           {%- endif -%}
         </div>
       </article>

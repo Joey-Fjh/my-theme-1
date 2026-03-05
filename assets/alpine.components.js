@@ -345,16 +345,18 @@ class AlpineComponents {
      *   2. AbortController — aborts in-flight request when a new one is issued post-debounce
      *   3. activeController reference guard — prevents a stale finally block from clearing new request state
      *
-     * @param {string} sectionId
-     * @param {string[]|null} [selectors=null]
+     * @param {string|string[]} sectionId  - Single ID or array for multi-section refresh
+     * @param {string[]|Object<string,string[]>|null} [selectors=null] - Shared selectors or per-section map
      */
     static sectionPagination(sectionId, selectors = null) {
         return {
             ...(window.__Theme__?.AlpineComponentsFactory?.useDisposable?.() || {}),
             isLoading: false,
             sectionId: sectionId || null,
-            /** @type {string[]} */
-            selectors: Array.isArray(selectors) ? selectors : (selectors ? [selectors] : []),
+            /** @type {string[]|Object<string,string[]>} per-section map or shared array */
+            selectors: (!Array.isArray(selectors) && selectors && typeof selectors === 'object')
+                ? selectors
+                : Array.isArray(selectors) ? selectors : (selectors ? [selectors] : []),
             abortController: null,
             /** @type {Function|null} debounced wrapper, created in init */
             _debouncedFetch: null,
@@ -383,13 +385,18 @@ class AlpineComponents {
             },
 
             buildDomMap() {
-                const config = {
-                    targetSelector: `#shopify-section-${this.sectionId}`
-                };
-                if (this.selectors.length > 0) {
-                    config.innerSelectors = this.selectors;
+                const ids = Array.isArray(this.sectionId) ? this.sectionId : [this.sectionId];
+                const perSection = !Array.isArray(this.selectors) && this.selectors && typeof this.selectors === 'object';
+                const map = {};
+                for (const id of ids) {
+                    const config = { targetSelector: `#shopify-section-${id}` };
+                    const sels = perSection ? this.selectors[id] : this.selectors;
+                    if (Array.isArray(sels) && sels.length > 0) {
+                        config.innerSelectors = sels;
+                    }
+                    map[id] = config;
                 }
-                return { [this.sectionId]: config };
+                return map;
             },
 
             /**
@@ -407,8 +414,9 @@ class AlpineComponents {
                 this.abortController = new AbortController();
                 const activeController = this.abortController;
 
+                const ids = Array.isArray(this.sectionId) ? this.sectionId : [this.sectionId];
                 const sep = url.includes('?') ? '&' : '?';
-                const fetchUrl = url + sep + 'sections=' + encodeURIComponent(this.sectionId);
+                const fetchUrl = url + sep + 'sections=' + ids.map(encodeURIComponent).join(',');
 
                 ThemeRequest.getJSON(fetchUrl, { signal: activeController.signal })
                     .then((data) => {
@@ -463,14 +471,18 @@ class AlpineComponents {
             },
 
             /**
-             * Compare current pathname against a target href (trailing-slash and case insensitive).
+             * Compare current URL against a target href (pathname + query params).
+             * Trailing-slash insensitive, case insensitive, query-param order insensitive.
              * @param {string} targetHref
              * @returns {boolean}
              */
             isUrlMatch(targetHref) {
-                const normalize = (p) => p.replace(/\/$/, '').toLowerCase();
-                return normalize(window.location.pathname) ===
-                    normalize(new URL(targetHref, window.location.origin).pathname);
+                const current = new URL(window.location.href);
+                const target = new URL(targetHref, window.location.origin);
+                const normalizePath = (p) => p.replace(/\/$/, '').toLowerCase();
+                if (normalizePath(current.pathname) !== normalizePath(target.pathname)) return false;
+                const sortParams = (sp) => new URLSearchParams([...sp].sort()).toString();
+                return sortParams(current.searchParams) === sortParams(target.searchParams);
             },
 
             destroy() {
