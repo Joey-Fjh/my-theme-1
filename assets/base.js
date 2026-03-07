@@ -621,19 +621,32 @@ class Main {
 
     static initAlpine(){
         document.addEventListener('alpine:init', () => {
+            // 1. Register global Stores
+            const Stores = window.__Theme__?.AlpineStores;
+            if (Stores) {
+                if (Stores.dialog) window.Alpine.store('dialog', Stores.dialog);
+
+                if (Stores.cart) {
+                    const initialCartData = window.__Theme__?.initialState?.cart || {};
+                    Stores.cart.init(initialCartData);
+                    window.Alpine.store('cart', Stores.cart);
+                }
+            }
+
+            // 2. Register components
             const Factory = window.__Theme__?.AlpineComponentsFactory;
             const Comps = window.__Theme__?.AlpineComponents;
-            
-            if (!Factory || !Comps) return;
 
-            Factory.init?.(window.Alpine);
-            Factory.register?.(Comps.DROPDOWN, Comps.dropdown);
-            Factory.register?.(Comps.STICKY_HEADER, Comps.stickyHeader);
-            Factory.register?.(Comps.TABCONTROL, Comps.tabControl);
-            Factory.register?.(Comps.BEFOREAFTERCOMPARISON, Comps.beforeAfterComparison);
-            Factory.register?.(Comps.COUNTDOWNTIMER, Comps.countdownTimer);
-            Factory.register?.(Comps.SECTIONPAGINATION, Comps.sectionPagination);
-        });
+            if (Factory && Comps) {
+                Factory.init?.(window.Alpine);
+                Factory.register?.(Comps.DROPDOWN, Comps.dropdown);
+                Factory.register?.(Comps.STICKY_HEADER, Comps.stickyHeader);
+                Factory.register?.(Comps.TABCONTROL, Comps.tabControl);
+                Factory.register?.(Comps.BEFOREAFTERCOMPARISON, Comps.beforeAfterComparison);
+                Factory.register?.(Comps.COUNTDOWNTIMER, Comps.countdownTimer);
+                Factory.register?.(Comps.SECTIONPAGINATION, Comps.sectionPagination);
+            }
+        }, { once: true });
     }
 }
 

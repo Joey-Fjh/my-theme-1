@@ -24,6 +24,9 @@
     {% comment %} --- 4. Core dispatcher & entry point (Depends on Utils, AlpineComponents, and third-party libs) --- {% endcomment %}
     <script src="{{ 'base.js' | asset_url }}" defer></script>
 
+    {% comment %} --- 4b. Alpine global stores (dialog, cart) — must run before Alpine --- {% endcomment %}
+    <script src="{{ 'alpine.store.js' | asset_url }}" defer></script>
+
     {% comment %} --- 5. Alpine.js framework initialization (Must be loaded last) --- {% endcomment %}
     <script src="{{ 'alpine-intersect.js' | asset_url }}" defer></script>
     <script src="{{ 'alpine.js' | asset_url }}" defer></script>
@@ -39,5 +42,13 @@
     </main>
 
     {% sections 'footer-group' %}
+
+    {% comment %} Global initial state hydration for Alpine stores {% endcomment %}
+    <script>
+      window.__Theme__ = window.__Theme__ || {};
+      window.__Theme__.initialState = {
+        cart: {{ cart | json }}
+      };
+    </script>
   </body>
 </html>

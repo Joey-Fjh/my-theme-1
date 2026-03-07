@@ -1,35 +1,218 @@
-{% comment %}
-  This section is used in the cart template to render /cart page with an
-  overview of the items in customer's cart.
-{% endcomment %}
+<div
+  data-section-id="{{ section.id }}"
+  class="py-10 pc:py-14 bg-[#f8f8f8]"
+  x-data="{}"
+  :class="{ 'opacity-50 pointer-events-none': $store.cart.loading }"
+>
+  <div class="layout container-page">
+    <div class="grid grid-cols-1 pc:grid-cols-[1fr_400px] gap-10 pc:gap-12">
+      {%- comment -%} Left: Cart list (Liquid-rendered for SRA) {%- endcomment -%}
+      <div class="flex flex-col">
+        <h1 class="text-4xl pc:text-5xl font-bold text-[#263D29] mb-8">
+          Cart
+        </h1>
 
-<h1>{{ 'cart.title' | t }}</h1>
+        <ul class="flex flex-col divide-y divide-[#e5e5e5]">
+          {%- for item in cart.items -%}
+            <li class="py-6 first:pt-0 flex flex-wrap items-center gap-4 pc:gap-6">
+              <div class="w-20 h-20 pc:w-24 pc:h-24 shrink-0 bg-[#e5e5e5] rounded overflow-hidden flex items-center justify-center">
+                {%- if item.image -%}
+                  <a href="{{ item.url }}" class="block w-full h-full bg-white">
+                    {% render 'image',
+                      image: item.image,
+                      width: 160,
+                      height: 160,
+                      sizes: '96px',
+                      class: 'w-full h-full object-contain',
+                      img_class: 'object-contain'
+                    %}
+                  </a>
+                {%- else -%}
+                  <span class="text-[#9ca3af] text-xs">No image</span>
+                {%- endif -%}
+              </div>
 
-<form action="{{ routes.cart_url }}" method="post">
-  <table>
-    {% for item in cart.items %}
-      <tr>
-        <td>
-          {% render 'image', image: item.image, url: item.url %}
-        </td>
-        <td>
-          <p>{{ item.product.title }}</p>
-          {{ 'cart.remove' | t | link_to: item.url_to_remove }}
-        </td>
-        <td>
-          <input type="text" name="updates[]" value="{{ item.quantity }}">
-          <input type="submit" value="{{ 'cart.update' | t }}">
-        </td>
-      </tr>
-    {% endfor %}
-  </table>
+              <div class="flex-1 min-w-0">
+                <p class="text-xs uppercase tracking-wide text-[#6b6b6b]">{{ item.vendor | default: ' ' }}</p>
+                <a href="{{ item.url }}" class="font-bold text-[#111] hover:underline block mt-0.5">
+                  {{ item.product.title }}
+                </a>
+                <p class="text-[#111] font-medium mt-1">{{ item.final_line_price | money }}</p>
+              </div>
 
-  <input type="submit" name="checkout" value="{{ 'cart.checkout' | t }}">
-</form>
+              <div class="flex items-center gap-2 w-full pc:w-auto pc:shrink-0">
+                <button
+                  type="button"
+                  aria-label="Decrease"
+                  class="w-9 h-9 flex items-center justify-center border border-[#d4d4d4] rounded text-[#111] hover:bg-[#f5f5f5] transition-colors"
+                  @click="$store.cart.change({{ forloop.index }}, {{ item.quantity | minus: 1 }}, ['{{ section.id }}'])"
+                >
+                  <span class="sr-only">−</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                </button>
+                <span class="min-w-8 text-center font-medium text-[#111] border-b border-[#111] pb-0.5" aria-live="polite">
+                  {{ item.quantity }}
+                </span>
+                <button
+                  type="button"
+                  aria-label="Increase"
+                  class="w-9 h-9 flex items-center justify-center border border-[#d4d4d4] rounded text-[#111] hover:bg-[#f5f5f5] transition-colors"
+                  @click="$store.cart.change({{ forloop.index }}, {{ item.quantity | plus: 1 }}, ['{{ section.id }}'])"
+                >
+                  <span class="sr-only">+</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                </button>
+                <a
+                  href="{{ item.url_to_remove }}"
+                  class="p-2 text-[#6b6b6b] hover:text-[#111] transition-colors"
+                  aria-label="Remove {{ item.product.title }}"
+                  @click.prevent="$store.cart.change({{ forloop.index }}, 0, ['{{ section.id }}'])"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                </a>
+              </div>
+            </li>
+          {%- endfor -%}
+        </ul>
+
+        <div class="mt-8 text-center">
+          {%- render 'link', text: 'Shop More', href: routes.root_url, variant: 'underline', class: 'text-[#111]' -%}
+        </div>
+      </div>
+
+      {%- comment -%} Right: Order Summary card {%- endcomment -%}
+      <aside class="pc:sticky pc:top-24 self-start">
+        <div class="bg-white rounded-lg shadow-md border border-[#e5e5e5] p-6 pc:p-8">
+          <h2 class="text-xl font-bold text-[#111] mb-6">
+            Order Summary
+          </h2>
+
+          {%- comment -%} Accordion: Order Special Instruction + Estimate Shipping {%- endcomment -%}
+          <div
+            x-data="{ active: 1 }"
+            class="flex flex-col border-t border-[#d4d4d4]"
+          >
+            <div class="border-t border-[#d4d4d4] first:border-t-0">
+              <button
+                type="button"
+                @click="active = active === 0 ? null : 0"
+                class="flex w-full items-center justify-between py-4 text-left cursor-pointer group"
+              >
+                <span class="font-bold text-[#2d3a2e]">Order Special Instruction</span>
+                <div class="relative shrink-0 ml-4 w-5 h-5 flex items-center justify-center text-[#5a5a5a]">
+                  <span class="absolute w-full h-[1.5px] bg-current transition-transform duration-300" :class="{ 'rotate-90': active === 0 }"></span>
+                  <span class="absolute w-[1.5px] h-full bg-current transition-transform duration-300" :class="{ 'rotate-90': active === 0 }"></span>
+                </div>
+              </button>
+              <div
+                class="grid transition-all duration-300 ease-in-out"
+                :class="active === 0 ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'"
+              >
+                <div class="overflow-hidden">
+                  <div class="pb-4 text-[#6b6b6b]">
+                    <textarea
+                      name="note"
+                      class="w-full min-h-20 px-3 py-2 border border-[#d4d4d4] rounded bg-[#f5f5f5] text-[#111] placeholder:text-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#263D29] focus:border-transparent"
+                      placeholder="Add a note to your order..."
+                    >{{ cart.note }}</textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="border-t border-[#d4d4d4]">
+              <button
+                type="button"
+                @click="active = active === 1 ? null : 1"
+                class="flex w-full items-center justify-between py-4 text-left cursor-pointer group"
+              >
+                <span class="font-bold text-[#2d3a2e]">Estimate Shipping</span>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  class="shrink-0 ml-4 text-[#5a5a5a] transition-transform duration-300"
+                  :class="{ 'rotate-180': active === 1 }"
+                >
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </button>
+              <div
+                class="grid transition-all duration-300 ease-in-out"
+                :class="active === 1 ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'"
+              >
+                <div class="overflow-hidden">
+                  <div class="pb-4 text-[#6b6b6b] space-y-3">
+                    <div class="grid grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        class="w-full px-3 py-2 border border-[#d4d4d4] rounded bg-[#f5f5f5] text-[#111] placeholder:text-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#263D29]"
+                        placeholder="Country"
+                        value="{{ cart.attributes.country | default: 'China' }}"
+                      >
+                      <input
+                        type="text"
+                        class="w-full px-3 py-2 border border-[#d4d4d4] rounded bg-[#f5f5f5] text-[#111] placeholder:text-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#263D29]"
+                        placeholder="Province"
+                        value="{{ cart.attributes.province | default: 'Anhui' }}"
+                      >
+                    </div>
+                    <input
+                      type="text"
+                      class="w-full px-3 py-2 border border-[#d4d4d4] rounded bg-[#f5f5f5] text-[#111] placeholder:text-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#263D29]"
+                      placeholder="Pincode"
+                    >
+                    <button
+                      type="button"
+                      class="w-full py-2.5 px-4 border border-[#111] rounded text-[#111] font-medium hover:bg-[#f5f5f5] transition-colors"
+                    >
+                      Get Estimate
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-6 pt-6 border-t border-[#e5e5e5]">
+            <div class="flex items-baseline justify-between gap-4">
+              <span class="text-lg font-bold text-[#111]">Estimate Total</span>
+              <span class="text-lg font-bold text-[#111]">{{ cart.total_price | money }}</span>
+            </div>
+            <p class="mt-2 text-sm text-[#9ca3af]">
+              Taxes, discounts and shipping calculated at checkout.
+            </p>
+          </div>
+
+          <form action="{{ routes.cart_url }}" method="post" class="mt-6">
+            <button
+              type="submit"
+              name="checkout"
+              class="w-full py-4 px-6 rounded font-bold text-white bg-[#263D29] hover:opacity-90 transition-opacity"
+            >
+              Checkout ({{ cart.item_count }})
+            </button>
+          </form>
+        </div>
+      </aside>
+    </div>
+  </div>
+</div>
 
 {% schema %}
 {
   "name": "t:general.cart",
-  "settings": []
+  "tag": "section",
+  "class": "section",
+  "settings": [],
+  "presets": [
+    {
+      "name": "t:general.cart"
+    }
+  ]
 }
 {% endschema %}
