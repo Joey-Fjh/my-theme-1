@@ -269,6 +269,14 @@ Input: `assets/tailwind.input.css` → Output: `assets/tailwind.output.css`
 - `tailwind.components.css` / `tailwind.elements.css`: for reusable `@utility` or component classes that appear across many sections.
 - **Never** add a `<style>` tag inside a Liquid template.
 
+### Typography & Headings (Strictly Enforced)
+
+- **NO Tailwind Text Sizes for Headings:** NEVER use Tailwind's built-in text size utilities (e.g., `text-lg`, `text-xl`, `text-4xl`, `text-[10rem]`) for headings or large display text.
+- **NO Tailwind Responsive Font Sizes:** DO NOT use responsive prefixes for font sizes on headings (e.g., `md:text-5xl`). The responsiveness and scaling are already handled natively in `base.css` via media queries and CSS variables (`--font-heading-scale`).
+- **USE Custom Classes:** You MUST STRICTLY USE our custom semantic tags or utility classes for all titles and headings:
+  `hxxxl`, `hxxl`, `hxl`, `h0`, `h1`, `h2`, `h3`, `h4`, `h5`, `h6`.
+- **Allowed Tailwind Typography:** You may still use Tailwind for text alignment (`text-center`), colors (`text-[#263D29]`), or body text sizing (`text-sm`, `text-base` for standard paragraphs ONLY).
+
 ---
 
 ## Reusable Snippets

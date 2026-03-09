@@ -2,12 +2,31 @@
 'use strict';
 
 /**
- * Alpine.js global store definitions (dialog, cart).
+ * Alpine.js global store definitions (dialog, cart, toast).
  * Only defines and attaches to window.__Theme__.AlpineStores.
  * Registration with Alpine happens in base.js (Main.initAlpine).
  */
 window.__Theme__ = window.__Theme__ || {};
 window.__Theme__.AlpineStores = {
+    toast: {
+        messages: [],
+        /**
+         * Show a toast notification.
+         * @param {string} message - Display text
+         * @param {'success'|'error'|'info'} type - Visual style (default: 'info')
+         * @param {number} duration - Auto-dismiss ms, 0 to persist (default: 3000)
+         */
+        show(message, type = 'info', duration = 3000) {
+            const id = Date.now() + Math.random().toString(36).substring(2);
+            this.messages.push({ id, message, type });
+            if (duration > 0) {
+                setTimeout(() => { this.remove(id); }, duration);
+            }
+        },
+        remove(id) {
+            this.messages = this.messages.filter(msg => msg.id !== id);
+        }
+    },
     dialog: {
         active: null,
         open(id) {
@@ -92,6 +111,7 @@ window.__Theme__.AlpineStores = {
                     }
                     return this.fetchCart().then(() => data);
                 })
+                .catch(this._handleError)
                 .finally(() => {
                     this.loading = false;
                 });
@@ -124,9 +144,44 @@ window.__Theme__.AlpineStores = {
                     }
                     return this.fetchCart().then(() => data);
                 })
+                .catch(this._handleError)
                 .finally(() => {
                     this.loading = false;
                 });
+        },
+
+        /**
+         * Update cart note or attributes via /cart/update.js
+         * @param {Object} data - e.g., { note: 'xxx' } or { attributes: { Country: 'China' } }
+         * @returns {Promise<Object>}
+         */
+        update(data) {
+            this.loading = true;
+            return fetch('/cart/update.js', {
+                method: 'POST',
+                headers: this._headers,
+                credentials: 'same-origin',
+                body: JSON.stringify(data)
+            })
+            .then(res => res.json())
+            .catch(this._handleError)
+            .finally(() => {
+                this.loading = false;
+            });
+        },
+
+        /**
+         * Centralized error interceptor — shows toast and re-throws.
+         * @param {Object|Error} err - Shopify API error or native Error
+         * @returns {Promise<never>}
+         */
+        _handleError(err) {
+            const toast = window.Alpine?.store('toast');
+            if (toast) {
+                const msg = err?.description || err?.message || 'Something went wrong updating your cart.';
+                toast.show(msg, 'error');
+            }
+            return Promise.reject(err);
         }
     }
 };

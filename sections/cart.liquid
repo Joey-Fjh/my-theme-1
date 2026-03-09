@@ -104,95 +104,66 @@
           </h2>
 
           {%- comment -%} Accordion: Order Special Instruction + Estimate Shipping {%- endcomment -%}
-          <div
-            x-data="{ active: 1 }"
-            class="flex flex-col"
-          >
-            <div class="border-t border-[#d4d4d4] first:border-t-0">
-              <button
-                type="button"
-                @click="active = active === 0 ? null : 0"
-                class="flex w-full items-center justify-between py-4 text-left cursor-pointer group"
-              >
-                <span class="font-bold text-[#2d3a2e]">Order Special Instruction</span>
-                <div class="relative shrink-0 ml-4 w-5 h-5 flex items-center justify-center text-[#5a5a5a]">
-                  <span class="absolute w-full h-[1.5px] bg-current transition-transform duration-300" :class="{ 'rotate-90': active === 0 }"></span>
-                  <span class="absolute w-[1.5px] h-full bg-current transition-transform duration-300" :class="{ 'rotate-90': active === 0 }"></span>
-                </div>
-              </button>
-              <div
-                class="grid transition-all duration-300 ease-in-out"
-                :class="active === 0 ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'"
-              >
-                <div class="overflow-hidden">
-                  <div class="pb-4 text-[#6b6b6b]">
-                    <textarea
-                      name="note"
-                      class="w-full min-h-20 px-3 py-2 border border-[#d4d4d4] rounded bg-[#f5f5f5] text-[#111] placeholder:text-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#263D29] focus:border-transparent"
-                      placeholder="Add a note to your order..."
-                    >{{ cart.note }}</textarea>
-                  </div>
-                </div>
-              </div>
-            </div>
+          {%- capture note_html -%}
+            <textarea
+              name="note"
+              class="w-full min-h-20 px-3 py-2 border border-[#d4d4d4] rounded bg-[#f5f5f5] text-[#111] placeholder:text-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#263D29] focus:border-transparent"
+              placeholder="Add a note to your order..."
+              @change="$store.cart.update({ note: $event.target.value })"
+            >{{ cart.note }}</textarea>
+          {%- endcapture -%}
 
-            <div class="border-t border-[#d4d4d4]">
+          {%- capture shipping_html -%}
+            <div class="space-y-3">
+              <div class="grid grid-cols-2 gap-2">
+                <input
+                  type="text"
+                  name="attributes[Country]"
+                  class="w-full px-3 py-2 border border-[#d4d4d4] rounded bg-[#f5f5f5] text-[#111] placeholder:text-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#263D29]"
+                  placeholder="Country"
+                  value="{{ cart.attributes.Country | default: 'China' }}"
+                  @change="$store.cart.update({ attributes: { Country: $event.target.value } })"
+                >
+                <input
+                  type="text"
+                  name="attributes[Province]"
+                  class="w-full px-3 py-2 border border-[#d4d4d4] rounded bg-[#f5f5f5] text-[#111] placeholder:text-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#263D29]"
+                  placeholder="Province"
+                  value="{{ cart.attributes.Province | default: 'Anhui' }}"
+                  @change="$store.cart.update({ attributes: { Province: $event.target.value } })"
+                >
+              </div>
+              <input
+                type="text"
+                class="w-full px-3 py-2 border border-[#d4d4d4] rounded bg-[#f5f5f5] text-[#111] placeholder:text-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#263D29]"
+                placeholder="Pincode"
+              >
               <button
                 type="button"
-                @click="active = active === 1 ? null : 1"
-                class="flex w-full items-center justify-between py-4 text-left cursor-pointer group"
+                class="cursor-pointer w-full py-2.5 px-4 border border-[#111] rounded text-[#111] font-medium hover:bg-[#f5f5f5] transition-colors"
               >
-                <span class="font-bold text-[#2d3a2e]">Estimate Shipping</span>
-                <span
-                  class="w-5 h-5 shrink-0 ml-4 inline-block text-[#5a5a5a] transition-transform duration-300"
-                  :class="{ 'rotate-180': active === 1 }"
-                >
-                  {{ 'icon-chevron-down.svg' | inline_asset_content }}
-                </span>
+                Get Estimate
               </button>
-              <div
-                class="grid transition-all duration-300 ease-in-out"
-                :class="active === 1 ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'"
-              >
-                <div class="overflow-hidden">
-                  <div class="pb-4 text-[#6b6b6b] space-y-3">
-                    <div class="grid grid-cols-2 gap-2">
-                      <input
-                        type="text"
-                        class="w-full px-3 py-2 border border-[#d4d4d4] rounded bg-[#f5f5f5] text-[#111] placeholder:text-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#263D29]"
-                        placeholder="Country"
-                        value="{{ cart.attributes.country | default: 'China' }}"
-                      >
-                      <input
-                        type="text"
-                        class="w-full px-3 py-2 border border-[#d4d4d4] rounded bg-[#f5f5f5] text-[#111] placeholder:text-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#263D29]"
-                        placeholder="Province"
-                        value="{{ cart.attributes.province | default: 'Anhui' }}"
-                      >
-                    </div>
-                    <input
-                      type="text"
-                      class="w-full px-3 py-2 border border-[#d4d4d4] rounded bg-[#f5f5f5] text-[#111] placeholder:text-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#263D29]"
-                      placeholder="Pincode"
-                    >
-                    <button
-                      type="button"
-                      class="w-full py-2.5 px-4 border border-[#111] rounded text-[#111] font-medium hover:bg-[#f5f5f5] transition-colors"
-                    >
-                      Get Estimate
-                    </button>
-                  </div>
-                </div>
-              </div>
             </div>
-          </div>
+          {%- endcapture -%}
+
+          {%- assign accordion_contents = note_html | append: '|' | append: shipping_html -%}
+
+          {% render 'accordion',
+            wrapper_class: 'flex flex-col gap-3',
+            initial_active: 1,
+            titles: 'Order Special Instruction|Estimate Shipping',
+            contents: accordion_contents,
+            icon_type: 'plus',
+            icon_size:'w-6 h-6'
+          %}
 
           <div class="mt-6 pt-6 border-t border-[#e5e5e5]">
             <div class="flex items-baseline justify-between gap-4">
-              <span class="text-lg font-bold text-[#111]">Estimate Total</span>
-              <span class="text-lg font-bold text-[#111]">{{ cart.total_price | money }}</span>
+              <span class="font-bold text-[#111]">Estimate Total</span>
+              <span class="font-bold text-[#111]">{{ cart.total_price | money }}</span>
             </div>
-            <p class="mt-2 text-sm text-[#9ca3af]">
+            <p class="mt-2 text-[#9ca3af]">
               Taxes, discounts and shipping calculated at checkout.
             </p>
           </div>
@@ -201,9 +172,9 @@
             <button
               type="submit"
               name="checkout"
-              class="w-full py-4 px-6 rounded font-bold text-white bg-[#263D29] hover:opacity-90 transition-opacity"
+              class="cursor-pointer w-full py-4 px-6 rounded font-bold text-white bg-[#263D29] hover:opacity-90 transition-opacity"
             >
-              Checkout ({{ cart.item_count }})
+              Checkout <sup class="sup-badge">({{ cart.item_count }})</sup>
             </button>
           </form>
         </div>

@@ -624,6 +624,7 @@ class Main {
             // 1. Register global Stores
             const Stores = window.__Theme__?.AlpineStores;
             if (Stores) {
+                if (Stores.toast) window.Alpine.store('toast', Stores.toast);
                 if (Stores.dialog) window.Alpine.store('dialog', Stores.dialog);
 
                 if (Stores.cart) {
