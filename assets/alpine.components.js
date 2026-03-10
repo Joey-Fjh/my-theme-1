@@ -78,6 +78,7 @@ class AlpineComponents {
     static BEFOREAFTERCOMPARISON = 'beforeAfterComparison';
     static COUNTDOWNTIMER = 'countdownTimer';
     static SECTIONPAGINATION = 'sectionPagination';
+    static COLLECTIONFILTERS = 'collectionFilters';
 
     static dropdown(){
         return {
@@ -489,6 +490,49 @@ class AlpineComponents {
                 if (this._debouncedFetch?.dispose) this._debouncedFetch.dispose();
                 if (this.abortController) this.abortController.abort();
                 if (this.dispose) this.dispose();
+            }
+        };
+    }
+
+    /**
+     * Thin orchestration layer for Collection filter / sort / paginate.
+     * Inherits the full SRA pipeline from sectionPagination (debounce, abort, history, render).
+     * Only adds URL-assembly + event interception; zero fetch / DOMParser code.
+     *
+     * @param {string} sectionId
+     * @param {string[]|null} selectors - innerSelectors forwarded to SectionRefresher
+     */
+    static collectionFilters(sectionId, selectors = null) {
+        return {
+            ...AlpineComponents.sectionPagination(sectionId, selectors),
+
+            _buildUrl(params) {
+                const qs = params.toString();
+                return qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
+            },
+
+            _getFormParams() {
+                const form = document.getElementById('CollectionFiltersForm');
+                return form
+                    ? new URLSearchParams(new FormData(form))
+                    : new URLSearchParams(window.location.search);
+            },
+
+            onChange() {
+                const params = this._getFormParams();
+                params.delete('page');
+                this.loadUrl(this._buildUrl(params));
+            },
+
+            onPaginate(e) {
+                const link = e.target.closest('a');
+                if (!link) return;
+                e.preventDefault();
+                const page = new URL(link.href).searchParams.get('page');
+                const params = this._getFormParams();
+                if (page) params.set('page', page);
+                else params.delete('page');
+                this.loadUrl(this._buildUrl(params));
             }
         };
     }

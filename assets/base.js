@@ -647,6 +647,7 @@ class Main {
                 Factory.register?.(Comps.BEFOREAFTERCOMPARISON, Comps.beforeAfterComparison);
                 Factory.register?.(Comps.COUNTDOWNTIMER, Comps.countdownTimer);
                 Factory.register?.(Comps.SECTIONPAGINATION, Comps.sectionPagination);
+                Factory.register?.(Comps.COLLECTIONFILTERS, Comps.collectionFilters);
             }
         }, { once: true });
     }
