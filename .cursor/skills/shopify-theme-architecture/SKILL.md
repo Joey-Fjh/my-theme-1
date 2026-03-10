@@ -279,6 +279,26 @@ Input: `assets/tailwind.input.css` → Output: `assets/tailwind.output.css`
 
 ---
 
+## Accessibility (A11y) Standards
+
+We build inclusive themes. Cursor MUST adhere to these accessibility guidelines when generating HTML:
+
+1. **Interactive Elements**: All `<button>`, `<a>`, and `<input>` elements MUST have descriptive text. If an element is icon-only, it MUST include an `aria-label` or a visually hidden span (`<span class="sr-only">`).
+2. **Dynamic Feedback**: Any dynamically injected feedback (e.g., Toast notifications, error messages, cart updates) MUST be wrapped in or contain `role="status"` and `aria-live="polite"` so screen readers can announce the changes.
+3. **Forms**: Inputs must be explicitly associated with labels (using `id` and `for`, or wrapping the input) and use proper `aria-invalid` states when errors occur.
+4. **Focus Management**: Modals, drawers, and popups should trap focus when open.
+
+---
+
+## Performance & Debugging
+
+This theme includes a custom `ThemePerformance` class that automatically monitors Core Web Vitals (LCP, Long Tasks) using the `PerformanceObserver` API.
+
+- **How to activate**: Performance logs are disabled in production by default. To view them in the browser console, append `?debug=true` to the URL or view the theme inside the Shopify Theme Editor.
+- **Cursor's Responsibility**: When writing complex GSAP animations, large DOM manipulations, or heavy Alpine.js logic, ALWAYS optimize for performance to avoid triggering "Long Task" warnings (>50ms) in the performance monitor. Prefer `requestAnimationFrame` for visual updates and `debounce` for high-frequency events.
+
+---
+
 ## Reusable Snippets
 
 Render shared UI with `{% render %}`:

@@ -614,6 +614,7 @@ class SectionRefresher {
 
 class Main {
     static main(){
+        window.__Theme__?.ThemePerformance?.init?.();
         Components.setupLifecycle();
         Base.init();
         this.initAlpine();

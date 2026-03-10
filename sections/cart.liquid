@@ -7,6 +7,9 @@
   "
   x-data="{}"
   :class="{ 'opacity-50 pointer-events-none': $store.cart.loading }"
+  data-component-kind="section"
+  data-component-type="cart"
+  data-component-id="{{ section.id }}"
 >
   <div class="layout container-page bg-[#F3F3F3]">
     <div class="p-6 grid grid-cols-1 pc:grid-cols-[1fr_auto] gap-10 pc:gap-12">
@@ -50,7 +53,7 @@
                   href="{{ item.url_to_remove }}"
                   class="w-9 h-9 text-[#263D29] opacity-80 hover:opacity-100 transition-colors"
                   aria-label="Remove {{ item.product.title }}"
-                  @click.prevent="$store.cart.change({{ forloop.index }}, 0, ['{{ section.id }}'])"
+                  @click.prevent="$store.cart.change('{{ item.key }}', 0, ['{{ section.id }}'])"
                 >
                   <span class="w-full h-full inline-block">
                     {{ 'icon-trash.svg' | inline_asset_content }}
@@ -62,7 +65,13 @@
                     type="button"
                     aria-label="Decrease"
                     class="w-9 h-9 flex items-center justify-center text-[#263D29] opacity-80 hover:opacity-100 transition-colors cursor-pointer"
-                    @click="$store.cart.change({{ forloop.index }}, {{ item.quantity | minus: 1 }}, ['{{ section.id }}'])"
+                    @click="
+                      if ({{ item.quantity }} <= 1) {
+                        $store.toast.show('Minimum quantity is 1. Use the remove button to delete item.', 'info');
+                        return;
+                      }
+                      $store.cart.change('{{ item.key }}', {{ item.quantity | minus: 1 }}, ['{{ section.id }}']);
+                    "
                   >
                     <span class="sr-only">−</span>
                     <span class="w-full h-full inline-block">
@@ -70,15 +79,49 @@
                     </span>
                   </button>
 
-                  <span class="inline-block min-w-[2ch] border-b text-center font-medium text-[#263D29]" aria-live="polite">
-                    {{ item.quantity }}
-                  </span>
+                  {% assign max_qty = null %}
+                  {% if item.variant.inventory_management != nil and item.variant.inventory_policy == 'deny' %}
+                    {% assign max_qty = item.variant.inventory_quantity %}
+                  {% endif %}
+                  
+                  <input
+                    type="number"
+                    min="1"
+                    {% if max_qty != null %}max="{{ max_qty }}"{% endif %}
+                    value="{{ item.quantity }}"
+                    aria-label="Quantity for {{ item.product.title }}"
+                    class="inline-block w-[4ch] border-b text-center font-medium text-[#263D29] bg-transparent appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    @change="
+                      const val = parseInt($event.target.value);
+                      if (val < 1 || isNaN(val)) {
+                        $event.target.value = {{ item.quantity }};
+                        $store.toast.show('Quantity must be at least 1', 'info');
+                        return;
+                      }
+                      {% if max_qty != null %}
+                      if (val > {{ max_qty }}) {
+                        $event.target.value = {{ item.quantity }};
+                        $store.toast.show('You can only add up to {{ max_qty }} of this item.', 'info');
+                        return;
+                      }
+                      {% endif %}
+                      $store.cart.change('{{ item.key }}', val, ['{{ section.id }}']);
+                    "
+                  >
                   
                   <button
                     type="button"
                     aria-label="Increase"
                     class="w-9 h-9 flex items-center justify-center text-[#263D29] opacity-80 hover:opacity-100 transition-colors cursor-pointer"
-                    @click="$store.cart.change({{ forloop.index }}, {{ item.quantity | plus: 1 }}, ['{{ section.id }}'])"
+                    @click="
+                      {% if max_qty != null %}
+                      if ({{ item.quantity }} >= {{ max_qty }}) {
+                        $store.toast.show('Maximum stock reached.', 'info');
+                        return;
+                      }
+                      {% endif %}
+                      $store.cart.change('{{ item.key }}', {{ item.quantity | plus: 1 }}, ['{{ section.id }}']);
+                    "
                   >
                     <span class="sr-only">+</span>
                     <span class="w-full h-full inline-block">
@@ -99,7 +142,7 @@
       {%- comment -%} Right: Order Summary card {%- endcomment -%}
       <aside class="pc:sticky self-start">
         <div class="bg-white rounded-lg shadow-md border border-[#e5e5e5] p-6 pc:p-9">
-          <h2 class="font-bold text-[#111]">
+          <h2 class="h2 font-bold text-[#111]">
             Order Summary
           </h2>
 
@@ -184,6 +227,18 @@
 </div>
 
 {%- javascript -%}
+(function(){
+  const Components = window.__Theme__?.Components;
+  if (!Components) return;
+
+  Components.register('cart', {
+    init(el) {
+      return {};
+    },
+    destroy(el, state) {
+    }
+  }, { lazy: true });
+})();
 {%- endjavascript -%}
 
 {%- stylesheet -%}

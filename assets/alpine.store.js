@@ -48,7 +48,7 @@ window.__Theme__.AlpineStores = {
         /** Default request headers for Cart Ajax API */
         _headers: {
             'Content-Type': 'application/json',
-            'Accept': 'application/javascript'
+            'Accept': 'application/json'
         },
 
         /**
@@ -118,33 +118,62 @@ window.__Theme__.AlpineStores = {
         },
 
         /**
-         * Change line quantity via /cart/change.js. On success, renders sections if returned and refetches cart.
-         * @param {number} line - 1-based line index.
-         * @param {number} quantity - New quantity.
-         * @param {string[]} [sections=[]] - Section IDs for Section Rendering API.
-         * @returns {Promise<Object>} Resolved with change response or rejects on failure.
+         * 修改购物车商品数量
+         * @param {Number|String} lineOrId - 传数字为 line 序号，传字符串为 item.key (推荐)
+         * @param {Number} quantity - 目标数量 (0 为删除)
+         * @param {Array} sections - 需要 SRA 局部刷新的 Section ID 数组
          */
-        change(line, quantity, sections = []) {
+        change(lineOrId, quantity, sections = []) {
             this.loading = true;
-            const body = { line: Number(line), quantity: Number(quantity) };
+            const bodyData = { quantity: Number(quantity) };
+            if (typeof lineOrId === 'string') {
+                bodyData.id = lineOrId;
+            } else {
+                bodyData.line = Number(lineOrId);
+            }
             if (Array.isArray(sections) && sections.length > 0) {
-                body.sections = sections.join(',');
+                bodyData.sections = sections.join(',');
             }
             return fetch('/cart/change.js', {
                 method: 'POST',
-                headers: this._headers,
+                headers: {
+                    ...this._headers,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
                 credentials: 'same-origin',
-                body: JSON.stringify(body)
+                body: JSON.stringify(bodyData)
             })
-                .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
-                .then(({ ok, data }) => {
-                    if (!ok) return Promise.reject(data);
-                    if (data.sections && typeof window.__Theme__?.SectionRefresher?.render === 'function') {
-                        window.__Theme__.SectionRefresher.render(data.sections);
-                    }
-                    return this.fetchCart().then(() => data);
+                .then(res => {
+                    if (!res.ok) throw res;
+                    return res.json();
                 })
-                .catch(this._handleError)
+                .then(parsedState => {
+                    if (parsedState.sections && Array.isArray(sections)) {
+                        sections.forEach(sectionId => {
+                            const targetElement = document.getElementById(`shopify-section-${sectionId}`);
+                            if (targetElement && parsedState.sections[sectionId]) {
+                                const html = new DOMParser().parseFromString(parsedState.sections[sectionId], 'text/html');
+                                const sourceElement = html.getElementById(`shopify-section-${sectionId}`);
+                                if (sourceElement) {
+                                    targetElement.innerHTML = sourceElement.innerHTML;
+                                }
+                            }
+                        });
+                    }
+                    this.items = Array.isArray(parsedState.items) ? parsedState.items : [];
+                    this.item_count = typeof parsedState.item_count === 'number' ? parsedState.item_count : 0;
+                    this.total_price = typeof parsedState.total_price === 'number' ? parsedState.total_price : 0;
+                    return parsedState;
+                })
+                .catch(err => {
+                    if (err && typeof err.json === 'function') {
+                        return err.json()
+                            .then(data => this._handleError({ ...data, status: err.status }))
+                            .catch(() => this._handleError({ status: err.status }));
+                    }
+                    return this._handleError(err);
+                })
                 .finally(() => {
                     this.loading = false;
                 });
@@ -163,7 +192,11 @@ window.__Theme__.AlpineStores = {
                 credentials: 'same-origin',
                 body: JSON.stringify(data)
             })
-            .then(res => res.json())
+            .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
+            .then(({ ok, data }) => {
+                if (!ok) return Promise.reject(data);
+                return data;
+            })
             .catch(this._handleError)
             .finally(() => {
                 this.loading = false;
@@ -176,10 +209,18 @@ window.__Theme__.AlpineStores = {
          * @returns {Promise<never>}
          */
         _handleError(err) {
+            let finalMsg = 'Something went wrong. Please try again.';
+
+            if (err?.description || err?.message) {
+                finalMsg = err.description || err.message;
+            } else if (err?.status) {
+                if (err.status === 429) finalMsg = 'Too many requests. Please slow down.';
+                if (err.status >= 500) finalMsg = 'Server error. Please try again later.';
+            }
+
             const toast = window.Alpine?.store('toast');
             if (toast) {
-                const msg = err?.description || err?.message || 'Something went wrong updating your cart.';
-                toast.show(msg, 'error');
+                toast.show(finalMsg, 'error');
             }
             return Promise.reject(err);
         }
