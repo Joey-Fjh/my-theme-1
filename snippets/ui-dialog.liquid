@@ -1,0 +1,95 @@
+{% comment %}
+  ui-dialog — Reusable dialog shell (modal or drawer) driven by Alpine store.
+  --------------------------------------------------
+  @param {string} id          - Required. Unique dialog identifier (must match open(id)).
+  @param {string} [type]     - 'modal' | 'drawer' (default: 'modal').
+  @param {string} [position] - For drawer only: 'left' | 'right' (default: 'right').
+  @param {string} [overlay_class] - Tailwind classes for overlay background (default: 'bg-black/50').
+  @param {string} [content]  - HTML content (use capture in parent and pass as content).
+
+  Example (modal):
+    <button @click="$store.dialog.open('confirm-modal')">Open</button>
+    {% capture dialog_content %}
+      <div class="p-6"><h2 id="dialog-title-confirm-modal">Confirm</h2><p>...</p></div>
+    {% endcapture %}
+    {% render 'ui-dialog', id: 'confirm-modal', content: dialog_content %}
+
+  Example (drawer, right):
+    <button @click="$store.dialog.open('cart-drawer')">Cart</button>
+    {% capture drawer_content %}...{% endcapture %}
+    {% render 'ui-dialog', id: 'cart-drawer', type: 'drawer', position: 'right', content: drawer_content %}
+{% endcomment %}
+
+{%- assign dialog_id = id -%}
+{%- assign dialog_type = type | default: 'modal' -%}
+{%- assign dialog_position = position | default: 'right' -%}
+{%- assign overlay_bg = overlay_class | default: 'bg-black/50' -%}
+
+<div
+  x-data="{}"
+  x-show="$store.dialog.active === '{{ dialog_id | escape }}'"
+  x-cloak
+  class="fixed inset-0 z-100"
+  aria-hidden="true"
+  @keydown.escape.window="$store.dialog.close()"
+>
+  {%- comment -%} Overlay: click to close {%- endcomment -%}
+  <div
+    class="fixed inset-0 z-100 {{ overlay_bg }}"
+    role="button"
+    tabindex="-1"
+    {% comment %} aria-label="{{ 'accessibility.close' | t | default: 'Close' }}" {% endcomment %}
+    aria-label="Close"
+    @click="$store.dialog.close()"
+    x-transition:enter="transition ease-out duration-200"
+    x-transition:enter-start="opacity-0"
+    x-transition:enter-end="opacity-100"
+    x-transition:leave="transition ease-in duration-150"
+    x-transition:leave-start="opacity-100"
+    x-transition:leave-end="opacity-0"
+  ></div>
+
+  {%- if dialog_type == 'drawer' -%}
+    {%- comment -%} Drawer: side panel (position via Liquid) {%- endcomment -%}
+    <div
+      class="fixed inset-y-0 z-101 h-full max-w-md w-full {% if dialog_position == 'left' %}left-0{% else %}right-0{% endif %}"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="dialog-title-{{ dialog_id | escape }}"
+      @click.stop
+    >
+      <div
+        class="h-full w-full bg-white shadow-xl overflow-auto"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="{% if dialog_position == 'left' %}-translate-x-full{% else %}translate-x-full{% endif %}"
+        x-transition:enter-end="translate-x-0"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="translate-x-0"
+        x-transition:leave-end="{% if dialog_position == 'left' %}-translate-x-full{% else %}translate-x-full{% endif %}"
+      >
+        {{ content }}
+      </div>
+    </div>
+  {%- else -%}
+    {%- comment -%} Modal: centered panel with scale + fade {%- endcomment -%}
+    <div
+      class="fixed inset-0 z-101 flex items-center justify-center p-4 pointer-events-none"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="dialog-title-{{ dialog_id | escape }}"
+    >
+      <div
+        class="pointer-events-auto w-full max-h-[90vh] overflow-auto bg-white shadow-xl rounded-lg"
+        @click.stop
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0 scale-95"
+        x-transition:enter-end="opacity-100 scale-100"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100 scale-100"
+        x-transition:leave-end="opacity-0 scale-95"
+      >
+        {{ content }}
+      </div>
+    </div>
+  {%- endif -%}
+</div>

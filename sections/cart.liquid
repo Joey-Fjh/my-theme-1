@@ -1,35 +1,284 @@
-{% comment %}
-  This section is used in the cart template to render /cart page with an
-  overview of the items in customer's cart.
-{% endcomment %}
+<div
+  data-section-id="{{ section.id }}"
+  class="cart-section full-width"
+  style="
+    --section-padding-top: {{ section.settings.padding_top }}px;
+    --section-padding-bottom: {{ section.settings.padding_bottom }}px;
+  "
+  x-data="{}"
+  :class="{ 'opacity-50 pointer-events-none': $store.cart.loading }"
+  data-component-kind="section"
+  data-component-type="cart"
+  data-component-id="{{ section.id }}"
+>
+  <div class="layout container-page bg-[#F3F3F3]">
+    <div class="p-6 grid grid-cols-1 pc:grid-cols-[1fr_auto] gap-10 pc:gap-12">
+      {%- comment -%} Left: Cart list (Liquid-rendered for SRA) {%- endcomment -%}
+      <div class="flex flex-col text-[#263D29] gap-9">
+        <h1 class="hxxl font-bold">
+          Cart
+        </h1>
 
-<h1>{{ 'cart.title' | t }}</h1>
+        <ul class="flex flex-col divide-y divide-[#e5e5e5]">
+          {%- for item in cart.items -%}
+            <li class="py-6 first:pt-0 flex flex-wrap items-center gap-4 pc:gap-6">
+              <div class="w-50 h-50 shrink-0 rounded overflow-hidden flex items-center justify-center">
+                {%- if item.image -%}
+                  {% render 'image',
+                    url: item.url,
+                    image: item.image,
+                    alt:item.image.alt,
+                    width: 120,
+                    height: 120
+                  %}
+                {%- else -%}
+                  <span class="text-[#9ca3af]">No image</span>
+                {%- endif -%}
+              </div>
 
-<form action="{{ routes.cart_url }}" method="post">
-  <table>
-    {% for item in cart.items %}
-      <tr>
-        <td>
-          {% render 'image', image: item.image, url: item.url %}
-        </td>
-        <td>
-          <p>{{ item.product.title }}</p>
-          {{ 'cart.remove' | t | link_to: item.url_to_remove }}
-        </td>
-        <td>
-          <input type="text" name="updates[]" value="{{ item.quantity }}">
-          <input type="submit" value="{{ 'cart.update' | t }}">
-        </td>
-      </tr>
-    {% endfor %}
-  </table>
+              <div class="flex-1 min-w-0 h-full flex flex-col">
+                <p class="h6 uppercase tracking-wide">
+                  {{ item.vendor | default: ' ' }}
+                </p>
+                <a href="{{ item.url }}" class="h3 font-bold hover:underline block">
+                  {{ item.product.title }}
+                </a>
+                <p class="mt-auto h6 font-medium">
+                  {{ item.final_line_price | money }}
+                </p>
+              </div>
 
-  <input type="submit" name="checkout" value="{{ 'cart.checkout' | t }}">
-</form>
+              <div class="flex gap-12 self-end items-center">
+                <a
+                  href="{{ item.url_to_remove }}"
+                  class="w-9 h-9 text-[#263D29] opacity-80 hover:opacity-100 transition-colors"
+                  aria-label="Remove {{ item.product.title }}"
+                  @click.prevent="$store.cart.change('{{ item.key }}', 0, ['{{ section.id }}'])"
+                >
+                  <span class="w-full h-full inline-block">
+                    {{ 'icon-trash.svg' | inline_asset_content }}
+                  </span>
+                </a>
+
+                <div class="flex items-center gap-6">
+                  <button
+                    type="button"
+                    aria-label="Decrease"
+                    class="w-9 h-9 flex items-center justify-center text-[#263D29] opacity-80 hover:opacity-100 transition-colors cursor-pointer"
+                    @click="
+                      if ({{ item.quantity }} <= 1) {
+                        $store.toast.show('Minimum quantity is 1. Use the remove button to delete item.', 'info');
+                        return;
+                      }
+                      $store.cart.change('{{ item.key }}', {{ item.quantity | minus: 1 }}, ['{{ section.id }}']);
+                    "
+                  >
+                    <span class="sr-only">−</span>
+                    <span class="w-full h-full inline-block">
+                      {{ 'icon-minus.svg' | inline_asset_content }}
+                    </span>
+                  </button>
+
+                  {% assign max_qty = null %}
+                  {% if item.variant.inventory_management != nil and item.variant.inventory_policy == 'deny' %}
+                    {% assign max_qty = item.variant.inventory_quantity %}
+                  {% endif %}
+                  
+                  <input
+                    type="number"
+                    min="1"
+                    {% if max_qty != null %}max="{{ max_qty }}"{% endif %}
+                    value="{{ item.quantity }}"
+                    aria-label="Quantity for {{ item.product.title }}"
+                    class="inline-block w-[4ch] border-b text-center font-medium text-[#263D29] bg-transparent appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    @change="
+                      const val = parseInt($event.target.value);
+                      if (val < 1 || isNaN(val)) {
+                        $event.target.value = {{ item.quantity }};
+                        $store.toast.show('Quantity must be at least 1', 'info');
+                        return;
+                      }
+                      {% if max_qty != null %}
+                      if (val > {{ max_qty }}) {
+                        $event.target.value = {{ item.quantity }};
+                        $store.toast.show('You can only add up to {{ max_qty }} of this item.', 'info');
+                        return;
+                      }
+                      {% endif %}
+                      $store.cart.change('{{ item.key }}', val, ['{{ section.id }}']);
+                    "
+                  >
+                  
+                  <button
+                    type="button"
+                    aria-label="Increase"
+                    class="w-9 h-9 flex items-center justify-center text-[#263D29] opacity-80 hover:opacity-100 transition-colors cursor-pointer"
+                    @click="
+                      {% if max_qty != null %}
+                      if ({{ item.quantity }} >= {{ max_qty }}) {
+                        $store.toast.show('Maximum stock reached.', 'info');
+                        return;
+                      }
+                      {% endif %}
+                      $store.cart.change('{{ item.key }}', {{ item.quantity | plus: 1 }}, ['{{ section.id }}']);
+                    "
+                  >
+                    <span class="sr-only">+</span>
+                    <span class="w-full h-full inline-block">
+                      {{ 'icon-plus.svg' | inline_asset_content }}
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </li>
+          {%- endfor -%}
+        </ul>
+
+        <div class="text-center">
+          {%- render 'link', text: 'Shop More', href: routes.root_url, variant: 'underline' -%}
+        </div>
+      </div>
+
+      {%- comment -%} Right: Order Summary card {%- endcomment -%}
+      <aside class="pc:sticky self-start">
+        <div class="bg-white rounded-lg shadow-md border border-[#e5e5e5] p-6 pc:p-9">
+          <h2 class="h2 font-bold text-[#111]">
+            Order Summary
+          </h2>
+
+          {%- comment -%} Accordion: Order Special Instruction + Estimate Shipping {%- endcomment -%}
+          {%- capture note_html -%}
+            <textarea
+              name="note"
+              class="w-full min-h-20 px-3 py-2 border border-[#d4d4d4] rounded bg-[#f5f5f5] text-[#111] placeholder:text-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#263D29] focus:border-transparent"
+              placeholder="Add a note to your order..."
+              @change="$store.cart.update({ note: $event.target.value })"
+            >{{ cart.note }}</textarea>
+          {%- endcapture -%}
+
+          {%- capture shipping_html -%}
+            <div class="space-y-3">
+              <div class="grid grid-cols-2 gap-2">
+                <input
+                  type="text"
+                  name="attributes[Country]"
+                  class="w-full px-3 py-2 border border-[#d4d4d4] rounded bg-[#f5f5f5] text-[#111] placeholder:text-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#263D29]"
+                  placeholder="Country"
+                  value="{{ cart.attributes.Country | default: 'China' }}"
+                  @change="$store.cart.update({ attributes: { Country: $event.target.value } })"
+                >
+                <input
+                  type="text"
+                  name="attributes[Province]"
+                  class="w-full px-3 py-2 border border-[#d4d4d4] rounded bg-[#f5f5f5] text-[#111] placeholder:text-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#263D29]"
+                  placeholder="Province"
+                  value="{{ cart.attributes.Province | default: 'Anhui' }}"
+                  @change="$store.cart.update({ attributes: { Province: $event.target.value } })"
+                >
+              </div>
+              <input
+                type="text"
+                class="w-full px-3 py-2 border border-[#d4d4d4] rounded bg-[#f5f5f5] text-[#111] placeholder:text-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#263D29]"
+                placeholder="Pincode"
+              >
+              <button
+                type="button"
+                class="cursor-pointer w-full py-2.5 px-4 border border-[#111] rounded text-[#111] font-medium hover:bg-[#f5f5f5] transition-colors"
+              >
+                Get Estimate
+              </button>
+            </div>
+          {%- endcapture -%}
+
+          {%- assign accordion_contents = note_html | append: '|' | append: shipping_html -%}
+
+          {% render 'accordion',
+            wrapper_class: 'flex flex-col gap-3',
+            initial_active: 1,
+            titles: 'Order Special Instruction|Estimate Shipping',
+            contents: accordion_contents,
+            icon_type: 'plus',
+            icon_size:'w-6 h-6'
+          %}
+
+          <div class="mt-6 pt-6 border-t border-[#e5e5e5]">
+            <div class="flex items-baseline justify-between gap-4">
+              <span class="font-bold text-[#111]">Estimate Total</span>
+              <span class="font-bold text-[#111]">{{ cart.total_price | money }}</span>
+            </div>
+            <p class="mt-2 text-[#9ca3af]">
+              Taxes, discounts and shipping calculated at checkout.
+            </p>
+          </div>
+
+          <form action="{{ routes.cart_url }}" method="post" class="mt-6">
+            <button
+              type="submit"
+              name="checkout"
+              class="cursor-pointer w-full py-4 px-6 rounded font-bold text-white bg-[#263D29] hover:opacity-90 transition-opacity"
+            >
+              Checkout <sup class="sup-badge">({{ cart.item_count }})</sup>
+            </button>
+          </form>
+        </div>
+      </aside>
+    </div>
+  </div>
+</div>
+
+{%- javascript -%}
+(function(){
+  const Components = window.__Theme__?.Components;
+  if (!Components) return;
+
+  Components.register('cart', {
+    init(el) {
+      return {};
+    },
+    destroy(el, state) {
+    }
+  }, { lazy: true });
+})();
+{%- endjavascript -%}
+
+{%- stylesheet -%}
+{%- endstylesheet -%}
 
 {% schema %}
 {
   "name": "t:general.cart",
-  "settings": []
+  "tag": "section",
+  "class": "section",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Padding"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Top",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Bottom",
+      "default": 0
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:general.cart"
+    }
+  ]
 }
 {% endschema %}
