@@ -41,19 +41,21 @@
  <div class="layout-special container-page">
   <div class="relative flex items-center justify-between">
     {%- comment -%} Filter trigger + hidden form + drawer {%- endcomment -%}
-    <form id="CollectionFiltersForm" class="hidden"></form>
+    <form id="CollectionFiltersForm" class="hidden" @change="onChange()"></form>
 
     <button
       type="button"
       @click="$store.dialog.open('collection-filters')"
-      class="absolute left-0 z-10 h2 shrink-0 self-start cursor-pointer"
+      class="absolute left-0 z-10 h2 shrink-0 self-start cursor-pointer flex items-center gap-3"
     >
-      Filter
+      <span class="inline-block w-10 h-10">{{ 'icon-filter.svg' | inline_asset_content }}</span>
+      <span>Filter</span>
     </button>
 
     {%- capture drawer_content -%}
-      {%- render 'filters-drawer', filter_source: collection.filters -%}
+      {%- render 'filters-drawer', filter_source: collection -%}
     {%- endcapture -%}
+    
     {%- render 'ui-dialog',
       id: 'collection-filters',
       type: 'drawer',
@@ -169,8 +171,7 @@
       -%}
     </div>
 
-    {% comment %} Sort by  {% endcomment %}
-    <div class="absolute right-0 z-10 h2 shrink-0 self-start">Sorted By</div>
+    {%- render 'sort-by-dropdown', results: collection, form_id: 'CollectionFiltersForm', class: 'absolute right-0 z-10 h2 shrink-0 self-start' -%}
   </div>
  </div>
 </div>

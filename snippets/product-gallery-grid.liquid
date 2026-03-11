@@ -1,0 +1,29 @@
+{% comment %}
+  Gallery layout: grid — CSS grid of all images.
+  Internal sub-snippet; always rendered inside product-gallery.liquid's x-data scope.
+
+  @param {array}   images       - Image objects
+  @param {boolean} zoom         - Enable click on images
+  @param {string}  aspect_ratio - Optional CSS aspect-ratio
+{% endcomment %}
+
+<div class="grid grid-cols-2 gap-2">
+  {%- for image in images -%}
+    {%- assign media_image = image.preview_image | default: image -%}
+    <div
+      class="overflow-hidden rounded-sm {% if forloop.first and images.size | modulo: 2 == 1 %}col-span-2{% endif %}"
+      style="{% if zoom %}cursor: zoom-in;{% endif %}{% if aspect_ratio %}aspect-ratio: {{ aspect_ratio }};{% endif %}"
+      {% if zoom %}@click="openZoom({{ forloop.index0 }})"{% endif %}
+    >
+      {%- render 'image',
+        image: media_image,
+        width: 800,
+        img_class: 'w-full h-full object-cover',
+        alt: media_image.alt,
+        sizes: '(min-width: 48rem) 25vw, 50vw',
+        widths: '300,400,600,800',
+        loading: 'lazy'
+      -%}
+    </div>
+  {%- endfor -%}
+</div>

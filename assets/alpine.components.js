@@ -79,6 +79,7 @@ class AlpineComponents {
     static COUNTDOWNTIMER = 'countdownTimer';
     static SECTIONPAGINATION = 'sectionPagination';
     static COLLECTIONFILTERS = 'collectionFilters';
+    static PRODUCTGALLERY = 'productGallery';
 
     static dropdown(){
         return {
@@ -533,6 +534,101 @@ class AlpineComponents {
                 if (page) params.set('page', page);
                 else params.delete('page');
                 this.loadUrl(this._buildUrl(params));
+            }
+        };
+    }
+
+    /**
+     * Product image gallery with multiple layout modes and optional lightbox.
+     *
+     * Layout modes (driven by Liquid, not JS):
+     *   thumbnails — thumb strip + single active main image
+     *   carousel   — Swiper slider with pagination dots
+     *   stacked    — all images laid out vertically
+     *   grid       — CSS grid of all images
+     *
+     * The component manages:
+     *   - activeIndex tracking (shared across thumb clicks, swiper, and lightbox)
+     *   - Swiper lifecycle for carousel mode
+     *   - Lightbox open/close with keyboard nav
+     *   - External variant-mapping via gallery:slide-to event
+     */
+    static productGallery() {
+        return {
+            ...AlpineComponentsFactory.useDisposable(),
+            activeIndex: 0,
+            imageCount: 0,
+            zoomOpen: false,
+            zoomIndex: 0,
+            _swiper: null,
+
+            init() {
+                this.imageCount = Number(this.$el.dataset.imageCount) || 0;
+                this.$nextTick(() => this._initSwiper());
+
+                this.on(window, 'gallery:slide-to', (e) => {
+                    if (e.detail?.id && e.detail.id !== this.$el.id) return;
+                    if (typeof e.detail?.index === 'number') this.setActive(e.detail.index);
+                });
+            },
+
+            setActive(index) {
+                if (this.imageCount === 0) return;
+                index = Math.max(0, Math.min(index, this.imageCount - 1));
+                this.activeIndex = index;
+                if (this._swiper) this._swiper.slideTo(index);
+            },
+
+            next() {
+                this.setActive((this.activeIndex + 1) % this.imageCount);
+            },
+
+            prev() {
+                this.setActive((this.activeIndex - 1 + this.imageCount) % this.imageCount);
+            },
+
+            openZoom(index) {
+                this.zoomIndex = typeof index === 'number' ? index : this.activeIndex;
+                this.zoomOpen = true;
+                document.body.style.overflow = 'hidden';
+            },
+
+            closeZoom() {
+                this.zoomOpen = false;
+                document.body.style.overflow = '';
+            },
+
+            zoomNext() {
+                this.zoomIndex = (this.zoomIndex + 1) % this.imageCount;
+            },
+
+            zoomPrev() {
+                this.zoomIndex = (this.zoomIndex - 1 + this.imageCount) % this.imageCount;
+            },
+
+            _initSwiper() {
+                if (typeof Swiper === 'undefined') return;
+
+                const mainEl = this.$el.querySelector('[data-gallery-swiper]');
+                if (!mainEl) return;
+
+                this._swiper = new Swiper(mainEl, {
+                    slidesPerView: 1,
+                    spaceBetween: 0,
+                    pagination: {
+                        el: mainEl.querySelector('.swiper-pagination'),
+                        clickable: true
+                    },
+                    on: {
+                        slideChange: (s) => { this.activeIndex = s.activeIndex; }
+                    }
+                });
+            },
+
+            destroy() {
+                if (this._swiper?.destroy) this._swiper.destroy(true, true);
+                if (this.zoomOpen) this.closeZoom();
+                this.dispose();
             }
         };
     }

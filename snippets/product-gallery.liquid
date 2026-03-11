@@ -1,0 +1,116 @@
+{% comment %}
+  Product image gallery — reusable across sections and pages.
+  Supports multiple layout modes and an optional lightbox overlay.
+
+  @param {array}   images          - Array of image objects (e.g. product.images, product.media | where: 'media_type', 'image')
+  @param {string}  layout          - 'thumbnails' | 'carousel' | 'stacked' | 'grid' (default: thumbnails)
+  @param {string}  thumb_position  - 'left' | 'bottom' (default: left, only for thumbnails layout)
+  @param {boolean} zoom            - Enable click-to-zoom lightbox (default: false)
+  @param {string}  aspect_ratio    - CSS aspect-ratio for main images (e.g. '1/1', '4/3'; default: natural)
+  @param {string}  class           - Optional CSS classes for the outermost wrapper
+  @param {string}  id              - Optional HTML id for event-targeting (variant mapping)
+{% endcomment %}
+
+{%- assign layout = layout | default: 'thumbnails' -%}
+{%- assign thumb_position = thumb_position | default: 'left' -%}
+{%- assign image_count = images | size -%}
+
+<div
+  x-data="productGallery"
+  data-image-count="{{ image_count }}"
+  {% if id %}id="{{ id }}"{% endif %}
+  {% if class %}class="{{ class }}"{% endif %}
+  @keydown.escape.window="zoomOpen && closeZoom()"
+  @keydown.right.window="zoomOpen && zoomNext()"
+  @keydown.left.window="zoomOpen && zoomPrev()"
+>
+  {%- liquid
+    case layout
+      when 'thumbnails'
+        render 'product-gallery-thumbnails', images: images, thumb_position: thumb_position, zoom: zoom, aspect_ratio: aspect_ratio
+      when 'carousel'
+        render 'product-gallery-carousel', images: images, zoom: zoom, aspect_ratio: aspect_ratio
+      when 'stacked'
+        render 'product-gallery-stacked', images: images, zoom: zoom, aspect_ratio: aspect_ratio
+      when 'grid'
+        render 'product-gallery-grid', images: images, zoom: zoom, aspect_ratio: aspect_ratio
+    endcase
+  -%}
+
+  {%- if zoom -%}
+    <div
+      x-show="zoomOpen"
+      x-cloak
+      x-transition:enter="transition ease-out duration-300"
+      x-transition:enter-start="opacity-0"
+      x-transition:enter-end="opacity-100"
+      x-transition:leave="transition ease-in duration-200"
+      x-transition:leave-start="opacity-100"
+      x-transition:leave-end="opacity-0"
+      class="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
+      @click.self="closeZoom()"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Image zoom"
+    >
+      <button
+        type="button"
+        @click="closeZoom()"
+        class="absolute top-4 right-4 z-10 flex items-center justify-center w-10 h-10 text-white/80 hover:text-white transition-colors cursor-pointer rotate-45"
+        aria-label="Close"
+      >
+        <span class="w-6 h-6 block">
+          {{- 'icon-plus.svg' | inline_asset_content -}}
+        </span>
+      </button>
+
+      {%- if image_count > 1 -%}
+        <button
+          type="button"
+          @click="zoomPrev()"
+          class="absolute left-4 z-10 flex items-center justify-center w-10 h-10 text-white/80 hover:text-white transition-colors cursor-pointer"
+          aria-label="Previous image"
+        >
+          <svg class="w-6 h-6 rotate-90" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>
+        </button>
+        <button
+          type="button"
+          @click="zoomNext()"
+          class="absolute right-4 z-10 flex items-center justify-center w-10 h-10 text-white/80 hover:text-white transition-colors cursor-pointer"
+          aria-label="Next image"
+        >
+          <svg class="w-6 h-6 -rotate-90" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>
+        </button>
+      {%- endif -%}
+
+      <div class="relative max-w-[90vw] max-h-[90vh]">
+        {%- for image in images -%}
+          {%- assign media_image = image.preview_image | default: image -%}
+          <div
+            x-show="zoomIndex === {{ forloop.index0 }}"
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0 scale-95"
+            x-transition:enter-end="opacity-100 scale-100"
+            class="flex items-center justify-center"
+          >
+            {%- render 'image',
+              image: media_image,
+              width: 2400,
+              img_class: 'max-w-[90vw] max-h-[90vh] object-contain',
+              alt: media_image.alt,
+              sizes: '90vw',
+              widths: '800,1200,1800,2400',
+              loading: 'lazy'
+            -%}
+          </div>
+        {%- endfor -%}
+      </div>
+
+      {%- if image_count > 1 -%}
+        <div class="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/60 text-sm" aria-live="polite">
+          <span x-text="zoomIndex + 1"></span> / {{ image_count }}
+        </div>
+      {%- endif -%}
+    </div>
+  {%- endif -%}
+</div>

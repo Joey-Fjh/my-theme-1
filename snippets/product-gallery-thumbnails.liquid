@@ -1,0 +1,81 @@
+{% comment %}
+  Gallery layout: thumbnails — thumb strip + single active main image.
+  Internal sub-snippet; always rendered inside product-gallery.liquid's x-data scope.
+
+  @param {array}   images          - Image objects
+  @param {string}  thumb_position  - 'left' | 'bottom'
+  @param {boolean} zoom            - Enable click on main image
+  @param {string}  aspect_ratio    - Optional CSS aspect-ratio
+{% endcomment %}
+
+{%- assign is_left = true -%}
+{%- if thumb_position == 'bottom' -%}
+  {%- assign is_left = false -%}
+{%- endif -%}
+
+<div class="{% if is_left %}flex gap-4{% else %}flex flex-col gap-3{% endif %}">
+  <div class="
+    {% if is_left %}
+      flex flex-col gap-2 shrink-0 w-20 overflow-y-auto max-h-150 order-first
+    {% else %}
+      flex gap-2 overflow-x-auto order-last
+    {% endif %}
+  " role="tablist" aria-label="Product thumbnails">
+    {%- for image in images -%}
+      {%- assign media_image = image.preview_image | default: image -%}
+      <button
+        type="button"
+        role="tab"
+        :aria-selected="activeIndex === {{ forloop.index0 }}"
+        @click="setActive({{ forloop.index0 }})"
+        class="
+          block overflow-hidden rounded-sm border-2 transition-all duration-200 cursor-pointer shrink-0
+          {% if is_left %}w-full aspect-square{% else %}w-20 h-20{% endif %}
+        "
+        :class="activeIndex === {{ forloop.index0 }}
+          ? 'border-[#C5E147] opacity-100'
+          : 'border-transparent opacity-50 hover:opacity-80'"
+      >
+        {%- render 'image',
+          image: media_image,
+          width: 200,
+          img_class: 'w-full h-full object-cover',
+          alt: media_image.alt,
+          sizes: '80px',
+          widths: '80,160,200',
+          loading: 'lazy'
+        -%}
+      </button>
+    {%- endfor -%}
+  </div>
+
+  <div
+    class="flex-1 relative overflow-hidden rounded-sm"
+    {% if aspect_ratio %}style="aspect-ratio: {{ aspect_ratio }}"{% endif %}
+    role="tabpanel"
+  >
+    {%- for image in images -%}
+      {%- assign media_image = image.preview_image | default: image -%}
+      <div
+        x-show="activeIndex === {{ forloop.index0 }}"
+        {% unless forloop.first %}x-cloak{% endunless %}
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        class="{% if forloop.first %}relative{% else %}absolute inset-0{% endif %}"
+        {% if zoom %}@click="openZoom({{ forloop.index0 }})"{% endif %}
+        {% if zoom %}style="cursor: zoom-in"{% endif %}
+      >
+        {%- render 'image',
+          image: media_image,
+          width: 1200,
+          img_class: 'w-full h-full object-cover',
+          alt: media_image.alt,
+          sizes: '(min-width: 48rem) 50vw, 100vw',
+          widths: '400,600,800,1200',
+          loading: 'lazy'
+        -%}
+      </div>
+    {%- endfor -%}
+  </div>
+</div>
