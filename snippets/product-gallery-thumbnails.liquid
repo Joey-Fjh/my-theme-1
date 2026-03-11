@@ -13,36 +13,65 @@
   {%- assign is_left = false -%}
 {%- endif -%}
 
-<div class="{% if is_left %}flex gap-4{% else %}flex flex-col gap-3{% endif %}">
-  <div class="
+<div 
+  class="
     {% if is_left %}
-      flex flex-col gap-2 shrink-0 w-20 overflow-y-auto max-h-150 order-first
+      flex gap-4
     {% else %}
-      flex gap-2 overflow-x-auto order-last
+      flex flex-col gap-3
     {% endif %}
-  " role="tablist" aria-label="Product thumbnails">
+  "
+>
+  <div class="
+    relative z-20
+    {% if is_left %}
+      grid gap-2 shrink-0 overflow-y-auto order-first [&::-webkit-scrollbar]:hidden
+    {% else %}
+      flex gap-2 overflow-x-auto order-last [&::-webkit-scrollbar]:hidden
+    {% endif %}
+  "
+  {% if is_left %}
+    style="grid-auto-rows:1fr"
+  {% endif %}
+  role="tablist" 
+  aria-label="Product thumbnails"
+>
     {%- for image in images -%}
       {%- assign media_image = image.preview_image | default: image -%}
+
+      {%- liquid
+        if is_left
+          assign thumb_sizes = '80px'
+          assign thumb_widths = '80,160,240'
+        else
+          assign thumb_sizes = '(min-width: 1024px) 150px, (min-width: 768px) 20vw, 25vw'
+          assign thumb_widths = '100,150,200,300,400'
+        endif
+      -%}
+
       <button
         type="button"
         role="tab"
         :aria-selected="activeIndex === {{ forloop.index0 }}"
         @click="setActive({{ forloop.index0 }})"
-        class="
-          block overflow-hidden rounded-sm border-2 transition-all duration-200 cursor-pointer shrink-0
-          {% if is_left %}w-full aspect-square{% else %}w-20 h-20{% endif %}
+        class="block overflow-hidden rounded-sm border-2 transition-all duration-200 cursor-pointer
+          {% if is_left %}
+            w-full min-h-0
+          {% else %}
+            w-20 h-20 shrink-0
+          {% endif %}
         "
         :class="activeIndex === {{ forloop.index0 }}
-          ? 'border-[#C5E147] opacity-100'
-          : 'border-transparent opacity-50 hover:opacity-80'"
+          ? 'border-[#C5E147]'
+          : 'border-transparent hover:border-gray-200'"
       >
         {%- render 'image',
           image: media_image,
-          width: 200,
+          width: 400,
           img_class: 'w-full h-full object-cover',
           alt: media_image.alt,
-          sizes: '80px',
-          widths: '80,160,200',
+          sizes: thumb_sizes,
+          widths: thumb_widths,
           loading: 'lazy'
         -%}
       </button>
@@ -50,21 +79,28 @@
   </div>
 
   <div
-    class="flex-1 relative overflow-hidden rounded-sm"
-    {% if aspect_ratio %}style="aspect-ratio: {{ aspect_ratio }}"{% endif %}
+    class="flex-1 overflow-hidden rounded-sm grid grid-rows-1 grid-cols-1 bg-[#F3F3F3] 
+    {% unless aspect_ratio %}
+      aspect-square
+    {% endunless %}"
+    {% if aspect_ratio %}
+      style="aspect-ratio: {{ aspect_ratio }}
+    "{% endif %}
     role="tabpanel"
   >
     {%- for image in images -%}
       {%- assign media_image = image.preview_image | default: image -%}
+
       <div
-        x-show="activeIndex === {{ forloop.index0 }}"
-        {% unless forloop.first %}x-cloak{% endunless %}
-        x-transition:enter="transition ease-out duration-300"
-        x-transition:enter-start="opacity-0"
-        x-transition:enter-end="opacity-100"
-        class="{% if forloop.first %}relative{% else %}absolute inset-0{% endif %}"
-        {% if zoom %}@click="openZoom({{ forloop.index0 }})"{% endif %}
-        {% if zoom %}style="cursor: zoom-in"{% endif %}
+        class="col-start-1 row-start-1 transition-opacity duration-300 ease-out w-full h-full min-h-0"
+        :class="activeIndex === {{ forloop.index0 }} 
+          ? 'opacity-100 z-10' 
+          : 'opacity-0 z-0 pointer-events-none'
+        "
+        {% if zoom %}
+          @click="openZoom({{ forloop.index0 }})"
+          style="cursor: zoom-in"
+        {% endif %}
       >
         {%- render 'image',
           image: media_image,
