@@ -4,26 +4,26 @@
 
   @param {array}   images       - Image objects
   @param {boolean} zoom         - Enable click on images
-  @param {string}  aspect_ratio - Optional CSS aspect-ratio
+  @param {string}  aspect_ratio - Optional CSS aspect-ratio (fallback when first image has no ratio)
 {% endcomment %}
 
-<div class="grid grid-cols-2 gap-2">
+{%- assign first_img = images.first -%}
+{%- if first_img.width != blank and first_img.height != blank -%}
+  {%- assign gallery_aspect = first_img.width | append: '/' | append: first_img.height -%}
+{%- else -%}
+  {%- assign gallery_aspect = images.first.aspect_ratio | default: aspect_ratio | default: '3/4' -%}
+{%- endif -%}
+
+<div class="grid grid-cols-2 gap-2 min-w-0 w-full">
   {%- for image in images -%}
     {%- assign media_image = image.preview_image | default: image -%}
     <div
-      class="overflow-hidden rounded-sm 
+      class="overflow-hidden rounded-sm min-w-0
         {% if forloop.first and images.size | modulo: 2 == 1 %}
           col-span-2
         {% endif %}
       "
-      style="
-        {% if zoom %}
-          cursor: zoom-in;
-        {% endif %}
-        {% if aspect_ratio %}
-          aspect-ratio: {{ aspect_ratio }};
-        {% endif %}
-      "
+      style="aspect-ratio: {{ gallery_aspect }}; {% if zoom %}cursor: zoom-in;{% endif %}"
       {% if zoom %}
         @click="openZoom({{ forloop.index0 }})"
       {% endif %}

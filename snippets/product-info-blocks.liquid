@@ -1,0 +1,115 @@
+{% doc %}
+  Renders product info blocks shared between featured-product (home) and product (PDP).
+
+  @param {product} product - Product object (from section.settings.product or product)
+  @param {section} section - Section object (for blocks and id)
+  @param {string} [context] - Rendering context, e.g. 'main' (PDP) or 'featured' (home)
+  @param {string} [container_class] - Optional extra classes for the root container (merged with defaults)
+{% enddoc %}
+
+{%- assign product = product | default: section.settings.product -%}
+{%- assign context = context | default: 'main' -%}
+{%- assign container_class = container_class | default: '' -%}
+
+<div
+  class="product-info {{ container_class }}"
+  id="ProductInfo-{{ section.id }}"
+>
+  {%- for block in section.blocks -%}
+    {%- case block.type -%}
+
+      {%- when '@app' -%}
+        <div {{ block.shopify_attributes }}>
+          {%- render block -%}
+        </div>
+
+      {%- when 'title' -%}
+        <div {{ block.shopify_attributes }}>
+          {%- if product != blank -%}
+            {%- if context == 'main' -%}
+              <h1 class="h1 font-bold text-white tracking-tight">
+                {{ product.title }}
+              </h1>
+            {%- else -%}
+              <h2 class="h2 font-bold text-white tracking-tight">
+                {{ product.title }}
+              </h2>
+            {%- endif -%}
+          {%- else -%}
+            <h2 class="h2 font-bold text-white tracking-tight">
+              Example Product Title
+            </h2>
+          {%- endif -%}
+        </div>
+
+      {%- when 'price' -%}
+        <div {{ block.shopify_attributes }}>
+          {%- if product != blank -%}
+            {%- assign current_variant = product.selected_or_first_available_variant -%}
+            <div class="flex items-center gap-3">
+              <span class="h4 font-medium text-white">
+                {{ current_variant.price | money }}
+              </span>
+              {%- if current_variant.compare_at_price > current_variant.price -%}
+                <s class="text-white/60 h6">
+                  {{ current_variant.compare_at_price | money }}
+                </s>
+              {%- endif -%}
+            </div>
+          {%- else -%}
+            <p class="h4 font-medium text-white">$99.00</p>
+          {%- endif -%}
+        </div>
+
+      {%- when 'description' -%}
+        <div {{ block.shopify_attributes }}>
+          {%- if product != blank and product.description != blank -%}
+            <div class="text-white/80 h6 leading-relaxed max-w-none">
+              {%- if context == 'featured' -%}
+                {{ product.description | strip_html | truncate: 150 }}
+              {%- else -%}
+                {{ product.description }}
+              {%- endif -%}
+            </div>
+          {%- else -%}
+            <div class="text-white/80 h6 leading-relaxed max-w-none">
+              Discover our innovative skincare serum pack, infused with advanced AI insights to tailor your beauty routine. Each serum is designed to meet your unique skin needs, ensuring a personalized experience that enhances your natural glow.
+            </div>
+          {%- endif -%}
+        </div>
+
+      {%- when 'variant_picker' -%}
+        <div
+          class="variant-picker-placeholder text-white/70 h6 py-4 border border-dashed border-white/20 rounded-sm px-4"
+          {{ block.shopify_attributes }}
+        >
+          Variant & Size Pickers (To be implemented)
+        </div>
+
+      {%- when 'buy_buttons' -%}
+        <div class="buy-buttons-block w-full mt-auto pt-6" {{ block.shopify_attributes }}>
+          <button
+            type="button"
+            class="w-full py-4 px-6 rounded-sm font-bold text-[#263D29] bg-[#C5E147] hover:opacity-90 transition-opacity cursor-pointer"
+            aria-label="Add to cart"
+          >
+            Add to cart
+          </button>
+        </div>
+
+      {%- when 'inventory_status' -%}
+        <div
+          class="inventory-status-placeholder text-white/70 h6 py-3 border border-dashed border-white/20 rounded-sm px-4"
+          {{ block.shopify_attributes }}
+        >
+          Inventory Status: In Stock
+        </div>
+
+      {%- else -%}
+        <div {{ block.shopify_attributes }}>
+          {%- render block -%}
+        </div>
+
+    {%- endcase -%}
+  {%- endfor -%}
+</div>
