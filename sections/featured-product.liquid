@@ -10,8 +10,8 @@
     data-component-id="{{ section.id }}"
 >
     <div class="layout container-page">
-        <div class="grid grid-cols-1 pc:grid-cols-2 gap-8 pc:gap-12 items-start w-full min-w-0">
-            <div class="min-w-0">
+        <div class="grid grid-cols-1 pc:grid-cols-2 gap-8 pc:gap-12 items-start w-full h-full min-w-0">
+            <div class="min-w-0 h-full">
                 {%- render 'product-gallery', 
                     images: section.settings.product.images,
                     layout: 'thumbnails',
@@ -29,28 +29,6 @@
         </div>
     </div>
 </div>
-
-{%- javascript -%}
-    (function(){
-        const Components = window.__Theme__?.Components;
-        if (!Components || typeof gsap === 'undefined') return;
-
-        Components.register(
-            'featured-product',
-            {
-                init(el){
-                },
-
-                destroy(el, state){
-                }
-            },
-            { lazy: true }
-        );
-    })();
-{%- endjavascript -%}
-
-{%- stylesheet -%}
-{%- endstylesheet -%}
 
 {% schema %}
   {
@@ -110,12 +88,49 @@
       {
         "type": "variant_picker",
         "name": "Variant picker",
+        "limit": 1,
+        "settings": [
+          {
+            "type": "select",
+            "id": "picker_type",
+            "label": "Style",
+            "options": [
+              { "value": "dropdown", "label": "Dropdown" },
+              { "value": "button", "label": "Pills" }
+            ],
+            "default": "button"
+          },
+          {
+            "type": "select",
+            "id": "swatch_shape",
+            "label": "Swatch shape",
+            "options": [
+              { "value": "circle", "label": "Circle" },
+              { "value": "square", "label": "Square" },
+              { "value": "none", "label": "None" }
+            ],
+            "default": "circle"
+          }
+        ]
+      },
+      {
+        "type": "quantity_selector",
+        "name": "Quantity selector",
         "limit": 1
       },
       {
         "type": "buy_buttons",
         "name": "Buy buttons",
-        "limit": 1
+        "limit": 1,
+        "settings": [
+          {
+            "type": "checkbox",
+            "id": "show_dynamic_checkout",
+            "label": "Show dynamic checkout buttons",
+            "info": "Using the payment methods available on your store, customers see their preferred option, like PayPal or Apple Pay.",
+            "default": true
+          }
+        ]
       }
     ],
     "presets": [
@@ -127,6 +142,7 @@
           { "type": "price" },
           { "type": "description" },
           { "type": "variant_picker" },
+          { "type": "quantity_selector" },
           { "type": "buy_buttons" }
         ]
       }

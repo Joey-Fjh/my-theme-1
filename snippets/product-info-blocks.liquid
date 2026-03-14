@@ -5,11 +5,13 @@
   @param {section} section - Section object (for blocks and id)
   @param {string} [context] - Rendering context, e.g. 'main' (PDP) or 'featured' (home)
   @param {string} [container_class] - Optional extra classes for the root container (merged with defaults)
+  @param {string} [product_form_id] - Shared form ID for variant picker, quantity, and buy buttons
 {% enddoc %}
 
 {%- assign product = product | default: section.settings.product -%}
 {%- assign context = context | default: 'main' -%}
 {%- assign container_class = container_class | default: '' -%}
+{%- assign product_form_id = product_form_id | default: 'product-form-' | append: section.id -%}
 
 <div
   class="product-info {{ container_class }}"
@@ -46,15 +48,27 @@
         <div {{ block.shopify_attributes }}>
           {%- if product != blank -%}
             {%- assign current_variant = product.selected_or_first_available_variant -%}
-            <div class="flex items-center gap-3">
-              <span class="h4 font-medium text-white">
-                {{ current_variant.price | money }}
+            <div
+              class="flex items-center gap-3"
+              x-data="ProductPrice({
+                sectionId: '{{ section.id }}',
+                price: {{ current_variant.price | default: 0 }},
+                comparePrice: {{ current_variant.compare_at_price | default: 0 }},
+                currency: '{{ shop.currency }}'
+              })"
+            >
+              <span class="h4 font-medium text-white" x-text="formattedPrice">
+                {{- current_variant.price | money -}}
               </span>
-              {%- if current_variant.compare_at_price > current_variant.price -%}
-                <s class="text-white/60 h6">
-                  {{ current_variant.compare_at_price | money }}
-                </s>
-              {%- endif -%}
+              <s
+                class="text-white/60 h6"
+                x-show="hasComparePrice"
+                x-text="formattedComparePrice"
+              >
+                {%- if current_variant.compare_at_price > current_variant.price -%}
+                  {{- current_variant.compare_at_price | money -}}
+                {%- endif -%}
+              </s>
             </div>
           {%- else -%}
             <p class="h4 font-medium text-white">$99.00</p>
@@ -79,22 +93,30 @@
         </div>
 
       {%- when 'variant_picker' -%}
-        <div
-          class="variant-picker-placeholder text-white/70 h6 py-4 border border-dashed border-white/20 rounded-sm px-4"
-          {{ block.shopify_attributes }}
-        >
-          Variant & Size Pickers (To be implemented)
+        {%- render 'product-variant-picker',
+          product: product,
+          block: block,
+          product_form_id: product_form_id
+        -%}
+
+      {%- when 'quantity_selector' -%}
+        <div {{ block.shopify_attributes }}>
+          {%- render 'quantity-selector',
+            value: 1,
+            min: 1,
+            product_form_id: product_form_id,
+            section_id: section.id
+          -%}
         </div>
 
       {%- when 'buy_buttons' -%}
-        <div class="buy-buttons-block w-full mt-auto pt-6" {{ block.shopify_attributes }}>
-          <button
-            type="button"
-            class="w-full py-4 px-6 rounded-sm font-bold text-[#263D29] bg-[#C5E147] hover:opacity-90 transition-opacity cursor-pointer"
-            aria-label="Add to cart"
-          >
-            Add to cart
-          </button>
+        <div class="buy-buttons-block w-full mt-auto pt-6">
+          {%- render 'buy-buttons',
+            product: product,
+            block: block,
+            product_form_id: product_form_id,
+            section_id: section.id
+          -%}
         </div>
 
       {%- when 'inventory_status' -%}

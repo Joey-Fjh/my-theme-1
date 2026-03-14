@@ -80,6 +80,10 @@ class AlpineComponents {
     static SECTIONPAGINATION = 'sectionPagination';
     static COLLECTIONFILTERS = 'collectionFilters';
     static PRODUCTGALLERY = 'productGallery';
+    static PRODUCTPRICE = 'ProductPrice';
+    static VARIANTPICKER = 'VariantPicker';
+    static QUANTITYSELECTOR = 'QuantitySelector';
+    static BUYBUTTONS = 'BuyButtons';
 
     static dropdown(){
         return {
@@ -534,6 +538,339 @@ class AlpineComponents {
                 if (page) params.set('page', page);
                 else params.delete('page');
                 this.loadUrl(this._buildUrl(params));
+            }
+        };
+    }
+
+    /**
+     * Reactive product price display — listens for variant:change and updates
+     * the visible price / compare-at-price using Intl.NumberFormat.
+     *
+     * @param {Object}  opts
+     * @param {string}  opts.sectionId
+     * @param {number}  [opts.price=0]          - Initial price in minor units (cents)
+     * @param {number}  [opts.comparePrice=0]   - Initial compare-at price in minor units
+     * @param {string}  [opts.currency='USD']   - ISO 4217 currency code
+     */
+    static ProductPrice({ sectionId, price = 0, comparePrice = 0, currency = 'USD' } = {}) {
+        const fmt = new Intl.NumberFormat(undefined, { style: 'currency', currency });
+
+        return {
+            ...AlpineComponentsFactory.useDisposable(),
+            price,
+            comparePrice,
+
+            get formattedPrice() { return fmt.format(this.price / 100); },
+            get formattedComparePrice() { return fmt.format(this.comparePrice / 100); },
+            get hasComparePrice() { return this.comparePrice > this.price; },
+
+            init() {
+                this.on(window, 'variant:change', (e) => {
+                    if (e.detail?.sectionId !== sectionId) return;
+                    const v = e.detail.variant;
+                    this.price = v?.price || 0;
+                    this.comparePrice = v?.compare_at_price || 0;
+                });
+            },
+
+            destroy() {
+                this.dispose();
+            }
+        };
+    }
+
+    /**
+     * Product variant picker — reads variants JSON, tracks selected options,
+     * resolves the matching variant, and dispatches update events for price /
+     * gallery / buy-button blocks.
+     *
+     * @param {Object} opts
+     * @param {string} opts.sectionId
+     * @param {number} opts.productId
+     * @param {string} opts.productFormId
+     */
+    static VariantPicker({ sectionId, productId, productFormId } = {}) {
+        return {
+            ...AlpineComponentsFactory.useDisposable(),
+            sectionId,
+            productId,
+            productFormId,
+            variants: [],
+            selectedOptions: {},
+            currentVariant: null,
+            currentVariantId: null,
+
+            init() {
+                const jsonEl = document.getElementById(`ProductVariants-${this.sectionId}`);
+                if (jsonEl) {
+                    try { this.variants = JSON.parse(jsonEl.textContent); } catch (_) { /* noop */ }
+                }
+
+                this._buildOptionNames();
+                this._setInitialSelection();
+                this._resolveVariant();
+
+                this.$nextTick(() => this._dispatchChange());
+
+                this.on(window, 'variant-picker:set', (e) => {
+                    if (e.detail?.sectionId !== this.sectionId) return;
+                    if (e.detail.options) {
+                        Object.assign(this.selectedOptions, e.detail.options);
+                        this._resolveVariant();
+                        this._dispatchChange();
+                    }
+                });
+            },
+
+            _optionNames: [],
+
+            _buildOptionNames() {
+                this._optionNames = [];
+                const children = this.$el.children;
+                for (let i = 0; i < children.length; i++) {
+                    const child = children[i];
+                    const legend = child.querySelector('legend');
+                    const label = child.querySelector('label');
+                    const textEl = legend || label;
+                    if (!textEl) continue;
+                    this._optionNames.push(textEl.textContent.split(':')[0].trim());
+                }
+            },
+
+            _setInitialSelection() {
+                const first = this.variants.find(v => v.available) || this.variants[0];
+                if (!first) return;
+                first.options.forEach((val, i) => {
+                    const name = this._optionNameByPosition(i + 1);
+                    if (name) this.selectedOptions[name] = val;
+                });
+                this.currentVariant = first;
+                this.currentVariantId = first.id;
+            },
+
+            _optionNameByPosition(pos) {
+                return this._optionNames[pos - 1] || null;
+            },
+
+            onVariantChange() {
+                this._resolveVariant();
+                this._dispatchChange();
+            },
+
+            _resolveVariant() {
+                const match = this.variants.find(v =>
+                    v.options.every((val, i) => {
+                        const name = this._optionNameByPosition(i + 1);
+                        return name && this.selectedOptions[name] === val;
+                    })
+                );
+
+                this.currentVariant = match || null;
+                this.currentVariantId = match?.id || null;
+            },
+
+            _dispatchChange() {
+                const variant = this.currentVariant;
+
+                window.dispatchEvent(new CustomEvent('variant:change', {
+                    detail: {
+                        sectionId: this.sectionId,
+                        productId: this.productId,
+                        variant
+                    }
+                }));
+
+                if (variant?.featured_image?.position) {
+                    window.dispatchEvent(new CustomEvent('gallery:slide-to', {
+                        detail: { index: variant.featured_image.position - 1 }
+                    }));
+                }
+
+                this._updateUrl(variant);
+            },
+
+            _updateUrl(variant) {
+                if (!variant) return;
+                const url = new URL(window.location);
+                url.searchParams.set('variant', variant.id);
+                window.history.replaceState({}, '', url);
+            },
+
+            isValueAvailable(optionName, value) {
+                const test = { ...this.selectedOptions, [optionName]: value };
+                return this.variants.some(v => {
+                    if (!v.available) return false;
+                    return v.options.every((val, i) => {
+                        const name = this._optionNameByPosition(i + 1);
+                        return !name || !(name in test) || test[name] === val;
+                    });
+                });
+            },
+
+            destroy() {
+                this.dispose();
+            }
+        };
+    }
+
+    /**
+     * Reusable quantity selector with boundary clamping and toast feedback.
+     * Dispatches 'quantity:change' (bubbles) so parent contexts (cart, product)
+     * can react without the component knowing the business layer.
+     * When sectionId is provided, auto-updates max from variant inventory via variant:change.
+     *
+     * @param {Object}      opts
+     * @param {number}      [opts.value=1]
+     * @param {number}      [opts.min=1]
+     * @param {number|null} [opts.max=null]    - null = unlimited
+     * @param {number}      [opts.step=1]
+     * @param {string|null} [opts.sectionId=null] - when set, listens for variant:change to sync max with inventory
+     */
+    static QuantitySelector({ value = 1, min = 1, max = null, step = 1, sectionId = null } = {}) {
+        return {
+            ...(sectionId ? AlpineComponentsFactory.useDisposable() : {}),
+            qty: value,
+            min,
+            max,
+            step,
+
+            get canDecrement() { return this.qty > this.min; },
+            get canIncrement() { return this.max === null || this.qty < this.max; },
+
+            init() {
+                if (!sectionId) return;
+                this.on(window, 'variant:change', (e) => {
+                    if (e.detail?.sectionId !== sectionId) return;
+                    const variant = e.detail.variant;
+                    if (!variant) return;
+                    if (variant.inventory_policy === 'continue' || variant.inventory_quantity == null) {
+                        this.max = null;
+                    } else {
+                        this.max = Math.max(this.min, variant.inventory_quantity);
+                    }
+                    if (this.max !== null && this.qty > this.max) {
+                        this.qty = this.max;
+                        this._notify();
+                    }
+                });
+            },
+
+            increment() {
+                if (!this.canIncrement) {
+                    this._toast(`Maximum quantity is ${this.max}.`);
+                    return;
+                }
+                this.qty = this.max !== null
+                    ? Math.min(this.max, this.qty + this.step)
+                    : this.qty + this.step;
+                this._notify();
+            },
+
+            decrement() {
+                if (!this.canDecrement) {
+                    this._toast(`Minimum quantity is ${this.min}.`);
+                    return;
+                }
+                this.qty = Math.max(this.min, this.qty - this.step);
+                this._notify();
+            },
+
+            onInput() {
+                const raw = parseInt(this.qty);
+                if (isNaN(raw) || raw < this.min) {
+                    this._toast(`Quantity must be at least ${this.min}.`);
+                    this.qty = this.min;
+                    this._notify();
+                    return;
+                }
+                if (this.max !== null && raw > this.max) {
+                    this._toast(`You can only add up to ${this.max} of this item.`);
+                    this.qty = this.max;
+                    this._notify();
+                    return;
+                }
+                this.qty = raw;
+                this._notify();
+            },
+
+            _notify() {
+                this.$dispatch('quantity:change', { value: this.qty });
+            },
+
+            _toast(msg) {
+                window.Alpine?.store('toast')?.show?.(msg, 'info');
+            },
+
+            destroy() {
+                if (sectionId) this.dispose();
+            }
+        };
+    }
+
+    /**
+     * Product buy-buttons — syncs with VariantPicker via variant:change,
+     * handles AJAX add-to-cart through $store.cart, and shows toast feedback.
+     *
+     * @param {Object}      opts
+     * @param {string}      opts.sectionId
+     * @param {string}      opts.productFormId
+     * @param {boolean}     [opts.available=true]
+     * @param {number|null} [opts.variantId=null]
+     */
+    static BuyButtons({ sectionId, productFormId, available = true, variantId = null } = {}) {
+        return {
+            ...AlpineComponentsFactory.useDisposable(),
+            sectionId,
+            productFormId,
+            available,
+            variantId,
+            isLoading: false,
+
+            get buttonText() {
+                if (!this.variantId) return 'Unavailable';
+                if (!this.available) return 'Sold out';
+                return 'Add to cart';
+            },
+
+            init() {
+                this.on(window, 'variant:change', (e) => {
+                    if (e.detail?.sectionId !== this.sectionId) return;
+                    const variant = e.detail.variant;
+                    this.variantId = variant?.id || null;
+                    this.available = variant?.available || false;
+                });
+            },
+
+            _getQuantity() {
+                const form = document.getElementById(this.productFormId);
+                const qtyInput = form?.querySelector('input[name="quantity"]')
+                    || document.querySelector(`input[name="quantity"][form="${this.productFormId}"]`)
+                    || this.$el.closest('.product-info')?.querySelector('input[name="quantity"]');
+                return qtyInput ? (parseInt(qtyInput.value) || 1) : 1;
+            },
+
+            addToCart() {
+                if (!this.available || !this.variantId || this.isLoading) return;
+
+                this.isLoading = true;
+                const cart = window.Alpine?.store('cart');
+                if (!cart) { this.isLoading = false; return; }
+
+                cart.add([{ id: this.variantId, quantity: this._getQuantity() }], [this.sectionId])
+                    .then(() => {
+                        window.Alpine?.store('toast')?.show?.('Added to cart!', 'success');
+                    })
+                    .catch((err) => {
+                        const msg = err?.message || 'Could not add to cart. Please try again.';
+                        window.Alpine?.store('toast')?.show?.(msg, 'error');
+                    })
+                    .finally(() => {
+                        this.isLoading = false;
+                    });
+            },
+
+            destroy() {
+                this.dispose();
             }
         };
     }
