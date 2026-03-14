@@ -1,45 +1,391 @@
-{% comment %}
-  This section is used in the collection template to render collection page
-  listing all products within a collection.
-{% endcomment %}
-
-<h1>{{ collection.title }}</h1>
-
-<div class="collection-products">
-  {% paginate collection.products by 20 %}
-    {% for product in collection.products %}
-      <div class="collection-product">
-        {% if product.featured_image %}
-          {% render 'image',
-            class: 'collection-product__image',
-            image: product.featured_image,
-            url: product.url,
-            width: 400,
-            height: 400,
-            crop: 'center'
-          %}
-        {% endif %}
-        <div class="collection-product__content">
-          <p>{{ product.title | escape | link_to: product.url }}</p>
-          <p>{{ product.price | money }}</p>
-        </div>
+<div
+  data-section-id="{{ section.id }}"
+  class="collection-section full-width relative bg-[#F3F3F3] text-[#263D29]"
+  style="
+    --section-padding-top: {{ section.settings.padding_top }}px;
+    --section-padding-bottom: {{ section.settings.padding_bottom }}px;
+  "
+  x-data="collectionFilters('{{ section.id }}', ['[role=&quot;tabpanel&quot;]','.sup-badge'])"
+  data-component-kind="section"
+  data-component-type="collection"
+  data-component-id="{{ section.id }}"
+>
+ <div class="layout pb-0 container-page">
+  {%- comment -%} Hero {%- endcomment -%}
+  <div class="relative py-20 pc:py-40">
+    <div class="flex items-start justify-between">
+      <div class="opacity-0 -translate-x-7.5" data-gsap-hero>
+        <h1 class="hxxxl font-bold leading-none mb-10">
+          {{ section.settings.header | default: 'Products' }}
+        </h1>
+        <p class="opacity-80 leading-relaxed max-w-xl h5">
+          {{ section.settings.description | default: 'Tailored experiences powered by AI intelligence. Discover insights that adapt to your needs.' }}
+        </p>
       </div>
-    {% endfor %}
 
-    {{ paginate | default_pagination }}
-  {% endpaginate %}
+      <div class="opacity-0 scale-50" data-gsap-badge>
+        {%- render 'rotating-badge',
+          classes: 'relative justify-self-center',
+          badge_class: 'text-[#000000]',
+          center_class: 'text-[#1B2608]',
+          unique_id: section.id,
+          size: 100,
+          badge_text: section.settings.rotate_badge_text,
+          center_text: section.settings.rotate_badge_percent
+        -%}
+      </div>
+    </div>
+  </div>
+ </div>
+
+ <div class="layout-special container-page">
+  <div class="relative flex items-center justify-between">
+    {%- comment -%} Filter trigger + hidden form + drawer {%- endcomment -%}
+    <form id="CollectionFiltersForm" class="hidden" @change="onChange()"></form>
+
+    <button
+      type="button"
+      @click="$store.dialog.open('collection-filters')"
+      class="absolute left-0 z-10 h2 shrink-0 self-start cursor-pointer flex items-center gap-3"
+    >
+      <span class="inline-block w-10 h-10">{{ 'icon-filter.svg' | inline_asset_content }}</span>
+      <span>Filter</span>
+    </button>
+
+    {%- capture drawer_content -%}
+      {%- render 'filters-drawer', filter_source: collection -%}
+    {%- endcapture -%}
+    
+    {%- render 'ui-dialog',
+      id: 'collection-filters',
+      type: 'drawer',
+      position: 'left',
+      content: drawer_content
+    -%}
+
+    {% comment %} Tab Control {% endcomment %}
+    <div class="min-w-0 flex-1">
+      {%- liquid
+        assign active_tab_index = 0
+        assign current_tag_handle = current_tags | first | handleize
+        if current_tags != blank
+          for tag in collection.all_tags
+            assign tag_handle = tag | handleize
+            if current_tag_handle == tag_handle
+              assign active_tab_index = forloop.index
+              break
+            endif
+          endfor
+        endif
+      -%}
+
+      {% capture tab_header %}
+        <span class="hidden" x-init="$nextTick(() => { setActive({{ active_tab_index }}) })"></span>
+
+        <a
+          href="{{ collection.url }}"
+          role="tab"
+          x-data="{ index: null }"
+          x-init="index = registerTab($el);"
+          :id="`tab-${index}`"
+          aria-controls="collection-panel"
+          @click.prevent="setActive(index); /* loadUrl($el.href) 后续再加 */"
+          :tabindex="isActive(index) ? 0 : -1"
+          :aria-selected="isActive(index)"
+          :class="isActive(index) ? 'opacity-100 border-b-2 border-[#263D29]' : 'opacity-50 hover:opacity-100 border-b-2 border-transparent'"
+          class="cursor-pointer h2 transition-all duration-300 focus:outline-none flex flex-nowrap items-center gap-1 whitespace-nowrap"
+        >
+          All <sup class="text-[10px] leading-none">({{ collection.all_products_count }})</sup>
+        </a>
+
+        {%- for tag in collection.all_tags -%}
+          <a
+            href="{{ collection.url }}/{{ tag | handleize }}"
+            role="tab"
+            x-data="{ index: null }"
+            x-init="index = registerTab($el);"
+            :id="`tab-${index}`"
+            aria-controls="collection-panel"
+            @click.prevent="setActive(index); /* loadUrl($el.href) 后续再加 */"
+            :tabindex="isActive(index) ? 0 : -1"
+            :aria-selected="isActive(index)"
+            :class="isActive(index) ? 'opacity-100 border-b-2 border-[#263D29]' : 'opacity-50 hover:opacity-100 border-b-2 border-transparent'"
+            class="cursor-pointer h2 transition-all duration-300 focus:outline-none flex flex-nowrap items-center gap-1 whitespace-nowrap"
+          >
+            {{ tag }}
+          </a>
+        {%- endfor -%}
+      {% endcapture %}
+
+      {% capture tab_content %}
+        <div 
+          role="tabpanel"
+          id="collection-panel"
+          x-data="{ index: null }"
+          x-init="index = registerPanel($el)"
+          class="relative w-full"
+        >
+          {% render 'loading', overlay: true, size: 'large' %}
+
+          {% paginate collection.products by section.settings.products_per_page %}
+            <div 
+              class="grid grid-cols-1 pc:grid-cols-4 gap-8 pb-10"
+              data-component-kind="section"
+              data-component-type="product-grid"
+              data-component-id="{{ section.id }}-grid"
+            >
+              {% for product in collection.products %}
+                <div class="group opacity-0 translate-y-7.5" data-gsap-card>
+                  {% render 'product-card', product: product %}
+                </div>
+              {% else %}
+                <div class="col-span-full py-20 text-center h3 opacity-60">
+                  No products found.
+                </div>
+              {% endfor %}
+            </div>
+
+            <div
+              class="collection-pagination-wrapper mt-8"
+              @click="
+                let link = $event.target.closest('nav.pagination a');
+                if (link) { 
+                  $event.preventDefault(); 
+                  /* 暂时写死 loadUrl，等后续我们合并 SortBy 时再改这里 */
+                  loadUrl(link.href);
+                }
+              "
+            >
+              {% render 'pagination', paginate_obj: paginate %}
+            </div>
+            
+          {% endpaginate %}
+        </div>
+      {% endcapture %}
+
+      {%- render 'tab-control', 
+        custom_class: 'items-start',
+        tab_header: tab_header,
+        header_class: 'border-b border-[#e5e5e5] flex flex-wrap gap-6 pc:gap-10 px-100 w-full', 
+        tab_content: tab_content 
+      -%}
+    </div>
+
+    {%- render 'sort-by-dropdown', results: collection, form_id: 'CollectionFiltersForm', class: 'absolute right-0 z-10 h2 shrink-0 self-start' -%}
+  </div>
+ </div>
 </div>
 
+{% javascript %}
+(function () {
+    const Components = window.__Theme__?.Components;
+    if (!Components) return;
+
+    Components.register(
+      'collection',
+      {
+        init(el) {
+          if (typeof gsap === 'undefined') return;
+          if (typeof ScrollTrigger === 'undefined') return;
+
+          gsap.registerPlugin(ScrollTrigger);
+
+          const heroEl = el.querySelector('[data-gsap-hero]');
+          const badgeEl = el.querySelector('[data-gsap-badge]');
+
+          const ctx = gsap.context(() => {
+            if (heroEl) {
+              gsap.to(heroEl, {
+                opacity: 1,
+                x: 0,
+                duration: 0.8,
+                ease: 'power2.out'
+              });
+            }
+
+            if (badgeEl) {
+              gsap.to(badgeEl, {
+                opacity: 1,
+                scale: 1,
+                duration: 0.6,
+                delay: 0.3,
+                ease: 'back.out(1.7)'
+              });
+            }
+          }, el);
+
+          return { ctx };
+        },
+
+        destroy(el, state) {
+          if (state?.ctx) {
+            state.ctx.revert();
+          }
+        }
+      },
+      { lazy: true }
+    );
+
+    Components.register(
+      'product-grid',
+      {
+        init(el) {
+          if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
+          gsap.registerPlugin(ScrollTrigger);
+
+          const cards = el.querySelectorAll('[data-gsap-card]');
+
+          const ctx = gsap.context(() => {
+            if (cards.length) {
+              gsap.set(cards, { opacity: 0, y: 30 }); 
+              
+              gsap.to(cards, {
+                opacity: 1,
+                y: 0,
+                duration: 0.5,
+                stagger: { amount: 0.6, from: 'start' },
+                ease: 'power2.out',
+                scrollTrigger: {
+                  trigger: el,
+                  start: 'top 85%',
+                  once: true
+                }
+              });
+            }
+          }, el);
+
+          return { ctx };
+        },
+        
+        destroy(el, state) {
+          if (state?.ctx) state.ctx.revert();
+        }
+      },
+      { lazy: true }
+    );
+  })();
+{% endjavascript %}
+
 {% stylesheet %}
-  .collection-products {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(500px, 1fr));
+  .price-range-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    pointer-events: none;
+    height: 0;
+  }
+  .price-range-thumb::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid #263D29;
+    background: #fff;
+    cursor: pointer;
+    pointer-events: auto;
+  }
+  .price-range-thumb::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid #263D29;
+    background: #fff;
+    cursor: pointer;
+    pointer-events: auto;
+  }
+
+  .filter-checkbox {
+    appearance: none;
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 1.5px solid #c4c4c4;
+    border-radius: 0.2rem;
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: background-color 0.15s, border-color 0.15s;
+  }
+  .filter-checkbox:checked {
+    background-color: #263D29;
+    border-color: #263D29;
+    background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
+    background-size: 100% 100%;
+    background-position: center;
+    background-repeat: no-repeat;
   }
 {% endstylesheet %}
 
 {% schema %}
 {
   "name": "t:general.collection",
-  "settings": []
+  "tag": "section",
+  "class": "section",
+  "enabled_on": {
+    "templates": ["collection"]
+  },
+  "settings": [
+    {
+      "type": "text",
+      "id": "header",
+      "default": "Products",
+      "label": "Header"
+    },
+    {
+      "type": "textarea",
+      "id": "description",
+      "default": "Tailored experiences powered by AI intelligence. Discover insights that adapt to your needs.",
+      "label": "Description"
+    },
+    {
+      "type": "text",
+      "id": "rotate_badge_text",
+      "label": "Rotate Badge Text",
+      "default": "PRODUCT GUARANTEE NATURAL"
+    },
+    {
+      "type": "text",
+      "id": "rotate_badge_percent",
+      "label": "Rotate Badge Percent",
+      "default": "100%"
+    },
+    {
+      "type": "range",
+      "id": "products_per_page",
+      "min": 3,
+      "max": 24,
+      "step": 3,
+      "default": 12,
+      "label": "Products per page"
+    },
+    {
+      "type": "header",
+      "content": "Padding"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Top",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Bottom",
+      "default": 0
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:general.collection"
+    }
+  ]
 }
 {% endschema %}

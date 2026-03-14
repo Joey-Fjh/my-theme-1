@@ -647,6 +647,12 @@ class Main {
                 Factory.register?.(Comps.BEFOREAFTERCOMPARISON, Comps.beforeAfterComparison);
                 Factory.register?.(Comps.COUNTDOWNTIMER, Comps.countdownTimer);
                 Factory.register?.(Comps.SECTIONPAGINATION, Comps.sectionPagination);
+                Factory.register?.(Comps.COLLECTIONFILTERS, Comps.collectionFilters);
+                Factory.register?.(Comps.PRODUCTGALLERY, Comps.productGallery);
+                Factory.register?.(Comps.PRODUCTPRICE, Comps.ProductPrice);
+                Factory.register?.(Comps.VARIANTPICKER, Comps.VariantPicker);
+                Factory.register?.(Comps.QUANTITYSELECTOR, Comps.QuantitySelector);
+                Factory.register?.(Comps.BUYBUTTONS, Comps.BuyButtons);
             }
         }, { once: true });
     }

@@ -1,0 +1,68 @@
+{% comment %}
+  Reusable quantity selector (Tailwind + Alpine.js).
+  All logic lives in the registered QuantitySelector Alpine component.
+
+  @param {number}  [value]         - Initial quantity (default: 1)
+  @param {number}  [min]           - Minimum allowed value (default: 1)
+  @param {number}  [max]           - Maximum allowed value (optional, null = no cap)
+  @param {number}  [step]          - Increment / decrement step (default: 1)
+  @param {string}  [name]          - Input name attribute (default: 'quantity')
+  @param {string}  [product_form_id] - Form id to bind via the form attribute (optional)
+  @param {string}  [section_id]    - Section ID; when set, listens for variant:change to auto-update max from inventory
+  @param {string}  [input_id]      - Unique id for the <input> (optional)
+  @param {string}  [wrapper_class] - Override Tailwind classes on the outer container
+  @param {string}  [label]         - Accessible label text (default: 'Quantity')
+
+  Usage (product page):
+  {% render 'quantity-selector', value: 1, min: 1, product_form_id: product_form_id, section_id: section.id %}
+
+  Usage (cart — wrap with event listener):
+  <div @quantity:change="$store.cart.change('{{ item.key }}', $event.detail.value, ['{{ section.id }}'])">
+    {% render 'quantity-selector', value: item.quantity, min: 1, max: max_qty %}
+  </div>
+{% endcomment %}
+
+<div
+  x-data="QuantitySelector({
+    value: {{ value | default: 1 }},
+    min: {{ min | default: 1 }},
+    max: {{ max | default: 'null' }},
+    step: {{ step | default: 1 }}{% if section_id %},
+    sectionId: '{{ section_id }}'{% endif %}
+  })"
+  class="{{ wrapper_class | default: 'flex items-center border border-white/20 rounded-sm w-max' }}"
+>
+  <button
+    type="button"
+    class="w-10 h-10 flex items-center justify-center cursor-pointer transition-opacity text-current hover:opacity-70 disabled:opacity-30 disabled:cursor-not-allowed"
+    aria-label="Decrease quantity"
+    @click="decrement()"
+    :disabled="!canDecrement"
+  >
+    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 13H5v-2h14z"/></svg>
+  </button>
+
+  <input
+    type="number"
+    {% if input_id %}id="{{ input_id }}"{% endif %}
+    name="{{ name | default: 'quantity' }}"
+    class="w-[4ch] h6 font-medium text-center bg-transparent border-b border-current focus:ring-0 focus:outline-none appearance-none p-0 text-current [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield]"
+    x-model.number="qty"
+    :min="min"
+    :max="max"
+    :step="step"
+    {% if product_form_id %}form="{{ product_form_id }}"{% endif %}
+    @change="onInput()"
+    aria-label="{{ label | default: 'Quantity' }}"
+  >
+
+  <button
+    type="button"
+    class="w-10 h-10 flex items-center justify-center cursor-pointer transition-opacity text-current hover:opacity-70 disabled:opacity-30 disabled:cursor-not-allowed"
+    aria-label="Increase quantity"
+    @click="increment()"
+    :disabled="!canIncrement"
+  >
+    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z"/></svg>
+  </button>
+</div>
