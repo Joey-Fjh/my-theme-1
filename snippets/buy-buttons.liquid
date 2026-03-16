@@ -15,10 +15,22 @@
 
 {%- assign product_form_id = product_form_id | default: 'product-form-' | append: section.id -%}
 {%- assign section_id = section_id | default: section.id -%}
+{%- assign context = context | default: 'featured' -%}
 
 {%- if product != blank -%}
   {%- assign current_variant = product.selected_or_first_available_variant -%}
   {%- assign show_dynamic_checkout = block.settings.show_dynamic_checkout | default: false -%}
+  {%- if context == 'product' -%}
+    {%- assign available_classes = 'bg-[#263D29] text-[#F3F3F3] hover:opacity-90' -%}
+    {%- assign unavailable_classes = 'bg-[#263D29]/10 text-[#263D29]/50' -%}
+  {%- else -%}
+    {%- if show_dynamic_checkout -%}
+      {%- assign available_classes = 'border border-[#C5E147] text-[#C5E147] bg-transparent hover:bg-[#C5E147]/10' -%}
+    {%- else -%}
+      {%- assign available_classes = 'bg-[#C5E147] text-[#263D29] hover:opacity-90' -%}
+    {%- endif -%}
+    {%- assign unavailable_classes = 'bg-white/20 text-white/60' -%}
+  {%- endif -%}
 
   <div
     x-data="BuyButtons({
@@ -49,8 +61,8 @@
           name="add"
           class="relative w-full py-4 px-6 rounded-sm font-bold transition-all cursor-pointer disabled:cursor-not-allowed"
           :class="available
-            ? '{% if show_dynamic_checkout %}border border-[#C5E147] text-[#C5E147] bg-transparent hover:bg-[#C5E147]/10{% else %}bg-[#C5E147] text-[#263D29] hover:opacity-90{% endif %} disabled:opacity-70'
-            : 'bg-white/20 text-white/60'"
+            ? '{{ available_classes }} disabled:opacity-70'
+            : '{{ unavailable_classes }}'"
           :disabled="!available || isLoading"
           @click.prevent="addToCart()"
         >

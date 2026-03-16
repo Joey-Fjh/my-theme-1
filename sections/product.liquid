@@ -1,50 +1,170 @@
-{% comment %}
-  This section is used in the product template to render product page with
-  media, content, and add-to-cart form.
-{% endcomment %}
+{% assign layout = section.settings.gallery_layout | default: 'thumbnails' %}
 
-<div class="product-images">
-  {% for image in product.images %}
-    {% render 'image', class: 'product-image', image: image %}
-  {% endfor %}
-</div>
+<div
+  data-section-id="{{ section.id }}"
+  class="product-section full-width"
+  style="
+    --section-padding-top: {{ section.settings.padding_top | default: 0 }}px;
+    --section-padding-bottom: {{ section.settings.padding_bottom | default: 0 }}px;
+  "
+  data-component-kind="section"
+  data-component-type="product"
+  data-component-id="{{ section.id }}"
+>
+  <div 
+    class="layout container-page bg-[#F3F3F3]"
+    style ="{% if layout == 'stacked' %}overflow: clip;{% endif %}"
+  >
+    <div class="grid grid-cols-1 pc:grid-cols-2 gap-8 pc:gap-12 w-full min-w-0">
+      <div class="min-w-0">
+        {%- render 'product-gallery',
+          images: product.images,
+          layout: layout,
+          thumb_position: 'left',
+          aspect_ratio: '576/622'
+        -%}
+      </div>
 
-<div class="product-info">
-  <h1>{{ product.title }}</h1>
-  <p>{{ product.price | money }}</p>
-  <p>{{ product.description }}</p>
-</div>
-
-<div class="product-form">
-  {% form 'product', product %}
-    {% assign current_variant = product.selected_or_first_available_variant %}
-
-    <select name="id">
-      {% for variant in product.variants %}
-        <option
-          value="{{ variant.id }}"
-          {% if variant == current_variant %}
-            selected="selected"
-          {% endif %}
+      <div class="min-w-0">
+        <div
+          class="self-start"
+          style="{% if layout == 'stacked' %}position: sticky;top: calc(var(--header-height) + var(--announcement-bar-height));{% endif %}"
         >
-          {{ variant.title }} - {{ variant.price | money }}
-        </option>
-      {% endfor %}
-    </select>
-
-    <input type="text" name="quantity" min="1" value="1">
-
-    <input type="submit" value="Add to cart">
-    {{ form | payment_button }}
-  {% endform %}
+          {%- render 'product-info-blocks',
+            product: product,
+            section: section,
+            context: 'product',
+            container_class: 'p-6 pc:p-10'
+          -%}
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 {% schema %}
 {
   "name": "t:general.product",
-  "settings": [],
+  "tag": "section",
+  "class": "section",
   "disabled_on": {
     "groups": ["header", "footer"]
-  }
+  },
+  "settings": [
+    {
+      "type": "header",
+      "content": "Padding"
+    },
+    {
+      "type": "select",
+      "id": "gallery_layout",
+      "label": "Image layout",
+      "options": [
+        { "value": "thumbnails", "label": "Thumbnails" },
+        { "value": "carousel", "label": "Carousel" },
+        { "value": "stacked", "label": "Stacked" },
+        { "value": "grid", "label": "Grid" }
+      ],
+      "default": "thumbnails"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Top",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Bottom",
+      "default": 0
+    }
+  ],
+  "blocks": [
+    {
+      "type": "title",
+      "name": "Title",
+      "limit": 1
+    },
+    {
+      "type": "price",
+      "name": "Price",
+      "limit": 1
+    },
+    {
+      "type": "description",
+      "name": "Description",
+      "limit": 1
+    },
+    {
+      "type": "variant_picker",
+      "name": "Variant picker",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "select",
+          "id": "picker_type",
+          "label": "Style",
+          "options": [
+            { "value": "dropdown", "label": "Dropdown" },
+            { "value": "button", "label": "Pills" }
+          ],
+          "default": "button"
+        },
+        {
+          "type": "select",
+          "id": "swatch_shape",
+          "label": "Swatch shape",
+          "options": [
+            { "value": "circle", "label": "Circle" },
+            { "value": "square", "label": "Square" },
+            { "value": "none", "label": "None" }
+          ],
+          "default": "circle"
+        }
+      ]
+    },
+    {
+      "type": "quantity_selector",
+      "name": "Quantity selector",
+      "limit": 1
+    },
+    {
+      "type": "buy_buttons",
+      "name": "Buy buttons",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "checkbox",
+          "id": "show_dynamic_checkout",
+          "label": "Show dynamic checkout buttons",
+          "info": "Using the payment methods available on your store, customers see their preferred option, like PayPal or Apple Pay.",
+          "default": false
+        }
+      ]
+    }
+  ],
+  "presets": [
+      {
+        "name": "t:general.product",
+        "settings": {},
+        "blocks": [
+          { "type": "title" },
+          { "type": "price" },
+          { "type": "description" },
+          { "type": "variant_picker" },
+          { "type": "quantity_selector" },
+          { "type": "buy_buttons" }
+        ]
+      }
+    ]
 }
 {% endschema %}
