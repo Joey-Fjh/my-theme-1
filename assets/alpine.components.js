@@ -84,6 +84,7 @@ class AlpineComponents {
     static VARIANTPICKER = 'VariantPicker';
     static QUANTITYSELECTOR = 'QuantitySelector';
     static BUYBUTTONS = 'BuyButtons';
+    static PREDICTIVESEARCH = 'predictiveSearch';
 
     static dropdown(){
         return {
@@ -871,6 +872,231 @@ class AlpineComponents {
 
             destroy() {
                 this.dispose();
+            }
+        };
+    }
+
+    /**
+     * Predictive search dropdown used in the header / search page.
+     * Uses Shopify Predictive Search API to fetch suggestions and resources.
+     *
+     * @param {Object} options
+     * @param {string} options.searchUrl   - Base search URL (routes.search_url)
+     * @param {string} [options.initialQuery=''] - Initial query from current page
+     */
+    static predictiveSearch() {
+        const Utils = window.__Theme__?.Utils;
+
+        return {
+            ...(Utils ? AlpineComponentsFactory.useDisposable() : {}),
+            searchUrl: '/search',
+            query: '',
+            isOpen: false,
+            loading: false,
+            isLoading: false,
+            suggestions: [],
+            products: [],
+            articles: [],
+            pages: [],
+            activeTab: 'products',
+            activeSuggestionId: null,
+            hasEmptyState: false,
+            _debouncedFetch: null,
+            _abortController: null,
+
+            init() {
+                if (Utils) {
+                    this._debouncedFetch = Utils.debounce((term) => this._fetch(term), 250);
+                }
+
+                if (this.query) {
+                    this.openPanel();
+                    this.onInput(this.query);
+                }
+            },
+
+            openPanel() {
+                if (!this.query) return;
+                this.isOpen = true;
+            },
+
+            closePanel() {
+                this.isOpen = false;
+                this.activeSuggestionId = null;
+            },
+
+            onInput(value) {
+                this.query = value;
+                const term = value.trim();
+
+                if (!term) {
+                    this._resetResults();
+                    this.isOpen = false;
+                    this.loading = false;
+                    this.isLoading = false;
+                    return;
+                }
+
+                this.isOpen = true;
+                this.loading = true;
+                this.isLoading = true;
+                this.hasEmptyState = false;
+
+                if (this._debouncedFetch) {
+                    this._debouncedFetch(term);
+                } else {
+                    this._fetch(term);
+                }
+            },
+
+            _resetResults() {
+                this.suggestions = [];
+                this.products = [];
+                this.articles = [];
+                this.pages = [];
+                this.hasEmptyState = false;
+            },
+
+            _fetch(term) {
+                if (!term) {
+                    this.loading = false;
+                    this.isLoading = false;
+                    this._resetResults();
+                    return;
+                }
+
+                if (this._abortController) {
+                    this._abortController.abort();
+                }
+
+                this._abortController = new AbortController();
+                const controller = this._abortController;
+
+                const url = new URL('/search/suggest.json', window.location.origin);
+                
+                url.searchParams.set('q', term);
+                url.searchParams.set('resources[type]', 'query,product,article,page');
+                url.searchParams.set('resources[limit]', '4');
+
+                fetch(url.toString(), {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' },
+                    signal: controller.signal
+                })
+                    .then((res) => {
+                        if (!res.ok) throw new Error('Predictive search failed');
+                        return res.json();
+                    })
+                    .then((data) => {
+                        const results = data?.resources?.results || {};
+                        const currency = window.Shopify?.currency?.active || (window.Shopify && window.Shopify.currency) || 'USD';
+                        const fmt = new Intl.NumberFormat(undefined, { style: 'currency', currency });
+
+                        
+                        this.suggestions = (results.queries || []).map((q) => ({
+                            text: q.text, 
+                            url: q.url
+                        })).filter((q) => q.text);
+
+                        this.products = (results.products || []).map((p) => {
+                            let finalPrice = p.price;
+                            if (typeof p.price === 'number') {
+                                finalPrice = fmt.format(p.price / 100);
+                            }
+
+                            return {
+                                id: p.id,
+                                title: p.title,
+                                vendor: p.vendor,
+                                priceFormatted: finalPrice,
+                                image: typeof p.image === 'string' ? p.image : (p.image?.url || p.featured_image?.url || ''),
+                                url: p.url
+                            };
+                        });
+
+                        this.articles = (results.articles || []).map((a) => ({
+                            id: a.id, title: a.title, url: a.url
+                        }));
+
+                        this.pages = (results.pages || []).map((pg) => ({
+                            id: pg.id, title: pg.title, url: pg.url
+                        }));
+
+                        const hasAny = 
+                            this.suggestions.length || 
+                            this.products.length || 
+                            this.articles.length || 
+                            this.pages.length;
+
+                        this.hasEmptyState = !hasAny;
+                        
+                        if (!this.products.length && this.articles.length) {
+                            this.activeTab = 'articles';
+                        } else if (!this.products.length && this.pages.length) {
+                            this.activeTab = 'pages';
+                        } else {
+                            this.activeTab = 'products';
+                        }
+                    })
+                    .catch((err) => {
+                        if (err.name === 'AbortError') return;
+                        console.error(err);
+                        this._resetResults();
+                        this.hasEmptyState = true;
+                    })
+                    .finally(() => {
+                        if (this._abortController === controller) {
+                            this.loading = false;
+                            this.isLoading = false;
+                            this._abortController = null;
+                        }
+                    });
+            },
+
+            performSearch() {
+                const term = (this.query || '').trim();
+                if (!term) return;
+
+                const url = new URL(this.searchUrl, window.location.origin);
+                url.searchParams.set('q', term);
+                window.location.assign(url.toString());
+            },
+
+            onSuggestionClick(item) {
+                if (!item) return;
+                this.query = item.text || '';
+                this.performSearch();
+            },
+
+            highlightSuggestion(text) {
+                const term = (this.query || '').trim();
+                if (!term || !text) return this._escapeHtml(text);
+
+                const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const regex = new RegExp(`(${escaped})`, 'ig');
+                return this._escapeHtml(text).replace(regex, '<span class=\"font-medium text-[#263D29]\">$1</span>');
+            },
+
+            _escapeHtml(str) {
+                return String(str)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            },
+
+            destroy() {
+                if (this._debouncedFetch?.dispose) {
+                    this._debouncedFetch.dispose();
+                }
+                if (this._abortController) {
+                    this._abortController.abort();
+                    this._abortController = null;
+                }
+                if (this.dispose) {
+                    this.dispose();
+                }
             }
         };
     }

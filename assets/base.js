@@ -653,6 +653,7 @@ class Main {
                 Factory.register?.(Comps.VARIANTPICKER, Comps.VariantPicker);
                 Factory.register?.(Comps.QUANTITYSELECTOR, Comps.QuantitySelector);
                 Factory.register?.(Comps.BUYBUTTONS, Comps.BuyButtons);
+                Factory.register?.(Comps.PREDICTIVESEARCH, Comps.predictiveSearch);
             }
         }, { once: true });
     }
