@@ -10,22 +10,25 @@
     data-component-id="{{ section.id }}"
 >
     <div class="layout container-page">
-        <div class="grid grid-cols-1 pc:grid-cols-2 gap-8 pc:gap-12 items-start w-full h-full min-w-0">
-            <div class="min-w-0 h-full">
+        <div class="grid grid-cols-1 pc:grid-cols-2 gap-8 pc:gap-12 items-start w-full">
+            <div class="min-w-0">
+                {% assign thumb_position = section.settings.thumb_position | default: 'left' %}
                 {%- render 'product-gallery', 
                     images: section.settings.product.images,
                     layout: 'thumbnails',
-                    thumb_position: 'left',
+                    thumb_position: thumb_position,
                     aspect_ratio:'576/622'
                 -%}
             </div>
             
-            {%- render 'product-info-blocks',
-                product: section.settings.product,
-                section: section,
-                context: 'featured',
-                container_class: 'h-full p-6 pc:p-10 flex flex-col gap-4 pc:gap-6 bg-[#263D29] text-[#ffffff]'
-            -%}
+            <div class="min-w-0">
+              {%- render 'product-info-blocks',
+                  product: section.settings.product,
+                  section: section,
+                  context: 'featured',
+                  container_class: 'p-6 pc:p-10'
+              -%}
+            </div>
         </div>
     </div>
 </div>
@@ -43,6 +46,16 @@
         "type": "product",
         "id": "product",
         "label": "Select Product"
+      },
+      {
+        "type": "select",
+        "id": "thumb_position",
+        "label": "Thumbnail position",
+        "options": [
+          { "value": "left", "label": "Left" },
+          { "value": "bottom", "label": "Bottom" }
+        ],
+        "default": "left"
       },
       {
         "type": "header",
