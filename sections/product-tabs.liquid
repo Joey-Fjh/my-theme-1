@@ -1,0 +1,237 @@
+<section
+  data-section-id="{{ section.id }}"
+  class="product-tabs-section full-width"
+  style="
+    --section-padding-top: {{ section.settings.padding_top | default: 0 }}px;
+    --section-padding-bottom: {{ section.settings.padding_bottom | default: 0 }}px;
+  "
+  data-component-kind="section"
+  data-component-type="product-tabs"
+  data-component-id="{{ section.id }}"
+>
+  <div class="layout container-page bg-[#F3F3F3]">
+    {%- liquid
+      assign reviews_heading = section.settings.reviews_heading | default: 'Reviews'
+      assign has_tabs = false
+    -%}
+
+    {%- capture tab_header -%}
+      {%- liquid
+        assign index = 0
+      -%}
+      {%- for block in section.blocks -%}
+        {%- case block.type -%}
+          {%- when 'description' -%}
+            {%- assign heading = 'Description' -%}
+          {%- when 'richtext' -%}
+            {%- assign heading = block.settings.heading | default: 'Specification' -%}
+          {%- when '@app' -%}
+            {%- assign heading = reviews_heading -%}
+          {%- else -%}
+            {%- continue -%}
+        {%- endcase -%}
+
+        {%- assign has_tabs = true -%}
+        {%- assign index = index | plus: 1 -%}
+
+        <button
+          type="button"
+          role="tab"
+          x-data="{ index: null }"
+          x-init="index = registerTab($el)"
+          :id="`tab-${index}`"
+          :aria-controls="`panel-${index}`"
+          @click="setActive(index)"
+          :tabindex="isActive(index) ? 0 : -1"
+          :aria-selected="isActive(index)"
+          :class="isActive(index)
+            ? 'text-[#263D29] border-b-2 border-[#263D29]'
+            : 'text-[#A3A3A3] border-b-2 border-transparent hover:text-[#263D29] hover:border-[#D4D4D4]'"
+          class="px-4 py-3 -mb-px whitespace-nowrap h6 bg-transparent focus:outline-none transition-colors"
+          {{ block.shopify_attributes }}
+        >
+          {{ heading }}
+        </button>
+      {%- endfor -%}
+    {%- endcapture -%}
+
+    {%- capture tab_content -%}
+      {%- liquid
+        assign index = 0
+      -%}
+      {%- for block in section.blocks -%}
+        {%- case block.type -%}
+          {%- when 'description' -%}
+          {%- when 'richtext' -%}
+          {%- when '@app' -%}
+          {%- else -%}
+            {%- continue -%}
+        {%- endcase -%}
+
+        {%- assign index = index | plus: 1 -%}
+
+        <div
+          {{ block.shopify_attributes }}
+          role="tabpanel"
+          x-data="{ index: null }"
+          x-init="index = registerPanel($el)"
+          :id="`panel-${index}`"
+          :aria-labelledby="`tab-${index}`"
+          x-show="isActive(index)"
+          x-cloak
+          class="py-6"
+        >
+          {%- case block.type -%}
+            {%- when 'description' -%}
+              {%- if product and product.description != blank -%}
+                <div class="prose max-w-none">
+                  {{ product.description }}
+                </div>
+              {%- else -%}
+                <p class="h6 text-gray-500">No description available.</p>
+              {%- endif -%}
+
+            {%- when 'richtext' -%}
+              {%- if block.settings.content != blank -%}
+                <div class="prose max-w-none">
+                  {{ block.settings.content }}
+                </div>
+              {%- else -%}
+                <p class="h6 text-gray-500">No content configured.</p>
+              {%- endif -%}
+
+            {%- when '@app' -%}
+              {%- render block -%}
+          {%- endcase -%}
+        </div>
+      {%- endfor -%}
+    {%- endcapture -%}
+
+    {%- if has_tabs -%}
+      {%- render 'tab-control',
+        initialTabStrategy: section.settings.initial_tab_strategy,
+        custom_class: 'mt-6 items-stretch',
+        header_class: 'flex gap-6 pc:flex-nowrap flex-wrap border-b border-gray-200',
+        content_class: 'pt-6',
+        tab_header: tab_header,
+        tab_content: tab_content
+      -%}
+    {%- else -%}
+      <div class="py-8 text-center">
+        <p class="h5 text-gray-500">Add blocks to this section to show product tabs.</p>
+      </div>
+    {%- endif -%}
+  </div>
+</section>
+
+{%- javascript -%}
+(function(){
+    const Components = window.__Theme__?.Components;
+    if (!Components) return;
+
+    Components.register(
+        'product-tabs',
+        {
+          init(el) {
+            return {};
+          },
+          destroy(el, state) {
+          }
+        },
+        { lazy: true }
+    );
+})();
+{%- endjavascript -%}
+
+{%- stylesheet -%}
+{%- endstylesheet -%}
+
+{% schema %}
+{
+  "name": "Product Tabs",
+  "tag": "section",
+  "class": "section",
+  "disabled_on": {
+    "groups": ["header", "footer"]
+  },
+  "settings": [
+    {
+      "type": "select",
+      "id": "initial_tab_strategy",
+      "label": "Initial active tab",
+      "default": "first",
+      "options": [
+        { "value": "first", "label": "First tab" },
+        { "value": "middle", "label": "Middle tab" }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "reviews_heading",
+      "label": "Reviews tab heading",
+      "default": "Reviews"
+    },
+    {
+      "type": "header",
+      "content": "Padding"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Top",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Bottom",
+      "default": 0
+    }
+  ],
+  "blocks": [
+    {
+      "type": "description",
+      "name": "Product Description",
+      "limit": 1
+    },
+    {
+      "type": "richtext",
+      "name": "Custom Text / Metafield",
+      "settings": [
+        {
+          "type": "text",
+          "id": "heading",
+          "label": "Heading",
+          "default": "Specification"
+        },
+        {
+          "type": "richtext",
+          "id": "content",
+          "label": "Content"
+        }
+      ]
+    },
+    {
+      "type": "@app"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Product Tabs",
+      "blocks": [
+        { "type": "description" },
+        { "type": "richtext", "settings": { "heading": "Specification" } }
+      ]
+    }
+  ]
+}
+{% endschema %}
+
