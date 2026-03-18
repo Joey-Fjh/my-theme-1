@@ -654,6 +654,7 @@ class Main {
                 Factory.register?.(Comps.QUANTITYSELECTOR, Comps.QuantitySelector);
                 Factory.register?.(Comps.BUYBUTTONS, Comps.BuyButtons);
                 Factory.register?.(Comps.PREDICTIVESEARCH, Comps.predictiveSearch);
+                Factory.register?.(Comps.RELATEDPRODUCTS, Comps.relatedProducts);
             }
         }, { once: true });
     }

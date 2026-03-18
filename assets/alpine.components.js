@@ -85,6 +85,7 @@ class AlpineComponents {
     static QUANTITYSELECTOR = 'QuantitySelector';
     static BUYBUTTONS = 'BuyButtons';
     static PREDICTIVESEARCH = 'predictiveSearch';
+    static RELATEDPRODUCTS = 'relatedProducts';
 
     static dropdown(){
         return {
@@ -997,20 +998,24 @@ class AlpineComponents {
                 const requestedTerm = term;
 
                 const url = new URL('/search/suggest.json', window.location.origin);
-                
                 url.searchParams.set('q', term);
                 url.searchParams.set('resources[type]', 'query,product,article,page');
                 url.searchParams.set('resources[limit]', '4');
 
-                fetch(url.toString(), {
-                    method: 'GET',
-                    headers: { 'Accept': 'application/json' },
-                    signal: controller.signal
-                })
-                    .then((res) => {
+                const ThemeRequest = window.__Theme__?.ThemeRequest;
+
+                const request = ThemeRequest
+                    ? ThemeRequest.getJSON(url.toString(), { signal: controller.signal })
+                    : fetch(url.toString(), {
+                        method: 'GET',
+                        headers: { 'Accept': 'application/json' },
+                        signal: controller.signal
+                    }).then((res) => {
                         if (!res.ok) throw new Error('Predictive search failed');
                         return res.json();
-                    })
+                    });
+
+                request
                     .then((data) => {
                         const results = data?.resources?.results || {};
                         const currency = window.Shopify?.currency?.active || (window.Shopify && window.Shopify.currency) || 'USD';
@@ -1127,6 +1132,113 @@ class AlpineComponents {
                 if (this.dispose) {
                     this.dispose();
                 }
+            }
+        };
+    }
+
+    /**
+     * Product recommendations (Ajax lazy-load) — used by sections/product-recommendations.liquid
+     *
+     * Fetches the recommendations section HTML only when it enters viewport.
+     * The response is parsed and only the [data-related-products-content] innerHTML is injected,
+     * then Components.initAll is called to re-bind Alpine/component engine behavior.
+     *
+     * @param {Object} opts
+     * @param {string} opts.url
+     * @param {string} opts.sectionId
+     */
+    static relatedProducts({ url, sectionId } = {}) {
+        return {
+            ...(AlpineComponentsFactory.useDisposable?.() || {}),
+            url,
+            sectionId,
+            _observer: null,
+            _abortController: null,
+            loaded: false,
+
+            init() {
+                if (!this.url || this.loaded) return;
+
+                if (!('IntersectionObserver' in window)) {
+                    this.load();
+                    return;
+                }
+
+                this._observer = new IntersectionObserver((entries) => {
+                    for (const entry of entries) {
+                        if (!entry.isIntersecting) continue;
+                        this.load();
+                        this._observer?.disconnect?.();
+                        this._observer = null;
+                        break;
+                    }
+                }, { rootMargin: '200px' });
+
+                this._observer.observe(this.$el);
+            },
+
+            load() {
+                if (this.loaded || !this.url) return;
+                this.loaded = true;
+
+                if (this._abortController) this._abortController.abort();
+                this._abortController = new AbortController();
+                const ctrl = this._abortController;
+
+                const ThemeRequest = window.__Theme__?.ThemeRequest;
+                const SectionRefresher = window.__Theme__?.SectionRefresher;
+
+                const request = ThemeRequest
+                    ? ThemeRequest.fetchWithTimeout(this.url, {
+                        method: 'GET',
+                        headers: { 'Accept': 'text/html' },
+                        signal: ctrl.signal
+                    })
+                    : fetch(this.url, {
+                        method: 'GET',
+                        headers: { 'Accept': 'text/html' },
+                        signal: ctrl.signal
+                    });
+
+                request
+                    .then((res) => {
+                        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                        return res.text();
+                    })
+                    .then((html) => {
+                        if (!SectionRefresher || !this.sectionId) return;
+
+                        const sections = { [this.sectionId]: html };
+                        const domMap = {
+                            [this.sectionId]: {
+                                targetSelector: `[data-section-id="${CSS.escape(this.sectionId)}"]`,
+                                innerSelectors: ['[data-related-products-content]']
+                            }
+                        };
+
+                        SectionRefresher.render(sections, domMap);
+                    })
+                    .catch((err) => {
+                        if (err?.name === 'AbortError') return;
+                        console.error('Related products load failed:', err);
+                        // allow retry if needed
+                        this.loaded = false;
+                    })
+                    .finally(() => {
+                        if (this._abortController === ctrl) {
+                            this._abortController = null;
+                        }
+                    });
+            },
+
+            destroy() {
+                if (this._observer?.disconnect) this._observer.disconnect();
+                this._observer = null;
+
+                if (this._abortController) this._abortController.abort();
+                this._abortController = null;
+
+                if (this.dispose) this.dispose();
             }
         };
     }
