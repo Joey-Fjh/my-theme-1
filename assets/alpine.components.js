@@ -1082,6 +1082,10 @@ class AlpineComponents {
                 const term = (this.query || '').trim();
                 if (!term) return;
 
+                // When executing a full search navigation, ensure the predictive panel closes
+                // so the UI doesn't remain open during/after navigation on the search page.
+                this.closePanel();
+
                 const url = new URL(this.searchUrl, window.location.origin);
                 url.searchParams.set('q', term);
                 window.location.assign(url.toString());
@@ -1090,6 +1094,7 @@ class AlpineComponents {
             onSuggestionClick(item) {
                 if (!item) return;
                 this.query = item.text || '';
+                this.closePanel();
                 this.performSearch();
             },
 

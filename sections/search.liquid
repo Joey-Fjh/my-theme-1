@@ -4,7 +4,7 @@
 
 <div
   data-section-id="{{ section.id }}"
-  class="search-section full-width bg-[#F3F3F3] h-screen"
+  class="search-section full-width bg-[#F3F3F3] min-h-[50vh]"
   style="
     --section-padding-top: {{ section.settings.padding_top | default: 0 }}px;
     --section-padding-bottom: {{ section.settings.padding_bottom | default: 0 }}px;
@@ -17,7 +17,7 @@
     <div
       class="w-full max-w-1/2 mx-auto"
       x-data="predictiveSearch"
-      x-init='searchUrl = {{ routes.search_url | json }}; query = {{ terms | json }}; if (query) { onInput(query); }'
+      x-init='searchUrl = {{ routes.search_url | json }}; query = {{ terms | json }}; if (query && !{{ search.performed | json }}) { onInput(query); } else { isOpen = false; }'
     >
       <form
         @submit.prevent="performSearch()"
@@ -256,7 +256,189 @@
     </div>
 
     {% if search.performed %}
-      <div>结果内容</div>
+      {%- liquid
+        assign q = search.terms | default: '' | strip | url_encode
+        assign param_type = request.params.type | default: '' | downcase | strip
+
+        if param_type != 'product' and param_type != 'article' and param_type != 'page'
+          assign param_type = 'product'
+        endif
+
+        assign active_tab_index = 0
+        if param_type == 'article'
+          assign active_tab_index = 1
+        elsif param_type == 'page'
+          assign active_tab_index = 2
+        endif
+
+        assign base_url = routes.search_url | append: '?q=' | append: q | append: '&options%5Bprefix%5D=last'
+        assign products_url = base_url | append: '&type=product'
+        assign articles_url = base_url | append: '&type=article'
+        assign pages_url = base_url | append: '&type=page'
+      -%}
+
+      <div
+        class="w-full mt-20"
+        x-data="sectionPagination('{{ section.id }}', ['[data-search-tabs-header]','[data-search-tabs-panel]'])"
+      >
+        {% capture results_tab_header %}
+          <div 
+            class="max-w-1/2 mx-auto flex gap-40 uppercase tracking-[0.16em] pt-6"
+            data-search-tabs-header
+          >
+            <span class="hidden" x-init="$nextTick(() => { setActive({{ active_tab_index }}) })"></span>
+
+            <a
+              href="{{ products_url }}"
+              role="tab"
+              x-data="{ index: null }"
+              x-init="index = registerTab($el);"
+              :id="`tab-${index}`"
+              aria-controls="search-results-panel"
+              @click.prevent="loadUrl($el.href); setActive(index)"
+              @popstate.window="isUrlMatch($el.href) && setActive(index)"
+              :tabindex="isActive(index) ? 0 : -1"
+              :aria-selected="isActive(index)"
+              class="inline-flex items-baseline gap-1 pb-2 border-b leading-tight cursor-pointer transition-opacity"
+              :class="isActive(index)
+                ? 'text-[#263D29] font-medium border-[#263D29]'
+                : 'text-[#A0A5A1] hover:text-[#263D29] border-transparent'
+              "
+            >
+              Products
+            </a>
+
+            <a
+              href="{{ articles_url }}"
+              role="tab"
+              x-data="{ index: null }"
+              x-init="index = registerTab($el);"
+              :id="`tab-${index}`"
+              aria-controls="search-results-panel"
+              @click.prevent="loadUrl($el.href); setActive(index)"
+              @popstate.window="isUrlMatch($el.href) && setActive(index)"
+              :tabindex="isActive(index) ? 0 : -1"
+              :aria-selected="isActive(index)"
+              class="inline-flex items-baseline gap-1 pb-2 border-b leading-tight cursor-pointer transition-opacity"
+              :class="isActive(index)
+                ? 'text-[#263D29] font-medium border-[#263D29]'
+                : 'text-[#A0A5A1] hover:text-[#263D29] border-transparent'
+              "
+            >
+              Articles
+            </a>
+
+            <a
+              href="{{ pages_url }}"
+              role="tab"
+              x-data="{ index: null }"
+              x-init="index = registerTab($el);"
+              :id="`tab-${index}`"
+              aria-controls="search-results-panel"
+              @click.prevent="loadUrl($el.href); setActive(index)"
+              @popstate.window="isUrlMatch($el.href) && setActive(index)"
+              :tabindex="isActive(index) ? 0 : -1"
+              :aria-selected="isActive(index)"
+              class="inline-flex items-baseline gap-1 pb-2 border-b leading-tight cursor-pointer transition-opacity"
+              :class="isActive(index)
+                ? 'text-[#263D29] font-medium border-[#263D29]'
+                : 'text-[#A0A5A1] hover:text-[#263D29] border-transparent'
+              "
+            >
+              Pages
+            </a>
+          </div>
+        {% endcapture %}
+
+        {% capture results_tab_content %}
+          <div
+            role="tabpanel"
+            id="search-results-panel"
+            x-data="{ index: null }"
+            x-init="index = registerPanel($el)"
+            class="relative w-full mt-6"
+            data-search-tabs-panel
+          >
+            {% render 'loading', overlay: true, size: 'large' %}
+
+            {% unless search.results_count == 0 %}
+              <div class="text-[#263D29] mb-6">
+                <p class="h6 uppercase tracking-[0.16em] opacity-70">
+                  <span class="opacity-60">
+                    Search for <span class="h6 opacity-60 truncate">“{{ search.terms | escape }}”</span> : {{ search.results_count }}
+                  </span>
+                </p>
+              </div> 
+            {% endunless %}
+            
+            {% paginate search.results by section.settings.search_per_page %}
+              {%- if search.results_count == 0 -%}
+                <div class="py-16 text-center text-[#263D29]">
+                  <p class="h5 opacity-80">No results found.</p>
+                </div>
+              {%- else -%}
+                {%- case param_type -%}
+                  {%- when 'product' -%}
+                    <div class="grid grid-cols-2 pc:grid-cols-4 gap-6">
+                      {%- for item in search.results -%}
+                        {%- if item.object_type == 'product' -%}
+                          {% render 'product-card', 
+                            product: item, 
+                            class: 'border border-[#F2F3F0]' 
+                          %}
+                        {%- endif -%}
+                      {%- endfor -%}
+                    </div>
+
+                  {%- when 'article' -%}
+                    <ul class="space-y-4">
+                      {%- for item in search.results -%}
+                        {%- if item.object_type == 'article' -%}
+                          <li class="border-b border-[#D5D9D6] pb-3">
+                            <a class="text-[#263D29] hover:underline" href="{{ item.url }}">{{ item.title }}</a>
+                          </li>
+                        {%- endif -%}
+                      {%- endfor -%}
+                    </ul>
+
+                  {%- when 'page' -%}
+                    <ul class="space-y-4">
+                      {%- for item in search.results -%}
+                        {%- if item.object_type == 'page' -%}
+                          <li class="border-b border-[#D5D9D6] pb-3">
+                            <a class="text-[#263D29] hover:underline" href="{{ item.url }}">{{ item.title }}</a>
+                          </li>
+                        {%- endif -%}
+                      {%- endfor -%}
+                    </ul>
+                {%- endcase -%}
+
+                <div
+                  class="mt-10"
+                  @click="
+                    let link = $event.target.closest('nav.pagination a');
+                    if (link) {
+                      $event.preventDefault();
+                      loadUrl(link.href);
+                    }
+                  "
+                >
+                  {% render 'pagination', paginate_obj: paginate %}
+                </div>
+              {%- endif -%}
+            {% endpaginate %}
+          </div>
+        {% endcapture %}
+
+        {%- render 'tab-control',
+          initialTabStrategy: 'first',
+          tab_header: results_tab_header,
+          tab_content: results_tab_content,
+          header_class: 'w-full border-b border-[#D5D9D6]',
+          content_class: 'w-full',
+          custom_class: 'w-full'
+        -%}
+      </div>
     {% endif %}
   </div>
 </div>
@@ -267,6 +449,15 @@
   "tag": "section",
   "class": "section",
   "settings": [
+    {
+      "type": "range",
+      "id": "search_per_page",
+      "min": 3,
+      "max": 24,
+      "step": 3,
+      "default": 12,
+      "label": "Search per page"
+    },
     {
       "type": "header",
       "content": "Padding"
