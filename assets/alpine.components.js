@@ -903,10 +903,15 @@ class AlpineComponents {
             hasEmptyState: false,
             _debouncedFetch: null,
             _abortController: null,
+            /** @type {string|null} Last term we scheduled a request for (debounced). */
+            _lastScheduledTerm: null,
+            /** @type {string|null} Last term we successfully resolved and rendered results for. */
+            _lastResolvedTerm: null,
 
             init() {
                 if (Utils) {
-                    this._debouncedFetch = Utils.debounce((term) => this._fetch(term), 250);
+                    // Slightly longer debounce reduces request spam during continuous typing.
+                    this._debouncedFetch = Utils.debounce((term) => this._fetch(term), 500);
                 }
 
                 if (this.query) {
@@ -934,6 +939,22 @@ class AlpineComponents {
                     this.isOpen = false;
                     this.loading = false;
                     this.isLoading = false;
+                    this._lastScheduledTerm = null;
+                    return;
+                }
+
+                // If we already have results for this exact term, don't re-request.
+                // This also prevents duplicate calls from IME confirm events (compositionend).
+                if (this._lastResolvedTerm === term) {
+                    this.isOpen = true;
+                    this.loading = false;
+                    this.isLoading = false;
+                    return;
+                }
+
+                // If this exact term is already scheduled (debounced), don't schedule again.
+                if (this._lastScheduledTerm === term) {
+                    this.isOpen = true;
                     return;
                 }
 
@@ -943,8 +964,10 @@ class AlpineComponents {
                 this.hasEmptyState = false;
 
                 if (this._debouncedFetch) {
+                    this._lastScheduledTerm = term;
                     this._debouncedFetch(term);
                 } else {
+                    this._lastScheduledTerm = term;
                     this._fetch(term);
                 }
             },
@@ -971,6 +994,7 @@ class AlpineComponents {
 
                 this._abortController = new AbortController();
                 const controller = this._abortController;
+                const requestedTerm = term;
 
                 const url = new URL('/search/suggest.json', window.location.origin);
                 
@@ -1029,6 +1053,7 @@ class AlpineComponents {
                             this.pages.length;
 
                         this.hasEmptyState = !hasAny;
+                        this._lastResolvedTerm = requestedTerm;
                         
                         if (!this.products.length && this.articles.length) {
                             this.activeTab = 'articles';
@@ -1074,7 +1099,7 @@ class AlpineComponents {
 
                 const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                 const regex = new RegExp(`(${escaped})`, 'ig');
-                return this._escapeHtml(text).replace(regex, '<span class=\"font-medium text-[#263D29]\">$1</span>');
+                return this._escapeHtml(text).replace(regex, '<span class=\"font-bold\">$1</span>');
             },
 
             _escapeHtml(str) {
