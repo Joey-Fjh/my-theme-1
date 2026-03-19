@@ -24,6 +24,12 @@
     <!-- Product Image Container -->
     <div class="relative mb-4 aspect-square">
         <!-- Product Image -->
+        {% comment %} 
+        {%- assign pc_items_safe = pc_items | default: 5 -%}
+        {%- assign mobile_items_safe = mobile_items | default: 2 -%} 
+        (min-width: 48rem) calc(100vw / {{pc_items_safe}}), calc(100vw / {{mobile_items_safe}})
+        {% endcomment %}
+
         {%- capture sizes -%}
             (min-width: 48rem) calc(100vw / pc_items), calc(100vw / mobile_items)
         {%- endcapture -%}
@@ -39,7 +45,7 @@
             width: product.featured_image.width,
             sizes: sizes,
             widths: widths,
-            aspect_ratio: image_ratio
+            aspect_ratio: image_ratio | default: '1/1'
         -%}
 
         <!-- Hover Actions -->

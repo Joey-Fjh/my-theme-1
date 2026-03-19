@@ -84,6 +84,10 @@ class AlpineComponents {
     static VARIANTPICKER = 'VariantPicker';
     static QUANTITYSELECTOR = 'QuantitySelector';
     static BUYBUTTONS = 'BuyButtons';
+    static PREDICTIVESEARCH = 'predictiveSearch';
+    static RELATEDPRODUCTS = 'relatedProducts';
+    static NEWSLETTEROVERLAY = 'newsletterOverlay';
+    static CARTOVERLAY = 'cartOverlay';
 
     static dropdown(){
         return {
@@ -876,6 +880,376 @@ class AlpineComponents {
     }
 
     /**
+     * Predictive search dropdown used in the header / search page.
+     * Uses Shopify Predictive Search API to fetch suggestions and resources.
+     *
+     * @param {Object} options
+     * @param {string} options.searchUrl   - Base search URL (routes.search_url)
+     * @param {string} [options.initialQuery=''] - Initial query from current page
+     */
+    static predictiveSearch({ limit = 8, limitScope = 'each' } = {}) {
+        const Utils = window.__Theme__?.Utils;
+
+        return {
+            ...(Utils ? AlpineComponentsFactory.useDisposable() : {}),
+            searchUrl: '/search',
+            query: '',
+            isOpen: false,
+            isLoading: false,
+            resultLimit: limit,
+            resultLimitScope: limitScope,
+            suggestions: [],
+            products: [],
+            articles: [],
+            pages: [],
+            activeTab: 'products',
+            activeSuggestionId: null,
+            hasEmptyState: false,
+            _debouncedFetch: null,
+            _abortController: null,
+            /** @type {string|null} Last term we scheduled a request for (debounced). */
+            _lastScheduledTerm: null,
+            /** @type {string|null} Last term we successfully resolved and rendered results for. */
+            _lastResolvedTerm: null,
+
+            init() {
+                if (Utils) {
+                    // Slightly longer debounce reduces request spam during continuous typing.
+                    this._debouncedFetch = Utils.debounce((term) => this._fetch(term), 500);
+                }
+
+                if (this.query) {
+                    this.openPanel();
+                    this.onInput(this.query);
+                }
+            },
+
+            openPanel() {
+                if (!this.query) return;
+                this.isOpen = true;
+            },
+
+            closePanel() {
+                this.isOpen = false;
+                this.activeSuggestionId = null;
+            },
+
+            onInput(value) {
+                this.query = value;
+                const term = value.trim();
+
+                if (!term) {
+                    this._resetResults();
+                    this.isOpen = false;
+                    this.isLoading = false;
+                    this._lastScheduledTerm = null;
+                    return;
+                }
+
+                // If we already have results for this exact term, don't re-request.
+                // This also prevents duplicate calls from IME confirm events (compositionend).
+                if (this._lastResolvedTerm === term) {
+                    this.isOpen = true;
+                    this.isLoading = false;
+                    return;
+                }
+
+                // If this exact term is already scheduled (debounced), don't schedule again.
+                if (this._lastScheduledTerm === term) {
+                    this.isOpen = true;
+                    return;
+                }
+
+                this.isOpen = true;
+                this.isLoading = true;
+                this.hasEmptyState = false;
+
+                if (this._debouncedFetch) {
+                    this._lastScheduledTerm = term;
+                    this._debouncedFetch(term);
+                } else {
+                    this._lastScheduledTerm = term;
+                    this._fetch(term);
+                }
+            },
+
+            _resetResults() {
+                this.suggestions = [];
+                this.products = [];
+                this.articles = [];
+                this.pages = [];
+                this.hasEmptyState = false;
+            },
+
+            _fetch(term) {
+                if (!term) {
+                    this.isLoading = false;
+                    this._resetResults();
+                    return;
+                }
+
+                if (this._abortController) {
+                    this._abortController.abort();
+                }
+
+                this._abortController = new AbortController();
+                const controller = this._abortController;
+                const requestedTerm = term;
+
+                const url = new URL('/search/suggest.json', window.location.origin);
+                url.searchParams.set('q', term);
+                url.searchParams.set('resources[type]', 'query,product,article,page');
+                const lim = Math.max(1, Math.min(20, Number(this.resultLimit) || 8));
+                url.searchParams.set('resources[limit]', String(lim));
+                if (this.resultLimitScope) {
+                    url.searchParams.set('resources[limit_scope]', String(this.resultLimitScope));
+                }
+
+                const ThemeRequest = window.__Theme__?.ThemeRequest;
+
+                const request = ThemeRequest
+                    ? ThemeRequest.getJSON(url.toString(), { signal: controller.signal })
+                    : fetch(url.toString(), {
+                        method: 'GET',
+                        headers: { 'Accept': 'application/json' },
+                        signal: controller.signal
+                    }).then((res) => {
+                        if (!res.ok) throw new Error('Predictive search failed');
+                        return res.json();
+                    });
+
+                request
+                    .then((data) => {
+                        const results = data?.resources?.results || {};
+                        const currency = window.Shopify?.currency?.active || (window.Shopify && window.Shopify.currency) || 'USD';
+                        const fmt = new Intl.NumberFormat(undefined, { style: 'currency', currency });
+
+                        
+                        this.suggestions = (results.queries || []).map((q) => ({
+                            text: q.text, 
+                            url: q.url
+                        })).filter((q) => q.text);
+
+                        this.products = (results.products || []).map((p) => {
+                            let finalPrice = p.price;
+                            if (typeof p.price === 'number') {
+                                finalPrice = fmt.format(p.price / 100);
+                            }
+
+                            return {
+                                id: p.id,
+                                title: p.title,
+                                vendor: p.vendor,
+                                priceFormatted: finalPrice,
+                                image: typeof p.image === 'string' ? p.image : (p.image?.url || p.featured_image?.url || ''),
+                                url: p.url
+                            };
+                        });
+
+                        this.articles = (results.articles || []).map((a) => ({
+                            id: a.id, title: a.title, url: a.url
+                        }));
+
+                        this.pages = (results.pages || []).map((pg) => ({
+                            id: pg.id, title: pg.title, url: pg.url
+                        }));
+
+                        const hasAny = 
+                            this.suggestions.length || 
+                            this.products.length || 
+                            this.articles.length || 
+                            this.pages.length;
+
+                        this.hasEmptyState = !hasAny;
+                        this._lastResolvedTerm = requestedTerm;
+                        
+                        if (!this.products.length && this.articles.length) {
+                            this.activeTab = 'articles';
+                        } else if (!this.products.length && this.pages.length) {
+                            this.activeTab = 'pages';
+                        } else {
+                            this.activeTab = 'products';
+                        }
+                    })
+                    .catch((err) => {
+                        if (err.name === 'AbortError') return;
+                        console.error(err);
+                        const toast = this.$store?.toast || window.Alpine?.store?.('toast');
+                        if (toast?.show) {
+                            toast.show('Search failed. Please try again.', 'error');
+                        }
+                        this._resetResults();
+                        this.hasEmptyState = true;
+                    })
+                    .finally(() => {
+                        if (this._abortController === controller) {
+                            this.isLoading = false;
+                            this._abortController = null;
+                        }
+                    });
+            },
+
+            performSearch() {
+                const term = (this.query || '').trim();
+                if (!term) return;
+
+                // When executing a full search navigation, ensure the predictive panel closes
+                // so the UI doesn't remain open during/after navigation on the search page.
+                this.closePanel();
+
+                const url = new URL(this.searchUrl, window.location.origin);
+                url.searchParams.set('q', term);
+                window.location.assign(url.toString());
+            },
+
+            onSuggestionClick(item) {
+                if (!item) return;
+                this.query = item.text || '';
+                this.closePanel();
+                this.performSearch();
+            },
+
+            highlightSuggestion(text) {
+                const term = (this.query || '').trim();
+                if (!term || !text) return this._escapeHtml(text);
+
+                const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const regex = new RegExp(`(${escaped})`, 'ig');
+                return this._escapeHtml(text).replace(regex, '<span class=\"font-bold\">$1</span>');
+            },
+
+            _escapeHtml(str) {
+                return String(str)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            },
+
+            destroy() {
+                if (this._debouncedFetch?.dispose) {
+                    this._debouncedFetch.dispose();
+                }
+                if (this._abortController) {
+                    this._abortController.abort();
+                    this._abortController = null;
+                }
+                if (this.dispose) {
+                    this.dispose();
+                }
+            }
+        };
+    }
+
+    /**
+     * Product recommendations (Ajax lazy-load) — used by sections/product-recommendations.liquid
+     *
+     * Fetches the recommendations section HTML only when it enters viewport.
+     * The response is parsed and only the [data-related-products-content] innerHTML is injected,
+     * then Components.initAll is called to re-bind Alpine/component engine behavior.
+     *
+     * @param {Object} opts
+     * @param {string} opts.url
+     * @param {string} opts.sectionId
+     */
+    static relatedProducts({ url, sectionId } = {}) {
+        return {
+            ...(AlpineComponentsFactory.useDisposable?.() || {}),
+            url,
+            sectionId,
+            _observer: null,
+            _abortController: null,
+            loaded: false,
+
+            init() {
+                if (!this.url || this.loaded) return;
+
+                if (!('IntersectionObserver' in window)) {
+                    this.load();
+                    return;
+                }
+
+                this._observer = new IntersectionObserver((entries) => {
+                    for (const entry of entries) {
+                        if (!entry.isIntersecting) continue;
+                        this.load();
+                        this._observer?.disconnect?.();
+                        this._observer = null;
+                        break;
+                    }
+                }, { rootMargin: '200px' });
+
+                this._observer.observe(this.$el);
+            },
+
+            load() {
+                if (this.loaded || !this.url) return;
+                this.loaded = true;
+
+                if (this._abortController) this._abortController.abort();
+                this._abortController = new AbortController();
+                const ctrl = this._abortController;
+
+                const ThemeRequest = window.__Theme__?.ThemeRequest;
+                const SectionRefresher = window.__Theme__?.SectionRefresher;
+
+                const request = ThemeRequest
+                    ? ThemeRequest.fetchWithTimeout(this.url, {
+                        method: 'GET',
+                        headers: { 'Accept': 'text/html' },
+                        signal: ctrl.signal
+                    })
+                    : fetch(this.url, {
+                        method: 'GET',
+                        headers: { 'Accept': 'text/html' },
+                        signal: ctrl.signal
+                    });
+
+                request
+                    .then((res) => {
+                        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                        return res.text();
+                    })
+                    .then((html) => {
+                        if (!SectionRefresher || !this.sectionId) return;
+
+                        const sections = { [this.sectionId]: html };
+                        const domMap = {
+                            [this.sectionId]: {
+                                targetSelector: `[data-section-id="${CSS.escape(this.sectionId)}"]`,
+                                innerSelectors: ['[data-related-products-content]']
+                            }
+                        };
+
+                        SectionRefresher.render(sections, domMap);
+                    })
+                    .catch((err) => {
+                        if (err?.name === 'AbortError') return;
+                        console.error('Related products load failed:', err);
+                        // allow retry if needed
+                        this.loaded = false;
+                    })
+                    .finally(() => {
+                        if (this._abortController === ctrl) {
+                            this._abortController = null;
+                        }
+                    });
+            },
+
+            destroy() {
+                if (this._observer?.disconnect) this._observer.disconnect();
+                this._observer = null;
+
+                if (this._abortController) this._abortController.abort();
+                this._abortController = null;
+
+                if (this.dispose) this.dispose();
+            }
+        };
+    }
+
+    /**
      * Product image gallery with multiple layout modes and optional lightbox.
      *
      * Layout modes (driven by Liquid, not JS):
@@ -966,6 +1340,218 @@ class AlpineComponents {
                 if (this._swiper?.destroy) this._swiper.destroy(true, true);
                 if (this.zoomOpen) this.closeZoom();
                 this.dispose();
+            }
+        };
+    }
+
+    /**
+     * Newsletter overlay logic (delay, expiry, display conditions, submit feedback).
+     *
+     * @param {Object} opts
+     */
+    static newsletterOverlay({
+        dialogId = '',
+        displayMode = 'enable',
+        showInHome = true,
+        showForVisitor = true,
+        isHomeTemplate = false,
+        isVisitor = true,
+        delay = 3,
+        expired = 7,
+        successMessage = 'Thanks for subscribing.',
+        errorMessage = 'Subscription failed. Please try again.'
+    } = {}) {
+        return {
+            ...AlpineComponentsFactory.useDisposable(),
+            dialogId,
+            displayMode,
+            showInHome,
+            showForVisitor,
+            isHomeTemplate,
+            isVisitor,
+            delay,
+            expired,
+            successMessage,
+            errorMessage,
+            isLoading: false,
+            timeId: null,
+            storageKey: 'newsletter-overlay-expired',
+
+            init() {
+                if (this.displayMode === 'test') {
+                    this._open();
+                    return;
+                }
+
+                if (!this._canShow()) return;
+
+                this.timeId = setTimeout(() => {
+                    this._open();
+                }, Math.max(0, Number(this.delay) * 1000));
+            },
+
+            _canShow() {
+                if (!this.showInHome && this.isHomeTemplate) return false;
+                if (!this.showForVisitor && this.isVisitor) return false;
+                if (!this._isExpired()) return false;
+                return true;
+            },
+
+            _isExpired() {
+                const saved = Number(window.localStorage.getItem(this.storageKey));
+                const now = Date.now();
+                return !saved || now > saved;
+            },
+
+            _setExpired() {
+                const ttl = Math.max(1, Number(this.expired)) * 24 * 60 * 60 * 1000;
+                window.localStorage.setItem(this.storageKey, String(Date.now() + ttl));
+            },
+
+            _open() {
+                if (!this.dialogId) return;
+                this.$store?.dialog?.open?.(this.dialogId);
+            },
+
+            hide() {
+                this.$store?.dialog?.close?.();
+                if (this.displayMode === 'enable') {
+                    this._setExpired();
+                }
+            },
+
+            async submit(event) {
+                if (this.isLoading) return;
+
+                const form = event?.target;
+                if (!(form instanceof HTMLFormElement)) return;
+
+                const emailInput = form.querySelector('input[type="email"]');
+                if (!emailInput || !emailInput.value) {
+                    window.Alpine?.store('toast')?.show?.(this.errorMessage, 'error');
+                    return;
+                }
+
+                this.isLoading = true;
+
+                try {
+                    const formData = new FormData(form);
+                    const response = await fetch(form.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: { 'Accept': 'text/html' },
+                        credentials: 'same-origin'
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Newsletter request failed');
+                    }
+
+                    window.Alpine?.store('toast')?.show?.(this.successMessage, 'success');
+                    form.reset();
+                    this.hide();
+                } catch (_) {
+                    window.Alpine?.store('toast')?.show?.(this.errorMessage, 'error');
+                } finally {
+                    this.isLoading = false;
+                }
+            },
+
+            destroy() {
+                if (this.timeId) {
+                    clearTimeout(this.timeId);
+                    this.timeId = null;
+                }
+                this.dispose();
+            }
+        };
+    }
+
+    /**
+     * Cart drawer controller: formatting, quantity changes, clear cart and checkout.
+     *
+     * @param {Object} opts
+     * @param {string[]} [opts.sections=[]] - Section IDs to refresh after cart mutations.
+     */
+    static cartOverlay({ sections = [] } = {}) {
+        return {
+            sections: Array.isArray(sections) ? sections : [],
+            pending: {},
+
+            get cart() {
+                return this.$store?.cart || { items: [], item_count: 0, total_price: 0, loading: false };
+            },
+
+            get items() {
+                return Array.isArray(this.cart.items) ? this.cart.items : [];
+            },
+
+            get isEmpty() {
+                return Number(this.cart.item_count || 0) <= 0;
+            },
+
+            get canCheckout() {
+                return !this.isEmpty && !this.cart.loading;
+            },
+
+            formatMoney(cents) {
+                const value = Number(cents || 0);
+                if (window.Shopify?.formatMoney) {
+                    return window.Shopify.formatMoney(value);
+                }
+                const currency = window.Shopify?.currency?.active || 'USD';
+                return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(value / 100);
+            },
+
+            linePrice(item) {
+                if (!item || typeof item !== 'object') return this.formatMoney(0);
+                if (typeof item.final_line_price === 'number') return this.formatMoney(item.final_line_price);
+                const line = Number(item.final_price || item.price || 0) * Number(item.quantity || 0);
+                return this.formatMoney(line);
+            },
+
+            maxQty(item) {
+                if (!item?.variant) return null;
+                if (item.variant.inventory_policy === 'continue') return null;
+                const qty = Number(item.variant.inventory_quantity);
+                return Number.isFinite(qty) && qty > 0 ? qty : null;
+            },
+
+            onQtyChange(item, qty) {
+                if (!item?.key) return;
+                const quantity = Math.max(0, Number(qty || 0));
+                if (!Number.isFinite(quantity)) return;
+                this.pending[item.key] = true;
+                this.cart.change(item.key, quantity, this.sections)
+                    .finally(() => {
+                        delete this.pending[item.key];
+                    });
+            },
+
+            remove(item) {
+                this.onQtyChange(item, 0);
+            },
+
+            decrement(item) {
+                if (!item) return;
+                this.onQtyChange(item, Math.max(0, Number(item.quantity || 0) - 1));
+            },
+
+            increment(item) {
+                if (!item) return;
+                const max = this.maxQty(item);
+                const next = Number(item.quantity || 0) + 1;
+                this.onQtyChange(item, max === null ? next : Math.min(max, next));
+            },
+
+            clearCart() {
+                if (this.cart.loading || this.isEmpty) return;
+                this.cart.clear(this.sections);
+            },
+
+            goCheckout() {
+                if (!this.canCheckout) return;
+                window.location.assign('/checkout');
             }
         };
     }
