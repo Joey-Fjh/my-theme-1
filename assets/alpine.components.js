@@ -86,6 +86,7 @@ class AlpineComponents {
     static BUYBUTTONS = 'BuyButtons';
     static PREDICTIVESEARCH = 'predictiveSearch';
     static RELATEDPRODUCTS = 'relatedProducts';
+    static NEWSLETTEROVERLAY = 'newsletterOverlay';
 
     static dropdown(){
         return {
@@ -893,7 +894,6 @@ class AlpineComponents {
             searchUrl: '/search',
             query: '',
             isOpen: false,
-            loading: false,
             isLoading: false,
             suggestions: [],
             products: [],
@@ -1333,6 +1333,129 @@ class AlpineComponents {
             destroy() {
                 if (this._swiper?.destroy) this._swiper.destroy(true, true);
                 if (this.zoomOpen) this.closeZoom();
+                this.dispose();
+            }
+        };
+    }
+
+    /**
+     * Newsletter overlay logic (delay, expiry, display conditions, submit feedback).
+     *
+     * @param {Object} opts
+     */
+    static newsletterOverlay({
+        dialogId = '',
+        displayMode = 'enable',
+        showInHome = true,
+        showForVisitor = true,
+        isHomeTemplate = false,
+        isVisitor = true,
+        delay = 3,
+        expired = 7,
+        successMessage = 'Thanks for subscribing.',
+        errorMessage = 'Subscription failed. Please try again.'
+    } = {}) {
+        return {
+            ...AlpineComponentsFactory.useDisposable(),
+            dialogId,
+            displayMode,
+            showInHome,
+            showForVisitor,
+            isHomeTemplate,
+            isVisitor,
+            delay,
+            expired,
+            successMessage,
+            errorMessage,
+            isLoading: false,
+            timeId: null,
+            storageKey: 'newsletter-overlay-expired',
+
+            init() {
+                if (this.displayMode === 'test') {
+                    this._open();
+                    return;
+                }
+
+                if (!this._canShow()) return;
+
+                this.timeId = setTimeout(() => {
+                    this._open();
+                }, Math.max(0, Number(this.delay) * 1000));
+            },
+
+            _canShow() {
+                if (!this.showInHome && this.isHomeTemplate) return false;
+                if (!this.showForVisitor && this.isVisitor) return false;
+                if (!this._isExpired()) return false;
+                return true;
+            },
+
+            _isExpired() {
+                const saved = Number(window.localStorage.getItem(this.storageKey));
+                const now = Date.now();
+                return !saved || now > saved;
+            },
+
+            _setExpired() {
+                const ttl = Math.max(1, Number(this.expired)) * 24 * 60 * 60 * 1000;
+                window.localStorage.setItem(this.storageKey, String(Date.now() + ttl));
+            },
+
+            _open() {
+                if (!this.dialogId) return;
+                this.$store?.dialog?.open?.(this.dialogId);
+            },
+
+            hide() {
+                this.$store?.dialog?.close?.();
+                if (this.displayMode === 'enable') {
+                    this._setExpired();
+                }
+            },
+
+            async submit(event) {
+                if (this.isLoading) return;
+
+                const form = event?.target;
+                if (!(form instanceof HTMLFormElement)) return;
+
+                const emailInput = form.querySelector('input[type="email"]');
+                if (!emailInput || !emailInput.value) {
+                    window.Alpine?.store('toast')?.show?.(this.errorMessage, 'error');
+                    return;
+                }
+
+                this.isLoading = true;
+
+                try {
+                    const formData = new FormData(form);
+                    const response = await fetch(form.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: { 'Accept': 'text/html' },
+                        credentials: 'same-origin'
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Newsletter request failed');
+                    }
+
+                    window.Alpine?.store('toast')?.show?.(this.successMessage, 'success');
+                    form.reset();
+                    this.hide();
+                } catch (_) {
+                    window.Alpine?.store('toast')?.show?.(this.errorMessage, 'error');
+                } finally {
+                    this.isLoading = false;
+                }
+            },
+
+            destroy() {
+                if (this.timeId) {
+                    clearTimeout(this.timeId);
+                    this.timeId = null;
+                }
                 this.dispose();
             }
         };

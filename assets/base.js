@@ -655,6 +655,7 @@ class Main {
                 Factory.register?.(Comps.BUYBUTTONS, Comps.BuyButtons);
                 Factory.register?.(Comps.PREDICTIVESEARCH, Comps.predictiveSearch);
                 Factory.register?.(Comps.RELATEDPRODUCTS, Comps.relatedProducts);
+                Factory.register?.(Comps.NEWSLETTEROVERLAY, Comps.newsletterOverlay);
             }
         }, { once: true });
     }

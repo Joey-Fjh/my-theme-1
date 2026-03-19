@@ -2,44 +2,52 @@
   ui-dialog — Reusable dialog shell (modal or drawer) driven by Alpine store.
   --------------------------------------------------
   @param {string} id          - Required. Unique dialog identifier (must match open(id)).
-  @param {string} [type]     - 'modal' | 'drawer' (default: 'modal').
-  @param {string} [position] - For drawer only: 'left' | 'right' (default: 'right').
+  @param {string} [type]      - 'modal' | 'drawer' (default: 'modal').
+  @param {string} [position]  - For drawer only: 'left' | 'right' (default: 'right').
+  @param {string} [modal_placement] - For modal only: 'center' | 'bottom-left' | 'bottom-right' (default: 'center').
   @param {string} [overlay_class] - Tailwind classes for overlay background (default: 'bg-black/50').
+  @param {string} [root_class] - Extra classes for root wrapper.
+  @param {string} [modal_wrapper_class] - Extra classes for modal outer wrapper.
+  @param {string} [modal_panel_class] - Extra classes for modal panel.
+  @param {string} [drawer_wrapper_class] - Extra classes for drawer outer wrapper.
+  @param {string} [drawer_panel_class] - Extra classes for drawer panel.
   @param {string} [content]  - HTML content (use capture in parent and pass as content).
-
-  Example (modal):
-    <button @click="$store.dialog.open('confirm-modal')">Open</button>
-    {% capture dialog_content %}
-      <div class="p-6"><h2 id="dialog-title-confirm-modal">Confirm</h2><p>...</p></div>
-    {% endcapture %}
-    {% render 'ui-dialog', id: 'confirm-modal', content: dialog_content %}
-
-  Example (drawer, right):
-    <button @click="$store.dialog.open('cart-drawer')">Cart</button>
-    {% capture drawer_content %}...{% endcapture %}
-    {% render 'ui-dialog', id: 'cart-drawer', type: 'drawer', position: 'right', content: drawer_content %}
 {% endcomment %}
 
 {%- assign dialog_id = id -%}
 {%- assign dialog_type = type | default: 'modal' -%}
 {%- assign dialog_position = position | default: 'right' -%}
+{%- assign dialog_modal_placement = modal_placement | default: 'center' -%}
 {%- assign overlay_bg = overlay_class | default: 'bg-black/50' -%}
+
+{%- assign root_classes = root_class | default: '' -%}
+{%- assign modal_wrapper_classes = modal_wrapper_class | default: '' -%}
+{%- assign modal_panel_classes = modal_panel_class | default: '' -%}
+{%- assign drawer_wrapper_classes = drawer_wrapper_class | default: '' -%}
+{%- assign drawer_panel_classes = drawer_panel_class | default: '' -%}
+
+{%- liquid
+  assign modal_placement_classes = 'items-center justify-center'
+
+  case dialog_modal_placement
+    when 'bottom-left'
+      assign modal_placement_classes = 'items-end justify-start'
+    when 'bottom-right'
+      assign modal_placement_classes = 'items-end justify-end'
+    when 'center'
+      assign modal_placement_classes = 'items-center justify-center'
+  endcase
+-%}
 
 <div
   x-data="{}"
   x-show="$store.dialog.active === '{{ dialog_id | escape }}'"
   x-cloak
-  class="fixed inset-0 z-100"
-  aria-hidden="true"
+  class="fixed inset-0 z-100 {{ root_classes }}"
   @keydown.escape.window="$store.dialog.close()"
 >
-  {%- comment -%} Overlay: click to close {%- endcomment -%}
   <div
     class="fixed inset-0 z-100 {{ overlay_bg }}"
-    role="button"
-    tabindex="-1"
-    {% comment %} aria-label="{{ 'accessibility.close' | t | default: 'Close' }}" {% endcomment %}
-    aria-label="Close"
     @click="$store.dialog.close()"
     x-transition:enter="transition ease-out duration-200"
     x-transition:enter-start="opacity-0"
@@ -50,16 +58,15 @@
   ></div>
 
   {%- if dialog_type == 'drawer' -%}
-    {%- comment -%} Drawer: side panel (position via Liquid) {%- endcomment -%}
     <div
-      class="fixed inset-y-0 z-101 h-full max-w-md w-full {% if dialog_position == 'left' %}left-0{% else %}right-0{% endif %}"
+      class="fixed inset-y-0 z-101 h-full w-full max-w-md {% if dialog_position == 'left' %}left-0{% else %}right-0{% endif %} {{ drawer_wrapper_classes }}"
       role="dialog"
       aria-modal="true"
       aria-labelledby="dialog-title-{{ dialog_id | escape }}"
       @click.stop
     >
       <div
-        class="h-full w-full bg-white shadow-xl overflow-auto"
+        class="h-full w-full bg-white shadow-xl overflow-auto {{ drawer_panel_classes }}"
         x-transition:enter="transition ease-out duration-300"
         x-transition:enter-start="{% if dialog_position == 'left' %}-translate-x-full{% else %}translate-x-full{% endif %}"
         x-transition:enter-end="translate-x-0"
@@ -71,15 +78,14 @@
       </div>
     </div>
   {%- else -%}
-    {%- comment -%} Modal: centered panel with scale + fade {%- endcomment -%}
     <div
-      class="fixed inset-0 z-101 flex items-center justify-center p-4 pointer-events-none"
+      class="fixed inset-0 z-101 flex p-4 pointer-events-none {{ modal_placement_classes }} {{ modal_wrapper_classes }}"
       role="dialog"
       aria-modal="true"
       aria-labelledby="dialog-title-{{ dialog_id | escape }}"
     >
       <div
-        class="pointer-events-auto w-full max-h-[90vh] overflow-auto bg-white shadow-xl rounded-lg"
+        class="pointer-events-auto w-full max-h-[90vh] overflow-auto bg-white shadow-xl rounded-lg {{ modal_panel_classes }}"
         @click.stop
         x-transition:enter="transition ease-out duration-200"
         x-transition:enter-start="opacity-0 scale-95"
