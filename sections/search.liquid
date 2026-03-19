@@ -57,14 +57,14 @@
             <aside class="w-full pc:w-62.5 shrink-0 border-b pc:border-b-0 pc:border-r border-[#D5D9D6] px-6 py-6">
               <p class="uppercase h6 tracking-[0.16em] text-[#A0A5A1]">Recommendation</p>
 
-              <template x-if="loading">
+              <template x-if="isLoading">
                 <div class="space-y-4">
                   <div class="h-4 bg-[#E5E7E4] animate-pulse w-full"></div>
                   <div class="h-4 bg-[#E5E7E4] animate-pulse w-2/3"></div>
                 </div>
               </template>
 
-              <template x-if="!loading && suggestions.length">
+              <template x-if="!isLoading && suggestions.length">
                 <ul class="space-y-4">
                   <template x-for="(item, index) in suggestions" :key="item.text">
                     <li class="border-b border-[#D5D9D6] pb-2">
@@ -79,21 +79,21 @@
                 </ul>
               </template>
               
-              <template x-if="!loading && !suggestions.length && query && !hasEmptyState">
+              <template x-if="!isLoading && !suggestions.length && query && !hasEmptyState">
                 <p class="text-[#A0A5A1] italic">No suggestions</p>
               </template>
             </aside>
 
             <div class="flex-1 px-6 py-6 flex flex-col relative min-w-0">       
-              <div x-show="loading" class="absolute inset-0 flex items-center justify-center bg-[#FBFBFB] bg-opacity-90 z-10">
+              <div x-show="isLoading" class="absolute inset-0 flex items-center justify-center bg-[#FBFBFB] bg-opacity-90 z-10">
                 {% render 'loading', size: 'small' %}
               </div>
 
-              <div x-show="!loading && hasEmptyState && query" class="flex flex-col items-center justify-center h-full text-center mt-10">
+              <div x-show="!isLoading && hasEmptyState && query" class="flex flex-col items-center justify-center h-full text-center mt-10">
                 <p class="font-medium text-[#263D29]">Not found for "<span x-text="query"></span>"</p>
               </div>
 
-              <div x-show="!loading && !hasEmptyState" class="flex-1 flex flex-col w-full">
+              <div x-show="!isLoading && !hasEmptyState" class="flex-1 flex flex-col w-full">
                 {% capture tab_header %}
                   <div class="flex gap-8 uppercase tracking-[0.16em] w-full border-b border-[#D5D9D6]">
                     <button 

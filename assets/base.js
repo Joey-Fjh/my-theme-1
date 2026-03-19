@@ -656,6 +656,7 @@ class Main {
                 Factory.register?.(Comps.PREDICTIVESEARCH, Comps.predictiveSearch);
                 Factory.register?.(Comps.RELATEDPRODUCTS, Comps.relatedProducts);
                 Factory.register?.(Comps.NEWSLETTEROVERLAY, Comps.newsletterOverlay);
+                Factory.register?.(Comps.CARTOVERLAY, Comps.cartOverlay);
             }
         }, { once: true });
     }

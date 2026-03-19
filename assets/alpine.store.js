@@ -180,6 +180,40 @@ window.__Theme__.AlpineStores = {
         },
 
         /**
+         * Clear all items from cart.
+         * @param {string[]} [sections=[]] - Optional Section Rendering API target IDs.
+         * @returns {Promise<Object>}
+         */
+        clear(sections = []) {
+            this.loading = true;
+            const bodyData = {};
+            if (Array.isArray(sections) && sections.length > 0) {
+                bodyData.sections = sections.join(',');
+            }
+            return fetch('/cart/clear.js', {
+                method: 'POST',
+                headers: this._headers,
+                credentials: 'same-origin',
+                body: JSON.stringify(bodyData)
+            })
+                .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
+                .then(({ ok, data }) => {
+                    if (!ok) return Promise.reject(data);
+                    if (data.sections && typeof window.__Theme__?.SectionRefresher?.render === 'function') {
+                        window.__Theme__.SectionRefresher.render(data.sections);
+                    }
+                    this.items = Array.isArray(data.items) ? data.items : [];
+                    this.item_count = typeof data.item_count === 'number' ? data.item_count : 0;
+                    this.total_price = typeof data.total_price === 'number' ? data.total_price : 0;
+                    return data;
+                })
+                .catch(this._handleError)
+                .finally(() => {
+                    this.loading = false;
+                });
+        },
+
+        /**
          * Update cart note or attributes via /cart/update.js
          * @param {Object} data - e.g., { note: 'xxx' } or { attributes: { Country: 'China' } }
          * @returns {Promise<Object>}

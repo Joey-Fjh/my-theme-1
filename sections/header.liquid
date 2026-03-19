@@ -38,28 +38,36 @@
     </div>
     
     <div class="flex justify-center items-center" style="grid-area: menu">
-      {%- render 'header-dropdown-menu' -%}
+      {%- if section.settings.menu_type == 'super' -%}
+        {%- render 'header-dropdown-super-menu' -%}
+      {%- else -%}
+        {%- render 'header-dropdown-menu' -%}
+      {%- endif -%}
     </div>
     
     <div class="flex justify-end items-center gap-3" style="grid-area:navigation">
       {%- assign size_class = 'w-12 h-12' -%}
       
-      <div class="flex items-center gap-2 border-b-2">
-        <span class="{{ size_class }} inline-block icons">
+      <button
+        type="button"
+        class="flex items-center gap-2 cursor-pointer"
+        @click="$store.dialog.open('search-overlay-drawer')"
+        aria-label="Open search"
+      >
+        <span class="{{ size_class }} inline-block icons" aria-hidden="true">
           {{ 'icon-search.svg' | inline_asset_content }}
         </span>
-        <input 
-          name="q"
-          type="search"
-          placeholder="Search"
-          class="flex-1 bg-transparent outline-none" 
-        >
-        </div>
+      </button>
         
-        <a href="{{ routes.cart_url }}" class="relative {{ size_class }} inline-flex items-center justify-center icons" aria-label="Cart">
+        <button
+          type="button"
+          class="relative {{ size_class }} inline-flex items-center justify-center icons cursor-pointer"
+          @click="$store.dialog.open('cart-overlay-drawer')"
+          aria-label="Open cart"
+        >
           {{ 'icon-cart.svg' | inline_asset_content }}
           <span x-show="$store.cart.item_count > 0" x-text="$store.cart.item_count" x-cloak class="absolute -top-1 -right-1 min-w-5 h-5 px-1 flex items-center justify-center text-xs font-medium bg-black text-white rounded-full"></span>
-        </a>
+        </button>
         
         <span class="w-10 h-10 inline-block icons">
           {{ 'icon-account.svg' | inline_asset_content }}
@@ -96,6 +104,7 @@
       grid-template-areas: "logo menu navigation";
     }
   }
+
 {% endstylesheet %}
 
 <script type="application/ld+json">
@@ -209,6 +218,59 @@
       "type": "link_list",
       "id": "menu",
       "label": "t:labels.menu"
+    },
+    {
+      "type": "header",
+      "content": "Menu Type"
+    },
+    {
+      "type": "select",
+      "id": "menu_type",
+      "label": "Menu Type",
+      "default": "dropdown",
+      "options": [
+        { "value": "dropdown", "label": "Dropdown Menu" },
+        { "value": "super", "label": "Super Menu" }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "super_menu_watermark_text",
+      "label": "Super Menu Watermark",
+      "default": "Eccenova®",
+      "visible_if": "{{ section.settings.menu_type == 'super' }}"
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_super_menu_series",
+      "label": "Enable Product Series Tabs",
+      "default": false,
+      "visible_if": "{{ section.settings.menu_type == 'super' }}"
+    },
+    {
+      "type": "collection",
+      "id": "super_collection_1",
+      "label": "Series Collection 1"
+    },
+    {
+      "type": "collection",
+      "id": "super_collection_2",
+      "label": "Series Collection 2"
+    },
+    {
+      "type": "collection",
+      "id": "super_collection_3",
+      "label": "Series Collection 3"
+    },
+    {
+      "type": "range",
+      "id": "super_series_products_limit",
+      "label": "Products Per Series",
+      "min": 3,
+      "max": 12,
+      "step": 1,
+      "default": 6,
+      "visible_if": "{{ section.settings.menu_type == 'super' and section.settings.enable_super_menu_series }}"
     }
   ]
 }

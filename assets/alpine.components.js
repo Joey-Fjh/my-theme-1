@@ -87,6 +87,7 @@ class AlpineComponents {
     static PREDICTIVESEARCH = 'predictiveSearch';
     static RELATEDPRODUCTS = 'relatedProducts';
     static NEWSLETTEROVERLAY = 'newsletterOverlay';
+    static CARTOVERLAY = 'cartOverlay';
 
     static dropdown(){
         return {
@@ -886,7 +887,7 @@ class AlpineComponents {
      * @param {string} options.searchUrl   - Base search URL (routes.search_url)
      * @param {string} [options.initialQuery=''] - Initial query from current page
      */
-    static predictiveSearch() {
+    static predictiveSearch({ limit = 8, limitScope = 'each' } = {}) {
         const Utils = window.__Theme__?.Utils;
 
         return {
@@ -895,6 +896,8 @@ class AlpineComponents {
             query: '',
             isOpen: false,
             isLoading: false,
+            resultLimit: limit,
+            resultLimitScope: limitScope,
             suggestions: [],
             products: [],
             articles: [],
@@ -938,7 +941,6 @@ class AlpineComponents {
                 if (!term) {
                     this._resetResults();
                     this.isOpen = false;
-                    this.loading = false;
                     this.isLoading = false;
                     this._lastScheduledTerm = null;
                     return;
@@ -948,7 +950,6 @@ class AlpineComponents {
                 // This also prevents duplicate calls from IME confirm events (compositionend).
                 if (this._lastResolvedTerm === term) {
                     this.isOpen = true;
-                    this.loading = false;
                     this.isLoading = false;
                     return;
                 }
@@ -960,7 +961,6 @@ class AlpineComponents {
                 }
 
                 this.isOpen = true;
-                this.loading = true;
                 this.isLoading = true;
                 this.hasEmptyState = false;
 
@@ -983,7 +983,6 @@ class AlpineComponents {
 
             _fetch(term) {
                 if (!term) {
-                    this.loading = false;
                     this.isLoading = false;
                     this._resetResults();
                     return;
@@ -1000,7 +999,11 @@ class AlpineComponents {
                 const url = new URL('/search/suggest.json', window.location.origin);
                 url.searchParams.set('q', term);
                 url.searchParams.set('resources[type]', 'query,product,article,page');
-                url.searchParams.set('resources[limit]', '4');
+                const lim = Math.max(1, Math.min(20, Number(this.resultLimit) || 8));
+                url.searchParams.set('resources[limit]', String(lim));
+                if (this.resultLimitScope) {
+                    url.searchParams.set('resources[limit_scope]', String(this.resultLimitScope));
+                }
 
                 const ThemeRequest = window.__Theme__?.ThemeRequest;
 
@@ -1071,12 +1074,15 @@ class AlpineComponents {
                     .catch((err) => {
                         if (err.name === 'AbortError') return;
                         console.error(err);
+                        const toast = this.$store?.toast || window.Alpine?.store?.('toast');
+                        if (toast?.show) {
+                            toast.show('Search failed. Please try again.', 'error');
+                        }
                         this._resetResults();
                         this.hasEmptyState = true;
                     })
                     .finally(() => {
                         if (this._abortController === controller) {
-                            this.loading = false;
                             this.isLoading = false;
                             this._abortController = null;
                         }
@@ -1457,6 +1463,95 @@ class AlpineComponents {
                     this.timeId = null;
                 }
                 this.dispose();
+            }
+        };
+    }
+
+    /**
+     * Cart drawer controller: formatting, quantity changes, clear cart and checkout.
+     *
+     * @param {Object} opts
+     * @param {string[]} [opts.sections=[]] - Section IDs to refresh after cart mutations.
+     */
+    static cartOverlay({ sections = [] } = {}) {
+        return {
+            sections: Array.isArray(sections) ? sections : [],
+            pending: {},
+
+            get cart() {
+                return this.$store?.cart || { items: [], item_count: 0, total_price: 0, loading: false };
+            },
+
+            get items() {
+                return Array.isArray(this.cart.items) ? this.cart.items : [];
+            },
+
+            get isEmpty() {
+                return Number(this.cart.item_count || 0) <= 0;
+            },
+
+            get canCheckout() {
+                return !this.isEmpty && !this.cart.loading;
+            },
+
+            formatMoney(cents) {
+                const value = Number(cents || 0);
+                if (window.Shopify?.formatMoney) {
+                    return window.Shopify.formatMoney(value);
+                }
+                const currency = window.Shopify?.currency?.active || 'USD';
+                return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(value / 100);
+            },
+
+            linePrice(item) {
+                if (!item || typeof item !== 'object') return this.formatMoney(0);
+                if (typeof item.final_line_price === 'number') return this.formatMoney(item.final_line_price);
+                const line = Number(item.final_price || item.price || 0) * Number(item.quantity || 0);
+                return this.formatMoney(line);
+            },
+
+            maxQty(item) {
+                if (!item?.variant) return null;
+                if (item.variant.inventory_policy === 'continue') return null;
+                const qty = Number(item.variant.inventory_quantity);
+                return Number.isFinite(qty) && qty > 0 ? qty : null;
+            },
+
+            onQtyChange(item, qty) {
+                if (!item?.key) return;
+                const quantity = Math.max(0, Number(qty || 0));
+                if (!Number.isFinite(quantity)) return;
+                this.pending[item.key] = true;
+                this.cart.change(item.key, quantity, this.sections)
+                    .finally(() => {
+                        delete this.pending[item.key];
+                    });
+            },
+
+            remove(item) {
+                this.onQtyChange(item, 0);
+            },
+
+            decrement(item) {
+                if (!item) return;
+                this.onQtyChange(item, Math.max(0, Number(item.quantity || 0) - 1));
+            },
+
+            increment(item) {
+                if (!item) return;
+                const max = this.maxQty(item);
+                const next = Number(item.quantity || 0) + 1;
+                this.onQtyChange(item, max === null ? next : Math.min(max, next));
+            },
+
+            clearCart() {
+                if (this.cart.loading || this.isEmpty) return;
+                this.cart.clear(this.sections);
+            },
+
+            goCheckout() {
+                if (!this.canCheckout) return;
+                window.location.assign('/checkout');
             }
         };
     }
