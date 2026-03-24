@@ -1,40 +1,40 @@
 {%- assign popup_id = 'search-overlay-drawer' -%}
 
 <div
-  data-section-id="{{ section.id }}"
-  class="search-overlay-section"
-  data-component-kind="section"
-  data-component-type="search-overlay"
-  data-component-id="{{ section.id }}"
+    data-section-id="{{ section.id }}"
+    class="search-overlay-section"
+    data-component-kind="section"
+    data-component-type="search-overlay"
+    data-component-id="{{ section.id }}"
 >
-  {%- capture drawer_content -%}
+    {%- capture drawer_content -%}
     <div
-      class="h-full bg-white text-[#263D29] flex flex-col"
+      class="flex h-full flex-col bg-white text-[#263D29]"
       x-data="predictiveSearch({ limit: {{ section.settings.search_result_limit | json }} })"
       x-init='searchUrl = {{ routes.search_url | json }}'
       @keydown.escape.window="$store.dialog.close()"
     >
-      <div class="px-5 pc:px-6 pt-5 pb-4 border-b border-[#D5D9D6]">
-        <div class="flex items-center justify-between gap-4 mb-5">
+      <div class="pc:px-6 border-b border-[#D5D9D6] px-5 pt-5 pb-4">
+        <div class="mb-5 flex items-center justify-between gap-4">
           <h2 id="dialog-title-{{ popup_id }}" class="h3">Search</h2>
           <button
             type="button"
-            class="inline-flex h-8 w-8 items-center justify-center text-[#263D29]/75 transition hover:text-[#263D29] cursor-pointer"
+            class="inline-flex h-8 w-8 cursor-pointer items-center justify-center text-[#263D29]/75 transition hover:text-[#263D29]"
             @click="$store.dialog.close()"
             aria-label="Close search drawer"
           >
-            <span class="w-4 h-4">{{ 'icon-trash.svg' | inline_asset_content }}</span>
+            <span class="h-4 w-4">{{ 'icon-trash.svg' | inline_asset_content }}</span>
           </button>
         </div>
 
         <form @submit.prevent="performSearch()" role="search" class="w-full">
           <div class="flex items-center gap-2 border-b border-[#263D29] pb-2">
-            <span class="w-4 h-4 shrink-0 opacity-70">{{ 'icon-search.svg' | inline_asset_content }}</span>
+            <span class="h-4 w-4 shrink-0 opacity-70">{{ 'icon-search.svg' | inline_asset_content }}</span>
             <input
               id="SearchOverlayInput-{{ section.id }}"
               type="search"
               name="q"
-              class="w-full min-w-0 bg-transparent border-none outline-none text-base placeholder:text-[#A0A5A1]"
+              class="w-full min-w-0 border-none bg-transparent text-base outline-none placeholder:text-[#A0A5A1]"
               autocomplete="off"
               placeholder="Search"
               x-model="query"
@@ -56,7 +56,7 @@
               <li>
                 <button
                   type="button"
-                  class="text-sm border-b border-[#D5D9D6] hover:border-[#263D29] transition-colors"
+                  class="border-b border-[#D5D9D6] text-sm transition-colors hover:border-[#263D29]"
                   @click="onSuggestionClick(item)"
                   x-html="highlightSuggestion(item.text)"
                 ></button>
@@ -66,12 +66,12 @@
         </template>
       </div>
 
-      <div class="flex-1 min-h-0 px-5 pc:px-6 py-4 flex flex-col">
+      <div class="pc:px-6 flex min-h-0 flex-1 flex-col px-5 py-4">
         <div x-show="!isLoading && hasEmptyState && query" class="py-6 text-center">
           <p class="h5">No results found for "<span x-text="query"></span>"</p>
         </div>
 
-        <div x-show="!isLoading && !hasEmptyState" class="flex-1 min-h-0 flex flex-col">
+        <div x-show="!isLoading && !hasEmptyState" class="flex min-h-0 flex-1 flex-col">
           {% capture tab_header %}
             <button
               type="button"
@@ -79,7 +79,7 @@
               x-data="{ index: null }"
               x-init="index = registerTab($el)"
               @click="setActive(index); activeTab = 'products'"
-              class="pb-2 border-b h6 uppercase tracking-[0.16em] transition-colors"
+              class="h6 border-b pb-2 tracking-[0.16em] uppercase transition-colors"
               :class="isActive(index) ? 'text-[#263D29] border-[#263D29]' : 'text-[#A0A5A1] border-transparent hover:text-[#263D29]'"
             >
               Products
@@ -91,7 +91,7 @@
               x-data="{ index: null }"
               x-init="index = registerTab($el)"
               @click="setActive(index); activeTab = 'articles'"
-              class="pb-2 border-b h6 uppercase tracking-[0.16em] transition-colors"
+              class="h6 border-b pb-2 tracking-[0.16em] uppercase transition-colors"
               :class="isActive(index) ? 'text-[#263D29] border-[#263D29]' : 'text-[#A0A5A1] border-transparent hover:text-[#263D29]'"
             >
               Articles
@@ -103,7 +103,7 @@
               x-data="{ index: null }"
               x-init="index = registerTab($el)"
               @click="setActive(index); activeTab = 'pages'"
-              class="pb-2 border-b h6 uppercase tracking-[0.16em] transition-colors"
+              class="h6 border-b pb-2 tracking-[0.16em] uppercase transition-colors"
               :class="isActive(index) ? 'text-[#263D29] border-[#263D29]' : 'text-[#A0A5A1] border-transparent hover:text-[#263D29]'"
             >
               Pages
@@ -121,24 +121,24 @@
               <div class="grid grid-cols-2 gap-3">
                 <template x-for="product in products" :key="product.id">
                   <a
-                    class="group block border border-[#E7EAE8] p-3 hover:shadow-sm transition-shadow"
+                    class="group block border border-[#E7EAE8] p-3 transition-shadow hover:shadow-sm"
                     :href="product.url"
                   >
-                    <div class="aspect-square bg-[#F4F5F3] mb-3 overflow-hidden">
+                    <div class="mb-3 aspect-square overflow-hidden bg-[#F4F5F3]">
                       <img
-                        class="w-full h-full object-cover group-hover:scale-102 transition-transform duration-300"
+                        class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-102"
                         :src="product.image"
                         :alt="product.title"
                         width="120"
                         height="120"
                       >
                     </div>
-                    <p class="text-sm line-clamp-2" x-text="product.title"></p>
-                    <p class="text-sm mt-1 opacity-80" x-text="product.priceFormatted"></p>
+                    <p class="line-clamp-2 text-sm" x-text="product.title"></p>
+                    <p class="mt-1 text-sm opacity-80" x-text="product.priceFormatted"></p>
                   </a>
                 </template>
               </div>
-              <p x-show="!products.length" class="text-sm text-[#A0A5A1] py-4">No products found.</p>
+              <p x-show="!products.length" class="py-4 text-sm text-[#A0A5A1]">No products found.</p>
             </div>
 
             <div
@@ -155,7 +155,7 @@
                   </li>
                 </template>
               </ul>
-              <p x-show="!articles.length" class="text-sm text-[#A0A5A1] py-4">No articles found.</p>
+              <p x-show="!articles.length" class="py-4 text-sm text-[#A0A5A1]">No articles found.</p>
             </div>
 
             <div
@@ -172,7 +172,7 @@
                   </li>
                 </template>
               </ul>
-              <p x-show="!pages.length" class="text-sm text-[#A0A5A1] py-4">No pages found.</p>
+              <p x-show="!pages.length" class="py-4 text-sm text-[#A0A5A1]">No pages found.</p>
             </div>
           {% endcapture %}
 
@@ -189,56 +189,60 @@
     </div>
   {%- endcapture -%}
 
-  {%- render 'ui-dialog',
-    id: popup_id,
-    type: 'drawer',
-    position: 'right',
-    overlay_class: 'bg-black/35',
-    root_class: 'z-[10010]',
-    drawer_wrapper_class: '!max-w-[40rem] fw:!max-w-[33vw]',
-    drawer_panel_class: 'overflow-hidden',
-    content: drawer_content
-  -%}
+    {%- render 'ui-dialog',
+        id: popup_id,
+        type: 'drawer',
+        position: 'right',
+        overlay_class: 'bg-black/35',
+        root_class: 'z-[10010]',
+        drawer_wrapper_class: '!max-w-[40rem] fw:!max-w-[33vw]',
+        drawer_panel_class: 'overflow-hidden',
+        content: drawer_content
+    -%}
 </div>
 
 {%- javascript -%}
-  (function() {
-    const Components = window.__Theme__?.Components;
-    if (!Components) return;
+    (function () {
+        const Components = window.__Theme__?.Components;
+        if (!Components) return;
 
-    Components.register('search-overlay', {
-      init() {
-        return {};
-      },
-      destroy() {}
-    }, { lazy: false });
-  })();
+        Components.register(
+            'search-overlay',
+            {
+                init() {
+                    return {};
+                },
+                destroy() {},
+            },
+            { lazy: false },
+        );
+    })();
 {%- endjavascript -%}
 
 {% schema %}
 {
-  "name": "Search Overlay",
-  "tag": "section",
-  "class": "section",
-  "enabled_on": {
-    "groups": ["custom.overlay"]
-  },
-  "limit": 1,
-  "settings": [
-    {
-      "type": "range",
-      "id": "search_result_limit",
-      "min": 2,
-      "max": 20,
-      "step": 1,
-      "default": 8,
-      "label": "Predictive search result limit"
-    }
-  ],
-  "presets": [
-    {
-      "name": "Search Overlay"
-    }
-  ]
+    "name": "Search Overlay",
+    "tag": "section",
+    "class": "section",
+    "enabled_on": {
+        "groups": ["custom.overlay"]
+    },
+    "limit": 1,
+    "settings": [
+        {
+            "type": "range",
+            "id": "search_result_limit",
+            "min": 2,
+            "max": 20,
+            "step": 1,
+            "default": 8,
+            "label": "Predictive search result limit"
+        }
+    ],
+    "presets": [
+        {
+            "name": "Search Overlay"
+        }
+    ]
 }
 {% endschema %}

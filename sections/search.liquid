@@ -1,115 +1,136 @@
 {%- liquid
-  assign terms = search.terms | strip
+    assign terms = search.terms | strip
 -%}
 
 <div
-  data-section-id="{{ section.id }}"
-  class="search-section full-width bg-[#F3F3F3] min-h-[50vh]"
-  style="
-    --section-padding-top: {{ section.settings.padding_top | default: 0 }}px;
-    --section-padding-bottom: {{ section.settings.padding_bottom | default: 0 }}px;
-  "
-  data-component-kind="section"
-  data-component-type="search-section"
-  data-component-id="{{ section.id }}"
-> 
-  <div class="layout container-page overflow-visible!">
-    <div
-      class="w-full max-w-1/2 mx-auto"
-      x-data="predictiveSearch"
-      x-init='searchUrl = {{ routes.search_url | json }}; query = {{ terms | json }}; if (query && !{{ search.performed | json }}) { onInput(query); } else { isOpen = false; }'
-    >
-      <form
-        @submit.prevent="performSearch()"
-        role="search"
-        class="relative w-full"
-        @click.outside="closePanel()"
-      >
-        <div class="flex items-center gap-3 border-b border-[#263D29] pb-3 mb-1">
-          <svg class="w-5 h-5 pc:w-6 pc:h-6 text-[#263D29] shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"></path>
-          </svg>
-
-          <input
-            id="SearchInput-{{ section.id }}"
-            type="search"
-            name="q"
-            class="flex-1 w-full bg-transparent border-none outline-none text-xl pc:text-2xl text-[#263D29] placeholder:text-[#A0A5A1] appearance-none"
-            autocomplete="off"
-            :aria-expanded="isOpen"
-            placeholder="Search"
-            x-model="query"
-            @input="onInput($event.target.value)"
-            @compositionend="onInput($event.target.value)"
-            @focus="openPanel()"
-            @click="openPanel()"
-            @keydown.escape.stop="closePanel()"
-            @keydown.enter.prevent="performSearch()"
-          >
-        </div>
-
+    data-section-id="{{ section.id }}"
+    class="search-section full-width min-h-[50vh] bg-[#F3F3F3]"
+    style="
+        --section-padding-top: {{ section.settings.padding_top | default: 0 }}px;
+        --section-padding-bottom: {{ section.settings.padding_bottom | default: 0 }}px;
+    "
+    data-component-kind="section"
+    data-component-type="search-section"
+    data-component-id="{{ section.id }}"
+>
+    <div class="layout container-page overflow-visible!">
         <div
-          x-cloak
-          x-show="isOpen"
-          class="absolute left-0 w-full bg-[#FBFBFB] border border-[#D5D9D6] shadow-lg z-30"
+            class="mx-auto w-full max-w-1/2"
+            x-data="predictiveSearch"
+            x-init="searchUrl = {{ routes.search_url | json }}; query = {{ terms | json }}; if (query && !{{ search.performed | json }}) { onInput(query); } else { isOpen = false; }"
         >
-          <div class="flex flex-col pc:flex-row min-h-100">
-            <aside class="w-full pc:w-62.5 shrink-0 border-b pc:border-b-0 pc:border-r border-[#D5D9D6] px-6 py-6">
-              <p class="uppercase h6 tracking-[0.16em] text-[#A0A5A1]">Recommendation</p>
+            <form
+                @submit.prevent="performSearch()"
+                role="search"
+                class="relative w-full"
+                @click.outside="closePanel()"
+            >
+                <div class="mb-1 flex items-center gap-3 border-b border-[#263D29] pb-3">
+                    <svg
+                        class="pc:w-6 pc:h-6 h-5 w-5 shrink-0 text-[#263D29]"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                        aria-hidden="true"
+                    >
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"></path>
+                    </svg>
 
-              <template x-if="isLoading">
-                <div class="space-y-4">
-                  <div class="h-4 bg-[#E5E7E4] animate-pulse w-full"></div>
-                  <div class="h-4 bg-[#E5E7E4] animate-pulse w-2/3"></div>
+                    <input
+                        id="SearchInput-{{ section.id }}"
+                        type="search"
+                        name="q"
+                        class="pc:text-2xl w-full flex-1 appearance-none border-none bg-transparent text-xl text-[#263D29] outline-none placeholder:text-[#A0A5A1]"
+                        autocomplete="off"
+                        :aria-expanded="isOpen"
+                        placeholder="Search"
+                        x-model="query"
+                        @input="onInput($event.target.value)"
+                        @compositionend="onInput($event.target.value)"
+                        @focus="openPanel()"
+                        @click="openPanel()"
+                        @keydown.escape.stop="closePanel()"
+                        @keydown.enter.prevent="performSearch()"
+                    >
                 </div>
-              </template>
 
-              <template x-if="!isLoading && suggestions.length">
-                <ul class="space-y-4">
-                  <template x-for="(item, index) in suggestions" :key="item.text">
-                    <li class="border-b border-[#D5D9D6] pb-2">
-                      <button 
-                        type="button" 
-                        class="w-full h5 text-left text-[#263D29] hover:opacity-70 transition-opacity" 
-                        @click="onSuggestionClick(item)" 
-                        x-html="highlightSuggestion(item.text)"
-                      ></button>
-                    </li>
-                  </template>
-                </ul>
-              </template>
-              
-              <template x-if="!isLoading && !suggestions.length && query && !hasEmptyState">
-                <p class="text-[#A0A5A1] italic">No suggestions</p>
-              </template>
-            </aside>
+                <div
+                    x-cloak
+                    x-show="isOpen"
+                    class="absolute left-0 z-30 w-full border border-[#D5D9D6] bg-[#FBFBFB] shadow-lg"
+                >
+                    <div class="pc:flex-row flex min-h-100 flex-col">
+                        <aside class="pc:w-62.5 pc:border-b-0 pc:border-r w-full shrink-0 border-b border-[#D5D9D6] px-6 py-6">
+                            <p class="h6 tracking-[0.16em] text-[#A0A5A1] uppercase">
+                                Recommendation
+                            </p>
 
-            <div class="flex-1 px-6 py-6 flex flex-col relative min-w-0">       
-              <div x-show="isLoading" class="absolute inset-0 flex items-center justify-center bg-[#FBFBFB] bg-opacity-90 z-10">
-                {% render 'loading', size: 'small' %}
-              </div>
+                            <template x-if="isLoading">
+                                <div class="space-y-4">
+                                    <div class="h-4 w-full animate-pulse bg-[#E5E7E4]"></div>
+                                    <div class="h-4 w-2/3 animate-pulse bg-[#E5E7E4]"></div>
+                                </div>
+                            </template>
 
-              <div x-show="!isLoading && hasEmptyState && query" class="flex flex-col items-center justify-center h-full text-center mt-10">
-                <p class="font-medium text-[#263D29]">Not found for "<span x-text="query"></span>"</p>
-              </div>
+                            <template x-if="!isLoading && suggestions.length">
+                                <ul class="space-y-4">
+                                    <template x-for="(item, index) in suggestions" :key="item.text">
+                                        <li class="border-b border-[#D5D9D6] pb-2">
+                                            <button
+                                                type="button"
+                                                class="h5 w-full text-left text-[#263D29] transition-opacity hover:opacity-70"
+                                                @click="onSuggestionClick(item)"
+                                                x-html="highlightSuggestion(item.text)"
+                                            ></button>
+                                        </li>
+                                    </template>
+                                </ul>
+                            </template>
 
-              <div x-show="!isLoading && !hasEmptyState" class="flex-1 flex flex-col w-full">
-                {% capture tab_header %}
-                  <div class="flex gap-8 uppercase tracking-[0.16em] w-full border-b border-[#D5D9D6]">
+                            <template x-if="!isLoading && !suggestions.length && query && !hasEmptyState">
+                                <p class="text-[#A0A5A1] italic">No suggestions</p>
+                            </template>
+                        </aside>
+
+                        <div class="relative flex min-w-0 flex-1 flex-col px-6 py-6">
+                            <div
+                                x-show="isLoading"
+                                class="bg-opacity-90 absolute inset-0 z-10 flex items-center justify-center bg-[#FBFBFB]"
+                            >
+                                {% render 'loading', size: 'small' %}
+                            </div>
+
+                            <div
+                                x-show="!isLoading && hasEmptyState && query"
+                                class="mt-10 flex h-full flex-col items-center justify-center text-center"
+                            >
+                                <p class="font-medium text-[#263D29]">
+                                    Not found for "<span x-text="query"></span>"
+                                </p>
+                            </div>
+
+                            <div
+                                x-show="!isLoading && !hasEmptyState"
+                                class="flex w-full flex-1 flex-col"
+                            >
+                                {% capture tab_header %}
+                  <div class="flex w-full gap-8 border-b border-[#D5D9D6] tracking-[0.16em] uppercase">
                     <button 
                       type="button" 
                       role="tab" 
                       x-data="{ index: null }" 
                       x-init="index = registerTab($el)" 
                       @click="setActive(index); activeTab = 'products'" 
-                      class="inline-flex items-baseline gap-1 pb-2 border-b leading-tight"
+                      class="inline-flex items-baseline gap-1 border-b pb-2 leading-tight"
                       :class="isActive(index) 
                         ? 'text-[#263D29] font-medium border-[#263D29]' 
                         : 'text-[#A0A5A1] hover:text-[#263D29] border-transparent'
                       "
                     >
                       Products 
-                      <sup x-show="products.length" x-text="`(${products.length})`" class="text-[0.75em] leading-none align-super"></sup>
+                      <sup x-show="products.length" x-text="`(${products.length})`" class="align-super text-[0.75em] leading-none"></sup>
                     </button>
                     <button 
                       type="button" 
@@ -117,14 +138,14 @@
                       x-data="{ index: null }" 
                       x-init="index = registerTab($el)" 
                       @click="setActive(index); activeTab = 'articles'" 
-                      class="inline-flex items-baseline gap-1 pb-2 border-b leading-tight"
+                      class="inline-flex items-baseline gap-1 border-b pb-2 leading-tight"
                       :class="isActive(index) 
                         ? 'text-[#263D29] font-medium border-[#263D29]' 
                         : 'text-[#A0A5A1] hover:text-[#263D29] border-transparent'
                       "
                     >
                       Articles
-                      <sup x-show="articles.length" x-text="`(${articles.length})`" class="text-[0.75em] leading-none align-super"></sup>
+                      <sup x-show="articles.length" x-text="`(${articles.length})`" class="align-super text-[0.75em] leading-none"></sup>
                     </button>
                     <button 
                       type="button" 
@@ -132,53 +153,53 @@
                       x-data="{ index: null }" 
                       x-init="index = registerTab($el)" 
                       @click="setActive(index); activeTab = 'pages'" 
-                      class="inline-flex items-baseline gap-1 pb-2 border-b leading-tight"
+                      class="inline-flex items-baseline gap-1 border-b pb-2 leading-tight"
                       :class="isActive(index) 
                         ? 'text-[#263D29] font-medium border-[#263D29]' 
                         : 'text-[#A0A5A1] hover:text-[#263D29] border-transparent'
                       "
                     >
                       Pages
-                      <sup x-show="pages.length" x-text="`(${pages.length})`" class="text-[0.75em] leading-none align-super"></sup>
+                      <sup x-show="pages.length" x-text="`(${pages.length})`" class="align-super text-[0.75em] leading-none"></sup>
                     </button>
                   </div>
                 {% endcapture %}
 
-                {% capture tab_content %}
+                                {% capture tab_content %}
                   <div 
                     role="tabpanel" 
                     x-data="{ index: null }" 
                     x-init="index = registerPanel($el)" 
                     x-show="activeTab === 'products'"
                   >
-                    <div class="grid grid-cols-2 pc:grid-cols-2 gap-6">
+                    <div class="pc:grid-cols-2 grid grid-cols-2 gap-6">
                       <template x-for="product in products" :key="product.id">
                         <a 
-                          class="group block bg-white p-4 transition-shadow hover:shadow-md border border-[#F2F3F0]" 
+                          class="group block border border-[#F2F3F0] bg-white p-4 transition-shadow hover:shadow-md" 
                           :href="product.url"
                         >
-                          <div class="flex justify-between items-center mb-3">
+                          <div class="mb-3 flex items-center justify-between">
                             <span 
-                              class="uppercase text-[#A0A5A1] tracking-widest" 
+                              class="tracking-widest text-[#A0A5A1] uppercase" 
                               x-text="product.vendor || 'Product'"
                             ></span>
                             <div class="flex gap-1">
-                              <span class="w-2 h-2 rounded-full bg-[#263D29]"></span>
-                              <span class="w-2 h-2 rounded-full bg-[#E5E7E4]"></span>
+                              <span class="h-2 w-2 rounded-full bg-[#263D29]"></span>
+                              <span class="h-2 w-2 rounded-full bg-[#E5E7E4]"></span>
                             </div>
                           </div>
-                          <div class="aspect-square overflow-hidden mb-4 flex items-center justify-center bg-[#F2F3F0]">
+                          <div class="mb-4 flex aspect-square items-center justify-center overflow-hidden bg-[#F2F3F0]">
                             <img 
-                              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                              class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" 
                               :src="product.image" 
                               :alt="product.title"
                               height="60" 
                               width="60"
                             >
                           </div>
-                          <div class="flex justify-between items-start border-t border-[#F2F3F0] pt-3">
-                            <p class="text-[#263D29] font-medium pr-2" x-text="product.title"></p>
-                            <p class="text-[#263D29] shrink-0" x-text="product.priceFormatted"></p>
+                          <div class="flex items-start justify-between border-t border-[#F2F3F0] pt-3">
+                            <p class="pr-2 font-medium text-[#263D29]" x-text="product.title"></p>
+                            <p class="shrink-0 text-[#263D29]" x-text="product.priceFormatted"></p>
                           </div>
                         </a>
                       </template>
@@ -228,62 +249,62 @@
                   </div>
                 {% endcapture %}
 
-                {%- render 'tab-control',
-                  initialTabStrategy: 'first',
-                  tab_header: tab_header,
-                  tab_content: tab_content,
-                  header_class: 'w-full',
-                  content_class: 'mt-2',
-                  custom_class: 'w-full flex-1',
-                -%}
-              </div>
+                                {%- render 'tab-control',
+                                    initialTabStrategy: 'first',
+                                    tab_header: tab_header,
+                                    tab_content: tab_content,
+                                    header_class: 'w-full',
+                                    content_class: 'mt-2',
+                                    custom_class: 'w-full flex-1'
+                                -%}
+                            </div>
 
-              <button
-                type="button"
-                class="mt-auto w-full flex items-center justify-between border-t border-[#D5D9D6] pt-4 text-[#263D29] hover:opacity-70"
-                @click="performSearch()"
-                x-show="query && !hasEmptyState"
-              >
-                <span>
-                  Search for "<span class="font-medium" x-text="query"></span>"
-                </span>
-                <span>→</span>
-              </button>
-            </div>
-          </div>
+                            <button
+                                type="button"
+                                class="mt-auto flex w-full items-center justify-between border-t border-[#D5D9D6] pt-4 text-[#263D29] hover:opacity-70"
+                                @click="performSearch()"
+                                x-show="query && !hasEmptyState"
+                            >
+                                <span>
+                                    Search for "<span class="font-medium" x-text="query"></span>"
+                                </span>
+                                <span>→</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
         </div>
-      </form>
-    </div>
 
-    {% if search.performed %}
-      {%- liquid
-        assign q = search.terms | default: '' | strip | url_encode
-        assign param_type = request.params.type | default: '' | downcase | strip
+        {% if search.performed %}
+            {%- liquid
+                assign q = search.terms | default: '' | strip | url_encode
+                assign param_type = request.params.type | default: '' | downcase | strip
 
-        if param_type != 'product' and param_type != 'article' and param_type != 'page'
-          assign param_type = 'product'
-        endif
+                if param_type != 'product' and param_type != 'article' and param_type != 'page'
+                    assign param_type = 'product'
+                endif
 
-        assign active_tab_index = 0
-        if param_type == 'article'
-          assign active_tab_index = 1
-        elsif param_type == 'page'
-          assign active_tab_index = 2
-        endif
+                assign active_tab_index = 0
+                if param_type == 'article'
+                    assign active_tab_index = 1
+                elsif param_type == 'page'
+                    assign active_tab_index = 2
+                endif
 
-        assign base_url = routes.search_url | append: '?q=' | append: q | append: '&options%5Bprefix%5D=last'
-        assign products_url = base_url | append: '&type=product'
-        assign articles_url = base_url | append: '&type=article'
-        assign pages_url = base_url | append: '&type=page'
-      -%}
+                assign base_url = routes.search_url | append: '?q=' | append: q | append: '&options%5Bprefix%5D=last'
+                assign products_url = base_url | append: '&type=product'
+                assign articles_url = base_url | append: '&type=article'
+                assign pages_url = base_url | append: '&type=page'
+            -%}
 
-      <div
-        class="w-full mt-20"
-        x-data="sectionPagination('{{ section.id }}', ['[data-search-tabs-header]','[data-search-tabs-panel]'])"
-      >
-        {% capture results_tab_header %}
+            <div
+                class="mt-20 w-full"
+                x-data="sectionPagination('{{ section.id }}', ['[data-search-tabs-header]','[data-search-tabs-panel]'])"
+            >
+                {% capture results_tab_header %}
           <div 
-            class="max-w-1/2 mx-auto flex gap-40 uppercase tracking-[0.16em] pt-6"
+            class="mx-auto flex max-w-1/2 gap-40 pt-6 tracking-[0.16em] uppercase"
             data-search-tabs-header
           >
             <span class="hidden" x-init="$nextTick(() => { setActive({{ active_tab_index }}) })"></span>
@@ -299,7 +320,7 @@
               @popstate.window="isUrlMatch($el.href) && setActive(index)"
               :tabindex="isActive(index) ? 0 : -1"
               :aria-selected="isActive(index)"
-              class="inline-flex items-baseline gap-1 pb-2 border-b leading-tight cursor-pointer transition-opacity"
+              class="inline-flex cursor-pointer items-baseline gap-1 border-b pb-2 leading-tight transition-opacity"
               :class="isActive(index)
                 ? 'text-[#263D29] font-medium border-[#263D29]'
                 : 'text-[#A0A5A1] hover:text-[#263D29] border-transparent'
@@ -319,7 +340,7 @@
               @popstate.window="isUrlMatch($el.href) && setActive(index)"
               :tabindex="isActive(index) ? 0 : -1"
               :aria-selected="isActive(index)"
-              class="inline-flex items-baseline gap-1 pb-2 border-b leading-tight cursor-pointer transition-opacity"
+              class="inline-flex cursor-pointer items-baseline gap-1 border-b pb-2 leading-tight transition-opacity"
               :class="isActive(index)
                 ? 'text-[#263D29] font-medium border-[#263D29]'
                 : 'text-[#A0A5A1] hover:text-[#263D29] border-transparent'
@@ -339,7 +360,7 @@
               @popstate.window="isUrlMatch($el.href) && setActive(index)"
               :tabindex="isActive(index) ? 0 : -1"
               :aria-selected="isActive(index)"
-              class="inline-flex items-baseline gap-1 pb-2 border-b leading-tight cursor-pointer transition-opacity"
+              class="inline-flex cursor-pointer items-baseline gap-1 border-b pb-2 leading-tight transition-opacity"
               :class="isActive(index)
                 ? 'text-[#263D29] font-medium border-[#263D29]'
                 : 'text-[#A0A5A1] hover:text-[#263D29] border-transparent'
@@ -350,22 +371,22 @@
           </div>
         {% endcapture %}
 
-        {% capture results_tab_content %}
+                {% capture results_tab_content %}
           <div
             role="tabpanel"
             id="search-results-panel"
             x-data="{ index: null }"
             x-init="index = registerPanel($el)"
-            class="relative w-full mt-6"
+            class="relative mt-6 w-full"
             data-search-tabs-panel
           >
             {% render 'loading', overlay: true, size: 'large' %}
 
             {% unless search.results_count == 0 %}
-              <div class="text-[#263D29] mb-6">
-                <p class="h6 uppercase tracking-[0.16em] opacity-70">
+              <div class="mb-6 text-[#263D29]">
+                <p class="h6 tracking-[0.16em] uppercase opacity-70">
                   <span class="opacity-60">
-                    Search for <span class="h6 opacity-60 truncate">“{{ search.terms | escape }}”</span> : {{ search.results_count }}
+                    Search for <span class="h6 truncate opacity-60">“{{ search.terms | escape }}”</span> : {{ search.results_count }}
                   </span>
                 </p>
               </div> 
@@ -379,7 +400,7 @@
               {%- else -%}
                 {%- case param_type -%}
                   {%- when 'product' -%}
-                    <div class="grid grid-cols-2 pc:grid-cols-4 gap-6">
+                    <div class="pc:grid-cols-4 grid grid-cols-2 gap-6">
                       {%- for item in search.results -%}
                         {%- if item.object_type == 'product' -%}
                           {% render 'product-card', 
@@ -430,64 +451,64 @@
           </div>
         {% endcapture %}
 
-        {%- render 'tab-control',
-          initialTabStrategy: 'first',
-          tab_header: results_tab_header,
-          tab_content: results_tab_content,
-          header_class: 'w-full border-b border-[#D5D9D6]',
-          content_class: 'w-full',
-          custom_class: 'w-full'
-        -%}
-      </div>
-    {% endif %}
-  </div>
+                {%- render 'tab-control',
+                    initialTabStrategy: 'first',
+                    tab_header: results_tab_header,
+                    tab_content: results_tab_content,
+                    header_class: 'w-full border-b border-[#D5D9D6]',
+                    content_class: 'w-full',
+                    custom_class: 'w-full'
+                -%}
+            </div>
+        {% endif %}
+    </div>
 </div>
 
 {% schema %}
 {
-  "name": "t:general.search",
-  "tag": "section",
-  "class": "section",
-  "settings": [
-    {
-      "type": "range",
-      "id": "search_per_page",
-      "min": 3,
-      "max": 24,
-      "step": 3,
-      "default": 12,
-      "label": "Search per page"
-    },
-    {
-      "type": "header",
-      "content": "Padding"
-    },
-    {
-      "type": "range",
-      "id": "padding_top",
-      "min": 0,
-      "max": 100,
-      "step": 4,
-      "unit": "px",
-      "label": "Padding Top",
-      "default": 0
-    },
-    {
-      "type": "range",
-      "id": "padding_bottom",
-      "min": 0,
-      "max": 100,
-      "step": 4,
-      "unit": "px",
-      "label": "Padding Bottom",
-      "default": 0
-    }
-  ],
-  "presets": [
-    {
-      "name": "t:general.search",
-      "settings": {}
-    }
-  ]
+    "name": "t:general.search",
+    "tag": "section",
+    "class": "section",
+    "settings": [
+        {
+            "type": "range",
+            "id": "search_per_page",
+            "min": 3,
+            "max": 24,
+            "step": 3,
+            "default": 12,
+            "label": "Search per page"
+        },
+        {
+            "type": "header",
+            "content": "Padding"
+        },
+        {
+            "type": "range",
+            "id": "padding_top",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "Padding Top",
+            "default": 0
+        },
+        {
+            "type": "range",
+            "id": "padding_bottom",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "Padding Bottom",
+            "default": 0
+        }
+    ],
+    "presets": [
+        {
+            "name": "t:general.search",
+            "settings": {}
+        }
+    ]
 }
 {% endschema %}

@@ -1,25 +1,25 @@
 {%- assign popup_id = 'cart-overlay-drawer' -%}
 
 <div
-  data-section-id="{{ section.id }}"
-  class="cart-overlay-section"
-  data-component-kind="section"
-  data-component-type="cart-overlay"
-  data-component-id="{{ section.id }}"
+    data-section-id="{{ section.id }}"
+    class="cart-overlay-section"
+    data-component-kind="section"
+    data-component-type="cart-overlay"
+    data-component-id="{{ section.id }}"
 >
-  {%- capture drawer_content -%}
+    {%- capture drawer_content -%}
     <div
-      class="h-full bg-white text-[#263D29] flex flex-col"
+      class="flex h-full flex-col bg-white text-[#263D29]"
       x-data="cartOverlay({ sections: ['{{ section.id }}'] })"
       @keydown.escape.window="$store.dialog.close()"
       :class="{ 'opacity-70 pointer-events-none': $store.cart.loading }"
     >
-      <div class="px-5 pc:px-6 pt-5 pb-4 border-b border-[#D5D9D6]">
+      <div class="pc:px-6 border-b border-[#D5D9D6] px-5 pt-5 pb-4">
         <div class="flex items-center justify-between gap-4">
           <h2 id="dialog-title-{{ popup_id }}" class="h3">Cart</h2>
           <button
             type="button"
-            class="inline-flex h-8 w-8 items-center justify-center text-[#263D29]/75 transition hover:text-[#263D29] cursor-pointer"
+            class="inline-flex h-8 w-8 cursor-pointer items-center justify-center text-[#263D29]/75 transition hover:text-[#263D29]"
             @click="$store.dialog.close()"
             aria-label="Close cart drawer"
           >
@@ -28,17 +28,17 @@
         </div>
       </div>
 
-      <div class="flex-1 min-h-0 px-5 pc:px-6 py-4 overflow-y-auto">
-        <div x-show="isEmpty" class="h-full flex items-center justify-center text-center">
+      <div class="pc:px-6 min-h-0 flex-1 overflow-y-auto px-5 py-4">
+        <div x-show="isEmpty" class="flex h-full items-center justify-center text-center">
           <p class="h5">Your cart is empty.</p>
         </div>
 
         <ul x-show="!isEmpty" class="flex flex-col divide-y divide-[#E7EAE8]">
           <template x-for="item in items" :key="item.key">
-            <li class="py-4 flex gap-3">
-              <a :href="item.url" class="w-20 h-20 shrink-0 bg-[#F4F5F3] overflow-hidden">
+            <li class="flex gap-3 py-4">
+              <a :href="item.url" class="h-20 w-20 shrink-0 overflow-hidden bg-[#F4F5F3]">
                 <img
-                  class="w-full h-full object-cover"
+                  class="h-full w-full object-cover"
                   :src="typeof item.image === 'string' ? item.image : (item.image?.url || item.featured_image?.url || '')"
                   :alt="item.product_title || item.title || 'Cart product'"
                   width="80"
@@ -46,41 +46,41 @@
                 >
               </a>
 
-              <div class="flex-1 min-w-0 flex flex-col">
-                <p class="text-[10px] uppercase tracking-[0.14em] opacity-70" x-text="item.vendor || ''"></p>
-                <a :href="item.url" class="text-sm leading-tight mt-1 line-clamp-2 hover:underline" x-text="item.product_title || item.title"></a>
-                <p class="text-sm mt-2" x-text="linePrice(item)"></p>
+              <div class="flex min-w-0 flex-1 flex-col">
+                <p class="text-[10px] tracking-[0.14em] uppercase opacity-70" x-text="item.vendor || ''"></p>
+                <a :href="item.url" class="mt-1 line-clamp-2 text-sm leading-tight hover:underline" x-text="item.product_title || item.title"></a>
+                <p class="mt-2 text-sm" x-text="linePrice(item)"></p>
               </div>
 
-              <div class="shrink-0 flex flex-col justify-between items-end gap-3">
+              <div class="flex shrink-0 flex-col items-end justify-between gap-3">
                 <button
                   type="button"
-                  class="inline-flex w-6 h-6 items-center justify-center opacity-75 hover:opacity-100 cursor-pointer"
+                  class="inline-flex h-6 w-6 cursor-pointer items-center justify-center opacity-75 hover:opacity-100"
                   @click="remove(item)"
                   :aria-label="'Remove ' + (item.product_title || item.title || 'item')"
                 >
-                  <span class="w-4 h-4">{{ 'icon-trash.svg' | inline_asset_content }}</span>
+                  <span class="h-4 w-4">{{ 'icon-trash.svg' | inline_asset_content }}</span>
                 </button>
 
                 <div class="flex items-center gap-2 border border-[#D5D9D6] px-1.5 py-0.5">
                   <button
                     type="button"
-                    class="w-6 h-6 inline-flex items-center justify-center cursor-pointer disabled:opacity-35"
+                    class="inline-flex h-6 w-6 cursor-pointer items-center justify-center disabled:opacity-35"
                     @click="decrement(item)"
                     :disabled="Number(item.quantity || 0) <= 1"
                     aria-label="Decrease quantity"
                   >
-                    <span class="w-4 h-4">{{ 'icon-minus.svg' | inline_asset_content }}</span>
+                    <span class="h-4 w-4">{{ 'icon-minus.svg' | inline_asset_content }}</span>
                   </button>
-                  <span class="text-sm tabular-nums min-w-[2ch] text-center" x-text="item.quantity"></span>
+                  <span class="min-w-[2ch] text-center text-sm tabular-nums" x-text="item.quantity"></span>
                   <button
                     type="button"
-                    class="w-6 h-6 inline-flex items-center justify-center cursor-pointer disabled:opacity-35"
+                    class="inline-flex h-6 w-6 cursor-pointer items-center justify-center disabled:opacity-35"
                     @click="increment(item)"
                     :disabled="maxQty(item) !== null && Number(item.quantity || 0) >= maxQty(item)"
                     aria-label="Increase quantity"
                   >
-                    <span class="w-4 h-4">{{ 'icon-plus.svg' | inline_asset_content }}</span>
+                    <span class="h-4 w-4">{{ 'icon-plus.svg' | inline_asset_content }}</span>
                   </button>
                 </div>
               </div>
@@ -93,16 +93,16 @@
         </div>
       </div>
 
-      <div class="mt-auto border-t border-[#D5D9D6] bg-white px-5 pc:px-6 py-4">
-        <div class="flex items-center justify-between mb-3">
-          <p class="text-sm uppercase tracking-[0.12em]">Total</p>
+      <div class="pc:px-6 mt-auto border-t border-[#D5D9D6] bg-white px-5 py-4">
+        <div class="mb-3 flex items-center justify-between">
+          <p class="text-sm tracking-[0.12em] uppercase">Total</p>
           <p class="h5" x-text="formatMoney($store.cart.total_price)"></p>
         </div>
 
         <div class="grid grid-cols-1 gap-2">
           <button
             type="button"
-            class="w-full py-3 px-4 border border-[#AEB4AF] text-[#263D29] cursor-pointer hover:bg-[#F6F7F6] transition-colors disabled:opacity-45 disabled:cursor-not-allowed"
+            class="w-full cursor-pointer border border-[#AEB4AF] px-4 py-3 text-[#263D29] transition-colors hover:bg-[#F6F7F6] disabled:cursor-not-allowed disabled:opacity-45"
             @click="clearCart()"
             :disabled="isEmpty || $store.cart.loading"
           >
@@ -110,7 +110,7 @@
           </button>
           <button
             type="button"
-            class="w-full py-3 px-4 border border-[#263D29] bg-[#1F4328] text-white cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-45 disabled:cursor-not-allowed"
+            class="w-full cursor-pointer border border-[#263D29] bg-[#1F4328] px-4 py-3 text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45"
             @click="goCheckout()"
             :disabled="!canCheckout"
           >
@@ -121,46 +121,50 @@
     </div>
   {%- endcapture -%}
 
-  {%- render 'ui-dialog',
-    id: popup_id,
-    type: 'drawer',
-    position: 'right',
-    overlay_class: 'bg-black/35',
-    root_class: 'z-[10010]',
-    drawer_wrapper_class: '!max-w-[40rem] fw:!max-w-[33vw]',
-    drawer_panel_class: 'overflow-hidden',
-    content: drawer_content
-  -%}
+    {%- render 'ui-dialog',
+        id: popup_id,
+        type: 'drawer',
+        position: 'right',
+        overlay_class: 'bg-black/35',
+        root_class: 'z-[10010]',
+        drawer_wrapper_class: '!max-w-[40rem] fw:!max-w-[33vw]',
+        drawer_panel_class: 'overflow-hidden',
+        content: drawer_content
+    -%}
 </div>
 
 {%- javascript -%}
-  (function() {
-    const Components = window.__Theme__?.Components;
-    if (!Components) return;
+    (function () {
+        const Components = window.__Theme__?.Components;
+        if (!Components) return;
 
-    Components.register('cart-overlay', {
-      init() {
-        return {};
-      },
-      destroy() {}
-    }, { lazy: false });
-  })();
+        Components.register(
+            'cart-overlay',
+            {
+                init() {
+                    return {};
+                },
+                destroy() {},
+            },
+            { lazy: false },
+        );
+    })();
 {%- endjavascript -%}
 
 {% schema %}
 {
-  "name": "Cart Overlay",
-  "tag": "section",
-  "class": "section",
-  "enabled_on": {
-    "groups": ["custom.overlay"]
-  },
-  "limit": 1,
-  "settings": [],
-  "presets": [
-    {
-      "name": "Cart Overlay"
-    }
-  ]
+    "name": "Cart Overlay",
+    "tag": "section",
+    "class": "section",
+    "enabled_on": {
+        "groups": ["custom.overlay"]
+    },
+    "limit": 1,
+    "settings": [],
+    "presets": [
+        {
+            "name": "Cart Overlay"
+        }
+    ]
 }
 {% endschema %}

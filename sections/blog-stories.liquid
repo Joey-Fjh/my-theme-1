@@ -8,7 +8,7 @@
 >
     <div class="layout container-page text-[#263D29]">
         {% comment %} Header {% endcomment %}
-        <div class="mb-12 flex flex-col justify-between gap-8 pc:flex-row pc:items-start">
+        <div class="pc:flex-row pc:items-start mb-12 flex flex-col justify-between gap-8">
             <h1 class="leading-tight font-bold">
                 {{ section.settings.heading }}
             </h1>
@@ -21,15 +21,15 @@
         </div>
 
         {% comment %} Article Grid {% endcomment %}
-        <div class="grid gap-6 pc:grid-cols-3">
+        <div class="pc:grid-cols-3 grid gap-6">
             {%- for block in section.blocks -%}
                 <article
                     class="group"
                     {{ block.shopify_attributes }}
                 >
                     <div class="relative mb-4 aspect-4/3 overflow-hidden">
-                        {%- render 'image', 
-                            class: 'transition-transform duration-300 group-hover:scale-105'
+                        {%- render 'image',
+                            class: 'transition-transform duration-300 group-hover:scale-105',
                             image: block.settings.image,
                             alt: block.settings.image.alt,
                             width: block.settings.image.width
@@ -45,11 +45,16 @@
                     {%- if block.settings.link != blank -%}
                         {%- capture link_content -%}
                             <span>{{ block.settings.link_text }}</span>
-                            <span class="inline-block w-6 h-6 ml-3">
+                            <span class="ml-3 inline-block h-6 w-6">
                                 {{- 'icon-arrow2.svg' | inline_asset_content -}}
                             </span>
                         {%- endcapture -%}
-                        {%- render 'link', class: 'opacity-80', href: block.settings.link, content: link_content, variant: "underline" -%}
+                        {%- render 'link',
+                            class: 'opacity-80',
+                            href: block.settings.link,
+                            content: link_content,
+                            variant: 'underline'
+                        -%}
                     {%- endif -%}
                 </article>
             {%- endfor -%}
@@ -58,12 +63,12 @@
 </div>
 
 {% schema %}
-  {
+{
     "name": "Blog Stories",
     "tag": "section",
     "class": "section",
     "disabled_on": {
-        "groups": ["header","footer"]
+        "groups": ["header", "footer"]
     },
     "settings": [
         {
@@ -140,11 +145,10 @@
         }
     ],
     "presets": [
-      {
-        "name": "Blog Stories",
-        "settings": {
+        {
+            "name": "Blog Stories",
+            "settings": {}
         }
-      }
     ]
-  }
+}
 {% endschema %}

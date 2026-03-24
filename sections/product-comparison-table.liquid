@@ -1,395 +1,441 @@
 <section
-  data-section-id="{{ section.id }}"
-  class="product-comparison-table-section full-width"
-  style="
-    --section-padding-top: {{ section.settings.padding_top | default: 0 }}px;
-    --section-padding-bottom: {{ section.settings.padding_bottom | default: 0 }}px;
-  "
-  data-component-kind="section"
-  data-component-type="product-comparison-table"
-  data-component-id="{{ section.id }}"
+    data-section-id="{{ section.id }}"
+    class="product-comparison-table-section full-width"
+    style="
+        --section-padding-top: {{ section.settings.padding_top | default: 0 }}px;
+        --section-padding-bottom: {{ section.settings.padding_bottom | default: 0 }}px;
+    "
+    data-component-kind="section"
+    data-component-type="product-comparison-table"
+    data-component-id="{{ section.id }}"
 >
-  <div class="layout container-page mx-auto pb-8" style="--comparison-table-min-width: {{ section.settings.products.size | times: 280 | plus: 320 }}px;">
-    {% if section.settings.heading != blank %}
-      <h1 class="h0 text-center mb-8 text-[#263D29]">
-        {{ section.settings.heading }}
-      </h1>
-    {% endif %}
-    {% if section.settings.products != blank and section.blocks.size > 0 %}
-      <div class="comparison-table-scroll overflow-x-auto rounded border border-gray-200" aria-label="Scroll to compare more products" data-comparison-scroll>
-        <table class="w-full border-collapse text-left comparison-table" role="grid" aria-label="Product comparison" style="min-width: var(--comparison-table-min-width);">
-          <tbody>
-            {% for block in section.blocks %}
-              <tr {{ block.shopify_attributes }}>
-                {% comment %} Row header (first column) — frozen when horizontal scroll {% endcomment %}
-                <th
-                  scope="row"
-                  class="comparison-table__sticky-col w-48 min-w-48 border border-gray-200 p-6 text-gray-600 bg-[#F9F9F9] align-middle font-medium h6 sticky left-0 z-10 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.06)]"
+    <div
+        class="layout container-page mx-auto pb-8"
+        style="--comparison-table-min-width: {{ section.settings.products.size | times: 280 | plus: 320 }}px;"
+    >
+        {% if section.settings.heading != blank %}
+            <h1 class="h0 mb-8 text-center text-[#263D29]">
+                {{ section.settings.heading }}
+            </h1>
+        {% endif %}
+        {% if section.settings.products != blank and section.blocks.size > 0 %}
+            <div
+                class="comparison-table-scroll overflow-x-auto rounded border border-gray-200"
+                aria-label="Scroll to compare more products"
+                data-comparison-scroll
+            >
+                <table
+                    class="comparison-table w-full border-collapse text-left"
+                    role="grid"
+                    aria-label="Product comparison"
+                    style="min-width: var(--comparison-table-min-width);"
                 >
-                {% case block.type %}
-                  {% when 'header' %}
-                    Product
-                  {% when 'price' %}
-                    Price
-                  {% when 'rating' %}
-                    Rating
-                  {% when 'metafield_text' %}
-                    {{ block.settings.row_title | default: '—' }}
-                  {% when 'availability' %}
-                    Availability
-                  {% else %}
-                    —
-                {% endcase %}
-              </th>
+                    <tbody>
+                        {% for block in section.blocks %}
+                            <tr {{ block.shopify_attributes }}>
+                                {% comment %} Row header (first column) — frozen when horizontal scroll {% endcomment %}
+                                <th
+                                    scope="row"
+                                    class="comparison-table__sticky-col h6 sticky left-0 z-10 w-48 min-w-48 border border-gray-200 bg-[#F9F9F9] p-6 align-middle font-medium text-gray-600 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.06)]"
+                                >
+                                    {% case block.type %}
+                                        {% when 'header' %}
+                                            Product
+                                        {% when 'price' %}
+                                            Price
+                                        {% when 'rating' %}
+                                            Rating
+                                        {% when 'metafield_text' %}
+                                            {{ block.settings.row_title | default: '—' }}
+                                        {% when 'availability' %}
+                                            Availability
+                                        {% else %}
+                                            —
+                                    {% endcase %}
+                                </th>
 
-              {% comment %} Product data columns {% endcomment %}
-              {% for item in section.settings.products %}
-                {% assign is_highlight = false %}
-                {% if section.settings.highlight_index > 0 and forloop.index == section.settings.highlight_index %}
-                  {% assign is_highlight = true %}
-                {% endif %}
-                <td
-                  class="border border-gray-200 p-6 align-middle min-w-60 {% if is_highlight %}bg-[#F4F1E8]{% else %}bg-transparent{% endif %}"
-                >
-                  {% case block.type %}
-                    {% when 'header' %}
-                      <a href="{{ item.url }}" class="comparison-table-product-link flex flex-col items-center w-full no-underline text-inherit cursor-pointer">
-                        <div class="aspect-3/4 w-full bg-[#F9F9F9] rounded overflow-hidden mb-4">
-                          {%- render 'image',
-                            image: item.featured_image,
-                            width: 500,
-                            aspect_ratio: '3/4',
-                            wrapper: 'div',
-                            class: 'w-full h-full',
-                            img_class: 'image_img w-full h-full object-cover object-center',
-                            alt: item.featured_image.alt | default: item.title
-                          -%}
-                        </div>
-                        <span class="font-bold text-[#263D29] h5 text-center">{{ item.title }}</span>
-                      </a>
+                                {% comment %} Product data columns {% endcomment %}
+                                {% for item in section.settings.products %}
+                                    {% assign is_highlight = false %}
+                                    {% if section.settings.highlight_index > 0
+                                        and forloop.index == section.settings.highlight_index
+                                    %}
+                                        {% assign is_highlight = true %}
+                                    {% endif %}
+                                    <td
+                                        class="min-w-60 border border-gray-200 p-6 align-middle {% if is_highlight %}bg-[#F4F1E8]{% else %}bg-transparent{% endif %}"
+                                    >
+                                        {% case block.type %}
+                                            {% when 'header' %}
+                                                <a
+                                                    href="{{ item.url }}"
+                                                    class="comparison-table-product-link flex w-full cursor-pointer flex-col items-center text-inherit no-underline"
+                                                >
+                                                    <div class="mb-4 aspect-3/4 w-full overflow-hidden rounded bg-[#F9F9F9]">
+                                                        {%-
+                                                            render 'image',
+                                                            image: item.featured_image,
+                                                            width: 500,
+                                                            aspect_ratio: '3/4',
+                                                            wrapper: 'div',
+                                                            class: 'w-full h-full',
+                                                            img_class: 'image_img w-full h-full object-cover object-center',
+                                                            alt: item.featured_image.alt | default: item.title
+                                                        -%}
+                                                    </div>
+                                                    <span class="h5 text-center font-bold text-[#263D29]">
+                                                        {{- item.title -}}
+                                                    </span>
+                                                </a>
 
-                    {% when 'price' %}
-                      <div class="flex flex-wrap items-baseline gap-2">
-                        <span class="font-medium">{{ item.price | money }}</span>
-                        {% if item.compare_at_price != blank and item.compare_at_price > item.price %}
-                          <span class="line-through text-gray-500 h6">{{ item.compare_at_price | money }}</span>
-                        {% endif %}
-                      </div>
+                                            {% when 'price' %}
+                                                <div class="flex flex-wrap items-baseline gap-2">
+                                                    <span class="font-medium">
+                                                        {{- item.price | money -}}
+                                                    </span>
+                                                    {% if item.compare_at_price != blank
+                                                        and item.compare_at_price > item.price
+                                                    %}
+                                                        <span class="h6 text-gray-500 line-through">
+                                                            {{- item.compare_at_price | money -}}
+                                                        </span>
+                                                    {% endif %}
+                                                </div>
 
-                    {% when 'rating' %}
-                      <div class="inline-flex items-baseline gap-2">
-                        {%- render 'starts', rating: 4.5, max: 5, size: 'sm', wrapper_class: 'mb-0 inline-flex items-baseline' -%}
-                        <span class="h6 text-gray-600 leading-none">4.5</span>
-                      </div>
+                                            {% when 'rating' %}
+                                                <div class="inline-flex items-baseline gap-2">
+                                                    {%- render 'starts',
+                                                        rating: 4.5,
+                                                        max: 5,
+                                                        size: 'sm',
+                                                        wrapper_class: 'mb-0 inline-flex items-baseline'
+                                                    -%}
+                                                    <span class="h6 leading-none text-gray-600"
+                                                        >4.5</span
+                                                    >
+                                                </div>
 
-                    {% when 'metafield_text' %}
-                      {% assign meta_key = block.settings.metafield_key | strip %}
-                      {% if meta_key != '' %}
-                        {% assign meta_parts = meta_key | split: '.' %}
-                        {% assign meta_ns = meta_parts[0] %}
-                        {% assign meta_key_name = meta_parts[1] %}
-                        {% assign meta_val = item.metafields[meta_ns][meta_key_name] %}
-                        <div class="text-gray-600 h6">
-                          {% if meta_val != blank and meta_val.value != blank %}
-                            {{ meta_val.value }}
-                          {% elsif meta_val != blank %}
-                            {{ meta_val }}
-                          {% else %}
-                            —
-                          {% endif %}
-                        </div>
-                      {% else %}
-                        <span class="text-gray-400 h6">—</span>
-                      {% endif %}
+                                            {% when 'metafield_text' %}
+                                                {% assign meta_key = block.settings.metafield_key
+                                                    | strip
+                                                %}
+                                                {% if meta_key != '' %}
+                                                    {% assign meta_parts = meta_key | split: '.' %}
+                                                    {% assign meta_ns = meta_parts[0] %}
+                                                    {% assign meta_key_name = meta_parts[1] %}
+                                                    {% assign meta_val = item.metafields[meta_ns][meta_key_name] %}
+                                                    <div class="h6 text-gray-600">
+                                                        {% if meta_val != blank
+                                                            and meta_val.value != blank
+                                                        %}
+                                                            {{ meta_val.value }}
+                                                        {% elsif meta_val != blank %}
+                                                            {{ meta_val }}
+                                                        {% else %}
+                                                            —
+                                                        {% endif %}
+                                                    </div>
+                                                {% else %}
+                                                    <span class="h6 text-gray-400">—</span>
+                                                {% endif %}
 
-                    {% when 'availability' %}
-                      {% if item.available %}
-                        <span class="text-[#263D29] h6">In stock</span>
-                      {% else %}
-                        <span class="text-red-500 h6">Out of Stock</span>
-                      {% endif %}
+                                            {% when 'availability' %}
+                                                {% if item.available %}
+                                                    <span class="h6 text-[#263D29]">In stock</span>
+                                                {% else %}
+                                                    <span class="h6 text-red-500"
+                                                        >Out of Stock</span
+                                                    >
+                                                {% endif %}
 
-                    {% else %}
-                      <span class="text-gray-400">—</span>
-                  {% endcase %}
-                </td>
-              {% endfor %}
-            </tr>
-          {% endfor %}
-        </tbody>
-        </table>
-      </div>
-    {% else %}
-      <div class="text-center py-12 text-gray-500">
-        <p class="h5">Select products in the section settings to compare.</p>
-        <p class="mt-2 h6">Add blocks (Price, Rating, etc.) to define comparison rows.</p>
-      </div>
-    {% endif %}
-  </div>
+                                            {% else %}
+                                                <span class="text-gray-400">—</span>
+                                        {% endcase %}
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="py-12 text-center text-gray-500">
+                <p class="h5">Select products in the section settings to compare.</p>
+                <p class="h6 mt-2">Add blocks (Price, Rating, etc.) to define comparison rows.</p>
+            </div>
+        {% endif %}
+    </div>
 </section>
 
 {%- javascript -%}
-(function(){
-    const Components = window.__Theme__?.Components;
-    if (!Components) return;
+    (function () {
+        const Components = window.__Theme__?.Components;
+        if (!Components) return;
 
-    Components.register(
-        'product-comparison-table',
-        {
-            init(el) {
-                const scrollEl = el.querySelector('[data-comparison-scroll]');
-                if (!scrollEl) return {};
+        Components.register(
+            'product-comparison-table',
+            {
+                init(el) {
+                    const scrollEl = el.querySelector('[data-comparison-scroll]');
+                    if (!scrollEl) return {};
 
-                const timeoutRef = { id: null };
-                const showDelayMs = 1000;
-                const dragThresholdPx = 5;
+                    const timeoutRef = { id: null };
+                    const showDelayMs = 1000;
+                    const dragThresholdPx = 5;
 
-                function showScrollbar() {
-                    scrollEl.classList.add('is-scrolling');
-                    if (timeoutRef.id) clearTimeout(timeoutRef.id);
-                    timeoutRef.id = setTimeout(function() {
-                        scrollEl.classList.remove('is-scrolling');
-                        timeoutRef.id = null;
-                    }, showDelayMs);
-                }
+                    function showScrollbar() {
+                        scrollEl.classList.add('is-scrolling');
+                        if (timeoutRef.id) clearTimeout(timeoutRef.id);
+                        timeoutRef.id = setTimeout(function () {
+                            scrollEl.classList.remove('is-scrolling');
+                            timeoutRef.id = null;
+                        }, showDelayMs);
+                    }
 
-                function onScroll() {
-                    showScrollbar();
-                }
-
-                scrollEl.addEventListener('scroll', onScroll, { passive: true });
-
-                var dragStartX = 0;
-                var dragStartScrollLeft = 0;
-                var isPointerDown = false;
-                var didDrag = false;
-                var boundMove = null;
-                var boundUp = null;
-
-                function onPointerDown(e) {
-                    if (e.button !== 0) return;
-                    isPointerDown = true;
-                    didDrag = false;
-                    dragStartX = e.clientX;
-                    dragStartScrollLeft = scrollEl.scrollLeft;
-                    boundMove = onPointerMove;
-                    boundUp = onPointerUp;
-                    window.addEventListener('mousemove', boundMove, { passive: true });
-                    window.addEventListener('mouseup', boundUp);
-                }
-
-                function onPointerMove(e) {
-                    if (!isPointerDown) return;
-                    var dx = dragStartX - e.clientX;
-                    scrollEl.scrollLeft = dragStartScrollLeft + dx;
-                    if (Math.abs(e.clientX - dragStartX) >= dragThresholdPx) {
-                        didDrag = true;
-                        scrollEl.classList.add('is-dragging');
+                    function onScroll() {
                         showScrollbar();
                     }
-                }
 
-                function onPointerUp() {
-                    isPointerDown = false;
-                    scrollEl.classList.remove('is-dragging');
-                    if (boundMove) window.removeEventListener('mousemove', boundMove);
-                    if (boundUp) window.removeEventListener('mouseup', boundUp);
-                    boundMove = null;
-                    boundUp = null;
-                    setTimeout(function() { didDrag = false; }, 0);
-                }
+                    scrollEl.addEventListener('scroll', onScroll, { passive: true });
 
-                scrollEl.addEventListener('mousedown', onPointerDown);
+                    var dragStartX = 0;
+                    var dragStartScrollLeft = 0;
+                    var isPointerDown = false;
+                    var didDrag = false;
+                    var boundMove = null;
+                    var boundUp = null;
 
-                function onLinkClick(e) {
-                    if (didDrag && e.target.closest('.comparison-table-product-link')) {
-                        e.preventDefault();
-                        e.stopPropagation();
+                    function onPointerDown(e) {
+                        if (e.button !== 0) return;
+                        isPointerDown = true;
+                        didDrag = false;
+                        dragStartX = e.clientX;
+                        dragStartScrollLeft = scrollEl.scrollLeft;
+                        boundMove = onPointerMove;
+                        boundUp = onPointerUp;
+                        window.addEventListener('mousemove', boundMove, { passive: true });
+                        window.addEventListener('mouseup', boundUp);
                     }
-                }
 
-                scrollEl.addEventListener('click', onLinkClick, true);
+                    function onPointerMove(e) {
+                        if (!isPointerDown) return;
+                        var dx = dragStartX - e.clientX;
+                        scrollEl.scrollLeft = dragStartScrollLeft + dx;
+                        if (Math.abs(e.clientX - dragStartX) >= dragThresholdPx) {
+                            didDrag = true;
+                            scrollEl.classList.add('is-dragging');
+                            showScrollbar();
+                        }
+                    }
 
-                return {
-                    scrollEl: scrollEl,
-                    onScroll: onScroll,
-                    timeoutRef: timeoutRef,
-                    onPointerDown: onPointerDown,
-                    onLinkClick: onLinkClick
-                };
+                    function onPointerUp() {
+                        isPointerDown = false;
+                        scrollEl.classList.remove('is-dragging');
+                        if (boundMove) window.removeEventListener('mousemove', boundMove);
+                        if (boundUp) window.removeEventListener('mouseup', boundUp);
+                        boundMove = null;
+                        boundUp = null;
+                        setTimeout(function () {
+                            didDrag = false;
+                        }, 0);
+                    }
+
+                    scrollEl.addEventListener('mousedown', onPointerDown);
+
+                    function onLinkClick(e) {
+                        if (didDrag && e.target.closest('.comparison-table-product-link')) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                        }
+                    }
+
+                    scrollEl.addEventListener('click', onLinkClick, true);
+
+                    return {
+                        scrollEl: scrollEl,
+                        onScroll: onScroll,
+                        timeoutRef: timeoutRef,
+                        onPointerDown: onPointerDown,
+                        onLinkClick: onLinkClick,
+                    };
+                },
+                destroy(el, state) {
+                    if (!state?.scrollEl) return;
+                    state.scrollEl.removeEventListener('scroll', state.onScroll);
+                    if (state.timeoutRef?.id) clearTimeout(state.timeoutRef.id);
+                    state.scrollEl.removeEventListener('mousedown', state.onPointerDown);
+                    state.scrollEl.removeEventListener('click', state.onLinkClick, true);
+                },
             },
-            destroy(el, state) {
-                if (!state?.scrollEl) return;
-                state.scrollEl.removeEventListener('scroll', state.onScroll);
-                if (state.timeoutRef?.id) clearTimeout(state.timeoutRef.id);
-                state.scrollEl.removeEventListener('mousedown', state.onPointerDown);
-                state.scrollEl.removeEventListener('click', state.onLinkClick, true);
-            }
-        },
-        { lazy: true }
-    );
-})();
+            { lazy: true },
+        );
+    })();
 {%- endjavascript -%}
 
 {% stylesheet %}
-  .product-comparison-table-section{
-    
-    .comparison-table-scroll {
-      scrollbar-width: thin;
-      scrollbar-color: transparent transparent;
-      cursor: grab;
+    .product-comparison-table-section {
+        .comparison-table-scroll {
+            scrollbar-width: thin;
+            scrollbar-color: transparent transparent;
+            cursor: grab;
+        }
+        .comparison-table-scroll:active {
+            cursor: grab;
+        }
+        .comparison-table-scroll.is-dragging {
+            cursor: grabbing;
+            user-select: none;
+        }
+        .comparison-table-scroll.is-dragging * {
+            user-select: none;
+            pointer-events: none;
+        }
+        .comparison-table-scroll .comparison-table-product-link {
+            pointer-events: auto;
+            cursor: pointer;
+        }
+        .comparison-table-scroll.is-dragging .comparison-table-product-link {
+            pointer-events: none;
+        }
+        .comparison-table-scroll::-webkit-scrollbar {
+            height: 8px;
+        }
+        .comparison-table-scroll.is-scrolling {
+            scrollbar-color: rgba(0, 0, 0, 0.25) transparent;
+        }
+        .comparison-table-scroll::-webkit-scrollbar-track {
+            background: transparent;
+            border-radius: 4px;
+        }
+        .comparison-table-scroll::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 4px;
+            opacity: 0;
+            transition: opacity 0.25s ease-out;
+        }
+        .comparison-table-scroll.is-scrolling::-webkit-scrollbar-thumb {
+            opacity: 1;
+        }
+        .comparison-table-scroll.is-scrolling::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 0, 0, 0.35);
+        }
     }
-    .comparison-table-scroll:active {
-      cursor: grab;
-    }
-    .comparison-table-scroll.is-dragging {
-      cursor: grabbing;
-      user-select: none;
-    }
-    .comparison-table-scroll.is-dragging * {
-      user-select: none;
-      pointer-events: none;
-    }
-    .comparison-table-scroll .comparison-table-product-link {
-      pointer-events: auto;
-      cursor: pointer;
-    }
-    .comparison-table-scroll.is-dragging .comparison-table-product-link {
-      pointer-events: none;
-    }
-    .comparison-table-scroll::-webkit-scrollbar {
-      height: 8px;
-    }
-    .comparison-table-scroll.is-scrolling {
-      scrollbar-color: rgba(0, 0, 0, 0.25) transparent;
-    }
-    .comparison-table-scroll::-webkit-scrollbar-track {
-      background: transparent;
-      border-radius: 4px;
-    }
-    .comparison-table-scroll::-webkit-scrollbar-thumb {
-      background: rgba(0, 0, 0, 0.25);
-      border-radius: 4px;
-      opacity: 0;
-      transition: opacity 0.25s ease-out;
-    }
-    .comparison-table-scroll.is-scrolling::-webkit-scrollbar-thumb {
-      opacity: 1;
-    }
-    .comparison-table-scroll.is-scrolling::-webkit-scrollbar-thumb:hover {
-      background: rgba(0, 0, 0, 0.35);
-    }
-  }
 {% endstylesheet %}
 
 {% schema %}
 {
-  "name": "Comparison Table",
-  "tag": "section",
-  "class": "section",
-  "disabled_on": {
-    "groups": ["header", "footer"]
-  },
-  "settings": [
-    {
-      "type": "text",
-      "id": "heading",
-      "label": "Section heading",
-      "default": "Similar Comparison Products"
+    "name": "Comparison Table",
+    "tag": "section",
+    "class": "section",
+    "disabled_on": {
+        "groups": ["header", "footer"]
     },
-    {
-      "type": "product_list",
-      "id": "products",
-      "label": "Select Products",
-      "limit": 8
-    },
-    {
-      "type": "range",
-      "id": "highlight_index",
-      "min": 0,
-      "max": 8,
-      "step": 1,
-      "default": 1,
-      "label": "Highlight Column Index",
-      "info": "1 = first product column; 0 = no highlight"
-    },
-    {
-      "type": "header",
-      "content": "Padding"
-    },
-    {
-      "type": "range",
-      "id": "padding_top",
-      "min": 0,
-      "max": 100,
-      "step": 4,
-      "unit": "px",
-      "label": "Padding Top",
-      "default": 0
-    },
-    {
-      "type": "range",
-      "id": "padding_bottom",
-      "min": 0,
-      "max": 100,
-      "step": 4,
-      "unit": "px",
-      "label": "Padding Bottom",
-      "default": 0
-    }
-  ],
-  "blocks": [
-    {
-      "type": "header",
-      "name": "Product Info",
-      "limit": 1
-    },
-    {
-      "type": "price",
-      "name": "Price",
-      "limit": 1
-    },
-    {
-      "type": "rating",
-      "name": "Rating",
-      "limit": 1
-    },
-    {
-      "type": "metafield_text",
-      "name": "Ingredients / Metafield",
-      "settings": [
+    "settings": [
         {
-          "type": "text",
-          "id": "row_title",
-          "label": "Row title",
-          "default": "Ingredients"
+            "type": "text",
+            "id": "heading",
+            "label": "Section heading",
+            "default": "Similar Comparison Products"
         },
         {
-          "type": "text",
-          "id": "metafield_key",
-          "label": "Metafield key (namespace.key)",
-          "default": "custom.ingredients",
-          "info": "e.g. custom.ingredients"
+            "type": "product_list",
+            "id": "products",
+            "label": "Select Products",
+            "limit": 8
+        },
+        {
+            "type": "range",
+            "id": "highlight_index",
+            "min": 0,
+            "max": 8,
+            "step": 1,
+            "default": 1,
+            "label": "Highlight Column Index",
+            "info": "1 = first product column; 0 = no highlight"
+        },
+        {
+            "type": "header",
+            "content": "Padding"
+        },
+        {
+            "type": "range",
+            "id": "padding_top",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "Padding Top",
+            "default": 0
+        },
+        {
+            "type": "range",
+            "id": "padding_bottom",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "Padding Bottom",
+            "default": 0
         }
-      ]
-    },
-    {
-      "type": "availability",
-      "name": "Availability",
-      "limit": 1
-    }
-  ],
-  "presets": [
-    {
-      "name": "Comparison Table",
-      "blocks": [
-        { "type": "header" },
-        { "type": "price" },
-        { "type": "rating" },
-        { "type": "metafield_text", "settings": { "row_title": "Ingredients", "metafield_key": "custom.ingredients" } },
-        { "type": "availability" }
-      ]
-    }
-  ]
+    ],
+    "blocks": [
+        {
+            "type": "header",
+            "name": "Product Info",
+            "limit": 1
+        },
+        {
+            "type": "price",
+            "name": "Price",
+            "limit": 1
+        },
+        {
+            "type": "rating",
+            "name": "Rating",
+            "limit": 1
+        },
+        {
+            "type": "metafield_text",
+            "name": "Ingredients / Metafield",
+            "settings": [
+                {
+                    "type": "text",
+                    "id": "row_title",
+                    "label": "Row title",
+                    "default": "Ingredients"
+                },
+                {
+                    "type": "text",
+                    "id": "metafield_key",
+                    "label": "Metafield key (namespace.key)",
+                    "default": "custom.ingredients",
+                    "info": "e.g. custom.ingredients"
+                }
+            ]
+        },
+        {
+            "type": "availability",
+            "name": "Availability",
+            "limit": 1
+        }
+    ],
+    "presets": [
+        {
+            "name": "Comparison Table",
+            "blocks": [
+                { "type": "header" },
+                { "type": "price" },
+                { "type": "rating" },
+                {
+                    "type": "metafield_text",
+                    "settings": {
+                        "row_title": "Ingredients",
+                        "metafield_key": "custom.ingredients"
+                    }
+                },
+                { "type": "availability" }
+            ]
+        }
+    ]
 }
 {% endschema %}

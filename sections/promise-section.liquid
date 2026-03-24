@@ -10,10 +10,14 @@
     data-component-id="{{ section.id }}"
 >
     <div class="layout container-page text-[#263D29]">
-        <div class="grid grid-cols-1 pc:grid-cols-2 gap-10 fw:gap-16 items-center">
+        <div class="pc:grid-cols-2 fw:gap-16 grid grid-cols-1 items-center gap-10">
             {% comment %} Left - Image {% endcomment %}
-            <div class="aspect-4/5 overflow-hidden rounded-sm opacity-0 -translate-x-10" data-gsap-image>
-                {%- render 'image', 
+            <div
+                class="aspect-4/5 -translate-x-10 overflow-hidden rounded-sm opacity-0"
+                data-gsap-image
+            >
+                {%-
+                    render 'image',
                     image: section.settings.image,
                     alt: section.settings.image.alt | default: 'Promise Section Image' | escape,
                     width: section.settings.image.width
@@ -21,15 +25,18 @@
             </div>
 
             {% comment %} Right - Content + Accordion  {% endcomment %}
-            <div class="opacity-0 translate-x-10 flex flex-col h-full justify-around" data-gsap-content>
+            <div
+                class="flex h-full translate-x-10 flex-col justify-around opacity-0"
+                data-gsap-content
+            >
                 <div>
-                    <h3 class="text-xl mb-4">{{ section.settings.subtitle }}</h3>
-                    <h0 class="font-bold leading-tight text-balance mb-10">
+                    <h3 class="mb-4 text-xl">{{ section.settings.subtitle }}</h3>
+                    <h0 class="mb-10 leading-tight font-bold text-balance">
                         {{ section.settings.heading }}
                     </h0>
                 </div>
                 {% comment %} Accordion {% endcomment %}
-                {%- render 'accordion', 
+                {%- render 'accordion',
                     blocks: section.blocks,
                     initial_active: 0,
                     icon_type: 'chevron'
@@ -40,7 +47,7 @@
 </div>
 
 {%- javascript -%}
-    (function(){
+    (function () {
         const Components = window.__Theme__?.Components;
         if (!Components || typeof gsap === 'undefined') return;
 
@@ -49,7 +56,7 @@
         Components.register(
             'promise-section',
             {
-                init(el){
+                init(el) {
                     const ctx = gsap.context(() => {
                         const image = el.querySelector('[data-gsap-image]');
                         const content = el.querySelector('[data-gsap-content]');
@@ -58,37 +65,41 @@
                             scrollTrigger: {
                                 trigger: el,
                                 start: 'top 75%',
-                                once: true
+                                once: true,
                             },
-                            defaults: { ease: 'power2.out' }
+                            defaults: { ease: 'power2.out' },
                         });
 
                         if (image) {
                             tl.to(image, {
                                 opacity: 1,
                                 x: 0,
-                                duration: 0.8
+                                duration: 0.8,
                             });
                         }
                         if (content) {
-                            tl.to(content, {
-                                opacity: 1,
-                                x: 0,
-                                duration: 0.8
-                            }, '-=0.5');
+                            tl.to(
+                                content,
+                                {
+                                    opacity: 1,
+                                    x: 0,
+                                    duration: 0.8,
+                                },
+                                '-=0.5',
+                            );
                         }
-                    },el);
+                    }, el);
 
                     return { ctx };
                 },
 
-                destroy(el, state){
+                destroy(el, state) {
                     if (state?.ctx) {
                         state.ctx.revert();
                     }
-                }
+                },
             },
-            { lazy: true }
+            { lazy: true },
         );
     })();
 {%- endjavascript -%}
@@ -97,7 +108,7 @@
 {%- endstylesheet -%}
 
 {% schema %}
-  {
+{
     "name": "Promise Section",
     "tag": "section",
     "class": "section",
@@ -149,55 +160,55 @@
             "type": "accordion_item",
             "name": "Accordion Item",
             "settings": [
-            {
-                "type": "text",
-                "id": "title",
-                "default": "Accordion title",
-                "label": "Title"
-            },
-            {
-                "type": "richtext",
-                "id": "text",
-                "default": "<p>Accordion description text goes here.</p>",
-                "label": "Content"
-            }
+                {
+                    "type": "text",
+                    "id": "title",
+                    "default": "Accordion title",
+                    "label": "Title"
+                },
+                {
+                    "type": "richtext",
+                    "id": "text",
+                    "default": "<p>Accordion description text goes here.</p>",
+                    "label": "Content"
+                }
             ]
         }
     ],
     "presets": [
-      {
-        "name": "Promise Section",
-        "blocks": [
-            {
-                "type": "accordion_item",
-                "settings": {
-                    "title": "Responsible Beauty Commitment",
-                    "text": "<p>Our promise extends beyond skincare. We embrace responsible practices that respect people, animals, and the planet at every step.</p>"
+        {
+            "name": "Promise Section",
+            "blocks": [
+                {
+                    "type": "accordion_item",
+                    "settings": {
+                        "title": "Responsible Beauty Commitment",
+                        "text": "<p>Our promise extends beyond skincare. We embrace responsible practices that respect people, animals, and the planet at every step.</p>"
+                    }
+                },
+                {
+                    "type": "accordion_item",
+                    "settings": {
+                        "title": "Honest & Transparent Process",
+                        "text": "<p>We believe in full transparency — from ingredient sourcing to formulation. You deserve to know exactly what goes into every product.</p>"
+                    }
+                },
+                {
+                    "type": "accordion_item",
+                    "settings": {
+                        "title": "Gentle Yet Effective Formulas",
+                        "text": "<p>Our formulations balance gentleness with efficacy, ensuring your skin receives the care it needs without irritation or compromise.</p>"
+                    }
+                },
+                {
+                    "type": "accordion_item",
+                    "settings": {
+                        "title": "Thoughtfully Chosen Ingredients",
+                        "text": "<p>Every ingredient is carefully selected for its proven benefits, purity, and compatibility with all skin types.</p>"
+                    }
                 }
-            },
-            {
-                "type": "accordion_item",
-                "settings": {
-                    "title": "Honest & Transparent Process",
-                    "text": "<p>We believe in full transparency — from ingredient sourcing to formulation. You deserve to know exactly what goes into every product.</p>"
-                }
-            },
-            {
-                "type": "accordion_item",
-                "settings": {
-                    "title": "Gentle Yet Effective Formulas",
-                    "text": "<p>Our formulations balance gentleness with efficacy, ensuring your skin receives the care it needs without irritation or compromise.</p>"
-                }
-            },
-            {
-                "type": "accordion_item",
-                "settings": {
-                    "title": "Thoughtfully Chosen Ingredients",
-                    "text": "<p>Every ingredient is carefully selected for its proven benefits, purity, and compatibility with all skin types.</p>"
-                }
-            }
-        ]
-      }
+            ]
+        }
     ]
-  }
+}
 {% endschema %}

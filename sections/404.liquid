@@ -1,111 +1,140 @@
 {% comment %}
-  This section is used in the 404 template to render page shown when customers
-  enter an invalid store URL.
+    This section is used in the 404 template to render page shown when customers
+    enter an invalid store URL.
 {% endcomment %}
 <div
-  data-section-id="{{ section.id }}"
-  class="404-section full-width"
-  data-component-kind="section"
-  data-component-type="404"
-  data-component-id="{{ section.id }}"
+    data-section-id="{{ section.id }}"
+    class="404-section full-width"
+    data-component-kind="section"
+    data-component-type="404"
+    data-component-id="{{ section.id }}"
 >
-  <div class="layout container-page bg-[#F3F3F3]">
-    <div class="relative flex flex-col justify-between overflow-hidden gap-40">
-      {%- comment -%} Main Content {%- endcomment -%}
-      <div class="relative z-10 pt-20 pc:pt-28 fw:pt-36 text-[#263D29]">
-        <h1
-          class="text-[clamp(3rem,8vw,6rem)] font-bold leading-[1.05] opacity-0 translate-y-5"
-          data-gsap-title
-        >
-          {{ section.settings.heading_line1 | default: '404' }}<br>
-          {{ section.settings.heading_line2 | default: 'Not Found' }}
-        </h1>
-        <p
-          class="mt-6 max-w-md text-xl leading-relaxed opacity-0 translate-y-5"
-          data-gsap-desc
-        >
-          {{ section.settings.description | default: 'Tailored experiences powered by AI intelligence. Discover insights that adapt to your needs.' }}
-        </p>
+    <div class="layout container-page bg-[#F3F3F3]">
+        <div class="relative flex flex-col justify-between gap-40 overflow-hidden">
+            {%- comment -%} Main Content {%- endcomment -%}
+            <div class="pc:pt-28 fw:pt-36 relative z-10 pt-20 text-[#263D29]">
+                <h1
+                    class="translate-y-5 text-[clamp(3rem,8vw,6rem)] leading-[1.05] font-bold opacity-0"
+                    data-gsap-title
+                >
+                    {{ section.settings.heading_line1 | default: '404' -}}
+                    <br>
+                    {{ section.settings.heading_line2 | default: 'Not Found' }}
+                </h1>
+                <p
+                    class="mt-6 max-w-md translate-y-5 text-xl leading-relaxed opacity-0"
+                    data-gsap-desc
+                >
+                    {{
+                        section.settings.description
+                        | default: 'Tailored experiences powered by AI intelligence. Discover insights that adapt to your needs.'
+                    }}
+                </p>
 
-        {%- if section.settings.show_button -%}
-          <a
-            href="{{ section.settings.button_link | default: '/' }}"
-            class="inline-flex items-center gap-2 mt-8 px-6 py-3 text-xl font-medium text-white bg-[#2d3a2e] rounded 
-              transition-colors hover:bg-[#3d4d3f] opacity-0 translate-y-5"
-            data-gsap-btn
-          >
-            {{ section.settings.button_text | default: 'Back to Home' }}
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M5 12h14"/>
-              <path d="m12 5 7 7-7 7"/>
-            </svg>
-          </a>
-        {%- endif -%}
-      </div>
+                {%- if section.settings.show_button -%}
+                    <a
+                        href="{{ section.settings.button_link | default: '/' }}"
+                        class="
+                            mt-8 inline-flex translate-y-5 items-center gap-2 rounded bg-[#2d3a2e] px-6 py-3 text-xl font-medium
+                            text-white opacity-0 transition-colors hover:bg-[#3d4d3f]
+                        "
+                        data-gsap-btn
+                    >
+                        {{ section.settings.button_text | default: 'Back to Home' }}
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path d="M5 12h14"/>
+                            <path d="m12 5 7 7-7 7"/>
+                        </svg>
+                    </a>
+                {%- endif -%}
+            </div>
 
-      {%- comment -%} Brand Watermark {%- endcomment -%}
-      {% render 'watermark', 
-        container_class: 'relative z-0 w-full overflow-hidden pointer-events-none select-none', 
-        text_class: 'block text-[clamp(12vw,16vw,18vw)] font-bold leading-none text-[#e4e3df] whitespace-nowrap translate-y-[10%]', 
-        html_attr: 'data-gsap-watermark', 
-        text: section.settings.watermark_text 
-      %}
+            {%- comment -%} Brand Watermark {%- endcomment -%}
+            {% render 'watermark',
+                container_class: 'relative z-0 w-full overflow-hidden pointer-events-none select-none',
+                text_class: 'block text-[clamp(12vw,16vw,18vw)] font-bold leading-none text-[#e4e3df] whitespace-nowrap translate-y-[10%]',
+                html_attr: 'data-gsap-watermark',
+                text: section.settings.watermark_text
+            %}
+        </div>
     </div>
-  </div>
 </div>
 
 {%- javascript -%}
-  (function(){
-    const Components = window.__Theme__?.Components;
-    if (!Components || typeof gsap === 'undefined') return;
+    (function () {
+        const Components = window.__Theme__?.Components;
+        if (!Components || typeof gsap === 'undefined') return;
 
-    Components.register(
-      '404',
-      {
-        init(el){
-          const ctx = gsap.context(() => {
-            const tl = gsap.timeline({
-              defaults: { ease: 'power2.out' }
-            });
+        Components.register(
+            '404',
+            {
+                init(el) {
+                    const ctx = gsap.context(() => {
+                        const tl = gsap.timeline({
+                            defaults: { ease: 'power2.out' },
+                        });
 
-            tl.to(el.querySelector('[data-gsap-title]'), {
-              opacity: 1,
-              y: 0,
-              duration: 0.7
-            })
-            .to(el.querySelector('[data-gsap-desc]'), {
-              opacity: 1,
-              y: 0,
-              duration: 0.5
-            }, '-=0.3')
-            .to(el.querySelector('[data-gsap-btn]'), {
-              opacity: 1,
-              y: 0,
-              duration: 0.5
-            }, '-=0.2')
-            .fromTo(el.querySelector('[data-gsap-watermark]'), {
-              opacity: 0,
-              x: 60
-            }, {
-              opacity: 1,
-              x: 0,
-              duration: 1,
-              ease: 'power3.out'
-            }, '-=0.4');
-          }, el);
+                        tl.to(el.querySelector('[data-gsap-title]'), {
+                            opacity: 1,
+                            y: 0,
+                            duration: 0.7,
+                        })
+                            .to(
+                                el.querySelector('[data-gsap-desc]'),
+                                {
+                                    opacity: 1,
+                                    y: 0,
+                                    duration: 0.5,
+                                },
+                                '-=0.3',
+                            )
+                            .to(
+                                el.querySelector('[data-gsap-btn]'),
+                                {
+                                    opacity: 1,
+                                    y: 0,
+                                    duration: 0.5,
+                                },
+                                '-=0.2',
+                            )
+                            .fromTo(
+                                el.querySelector('[data-gsap-watermark]'),
+                                {
+                                    opacity: 0,
+                                    x: 60,
+                                },
+                                {
+                                    opacity: 1,
+                                    x: 0,
+                                    duration: 1,
+                                    ease: 'power3.out',
+                                },
+                                '-=0.4',
+                            );
+                    }, el);
 
-          return { ctx };
-        },
+                    return { ctx };
+                },
 
-        destroy(el, state){
-          if(state?.ctx){
-            state.ctx.revert();
-          }
-        }
-      },
-      { lazy:true }
-    );
-  })();
+                destroy(el, state) {
+                    if (state?.ctx) {
+                        state.ctx.revert();
+                    }
+                },
+            },
+            { lazy: true },
+        );
+    })();
 {%- endjavascript -%}
 
 {%- stylesheet -%}
@@ -113,60 +142,60 @@
 
 {% schema %}
 {
-  "name": "t:general.404",
-  "tag": "section",
-  "class": "section",
-  "enabled_on": {
-    "templates": ["404"]
-  },
-  "settings": [
-    {
-      "type": "text",
-      "id": "heading_line1",
-      "default": "404",
-      "label": "Heading line 1"
+    "name": "t:general.404",
+    "tag": "section",
+    "class": "section",
+    "enabled_on": {
+        "templates": ["404"]
     },
-    {
-      "type": "text",
-      "id": "heading_line2",
-      "default": "Not Found",
-      "label": "Heading line 2"
-    },
-    {
-      "type": "textarea",
-      "id": "description",
-      "default": "Tailored experiences powered by AI intelligence. Discover insights that adapt to your needs.",
-      "label": "Description"
-    },
-    {
-      "type": "checkbox",
-      "id": "show_button",
-      "default": true,
-      "label": "Show button"
-    },
-    {
-      "type": "text",
-      "id": "button_text",
-      "default": "Back to Home",
-      "label": "Button text"
-    },
-    {
-      "type": "url",
-      "id": "button_link",
-      "default": "/",
-      "label": "Button link"
-    },
-    {
-      "type": "text",
-      "id": "watermark_text",
-      "default": "Eccenova®",
-      "label": "Watermark text"
-    }
-  ],
-  "presets": [
-    {
-      "name": "t:general.404"
-    }
-  ]
+    "settings": [
+        {
+            "type": "text",
+            "id": "heading_line1",
+            "default": "404",
+            "label": "Heading line 1"
+        },
+        {
+            "type": "text",
+            "id": "heading_line2",
+            "default": "Not Found",
+            "label": "Heading line 2"
+        },
+        {
+            "type": "textarea",
+            "id": "description",
+            "default": "Tailored experiences powered by AI intelligence. Discover insights that adapt to your needs.",
+            "label": "Description"
+        },
+        {
+            "type": "checkbox",
+            "id": "show_button",
+            "default": true,
+            "label": "Show button"
+        },
+        {
+            "type": "text",
+            "id": "button_text",
+            "default": "Back to Home",
+            "label": "Button text"
+        },
+        {
+            "type": "url",
+            "id": "button_link",
+            "default": "/",
+            "label": "Button link"
+        },
+        {
+            "type": "text",
+            "id": "watermark_text",
+            "default": "Eccenova®",
+            "label": "Watermark text"
+        }
+    ],
+    "presets": [
+        {
+            "name": "t:general.404"
+        }
+    ]
 }
 {% endschema %}

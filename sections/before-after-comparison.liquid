@@ -4,10 +4,10 @@
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
-    " 
+    "
 >
     <div class="layout container-page">
-        <div class="text-center flex flex-col gap-6 text-[#263D29]">
+        <div class="flex flex-col gap-6 text-center text-[#263D29]">
             <h3 class="opacity-80">
                 {{ section.settings.sub_heading }}
             </h3>
@@ -16,12 +16,12 @@
             </h1>
         </div>
 
-        <div 
+        <div
             class="mt-25"
             x-data="beforeAfterComparison()"
         >
             <div
-                class="relative aspect-video overflow-hidden rounded-lg cursor-ew-resize select-none"
+                class="relative aspect-video cursor-ew-resize overflow-hidden rounded-lg select-none"
                 x-ref="container"
                 @mousedown="startDrag($event)"
                 @touchstart.passive="startDrag($event)"
@@ -33,8 +33,8 @@
                 x-intersect:enter.once="animateToCenter()"
             >
                 {% comment %} After Image (Background) {% endcomment %}
-                <div class="absolute inset-0 w-full h-full">
-                    {%- render 'image', 
+                <div class="absolute inset-0 h-full w-full">
+                    {%- render 'image',
                         image: section.settings.after_img,
                         alt: section.settings.after_img.alt,
                         width: section.settings.after_img.width,
@@ -43,10 +43,11 @@
                 </div>
 
                 {% comment %} Before Image (Clipped) {% endcomment %}
-                <div class="absolute inset-0 w-full h-full"
+                <div
+                    class="absolute inset-0 h-full w-full"
                     :style="`clip-path: inset(0 ${100 - position}% 0 0)`"
                 >
-                    {%- render 'image', 
+                    {%- render 'image',
                         image: section.settings.before_img,
                         alt: section.settings.after_img.alt,
                         width: section.settings.after_img.width,
@@ -56,34 +57,52 @@
 
                 {% comment %} Silder Line {% endcomment %}
                 <div
-                    class="absolute top-0 bottom-0 w-2 bg-white/90 -translate-x-1/2 z-10 transition-[left] duration-75 ease-out"
+                    class="absolute top-0 bottom-0 z-10 w-2 -translate-x-1/2 bg-white/90 transition-[left] duration-75 ease-out"
                     :class="{'transition-none' : isDragging }"
                     :style="`left: ${position}%`"
                 >
                     {% comment %} Handle {% endcomment %}
                     <div
-                        class="cursor-grab active:cursor-grabbing absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 bg-white rounded-full shadow-lg flex items-center justify-center
-                            gap-0 hover:scale-110 transition-transform duration-200 focus:outline-none focus:ring-2 focus:ring-white/50"
+                        class="
+                            absolute top-1/2 left-1/2 flex h-24 w-24 -translate-x-1/2 -translate-y-1/2 cursor-grab items-center justify-center gap-0 rounded-full bg-white shadow-lg
+                            transition-transform duration-200 hover:scale-110 focus:ring-2 focus:ring-white/50 focus:outline-none active:cursor-grabbing
+                        "
                         @mousedown.stop="startDrag($event)"
                         @touchstart.stop.passive="startDrag($event)"
                         aria-label="Drag to compare images"
                     >
-                        <svg class="w-12 h-12 text-neutral-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg
+                            class="h-12 w-12 text-neutral-700"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
                             <path d="M15 18L9 12L15 6"/>
                         </svg>
-                        <svg class="w-12 h-12 text-neutral-700 -ml-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg
+                            class="-ml-2 h-12 w-12 text-neutral-700"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
                             <path d="M9 18L15 12L9 6"/>
                         </svg>
                     </div>
                 </div>
 
                 {% comment %} Before Label {% endcomment %}
-                <div class="absolute bottom-10 left-10 p-4 text-3xl font-medium tracking-wider text-white backdrop-blur-sm rounded z-10 border-white border-2">
+                <div class="absolute bottom-10 left-10 z-10 rounded border-2 border-white p-4 text-3xl font-medium tracking-wider text-white backdrop-blur-sm">
                     {{ section.settings.before_label }}
                 </div>
 
                 {% comment %} After Label {% endcomment %}
-                <div class="absolute bottom-10 right-10 p-4 text-3xl font-medium tracking-wider text-white backdrop-blur-sm rounded z-10 border-white border-2">
+                <div class="absolute right-10 bottom-10 z-10 rounded border-2 border-white p-4 text-3xl font-medium tracking-wider text-white backdrop-blur-sm">
                     {{ section.settings.after_label }}
                 </div>
             </div>
@@ -92,12 +111,12 @@
 </div>
 
 {% schema %}
-  {
+{
     "name": "Before After Comparison",
     "tag": "section",
     "class": "section",
     "disabled_on": {
-        "groups": ["header","footer"]
+        "groups": ["header", "footer"]
     },
     "settings": [
         {
@@ -160,11 +179,10 @@
         }
     ],
     "presets": [
-      {
-        "name": "Before After Comparison",
-        "settings": {
+        {
+            "name": "Before After Comparison",
+            "settings": {}
         }
-      }
     ]
-  }
+}
 {% endschema %}

@@ -1,241 +1,251 @@
 {%- liquid
-  assign social_icons = true
-  if settings.social_facebook_link == blank and settings.social_instagram_link == blank and settings.social_youtube_link == blank and settings.social_tiktok_link == blank and settings.social_twitter_link == blank and settings.social_pinterest_link == blank and settings.social_snapchat_link == blank and settings.social_tumblr_link == blank and settings.social_vimeo_link == blank
-    assign social_icons = false
-  endif
-  if section.settings.enable_country_selector or section.settings.enable_language_selector
-    assign language_country_selector = true
-  endif
-  if section.blocks.size > 0
-    assign announcement_bar = true
-  endif
+    assign social_icons = true
+    if settings.social_facebook_link == blank and settings.social_instagram_link == blank and settings.social_youtube_link == blank and settings.social_tiktok_link == blank and settings.social_twitter_link == blank and settings.social_pinterest_link == blank and settings.social_snapchat_link == blank and settings.social_tumblr_link == blank and settings.social_vimeo_link == blank
+        assign social_icons = false
+    endif
+    if section.settings.enable_country_selector or section.settings.enable_language_selector
+        assign language_country_selector = true
+    endif
+    if section.blocks.size > 0
+        assign announcement_bar = true
+    endif
 -%}
 
-<div 
-  data-section-id = "{{ section.id }}"
-  class="announcement-bar-section full-width color-{{ section.settings.color_scheme }}"
-  data-component-kind="section"
-  data-component-type="announcement-bar"
-  data-component-id="{{ section.id }}"
-  data-auto-play="{{ section.settings.auto_play }}"
-  data-change-play-speed="{{ section.settings.change_play_speed }}"
+<div
+    data-section-id="{{ section.id }}"
+    class="announcement-bar-section full-width color-{{ section.settings.color_scheme }}"
+    data-component-kind="section"
+    data-component-type="announcement-bar"
+    data-component-id="{{ section.id }}"
+    data-auto-play="{{ section.settings.auto_play }}"
+    data-change-play-speed="{{ section.settings.change_play_speed }}"
 >
-  <div class="container-page">
-    <div class="grid grid-cols-1 py-3
-      {% if announcement_bar and language_country_selector or section.settings.show_social and social_icons %} 
-        pc:grid-cols-3 announcement-bar__cols-3
-      {% elsif language_country_selector or section.settings.show_social and social_icons %} 
-        pc:grid-cols-2 announcement-bar__cols-2
-      {% endif %}"
-    >
-      {%- if section.settings.show_social -%}
-        {%- render 'social-icons' -%}
-      {%- endif -%}
-      
-      {%- if announcement_bar -%}
-        <div class="overflow-hidden break-all" style="grid-area: announcements">
-          {%- if section.blocks.size > 0 -%}
-            <div class="swiper w-full h-full">
-              <div class="swiper-wrapper">
-                {%- for block in section.blocks -%}
-                  <div class="swiper-slide" {{ block.shopify_attributes }}>
-                    {%- if block.settings.link != blank -%}
-                      <a href="{{ block.settings.link }}" class="inline-block hover:underlink">
-                        {{ block.settings.text }}
-                      </a>
-                    {%- else -%}
-                      <span>{{ block.settings.text }}</span>
+    <div class="container-page">
+        <div
+            class="
+                grid grid-cols-1 py-3
+                {% if announcement_bar and language_country_selector or section.settings.show_social and social_icons %}
+                  pc:grid-cols-3 announcement-bar__cols-3
+                {% elsif language_country_selector or section.settings.show_social and social_icons %}
+                  pc:grid-cols-2 announcement-bar__cols-2
+                {% endif %}
+            "
+        >
+            {%- if section.settings.show_social -%}
+                {%- render 'social-icons' -%}
+            {%- endif -%}
+
+            {%- if announcement_bar -%}
+                <div class="overflow-hidden break-all" style="grid-area: announcements">
+                    {%- if section.blocks.size > 0 -%}
+                        <div class="swiper h-full w-full">
+                            <div class="swiper-wrapper">
+                                {%- for block in section.blocks -%}
+                                    <div class="swiper-slide" {{ block.shopify_attributes }}>
+                                        {%- if block.settings.link != blank -%}
+                                            <a
+                                                href="{{ block.settings.link }}"
+                                                class="hover:underlink inline-block"
+                                            >
+                                                {{ block.settings.text }}
+                                            </a>
+                                        {%- else -%}
+                                            <span>{{ block.settings.text }}</span>
+                                        {%- endif -%}
+                                    </div>
+                                {%- endfor -%}
+                            </div>
+                        </div>
                     {%- endif -%}
-                  </div>
-                {%- endfor -%}
-              </div>
+                </div>
+            {%- endif -%}
+
+            <div
+                class="max-pc:hidden flex items-center justify-end gap-2"
+                style="grid-area: language-currency"
+            >
+                {%- if section.settings.enable_country_selector -%}
+                    {%- render 'country-localization', localPosition: 'AnnouncementCountry' -%}
+                {%- endif -%}
+
+                {%- if section.settings.enable_language_selector -%}
+                    {%- render 'language-localization', localPosition: 'AnnouncementLanguage' -%}
+                {%- endif -%}
             </div>
-          {%- endif -%}
         </div>
-      {%- endif -%}
-
-      <div class="flex items-center gap-2 justify-end max-pc:hidden" style="grid-area: language-currency">
-        {%- if section.settings.enable_country_selector -%}
-          {%- render 'country-localization', localPosition: 'AnnouncementCountry' -%}
-        {%- endif -%}
-
-        {%- if section.settings.enable_language_selector -%}
-          {%- render 'language-localization', localPosition: 'AnnouncementLanguage' -%}
-        {%- endif -%}
-      </div>
     </div>
-  </div>
 </div>
 
 {% javascript %}
-  (function () {
-    const Components = window.__Theme__?.Components;
-    if (!Components) return;
+    (function () {
+        const Components = window.__Theme__?.Components;
+        if (!Components) return;
 
-    Components.register(
-      'announcement-bar', 
-      {
-        init(el) {
-          const autoPlay = el.getAttribute('data-auto-play') === 'true';
-          const changePlaySpeed = parseInt(el.getAttribute('data-change-play-speed'), 10) || 5;
+        Components.register(
+            'announcement-bar',
+            {
+                init(el) {
+                    const autoPlay = el.getAttribute('data-auto-play') === 'true';
+                    const changePlaySpeed =
+                        parseInt(el.getAttribute('data-change-play-speed'), 10) || 5;
 
-          const swiperContainer = el.querySelector('.swiper');
-          if (!swiperContainer || typeof Swiper === 'undefined') return null;
+                    const swiperContainer = el.querySelector('.swiper');
+                    if (!swiperContainer || typeof Swiper === 'undefined') return null;
 
-          const slides = el.querySelectorAll('.swiper-slide');
+                    const slides = el.querySelectorAll('.swiper-slide');
 
-          const swiper = new Swiper(swiperContainer, {
-            loop: slides.length > 1,
-            autoplay: autoPlay
-              ? {
-                  delay: changePlaySpeed * 1000,
-                  disableOnInteraction: false
-                }
-              : false,
-            slidesPerView: 1,
-            allowTouchMove: false,
-            effect: 'fade',
-            fadeEffect: {
-              crossFade: true
+                    const swiper = new Swiper(swiperContainer, {
+                        loop: slides.length > 1,
+                        autoplay: autoPlay
+                            ? {
+                                  delay: changePlaySpeed * 1000,
+                                  disableOnInteraction: false,
+                              }
+                            : false,
+                        slidesPerView: 1,
+                        allowTouchMove: false,
+                        effect: 'fade',
+                        fadeEffect: {
+                            crossFade: true,
+                        },
+                        pagination: false,
+                        navigation: false,
+                    });
+
+                    return { swiper };
+                },
+
+                destroy(el, state) {
+                    if (!state || !state.swiper) return;
+
+                    if (typeof state.swiper.destroy === 'function') {
+                        state.swiper.destroy(true, true);
+                    }
+                },
             },
-            pagination: false,
-            navigation: false
-          });
-
-          return { swiper };
-        },
-
-        destroy(el, state) {
-          if (!state || !state.swiper) return;
-
-          if (typeof state.swiper.destroy === 'function') {
-            state.swiper.destroy(true, true);
-          }
-        }
-      },
-      { lazy: true}
-    );
-  })();
+            { lazy: true },
+        );
+    })();
 {% endjavascript %}
 
 {% stylesheet %}
-  .announcement-bar{
-    position: absolute;
-    z-index: 9999;
-  }
-  
-  .announcement-bar-section {
-    .announcement-bar__cols-3 {
-      grid-template-areas: "social-icons announcements language-currency";
+    .announcement-bar {
+        position: absolute;
+        z-index: 9999;
     }
 
-    .announcement-bar__cols-2 {
-      grid-template-areas: "social-icons language-currency";
-    }
+    .announcement-bar-section {
+        .announcement-bar__cols-3 {
+            grid-template-areas: 'social-icons announcements language-currency';
+        }
 
-    .swiper-slide{
-      display:flex;
-      align-items: center;
-      justify-content: center;
+        .announcement-bar__cols-2 {
+            grid-template-areas: 'social-icons language-currency';
+        }
+
+        .swiper-slide {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
     }
-  }
 {% endstylesheet %}
 
 {% schema %}
-  {
+{
     "name": "Announcement Bar",
     "tag": "section",
     "class": "section announcement-bar",
     "limit": 1,
     "max_blocks": 6,
     "enabled_on": {
-      "groups": ["header"]
+        "groups": ["header"]
     },
     "settings": [
-      {
-        "type": "header",
-        "content": "Announcement bar"
-      },
-      {
-        "type": "checkbox",
-        "id": "auto_play",
-        "label": "Auto-play announcements",
-        "default": false
-      },
-      {
-        "type": "range",
-        "id": "change_play_speed",
-        "min": 3,
-        "max": 10,
-        "step": 1,
-        "unit": "s",
-        "label": "Change play speed",
-        "default": 5
-      },
-      {
-        "type": "color_scheme",
-        "id": "color_scheme",
-        "label": "Color scheme",
-        "default": "scheme-1"
-      },
-      {
-        "type": "header",
-        "content": "Public settings"
-      },
-      {
-        "type": "paragraph",
-        "content": "Only displayed on large screens"
-      },
-      {
-        "type": "checkbox",
-        "id": "show_social",
-        "default": false,
-        "label": "Social icon",
-        "info": "[Manage social accounts](/editor?context=theme&category=social%20icon)"
-      },
-      {
-        "type": "checkbox",
-        "id": "enable_country_selector",
-        "default": false,
-        "label": "Country/region selector",
-        "info": "[Manage countries/regions](/admin/settings/markets)"
-      },
-      {
-        "type": "checkbox",
-        "id": "enable_language_selector",
-        "default": false,
-        "label": "Language selector",
-        "info": "[Manage languages](/admin/settings/languages)"
-      }
+        {
+            "type": "header",
+            "content": "Announcement bar"
+        },
+        {
+            "type": "checkbox",
+            "id": "auto_play",
+            "label": "Auto-play announcements",
+            "default": false
+        },
+        {
+            "type": "range",
+            "id": "change_play_speed",
+            "min": 3,
+            "max": 10,
+            "step": 1,
+            "unit": "s",
+            "label": "Change play speed",
+            "default": 5
+        },
+        {
+            "type": "color_scheme",
+            "id": "color_scheme",
+            "label": "Color scheme",
+            "default": "scheme-1"
+        },
+        {
+            "type": "header",
+            "content": "Public settings"
+        },
+        {
+            "type": "paragraph",
+            "content": "Only displayed on large screens"
+        },
+        {
+            "type": "checkbox",
+            "id": "show_social",
+            "default": false,
+            "label": "Social icon",
+            "info": "[Manage social accounts](/editor?context=theme&category=social%20icon)"
+        },
+        {
+            "type": "checkbox",
+            "id": "enable_country_selector",
+            "default": false,
+            "label": "Country/region selector",
+            "info": "[Manage countries/regions](/admin/settings/markets)"
+        },
+        {
+            "type": "checkbox",
+            "id": "enable_language_selector",
+            "default": false,
+            "label": "Language selector",
+            "info": "[Manage languages](/admin/settings/languages)"
+        }
     ],
-    "blocks":[
-      {
-        "type": "announcement",
-        "name": "Announcement",
-        "settings": [
-          {
-            "type": "inline_richtext",
-            "id": "text",
-            "default":"Welcome to our store!",
-            "label": "Text"
-          },
-          {
-            "type": "url",
-            "id": "link",
-            "label": "Link"
-          }
-        ]
-      }
+    "blocks": [
+        {
+            "type": "announcement",
+            "name": "Announcement",
+            "settings": [
+                {
+                    "type": "inline_richtext",
+                    "id": "text",
+                    "default": "Welcome to our store!",
+                    "label": "Text"
+                },
+                {
+                    "type": "url",
+                    "id": "link",
+                    "label": "Link"
+                }
+            ]
+        }
     ],
     "presets": [
-      {
-        "name": "Announcement Bar",
-        "blocks": [
-          {
-            "type": "announcement"
-          }
-        ]
-      }
+        {
+            "name": "Announcement Bar",
+            "blocks": [
+                {
+                    "type": "announcement"
+                }
+            ]
+        }
     ]
-  }
+}
 {% endschema %}
