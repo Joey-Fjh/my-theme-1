@@ -1,11 +1,11 @@
 {% doc %}
-  Renders product info blocks shared between featured-product (home) and product (PDP).
+    Renders product info blocks shared between featured-product (home) and product (PDP).
 
-  @param {product} product - Product object (from section.settings.product or product)
-  @param {section} section - Section object (for blocks and id)
-  @param {string} [context] - Rendering context, e.g. 'main' (PDP) or 'featured' (home)
-  @param {string} [container_class] - Optional extra classes for the root container (merged with defaults)
-  @param {string} [product_form_id] - Shared form ID for variant picker, quantity, and buy buttons
+    @param {product} product - Product object (from section.settings.product or product)
+    @param {section} section - Section object (for blocks and id)
+    @param {string} [context] - Rendering context, e.g. 'main' (PDP) or 'featured' (home)
+    @param {string} [container_class] - Optional extra classes for the root container (merged with defaults)
+    @param {string} [product_form_id] - Shared form ID for variant picker, quantity, and buy buttons
 {% enddoc %}
 
 {%- assign product = product | default: section.settings.product -%}
@@ -15,126 +15,130 @@
 {%- assign context_modifier = 'product-info-blocks--' | append: context -%}
 
 <div
-  class="product-info-blocks {{ context_modifier }} {{ container_class }}"
-  id="ProductInfo-{{ section.id }}"
+    class="product-info-blocks {{ context_modifier }} {{ container_class }}"
+    id="ProductInfo-{{ section.id }}"
 >
-  {%- for block in section.blocks -%}
-    {%- case block.type -%}
+    {%- for block in section.blocks -%}
+        {%- case block.type -%}
+            {%- when '@app' -%}
+                <div {{ block.shopify_attributes }}>
+                    {%- render block -%}
+                </div>
 
-      {%- when '@app' -%}
-        <div {{ block.shopify_attributes }}>
-          {%- render block -%}
-        </div>
+            {%- when 'title' -%}
+                <div {{ block.shopify_attributes }}>
+                    {%- if product != blank -%}
+                        {%- if context == 'main' -%}
+                            <h1 class="h1 product-info-blocks__title">
+                                {{ product.title }}
+                            </h1>
+                        {%- else -%}
+                            <h2 class="h2 product-info-blocks__title">
+                                {{ product.title }}
+                            </h2>
+                        {%- endif -%}
+                    {%- else -%}
+                        <h2 class="h2 product-info-blocks__title">Example Product Title</h2>
+                    {%- endif -%}
+                </div>
 
-      {%- when 'title' -%}
-        <div {{ block.shopify_attributes }}>
-          {%- if product != blank -%}
-            {%- if context == 'main' -%}
-              <h1 class="h1 product-info-blocks__title">
-                {{ product.title }}
-              </h1>
+            {%- when 'price' -%}
+                <div {{ block.shopify_attributes }}>
+                    {%- if product != blank -%}
+                        {%- assign current_variant = product.selected_or_first_available_variant -%}
+                        <div
+                            class="product-info-blocks__price"
+                            x-data="
+                                ProductPrice({
+                                  sectionId: '{{ section.id }}',
+                                  price: {{ current_variant.price | default: 0 }},
+                                  comparePrice: {{ current_variant.compare_at_price | default: 0 }},
+                                  currency: '{{ shop.currency }}'
+                                })
+                            "
+                        >
+                            <span
+                                class="h4 product-info-blocks__price-main"
+                                x-text="formattedPrice"
+                            >
+                                {{- current_variant.price | money -}}
+                            </span>
+                            <s
+                                class="product-info-blocks__price-compare"
+                                x-show="hasComparePrice"
+                                x-text="formattedComparePrice"
+                            >
+                                {%- if current_variant.compare_at_price > current_variant.price -%}
+                                    {{- current_variant.compare_at_price | money -}}
+                                {%- endif -%}
+                            </s>
+                        </div>
+                    {%- else -%}
+                        <p class="h4 product-info-blocks__price-main">$99.00</p>
+                    {%- endif -%}
+                </div>
+
+            {%- when 'description' -%}
+                <div {{ block.shopify_attributes }}>
+                    {%- if product != blank and product.description != blank -%}
+                        <div class="h6 product-info-blocks__description">
+                            {%- if context == 'featured' -%}
+                                {{ product.description | strip_html | truncate: 150 }}
+                            {%- else -%}
+                                {{ product.description }}
+                            {%- endif -%}
+                        </div>
+                    {%- else -%}
+                        <div class="h6 product-info-blocks__description">
+                            Discover our innovative skincare serum pack, infused with advanced AI
+                            insights to tailor your beauty routine. Each serum is designed to meet
+                            your unique skin needs, ensuring a personalized experience that enhances
+                            your natural glow.
+                        </div>
+                    {%- endif -%}
+                </div>
+
+            {%- when 'variant_picker' -%}
+                {%- render 'product-variant-picker',
+                    product: product,
+                    block: block,
+                    product_form_id: product_form_id,
+                    context: context
+                -%}
+
+            {%- when 'quantity_selector' -%}
+                <div {{ block.shopify_attributes }}>
+                    {%- render 'quantity-selector',
+                        value: 1,
+                        min: 1,
+                        product_form_id: product_form_id,
+                        section_id: section.id
+                    -%}
+                </div>
+
+            {%- when 'buy_buttons' -%}
+                <div class="buy-buttons-block product-info-blocks__buy-buttons">
+                    {%- render 'buy-buttons',
+                        product: product,
+                        block: block,
+                        product_form_id: product_form_id,
+                        section_id: section.id,
+                        context: context
+                    -%}
+                </div>
+
+            {%- when 'inventory_status' -%}
+                <div
+                    class="inventory-status-placeholder h6 product-info-blocks__inventory"
+                    {{ block.shopify_attributes }}
+                >
+                    Inventory Status: In Stock
+                </div>
+
             {%- else -%}
-              <h2 class="h2 product-info-blocks__title">
-                {{ product.title }}
-              </h2>
-            {%- endif -%}
-          {%- else -%}
-            <h2 class="h2 product-info-blocks__title">
-              Example Product Title
-            </h2>
-          {%- endif -%}
-        </div>
-
-      {%- when 'price' -%}
-        <div {{ block.shopify_attributes }}>
-          {%- if product != blank -%}
-            {%- assign current_variant = product.selected_or_first_available_variant -%}
-            <div
-              class="product-info-blocks__price"
-              x-data="ProductPrice({
-                sectionId: '{{ section.id }}',
-                price: {{ current_variant.price | default: 0 }},
-                comparePrice: {{ current_variant.compare_at_price | default: 0 }},
-                currency: '{{ shop.currency }}'
-              })"
-            >
-              <span class="h4 product-info-blocks__price-main" x-text="formattedPrice">
-                {{- current_variant.price | money -}}
-              </span>
-              <s
-                class="product-info-blocks__price-compare"
-                x-show="hasComparePrice"
-                x-text="formattedComparePrice"
-              >
-                {%- if current_variant.compare_at_price > current_variant.price -%}
-                  {{- current_variant.compare_at_price | money -}}
-                {%- endif -%}
-              </s>
-            </div>
-          {%- else -%}
-            <p class="h4 product-info-blocks__price-main">$99.00</p>
-          {%- endif -%}
-        </div>
-
-      {%- when 'description' -%}
-        <div {{ block.shopify_attributes }}>
-          {%- if product != blank and product.description != blank -%}
-            <div class="h6 product-info-blocks__description">
-              {%- if context == 'featured' -%}
-                {{ product.description | strip_html | truncate: 150 }}
-              {%- else -%}
-                {{ product.description }}
-              {%- endif -%}
-            </div>
-          {%- else -%}
-            <div class="h6 product-info-blocks__description">
-              Discover our innovative skincare serum pack, infused with advanced AI insights to tailor your beauty routine. Each serum is designed to meet your unique skin needs, ensuring a personalized experience that enhances your natural glow.
-            </div>
-          {%- endif -%}
-        </div>
-
-      {%- when 'variant_picker' -%}
-        {%- render 'product-variant-picker',
-          product: product,
-          block: block,
-          product_form_id: product_form_id,
-          context: context
-        -%}
-
-      {%- when 'quantity_selector' -%}
-        <div {{ block.shopify_attributes }}>
-          {%- render 'quantity-selector',
-            value: 1,
-            min: 1,
-            product_form_id: product_form_id,
-            section_id: section.id
-          -%}
-        </div>
-
-      {%- when 'buy_buttons' -%}
-        <div class="buy-buttons-block product-info-blocks__buy-buttons">
-          {%- render 'buy-buttons',
-            product: product,
-            block: block,
-            product_form_id: product_form_id,
-            section_id: section.id,
-            context: context
-          -%}
-        </div>
-
-      {%- when 'inventory_status' -%}
-        <div
-          class="inventory-status-placeholder h6 product-info-blocks__inventory"
-          {{ block.shopify_attributes }}
-        >
-          Inventory Status: In Stock
-        </div>
-
-      {%- else -%}
-        <div {{ block.shopify_attributes }}>
-          {%- render block -%}
-        </div>
-
-    {%- endcase -%}
-  {%- endfor -%}
+                <div {{ block.shopify_attributes }}>
+                    {%- render block -%}
+                </div>
+        {%- endcase -%}
+    {%- endfor -%}
 </div>

@@ -11,7 +11,7 @@
 >
     <div class="layout container-page text-[#263D29]">
         {%- comment -%} Header {%- endcomment -%}
-        <div class="max-w-1/2 mx-auto text-center mb-12 pc:mb-20">  
+        <div class="pc:mb-20 mx-auto mb-12 max-w-1/2 text-center">
             <h3
                 data-gsap-item
                 class="mb-4 opacity-80"
@@ -20,38 +20,39 @@
             </h3>
             <hxl
                 data-gsap-item
-                class="font-bold leading-tight"
+                class="leading-tight font-bold"
             >
                 {{ section.settings.heading }}
-            </hxl>         
+            </hxl>
             <p
                 data-gsap-item
-                class="text-[#1B2608] opacity-80 mt-4 leading-relaxed"
+                class="mt-4 leading-relaxed text-[#1B2608] opacity-80"
             >
                 {{ section.settings.description }}
             </p>
         </div>
-        
+
         {%- comment -%} Cards Grid {%- endcomment -%}
-        <div class="grid grid-cols-1 pc:grid-cols-3 gap-6 pc:gap-8">          
+        <div class="pc:grid-cols-3 pc:gap-8 grid grid-cols-1 gap-6">
             {%- for block in section.blocks -%}
-                <div 
+                <div
                     data-gsap-card
                     {{ block.shopify_attributes }}
                 >
                     <div class="aspect-4/3 overflow-hidden rounded-sm">
-                        {%- render 'image',
+                        {%-
+                            render 'image',
                             image: block.settings.image,
                             alt: block.settings.image.alt | default: block.settings.title | escape,
                             width: block.settings.image.width
                         -%}
                     </div>
-                                
-                    <h3 class="mt-5 font-bold leading-snug">
+
+                    <h3 class="mt-5 leading-snug font-bold">
                         {{ block.settings.title }}
                     </h3>
-                    
-                    <p class="opacity-80 mt-2 leading-relaxed">
+
+                    <p class="mt-2 leading-relaxed opacity-80">
                         {{ block.settings.text }}
                     </p>
                 </div>
@@ -61,16 +62,15 @@
 </div>
 
 {%- javascript -%}
-    (function(){
+    (function () {
         const Components = window.__Theme__?.Components;
         if (!Components || typeof gsap === 'undefined') return;
 
         Components.register(
             'philosophy-section',
             {
-                init(el){
+                init(el) {
                     const ctx = gsap.context(() => {
-
                         const items = el.querySelectorAll('[data-gsap-item]');
                         const cards = el.querySelectorAll('[data-gsap-card]');
 
@@ -84,36 +84,39 @@
                             scrollTrigger: {
                                 trigger: el,
                                 start: 'top 80%',
-                                once: true
-                            }
+                                once: true,
+                            },
                         });
 
                         tl.to(items, {
                             y: 0,
                             opacity: 1,
                             duration: 0.8,
-                            stagger: 0.2
+                            stagger: 0.2,
                         });
 
-                        tl.to(cards, {
-                            y: 0,
-                            opacity: 1,
-                            duration: 0.9,
-                            stagger: 0.15
-                        }, '-=0.4');
-
+                        tl.to(
+                            cards,
+                            {
+                                y: 0,
+                                opacity: 1,
+                                duration: 0.9,
+                                stagger: 0.15,
+                            },
+                            '-=0.4',
+                        );
                     }, el);
 
                     return { ctx };
                 },
 
-                destroy(el, state){
+                destroy(el, state) {
                     if (state?.ctx) {
                         state.ctx.revert();
                     }
-                }
+                },
             },
-            { lazy: true }
+            { lazy: true },
         );
     })();
 {%- endjavascript -%}
@@ -122,74 +125,70 @@
 {%- endstylesheet -%}
 
 {% schema %}
-    {
-        "name": "Philosophy Section",
-        "tag": "section",
-        "class": "section",
-        "settings": [
-            {
-                "type": "text",
-                "id": "subtitle",
-                "default": "Our Philosophy",
-                "label": "Subtitle"
-            },
-            {
-                "type": "text",
-                "id": "heading",
-                "default": "Created with Intention",
-                "label": "Heading"
-            },
-            {
-                "type": "textarea",
-                "id": "description",
-                "default": "Our skincare is crafted with precision, integrity, and respect for the skin.",
-                "label": "Description"
-            },
-            {
-                "type": "header",
-                "content": "Padding"
-            },
-            {
-                "type": "range",
-                "id": "padding_top",
-                "min": 0,
-                "max": 100,
-                "step": 4,
-                "unit": "px",
-                "label": "Padding Top",
-                "default": 0
-            },
-            {
-                "type": "range",
-                "id": "padding_bottom",
-                "min": 0,
-                "max": 100,
-                "step": 4,
-                "unit": "px",
-                "label": "Padding Bottom",
-                "default": 0
-            }
-        ],
-        "blocks": [
-            {
-                "type": "card",
-                "name": "Philosophy Card",
-                "settings": [
-                    { "type": "image_picker", "id": "image", "label": "Image" },
-                    { "type": "text", "id": "title", "label": "Title" },
-                    { "type": "textarea", "id": "text", "label": "Description" }
-                ]
-            }
-        ],
-        "presets": [
+{
+    "name": "Philosophy Section",
+    "tag": "section",
+    "class": "section",
+    "settings": [
         {
-            "name": "Philosophy Section",
-            "blocks": [
-                { "type": "card" },
-                { "type": "card" },
-                { "type": "card" }
+            "type": "text",
+            "id": "subtitle",
+            "default": "Our Philosophy",
+            "label": "Subtitle"
+        },
+        {
+            "type": "text",
+            "id": "heading",
+            "default": "Created with Intention",
+            "label": "Heading"
+        },
+        {
+            "type": "textarea",
+            "id": "description",
+            "default": "Our skincare is crafted with precision, integrity, and respect for the skin.",
+            "label": "Description"
+        },
+        {
+            "type": "header",
+            "content": "Padding"
+        },
+        {
+            "type": "range",
+            "id": "padding_top",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "Padding Top",
+            "default": 0
+        },
+        {
+            "type": "range",
+            "id": "padding_bottom",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "Padding Bottom",
+            "default": 0
+        }
+    ],
+    "blocks": [
+        {
+            "type": "card",
+            "name": "Philosophy Card",
+            "settings": [
+                { "type": "image_picker", "id": "image", "label": "Image" },
+                { "type": "text", "id": "title", "label": "Title" },
+                { "type": "textarea", "id": "text", "label": "Description" }
             ]
         }
-        ]
-    }
+    ],
+    "presets": [
+        {
+            "name": "Philosophy Section",
+            "blocks": [{ "type": "card" }, { "type": "card" }, { "type": "card" }]
+        }
+    ]
+}
 {% endschema %}

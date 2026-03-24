@@ -1,6 +1,10 @@
 # Component Engine — Full API Reference
 
-Source: `assets/base.js`, class `Components` (lines 99–406).
+This document is an implementation reference for the current theme engine.
+If it conflicts with the runtime code in `assets/base.js` or related files, the runtime code is the source of truth.
+Keep this file updated when the engine API, script load order, or lifecycle behavior changes.
+
+Source: `assets/base.js`, class `Components`.
 
 ## Static Properties
 
@@ -83,14 +87,15 @@ document.addEventListener('alpine:init', () => {
 ## Script Load Order (layout/theme.liquid)
 
 ```
-1. gsap.js                    (GSAP core)
-2. gsap-ScrollTrigger.js      (ScrollTrigger plugin)
-3. swiper.js                  (Swiper carousel)
-4. utils.js                   (Theme utilities)
-5. alpine.components.js       (Alpine component definitions)
-6. base.js                    (Components engine + Alpine init)
-7. alpine-intersect.js        (Alpine Intersect plugin)
-8. alpine.js                  (Alpine core — MUST be last)
+1. vendor-gsap.min.js                    (GSAP core)
+2. vendor-gsap-scrolltrigger.min.js      (ScrollTrigger plugin)
+3. vendor-swiper.min.js                  (Swiper carousel)
+4. utils.js                              (Theme utilities)
+5. alpine.components.js                  (Alpine component definitions)
+6. base.js                               (Components engine + Alpine init)
+7. alpine.store.js                       (Alpine global stores)
+8. vendor-alpine-intersect.min.js        (Alpine Intersect plugin)
+9. vendor-alpine.min.js                  (Alpine core — MUST be last)
 ```
 
 All scripts use `defer`.

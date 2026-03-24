@@ -1,16 +1,16 @@
 {% comment %}
-  Renders product buy buttons (Tailwind + Alpine.js).
-  Syncs with VariantPicker via variant:change events.
-  Uses $store.cart.add() for AJAX add-to-cart with toast feedback.
-  Supports Shopify dynamic checkout (Buy it now) via {{ form | payment_button }}.
+    Renders product buy buttons (Tailwind + Alpine.js).
+    Syncs with VariantPicker via variant:change events.
+    Uses $store.cart.add() for AJAX add-to-cart with toast feedback.
+    Supports Shopify dynamic checkout (Buy it now) via {{ form | payment_button }}.
 
-  @param {Object}  product           - Product object
-  @param {Object}  [block]           - Block object (for shopify_attributes + settings)
-  @param {string}  [product_form_id] - Form ID (default: 'product-form-' + section.id)
-  @param {string}  [section_id]      - Section ID for SRA refresh after add
+    @param {Object}  product           - Product object
+    @param {Object}  [block]           - Block object (for shopify_attributes + settings)
+    @param {string}  [product_form_id] - Form ID (default: 'product-form-' + section.id)
+    @param {string}  [section_id]      - Section ID for SRA refresh after add
 
-  Usage:
-  {% render 'buy-buttons', product: product, block: block, product_form_id: product_form_id, section_id: section.id %}
+    Usage:
+    {% render 'buy-buttons', product: product, block: block, product_form_id: product_form_id, section_id: section.id %}
 {% endcomment %}
 
 {%- assign product_form_id = product_form_id | default: 'product-form-' | append: section.id -%}
@@ -18,86 +18,94 @@
 {%- assign context = context | default: 'featured' -%}
 
 {%- if product != blank -%}
-  {%- assign current_variant = product.selected_or_first_available_variant -%}
-  {%- assign show_dynamic_checkout = block.settings.show_dynamic_checkout | default: false -%}
-  {%- if context == 'product' -%}
-    {%- assign available_classes = 'bg-[#263D29] text-[#F3F3F3] hover:opacity-90' -%}
-    {%- assign unavailable_classes = 'bg-[#263D29]/10 text-[#263D29]/50' -%}
-  {%- else -%}
-    {%- if show_dynamic_checkout -%}
-      {%- assign available_classes = 'border border-[#C5E147] text-[#C5E147] bg-transparent hover:bg-[#C5E147]/10' -%}
+    {%- assign current_variant = product.selected_or_first_available_variant -%}
+    {%- assign show_dynamic_checkout = block.settings.show_dynamic_checkout | default: false -%}
+    {%- if context == 'product' -%}
+        {%- assign available_classes = 'bg-[#263D29] text-[#F3F3F3] hover:opacity-90' -%}
+        {%- assign unavailable_classes = 'bg-[#263D29]/10 text-[#263D29]/50' -%}
     {%- else -%}
-      {%- assign available_classes = 'bg-[#C5E147] text-[#263D29] hover:opacity-90' -%}
-    {%- endif -%}
-    {%- assign unavailable_classes = 'bg-white/20 text-white/60' -%}
-  {%- endif -%}
-
-  <div
-    x-data="BuyButtons({
-      sectionId: '{{ section_id }}',
-      productFormId: '{{ product_form_id }}',
-      available: {{ current_variant.available | default: false }},
-      variantId: {{ current_variant.id | default: 'null' }}
-    })"
-    {{ block.shopify_attributes }}
-  >
-    {%- form 'product',
-      product,
-      id: product_form_id,
-      novalidate: 'novalidate',
-      data-type: 'add-to-cart-form'
-    -%}
-      <input
-        type="hidden"
-        name="id"
-        x-ref="variantInput"
-        :value="variantId"
-        :disabled="!available"
-      >
-
-      <div class="flex flex-col gap-3">
-        <button
-          type="submit"
-          name="add"
-          class="relative w-full py-4 px-6 rounded-sm font-bold transition-all cursor-pointer disabled:cursor-not-allowed"
-          :class="available
-            ? '{{ available_classes }} disabled:opacity-70'
-            : '{{ unavailable_classes }}'"
-          :disabled="!available || isLoading"
-          @click.prevent="addToCart()"
-        >
-          <span
-            class="inline-block transition-opacity"
-            :class="{ 'opacity-0': isLoading }"
-            x-text="buttonText"
-          >{% if current_variant.available %}Add to cart{% else %}Sold out{% endif %}</span>
-          <span
-            x-show="isLoading"
-            x-cloak
-            class="absolute inset-0 flex items-center justify-center"
-            aria-hidden="true"
-          >
-            <span class="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
-          </span>
-        </button>
-
         {%- if show_dynamic_checkout -%}
-          <div class="shopify-payment-button-wrapper" :class="{ 'hidden': !available }">
-            {{ form | payment_button }}
-          </div>
+            {%- assign available_classes = 'border border-[#C5E147] text-[#C5E147] bg-transparent hover:bg-[#C5E147]/10' -%}
+        {%- else -%}
+            {%- assign available_classes = 'bg-[#C5E147] text-[#263D29] hover:opacity-90' -%}
         {%- endif -%}
-      </div>
-    {%- endform -%}
-  </div>
+        {%- assign unavailable_classes = 'bg-white/20 text-white/60' -%}
+    {%- endif -%}
+
+    <div
+        x-data="
+            BuyButtons({
+              sectionId: '{{ section_id }}',
+              productFormId: '{{ product_form_id }}',
+              available: {{ current_variant.available | default: false }},
+              variantId: {{ current_variant.id | default: 'null' }}
+            })
+        "
+        {{ block.shopify_attributes }}
+    >
+        {%- form 'product',
+            product,
+            id: product_form_id,
+            novalidate: 'novalidate',
+            data-type: 'add-to-cart-form'
+        -%}
+            <input
+                type="hidden"
+                name="id"
+                x-ref="variantInput"
+                :value="variantId"
+                :disabled="!available"
+            >
+
+            <div class="flex flex-col gap-3">
+                <button
+                    type="submit"
+                    name="add"
+                    class="relative w-full cursor-pointer rounded-sm px-6 py-4 font-bold transition-all disabled:cursor-not-allowed"
+                    :class="
+                        available
+                        ? '{{ available_classes }} disabled:opacity-70'
+                        : '{{ unavailable_classes }}'
+                    "
+                    :disabled="!available || isLoading"
+                    @click.prevent="addToCart()"
+                >
+                    <span
+                        class="inline-block transition-opacity"
+                        :class="{ 'opacity-0': isLoading }"
+                        x-text="buttonText"
+                    >
+                        {%- if current_variant.available %}Add to cart{% else %}Sold out{% endif -%}
+                    </span>
+                    <span
+                        x-show="isLoading"
+                        x-cloak
+                        class="absolute inset-0 flex items-center justify-center"
+                        aria-hidden="true"
+                    >
+                        <span
+                            class="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent"
+                        ></span>
+                    </span>
+                </button>
+
+                {%- if show_dynamic_checkout -%}
+                    <div class="shopify-payment-button-wrapper" :class="{ 'hidden': !available }">
+                        {{ form | payment_button }}
+                    </div>
+                {%- endif -%}
+            </div>
+        {%- endform -%}
+    </div>
 
 {%- else -%}
-  <div {{ block.shopify_attributes }}>
-    <button
-      type="button"
-      class="w-full py-4 px-6 rounded-sm font-bold bg-white/20 text-white/60 cursor-not-allowed"
-      disabled
-    >
-      Unavailable
-    </button>
-  </div>
+    <div {{ block.shopify_attributes }}>
+        <button
+            type="button"
+            class="w-full cursor-not-allowed rounded-sm bg-white/20 px-6 py-4 font-bold text-white/60"
+            disabled
+        >
+            Unavailable
+        </button>
+    </div>
 {%- endif -%}

@@ -1,46 +1,49 @@
 {% comment %}
-  Gallery layout: carousel — Swiper slider with pagination dots.
-  Internal sub-snippet; always rendered inside product-gallery.liquid's x-data scope.
+    Gallery layout: carousel — Swiper slider with pagination dots.
+    Internal sub-snippet; always rendered inside product-gallery.liquid's x-data scope.
 
-  @param {array}   images       - Image objects
-  @param {boolean} zoom         - Enable click on slides
-  @param {string}  aspect_ratio - Optional CSS aspect-ratio (fallback when first image has no ratio)
+    @param {array}   images       - Image objects
+    @param {boolean} zoom         - Enable click on slides
+    @param {string}  aspect_ratio - Optional CSS aspect-ratio (fallback when first image has no ratio)
 {% endcomment %}
 
 {%- assign first_img = images.first -%}
 {%- if first_img.width != blank and first_img.height != blank -%}
-  {%- assign gallery_aspect = first_img.width | append: '/' | append: first_img.height -%}
+    {%- assign gallery_aspect = first_img.width | append: '/' | append: first_img.height -%}
 {%- else -%}
-  {%- assign gallery_aspect = images.first.aspect_ratio | default: aspect_ratio | default: '3/4' -%}
+    {%- assign gallery_aspect = images.first.aspect_ratio
+        | default: aspect_ratio
+        | default: '3/4'
+    -%}
 {%- endif -%}
 
 <div
-  class="swiper overflow-hidden rounded-sm min-w-0 w-full"
-  data-gallery-swiper
-  style="aspect-ratio: {{ gallery_aspect }};"
+    class="swiper w-full min-w-0 overflow-hidden rounded-sm"
+    data-gallery-swiper
+    style="aspect-ratio: {{ gallery_aspect }};"
 >
-  <div class="swiper-wrapper">
-    {%- for image in images -%}
-      {%- assign media_image = image.preview_image | default: image -%}
+    <div class="swiper-wrapper">
+        {%- for image in images -%}
+            {%- assign media_image = image.preview_image | default: image -%}
 
-      <div
-        class="swiper-slide"
-        {% if zoom %}
-          @click="openZoom({{ forloop.index0 }})"
-          style="cursor: zoom-in"
-        {% endif %}
-      >
-        {%- render 'image',
-          image: media_image,
-          width: 1200,
-          img_class: 'w-full h-full object-cover',
-          alt: media_image.alt,
-          sizes: '100vw',
-          widths: '400,600,800,1200',
-          loading: 'lazy'
-        -%}
-      </div>
-    {%- endfor -%}
-  </div>
-  <div class="swiper-pagination mt-4"></div>
+            <div
+                class="swiper-slide"
+                {% if zoom %}
+                    @click="openZoom({{ forloop.index0 }})"
+                    style="cursor: zoom-in"
+                {% endif %}
+            >
+                {%- render 'image',
+                    image: media_image,
+                    width: 1200,
+                    img_class: 'w-full h-full object-cover',
+                    alt: media_image.alt,
+                    sizes: '100vw',
+                    widths: '400,600,800,1200',
+                    loading: 'lazy'
+                -%}
+            </div>
+        {%- endfor -%}
+    </div>
+    <div class="swiper-pagination mt-4"></div>
 </div>

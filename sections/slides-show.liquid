@@ -1,134 +1,142 @@
-<div 
-  data-section-id="{{ section.id }}"
-  class="slides-show-section full-width h-screen
-    color-{{ section.settings.color_scheme }}
-  "
-  style="
-    --section-padding-top: {{ section.settings.padding_top }}px;
-    --section-padding-bottom: {{ section.settings.padding_bottom }}px;
-  "
-  data-component-kind="section"
-  data-component-type="slides-show"
-  data-component-id="{{ section.id }}"
-  data-auto-slide="{{ section.settings.is_auto_slide }}"
-  data-slide-delay="{{ section.settings.slide_delay }}"
+<div
+    data-section-id="{{ section.id }}"
+    class="
+        slides-show-section full-width h-screen
+        color-{{ section.settings.color_scheme }}
+    "
+    style="
+        --section-padding-top: {{ section.settings.padding_top }}px;
+        --section-padding-bottom: {{ section.settings.padding_bottom }}px;
+    "
+    data-component-kind="section"
+    data-component-type="slides-show"
+    data-component-id="{{ section.id }}"
+    data-auto-slide="{{ section.settings.is_auto_slide }}"
+    data-slide-delay="{{ section.settings.slide_delay }}"
 >
-  <div class="swiper w-full h-full">
-    <div class="swiper-wrapper">
-      {%- for block in section.blocks -%}
-        <div class="swiper-slide" {{ block.shopify_attributes }}>
-          {%- capture sizes -%}
+    <div class="swiper h-full w-full">
+        <div class="swiper-wrapper">
+            {%- for block in section.blocks -%}
+                <div class="swiper-slide" {{ block.shopify_attributes }}>
+                    {%- capture sizes -%}
             (min-width: 80rem) 100vw, (min-width: 48rem) 1280px, 768px
           {%- endcapture -%}
-          
-          {%- capture widths -%}
+
+                    {%- capture widths -%}
             400,768,1280,1536,2560
           {%- endcapture -%}
 
-          {%- assign image_loading = 'lazy' -%}
-          {%- if forloop.first -%}
-            {%- assign image_loading = 'eager' -%}
-          {%- endif -%}
+                    {%- assign image_loading = 'lazy' -%}
+                    {%- if forloop.first -%}
+                        {%- assign image_loading = 'eager' -%}
+                    {%- endif -%}
 
-          {%- render 'image',
-              image: block.settings.slide_image,
-              alt: block.settings.slide_image.alt | default: shop.name | escape,
-              width: block.settings.slide_image.width,
-              sizes: sizes,
-              widths: widths,
-              loading: image_loading
-          -%}
+                    {%-
+                        render 'image',
+                        image: block.settings.slide_image,
+                        alt: block.settings.slide_image.alt | default: shop.name | escape,
+                        width: block.settings.slide_image.width,
+                        sizes: sizes,
+                        widths: widths,
+                        loading: image_loading
+                    -%}
 
-          <div class="layout container-page absolute inset-0">
-            <div class="grid grid-cols-3 grid-rows-3">
-              <div 
-                class="{{ block.settings.heading_position }} flex items-center h-full w-full"
-              >
-                <hxl class="font-bold tracking-tight leading-tight">
-                  {{ block.settings.headline }}
-                </hxl>
-              </div>
+                    <div class="layout container-page absolute inset-0">
+                        <div class="grid grid-cols-3 grid-rows-3">
+                            <div
+                                class="{{ block.settings.heading_position }} flex h-full w-full items-center"
+                            >
+                                <hxl class="leading-tight font-bold tracking-tight">
+                                    {{ block.settings.headline }}
+                                </hxl>
+                            </div>
 
-              <div
-                class="{{ block.settings.caption_position }} flex flex-col h-full w-full justify-around"
-              >
-                <p class="font-light leading-relaxed">
-                  {{ block.settings.year }}
-                </p>
+                            <div
+                                class="{{ block.settings.caption_position }} flex h-full w-full flex-col justify-around"
+                            >
+                                <p class="leading-relaxed font-light">
+                                    {{ block.settings.year }}
+                                </p>
 
-                <div class="mt-2 leading-tight font-light">
-                  {{ block.settings.description }}
-                </div>
-                
-                {%- capture link_content -%}
+                                <div class="mt-2 leading-tight font-light">
+                                    {{ block.settings.description }}
+                                </div>
+
+                                {%- capture link_content -%}
                   <span>{{ block.settings.cta_text }}</span>
-                  <span class="inline-block w-6 h-6 ml-3">
+                  <span class="ml-3 inline-block h-6 w-6">
                     {{- 'icon-arrow2.svg' | inline_asset_content -}}
                   </span>
                 {%- endcapture -%}
-                {%- render 'link', href:block.settings.cta_link,content: link_content,variant: 'underline' -%}
-              </div>
-              
-              <div
-                class="{{ block.settings.badge_position }} flex flex-col h-full w-full justify-around items-center"
-              >
-                <div>{{ block.settings.badge_text }}</div>
-                <div>{{ block.settings.badge_counter }}</div>
-              </div>
-            </div>
-          </div>
+                                {%- render 'link',
+                                    href: block.settings.cta_link,
+                                    content: link_content,
+                                    variant: 'underline'
+                                -%}
+                            </div>
+
+                            <div
+                                class="{{ block.settings.badge_position }} flex h-full w-full flex-col items-center justify-around"
+                            >
+                                <div>{{ block.settings.badge_text }}</div>
+                                <div>{{ block.settings.badge_counter }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {%- endfor -%}
         </div>
-      {%- endfor -%}
     </div>
-  </div>
 </div>
 
 {% javascript %}
-  (function() {
-    const Components = window.__Theme__?.Components;
-    if (!Components) return;
+    (function () {
+        const Components = window.__Theme__?.Components;
+        if (!Components) return;
 
-    Components.register(
-      'slides-show', 
-      {
-        init(el){
-          const slides = el.querySelectorAll('.swiper-slide');
-          const autoSlide = el.getAttribute('data-auto-slide') === 'true';
-          const slideDelay = parseInt(el.getAttribute('data-slide-delay'), 10) || 5;
+        Components.register(
+            'slides-show',
+            {
+                init(el) {
+                    const slides = el.querySelectorAll('.swiper-slide');
+                    const autoSlide = el.getAttribute('data-auto-slide') === 'true';
+                    const slideDelay = parseInt(el.getAttribute('data-slide-delay'), 10) || 5;
 
-          const swiperContainer = el.querySelector('.swiper');
+                    const swiperContainer = el.querySelector('.swiper');
 
-          if(!swiperContainer || typeof Swiper === 'undefined') return;
+                    if (!swiperContainer || typeof Swiper === 'undefined') return;
 
-          const swiper = new Swiper(swiperContainer, {
-            loop: slides.length > 1,
-            autoplay: autoSlide ? {
-              delay: slideDelay * 1000,
-              disableOnInteraction: false
-            } : false,
-            slidesPerView: 1,
-            effect: 'fade',
-            fadeEffect: {
-              crossFade: true
+                    const swiper = new Swiper(swiperContainer, {
+                        loop: slides.length > 1,
+                        autoplay: autoSlide
+                            ? {
+                                  delay: slideDelay * 1000,
+                                  disableOnInteraction: false,
+                              }
+                            : false,
+                        slidesPerView: 1,
+                        effect: 'fade',
+                        fadeEffect: {
+                            crossFade: true,
+                        },
+                        pagination: false,
+                        navigation: false,
+                    });
+
+                    return { swiper };
+                },
+
+                destroy(el, state) {
+                    if (!state || !state.swiper) return;
+
+                    if (typeof state.swiper.destroy === 'function') {
+                        state.swiper.destroy(true, true);
+                    }
+                },
             },
-            pagination: false,
-            navigation: false
-          });
-
-          return { swiper };
-        },
-
-        destroy(el, state){
-          if(!state || !state.swiper) return;
-
-          if(typeof state.swiper.destroy === 'function'){
-            state.swiper.destroy(true, true);
-          }
-        }
-      },
-      { lazy: true }
-    );
-  })();
+            { lazy: true },
+        );
+    })();
 {% endjavascript %}
 
 {% stylesheet %}
@@ -136,212 +144,212 @@
 
 {% schema %}
 {
-  "name": "Slides Show",
-  "tag": "section",
-  "class": "section",
-  "disabled_on": {
-    "groups": ["header","footer"]
-  },
-  "settings": [
-    {
-      "type": "color_scheme",
-      "id": "color_scheme",
-      "label": "Color Scheme",
-      "default":"color-scheme-1"
+    "name": "Slides Show",
+    "tag": "section",
+    "class": "section",
+    "disabled_on": {
+        "groups": ["header", "footer"]
     },
-    {
-      "type": "header",
-      "content": "Slide Setting"
-    },
-    {
-      "type": "checkbox",
-      "id": "is_auto_slide",
-      "label": "Auto Slide",
-      "default": true
-    },
-    {
-      "type": "range",
-      "id": "slide_delay",
-      "min": 3,
-      "max": 10,
-      "step": 1,
-      "unit": "s",
-      "label": "Slide Delay",
-      "default": 5
-    },
-    {
-      "type": "header",
-      "content": "Padding"
-    },
-    {
-      "type": "range",
-      "id": "padding_top",
-      "min": 0,
-      "max": 100,
-      "step": 4,
-      "unit": "px",
-      "label": "Padding Top",
-      "default": 0
-    },
-    {
-      "type": "range",
-      "id": "padding_bottom",
-      "min": 0,
-      "max": 100,
-      "step": 4,
-      "unit": "px",
-      "label": "Padding Bottom",
-      "default": 0
-    }
-  ],
-  "blocks": [
-    {
-      "type": "slide",
-      "name": "Slide",
-      "settings": [
+    "settings": [
         {
-          "type": "header",
-          "content": "Slide Image"
+            "type": "color_scheme",
+            "id": "color_scheme",
+            "label": "Color Scheme",
+            "default": "color-scheme-1"
         },
         {
-          "type": "image_picker",
-          "id": "slide_image",
-          "label": "Slide Image"
+            "type": "header",
+            "content": "Slide Setting"
         },
         {
-          "type": "header",
-          "content": "Slide Content"
+            "type": "checkbox",
+            "id": "is_auto_slide",
+            "label": "Auto Slide",
+            "default": true
         },
         {
-          "type": "color_scheme",
-          "id": "color_scheme",
-          "label": "Color Scheme",
-          "default":"color-scheme-1"
+            "type": "range",
+            "id": "slide_delay",
+            "min": 3,
+            "max": 10,
+            "step": 1,
+            "unit": "s",
+            "label": "Slide Delay",
+            "default": 5
         },
         {
-          "type": "header",
-          "content": "Headline"
+            "type": "header",
+            "content": "Padding"
         },
         {
-          "type": "paragraph",
-          "content": "Configure the main heading and its position on the slide."
+            "type": "range",
+            "id": "padding_top",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "Padding Top",
+            "default": 0
         },
         {
-          "type": "select",
-          "id": "heading_position",
-          "label": "Heading Position",
-          "options": [
-            { "value": "place-top-left", "label": "Top Left" },
-            { "value": "place-top-center", "label": "Top Center" },
-            { "value": "place-top-right", "label": "Top Right" },
-            { "value": "place-center-left", "label": "Center Left" },
-            { "value": "place-center", "label": "Center" },
-            { "value": "place-center-right", "label": "Center Right" },
-            { "value": "place-bottom-left", "label": "Bottom Left" },
-            { "value": "place-bottom-center", "label": "Bottom Center" },
-            { "value": "place-bottom-right", "label": "Bottom Right" }
-          ],
-          "default": "place-bottom-left"
-        },
-        {
-          "type": "richtext",
-          "id": "headline",
-          "label": "Headline",
-          "default": "<p>Precision Vision,Timeless Style.</p>"
-        },
-        {
-          "type": "header",
-          "content": "Caption"
-        },
-        {
-          "type": "paragraph",
-          "content": "Add supporting text such as a short description or brand message. This appears as secondary content on the slide."
-        },
-        {
-          "type": "select",
-          "id": "caption_position",
-          "label": "Caption Position",
-          "options": [
-            { "value": "place-top-left", "label": "Top Left" },
-            { "value": "place-top-center", "label": "Top Center" },
-            { "value": "place-top-right", "label": "Top Right" },
-            { "value": "place-center-left", "label": "Center Left" },
-            { "value": "place-center", "label": "Center" },
-            { "value": "place-center-right", "label": "Center Right" },
-            { "value": "place-bottom-left", "label": "Bottom Left" },
-            { "value": "place-bottom-center", "label": "Bottom Center" },
-            { "value": "place-bottom-right", "label": "Bottom Right" }
-          ],
-          "default": "place-top-left"
-        },
-        {
-          "type": "text",
-          "id": "year",
-          "label": "Year & Copyright",
-          "default": "2026©"
-        },
-        {
-          "type": "richtext",
-          "id": "description",
-          "label": "Description",
-          "default": "<p>Personalized with AI insight. Personalized with AI insight. Personalized with AI insight.</p>"
-        },
-        {
-          "type": "text",
-          "id": "cta_text",
-          "label": "Call to Action Text",
-          "default": "See Our New Product"
-        },
-        {
-          "type": "url",
-          "id": "cta_link",
-          "label": "Link URL",
-          "default": "/collections"
-        },
-        {
-          "type": "header",
-          "content": "Badge"
-        },
-        {
-          "type": "paragraph",
-          "content": "Display a small label like 'AI' or a sequence number (e.g., 002/12). Customize its text, position, and colors below."
-        },
-        {
-          "type": "select",
-          "id": "badge_position",
-          "label": "Badge Position",
-          "options": [
-            { "value": "place-top-left", "label": "Top Left" },
-            { "value": "place-top-center", "label": "Top Center" },
-            { "value": "place-top-right", "label": "Top Right" },
-            { "value": "place-center-left", "label": "Center Left" },
-            { "value": "place-center", "label": "Center" },
-            { "value": "place-center-right", "label": "Center Right" },
-            { "value": "place-bottom-left", "label": "Bottom Left" },
-            { "value": "place-bottom-center", "label": "Bottom Center" },
-            { "value": "place-bottom-right", "label": "Bottom Right" }
-          ],
-          "default": "place-bottom-right"
-        },
-        {
-          "type": "text",
-          "id": "badge_text",
-          "label": "Badge Text",
-          "default": "Personalize insight."
-        },
-        {
-          "type": "text",
-          "id": "badge_counter",
-          "label": "Counter Number",
-          "default": "002/12"
+            "type": "range",
+            "id": "padding_bottom",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "Padding Bottom",
+            "default": 0
         }
-      ]
-    }
-  ],
-  "presets": [
-    {
-      "name": "Slides Show"
-    }
-  ]
+    ],
+    "blocks": [
+        {
+            "type": "slide",
+            "name": "Slide",
+            "settings": [
+                {
+                    "type": "header",
+                    "content": "Slide Image"
+                },
+                {
+                    "type": "image_picker",
+                    "id": "slide_image",
+                    "label": "Slide Image"
+                },
+                {
+                    "type": "header",
+                    "content": "Slide Content"
+                },
+                {
+                    "type": "color_scheme",
+                    "id": "color_scheme",
+                    "label": "Color Scheme",
+                    "default": "color-scheme-1"
+                },
+                {
+                    "type": "header",
+                    "content": "Headline"
+                },
+                {
+                    "type": "paragraph",
+                    "content": "Configure the main heading and its position on the slide."
+                },
+                {
+                    "type": "select",
+                    "id": "heading_position",
+                    "label": "Heading Position",
+                    "options": [
+                        { "value": "place-top-left", "label": "Top Left" },
+                        { "value": "place-top-center", "label": "Top Center" },
+                        { "value": "place-top-right", "label": "Top Right" },
+                        { "value": "place-center-left", "label": "Center Left" },
+                        { "value": "place-center", "label": "Center" },
+                        { "value": "place-center-right", "label": "Center Right" },
+                        { "value": "place-bottom-left", "label": "Bottom Left" },
+                        { "value": "place-bottom-center", "label": "Bottom Center" },
+                        { "value": "place-bottom-right", "label": "Bottom Right" }
+                    ],
+                    "default": "place-bottom-left"
+                },
+                {
+                    "type": "richtext",
+                    "id": "headline",
+                    "label": "Headline",
+                    "default": "<p>Precision Vision,Timeless Style.</p>"
+                },
+                {
+                    "type": "header",
+                    "content": "Caption"
+                },
+                {
+                    "type": "paragraph",
+                    "content": "Add supporting text such as a short description or brand message. This appears as secondary content on the slide."
+                },
+                {
+                    "type": "select",
+                    "id": "caption_position",
+                    "label": "Caption Position",
+                    "options": [
+                        { "value": "place-top-left", "label": "Top Left" },
+                        { "value": "place-top-center", "label": "Top Center" },
+                        { "value": "place-top-right", "label": "Top Right" },
+                        { "value": "place-center-left", "label": "Center Left" },
+                        { "value": "place-center", "label": "Center" },
+                        { "value": "place-center-right", "label": "Center Right" },
+                        { "value": "place-bottom-left", "label": "Bottom Left" },
+                        { "value": "place-bottom-center", "label": "Bottom Center" },
+                        { "value": "place-bottom-right", "label": "Bottom Right" }
+                    ],
+                    "default": "place-top-left"
+                },
+                {
+                    "type": "text",
+                    "id": "year",
+                    "label": "Year & Copyright",
+                    "default": "2026©"
+                },
+                {
+                    "type": "richtext",
+                    "id": "description",
+                    "label": "Description",
+                    "default": "<p>Personalized with AI insight. Personalized with AI insight. Personalized with AI insight.</p>"
+                },
+                {
+                    "type": "text",
+                    "id": "cta_text",
+                    "label": "Call to Action Text",
+                    "default": "See Our New Product"
+                },
+                {
+                    "type": "url",
+                    "id": "cta_link",
+                    "label": "Link URL",
+                    "default": "/collections"
+                },
+                {
+                    "type": "header",
+                    "content": "Badge"
+                },
+                {
+                    "type": "paragraph",
+                    "content": "Display a small label like 'AI' or a sequence number (e.g., 002/12). Customize its text, position, and colors below."
+                },
+                {
+                    "type": "select",
+                    "id": "badge_position",
+                    "label": "Badge Position",
+                    "options": [
+                        { "value": "place-top-left", "label": "Top Left" },
+                        { "value": "place-top-center", "label": "Top Center" },
+                        { "value": "place-top-right", "label": "Top Right" },
+                        { "value": "place-center-left", "label": "Center Left" },
+                        { "value": "place-center", "label": "Center" },
+                        { "value": "place-center-right", "label": "Center Right" },
+                        { "value": "place-bottom-left", "label": "Bottom Left" },
+                        { "value": "place-bottom-center", "label": "Bottom Center" },
+                        { "value": "place-bottom-right", "label": "Bottom Right" }
+                    ],
+                    "default": "place-bottom-right"
+                },
+                {
+                    "type": "text",
+                    "id": "badge_text",
+                    "label": "Badge Text",
+                    "default": "Personalize insight."
+                },
+                {
+                    "type": "text",
+                    "id": "badge_counter",
+                    "label": "Counter Number",
+                    "default": "002/12"
+                }
+            ]
+        }
+    ],
+    "presets": [
+        {
+            "name": "Slides Show"
+        }
+    ]
 }
 {% endschema %}

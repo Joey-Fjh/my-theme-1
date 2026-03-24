@@ -1,277 +1,288 @@
-<div 
-  data-section-id="{{ section.id }}"
-  class="routine-showcase-section full-width"
-  style="
-    --section-padding-top: {{ section.settings.padding_top }}px;
-    --section-padding-bottom: {{ section.settings.padding_bottom }}px;
-  "
-  data-component-kind="section"
-  data-component-type="routine-showcase"
-  data-component-id="{{ section.id }}"
+<div
+    data-section-id="{{ section.id }}"
+    class="routine-showcase-section full-width"
+    style="
+        --section-padding-top: {{ section.settings.padding_top }}px;
+        --section-padding-bottom: {{ section.settings.padding_bottom }}px;
+    "
+    data-component-kind="section"
+    data-component-type="routine-showcase"
+    data-component-id="{{ section.id }}"
 >
-  <div class="relative">
-    {%- capture sizes -%}
+    <div class="relative">
+        {%- capture sizes -%}
       (min-width: 80rem) 100vw, (min-width: 48rem) 1280px, 768px
     {%- endcapture -%}
-    
-    {%- capture widths -%}
+
+        {%- capture widths -%}
       400,768,1280,1440,1536,2560
     {%- endcapture -%}
 
-    {%- render 'image', 
-      image: section.settings.bg_img,
-      alt: section.settings.bg_img.alt | default: "Background Image",
-      width: section.settings.bg_img.width,
-      sizes: sizes,
-      widths: widths
-    -%} 
+        {%-
+            render 'image',
+            image: section.settings.bg_img,
+            alt: section.settings.bg_img.alt | default: "Background Image",
+            width: section.settings.bg_img.width,
+            sizes: sizes,
+            widths: widths
+        -%}
 
-    <div class="layout absolute container-page inset-0">
-      <div class="grid grid-cols-2 grid-rows-[1fr_auto] gap-8 p-4">
-        <div class="flex flex-col justify-between w-fit gap-3">
-          <div class="swiper-button-prev"></div>
-          <div class="swiper flex-1" style="margin-left:0;">
-            <div class="swiper-wrapper">
-              {%- assign products = section.settings.collection.products -%}  
+        <div class="layout container-page absolute inset-0">
+            <div class="grid grid-cols-2 grid-rows-[1fr_auto] gap-8 p-4">
+                <div class="flex w-fit flex-col justify-between gap-3">
+                    <div class="swiper-button-prev"></div>
+                    <div class="swiper flex-1" style="margin-left:0;">
+                        <div class="swiper-wrapper">
+                            {%- assign products = section.settings.collection.products -%}
 
-              {%- for product in products -%}
-                <div class="swiper-slide w-auto fw:w-136">
-                  <a class="relative block h-full" 
-                    href="{{ product.url }}"
-                    x-data="{ hover: false }"
-                    @mouseenter="hover = true"
-                    @mouseleave="hover = false"
-                  >
-                    {%- render 'image', 
-                      aspect_ratio: '342/198',
-                      image: product.featured_image,
-                      alt: product.title | escape,
-                      width: product.featured_image.width            
-                    -%}
+                            {%- for product in products -%}
+                                <div class="swiper-slide fw:w-136 w-auto">
+                                    <a
+                                        class="relative block h-full"
+                                        href="{{ product.url }}"
+                                        x-data="{ hover: false }"
+                                        @mouseenter="hover = true"
+                                        @mouseleave="hover = false"
+                                    >
+                                        {%-
+                                            render 'image',
+                                            aspect_ratio: '342/198',
+                                            image: product.featured_image,
+                                            alt: product.title | escape,
+                                            width: product.featured_image.width
+                                        -%}
 
-                    <div class="absolute bottom-0 left-0 right-0 text-xl flex justify-between 
-                      p-4"
-                      :class=" hover ? 'bg-[#263D29] text-[#D5FF83]':'bg-[#F8F8F8] text-[#0D1400]' "
-                    >
-                      <div class="font-medium">{{ product.title }}</div>
-                      <div class="opacity-20">
-                        {% if forloop.index < 10 %}
-                          {% assign display_index = forloop.index | prepend: '0' %}
-                        {% else %}
-                          {% assign display_index = forloop.index %}
-                        {% endif %}
-                        {{ display_index }}
-                      </div>
+                                        <div
+                                            class="
+                                                absolute right-0 bottom-0 left-0 flex justify-between p-4
+                                                text-xl
+                                            "
+                                            :class=" hover ? 'bg-[#263D29] text-[#D5FF83]':'bg-[#F8F8F8] text-[#0D1400]' "
+                                        >
+                                            <div class="font-medium">{{ product.title }}</div>
+                                            <div class="opacity-20">
+                                                {% if forloop.index < 10 %}
+                                                    {% assign display_index = forloop.index
+                                                        | prepend: '0'
+                                                    %}
+                                                {% else %}
+                                                    {% assign display_index = forloop.index %}
+                                                {% endif %}
+                                                {{ display_index }}
+                                            </div>
+                                        </div>
+                                    </a>
+                                </div>
+                            {%- endfor -%}
+                        </div>
                     </div>
-                  </a>
+                    <div class="swiper-button-next"></div>
                 </div>
-              {%- endfor -%}
-            </div>
-          </div>
-          <div class="swiper-button-next"></div>
-        </div>
 
-        <div class="bg-white text-[#263D29] flex flex-col p-6 gap-12 justify-self-end self-center w-auto fw:w-3/5">
-          <div>{{ section.settings.eyebrow }}</div>
+                <div class="fw:w-3/5 flex w-auto flex-col gap-12 self-center justify-self-end bg-white p-6 text-[#263D29]">
+                    <div>{{ section.settings.eyebrow }}</div>
 
-          <div class="gap-2">
-            <h3>{{ section.settings.heading }}</h3>
-            <div class="opacity-60">{{ section.settings.description }}</div>
-          </div>
-          
-          {%- capture link_content -%}
+                    <div class="gap-2">
+                        <h3>{{ section.settings.heading }}</h3>
+                        <div class="opacity-60">{{ section.settings.description }}</div>
+                    </div>
+
+                    {%- capture link_content -%}
             <span>{{ section.settings.cta_text }}</span>
-            <span class="inline-block w-6 h-6 ml-3">
+            <span class="ml-3 inline-block h-6 w-6">
               {{- 'icon-arrow2.svg' | inline_asset_content -}}
             </span>
           {%- endcapture -%}
 
-          {%- render 'link', href: section.settings.cta_link, content: link_content, variant: "underline" -%}
-        </div>
-        
-        <div class="text-xl text-[#263D29] opacity-80">
-          {{ section.settings.badge_counter }}
-        </div>
+                    {%- render 'link',
+                        href: section.settings.cta_link,
+                        content: link_content,
+                        variant: 'underline'
+                    -%}
+                </div>
 
-        {%- render 'rotating-badge',
-          classes: 'relative justify-self-center',
-          unique_id: section.id,
-          size: 100,
-          badge_text: section.settings.rotate_badge_text,
-          center_text: section.settings.rotate_badge_percent
-        -%}
-      </div>
+                <div class="text-xl text-[#263D29] opacity-80">
+                    {{ section.settings.badge_counter }}
+                </div>
+
+                {%- render 'rotating-badge',
+                    classes: 'relative justify-self-center',
+                    unique_id: section.id,
+                    size: 100,
+                    badge_text: section.settings.rotate_badge_text,
+                    center_text: section.settings.rotate_badge_percent
+                -%}
+            </div>
+        </div>
     </div>
-  </div>
 </div>
 
 {%- javascript -%}
-  (function(){
-    const Components = window.__Theme__?.Components;
-    if (!Components) return;
+    (function () {
+        const Components = window.__Theme__?.Components;
+        if (!Components) return;
 
-    Components.register(
-      'routine-showcase',
-      {
-        init(el){
-          const swiperContainer = el.querySelector('.swiper');
+        Components.register(
+            'routine-showcase',
+            {
+                init(el) {
+                    const swiperContainer = el.querySelector('.swiper');
 
-          if(!swiperContainer || typeof Swiper === 'undefined') return;
+                    if (!swiperContainer || typeof Swiper === 'undefined') return;
 
-          const swiper = new Swiper(swiperContainer, {
-            direction: window.innerWidth <= 760 ? 'horizontal' : 'vertical',
-            slidesPerView: 4,
-            autoHeight: true,
-            spaceBetween: 8,
-            speed: 300,
-            loop: false,
-            allowTouchMove: false,
-            navigation: {
-              nextEl: '.swiper-button-next',
-              prevEl: '.swiper-button-prev'
+                    const swiper = new Swiper(swiperContainer, {
+                        direction: window.innerWidth <= 760 ? 'horizontal' : 'vertical',
+                        slidesPerView: 4,
+                        autoHeight: true,
+                        spaceBetween: 8,
+                        speed: 300,
+                        loop: false,
+                        allowTouchMove: false,
+                        navigation: {
+                            nextEl: '.swiper-button-next',
+                            prevEl: '.swiper-button-prev',
+                        },
+                        on: {
+                            resize() {
+                                swiper.changeDirection(
+                                    window.innerWidth <= 760 ? 'horizontal' : 'vertical',
+                                );
+                            },
+                        },
+                    });
+
+                    return { swiper };
+                },
+
+                destroy(el, state) {
+                    if (!state || !state.swiper) return;
+
+                    if (typeof state.swiper.destroy === 'function') {
+                        state.swiper.destroy(true, true);
+                    }
+                },
             },
-            on: {
-              resize() {
-                swiper.changeDirection(
-                  window.innerWidth <= 760 ? 'horizontal' : 'vertical'
-                );
-              }
-            }
-          });
-
-          return { swiper };
-        },
-
-        destroy(el,state){
-          if(!state || !state.swiper) return;
-
-          if(typeof state.swiper.destroy === 'function'){
-            state.swiper.destroy(true, true);
-          }
-        }
-      },
-      { lazy: true}
-    );
-  })()
+            { lazy: true },
+        );
+    })();
 {%- endjavascript -%}
 
 {% stylesheet %}
-  .routine-showcase-section{
-    .swiper-button-prev,
-    .swiper-button-next{
-      --swiper-navigation-size: 18px;
-      --swiper-navigation-color: #000;
+    .routine-showcase-section {
+        .swiper-button-prev,
+        .swiper-button-next {
+            --swiper-navigation-size: 18px;
+            --swiper-navigation-color: #000;
 
-      position: relative;
-      top: 0;
-      margin-top: 0;
-    }
+            position: relative;
+            top: 0;
+            margin-top: 0;
+        }
 
-    .swiper-button-prev{
-      transform: rotate(90deg);
-      margin: 0 auto;
+        .swiper-button-prev {
+            transform: rotate(90deg);
+            margin: 0 auto;
+        }
     }
-  }
 {% endstylesheet %}
 
 {% schema %}
-  {
+{
     "name": "Routine Showcase",
     "tag": "section",
     "class": "section",
     "disabled_on": {
-      "groups": ["header","footer"]
+        "groups": ["header", "footer"]
     },
     "settings": [
-      {
-        "type": "image_picker",
-        "id": "bg_img",
-        "label": "Background Image"
-      },
-      {
-        "type": "collection",
-        "id": "collection",
-        "label": "Select Collection"
-      },
-      {
-        "type": "text",
-        "id": "eyebrow",
-        "label": "Eyebrow",
-        "default": "2026©"
-      },
-      {
-        "type": "inline_richtext",
-        "id": "heading",
-        "label": "Heading",
-        "default": "Personalized with AI insight."
-      },
-      {
-        "type": "richtext",
-        "id": "description",
-        "label": "Description",
-        "default": "<p>Personalized with AI insight.</p><p>Personalized with AI insight.</p>"
-      },
-      {
-        "type": "text",
-        "id": "cta_text",
-        "label": "Call to Action Text",
-        "default": "See Our New Product"
-      },
-      {
-        "type": "url",
-        "id": "cta_link",
-        "label": "Link URL",
-        "default": "/collections"
-      },
-      {
-        "type": "text",
-        "id": "badge_counter",
-        "label": "Counter Number",
-        "default": "002/12"
-      },
-      {
-        "type": "text",
-        "id": "rotate_badge_text",
-        "label": "Rotate Badge Text",
-        "default":"PRODUCT GUARANTEE NATURAL"
-      },
-      {
-        "type": "text",
-        "id": "rotate_badge_percent",
-        "label": "Rotate Badge Percent",
-        "default":"100%"
-      },
-      {
-        "type": "header",
-        "content": "Padding"
-      },
-      {
-        "type": "range",
-        "id": "padding_top",
-        "min": 0,
-        "max": 100,
-        "step": 4,
-        "unit": "px",
-        "label": "Padding Top",
-        "default": 0
-      },
-      {
-        "type": "range",
-        "id": "padding_bottom",
-        "min": 0,
-        "max": 100,
-        "step": 4,
-        "unit": "px",
-        "label": "Padding Bottom",
-        "default": 0
-      }
+        {
+            "type": "image_picker",
+            "id": "bg_img",
+            "label": "Background Image"
+        },
+        {
+            "type": "collection",
+            "id": "collection",
+            "label": "Select Collection"
+        },
+        {
+            "type": "text",
+            "id": "eyebrow",
+            "label": "Eyebrow",
+            "default": "2026©"
+        },
+        {
+            "type": "inline_richtext",
+            "id": "heading",
+            "label": "Heading",
+            "default": "Personalized with AI insight."
+        },
+        {
+            "type": "richtext",
+            "id": "description",
+            "label": "Description",
+            "default": "<p>Personalized with AI insight.</p><p>Personalized with AI insight.</p>"
+        },
+        {
+            "type": "text",
+            "id": "cta_text",
+            "label": "Call to Action Text",
+            "default": "See Our New Product"
+        },
+        {
+            "type": "url",
+            "id": "cta_link",
+            "label": "Link URL",
+            "default": "/collections"
+        },
+        {
+            "type": "text",
+            "id": "badge_counter",
+            "label": "Counter Number",
+            "default": "002/12"
+        },
+        {
+            "type": "text",
+            "id": "rotate_badge_text",
+            "label": "Rotate Badge Text",
+            "default": "PRODUCT GUARANTEE NATURAL"
+        },
+        {
+            "type": "text",
+            "id": "rotate_badge_percent",
+            "label": "Rotate Badge Percent",
+            "default": "100%"
+        },
+        {
+            "type": "header",
+            "content": "Padding"
+        },
+        {
+            "type": "range",
+            "id": "padding_top",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "Padding Top",
+            "default": 0
+        },
+        {
+            "type": "range",
+            "id": "padding_bottom",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "Padding Bottom",
+            "default": 0
+        }
     ],
     "presets": [
-      {
-        "name": "Routine Showcase",
-        "settings": {
+        {
+            "name": "Routine Showcase",
+            "settings": {}
         }
-      }
     ]
-  }
+}
 {% endschema %}

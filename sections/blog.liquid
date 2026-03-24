@@ -1,60 +1,63 @@
 <div
-  data-section-id="{{ section.id }}"
-  class="blog-section full-width relative"
-  style="
-    --section-padding-top: {{ section.settings.padding_top }}px;
-    --section-padding-bottom: {{ section.settings.padding_bottom }}px;
-  "
-  x-data="sectionPagination('{{ section.id }}', ['[role=&quot;tabpanel&quot;]','.sup-badge'])"
-  data-component-kind="section"
-  data-component-type="blog"
-  data-component-id="{{ section.id }}"
+    data-section-id="{{ section.id }}"
+    class="blog-section full-width relative"
+    style="
+        --section-padding-top: {{ section.settings.padding_top }}px;
+        --section-padding-bottom: {{ section.settings.padding_bottom }}px;
+    "
+    x-data="sectionPagination('{{ section.id }}', ['[role=&quot;tabpanel&quot;]','.sup-badge'])"
+    data-component-kind="section"
+    data-component-type="blog"
+    data-component-id="{{ section.id }}"
 >
-  <div class="layout pb-0 container-page bg-[#EBE4D1] text-[#263D29]">
-    {%- comment -%} Hero {%- endcomment -%}
-    <div class="relative py-20 pc:py-40">
-      <div class="flex items-start justify-between">
-        <div class="opacity-0 -translate-x-7.5" data-gsap-hero>
-          <h1 class="hxxxl font-bold leading-none mb-10">
-            {{ section.settings.header | default: 'Blog' }}
-          </h1>
-          <p class="opacity-80 leading-relaxed max-w-xl h5">
-            {{ section.settings.description | default: 'Tailored experiences powered by AI intelligence. Discover insights that adapt to your needs.' }}
-          </p>
-        </div>
+    <div class="layout container-page bg-[#EBE4D1] pb-0 text-[#263D29]">
+        {%- comment -%} Hero {%- endcomment -%}
+        <div class="pc:py-40 relative py-20">
+            <div class="flex items-start justify-between">
+                <div class="-translate-x-7.5 opacity-0" data-gsap-hero>
+                    <h1 class="hxxxl mb-10 leading-none font-bold">
+                        {{ section.settings.header | default: 'Blog' }}
+                    </h1>
+                    <p class="h5 max-w-xl leading-relaxed opacity-80">
+                        {{
+                            section.settings.description
+                            | default: 'Tailored experiences powered by AI intelligence. Discover insights that adapt to your needs.'
+                        }}
+                    </p>
+                </div>
 
-        <div class="opacity-0 scale-50" data-gsap-badge>
-          {%- render 'rotating-badge',
-            classes: 'relative justify-self-center',
-            badge_class: 'text-[#000000]',
-            center_class: 'text-[#1B2608]',
-            unique_id: section.id,
-            size: 100,
-            badge_text: section.settings.rotate_badge_text,
-            center_text: section.settings.rotate_badge_percent
-          -%}
+                <div class="scale-50 opacity-0" data-gsap-badge>
+                    {%- render 'rotating-badge',
+                        classes: 'relative justify-self-center',
+                        badge_class: 'text-[#000000]',
+                        center_class: 'text-[#1B2608]',
+                        unique_id: section.id,
+                        size: 100,
+                        badge_text: section.settings.rotate_badge_text,
+                        center_text: section.settings.rotate_badge_percent
+                    -%}
+                </div>
+            </div>
         </div>
-      </div>
     </div>
-  </div>
 
-  <div class="layout-special container-page bg-[#FBFBFB] text-[#263D29]">
-    <div class="relative flex items-center justify-between">
-      {%- comment -%} Tab Header (Router Trigger) + Tab Content (fetch replace) {%- endcomment -%}
-      <div class="min-w-0 flex-1">
-        {%- liquid
-          assign active_tab_index = 0
-          if current_tags != blank
-            for tag in blog.all_tags
-              if current_tags contains tag
-                assign active_tab_index = forloop.index
-                break
-              endif
-            endfor
-          endif
-        -%}
-    
-        {% capture tab_header %}
+    <div class="layout-special container-page bg-[#FBFBFB] text-[#263D29]">
+        <div class="relative flex items-center justify-between">
+            {%- comment -%} Tab Header (Router Trigger) + Tab Content (fetch replace) {%- endcomment -%}
+            <div class="min-w-0 flex-1">
+                {%- liquid
+                    assign active_tab_index = 0
+                    if current_tags != blank
+                        for tag in blog.all_tags
+                            if current_tags contains tag
+                                assign active_tab_index = forloop.index
+                                break
+                            endif
+                        endfor
+                    endif
+                -%}
+
+                {% capture tab_header %}
           <span class="hidden" x-init="$nextTick(() => { setActive({{ active_tab_index }}) })"></span>
 
           <a
@@ -69,7 +72,7 @@
             :tabindex="isActive(index) ? 0 : -1"
             :aria-selected="isActive(index)"
             :class="isActive(index) ? 'opacity-100 border-b-2 border-[#263D29]' : 'opacity-20 hover:opacity-60'"
-            class="cursor-pointer h2 transition-opacity focus:outline-none flex flex-wrap items-center gap-x-4 gap-y-2"
+            class="h2 flex cursor-pointer flex-wrap items-center gap-x-4 gap-y-2 transition-opacity focus:outline-none"
           >
             All <sup class="sup-badge">({{ blog.articles_count }})</sup>
           </a>
@@ -86,14 +89,14 @@
               :tabindex="isActive(index) ? 0 : -1"
               :aria-selected="isActive(index)"
               :class="isActive(index) ? 'opacity-100 border-b-2 border-[#263D29]' : 'opacity-20 hover:opacity-60'"
-              class="cursor-pointer h2 transition-opacity focus:outline-none flex flex-wrap items-center gap-x-4 gap-y-2"
+              class="h2 flex cursor-pointer flex-wrap items-center gap-x-4 gap-y-2 transition-opacity focus:outline-none"
             >
               {{ tag }}
             </a>
           {%- endfor -%}
         {% endcapture %}
 
-        {% capture tab_content %}
+                {% capture tab_content %}
           <div
             role="tabpanel"
             id="blog-panel"
@@ -105,14 +108,14 @@
 
             {% paginate blog.articles by section.settings.articles_per_page %}
               <div 
-                class="grid grid-cols-1 pc:grid-cols-3 gap-8 pb-10"
+                class="pc:grid-cols-3 grid grid-cols-1 gap-8 pb-10"
                 data-component-kind="component"
                 data-component-type="article-grid"
                 data-component-id="{{ section.id }}-grid"
               >
                 {% for article in blog.articles %}
-                  <article class="group opacity-0 translate-y-7.5" data-gsap-card>
-                    <div class="block aspect-4/3 overflow-hidden rounded-sm mb-4">
+                  <article class="group translate-y-7.5 opacity-0" data-gsap-card>
+                    <div class="mb-4 block aspect-4/3 overflow-hidden rounded-sm">
                       {% comment %} Image {% endcomment %}
                       {%- capture sizes -%}
                         (max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw
@@ -142,7 +145,7 @@
                     {%- if article.url !=blank -%}
                       {%- capture link_content -%}
                         <span>{{ section.settings.link_text }}</span>
-                        <span class="inline-block w-6 h-6 ml-3">
+                        <span class="ml-3 inline-block h-6 w-6">
                           {{- 'icon-arrow2.svg' | inline_asset_content -}}
                         </span>
                         {%- endcapture -%}
@@ -168,100 +171,105 @@
           </div>
         {% endcapture %}
 
-        {%- render 'tab-control', custom_class:'items-start',tab_header: tab_header,header_class:'flex-wrap gap-9 pr-100',tab_content: tab_content -%}
-      </div>
+                {%- render 'tab-control',
+                    custom_class: 'items-start',
+                    tab_header: tab_header,
+                    header_class: 'flex-wrap gap-9 pr-100',
+                    tab_content: tab_content
+                -%}
+            </div>
+        </div>
     </div>
-  </div>
 </div>
 
 {%- javascript -%}
-  (function () {
-    const Components = window.__Theme__?.Components;
-    if (!Components) return;
+    (function () {
+        const Components = window.__Theme__?.Components;
+        if (!Components) return;
 
-    Components.register(
-      'blog',
-      {
-        init(el) {
-          if (typeof gsap === 'undefined') return;
-          if (typeof ScrollTrigger === 'undefined') return;
+        Components.register(
+            'blog',
+            {
+                init(el) {
+                    if (typeof gsap === 'undefined') return;
+                    if (typeof ScrollTrigger === 'undefined') return;
 
-          gsap.registerPlugin(ScrollTrigger);
+                    gsap.registerPlugin(ScrollTrigger);
 
-          const heroEl = el.querySelector('[data-gsap-hero]');
-          const badgeEl = el.querySelector('[data-gsap-badge]');
+                    const heroEl = el.querySelector('[data-gsap-hero]');
+                    const badgeEl = el.querySelector('[data-gsap-badge]');
 
-          const ctx = gsap.context(() => {
-            if (heroEl) {
-              gsap.to(heroEl, {
-                opacity: 1,
-                x: 0,
-                duration: 0.8,
-                ease: 'power2.out'
-              });
-            }
+                    const ctx = gsap.context(() => {
+                        if (heroEl) {
+                            gsap.to(heroEl, {
+                                opacity: 1,
+                                x: 0,
+                                duration: 0.8,
+                                ease: 'power2.out',
+                            });
+                        }
 
-            if (badgeEl) {
-              gsap.to(badgeEl, {
-                opacity: 1,
-                scale: 1,
-                duration: 0.6,
-                delay: 0.3,
-                ease: 'back.out(1.7)'
-              });
-            }
-          }, el);
+                        if (badgeEl) {
+                            gsap.to(badgeEl, {
+                                opacity: 1,
+                                scale: 1,
+                                duration: 0.6,
+                                delay: 0.3,
+                                ease: 'back.out(1.7)',
+                            });
+                        }
+                    }, el);
 
-          return { ctx };
-        },
+                    return { ctx };
+                },
 
-        destroy(el, state) {
-          if (state?.ctx) {
-            state.ctx.revert();
-          }
-        }
-      },
-      { lazy: true }
-    );
+                destroy(el, state) {
+                    if (state?.ctx) {
+                        state.ctx.revert();
+                    }
+                },
+            },
+            { lazy: true },
+        );
 
-    Components.register(
-      'article-grid',
-      {
-        init(el) {
-          if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
-          gsap.registerPlugin(ScrollTrigger);
+        Components.register(
+            'article-grid',
+            {
+                init(el) {
+                    if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
+                    gsap.registerPlugin(ScrollTrigger);
 
-          const cards = el.querySelectorAll('[data-gsap-card]');
+                    const cards = el.querySelectorAll('[data-gsap-card]');
 
-          const ctx = gsap.context(() => {
-            if (cards.length) {
-              gsap.set(cards, { opacity: 0, y: 30 }); 
-              
-              gsap.to(cards, {
-                opacity: 1,
-                y: 0,
-                duration: 0.5,
-                stagger: { amount: 0.6, from: 'start' },
-                ease: 'power2.out',
-                scrollTrigger: {
-                  trigger: el,
-                  start: 'top 85%',
-                  once: true
-                }
-              });
-            }
-          }, el);
+                    const ctx = gsap.context(() => {
+                        if (cards.length) {
+                            gsap.set(cards, { opacity: 0, y: 30 });
 
-          return { ctx };
-        },
-        
-        destroy(el, state) {
-          if (state?.ctx) state.ctx.revert();
-        }
-      },
-      { lazy: true }
-    );
-  })();
+                            gsap.to(cards, {
+                                opacity: 1,
+                                y: 0,
+                                duration: 0.5,
+                                stagger: { amount: 0.6, from: 'start' },
+                                ease: 'power2.out',
+                                scrollTrigger: {
+                                    trigger: el,
+                                    start: 'top 85%',
+                                    once: true,
+                                },
+                            });
+                        }
+                    }, el);
+
+                    return { ctx };
+                },
+
+                destroy(el, state) {
+                    if (state?.ctx) state.ctx.revert();
+                },
+            },
+            { lazy: true },
+        );
+    })();
 {%- endjavascript -%}
 
 {%- stylesheet -%}
@@ -269,81 +277,81 @@
 
 {% schema %}
 {
-  "name": "t:general.blog",
-  "tag": "section",
-  "class": "section",
-  "enabled_on": {
-    "templates": ["blog"]
-  },
-  "settings": [
-    {
-      "type": "text",
-      "id": "header",
-      "default": "Blog",
-      "label": "Header"
+    "name": "t:general.blog",
+    "tag": "section",
+    "class": "section",
+    "enabled_on": {
+        "templates": ["blog"]
     },
-    {
-      "type": "textarea",
-      "id": "description",
-      "default": "Tailored experiences powered by AI intelligence. Discover insights that adapt to your needs.",
-      "label": "Description"
-    },
-    {
-      "type": "text",
-      "id": "rotate_badge_text",
-      "label": "Rotate Badge Text",
-      "default": "PRODUCT GUARANTEE NATURAL"
-    },
-    {
-      "type": "text",
-      "id": "rotate_badge_percent",
-      "label": "Rotate Badge Percent",
-      "default": "100%"
-    },
-    {
-      "type": "range",
-      "id": "articles_per_page",
-      "min": 3,
-      "max": 24,
-      "step": 3,
-      "default": 12,
-      "label": "Articles per page"
-    },
-    {
-      "type": "text",
-      "id": "link_text",
-      "label": "Link Text",
-      "default": "Read More"
-    },
-    {
-      "type": "header",
-      "content": "Padding"
-    },
-    {
-      "type": "range",
-      "id": "padding_top",
-      "min": 0,
-      "max": 100,
-      "step": 4,
-      "unit": "px",
-      "label": "Padding Top",
-      "default": 0
-    },
-    {
-      "type": "range",
-      "id": "padding_bottom",
-      "min": 0,
-      "max": 100,
-      "step": 4,
-      "unit": "px",
-      "label": "Padding Bottom",
-      "default": 0
-    }
-  ],
-  "presets": [
-    {
-      "name": "t:general.blog"
-    }
-  ]
+    "settings": [
+        {
+            "type": "text",
+            "id": "header",
+            "default": "Blog",
+            "label": "Header"
+        },
+        {
+            "type": "textarea",
+            "id": "description",
+            "default": "Tailored experiences powered by AI intelligence. Discover insights that adapt to your needs.",
+            "label": "Description"
+        },
+        {
+            "type": "text",
+            "id": "rotate_badge_text",
+            "label": "Rotate Badge Text",
+            "default": "PRODUCT GUARANTEE NATURAL"
+        },
+        {
+            "type": "text",
+            "id": "rotate_badge_percent",
+            "label": "Rotate Badge Percent",
+            "default": "100%"
+        },
+        {
+            "type": "range",
+            "id": "articles_per_page",
+            "min": 3,
+            "max": 24,
+            "step": 3,
+            "default": 12,
+            "label": "Articles per page"
+        },
+        {
+            "type": "text",
+            "id": "link_text",
+            "label": "Link Text",
+            "default": "Read More"
+        },
+        {
+            "type": "header",
+            "content": "Padding"
+        },
+        {
+            "type": "range",
+            "id": "padding_top",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "Padding Top",
+            "default": 0
+        },
+        {
+            "type": "range",
+            "id": "padding_bottom",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "Padding Bottom",
+            "default": 0
+        }
+    ],
+    "presets": [
+        {
+            "name": "t:general.blog"
+        }
+    ]
 }
 {% endschema %}

@@ -1,134 +1,140 @@
 <div
-  data-section-id="{{ section.id }}"
-  class="collections-section full-width h-full"
-  style="
-    --section-padding-top: {{ section.settings.padding_top }}px;
-    --section-padding-bottom: {{ section.settings.padding_bottom }}px;
-  "
-  data-component-kind="section"
-  data-component-type="collections"
-  data-component-id="{{ section.id }}"
+    data-section-id="{{ section.id }}"
+    class="collections-section full-width h-full"
+    style="
+        --section-padding-top: {{ section.settings.padding_top }}px;
+        --section-padding-bottom: {{ section.settings.padding_bottom }}px;
+    "
+    data-component-kind="section"
+    data-component-type="collections"
+    data-component-id="{{ section.id }}"
 >
-  <div class="layout container-page bg-[#F3F3F3]">
-    <div class="relative text-center my-25 text-[#263D29]">
-      <div class="flex flex-col gap-6">
-        <h1 class="font-bold tracking-tighter">Latest Brand</h1>
-        <p class="opacity-80">Tailored experiences powered by AI intelligence. Discover insights that adapt to your needs.</p>
-      </div>
+    <div class="layout container-page bg-[#F3F3F3]">
+        <div class="relative my-25 text-center text-[#263D29]">
+            <div class="flex flex-col gap-6">
+                <h1 class="font-bold tracking-tighter">Latest Brand</h1>
+                <p class="opacity-80">
+                    Tailored experiences powered by AI intelligence. Discover insights that adapt to
+                    your needs.
+                </p>
+            </div>
 
-      {%- if section.settings.show_badge -%}
-        {%- render 'rotating-badge',
-            classes: 'absolute right-0 top-0 z-10',
-            badge_class:'text-[#263D29] opacity-80',
-            center_class:'text-[#263D29]',
-            unique_id: section.id,
-            size: 100,
-            badge_text: section.settings.badge_text,
-            center_text: section.settings.badge_value
-        -%}
-      {%- endif -%}
-    </div>
+            {%- if section.settings.show_badge -%}
+                {%- render 'rotating-badge',
+                    classes: 'absolute right-0 top-0 z-10',
+                    badge_class: 'text-[#263D29] opacity-80',
+                    center_class: 'text-[#263D29]',
+                    unique_id: section.id,
+                    size: 100,
+                    badge_text: section.settings.badge_text,
+                    center_text: section.settings.badge_value
+                -%}
+            {%- endif -%}
+        </div>
 
-    {%- paginate collections by section.settings.collections_per_page -%}
-      <div>
-        {% comment %} Collection Grid {% endcomment %}
-        <div 
-          class="grid grid-cols-2 pc:grid-cols-3 fw:grid-cols-4 gap-3 p-4"
-          data-collection-grid
-        >
-          {%- for collection in collections -%}
-            <a 
-              href="{{ collection.url }}"
-              class="group block overflow-hidden rounded-lg bg-white 
-              transition-shadow duration-300 hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] opacity-0 translate-y-7.5"
-              data-gsap-card
-            >
-              {%- comment -%} Image {%- endcomment -%}
-              <div class="relative aspect-square overflow-hidden bg-[#f5f5f5]">
-                {%- capture sizes -%}
+        {%- paginate collections by section.settings.collections_per_page -%}
+            <div>
+                {% comment %} Collection Grid {% endcomment %}
+                <div
+                    class="pc:grid-cols-3 fw:grid-cols-4 grid grid-cols-2 gap-3 p-4"
+                    data-collection-grid
+                >
+                    {%- for collection in collections -%}
+                        <a
+                            href="{{ collection.url }}"
+                            class="
+                                group block translate-y-7.5 overflow-hidden rounded-lg
+                                bg-white opacity-0 transition-shadow duration-300 hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)]
+                            "
+                            data-gsap-card
+                        >
+                            {%- comment -%} Image {%- endcomment -%}
+                            <div class="relative aspect-square overflow-hidden bg-[#f5f5f5]">
+                                {%- capture sizes -%}
                   (max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw
                 {%- endcapture -%}
 
-                {%- capture widths -%}
+                                {%- capture widths -%}
                   300,450,600
                 {%- endcapture -%}
 
-                {%- assign image_loading = 'lazy' -%}
-                {%- if forloop.index <= 4 -%}
-                  {%- assign image_loading = 'eager' -%}
-                {%- endif -%}
+                                {%- assign image_loading = 'lazy' -%}
+                                {%- if forloop.index <= 4 -%}
+                                    {%- assign image_loading = 'eager' -%}
+                                {%- endif -%}
 
-                {%- render 'image',
-                  image: collection.image,
-                  alt: collection.image.alt | default: shop.name | escape,
-                  width: collection.image.width,
-                  sizes: sizes,
-                  widths: widths,
-                  loading: image_loading,
-                  class: 'w-full h-full object-cover 
-                    transition-transform duration-[600ms] ease-[cubic-bezier(0.25,0.46,0.45,0.94)] group-hover:scale-105'
-                -%}
-              </div>
+                                {%-
+                                    render 'image',
+                                    image: collection.image,
+                                    alt: collection.image.alt | default: shop.name | escape,
+                                    width: collection.image.width,
+                                    sizes: sizes,
+                                    widths: widths,
+                                    loading: image_loading,
+                                    class: 'w-full h-full object-cover
+                                    transition-transform duration-[600ms] ease-[cubic-bezier(0.25,0.46,0.45,0.94)] group-hover:scale-105'
+                                -%}
+                            </div>
 
-              {%- comment -%} Info {%- endcomment -%}
-              <div class="flex items-center justify-between px-4 py-3 border-t border-[#e5e5e5]">
-                <span class="text-xl font-medium text-[#1a1a1a] leading-snug">{{ collection.title }}</span>
-                <span class="flex items-center justify-center w-8 h-8 text-[#1a1a1a] transition-transform duration-300 group-hover:translate-x-1">
-                  {{ 'icon-arrow2.svg' | inline_asset_content }}
-                </span>
-              </div>
-            </a>
-          {%- endfor -%}
-        </div>
+                            {%- comment -%} Info {%- endcomment -%}
+                            <div class="flex items-center justify-between border-t border-[#e5e5e5] px-4 py-3">
+                                <span class="text-xl leading-snug font-medium text-[#1a1a1a]">
+                                    {{- collection.title -}}
+                                </span>
+                                <span class="flex h-8 w-8 items-center justify-center text-[#1a1a1a] transition-transform duration-300 group-hover:translate-x-1">
+                                    {{ 'icon-arrow2.svg' | inline_asset_content }}
+                                </span>
+                            </div>
+                        </a>
+                    {%- endfor -%}
+                </div>
 
-        {% comment %} Pagination {% endcomment %}
-        {%- render 'pagination', paginate_obj: paginate -%}
-      </div>  
-    {% endpaginate %}
-  </div>
+                {% comment %} Pagination {% endcomment %}
+                {%- render 'pagination', paginate_obj: paginate -%}
+            </div>
+        {% endpaginate %}
+    </div>
 </div>
 
-{%- javascript -%}  
-  (function(){
-    const Components = window.__Theme__?.Components;
-    if (!Components || typeof gsap === 'undefined') return;
+{%- javascript -%}
+    (function () {
+        const Components = window.__Theme__?.Components;
+        if (!Components || typeof gsap === 'undefined') return;
 
-    gsap.registerPlugin(ScrollTrigger);
+        gsap.registerPlugin(ScrollTrigger);
 
-    Components.register(
-      'collections',
-      {
-        init(el){
-          const ctx = gsap.context(() => {
-            const cards = el.querySelectorAll('[data-gsap-card]');
+        Components.register(
+            'collections',
+            {
+                init(el) {
+                    const ctx = gsap.context(() => {
+                        const cards = el.querySelectorAll('[data-gsap-card]');
 
-            gsap.to(cards, 
-              {
-                opacity: 1,
-                y: 0,
-                duration: 0.5,
-                stagger: 0.1,
-                scrollTrigger: {
-                  trigger: el,
-                  start: 'top 85%',
-                  once: true
-                }
-              }
-            );
-          }, el);
+                        gsap.to(cards, {
+                            opacity: 1,
+                            y: 0,
+                            duration: 0.5,
+                            stagger: 0.1,
+                            scrollTrigger: {
+                                trigger: el,
+                                start: 'top 85%',
+                                once: true,
+                            },
+                        });
+                    }, el);
 
-          return { ctx };
-        },
+                    return { ctx };
+                },
 
-        destroy(el,state){ 
-          if(state?.ctx){
-            state.ctx.revert();
-          }
-        }
-      },
-      { lazy:true }
-    );
-  })();
+                destroy(el, state) {
+                    if (state?.ctx) {
+                        state.ctx.revert();
+                    }
+                },
+            },
+            { lazy: true },
+        );
+    })();
 {%- endjavascript -%}
 
 {% stylesheet %}
@@ -136,69 +142,69 @@
 
 {% schema %}
 {
-  "name": "t:general.collections_grid",
-  "tag": "section",
-  "class": "section",
-  "enabled_on": {
-    "templates": ["list-collections"]
-  },
-  "settings": [
-    {
-      "type": "range",
-      "id": "collections_per_page",
-      "min": 4,
-      "max": 24,
-      "step": 4,
-      "default": 12,
-      "label": "Collections per page"
+    "name": "t:general.collections_grid",
+    "tag": "section",
+    "class": "section",
+    "enabled_on": {
+        "templates": ["list-collections"]
     },
-    {
-      "type": "checkbox",
-      "id": "show_badge",
-      "label": "Show Badge",
-      "default": true
-    },
-    {
-      "type": "text",
-      "id": "badge_text",
-      "label": "Badge Text",
-      "default": "PRODUCT GUARANTEE • NATURAL •"
-    },
-    {
-      "type": "text",
-      "id": "badge_value",
-      "label": "Badge Value",
-      "default": "100%"
-    },
-    {
-      "type": "header",
-      "content": "Padding"
-    },
-    {
-      "type": "range",
-      "id": "padding_top",
-      "min": 0,
-      "max": 100,
-      "step": 4,
-      "unit": "px",
-      "label": "Padding Top",
-      "default": 0
-    },
-    {
-      "type": "range",
-      "id": "padding_bottom",
-      "min": 0,
-      "max": 100,
-      "step": 4,
-      "unit": "px",
-      "label": "Padding Bottom",
-      "default": 0
-    }
-  ],
-  "presets": [
-    { 
-      "name": "t:general.collections_grid" 
-    }
-  ]
+    "settings": [
+        {
+            "type": "range",
+            "id": "collections_per_page",
+            "min": 4,
+            "max": 24,
+            "step": 4,
+            "default": 12,
+            "label": "Collections per page"
+        },
+        {
+            "type": "checkbox",
+            "id": "show_badge",
+            "label": "Show Badge",
+            "default": true
+        },
+        {
+            "type": "text",
+            "id": "badge_text",
+            "label": "Badge Text",
+            "default": "PRODUCT GUARANTEE • NATURAL •"
+        },
+        {
+            "type": "text",
+            "id": "badge_value",
+            "label": "Badge Value",
+            "default": "100%"
+        },
+        {
+            "type": "header",
+            "content": "Padding"
+        },
+        {
+            "type": "range",
+            "id": "padding_top",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "Padding Top",
+            "default": 0
+        },
+        {
+            "type": "range",
+            "id": "padding_bottom",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "Padding Bottom",
+            "default": 0
+        }
+    ],
+    "presets": [
+        {
+            "name": "t:general.collections_grid"
+        }
+    ]
 }
 {% endschema %}

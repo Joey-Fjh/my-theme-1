@@ -10,18 +10,19 @@
     data-component-id="{{ section.id }}"
 >
     {% comment %} Decorative brushstroke {% endcomment %}
-    <div class="opacity-0 translate-x-15" data-gsap-brush>
-        {%- render 'image', 
+    <div class="translate-x-15 opacity-0" data-gsap-brush>
+        {%-
+            render 'image',
             image: section.settings.brushstroke_image,
             alt: section.settings.brushstroke_image.image_alt | default: 'Brushstroke' | escape,
-            width: section.settings.brushstroke_image.width 
+            width: section.settings.brushstroke_image.width
         -%}
     </div>
     <div class="layout container-page absolute inset-0">
         {% comment %} Statement Text {% endcomment %}
-        <div class="max-w-2/3 mx-auto">
-            <p 
-                class="hxl font-bold leading-[1.2] text-[#2d3a2e] text-center text-balance opacity-0 translate-y-3 fw:translate-y-3/4"
+        <div class="mx-auto max-w-2/3">
+            <p
+                class="hxl fw:translate-y-3/4 translate-y-3 text-center leading-[1.2] font-bold text-balance text-[#2d3a2e] opacity-0"
                 data-gsap-text
             >
                 {{ section.settings.statement }}
@@ -31,48 +32,56 @@
 </div>
 
 {%- javascript -%}
-    (function(){
+    (function () {
         const Components = window.__Theme__?.Components;
         if (!Components || typeof gsap === 'undefined') return;
 
         Components.register(
             'brand-statement',
             {
-                init(el){
-                    const ctx = gsap.context(() => { 
+                init(el) {
+                    const ctx = gsap.context(() => {
                         const brush = el.querySelector('[data-gsap-brush]');
-                        const text = el.querySelector('[data-gsap-text]'); 
-                    
+                        const text = el.querySelector('[data-gsap-text]');
+
                         if (!brush || !text) return;
 
                         const tl = gsap.timeline({
                             scrollTrigger: {
                                 trigger: el,
                                 start: 'top 75%',
-                                once: true
+                                once: true,
                             },
-                            defaults: { ease: 'power2.out' }
+                            defaults: { ease: 'power2.out' },
                         });
 
                         tl.to(brush, {
-                            opacity: 1, y: 0, duration: 0.9
+                            opacity: 1,
+                            y: 0,
+                            duration: 0.9,
                         });
 
-                        tl.to(text, {
-                            opacity: 1, x: 0, duration: 1
-                        }, '-=0.5');
+                        tl.to(
+                            text,
+                            {
+                                opacity: 1,
+                                x: 0,
+                                duration: 1,
+                            },
+                            '-=0.5',
+                        );
                     }, el);
 
                     return { ctx };
                 },
 
-                destroy(el, state){
+                destroy(el, state) {
                     if (state?.ctx) {
                         state.ctx.revert();
                     }
-                }
+                },
             },
-            { lazy: true }
+            { lazy: true },
         );
     })();
 {%- endjavascript -%}
@@ -81,7 +90,7 @@
 {%- endstylesheet -%}
 
 {% schema %}
-  {
+{
     "name": "Brand Statement",
     "tag": "section",
     "class": "section",
@@ -123,11 +132,10 @@
         }
     ],
     "presets": [
-      {
-        "name": "Brand Statement",
-        "settings": {
+        {
+            "name": "Brand Statement",
+            "settings": {}
         }
-      }
     ]
-  }
+}
 {% endschema %}

@@ -1,277 +1,292 @@
 <header
-  data-section-id = "{{ section.id }}"
-  class="header-section full-width color-{{ section.settings.color_scheme }} transition-all duration-300 ease-in-out"
-  x-data="stickyHeader"
-  :class="{
-    'is-top': isTop,
-    'is-hidden' : isHidden,
-    'is-scrolled': !isTop
-  }"
+    data-section-id="{{ section.id }}"
+    class="header-section full-width color-{{ section.settings.color_scheme }} transition-all duration-300 ease-in-out"
+    x-data="stickyHeader"
+    :class="
+        {
+          'is-top': isTop,
+          'is-hidden' : isHidden,
+          'is-scrolled': !isTop
+        }
+    "
 >
-  <div class="container-page">
-    <div class="grid py-3 header__cols-3">
-      <div style="grid-area: logo">
-        {%- assign logo_alt = settings.logo.alt | default: shop.name | escape -%}
-        {%- assign logo_height = settings.logo_width | divided_by: settings.logo.aspect_ratio -%}
-        {%- capture sizes -%}
+    <div class="container-page">
+        <div class="header__cols-3 grid py-3">
+            <div style="grid-area: logo">
+                {%- assign logo_alt = settings.logo.alt | default: shop.name | escape -%}
+                {%- assign logo_height = settings.logo_width
+                    | divided_by: settings.logo.aspect_ratio
+                -%}
+                {%- capture sizes -%}
           (max-width: {{ settings.logo_width | times: 2 }}px) 50vw, {{ settings.logo_width }}px
         {%- endcapture -%}
-        {%- capture widths -%}
+                {%- capture widths -%}
           {{ settings.logo_width }},{{ settings.logo_width | times: 1.5 | round }},{{ settings.logo_width | times:2 }}
         {%- endcapture -%}
-        
-        {%- if settings.logo -%}
-          {% render 'image',
-            image: settings.logo,
-            width: settings.logo_width,
-            height: logo_height,
-            alt: logo_alt,
-            url:  routes.root_url,
-            sizes: sizes,
-            widths: widths,
-            loading: 'eager'
-          %}
-        {%- else -%}  
 
-        {%- render 'link', text: shop.name ,class:"h2", variant: "underline",href: routes.root_url  -%}
-      {%- endif -%}
+                {%- if settings.logo -%}
+                    {% render 'image',
+                        image: settings.logo,
+                        width: settings.logo_width,
+                        height: logo_height,
+                        alt: logo_alt,
+                        url: routes.root_url,
+                        sizes: sizes,
+                        widths: widths,
+                        loading: 'eager'
+                    %}
+                {%- else -%}
+                    {%- render 'link',
+                        text: shop.name,
+                        class: 'h2',
+                        variant: 'underline',
+                        href: routes.root_url
+                    -%}
+                {%- endif -%}
+            </div>
+
+            <div class="flex items-center justify-center" style="grid-area: menu">
+                {%- if section.settings.menu_type == 'super' -%}
+                    {%- render 'header-dropdown-super-menu' -%}
+                {%- else -%}
+                    {%- render 'header-dropdown-menu' -%}
+                {%- endif -%}
+            </div>
+
+            <div class="flex items-center justify-end gap-3" style="grid-area:navigation">
+                {%- assign size_class = 'w-12 h-12' -%}
+
+                <button
+                    type="button"
+                    class="flex cursor-pointer items-center gap-2"
+                    @click="$store.dialog.open('search-overlay-drawer')"
+                    aria-label="Open search"
+                >
+                    <span class="{{ size_class }} icons inline-block" aria-hidden="true">
+                        {{ 'icon-search.svg' | inline_asset_content }}
+                    </span>
+                </button>
+
+                <button
+                    type="button"
+                    class="relative {{ size_class }} icons inline-flex cursor-pointer items-center justify-center"
+                    @click="$store.dialog.open('cart-overlay-drawer')"
+                    aria-label="Open cart"
+                >
+                    {{ 'icon-cart.svg' | inline_asset_content }}
+                    <span
+                        x-show="$store.cart.item_count > 0"
+                        x-text="$store.cart.item_count"
+                        x-cloak
+                        class="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-black px-1 text-xs font-medium text-white"
+                    ></span>
+                </button>
+
+                <span class="icons inline-block h-10 w-10">
+                    {{ 'icon-account.svg' | inline_asset_content }}
+                </span>
+            </div>
+        </div>
     </div>
-    
-    <div class="flex justify-center items-center" style="grid-area: menu">
-      {%- if section.settings.menu_type == 'super' -%}
-        {%- render 'header-dropdown-super-menu' -%}
-      {%- else -%}
-        {%- render 'header-dropdown-menu' -%}
-      {%- endif -%}
-    </div>
-    
-    <div class="flex justify-end items-center gap-3" style="grid-area:navigation">
-      {%- assign size_class = 'w-12 h-12' -%}
-      
-      <button
-        type="button"
-        class="flex items-center gap-2 cursor-pointer"
-        @click="$store.dialog.open('search-overlay-drawer')"
-        aria-label="Open search"
-      >
-        <span class="{{ size_class }} inline-block icons" aria-hidden="true">
-          {{ 'icon-search.svg' | inline_asset_content }}
-        </span>
-      </button>
-        
-        <button
-          type="button"
-          class="relative {{ size_class }} inline-flex items-center justify-center icons cursor-pointer"
-          @click="$store.dialog.open('cart-overlay-drawer')"
-          aria-label="Open cart"
-        >
-          {{ 'icon-cart.svg' | inline_asset_content }}
-          <span x-show="$store.cart.item_count > 0" x-text="$store.cart.item_count" x-cloak class="absolute -top-1 -right-1 min-w-5 h-5 px-1 flex items-center justify-center text-xs font-medium bg-black text-white rounded-full"></span>
-        </button>
-        
-        <span class="w-10 h-10 inline-block icons">
-          {{ 'icon-account.svg' | inline_asset_content }}
-        </span>
-      </div>
-    </div>
-  </div>  
 </header>
 
-{%  stylesheet  %}  
-  .header{
-    position: fixed;
-    left: 0;
-    right: 0;
-    top: var(--announcement-bar-height);
-    z-index: 9998;
-  }
-  
-  .header > header.is-top{
-    background-color: transparent;
-  }
-  
-  .header > header.is-hidden{
-    transform: translateY(calc(-100% - var(--announcement-bar-height)));
-  }
-  
-  .header > header.is-scrolled{
-    background-color: transparent;
-    box-shadow: 0 1px 10px rgba(0,0,0,.06);
-  }
-
-  .header-section {
-    .header__cols-3{
-      grid-template-areas: "logo menu navigation";
+{% stylesheet %}
+    .header {
+        position: fixed;
+        left: 0;
+        right: 0;
+        top: var(--announcement-bar-height);
+        z-index: 9998;
     }
-  }
 
+    .header > header.is-top {
+        background-color: transparent;
+    }
+
+    .header > header.is-hidden {
+        transform: translateY(calc(-100% - var(--announcement-bar-height)));
+    }
+
+    .header > header.is-scrolled {
+        background-color: transparent;
+        box-shadow: 0 1px 10px rgba(0, 0, 0, 0.06);
+    }
+
+    .header-section {
+        .header__cols-3 {
+            grid-template-areas: 'logo menu navigation';
+        }
+    }
 {% endstylesheet %}
 
 <script type="application/ld+json">
-  {
-    "@context": "http://schema.org",
-    "@type": "Organization",
-    "name": {{ shop.name | json }},
-    {% if settings.logo %}
-      "logo": {{ settings.logo | image_url: width: 500 | prepend: "https:" | json }},
-    {% endif %}
-    "sameAs": [
-      {{ settings.social_twitter_link | json }},
-      {{ settings.social_facebook_link | json }},
-      {{ settings.social_pinterest_link | json }},
-      {{ settings.social_instagram_link | json }},
-      {{ settings.social_tiktok_link | json }},
-      {{ settings.social_tumblr_link | json }},
-      {{ settings.social_snapchat_link | json }},
-      {{ settings.social_youtube_link | json }},
-      {{ settings.social_vimeo_link | json }}
-    ],
-    "url": {{ request.origin | append: page.url | json }}
-  }
+    {
+      "@context": "http://schema.org",
+      "@type": "Organization",
+      "name": {{ shop.name | json }},
+      {% if settings.logo %}
+        "logo": {{ settings.logo | image_url: width: 500 | prepend: "https:" | json }},
+      {% endif %}
+      "sameAs": [
+        {{ settings.social_twitter_link | json }},
+        {{ settings.social_facebook_link | json }},
+        {{ settings.social_pinterest_link | json }},
+        {{ settings.social_instagram_link | json }},
+        {{ settings.social_tiktok_link | json }},
+        {{ settings.social_tumblr_link | json }},
+        {{ settings.social_snapchat_link | json }},
+        {{ settings.social_youtube_link | json }},
+        {{ settings.social_vimeo_link | json }}
+      ],
+      "url": {{ request.origin | append: page.url | json }}
+    }
 </script>
 
 {%- if request.page_type == 'index' -%}
-  {% assign potential_action_target = request.origin | append: routes.search_url | append: '?q={search_term_string}' %}
-  <script type="application/ld+json">
-    {
-      "@context": "http://schema.org",
-      "@type": "WebSite",
-      "name": {{ shop.name | json }},
-      "potentialAction": {
-        "@type": "SearchAction",
-        "target": {{ potential_action_target | json }},
-        "query-input": "required name=search_term_string"
-      },
-      "url": {{ request.origin | append: page.url | json }}
-    }
-  </script>
+    {% assign potential_action_target = request.origin
+        | append: routes.search_url
+        | append: '?q={search_term_string}'
+    %}
+    <script type="application/ld+json">
+        {
+          "@context": "http://schema.org",
+          "@type": "WebSite",
+          "name": {{ shop.name | json }},
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": {{ potential_action_target | json }},
+            "query-input": "required name=search_term_string"
+          },
+          "url": {{ request.origin | append: page.url | json }}
+        }
+    </script>
 {%- endif -%}
 
 {% schema %}
 {
-  "name": "t:general.header",
-  "tag": "section",
-  "class": "section header",
-  "limit": 1,
-  "enabled_on": {
-    "groups": ["header"]
-  },
-  "settings": [
-    {
-      "type": "header",
-      "content": "Header"
+    "name": "t:general.header",
+    "tag": "section",
+    "class": "section header",
+    "limit": 1,
+    "enabled_on": {
+        "groups": ["header"]
     },
-    {
-      "type": "select",
-      "id": "logo_position",
-      "options": [
+    "settings": [
         {
-          "value": "top-center",
-          "label": "Top Center"
+            "type": "header",
+            "content": "Header"
         },
         {
-          "value": "middle-left",
-          "label": "Middle Left"
+            "type": "select",
+            "id": "logo_position",
+            "options": [
+                {
+                    "value": "top-center",
+                    "label": "Top Center"
+                },
+                {
+                    "value": "middle-left",
+                    "label": "Middle Left"
+                },
+                {
+                    "value": "middle-center",
+                    "label": "Middle Center"
+                }
+            ],
+            "label": "Logo Position",
+            "default": "middle-left",
+            "info": "Edit your logo in [theme settings](/editor?context=theme&category=logo)"
         },
         {
-          "value": "middle-center",
-          "label": "Middle Center"
+            "type": "select",
+            "id": "mobile_logo_position",
+            "label": "Mobile Logo Position",
+            "options": [
+                {
+                    "value": "center",
+                    "label": "Center"
+                },
+                {
+                    "value": "left",
+                    "label": "Left"
+                }
+            ],
+            "default": "center"
+        },
+        {
+            "type": "header",
+            "content": "Color"
+        },
+        {
+            "type": "color_scheme",
+            "id": "color_scheme",
+            "label": "Color Scheme",
+            "default": "color-scheme-1"
+        },
+        {
+            "type": "color_scheme",
+            "id": "menu_color_scheme",
+            "label": "Menu Color Scheme",
+            "default": "color-scheme-1"
+        },
+        {
+            "type": "link_list",
+            "id": "menu",
+            "label": "t:labels.menu"
+        },
+        {
+            "type": "header",
+            "content": "Menu Type"
+        },
+        {
+            "type": "select",
+            "id": "menu_type",
+            "label": "Menu Type",
+            "default": "dropdown",
+            "options": [
+                { "value": "dropdown", "label": "Dropdown Menu" },
+                { "value": "super", "label": "Super Menu" }
+            ]
+        },
+        {
+            "type": "text",
+            "id": "super_menu_watermark_text",
+            "label": "Super Menu Watermark",
+            "default": "Eccenova®",
+            "visible_if": "{{ section.settings.menu_type == 'super' }}"
+        },
+        {
+            "type": "checkbox",
+            "id": "enable_super_menu_series",
+            "label": "Enable Product Series Tabs",
+            "default": false,
+            "visible_if": "{{ section.settings.menu_type == 'super' }}"
+        },
+        {
+            "type": "collection",
+            "id": "super_collection_1",
+            "label": "Series Collection 1"
+        },
+        {
+            "type": "collection",
+            "id": "super_collection_2",
+            "label": "Series Collection 2"
+        },
+        {
+            "type": "collection",
+            "id": "super_collection_3",
+            "label": "Series Collection 3"
+        },
+        {
+            "type": "range",
+            "id": "super_series_products_limit",
+            "label": "Products Per Series",
+            "min": 3,
+            "max": 12,
+            "step": 1,
+            "default": 6,
+            "visible_if": "{{ section.settings.menu_type == 'super' and section.settings.enable_super_menu_series }}"
         }
-      ],
-      "label": "Logo Position",
-      "default": "middle-left",
-      "info": "Edit your logo in [theme settings](/editor?context=theme&category=logo)"
-    },
-    {
-      "type": "select",
-      "id": "mobile_logo_position",
-      "label": "Mobile Logo Position",
-      "options": [
-        {
-          "value": "center",
-          "label": "Center"
-        },
-        {
-          "value": "left",
-          "label": "Left"
-        }
-      ],
-      "default": "center"
-    },
-    {
-      "type": "header",
-      "content": "Color"
-    },
-    {
-      "type": "color_scheme",
-      "id": "color_scheme",
-      "label": "Color Scheme",
-      "default":"color-scheme-1"
-    },
-    {
-      "type": "color_scheme",
-      "id": "menu_color_scheme",
-      "label": "Menu Color Scheme",
-      "default":"color-scheme-1"
-    },
-    {
-      "type": "link_list",
-      "id": "menu",
-      "label": "t:labels.menu"
-    },
-    {
-      "type": "header",
-      "content": "Menu Type"
-    },
-    {
-      "type": "select",
-      "id": "menu_type",
-      "label": "Menu Type",
-      "default": "dropdown",
-      "options": [
-        { "value": "dropdown", "label": "Dropdown Menu" },
-        { "value": "super", "label": "Super Menu" }
-      ]
-    },
-    {
-      "type": "text",
-      "id": "super_menu_watermark_text",
-      "label": "Super Menu Watermark",
-      "default": "Eccenova®",
-      "visible_if": "{{ section.settings.menu_type == 'super' }}"
-    },
-    {
-      "type": "checkbox",
-      "id": "enable_super_menu_series",
-      "label": "Enable Product Series Tabs",
-      "default": false,
-      "visible_if": "{{ section.settings.menu_type == 'super' }}"
-    },
-    {
-      "type": "collection",
-      "id": "super_collection_1",
-      "label": "Series Collection 1"
-    },
-    {
-      "type": "collection",
-      "id": "super_collection_2",
-      "label": "Series Collection 2"
-    },
-    {
-      "type": "collection",
-      "id": "super_collection_3",
-      "label": "Series Collection 3"
-    },
-    {
-      "type": "range",
-      "id": "super_series_products_limit",
-      "label": "Products Per Series",
-      "min": 3,
-      "max": 12,
-      "step": 1,
-      "default": 6,
-      "visible_if": "{{ section.settings.menu_type == 'super' and section.settings.enable_super_menu_series }}"
-    }
-  ]
+    ]
 }
 {% endschema %}

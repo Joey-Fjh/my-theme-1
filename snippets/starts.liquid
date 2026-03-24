@@ -1,97 +1,101 @@
 {% doc %}
-  Renders a row of star icons for a rating value.
+    Renders a row of star icons for a rating value.
 
-  @param {number} rating - The numeric rating value (for example, 4.5). If omitted, defaults to `max`.
-  @param {number} [max] - The maximum number of stars to display. Defaults to 5.
-  @param {string} [wrapper_class] - Optional extra CSS classes for the outer wrapper.
-  @param {string} [size] - Size preset for icons: 'sm', 'md', or 'lg'. Defaults to 'md'.
+    @param {number} rating - The numeric rating value (for example, 4.5). If omitted, defaults to `max`.
+    @param {number} [max] - The maximum number of stars to display. Defaults to 5.
+    @param {string} [wrapper_class] - Optional extra CSS classes for the outer wrapper.
+    @param {string} [size] - Size preset for icons: 'sm', 'md', or 'lg'. Defaults to 'md'.
 
-  @example
-  {% render 'stars', rating: 4 %}
+    @example
+    {% render 'stars', rating: 4 %}
   {% render 'stars', rating: 4.5, size: 'sm' %}
   {% render 'stars', rating: 5, max: 10, size: 'lg', wrapper_class: 'justify-center' %}
 {% enddoc %}
 
 {% liquid
-  assign max = max | default: 5
-  assign rating = rating | default: max
+    assign max = max | default: 5
+    assign rating = rating | default: max
 
-  if max <= 0
-    assign max = 5
-  endif
+    if max <= 0
+        assign max = 5
+    endif
 
-  assign size = size | default: 'md'
+    assign size = size | default: 'md'
 
-  case size
-    when 'sm'
-      assign size_class = 'stars__icon--sm'
-    when 'lg'
-      assign size_class = 'stars__icon--lg'
-    else
-      assign size_class = 'stars__icon--md'
-  endcase
+    case size
+        when 'sm'
+            assign size_class = 'stars__icon--sm'
+        when 'lg'
+            assign size_class = 'stars__icon--lg'
+        else
+            assign size_class = 'stars__icon--md'
+    endcase
 %}
 
 <div
-  class="inline-flex items-center mb-6 gap-1 {{ wrapper_class }}"
-  role="img"
-  {% comment %} aria-label="{{ 'components.stars.rating_aria_label' | t: rating: rating, max: max }}" {% endcomment %}
+    class="mb-6 inline-flex items-center gap-1 {{ wrapper_class }}"
+    role="img"
+    {% comment %} aria-label="{{ 'components.stars.rating_aria_label' | t: rating: rating, max: max }}" {% endcomment %}
 >
-  {% comment %} <span class="visually-hidden">
-    {{ 'components.stars.rating_visually_hidden' | t: rating: rating, max: max }}
-  </span> {% endcomment %}
+    {% comment %}
+        <span class="visually-hidden">
+          {{ 'components.stars.rating_visually_hidden' | t: rating: rating, max: max }}
+        </span>
+    {% endcomment %}
 
-  {% for i in (1..max) %}
-    {% liquid
-      if i <= rating
-        assign is_filled = true
-      else
-        assign is_filled = false
-      endif
-    %}
+    {% for i in (1..max) %}
+        {% liquid
+            if i <= rating
+                assign is_filled = true
+            else
+                assign is_filled = false
+            endif
+        %}
 
-    <svg
-      class="stars__icon {{ size_class }} {% if is_filled %} stars__icon--active{% else %} stars__icon--inactive{% endif %}"
-      viewBox="0 0 20 20"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-    </svg>
-  {% endfor %}
+        <svg
+            class="stars__icon {{ size_class }} {% if is_filled %} stars__icon--active{% else %} stars__icon--inactive{% endif %}"
+            viewBox="0 0 20 20"
+            aria-hidden="true"
+            focusable="false"
+        >
+            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+        </svg>
+    {% endfor %}
 </div>
 
 {% stylesheet %}
-  .stars__icon {
-    width: 1.25rem;
-    height: 1.25rem;
-    transition: transform 150ms ease-out, fill 150ms ease-out;
-  }
+    .stars__icon {
+        width: 1.25rem;
+        height: 1.25rem;
+        transition:
+            transform 150ms ease-out,
+            fill 150ms ease-out;
+    }
 
-  .stars__icon--sm {
-    width: 0.875rem; 
-    height: 0.875rem;
-  }
+    .stars__icon--sm {
+        width: 0.875rem;
+        height: 0.875rem;
+    }
 
-  .stars__icon--md {
-    width: 1.25rem; 
-    height: 1.25rem;
-  }
+    .stars__icon--md {
+        width: 1.25rem;
+        height: 1.25rem;
+    }
 
-  .stars__icon--lg {
-    width: 1.75rem;
-    height: 1.75rem;
-  }
+    .stars__icon--lg {
+        width: 1.75rem;
+        height: 1.75rem;
+    }
 
-  .stars__icon--active {
-    fill: #1f2937;
-  }
+    .stars__icon--active {
+        fill: #1f2937;
+    }
 
-  .stars__icon--inactive {
-    fill: #d6d3d1;
-  }
+    .stars__icon--inactive {
+        fill: #d6d3d1;
+    }
 
-  .stars__icon:hover {
-    transform: scale(1.05);
-  }
+    .stars__icon:hover {
+        transform: scale(1.05);
+    }
 {% endstylesheet %}

@@ -12,33 +12,42 @@
     data-slide-delay="{{ section.settings.slide_delay }}"
 >
     <div class="layout container-page">
-        <div class="flex flex-col pc:flex-row">
+        <div class="pc:flex-row flex flex-col">
             {% comment %} Left - Testimonial {% endcomment %}
             <div class="swiper flex-1 text-[#263D29]">
                 <div class="swiper-wrapper">
                     {% for block in section.blocks %}
                         <div class="swiper-slide" {{ block.shopify_attributes }}>
-                            <div class="h-full flex flex-1 flex-col items-center justify-center 
-                                gap-30 text-center
-                            ">
-                                {% render 'starts',rating: block.settings.rating ,size:'lg' %}
+                            <div
+                                class="
+                                    flex h-full flex-1 flex-col items-center justify-center
+                                    gap-30 text-center
+                                "
+                            >
+                                {% render 'starts', rating: block.settings.rating, size: 'lg' %}
 
                                 <blockquote
-                                    class="max-w-[50%] h2 leading-relaxed"
+                                    class="h2 max-w-[50%] leading-relaxed"
                                 >
                                     {{ block.settings.quote }}
                                 </blockquote>
-                                
+
                                 <div class="flex flex-col gap-3">
                                     <p
                                         class="text-3xl font-bold"
                                     >
-                                        {{ block.settings.author_name | default: 'Alexandria Maria' }}
+                                        {{
+                                            block.settings.author_name
+                                            | default: 'Alexandria Maria'
+                                        }}
                                     </p>
                                     <p
                                         class="text-xl opacity-80"
                                     >
-                                        {{ block.settings.author_title | default: 'Beauty Influencer' }}
+                                        {{
+                                            block.settings.author_title
+                                            | default: 'Beauty Influencer'
+                                        }}
                                     </p>
                                 </div>
                             </div>
@@ -59,68 +68,69 @@
                 {% comment %} Floating Card {% endcomment %}
                 {% if section.settings.show_floating_card %}
                     <div
-                        class="justify-self-center absolute w-[90%] bg-white bottom-8 p-6 shadow-lg italic"
+                        class="absolute bottom-8 w-[90%] justify-self-center bg-white p-6 italic shadow-lg"
                     >
-                    <p class="mb-3 text-xl opacity-80">
-                        {{ section.settings.card_label }}
-                    </p>
-                    <p class="font-bold text-3xl">
-                        {{ section.settings.card_title }}
-                    </p>
+                        <p class="mb-3 text-xl opacity-80">
+                            {{ section.settings.card_label }}
+                        </p>
+                        <p class="text-3xl font-bold">
+                            {{ section.settings.card_title }}
+                        </p>
                     </div>
                 {% endif %}
-
-            </div>  
+            </div>
         </div>
     </div>
 </div>
 
 {% javascript %}
-    (function(){
+    (function () {
         const Components = window.__Theme__?.Components;
         if (!Components) return;
 
         Components.register(
-            'testimonial-featured', 
+            'testimonial-featured',
             {
-                init(el){
+                init(el) {
                     const slides = el.querySelectorAll('.swiper-slide');
                     const autoSlide = el.getAttribute('data-auto-slide') === 'true';
                     const slideDelay = parseInt(el.getAttribute('data-slide-delay'), 10) || 5;
 
                     const swiperContainer = el.querySelector('.swiper');
 
-                    if(!swiperContainer || typeof Swiper === 'undefined') return;
+                    if (!swiperContainer || typeof Swiper === 'undefined') return;
 
                     const swiper = new Swiper(swiperContainer, {
                         loop: slides.length > 1,
-                        autoplay: autoSlide ? {
-                            delay: slideDelay * 1000,
-                            disableOnInteraction: false
-                        } : false,
+                        autoplay: autoSlide
+                            ? {
+                                  delay: slideDelay * 1000,
+                                  disableOnInteraction: false,
+                              }
+                            : false,
                         slidesPerView: 1,
                         effect: 'fade',
                         fadeEffect: {
-                            crossFade: true
+                            crossFade: true,
                         },
                         pagination: false,
-                        navigation: false
+                        navigation: false,
                     });
 
                     return { swiper };
                 },
 
-                destroy(el, state){
-                    if(!state || !state.swiper) return;
+                destroy(el, state) {
+                    if (!state || !state.swiper) return;
 
-                    if(typeof state.swiper.destroy === 'function'){
+                    if (typeof state.swiper.destroy === 'function') {
                         state.swiper.destroy(true, true);
                     }
-                }
+                },
             },
-            { lazy: true }
+            { lazy: true },
         );
-    })()
+    })();
 {% endjavascript %}
 
 {% schema %}
@@ -129,7 +139,7 @@
     "tag": "section",
     "class": "section",
     "disabled_on": {
-        "groups": ["header","footer"]
+        "groups": ["header", "footer"]
     },
     "settings": [
         {
@@ -211,30 +221,30 @@
             "settings": [
                 {
                     "type": "range",
-                    "id":"rating",
+                    "id": "rating",
                     "label": "Star Rating",
                     "min": 1,
                     "max": 5,
                     "step": 1,
-                    "default":5
+                    "default": 5
                 },
                 {
                     "type": "richtext",
                     "id": "quote",
                     "label": "Quote",
-                    "default":"<p>Using this software has transformed my workflow! The AI insights are incredibly personalized, making my tasks easier and more efficient. I can't imagine going back to the old way of doing things!</p>"
+                    "default": "<p>Using this software has transformed my workflow! The AI insights are incredibly personalized, making my tasks easier and more efficient. I can't imagine going back to the old way of doing things!</p>"
                 },
                 {
                     "type": "inline_richtext",
                     "id": "author_name",
-                    "label":"Author Name",
-                    "default":"Alexandria Maria"
+                    "label": "Author Name",
+                    "default": "Alexandria Maria"
                 },
                 {
                     "type": "inline_richtext",
                     "id": "author_title",
                     "label": "Author Title",
-                    "default":"Beauty Influencer"
+                    "default": "Beauty Influencer"
                 }
             ]
         }

@@ -1,4 +1,4 @@
-<div 
+<div
     data-section-id="{{ section.id }}"
     class="scroll-categories-section full-width"
     style="
@@ -19,7 +19,7 @@
             {%- assign collection = section.settings.collection -%}
 
             <div class="flex flex-col gap-16">
-                <div class="flex justify-between items-center">
+                <div class="flex items-center justify-between">
                     <div>
                         {%- capture link_content -%}
                             <h1 class="font-bold">
@@ -34,7 +34,11 @@
                                 {%- endif -%}
                             </h1>
                         {%- endcapture -%}
-                        {%- render 'link', href: collection.url, content: link_content,variant: 'underline' -%}
+                        {%- render 'link',
+                            href: collection.url,
+                            content: link_content,
+                            variant: 'underline'
+                        -%}
                     </div>
                     <div>
                         {{ section.settings.description }}
@@ -46,8 +50,8 @@
 
                     {% # theme-check-disable-next-line LiquidHTMLSyntaxError %}
                     {%- for product in collection.products limit: max_items -%}
-                        <a 
-                            class="flex justify-between items-center p-8 transition-colors duration-300" 
+                        <a
+                            class="flex items-center justify-between p-8 transition-colors duration-300"
                             href="{{ product.url }}"
                             x-data="{hover:false}"
                             @mouseenter="hover = true"
@@ -55,33 +59,35 @@
                             :class=" hover ? 'bg-[#D5FF83]  text-[#263D29]':'' "
                         >
                             <div>
-                                {{ product.type | default: "Momonise" }} 
+                                {{ product.type | default: 'Momonise' }}
                             </div>
 
-                            <div class="relative flex gap-3 items-center">
+                            <div class="relative flex items-center gap-3">
                                 <h0>{{ product.title }}</h0>
 
                                 {%- capture sizes -%}
                                     100px
                                 {%- endcapture -%}
 
-                                <div 
-                                    class="absolute 
-                                        top-1/2 
+                                <div
+                                    class="
+                                        pointer-events-none
+                                        absolute
+                                        top-1/2
                                         -right-3
                                         translate-x-full
-                                        -translate-y-1/2
-                                        transition-all duration-300 ease-out
-                                        opacity-0 scale-95
-                                        pointer-events-none"
+                                        -translate-y-1/2 scale-95 opacity-0
+                                        transition-all duration-300
+                                        ease-out
+                                    "
                                     :class="hover ? 'opacity-100 scale-100' : ''"
                                 >
                                     {%- render 'image',
-                                        class: 'product-image', 
+                                        class: 'product-image',
                                         image: product.featured_image,
                                         alt: product.featured_image.alt,
                                         width: 100,
-                                        sizes: sizes,
+                                        sizes: sizes
                                     -%}
                                 </div>
                             </div>
@@ -93,8 +99,8 @@
                     {%- endfor -%}
                 </div>
 
-                <div class="self-center flex flex-col items-center justify-center text-center">
-                    <span class="inline-block w-6 h-6">
+                <div class="flex flex-col items-center justify-center self-center text-center">
+                    <span class="inline-block h-6 w-6">
                         {{- 'icon-eyeglasses.svg' | inline_asset_content -}}
                     </span>
                     <div>
@@ -108,7 +114,7 @@
 
 {% stylesheet %}
     .scroll-categories-section {
-        .product-image{
+        .product-image {
             width: 100px;
             height: 72px;
         }
@@ -116,19 +122,19 @@
 {% endstylesheet %}
 
 {% schema %}
-  {
+{
     "name": "Scroll Categories",
     "tag": "section",
     "class": "section",
     "disabled_on": {
-        "groups": ["header","footer"]
+        "groups": ["header", "footer"]
     },
     "settings": [
         {
-            "type":"color_scheme",
+            "type": "color_scheme",
             "id": "color_scheme",
             "label": "Color Scheme",
-            "default":"color-scheme-1"
+            "default": "color-scheme-1"
         },
         {
             "type": "range",
@@ -136,7 +142,7 @@
             "min": 4,
             "max": 8,
             "step": 1,
-            "default":4,
+            "default": 4,
             "label": "Maximum items"
         },
         {
@@ -192,11 +198,10 @@
         }
     ],
     "presets": [
-      {
-        "name": "Scroll Categories",
-        "settings": {
+        {
+            "name": "Scroll Categories",
+            "settings": {}
         }
-      }
     ]
-  }
+}
 {% endschema %}
