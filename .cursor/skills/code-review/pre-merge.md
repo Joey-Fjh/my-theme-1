@@ -1,39 +1,75 @@
 ---
-description: Executes a global pre-merge code review. Strictly compares branch changes against the shopify-theme-architecture standards.
-globs: ["**/*.liquid", "**/*.js", "**/*.css"]
+description: Executes a pre-merge review for this Shopify theme. Compare changes against the project architecture, repo rules, and engine conventions.
+globs: ["**/*.liquid", "**/*.js", "**/*.css", "**/*.json", ".github/workflows/*.yml", ".prettierrc", ".editorconfig", ".vscode/settings.json", "package.json"]
 ---
 
-# Role: Shopify Front-End Chief Architect & Code Reviewer
+# Role: Shopify Theme Pre-Merge Reviewer
 
 ## Mission
-You are currently executing a Pre-Merge Code Review. 
-You must analyze the user-provided code changes (typically supplied via @Working Tree or @Diff) and conduct a comprehensive, rigorous scan against the project's foundational architecture guidelines (referencing the sibling files `SKILL.md` and `engine-reference.md`).
 
-## Core Review Radar (Checklist)
+Review the provided changes against the project standards defined in:
 
-1. **Architectural Compliance (Engine & Alpine)**
-   - Does every `<section>` include the three essential binding attributes: `data-component-kind`, `data-component-type`, and `data-component-id`?
-   - Are there any illegal top-level `fetch` calls or inline `<script>` event listeners? All interactive logic MUST be routed through Alpine.js (`x-data`) or `Components.register`.
+- `../shopify-theme-architecture/SKILL.md`
+- `../shopify-theme-architecture/engine-reference.md`
+- `../shopify-theme-repo-rules/SKILL.md`
 
-2. **Global State & Concurrency (State & Concurrency)**
-   - Do API requests (such as cart add/update/remove) utilize safe, unique identifiers (e.g., `'{{ item.key }}'`) rather than `forloop.index`, which is prone to concurrency bugs?
-   - Does the Section Rendering API (SRA) partial refresh strictly execute `targetElement.innerHTML = sourceElement.innerHTML` to prevent DOM nesting corruption?
+Focus on merge safety, architectural consistency, maintainability, and review clarity.
 
-3. **Defensive Programming (Validation & UX)**
-   - Do quantity input fields and adjustment buttons enforce front-end baseline validations (e.g., `< 1` checks) before triggering API calls?
-   - Are all API error `catch` blocks gracefully delegated to the global `$store.toast.show` method?
+---
 
-4. **Accessibility & Performance (A11y & Performance)**
-   - Do all icon-only buttons possess an `aria-label` or a visually hidden `<span class="sr-only">`?
-   - Do dynamic notification wrappers (e.g., Toasts) include `role="status"` and `aria-live="polite"`?
-   - Are there any illegal inline `<style>` blocks injected into the markup? (Strictly adhere to Tailwind utility classes).
+## Review Checklist
 
-## Output Format Requirements
-Upon completing the analysis, strictly format your review report as follows:
+### 1. Architecture & Lifecycle
+
+- If JS behavior is added, does it follow the current theme runtime pattern?
+- Is behavior scoped to the component root instead of using top-level global DOM queries?
+- If lifecycle-managed behavior is required, is it wired through `Components.register()`?
+- If resources are created (GSAP, Swiper, observers, listeners), is cleanup implemented?
+
+### 2. Liquid Structure
+
+- Does the section or block root include the required component binding attributes when needed?
+- Is the markup semantic and consistent with project patterns?
+- Are shared UI pieces rendered via snippets when reuse already exists?
+
+### 3. Alpine & State
+
+- Is Alpine used for local reactive UI state instead of ad-hoc global DOM scripting?
+- Is global shared state routed through Alpine store when appropriate?
+- Are Alpine expressions readable and safe?
+
+### 4. Styling
+
+- Does the code follow Tailwind-first styling?
+- Are inline `<style>` blocks avoided unless explicitly justified?
+- Are reusable patterns kept in the proper CSS layer instead of duplicated ad hoc?
+
+### 5. Accessibility
+
+- Do icon-only controls have accessible text via `aria-label` or `.sr-only`?
+- Do dynamic status messages use appropriate live-region semantics when needed?
+- Are focus-sensitive UI patterns (dialog, drawer, dropdown, tabs) respecting accessibility expectations?
+
+### 6. Repo Safety
+
+- Were vendor files left untouched unless explicitly requested?
+- Were generated files avoided?
+- Are renames, reference updates, and docs changes consistent?
+- Is the diff reasonably minimal for the stated task?
+
+### 7. Risk Checks
+
+- Any likely runtime regressions?
+- Any fragile selectors, ordering assumptions, or missing teardown?
+- Any formatting-only churn mixed with behavior changes that should be split?
+
+---
+
+## Output Format
 
 ### Pre-Merge Review Report
 
-- **Blockers:** [List critical violations of architectural standards. You MUST provide direct, one-click code blocks to fix them. If no blockers exist, output "None".]
-- **Warnings:** [List code smells, edge cases, or non-standard implementations that should be addressed.]
-- **Suggestions:** [Provide actionable recommendations for UI, UX, Accessibility, or Performance optimizations.]
-- **Conclusion:** [Output exactly "APPROVE" if the code is safe to merge, or "REQUEST CHANGES" if there are Blockers.]
+- **Blockers:** Critical issues that make the change unsafe to merge. If possible, include direct fix suggestions. If none, output `None`.
+- **Warnings:** Non-blocking issues, code smells, edge cases, or consistency problems.
+- **Suggestions:** Actionable improvements for maintainability, UX, accessibility, or performance.
+- **Conclusion:** Output exactly `APPROVE` or `REQUEST CHANGES`.

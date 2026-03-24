@@ -1,6 +1,6 @@
 ---
 name: shopify-theme-architecture
-description: Enforces this Shopify theme's front-end architecture — Tailwind CSS, Alpine.js, GSAP, and the custom Components.register() engine. Use when creating or modifying Liquid sections/snippets, writing JavaScript behavior, styling UI, implementing state management, or adding animations.
+description: Enforces this Shopify theme's front-end architecture — Tailwind CSS, Alpine.js, GSAP, and the custom Components.register() engine. Use when creating or modifying Liquid sections/snippets, writing JavaScript behavior, styling UI, implementing state management, or adding animations. Pair with shopify-theme-repo-rules for formatting, naming, and safe-edit conventions.
 ---
 
 # Shopify Theme Front-End Architecture
@@ -183,8 +183,7 @@ destroy(el, state) {
 
 ### Loading Order
 
-Scripts load in this order (all `defer`):
-`vendor-gsap.min.js` → `vendor-gsap-scrolltrigger.min.js` → `vendor-swiper.min.js` → `utils.js` → `alpine.components.js` → `base.js` → `vendor-alpine-intersect.min.js` → `vendor-alpine.min.js`
+Refer to `engine-reference.md` for current script load order and runtime implementation details.
 
 Alpine must load **last** so all `Alpine.data()` registrations happen during `alpine:init`.
 
@@ -201,22 +200,13 @@ Use for self-contained UI — toggles, dropdowns, accordions, hover states:
 
 ### Registered Alpine Components
 
-Complex, reusable behaviors are defined in `assets/alpine.components.js` and registered via `AlpineComponentsFactory`. Existing components:
-
-| Name | Purpose |
-|------|---------|
-| `dropdown` | Nested dropdown menus (keyboard nav, escape, focus trap) |
-| `stickyHeader` | Show/hide header on scroll direction |
-| `tabControl` | Accessible tab panels (role, aria, keyboard) |
-| `beforeAfterComparison` | Before/after image comparison slider |
-| `countdownTimer` | Countdown timer with flip-digit animation |
-| `sectionPagination` | Partial HTML refresh for tabbed content |
+Complex, reusable behaviors are defined in `assets/alpine.components.js` and registered via `AlpineComponentsFactory`. Keep the main skill principle-based; treat code as the source of truth for the current component inventory.
 
 To add a new Alpine component, define it in `alpine.components.js` and register it in the `alpine:init` listener in `base.js`.
 
 ### Plugin: Intersect
 
-The only Alpine plugin. Use `x-intersect` for in-view triggers:
+Use `x-intersect` for in-view triggers when the Intersect plugin is available in the current runtime:
 
 ```html
 <div x-data="{ visible: false }" x-intersect:enter.once="visible = true">
@@ -232,7 +222,7 @@ Both systems can live on the same element. The engine handles lifecycle (GSAP, S
 
 ### Configuration (v4, CSS-based)
 
-Config lives in `assets/tailwind.input.css`. No `tailwind.config.js`.
+Tailwind configuration is CSS-based in this repo. Refer to the current Tailwind input/build files rather than assuming a fixed config filename.
 
 Custom breakpoints:
 
@@ -251,7 +241,7 @@ npm run build:tw   # production build
 npm run dev        # shopify theme dev + tailwind watch
 ```
 
-Input: `assets/tailwind.input.css` → Output: `assets/tailwind.output.css`
+Input/output file paths may evolve; rely on the current theme scripts and repository files as the source of truth.
 
 ### CSS Architecture (layered imports)
 
@@ -292,7 +282,7 @@ We build inclusive themes. Cursor MUST adhere to these accessibility guidelines 
 
 ## Performance & Debugging
 
-This theme includes a custom `ThemePerformance` class that automatically monitors Core Web Vitals (LCP, Long Tasks) using the `PerformanceObserver` API.
+This theme includes runtime performance monitoring (Core Web Vitals and long-task visibility) based on browser performance APIs.
 
 - **How to activate**: Performance logs are disabled in production by default. To view them in the browser console, append `?debug=true` to the URL or view the theme inside the Shopify Theme Editor.
 - **Cursor's Responsibility**: When writing complex GSAP animations, large DOM manipulations, or heavy Alpine.js logic, ALWAYS optimize for performance to avoid triggering "Long Task" warnings (>50ms) in the performance monitor. Prefer `requestAnimationFrame` for visual updates and `debounce` for high-frequency events.
@@ -303,16 +293,9 @@ This theme includes a custom `ThemePerformance` class that automatically monitor
 
 Render shared UI with `{% render %}`:
 
-| Snippet | Usage |
-|---------|-------|
-| `image` | `{% render 'image', image: obj, alt: '...', width: n %}` |
-| `accordion` | `{% render 'accordion', blocks: section.blocks, initial_active: 0, icon_type: 'chevron' %}` |
-| `tab-control` | `{% render 'tab-control', ... %}` |
-| `product-card` | `{% render 'product-card', product: product %}` |
-| `link` | `{% render 'link', ... %}` |
-| `watermark` | `{% render 'watermark', text: '...', html_attr: 'data-gsap-watermark' %}` |
-| `loading` | `{% render 'loading' %}` |
-| `rotating-badge` | `{% render 'rotating-badge', ... %}` |
+- Reuse existing snippets before adding new section-specific markup.
+- Keep snippet APIs consistent and explicit through named arguments.
+- Prefer extending a shared snippet over duplicating markup across sections.
 
 Always check if an existing snippet covers your need before creating new markup.
 
