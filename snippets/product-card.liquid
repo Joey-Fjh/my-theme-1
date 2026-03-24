@@ -10,7 +10,7 @@
 {% enddoc %}
 
 <div
-    class="{{ class }} relative p-4 bg-white"
+    class="{{ class }} relative bg-white p-4"
     x-data="{ hover: false }"
     x-on:mouseenter="hover = true"
     x-on:mouseleave="hover = false"
@@ -24,21 +24,22 @@
     <!-- Product Image Container -->
     <div class="relative mb-4 aspect-square">
         <!-- Product Image -->
-        {% comment %} 
-        {%- assign pc_items_safe = pc_items | default: 5 -%}
-        {%- assign mobile_items_safe = mobile_items | default: 2 -%} 
-        (min-width: 48rem) calc(100vw / {{pc_items_safe}}), calc(100vw / {{mobile_items_safe}})
+        {% comment %}
+            {%- assign pc_items_safe = pc_items | default: 5 -%}
+            {%- assign mobile_items_safe = mobile_items | default: 2 -%}
+            (min-width: 48rem) calc(100vw / {{pc_items_safe}}), calc(100vw / {{mobile_items_safe}})
         {% endcomment %}
 
         {%- capture sizes -%}
             (min-width: 48rem) calc(100vw / pc_items), calc(100vw / mobile_items)
         {%- endcapture -%}
-            
+
         {%- capture widths -%}
             200,320,480,640,800
         {%- endcapture -%}
 
-        {%- render 'image',
+        {%-
+            render 'image',
             image: product.featured_image,
             url: product.url,
             alt: product.featured_image.alt | default: product.title,
@@ -50,16 +51,16 @@
 
         <!-- Hover Actions -->
         <div
-            class="absolute m-6 inset-x-0 bottom-0 flex flex-col gap-2 transition-opacity duration-300"
+            class="absolute inset-x-0 bottom-0 m-6 flex flex-col gap-2 transition-opacity duration-300"
             :class="hover ? 'opacity-100' : 'opacity-0'"
         >
-            <button 
+            <button
                 class="w-full border border-gray-300 bg-white py-2 text-2xl text-gray-800 transition-colors hover:bg-gray-50"
                 data-product-handle="{{ product.handle }}"
             >
                 Quick View
             </button>
-            <button 
+            <button
                 class="w-full bg-[#4a5d23] py-2 text-2xl text-white transition-colors hover:bg-[#3d4d1c]"
                 data-variant-id="{{ product.selected_or_first_available_variant.id }}"
             >
@@ -76,4 +77,3 @@
         <span class="text-2xl font-medium text-gray-800">{{ product.price | money }}</span>
     </div>
 </div>
-    

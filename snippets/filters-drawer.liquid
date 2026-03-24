@@ -1,43 +1,46 @@
 {% doc %}
-  Filters drawer — rendered inside ui-dialog (drawer, left).
+    Filters drawer — rendered inside ui-dialog (drawer, left).
   Global reuse: works for both Collection and Search via filter_host.
   No <form> here; all inputs bind to the external form via form="CollectionFiltersForm".
-  All controls auto-submit via @change="onChange" (resolved through Alpine scope chain).
+  All controls auto-submit via
 
-  @param {object} filter_source - Optional. Pass search or collection to drive filters.
-  @default collection | search (Liquid default when snippet included from section)
+    @change="onChange" (resolved through Alpine scope chain).
+
+    @param {object} filter_source - Optional. Pass search or collection to drive filters.
+
+    @default collection | search (Liquid default when snippet included from section)
 {% enddoc %}
 
 {%- assign filter_host = filter_source | default: collection | default: search -%}
 {%- assign result_count = filter_host.products_count | default: filter_host.results_count -%}
 
-<div class="flex flex-col h-full text-[#263D29]">
-  {%- comment -%} Header {%- endcomment -%}
-  <div class="flex items-center justify-between px-6 py-5 border-b border-[#e5e5e5]">
-    <h2 id="dialog-title-collection-filters" class="h3 font-bold">Filters</h2>
-    <button
-      type="button"
-      @click="$store.dialog.close()"
-      class="flex items-center justify-center w-10 h-10 -mr-2 rotate-45 cursor-pointer text-[#263D29]"
-      aria-label="Close"
-    >
-      <span class="w-5 h-5 block">
-        {{- 'icon-plus.svg' | inline_asset_content -}}
-      </span>
-    </button>
-  </div>
+<div class="flex h-full flex-col text-[#263D29]">
+    {%- comment -%} Header {%- endcomment -%}
+    <div class="flex items-center justify-between border-b border-[#e5e5e5] px-6 py-5">
+        <h2 id="dialog-title-collection-filters" class="h3 font-bold">Filters</h2>
+        <button
+            type="button"
+            @click="$store.dialog.close()"
+            class="-mr-2 flex h-10 w-10 rotate-45 cursor-pointer items-center justify-center text-[#263D29]"
+            aria-label="Close"
+        >
+            <span class="block h-5 w-5">
+                {{- 'icon-plus.svg' | inline_asset_content -}}
+            </span>
+        </button>
+    </div>
 
-  {%- comment -%} Scrollable filter body {%- endcomment -%}
-  <div class="flex-1 overflow-y-auto px-6 py-4">
-    {%- for filter in filter_host.filters -%}
-      {%- capture filter_content -%}
+    {%- comment -%} Scrollable filter body {%- endcomment -%}
+    <div class="flex-1 overflow-y-auto px-6 py-4">
+        {%- for filter in filter_host.filters -%}
+            {%- capture filter_content -%}
         {%- case filter.type -%}
           {%- when 'boolean' -%}
             <div class="flex flex-col gap-1">
               {%- for value in filter.values -%}
-                <label class="flex items-center justify-between px-4 py-3.5 bg-[#f5f5f5] rounded-lg cursor-pointer">
+                <label class="flex cursor-pointer items-center justify-between rounded-lg bg-[#f5f5f5] px-4 py-3.5">
                   <span class="leading-snug">{{ value.label }}</span>
-                  <span class="relative inline-flex items-center w-12 h-7">
+                  <span class="relative inline-flex h-7 w-12 items-center">
                     <input
                       type="checkbox"
                       class="peer sr-only"
@@ -47,8 +50,8 @@
                       {% if value.active %}checked{% endif %}
                       @change="onChange"
                     >
-                    <span class="absolute inset-0 rounded-full bg-[#d4d4d4] peer-checked:bg-[#263D29] transition-colors"></span>
-                    <span class="absolute left-1 top-1 w-5 h-5 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-5"></span>
+                    <span class="absolute inset-0 rounded-full bg-[#d4d4d4] transition-colors peer-checked:bg-[#263D29]"></span>
+                    <span class="absolute top-1 left-1 h-5 w-5 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-5"></span>
                   </span>
                 </label>
               {%- endfor -%}
@@ -57,7 +60,7 @@
           {%- when 'list' -%}
             <div class="flex flex-col">
               {%- for value in filter.values -%}
-                <label class="flex items-center gap-3 py-3 cursor-pointer {% unless forloop.last %}border-b border-[#e5e5e5]{% endunless %}">
+                <label class="flex cursor-pointer items-center gap-3 py-3 {% unless forloop.last %}border-b border-[#e5e5e5]{% endunless %}">
                   <input
                     type="checkbox"
                     class="filter-checkbox"
@@ -91,10 +94,10 @@
               }"
             >
               {%- comment -%} Dual-thumb range slider {%- endcomment -%}
-              <div class="relative w-full h-10 flex items-center">
-                <div class="absolute inset-x-0 h-0.5 bg-[#d4d4d4] rounded-full"></div>
+              <div class="relative flex h-10 w-full items-center">
+                <div class="absolute inset-x-0 h-0.5 rounded-full bg-[#d4d4d4]"></div>
                 <div
-                  class="absolute h-0.5 bg-[#263D29] rounded-full"
+                  class="absolute h-0.5 rounded-full bg-[#263D29]"
                   :style="`left:${minPct()}%;right:${maxPct()}%`"
                 ></div>
                 <input
@@ -104,7 +107,7 @@
                   x-model.number="min"
                   @input="clampMin()"
                   @change.debounce.500ms="$refs.inputMin.value = min; onChange"
-                  class="price-range-thumb absolute inset-x-0 w-full appearance-none bg-transparent pointer-events-none z-10"
+                  class="price-range-thumb pointer-events-none absolute inset-x-0 z-10 w-full appearance-none bg-transparent"
                 >
                 <input
                   type="range"
@@ -113,16 +116,16 @@
                   x-model.number="max"
                   @input="clampMax()"
                   @change.debounce.500ms="$refs.inputMax.value = max; onChange"
-                  class="price-range-thumb absolute inset-x-0 w-full appearance-none bg-transparent pointer-events-none z-20"
+                  class="price-range-thumb pointer-events-none absolute inset-x-0 z-20 w-full appearance-none bg-transparent"
                 >
               </div>
 
               {%- comment -%} From / To number inputs {%- endcomment -%}
               <div class="flex items-center gap-4">
                 <div class="flex-1">
-                  <label class="block text-sm mb-1 opacity-60" for="Filter-{{ filter.label | handleize }}-GTE">From</label>
-                  <div class="flex items-center border border-[#d4d4d4] rounded px-3 py-2">
-                    <span class="opacity-50 mr-1">$</span>
+                  <label class="mb-1 block text-sm opacity-60" for="Filter-{{ filter.label | handleize }}-GTE">From</label>
+                  <div class="flex items-center rounded border border-[#d4d4d4] px-3 py-2">
+                    <span class="mr-1 opacity-50">$</span>
                     <input
                       x-ref="inputMin"
                       id="Filter-{{ filter.label | handleize }}-GTE"
@@ -134,14 +137,14 @@
                       placeholder="0"
                       form="CollectionFiltersForm"
                       @input.debounce.500ms="min = +$el.value; clampMin(); $el.value = min; onChange"
-                      class="w-full bg-transparent outline-none appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                      class="w-full appearance-none bg-transparent outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                     >
                   </div>
                 </div>
                 <div class="flex-1">
-                  <label class="block text-sm mb-1 opacity-60" for="Filter-{{ filter.label | handleize }}-LTE">To</label>
-                  <div class="flex items-center border border-[#d4d4d4] rounded px-3 py-2">
-                    <span class="opacity-50 mr-1">$</span>
+                  <label class="mb-1 block text-sm opacity-60" for="Filter-{{ filter.label | handleize }}-LTE">To</label>
+                  <div class="flex items-center rounded border border-[#d4d4d4] px-3 py-2">
+                    <span class="mr-1 opacity-50">$</span>
                     <input
                       x-ref="inputMax"
                       id="Filter-{{ filter.label | handleize }}-LTE"
@@ -153,7 +156,7 @@
                       placeholder="{{ range_max }}"
                       form="CollectionFiltersForm"
                       @input.debounce.500ms="max = +$el.value; clampMax(); $el.value = max; onChange"
-                      class="w-full bg-transparent outline-none appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                      class="w-full appearance-none bg-transparent outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                     >
                   </div>
                 </div>
@@ -163,26 +166,26 @@
         {%- endcase -%}
       {%- endcapture -%}
 
-      {%- render 'accordion',
-        titles: filter.label,
-        contents: filter_content,
-        initial_active: 0,
-        icon_type: 'plus',
-        wrapper_class: 'flex flex-col',
-        item_class: 'border-t border-[#d4d4d4] first:border-t-0',
-        content_class: 'pb-2'
-      -%}
-    {%- endfor -%}
-  </div>
+            {%- render 'accordion',
+                titles: filter.label,
+                contents: filter_content,
+                initial_active: 0,
+                icon_type: 'plus',
+                wrapper_class: 'flex flex-col',
+                item_class: 'border-t border-[#d4d4d4] first:border-t-0',
+                content_class: 'pb-2'
+            -%}
+        {%- endfor -%}
+    </div>
 
-  {%- comment -%} Sticky footer — close only, filters auto-submit on change {%- endcomment -%}
-  <div class="sticky bottom-0 px-6 py-5 bg-white border-t border-[#e5e5e5]">
-    <button
-      type="button"
-      @click="$store.dialog.close()"
-      class="w-full py-4 rounded-sm text-center font-medium cursor-pointer bg-[#263D29] text-white transition-opacity hover:opacity-90"
-    >
-      View Result <sup class="opacity-60">({{ result_count }})</sup>
-    </button>
-  </div>
+    {%- comment -%} Sticky footer — close only, filters auto-submit on change {%- endcomment -%}
+    <div class="sticky bottom-0 border-t border-[#e5e5e5] bg-white px-6 py-5">
+        <button
+            type="button"
+            @click="$store.dialog.close()"
+            class="w-full cursor-pointer rounded-sm bg-[#263D29] py-4 text-center font-medium text-white transition-opacity hover:opacity-90"
+        >
+            View Result <sup class="opacity-60">({{ result_count }})</sup>
+        </button>
+    </div>
 </div>

@@ -1,133 +1,141 @@
 {% comment %}
-  Gallery layout: thumbnails — thumb strip + single active main image.
-  Internal sub-snippet; always rendered inside product-gallery.liquid's x-data scope.
+    Gallery layout: thumbnails — thumb strip + single active main image.
+    Internal sub-snippet; always rendered inside product-gallery.liquid's x-data scope.
 
-  @param {array}   images          - Image objects
-  @param {string}  thumb_position  - 'left' | 'bottom'
-  @param {boolean} zoom            - Enable click on main image
-  @param {string}  aspect_ratio    - Optional CSS aspect-ratio (fallback when first image has no ratio)
+    @param {array}   images          - Image objects
+    @param {string}  thumb_position  - 'left' | 'bottom'
+    @param {boolean} zoom            - Enable click on main image
+    @param {string}  aspect_ratio    - Optional CSS aspect-ratio (fallback when first image has no ratio)
 {% endcomment %}
 
 {%- assign is_left = true -%}
 {%- if thumb_position == 'bottom' -%}
-  {%- assign is_left = false -%}
+    {%- assign is_left = false -%}
 {%- endif -%}
 
 {%- comment -%} Dynamic gallery aspect from first image; fallback to passed aspect_ratio or 3/4 {%- endcomment -%}
 {%- assign first_img = images.first -%}
 {%- if first_img.width != blank and first_img.height != blank -%}
-  {%- assign gallery_aspect = first_img.width | append: '/' | append: first_img.height -%}
+    {%- assign gallery_aspect = first_img.width | append: '/' | append: first_img.height -%}
 {%- else -%}
-  {%- assign gallery_aspect = images.first.aspect_ratio | default: aspect_ratio | default: '3/4' -%}
+    {%- assign gallery_aspect = images.first.aspect_ratio
+        | default: aspect_ratio
+        | default: '3/4'
+    -%}
 {%- endif -%}
 
-<div 
-  class="
-    {% if is_left %}
-      flex flex-col pc:flex-row gap-4 min-w-0 w-full h-full
-    {% else %}
-      flex flex-col gap-3 min-w-0 w-full
-    {% endif %}
-  "
->
-  <div
+<div
     class="
-      relative z-0 shrink-0
-      {% if is_left %}
-        w-20 order-first flex flex-col gap-2 overflow-y-auto max-h-[min(80vh,720px)] [&::-webkit-scrollbar]:hidden
-      {% else %}
-        w-full min-w-0 order-last flex flex-nowrap gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden
-      {% endif %}
-    "
-    role="tablist"
-    aria-label="Product thumbnails"
-  >
-    {%- if is_left -%}
-        {%- for image in images -%}
-          {%- assign media_image = image.preview_image | default: image -%}
-          {%- assign thumb_sizes = '80px' -%}
-          {%- assign thumb_widths = '80,160,240' -%}
-          <button
-            type="button"
-            role="tab"
-            :aria-selected="activeIndex === {{ forloop.index0 }}"
-            @click="setActive({{ forloop.index0 }})"
-            class="block w-full overflow-hidden rounded-sm border-2 transition-all duration-200 cursor-pointer shrink-0 aspect-square"
-            :class="activeIndex === {{ forloop.index0 }}
-              ? 'border-[#C5E147]'
-              : 'border-transparent hover:border-gray-200'"
-          >
-            {%- render 'image',
-              image: media_image,
-              width: 400,
-              img_class: 'w-full h-full object-cover',
-              alt: media_image.alt,
-              sizes: thumb_sizes,
-              widths: thumb_widths,
-              loading: 'lazy',
-              aspect_ratio: '1/1'
-            -%}
-          </button>
-        {%- endfor -%}
-    {%- else -%}
-        {%- for image in images -%}
-          {%- assign media_image = image.preview_image | default: image -%}
-          {%- assign thumb_sizes = '(min-width: 1024px) 80px, (min-width: 768px) 72px, 64px' -%}
-          {%- assign thumb_widths = '80,160,240' -%}
-          <button
-            type="button"
-            role="tab"
-            :aria-selected="activeIndex === {{ forloop.index0 }}"
-            @click="setActive({{ forloop.index0 }})"
-            class="block overflow-hidden rounded-sm border-2 transition-all duration-200 cursor-pointer w-20 h-20 shrink-0"
-            :class="activeIndex === {{ forloop.index0 }}
-              ? 'border-[#C5E147]'
-              : 'border-transparent hover:border-gray-200'"
-          >
-            {%- render 'image',
-              image: media_image,
-              width: 400,
-              img_class: 'w-full h-full object-cover',
-              alt: media_image.alt,
-              sizes: thumb_sizes,
-              widths: thumb_widths,
-              loading: 'lazy',
-              aspect_ratio: '1/1'
-            -%}
-          </button>
-        {%- endfor -%}
-    {%- endif -%}
-  </div>
-
-  <div
-    class="flex-1 min-w-0 relative overflow-hidden rounded-sm bg-[#F3F3F3]"
-    style="aspect-ratio: {{ gallery_aspect }};"
-    role="tabpanel"
-  >
-    {%- for image in images -%}
-      {%- assign media_image = image.preview_image | default: image -%}
-
-      <div
-        class="absolute inset-0 w-full h-full transition-opacity duration-300 ease-out"
-        :class="activeIndex === {{ forloop.index0 }} 
-          ? 'opacity-100 z-10' 
-          : 'opacity-0 z-0 pointer-events-none'
-        "
-        {% if zoom %}
-          @click="openZoom({{ forloop.index0 }})"
-          style="cursor: zoom-in"
+        {% if is_left %}
+          flex flex-col pc:flex-row gap-4 min-w-0 w-full h-full
+        {% else %}
+          flex flex-col gap-3 min-w-0 w-full
         {% endif %}
-      >
-        {%- render 'image',
-          image: media_image,
-          width: 1200,
-          img_class: 'w-full h-full object-cover',
-          alt: media_image.alt,
-          sizes: '(min-width: 48rem) 50vw, 100vw',
-          widths: '400,600,800,1200',
-          loading: 'lazy'
-        -%}
-      </div>
-    {%- endfor -%}
-  </div>
+    "
+>
+    <div
+        class="
+            relative z-0 shrink-0
+            {% if is_left %}
+              w-20 order-first flex flex-col gap-2 overflow-y-auto max-h-[min(80vh,720px)] [&::-webkit-scrollbar]:hidden
+            {% else %}
+              w-full min-w-0 order-last flex flex-nowrap gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden
+            {% endif %}
+        "
+        role="tablist"
+        aria-label="Product thumbnails"
+    >
+        {%- if is_left -%}
+            {%- for image in images -%}
+                {%- assign media_image = image.preview_image | default: image -%}
+                {%- assign thumb_sizes = '80px' -%}
+                {%- assign thumb_widths = '80,160,240' -%}
+                <button
+                    type="button"
+                    role="tab"
+                    :aria-selected="activeIndex === {{ forloop.index0 }}"
+                    @click="setActive({{ forloop.index0 }})"
+                    class="block aspect-square w-full shrink-0 cursor-pointer overflow-hidden rounded-sm border-2 transition-all duration-200"
+                    :class="
+                        activeIndex === {{ forloop.index0 }}
+                        ? 'border-[#C5E147]'
+                        : 'border-transparent hover:border-gray-200'
+                    "
+                >
+                    {%- render 'image',
+                        image: media_image,
+                        width: 400,
+                        img_class: 'w-full h-full object-cover',
+                        alt: media_image.alt,
+                        sizes: thumb_sizes,
+                        widths: thumb_widths,
+                        loading: 'lazy',
+                        aspect_ratio: '1/1'
+                    -%}
+                </button>
+            {%- endfor -%}
+        {%- else -%}
+            {%- for image in images -%}
+                {%- assign media_image = image.preview_image | default: image -%}
+                {%- assign thumb_sizes = '(min-width: 1024px) 80px, (min-width: 768px) 72px, 64px' -%}
+                {%- assign thumb_widths = '80,160,240' -%}
+                <button
+                    type="button"
+                    role="tab"
+                    :aria-selected="activeIndex === {{ forloop.index0 }}"
+                    @click="setActive({{ forloop.index0 }})"
+                    class="block h-20 w-20 shrink-0 cursor-pointer overflow-hidden rounded-sm border-2 transition-all duration-200"
+                    :class="
+                        activeIndex === {{ forloop.index0 }}
+                        ? 'border-[#C5E147]'
+                        : 'border-transparent hover:border-gray-200'
+                    "
+                >
+                    {%- render 'image',
+                        image: media_image,
+                        width: 400,
+                        img_class: 'w-full h-full object-cover',
+                        alt: media_image.alt,
+                        sizes: thumb_sizes,
+                        widths: thumb_widths,
+                        loading: 'lazy',
+                        aspect_ratio: '1/1'
+                    -%}
+                </button>
+            {%- endfor -%}
+        {%- endif -%}
+    </div>
+
+    <div
+        class="relative min-w-0 flex-1 overflow-hidden rounded-sm bg-[#F3F3F3]"
+        style="aspect-ratio: {{ gallery_aspect }};"
+        role="tabpanel"
+    >
+        {%- for image in images -%}
+            {%- assign media_image = image.preview_image | default: image -%}
+
+            <div
+                class="absolute inset-0 h-full w-full transition-opacity duration-300 ease-out"
+                :class="
+                    activeIndex === {{ forloop.index0 }}
+                    ? 'opacity-100 z-10'
+                    : 'opacity-0 z-0 pointer-events-none'
+                "
+                {% if zoom %}
+                    @click="openZoom({{ forloop.index0 }})"
+                    style="cursor: zoom-in"
+                {% endif %}
+            >
+                {%- render 'image',
+                    image: media_image,
+                    width: 1200,
+                    img_class: 'w-full h-full object-cover',
+                    alt: media_image.alt,
+                    sizes: '(min-width: 48rem) 50vw, 100vw',
+                    widths: '400,600,800,1200',
+                    loading: 'lazy'
+                -%}
+            </div>
+        {%- endfor -%}
+    </div>
 </div>

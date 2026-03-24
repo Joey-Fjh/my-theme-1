@@ -1,93 +1,100 @@
 <nav
-  class="header-dropdown-super-menu"
-  x-data="dropdown"
-  @click.outside="close()"
-  @keydown.escape.window="close()"
+    class="header-dropdown-super-menu"
+    x-data="dropdown"
+    @click.outside="close()"
+    @keydown.escape.window="close()"
 >
-  <ul class="flex items-center gap-6" role="list">
-    {%- for link in section.settings.menu.links -%}
-      <li class="relative">
-        {%- if link.links != blank -%}
-          <details
-            class="dropdown"
-            data-dropdown
-            data-deep="1"
-          >
-            <summary
-              class="dropdown-trigger flex items-center gap-1"
-              id="HeaderSuperMenu-{{ link.handle }}"
-              @click.stop.prevent="toggle($el.parentElement)"
-            >
-              <div class="links links-underline flex items-center gap-3">
-                <span>{{ link.title | escape }}</span>
-                <span class="w-6 h-6 inline-block icons dropdown-icon dropdown-icon--down">
-                  {{ 'icon-arrow.svg' | inline_asset_content }}
-                </span>
-              </div>
-            </summary>
+    <ul class="flex items-center gap-6" role="list">
+        {%- for link in section.settings.menu.links -%}
+            <li class="relative">
+                {%- if link.links != blank -%}
+                    <details
+                        class="dropdown"
+                        data-dropdown
+                        data-deep="1"
+                    >
+                        <summary
+                            class="dropdown-trigger flex items-center gap-1"
+                            id="HeaderSuperMenu-{{ link.handle }}"
+                            @click.stop.prevent="toggle($el.parentElement)"
+                        >
+                            <div class="links links-underline flex items-center gap-3">
+                                <span>{{ link.title | escape }}</span>
+                                <span class="icons dropdown-icon dropdown-icon--down inline-block h-6 w-6">
+                                    {{ 'icon-arrow.svg' | inline_asset_content }}
+                                </span>
+                            </div>
+                        </summary>
 
-            <div
-              class="dropdown-panel dropdown-open fixed left-0 right-0 mt-0 w-screen max-w-none rounded-none px-7 py-5 shadow-xl
-                top-[calc(var(--announcement-bar-height)+var(--header-height))]  
-                color-{{ section.settings.menu_color_scheme }} 
-              "
-            >
-              <div class="relative">
-                <div class="space-y-6 relative z-10">
-                  <div class="grid gap-6 pc:grid-cols-[16rem_minmax(0,1fr)]">
-                    <ul class="space-y-1" role="list">
-                    {%- for childlink in link.links -%}
-                      <li class="w-full">
-                          {%- capture child_link_attributes -%}
+                        <div
+                            class="
+                                dropdown-panel dropdown-open fixed top-[calc(var(--announcement-bar-height)+var(--header-height))] right-0 left-0 mt-0 w-screen max-w-none rounded-none px-7 py-5
+                                shadow-xl
+                                color-{{ section.settings.menu_color_scheme }}
+                            "
+                        >
+                            <div class="relative">
+                                <div class="relative z-10 space-y-6">
+                                    <div class="pc:grid-cols-[16rem_minmax(0,1fr)] grid gap-6">
+                                        <ul class="space-y-1" role="list">
+                                            {%- for childlink in link.links -%}
+                                                <li class="w-full">
+                                                    {%- capture child_link_attributes -%}
                             {%- if childlink.current -%}
                               aria-current="page"
                             {%- endif -%}
                           {%- endcapture -%}
 
-                          {%- render 'link',
-                            text: childlink.title | escape,
-                            href: childlink.url,
-                            variant: 'underline',
-                            class: 'block px-4 py-2 h5',
-                            attributes: child_link_attributes
-                          -%}
-                      </li>
-                    {%- endfor -%}
-                    </ul>
+                                                    {%-
+                                                        render 'link',
+                                                        text: childlink.title | escape,
+                                                        href: childlink.url,
+                                                        variant: 'underline',
+                                                        class: 'block px-4 py-2 h5',
+                                                        attributes: child_link_attributes
+                                                    -%}
+                                                </li>
+                                            {%- endfor -%}
+                                        </ul>
 
-                    <div class="min-h-24">
-                      {%- for childlink in link.links -%}
-                        {%- if childlink.links != blank -%}
-                          <div class="pb-4 last:pb-0">
-                            <div class="flex flex-wrap gap-x-8 gap-y-3 pt-1">
-                              {%- for grandchild in childlink.links -%}
-                                {%- if grandchild.title == childlink.title and grandchild.url == childlink.url -%}
-                                  {%- continue -%}
-                                {%- endif -%}
-                                
-                                {%- capture grand_link_attributes -%}
+                                        <div class="min-h-24">
+                                            {%- for childlink in link.links -%}
+                                                {%- if childlink.links != blank -%}
+                                                    <div class="pb-4 last:pb-0">
+                                                        <div class="flex flex-wrap gap-x-8 gap-y-3 pt-1">
+                                                            {%- for grandchild in childlink.links -%}
+                                                                {%- if grandchild.title
+                                                                        == childlink.title
+                                                                    and grandchild.url
+                                                                        == childlink.url
+                                                                -%}
+                                                                    {%- continue -%}
+                                                                {%- endif -%}
+
+                                                                {%- capture grand_link_attributes -%}
                                   {%- if grandchild.current -%}
                                     aria-current="page"
                                   {%- endif -%}
                                 {%- endcapture -%}
 
-                                {%- render 'link',
-                                  text: grandchild.title | escape,
-                                  href: grandchild.url,
-                                  variant: 'underline',
-                                  class: 'h5',
-                                  attributes: grand_link_attributes
-                                -%}
-                              {%- endfor -%}
-                            </div>
-                          </div>
-                        {%- endif -%}
-                      {%- endfor -%}
-                    </div>
-                  </div>
+                                                                {%-
+                                                                    render 'link',
+                                                                    text: grandchild.title | escape,
+                                                                    href: grandchild.url,
+                                                                    variant: 'underline',
+                                                                    class: 'h5',
+                                                                    attributes: grand_link_attributes
+                                                                -%}
+                                                            {%- endfor -%}
+                                                        </div>
+                                                    </div>
+                                                {%- endif -%}
+                                            {%- endfor -%}
+                                        </div>
+                                    </div>
 
-                  {%- if section.settings.enable_super_menu_series -%}
-                    {%- capture super_tab_header -%}
+                                    {%- if section.settings.enable_super_menu_series -%}
+                                        {%- capture super_tab_header -%}
                       {%- for i in (1..3) -%}
                         {%- assign collection_key = 'super_collection_' | append: i -%}
                         {%- assign collection_item = section.settings[collection_key] -%}
@@ -99,7 +106,7 @@
                             x-data="{ index: null }"
                             x-init="index = registerTab($el)"
                             @click="setActive(index)"
-                            class="pb-2 border-b h4 transition-colors"
+                            class="h4 border-b pb-2 transition-colors"
                             :class="isActive(index) ? 'border-black text-black' : 'border-transparent opacity-60 hover:opacity-100'"
                           >
                             {{ collection_item.title | escape }}
@@ -108,7 +115,7 @@
                       {%- endfor -%}
                     {%- endcapture -%}
 
-                    {%- capture super_tab_content -%}
+                                        {%- capture super_tab_content -%}
                       {%- for i in (1..3) -%}
                         {%- assign collection_key = 'super_collection_' | append: i -%}
                         {%- assign collection_item = section.settings[collection_key] -%}
@@ -139,35 +146,35 @@
                       {%- endfor -%}
                     {%- endcapture -%}
 
-                    {%- if super_tab_header != blank -%}
-                      {%- render 'tab-control',
-                        initialTabStrategy: 'first',
-                        tab_header: super_tab_header,
-                        tab_content: super_tab_content,
-                        header_class: 'w-full flex flex-wrap gap-6'
-                      -%}
-                    {%- endif -%}
-                  {%- endif -%}
-                </div>
+                                        {%- if super_tab_header != blank -%}
+                                            {%- render 'tab-control',
+                                                initialTabStrategy: 'first',
+                                                tab_header: super_tab_header,
+                                                tab_content: super_tab_content,
+                                                header_class: 'w-full flex flex-wrap gap-6'
+                                            -%}
+                                        {%- endif -%}
+                                    {%- endif -%}
+                                </div>
 
-                {% render 'watermark',
-                  container_class: 'absolute bottom-0 w-full overflow-hidden pointer-events-none select-none z-0',
-                  text_class: 'block w-full text-[clamp(16vw,18vw,20vw)] font-bold leading-none opacity-12 whitespace-nowrap',
-                  text: section.settings.super_menu_watermark_text
-                %}
-              </div>
-            </div>
-          </details>
-        {%- else -%}
-          {%- capture link_attributes -%}
+                                {% render 'watermark',
+                                    container_class: 'absolute bottom-0 w-full overflow-hidden pointer-events-none select-none z-0',
+                                    text_class: 'block w-full text-[clamp(16vw,18vw,20vw)] font-bold leading-none opacity-12 whitespace-nowrap',
+                                    text: section.settings.super_menu_watermark_text
+                                %}
+                            </div>
+                        </div>
+                    </details>
+                {%- else -%}
+                    {%- capture link_attributes -%}
             {%- if link.current -%}
               aria-current="page"
             {%- endif -%}
           {%- endcapture -%}
 
-          {%- render 'link', text: link.title | escape, href: link.url, variant: 'underline', attributes: link_attributes -%}
-        {%- endif -%}
-      </li>
-    {%- endfor -%}
-  </ul>
+                    {%- render 'link', text: link.title | escape, href: link.url, variant: 'underline', attributes: link_attributes -%}
+                {%- endif -%}
+            </li>
+        {%- endfor -%}
+    </ul>
 </nav>

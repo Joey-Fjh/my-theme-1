@@ -1,198 +1,224 @@
 {% comment %}
-  Renders product variant picker (Tailwind + Alpine.js).
-  Supports Schema-driven picker_type (dropdown / button) and swatch_shape (circle / square / none).
+    Renders product variant picker (Tailwind + Alpine.js).
+    Supports Schema-driven picker_type (dropdown / button) and swatch_shape (circle / square / none).
 
-  Accepts:
-  - product: {Object} product object.
-  - block: {Object} passing the block information (expects block.settings.picker_type, block.settings.swatch_shape).
-  - product_form_id: {String} Id of the product form to which the variant picker is associated.
+    Accepts:
+    - product: {Object} product object.
+    - block: {Object} passing the block information (expects block.settings.picker_type, block.settings.swatch_shape).
+    - product_form_id: {String} Id of the product form to which the variant picker is associated.
 
-  Usage:
-  {% render 'product-variant-picker', product: product, block: block, product_form_id: product_form_id %}
+    Usage:
+    {% render 'product-variant-picker', product: product, block: block, product_form_id: product_form_id %}
 {% endcomment %}
 
 {%- assign context = context | default: 'featured' -%}
 
 {%- unless product.has_only_default_variant -%}
-  {%- assign product_form_id = product_form_id | default: 'product-form-' | append: section.id -%}
+    {%- assign product_form_id = product_form_id | default: 'product-form-' | append: section.id -%}
 
-  <script id="ProductVariants-{{ section.id }}" type="application/json">
-    {{ product.variants | json }}
-  </script>
+    <script id="ProductVariants-{{ section.id }}" type="application/json">
+        {{ product.variants | json }}
+    </script>
 
-  <div
-    id="VariantPicker-{{ section.id }}"
-    class="flex flex-col gap-3 pc:gap-4"
-    x-data="VariantPicker({
-      sectionId: '{{ section.id }}',
-      productId: {{ product.id }},
-      productFormId: '{{ product_form_id }}'
-    })"
-    {{ block.shopify_attributes }}
-  >
-    {%- for option in product.options_with_values -%}
-      {%- liquid
-        assign picker_type = block.settings.picker_type | default: 'button'
-        assign swatch_shape = block.settings.swatch_shape | default: 'circle'
+    <div
+        id="VariantPicker-{{ section.id }}"
+        class="pc:gap-4 flex flex-col gap-3"
+        x-data="
+            VariantPicker({
+              sectionId: '{{ section.id }}',
+              productId: {{ product.id }},
+              productFormId: '{{ product_form_id }}'
+            })
+        "
+        {{ block.shopify_attributes }}
+    >
+        {%- for option in product.options_with_values -%}
+            {%- liquid
+                assign picker_type = block.settings.picker_type | default: 'button'
+                assign swatch_shape = block.settings.swatch_shape | default: 'circle'
 
-        assign is_color = false
-        assign downcase_option = option.name | downcase
-        if downcase_option contains 'color' or downcase_option contains 'colour'
-          assign is_color = true
-        endif
+                assign is_color = false
+                assign downcase_option = option.name | downcase
+                if downcase_option contains 'color' or downcase_option contains 'colour'
+                    assign is_color = true
+                endif
 
-        assign option_name_escaped = option.name | escape
-      -%}
+                assign option_name_escaped = option.name | escape
+            -%}
 
-      {%- if picker_type == 'dropdown' -%}
-        {%- comment -%} ═══ Dropdown mode ═══ {%- endcomment -%}
-        <div class="flex flex-col gap-1.5">
-          <label class="h6 {% if context == 'product' %}text-[#263D29]/80{% else %}text-white/80{% endif %}" for="OptionDropdown-{{ section.id }}-{{ forloop.index0 }}">
-            {{ option.name }}:
-            <span
-              x-text="selectedOptions['{{ option_name_escaped }}']"
-              class="font-bold ml-1 {% if context == 'product' %}text-[#263D29]{% else %}text-white{% endif %}"
-            >{{ option.selected_value }}</span>
-          </label>
+            {%- if picker_type == 'dropdown' -%}
+                {%- comment -%} ═══ Dropdown mode ═══ {%- endcomment -%}
+                <div class="flex flex-col gap-1.5">
+                    <label
+                        class="h6 {% if context == 'product' %}text-[#263D29]/80{% else %}text-white/80{% endif %}"
+                        for="OptionDropdown-{{ section.id }}-{{ forloop.index0 }}"
+                    >
+                        {{ option.name }}:
+                        <span
+                            x-text="selectedOptions['{{ option_name_escaped }}']"
+                            class="ml-1 font-bold {% if context == 'product' %}text-[#263D29]{% else %}text-white{% endif %}"
+                        >
+                            {{- option.selected_value -}}
+                        </span>
+                    </label>
 
-          <div class="relative">
-            <select
-              id="OptionDropdown-{{ section.id }}-{{ forloop.index0 }}"
-              class="w-full rounded-sm py-3 px-4 h6 appearance-none cursor-pointer focus:outline-none {% if context == 'product' %}bg-transparent border border-[#263D29]/30 text-[#263D29] focus:border-[#263D29]{% else %}bg-[#263D29] border border-white/20 text-white focus:border-[#C5E147]{% endif %}"
-              name="options[{{ option_name_escaped }}]"
-              form="{{ product_form_id }}"
-              x-model="selectedOptions['{{ option_name_escaped }}']"
-              @change="onVariantChange()"
-            >
-              {%- for value in option.values -%}
-                <option
-                  class="bg-[#263D29] text-white"
-                  value="{{ value | escape }}"
-                  {% unless value.available %}disabled{% endunless %}
-                  data-option-value-id="{{ value.id }}"
+                    <div class="relative">
+                        <select
+                            id="OptionDropdown-{{ section.id }}-{{ forloop.index0 }}"
+                            class="h6 w-full cursor-pointer appearance-none rounded-sm px-4 py-3 focus:outline-none {% if context == 'product' %}bg-transparent border border-[#263D29]/30 text-[#263D29] focus:border-[#263D29]{% else %}bg-[#263D29] border border-white/20 text-white focus:border-[#C5E147]{% endif %}"
+                            name="options[{{ option_name_escaped }}]"
+                            form="{{ product_form_id }}"
+                            x-model="selectedOptions['{{ option_name_escaped }}']"
+                            @change="onVariantChange()"
+                        >
+                            {%- for value in option.values -%}
+                                <option
+                                    class="bg-[#263D29] text-white"
+                                    value="{{ value | escape }}"
+                                    {% unless value.available %}
+                                        disabled
+                                    {% endunless %}
+                                    data-option-value-id="{{ value.id }}"
+                                >
+                                    {%- if value.available -%}
+                                        {{- value -}}
+                                    {%- else -%}
+                                        {{- value }} — Sold out
+                                    {%- endif -%}
+                                </option>
+                            {%- endfor -%}
+                        </select>
+                        <span
+                            class="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 {% if context == 'product' %}text-[#263D29]/60{% else %}text-white/60{% endif %}"
+                            aria-hidden="true"
+                        >
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z"/>
+                            </svg>
+                        </span>
+                    </div>
+                </div>
+
+            {%- else -%}
+                {%- comment -%} ═══ Button mode (pills + swatches) ═══ {%- endcomment -%}
+                <fieldset
+                    class="flex flex-col gap-1.5"
+                    role="radiogroup"
+                    aria-label="{{ option.name }}"
                 >
-                  {%- if value.available -%}
-                    {{- value -}}
-                  {%- else -%}
-                    {{- value }} — Sold out
-                  {%- endif -%}
-                </option>
-              {%- endfor -%}
-            </select>
-            <span class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none {% if context == 'product' %}text-[#263D29]/60{% else %}text-white/60{% endif %}" aria-hidden="true">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>
-            </span>
-          </div>
-        </div>
+                    <legend class="h6 {% if context == 'product' %}text-[#263D29]/80{% else %}text-white/80{% endif %}">
+                        {{ option.name }}:
+                        <span
+                            x-text="selectedOptions['{{ option_name_escaped }}']"
+                            class="ml-1 font-bold {% if context == 'product' %}text-[#263D29]{% else %}text-white{% endif %}"
+                        >
+                            {{- option.selected_value -}}
+                        </span>
+                    </legend>
 
-      {%- else -%}
-        {%- comment -%} ═══ Button mode (pills + swatches) ═══ {%- endcomment -%}
-        <fieldset class="flex flex-col gap-1.5" role="radiogroup" aria-label="{{ option.name }}">
-          <legend class="h6 {% if context == 'product' %}text-[#263D29]/80{% else %}text-white/80{% endif %}">
-            {{ option.name }}:
-            <span
-              x-text="selectedOptions['{{ option_name_escaped }}']"
-              class="font-bold ml-1 {% if context == 'product' %}text-[#263D29]{% else %}text-white{% endif %}"
-            >{{ option.selected_value }}</span>
-          </legend>
+                    <div class="flex flex-wrap gap-2">
+                        {%- for value in option.values -%}
+                            {%- liquid
+                                assign swatch_bg = null
+                                if value.swatch.image
+                                    assign image_url = value.swatch.image | image_url: width: 50
+                                    assign swatch_bg = 'url(' | append: image_url | append: ')'
+                                elsif value.swatch.color
+                                    assign swatch_bg = 'rgb(' | append: value.swatch.color.rgb | append: ')'
+                                endif
 
-          <div class="flex flex-wrap gap-2">
-            {%- for value in option.values -%}
-              {%- liquid
-                assign swatch_bg = null
-                if value.swatch.image
-                  assign image_url = value.swatch.image | image_url: width: 50
-                  assign swatch_bg = 'url(' | append: image_url | append: ')'
-                elsif value.swatch.color
-                  assign swatch_bg = 'rgb(' | append: value.swatch.color.rgb | append: ')'
-                endif
+                                assign escaped_value = value | escape
+                                assign render_swatch = false
+                                if swatch_bg or is_color
+                                    if swatch_shape != 'none'
+                                        assign render_swatch = true
+                                    endif
+                                endif
 
-                assign escaped_value = value | escape
-                assign render_swatch = false
-                if swatch_bg or is_color
-                  if swatch_shape != 'none'
-                    assign render_swatch = true
-                  endif
-                endif
+                                assign shape_class = 'rounded-full'
+                                if swatch_shape == 'square'
+                                    assign shape_class = 'rounded-sm'
+                                endif
+                            -%}
 
-                assign shape_class = 'rounded-full'
-                if swatch_shape == 'square'
-                  assign shape_class = 'rounded-sm'
-                endif
-              -%}
+                            {%- capture input_id -%}VariantOption-{{ section.id }}-{{ option.position }}-{{ forloop.index0 }}{%- endcapture -%}
 
-              {%- capture input_id -%}VariantOption-{{ section.id }}-{{ option.position }}-{{ forloop.index0 }}{%- endcapture -%}
+                            {%- if render_swatch -%}
+                                {%- comment -%} ——— Swatch ——— {%- endcomment -%}
+                                <label class="relative cursor-pointer" for="{{ input_id }}">
+                                    <input
+                                        type="radio"
+                                        id="{{ input_id }}"
+                                        class="peer sr-only"
+                                        name="{{ option_name_escaped }}"
+                                        value="{{ escaped_value }}"
+                                        form="{{ product_form_id }}"
+                                        x-model="selectedOptions['{{ option_name_escaped }}']"
+                                        @change="onVariantChange()"
+                                        data-option-value-id="{{ value.id }}"
+                                    >
+                                    <span
+                                        class="block h-8 w-8 border transition-all {{ shape_class }} {% if context == 'product' %}border-[#263D29]/30{% else %}border-white/20{% endif %}"
+                                        :class="
+                                            selectedOptions['{{ option_name_escaped }}'] === '{{ escaped_value }}'
+                                            ? '{% if context == 'product' %}ring-2 ring-[#263D29] ring-offset-2 ring-offset-[#F3F3F3]{% else %}ring-2 ring-white ring-offset-2 ring-offset-[#263D29]{% endif %}'
+                                            : '{% if context == 'product' %}hover:border-[#263D29]/60{% else %}hover:border-white/50{% endif %}'
+                                        "
+                                        {%- if swatch_bg %}
+                                            style="background: {{ swatch_bg }}; background-size: cover;"
+                                        {%- elsif is_color %}
+                                            style="background-color: {{ value | handle }};"
+                                        {%- endif %}
+                                    ></span>
+                                    {%- unless value.available -%}
+                                        <span class="pointer-events-none absolute inset-0 flex items-center justify-center opacity-60">
+                                            <span
+                                                class="block h-10 w-1 -translate-y-1 rotate-45 {% if context == 'product' %}bg-[#263D29]/70{% else %}bg-white/70{% endif %}"
+                                            ></span>
+                                        </span>
+                                    {%- endunless -%}
+                                    <span class="sr-only">
+                                        {{ escaped_value }}
+                                        {%- unless value.available %} - Sold out{%- endunless -%}
+                                    </span>
+                                </label>
 
-              {%- if render_swatch -%}
-                {%- comment -%} ——— Swatch ——— {%- endcomment -%}
-                <label class="relative cursor-pointer" for="{{ input_id }}">
-                  <input
-                    type="radio"
-                    id="{{ input_id }}"
-                    class="sr-only peer"
-                    name="{{ option_name_escaped }}"
-                    value="{{ escaped_value }}"
-                    form="{{ product_form_id }}"
-                    x-model="selectedOptions['{{ option_name_escaped }}']"
-                    @change="onVariantChange()"
-                    data-option-value-id="{{ value.id }}"
-                  >
-                  <span
-                    class="block w-8 h-8 border transition-all {{ shape_class }} {% if context == 'product' %}border-[#263D29]/30{% else %}border-white/20{% endif %}"
-                    :class="selectedOptions['{{ option_name_escaped }}'] === '{{ escaped_value }}'
-                      ? '{% if context == 'product' %}ring-2 ring-[#263D29] ring-offset-2 ring-offset-[#F3F3F3]{% else %}ring-2 ring-white ring-offset-2 ring-offset-[#263D29]{% endif %}'
-                      : '{% if context == 'product' %}hover:border-[#263D29]/60{% else %}hover:border-white/50{% endif %}'"
-                    {%- if swatch_bg %}
-                      style="background: {{ swatch_bg }}; background-size: cover;"
-                    {%- elsif is_color %}
-                      style="background-color: {{ value | handle }};"
-                    {%- endif %}
-                  ></span>
-                  {%- unless value.available -%}
-                    <span class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-60">
-                      <span class="block w-1 h-10 rotate-45 -translate-y-1 {% if context == 'product' %}bg-[#263D29]/70{% else %}bg-white/70{% endif %}"></span>
-                    </span>
-                  {%- endunless -%}
-                  <span class="sr-only">
-                    {{ escaped_value }}
-                    {%- unless value.available %} - Sold out{%- endunless -%}
-                  </span>
-                </label>
-
-              {%- else -%}
-                {%- comment -%} ——— Pill ——— {%- endcomment -%}
-                <label class="relative cursor-pointer" for="{{ input_id }}">
-                  <input
-                    type="radio"
-                    id="{{ input_id }}"
-                    class="sr-only peer"
-                    name="{{ option_name_escaped }}"
-                    value="{{ escaped_value }}"
-                    form="{{ product_form_id }}"
-                    x-model="selectedOptions['{{ option_name_escaped }}']"
-                    @change="onVariantChange()"
-                    data-option-value-id="{{ value.id }}"
-                  >
-                  <span
-                    class="block px-4 py-2 border rounded-sm h6 transition-colors"
-                    :class="[
-                      selectedOptions['{{ option_name_escaped }}'] === '{{ escaped_value }}'
-                        ? '{% if context == 'product' %}border-[#263D29] text-[#263D29]{% else %}border-[#C5E147] text-[#C5E147]{% endif %}'
-                        : '{% if context == 'product' %}border-[#263D29]/30 text-[#263D29]/70 hover:border-[#263D29]/60 hover:text-[#263D29]{% else %}border-white/20 text-white/80 hover:border-white/50 hover:text-white{% endif %}',
-                      !isValueAvailable('{{ option_name_escaped }}', '{{ escaped_value }}') && 'opacity-40 line-through'
-                    ]"
-                  >
-                    {{ value }}
-                  </span>
-                  {%- unless value.available -%}
-                    <span class="sr-only">Sold out</span>
-                  {%- endunless -%}
-                </label>
-              {%- endif -%}
-            {%- endfor -%}
-          </div>
-        </fieldset>
-      {%- endif -%}
-    {%- endfor -%}
-  </div>
+                            {%- else -%}
+                                {%- comment -%} ——— Pill ——— {%- endcomment -%}
+                                <label class="relative cursor-pointer" for="{{ input_id }}">
+                                    <input
+                                        type="radio"
+                                        id="{{ input_id }}"
+                                        class="peer sr-only"
+                                        name="{{ option_name_escaped }}"
+                                        value="{{ escaped_value }}"
+                                        form="{{ product_form_id }}"
+                                        x-model="selectedOptions['{{ option_name_escaped }}']"
+                                        @change="onVariantChange()"
+                                        data-option-value-id="{{ value.id }}"
+                                    >
+                                    <span
+                                        class="h6 block rounded-sm border px-4 py-2 transition-colors"
+                                        :class="
+                                            [
+                                              selectedOptions['{{ option_name_escaped }}'] === '{{ escaped_value }}'
+                                                ? '{% if context == 'product' %}border-[#263D29] text-[#263D29]{% else %}border-[#C5E147] text-[#C5E147]{% endif %}'
+                                                : '{% if context == 'product' %}border-[#263D29]/30 text-[#263D29]/70 hover:border-[#263D29]/60 hover:text-[#263D29]{% else %}border-white/20 text-white/80 hover:border-white/50 hover:text-white{% endif %}',
+                                              !isValueAvailable('{{ option_name_escaped }}', '{{ escaped_value }}') && 'opacity-40 line-through'
+                                            ]
+                                        "
+                                    >
+                                        {{ value }}
+                                    </span>
+                                    {%- unless value.available -%}
+                                        <span class="sr-only">Sold out</span>
+                                    {%- endunless -%}
+                                </label>
+                            {%- endif -%}
+                        {%- endfor -%}
+                    </div>
+                </fieldset>
+            {%- endif -%}
+        {%- endfor -%}
+    </div>
 {%- endunless -%}

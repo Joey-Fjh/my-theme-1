@@ -1,5 +1,5 @@
 {% doc %}
-  Renders a responsive image that might be wrapped in a link.
+    Renders a responsive image that might be wrapped in a link.
 
   When `width`, `height` and `crop` are provided, the image will be rendered
   with a fixed aspect ratio.
@@ -10,26 +10,26 @@
   This is a component that defaults to assuming "full-width" layout.
   If the image is not actually displayed at full width in your layout, please be sure to override the sizes parameter when invoking it.
 
-  @param {image} image - The image to be rendered
-  @param {string} [url] - An optional destination URL for the image
-  @param {string} [wrapper] - An optional wrapper element, either 'a' or 'div'. If not provided, it will be 'a' if url is provided, otherwise 'div'.
-  @param {string} [class] - Optional class to be added to the image wrapper
-  @param {string} [img_class] - Optional class to be added to the img tag
-  @param {number} [width] - The highest resolution width of the image to be rendered
-  @param {number} [height] - The highest resolution height of the image to be rendered
-  @param {string} [crop] - The crop position of the image
-  @param {string} [widths] - Optional widths for srcset generation (comma-separated list of numbers)
-  @param {string} [sizes] - Optional sizes attribute for responsive images
-  @param {string} [loading] - Optional loading attribute for the img tag ('lazy' or 'eager')
-  @param {string} [decoding] - Optional decoding attribute for the img tag ('async', 'sync' or 'auto')
-  @param {string} [alt] - Optional alt text for the image
-  @param {string} [aspect_ratio] - Optional aspect ratio for the image (e.g. '16:9') 
-  @param {string} [placeholder_key] - Optional placeholder key for nil image
-  @param {string} [placeholder_class] - Optional placeholder class for nil image
-  @param {string} [extra_attributes] - Additional raw HTML attributes applied to the <img> element
+    @param {image} image - The image to be rendered
+    @param {string} [url] - An optional destination URL for the image
+    @param {string} [wrapper] - An optional wrapper element, either 'a' or 'div'. If not provided, it will be 'a' if url is provided, otherwise 'div'.
+    @param {string} [class] - Optional class to be added to the image wrapper
+    @param {string} [img_class] - Optional class to be added to the img tag
+    @param {number} [width] - The highest resolution width of the image to be rendered
+    @param {number} [height] - The highest resolution height of the image to be rendered
+    @param {string} [crop] - The crop position of the image
+    @param {string} [widths] - Optional widths for srcset generation (comma-separated list of numbers)
+    @param {string} [sizes] - Optional sizes attribute for responsive images
+    @param {string} [loading] - Optional loading attribute for the img tag ('lazy' or 'eager')
+    @param {string} [decoding] - Optional decoding attribute for the img tag ('async', 'sync' or 'auto')
+    @param {string} [alt] - Optional alt text for the image
+    @param {string} [aspect_ratio] - Optional aspect ratio for the image (e.g. '16:9')
+    @param {string} [placeholder_key] - Optional placeholder key for nil image
+    @param {string} [placeholder_class] - Optional placeholder class for nil image
+    @param {string} [extra_attributes] - Additional raw HTML attributes applied to the <img> element
 
-  @example
-  {% render 'image', image: product.featured_image, url: product.url %}
+    @example
+    {% render 'image', image: product.featured_image, url: product.url %}
   {% render 'image',
     image: product.featured_image,
     url: product.url,
@@ -39,55 +39,59 @@
 {% enddoc %}
 
 {%- liquid
-  if wrapper == blank
-    if url != blank
-      assign wrapper = 'a'
-    else
-      assign wrapper = 'div'
+    if wrapper == blank
+        if url != blank
+            assign wrapper = 'a'
+        else
+            assign wrapper = 'div'
+        endif
     endif
-  endif
 
-  if width == blank
-    assign width = 1440
-  endif
+    if width == blank
+        assign width = 1440
+    endif
 
-  assign widths = widths | default: '165,360,535,750,1100,1500,2000'
-  assign sizes = sizes | default: '100vw'
+    assign widths = widths | default: '165,360,535,750,1100,1500,2000'
+    assign sizes = sizes | default: '100vw'
 
-  assign loading = loading | default: 'lazy'
-  assign decoding = decoding | default: 'async'
-  assign aspect_ratio = aspect_ratio
-  if aspect_ratio == blank and image != blank and image.width and image.height
-    assign aspect_ratio = image.width | append: '/' | append: image.height    
-  endif
+    assign loading = loading | default: 'lazy'
+    assign decoding = decoding | default: 'async'
+    assign aspect_ratio = aspect_ratio
+    if aspect_ratio == blank and image != blank and image.width and image.height
+        assign aspect_ratio = image.width | append: '/' | append: image.height
+    endif
 
-  assign class = class | default: ''
-  assign img_class = img_class | default: 'image_img'
-  assign extra_attributes = extra_attributes | default: '' 
+    assign class = class | default: ''
+    assign img_class = img_class | default: 'image_img'
+    assign extra_attributes = extra_attributes | default: ''
 -%}
 
 {% liquid
-  unless height
-    assign width = width | default: image.width
-  endunless
+    unless height
+        assign width = width | default: image.width
+    endunless
 
-  if url
-    assign wrapper = 'a'
-  else
-    assign wrapper = 'div'
-  endif
+    if url
+        assign wrapper = 'a'
+    else
+        assign wrapper = 'div'
+    endif
 
-  assign placeholder_key = placeholder_key | default: 'image'
-  assign placeholder_class = placeholder_class | default: 'svg-placeholder'
+    assign placeholder_key = placeholder_key | default: 'image'
+    assign placeholder_class = placeholder_class | default: 'svg-placeholder'
 %}
 
 <{{ wrapper }}
-  class="image {% if class %} {{ class }} {% endif %}"
-  {% if url %} href="{{ url }}" {% endif %}
-  {%- if aspect_ratio -%} style="--aspect-ratio: {{ aspect_ratio }}" {%- endif -%}
+    class="image {% if class %} {{ class }} {% endif %}"
+    {% if url %}
+        href="{{ url }}"
+    {% endif %}
+    {%- if aspect_ratio -%}
+        style="--aspect-ratio: {{ aspect_ratio }}"
+    {%- endif -%}
 >
-  {%- if image != blank -%}
-    {%- capture image_tag_html -%}
+    {%- if image != blank -%}
+        {%- capture image_tag_html -%}
       {{ 
         image 
         | image_url: width: width, height: height, crop: crop 
@@ -101,42 +105,42 @@
       }}  
     {%- endcapture -%}
 
-    {%- if extra_attributes != blank -%}
-      {{ image_tag_html | replace_first: '>', ' ' | append: extra_attributes | append: '>' }}
+        {%- if extra_attributes != blank -%}
+            {{ image_tag_html | replace_first: '>', ' ' | append: extra_attributes | append: '>' }}
+        {%- else -%}
+            {{ image_tag_html }}
+        {%- endif -%}
     {%- else -%}
-      {{ image_tag_html }}
+        {{ placeholder_key | placeholder_svg_tag: placeholder_class }}
     {%- endif -%}
-  {%- else -%}
-    {{ placeholder_key | placeholder_svg_tag: placeholder_class }}
-  {%- endif -%}
 </{{ wrapper }}>
 
 {% stylesheet %}
-  .image {
-    display: block;
-    position: relative;
-    overflow: hidden;
-    width: 100%;
-    aspect-ratio: var(--aspect-ratio);
-    height: 100%;
-  }
+    .image {
+        display: block;
+        position: relative;
+        overflow: hidden;
+        width: 100%;
+        aspect-ratio: var(--aspect-ratio);
+        height: 100%;
+    }
 
-  .image > .image_img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
+    .image > .image_img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
 
-  .svg-placeholder{
-    width: 100%;
-    height: 100%;
-    display: block;
-  }
+    .svg-placeholder {
+        width: 100%;
+        height: 100%;
+        display: block;
+    }
 
-  .svg-placeholder svg {
-    width: 100%;
-    height: 100%;
-    display: block;
-  }
+    .svg-placeholder svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+    }
 {% endstylesheet %}
