@@ -11,6 +11,7 @@ description: Enforces this Shopify theme's front-end architecture — Tailwind C
 2. **JavaScript** — NEVER write inline `<script>` tags, bare DOM listeners, or global code. All JS must go through `Components.register()` inside a `{%- javascript -%}` block.
 3. **State** — Use Alpine.js. `x-data` for local UI state; `Alpine.store()` for global shared state.
 4. **HTML** — Semantic elements (`<article>`, `<nav>`, `<aside>`, etc.). Root of every section component must carry the three data attributes that bind it to the engine.
+5. **SVG** - Prefer the repository SVG asset workflow for reusable icons instead of duplicating inline SVG markup.
 
 ---
 
@@ -219,6 +220,14 @@ Both systems can live on the same element. The engine handles lifecycle (GSAP, S
 ---
 
 ## Tailwind CSS
+
+### Tailwind Class Authoring
+
+1. Prefer existing project class patterns over inventing new utility combinations.
+2. Keep inline utility usage readable; if a class string becomes repeated or structurally important across sections, move it into the proper CSS layer.
+3. Do not introduce ad-hoc custom CSS when Tailwind utilities already express the intent clearly.
+4. Avoid overly complex dynamic class expressions in Liquid. If a class value has defaults or conditions, prefer assigning it in Liquid first, then render a simpler attribute.
+5. Let the repository formatter and Tailwind plugin control class ordering. Do not manually reorder classes based on personal preference.
 
 ### Configuration (v4, CSS-based)
 
