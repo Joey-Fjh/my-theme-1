@@ -83,14 +83,14 @@ document.addEventListener('alpine:init', () => {
 ## Script Load Order (layout/theme.liquid)
 
 ```
-1. gsap.js                    (GSAP core)
-2. gsap-ScrollTrigger.js      (ScrollTrigger plugin)
-3. swiper.js                  (Swiper carousel)
+1. vendor-gsap.min.js                    (GSAP core)
+2. vendor-gsap-scrolltrigger.min.js      (ScrollTrigger plugin)
+3. vendor-swiper.min.js                  (Swiper carousel)
 4. utils.js                   (Theme utilities)
 5. alpine.components.js       (Alpine component definitions)
 6. base.js                    (Components engine + Alpine init)
-7. alpine-intersect.js        (Alpine Intersect plugin)
-8. alpine.js                  (Alpine core — MUST be last)
+7. vendor-alpine-intersect.min.js        (Alpine Intersect plugin)
+8. vendor-alpine.min.js                  (Alpine core — MUST be last)
 ```
 
 All scripts use `defer`.

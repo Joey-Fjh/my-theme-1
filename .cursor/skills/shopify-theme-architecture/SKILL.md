@@ -184,7 +184,7 @@ destroy(el, state) {
 ### Loading Order
 
 Scripts load in this order (all `defer`):
-`gsap` → `ScrollTrigger` → `swiper` → `utils.js` → `alpine.components.js` → `base.js` → `alpine-intersect` → `alpine.js`
+`vendor-gsap.min.js` → `vendor-gsap-scrolltrigger.min.js` → `vendor-swiper.min.js` → `utils.js` → `alpine.components.js` → `base.js` → `vendor-alpine-intersect.min.js` → `vendor-alpine.min.js`
 
 Alpine must load **last** so all `Alpine.data()` registrations happen during `alpine:init`.
 
@@ -257,7 +257,7 @@ Input: `assets/tailwind.input.css` → Output: `assets/tailwind.output.css`
 
 | Layer | File | Purpose |
 |-------|------|---------|
-| base | `swiper.css`, `base.css` | Resets, typography, section utilities |
+| base | `vendor-swiper.min.css`, `base.css` | Resets, typography, section utilities |
 | elements | `tailwind.elements.css` | Atomic UI units (`container-page`, `surface`, `icons`, `links`) |
 | components | `tailwind.components.css` | Composite modules (`.dropdown`, `.localization-switcher`) |
 | utilities | `tailwind.utilities.css` | Layout helpers |
