@@ -5,8 +5,27 @@
 
     @param {string} [text] - The watermark text to render. Defaults to brand name.
     @param {string} [container_class] - Optional additional classes for the outer container.
-    @param {string} [text_class] - Optional additional classes for the text element.
-    @param {string} [html_attr] - Optional raw HTML attributes to forward to the text element (for example, data-gsap-* attributes).
+    @param {string} [svg_class] - Optional additional classes for the SVG element.
+    @param {string} [text_class] - Optional additional classes for the SVG text element.
+    @param {string} [html_attr] - Optional raw HTML attributes to forward to the outer container (for example, data-gsap-* attributes).
+    @param {string} [svg_attr] - Optional raw HTML attributes to forward to the SVG element.
+    @param {string} [text_attr] - Optional raw HTML attributes to forward to the SVG text element.
+    @param {number} [font_size] - Base font size for watermark text in SVG units.
+
+    Defaults to `view_box_height * 0.9`.
+
+    @param {number} [baseline_y] - Baseline Y position for text in SVG units.
+
+    Defaults to `view_box_height * 0.825`.
+
+    @param {number} [text_length] - Width target used by textLength.
+
+    Defaults to `view_box_width`.
+
+    @param {number} [view_box_width] - SVG viewBox width. Defaults to 1200.
+    @param {number} [view_box_height] - SVG viewBox height. Defaults to 200.
+    @param {string} [length_adjust] - SVG length adjust mode. Defaults to spacing.
+    @param {string} [preserve_aspect_ratio] - SVG preserveAspectRatio value. Defaults to xMinYMid meet.
 
     @example
     {% render 'background-watermark',
@@ -16,6 +35,31 @@
     html_attr: 'data-gsap-trigger'
   %}
 {% enddoc %}
+{%- liquid
+    assign watermark_view_box_width = view_box_width | default: 1200
+    assign watermark_view_box_height = view_box_height | default: 200
+
+    if font_size == blank
+        assign watermark_font_size = watermark_view_box_height | times: 9 | divided_by: 10
+    else
+        assign watermark_font_size = font_size
+    endif
+
+    if baseline_y == blank
+        assign watermark_baseline_y = watermark_view_box_height | times: 33 | divided_by: 40
+    else
+        assign watermark_baseline_y = baseline_y
+    endif
+
+    if text_length == blank
+        assign watermark_text_length = watermark_view_box_width
+    else
+        assign watermark_text_length = text_length
+    endif
+
+    assign watermark_length_adjust = length_adjust | default: 'spacing'
+    assign watermark_preserve_aspect_ratio = preserve_aspect_ratio | default: 'xMinYMid meet'
+-%}
 
 <div
     class="{{ container_class }}"
@@ -24,7 +68,28 @@
         {{- html_attr -}}
     {% endif %}
 >
-    <span class="{{ text_class }}">
-        {{ text | default: 'Eccenova®' }}
-    </span>
+    <svg
+        class="block h-auto w-full {{ svg_class }}"
+        viewBox="0 0 {{ watermark_view_box_width }} {{ watermark_view_box_height }}"
+        preserveAspectRatio="{{ watermark_preserve_aspect_ratio }}"
+        role="presentation"
+        focusable="false"
+        {% if svg_attr != blank %}
+            {{- svg_attr -}}
+        {% endif %}
+    >
+        <text
+            x="0"
+            y="{{ watermark_baseline_y }}"
+            font-size="{{ watermark_font_size }}"
+            textLength="{{ watermark_text_length }}"
+            lengthAdjust="{{ watermark_length_adjust }}"
+            class="fill-current font-heading {{ text_class }}"
+            {% if text_attr != blank %}
+                {{- text_attr -}}
+            {% endif %}
+        >
+            {{ text | default: 'Eccenova®' | escape }}
+        </text>
+    </svg>
 </div>
