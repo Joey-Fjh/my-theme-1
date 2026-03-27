@@ -1,6 +1,10 @@
 <header
     data-section-id="{{ section.id }}"
-    class="header-section full-width color-{{ section.settings.color_scheme }} transition-all duration-300 ease-in-out"
+    class="
+        header-section full-width
+        color-{{ section.settings.mobile_color_scheme }}
+        pc:color-{{ section.settings.color_scheme }}
+    "
     x-data="stickyHeader"
     :class="
         {
@@ -12,17 +16,22 @@
 >
     <div class="container-page">
         <div class="header__cols-3 grid py-3">
+            <div style="grid-area: mobile-menu">
+                {%- render 'icons', color: 'current', icon: 'icon-menu', class: 'ml-3 h-10 w-10' -%}
+            </div>
+
             <div style="grid-area: logo">
                 {%- assign logo_alt = settings.logo.alt | default: shop.name | escape -%}
                 {%- assign logo_height = settings.logo_width
                     | divided_by: settings.logo.aspect_ratio
                 -%}
                 {%- capture sizes -%}
-          (max-width: {{ settings.logo_width | times: 2 }}px) 50vw, {{ settings.logo_width }}px
-        {%- endcapture -%}
+                    (max-width: {{ settings.logo_width | times: 2 }}px) 50vw, {{ settings.logo_width }}px
+                {%- endcapture -%}
+
                 {%- capture widths -%}
-          {{ settings.logo_width }},{{ settings.logo_width | times: 1.5 | round }},{{ settings.logo_width | times:2 }}
-        {%- endcapture -%}
+                    {{ settings.logo_width }},{{ settings.logo_width | times: 1.5 | round }},{{ settings.logo_width | times:2 }}
+                {%- endcapture -%}
 
                 {%- if settings.logo -%}
                     {% render 'image',
@@ -40,12 +49,13 @@
                         text: shop.name,
                         class: 'h2',
                         variant: 'underline',
-                        href: routes.root_url
+                        href: routes.root_url,
+                        color: 'current'
                     -%}
                 {%- endif -%}
             </div>
 
-            <div class="flex items-center justify-center" style="grid-area: menu">
+            <div class="flex items-center justify-center max-pc:hidden" style="grid-area: menu">
                 {%- if section.settings.menu_type == 'super' -%}
                     {%- render 'header-dropdown-super-menu' -%}
                 {%- else -%}
@@ -110,7 +120,7 @@
 
     .header-section {
         .header__cols-3 {
-            grid-template-areas: 'logo menu navigation';
+            grid-template-areas: 'mobile-menu logo menu navigation';
         }
     }
 {% endstylesheet %}
@@ -221,8 +231,8 @@
         },
         {
             "type": "color_scheme",
-            "id": "menu_color_scheme",
-            "label": "Menu Color Scheme",
+            "id": "mobile_color_scheme",
+            "label": "Mobile Color Scheme",
             "default": "color-scheme-1"
         },
         {
