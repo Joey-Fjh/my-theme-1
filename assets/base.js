@@ -2,6 +2,9 @@
     'use strict';
 
     class Base {
+        static resizeObserver = null;
+        static rafUpdateLayout = null;
+        static bindOnShopifySectionLayout = null;
         static initialized = false;
 
         static announcementBar = null;
@@ -13,40 +16,60 @@
 
         static init() {
             if (this.initialized) return;
-            this.initialized = true;
 
-            this.announcementBar = document.querySelector('.announcement-bar');
-            this.header = document.querySelector('.header');
+            this.initialized = true;
+            this.rafUpdateLayout = window.__Theme__.Utils.rafThrottle(this.updateLayout.bind(this));
+            this.bindOnShopifySectionLayout = this.onShopifySectionLayout.bind(this);
+
+            if (typeof ResizeObserver !== 'undefined') {
+                this.bindResizeTargets();
+            } else {
+                window.addEventListener('resize', this.rafUpdateLayout);
+            }
 
             this.updateLayout();
 
-            this.rafUpdateLayout = window.__Theme__.Utils.rafThrottle(this.updateLayout.bind(this));
-
-            window.addEventListener('resize', this.rafUpdateLayout);
-            window.addEventListener('scroll', this.rafUpdateLayout, {
-                passive: true,
-            });
-
             ['shopify:section:load', 'shopify:section:reorder', 'shopify:section:unload'].forEach(
-                (evt) => document.addEventListener(evt, this.rafUpdateLayout),
+                (evt) => document.addEventListener(evt, this.bindOnShopifySectionLayout),
             );
         }
 
+        static bindResizeTargets() {
+            if (typeof ResizeObserver === 'undefined') return;
+
+            if (!this.resizeObserver) {
+                this.resizeObserver = new ResizeObserver(this.rafUpdateLayout);
+            }
+
+            this.resizeObserver.disconnect();
+            this.refreshElements();
+
+            if (this.announcementBar) this.resizeObserver.observe(this.announcementBar);
+            if (this.header) this.resizeObserver.observe(this.header);
+        }
+
+        static onShopifySectionLayout() {
+            this.bindResizeTargets();
+            this.rafUpdateLayout();
+        }
+
+        static refreshElements() {
+            this.announcementBar = document.querySelector('.announcement-bar');
+            this.header = document.querySelector('.header');
+        }
+
         static updateLayout() {
+            this.refreshElements();
             this.updateAnnouncementBarHeight();
             this.updateHeaderHeight();
         }
 
         static updateAnnouncementBarHeight() {
-            if (!this.announcementBar) return this.setCSSVar('--announcement-bar-height', `0px`);
+            const announcementBarHeight = this.announcementBar
+                ? this.announcementBar.offsetHeight
+                : 0;
 
-            const rect = this.announcementBar.getBoundingClientRect();
-            const announcementHeight = Math.max(
-                0,
-                Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0),
-            );
-
-            this.setCSSVar('--announcement-bar-height', `${announcementHeight}px`);
+            this.setCSSVar('--announcement-bar-height', `${announcementBarHeight}px`);
         }
 
         static updateHeaderHeight() {
@@ -58,18 +81,24 @@
         static destroy() {
             if (!this.initialized) return;
 
-            window.removeEventListener('resize', this.rafUpdateLayout);
-            window.removeEventListener('scroll', this.rafUpdateLayout);
-
-            ['shopify:section:load', 'shopify:section:reorder', 'shopify:section:unload'].forEach(
-                (evt) => document.removeEventListener(evt, this.rafUpdateLayout),
-            );
-
-            if (typeof this.rafUpdateLayout?.dispose === 'function') {
-                this.rafUpdateLayout.dispose();
+            if (this.resizeObserver) {
+                this.resizeObserver.disconnect();
+                this.resizeObserver = null;
             }
 
+            if (this.rafUpdateLayout) {
+                this.rafUpdateLayout.dispose();
+
+                window.removeEventListener('resize', this.rafUpdateLayout);
+                this.rafUpdateLayout = null;
+            }
+
+            ['shopify:section:load', 'shopify:section:reorder', 'shopify:section:unload'].forEach(
+                (evt) => document.removeEventListener(evt, this.bindOnShopifySectionLayout),
+            );
+
             this.initialized = false;
+            this.bindOnShopifySectionLayout = null;
         }
     }
 
@@ -684,8 +713,11 @@
     }
 
     window.__Theme__ = window.__Theme__ || {};
+
+    window.__Theme__.Base = Base;
     window.__Theme__.Components = Components;
     window.__Theme__.ThemeRequest = ThemeRequest;
     window.__Theme__.SectionRefresher = SectionRefresher;
+
     Main.main();
 })();
