@@ -17,8 +17,19 @@
 >
     <div class="container-page">
         <div class="header__cols grid-cols-3 header__cols-{{ section.settings.logo_position }} grid py-3">
-            <div class="pc:hidden" style="grid-area: mobile-menu">
-                {%- render 'icons', color: 'current', icon: 'icon-menu', class: 'ml-3 h-10 w-10' -%}
+            <div class="flex items-center pc:hidden" style="grid-area: mobile-menu">
+                <button
+                    type="button"
+                    class="cursor-pointer"
+                    @click="$store.dialog.open('')"
+                    aria-label="Mobile Menu"
+                >
+                    {%- render 'icons',
+                        color: 'current',
+                        icon: 'icon-menu',
+                        class: 'ml-3 h-10 w-10'
+                    -%}
+                </button>
             </div>
 
             <div class="header-search hidden items-center justify-start" style="grid-area: search">
@@ -84,7 +95,7 @@
             >
                 <button
                     type="button"
-                    class="cursor-pointer"
+                    class="header-search__right cursor-pointer"
                     @click="$store.dialog.open('search-overlay-drawer')"
                     aria-label="Search"
                 >
@@ -100,14 +111,22 @@
                     {% render 'icons', icon: 'icon-cart', class: size_class, color: 'current' %}
                 </button>
 
-                <button
-                    type="button"
-                    class="cursor-pointer"
-                    @click="$store.dialog.open('account-overlay-drawer')"
-                    aria-label="Account"
-                >
+                {% assign account_href = routes.account_login_url %}
+                {% if customer %}
+                    {% assign account_href = routes.account_url %}
+                {% endif %}
+
+                {% capture link_content %}
                     {% render 'icons', icon: 'icon-account', class: 'h-10 w-10', color: 'current' %}
-                </button>
+                {% endcapture %}
+
+                {% render 'link',
+                    href: account_href,
+                    content: link_content,
+                    variant: 'plain',
+                    class: 'cursor-pointer',
+                    aria_label: 'Account'
+                %}
             </div>
         </div>
     </div>
@@ -161,10 +180,15 @@
                 grid-template-areas:
                     'search logo navigation'
                     '. menu .';
+                row-gap: 10px;
             }
 
             .header__cols-middle-center > .header-search {
                 display: flex;
+            }
+
+            .header__cols-middle-center .header-search__right {
+                display: none;
             }
 
             .header__cols-middle-center > .header-logo {
@@ -260,6 +284,12 @@
             "type": "color_scheme",
             "id": "color_scheme",
             "label": "Color Scheme",
+            "default": "color-scheme-1"
+        },
+        {
+            "type": "color_scheme",
+            "id": "menu_color_scheme",
+            "label": "Menu Color Scheme",
             "default": "color-scheme-1"
         },
         {

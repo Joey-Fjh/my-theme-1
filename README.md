@@ -26,7 +26,8 @@ my skeleton theme is based on the [Skeleton](http://getskeleton.com/) framework.
 
 - assets/tailwind.input.css: Tailwind v4 entrypoint and token bridge (@theme inline, breakpoints, and import orchestration)
 - assets/base.css: global reset and structural defaults (minimal, non-feature-specific)
-- assets/tailwind.elements.css: reusable design primitives (h1, body-md, surface, btn, field, links)
+- assets/tailwind.typography.css: semantic typography utilities (hxxxl-h6, body-xl-body-xs, heading/body base)
+- assets/tailwind.elements.css: reusable design primitives (surface, btn, field, links, icons, badges)
 - assets/tailwind.components.css: composite UI patterns (.dropdown, .localization-switcher, .tab-control-default)
 - assets/tailwind.snippets.css: snippet-scoped reusable UI blocks (.product-info-blocks and its context variants)
 - assets/tailwind.utilities.css: layout and placement helpers (container-page, place-\*)
