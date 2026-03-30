@@ -1,9 +1,10 @@
+{%- assign size_class = 'w-12 h-12' -%}
+
 <header
     data-section-id="{{ section.id }}"
     class="
         header-section full-width
-        color-{{ section.settings.mobile_color_scheme }}
-        pc:color-{{ section.settings.color_scheme }}
+        color-{{ section.settings.color_scheme }}
     "
     x-data="stickyHeader"
     :class="
@@ -15,12 +16,23 @@
     "
 >
     <div class="container-page">
-        <div class="header__cols-3 grid py-3">
+        <div class="header__cols grid-cols-3 header__cols-{{ section.settings.logo_position }} grid py-3">
             <div class="pc:hidden" style="grid-area: mobile-menu">
                 {%- render 'icons', color: 'current', icon: 'icon-menu', class: 'ml-3 h-10 w-10' -%}
             </div>
 
-            <div style="grid-area: logo">
+            <div class="header-search hidden items-center justify-start" style="grid-area: search">
+                <button
+                    type="button"
+                    class="cursor-pointer"
+                    @click="$store.dialog.open('search-overlay-drawer')"
+                    aria-label="Search"
+                >
+                    {% render 'icons', icon: 'icon-search', class: size_class, color: 'current' %}
+                </button>
+            </div>
+
+            <div class="header-logo flex items-center justify-start" style="grid-area: logo">
                 {%- assign logo_alt = settings.logo.alt | default: shop.name | escape -%}
                 {%- assign logo_height = settings.logo_width
                     | divided_by: settings.logo.aspect_ratio
@@ -55,7 +67,10 @@
                 {%- endif -%}
             </div>
 
-            <div class="flex items-center justify-center max-pc:hidden" style="grid-area: menu">
+            <div
+                class="header-menu flex items-center justify-center max-pc:hidden"
+                style="grid-area: menu"
+            >
                 {%- if section.settings.menu_type == 'super' -%}
                     {%- render 'header-dropdown-super-menu' -%}
                 {%- else -%}
@@ -63,9 +78,10 @@
                 {%- endif -%}
             </div>
 
-            <div class="flex items-center justify-end gap-3" style="grid-area:navigation">
-                {%- assign size_class = 'w-12 h-12' -%}
-
+            <div
+                class="header-navigation flex items-center justify-end gap-3"
+                style="grid-area:navigation"
+            >
                 <button
                     type="button"
                     class="cursor-pointer"
@@ -120,8 +136,40 @@
     }
 
     .header-section {
-        .header__cols-3 {
-            grid-template-areas: 'logo menu navigation';
+        .header__cols {
+            grid-template-areas: 'mobile-menu logo navigation';
+        }
+
+        @media (min-width: 48rem) {
+            .header__cols {
+                grid-template-areas: 'logo menu navigation';
+            }
+
+            .header__cols-middle {
+                grid-template-areas: 'menu logo navigation';
+            }
+
+            .header__cols-middle > .header-logo {
+                justify-content: center;
+            }
+
+            .header__cols-middle > .header-menu {
+                justify-content: start;
+            }
+
+            .header__cols-middle-center {
+                grid-template-areas:
+                    'search logo navigation'
+                    '. menu .';
+            }
+
+            .header__cols-middle-center > .header-search {
+                display: flex;
+            }
+
+            .header__cols-middle-center > .header-logo {
+                justify-content: center;
+            }
         }
     }
 {% endstylesheet %}
@@ -192,7 +240,7 @@
                     "label": "Left"
                 },
                 {
-                    "value": "Middle",
+                    "value": "middle",
                     "label": "Middle"
                 },
                 {
@@ -205,22 +253,6 @@
             "info": "Edit your logo in [theme settings](/editor?context=theme&category=logo)"
         },
         {
-            "type": "select",
-            "id": "mobile_logo_position",
-            "label": "Mobile Logo Position",
-            "options": [
-                {
-                    "value": "center",
-                    "label": "Center"
-                },
-                {
-                    "value": "left",
-                    "label": "Left"
-                }
-            ],
-            "default": "center"
-        },
-        {
             "type": "header",
             "content": "Color"
         },
@@ -228,12 +260,6 @@
             "type": "color_scheme",
             "id": "color_scheme",
             "label": "Color Scheme",
-            "default": "color-scheme-1"
-        },
-        {
-            "type": "color_scheme",
-            "id": "mobile_color_scheme",
-            "label": "Mobile Color Scheme",
             "default": "color-scheme-1"
         },
         {

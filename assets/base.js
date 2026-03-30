@@ -23,9 +23,9 @@
 
             if (typeof ResizeObserver !== 'undefined') {
                 this.bindResizeTargets();
-            } else {
-                window.addEventListener('resize', this.rafUpdateLayout);
             }
+
+            window.addEventListener('scroll', this.rafUpdateLayout, { passive: true });
 
             this.updateLayout();
 
@@ -65,11 +65,15 @@
         }
 
         static updateAnnouncementBarHeight() {
-            const announcementBarHeight = this.announcementBar
-                ? this.announcementBar.offsetHeight
-                : 0;
+            if (!this.announcementBar) return this.setCSSVar('--announcement-bar-height', `0px`);
 
-            this.setCSSVar('--announcement-bar-height', `${announcementBarHeight}px`);
+            const rect = this.announcementBar.getBoundingClientRect();
+            const announcementHeight = Math.max(
+                0,
+                Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0),
+            );
+
+            this.setCSSVar('--announcement-bar-height', `${announcementHeight}px`);
         }
 
         static updateHeaderHeight() {
@@ -89,7 +93,7 @@
             if (this.rafUpdateLayout) {
                 this.rafUpdateLayout.dispose();
 
-                window.removeEventListener('resize', this.rafUpdateLayout);
+                window.removeEventListener('scroll', this.rafUpdateLayout);
                 this.rafUpdateLayout = null;
             }
 
