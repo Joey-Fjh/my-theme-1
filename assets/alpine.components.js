@@ -23,6 +23,9 @@
 
             const enhancedCb = function (...args) {
                 const componentDefinition = cb.apply(this, args);
+                const ThemeEvents = window.__Theme__.Events;
+                const eventNames = ThemeEvents.events;
+                const unmountEvent = eventNames.COMPONENT_UNMOUNTED;
 
                 if (typeof componentDefinition.dispose !== 'function') {
                     return componentDefinition;
@@ -36,7 +39,7 @@
                         typeof this.on === 'function' &&
                         typeof this.destroy === 'function'
                     ) {
-                        this.on(this.$el, 'unmount', this.destroy.bind(this));
+                        this.on(this.$el, unmountEvent, this.destroy.bind(this));
                     }
 
                     if (originalInit) {
@@ -664,7 +667,7 @@
         }
 
         /**
-         * Reactive product price display — listens for variant:change and updates
+         * Reactive product price display — listens for PRODUCT_VARIANT_CHANGED and updates
          * the visible price / compare-at-price using Intl.NumberFormat.
          *
          * @param {Object}  opts
@@ -683,6 +686,7 @@
                 ...AlpineComponentsFactory.useDisposable(),
                 price,
                 comparePrice,
+                _eventScope: null,
 
                 get formattedPrice() {
                     return fmt.format(this.price / 100);
@@ -695,15 +699,23 @@
                 },
 
                 init() {
-                    this.on(window, 'variant:change', (e) => {
+                    const Events = window.__Theme__.Events;
+                    const events = Events.events;
+                    this._eventScope = Events.createScope();
+
+                    const onVariantChange = (e) => {
                         if (e.detail?.sectionId !== sectionId) return;
                         const v = e.detail.variant;
                         this.price = v?.price || 0;
                         this.comparePrice = v?.compare_at_price || 0;
-                    });
+                    };
+
+                    this._eventScope.on(events.PRODUCT_VARIANT_CHANGED, onVariantChange);
                 },
 
                 destroy() {
+                    this._eventScope?.dispose?.();
+                    this._eventScope = null;
                     this.dispose();
                 },
             };
@@ -729,8 +741,13 @@
                 selectedOptions: {},
                 currentVariant: null,
                 currentVariantId: null,
+                _eventScope: null,
 
                 init() {
+                    const Events = window.__Theme__.Events;
+                    const events = Events.events;
+                    this._eventScope = Events.createScope();
+
                     const jsonEl = document.getElementById(`ProductVariants-${this.sectionId}`);
                     if (jsonEl) {
                         try {
@@ -746,14 +763,16 @@
 
                     this.$nextTick(() => this._dispatchChange());
 
-                    this.on(window, 'variant-picker:set', (e) => {
+                    const onVariantSetRequest = (e) => {
                         if (e.detail?.sectionId !== this.sectionId) return;
                         if (e.detail.options) {
                             Object.assign(this.selectedOptions, e.detail.options);
                             this._resolveVariant();
                             this._dispatchChange();
                         }
-                    });
+                    };
+
+                    this._eventScope.on(events.PRODUCT_VARIANT_SET_REQUEST, onVariantSetRequest);
                 },
 
                 _optionNames: [],
@@ -805,25 +824,21 @@
 
                 _dispatchChange() {
                     const variant = this.currentVariant;
+                    const Events = window.__Theme__.Events;
+                    const events = Events.events;
+                    const detail = {
+                        sectionId: this.sectionId,
+                        productId: this.productId,
+                        variant,
+                    };
 
-                    window.dispatchEvent(
-                        new CustomEvent('variant:change', {
-                            detail: {
-                                sectionId: this.sectionId,
-                                productId: this.productId,
-                                variant,
-                            },
-                        }),
-                    );
+                    Events.emit(events.PRODUCT_VARIANT_CHANGED, detail);
 
                     if (variant?.featured_image?.position) {
-                        window.dispatchEvent(
-                            new CustomEvent('gallery:slide-to', {
-                                detail: {
-                                    index: variant.featured_image.position - 1,
-                                },
-                            }),
-                        );
+                        const galleryDetail = {
+                            index: variant.featured_image.position - 1,
+                        };
+                        Events.emit(events.PRODUCT_GALLERY_SLIDE_TO_REQUEST, galleryDetail);
                     }
 
                     this._updateUrl(variant);
@@ -851,6 +866,8 @@
                 },
 
                 destroy() {
+                    this._eventScope?.dispose?.();
+                    this._eventScope = null;
                     this.dispose();
                 },
             };
@@ -858,16 +875,18 @@
 
         /**
          * Reusable quantity selector with boundary clamping and toast feedback.
-         * Dispatches 'quantity:change' (bubbles) so parent contexts (cart, product)
+         * Dispatches PRODUCT_QUANTITY_CHANGED (bubbles) so parent contexts (cart, product)
          * can react without the component knowing the business layer.
-         * When sectionId is provided, auto-updates max from variant inventory via variant:change.
+         * When sectionId is provided, auto-updates max from variant inventory via
+         * PRODUCT_VARIANT_CHANGED.
          *
          * @param {Object}      opts
          * @param {number}      [opts.value=1]
          * @param {number}      [opts.min=1]
          * @param {number|null} [opts.max=null]    - null = unlimited
          * @param {number}      [opts.step=1]
-         * @param {string|null} [opts.sectionId=null] - when set, listens for variant:change to sync max with inventory
+         * @param {string|null} [opts.sectionId=null] - when set, listens for
+         * PRODUCT_VARIANT_CHANGED to sync max with inventory
          */
         static QuantitySelector({
             value = 1,
@@ -882,6 +901,7 @@
                 min,
                 max,
                 step,
+                _eventScope: null,
 
                 get canDecrement() {
                     return this.qty > this.min;
@@ -892,7 +912,11 @@
 
                 init() {
                     if (!sectionId) return;
-                    this.on(window, 'variant:change', (e) => {
+                    const Events = window.__Theme__.Events;
+                    const events = Events.events;
+                    this._eventScope = Events.createScope();
+
+                    const onVariantChange = (e) => {
                         if (e.detail?.sectionId !== sectionId) return;
                         const variant = e.detail.variant;
                         if (!variant) return;
@@ -908,7 +932,9 @@
                             this.qty = this.max;
                             this._notify();
                         }
-                    });
+                    };
+
+                    this._eventScope.on(events.PRODUCT_VARIANT_CHANGED, onVariantChange);
                 },
 
                 increment() {
@@ -951,7 +977,13 @@
                 },
 
                 _notify() {
-                    this.$dispatch('quantity:change', { value: this.qty });
+                    const Events = window.__Theme__.Events;
+                    const events = Events.events;
+                    const detail = { value: this.qty };
+                    Events.emit(events.PRODUCT_QUANTITY_CHANGED, detail, {
+                        target: this.$el,
+                        bubbles: true,
+                    });
                 },
 
                 _toast(msg) {
@@ -959,13 +991,15 @@
                 },
 
                 destroy() {
+                    this._eventScope?.dispose?.();
+                    this._eventScope = null;
                     if (sectionId) this.dispose();
                 },
             };
         }
 
         /**
-         * Product buy-buttons — syncs with VariantPicker via variant:change,
+         * Product buy-buttons — syncs with VariantPicker via PRODUCT_VARIANT_CHANGED,
          * handles AJAX add-to-cart through $store.cart, and shows toast feedback.
          *
          * @param {Object}      opts
@@ -982,6 +1016,7 @@
                 available,
                 variantId,
                 isLoading: false,
+                _eventScope: null,
 
                 get buttonText() {
                     if (!this.variantId) return 'Unavailable';
@@ -990,12 +1025,18 @@
                 },
 
                 init() {
-                    this.on(window, 'variant:change', (e) => {
+                    const Events = window.__Theme__.Events;
+                    const events = Events.events;
+                    this._eventScope = Events.createScope();
+
+                    const onVariantChange = (e) => {
                         if (e.detail?.sectionId !== this.sectionId) return;
                         const variant = e.detail.variant;
                         this.variantId = variant?.id || null;
                         this.available = variant?.available || false;
-                    });
+                    };
+
+                    this._eventScope.on(events.PRODUCT_VARIANT_CHANGED, onVariantChange);
                 },
 
                 _getQuantity() {
@@ -1036,6 +1077,8 @@
                 },
 
                 destroy() {
+                    this._eventScope?.dispose?.();
+                    this._eventScope = null;
                     this.dispose();
                 },
             };
@@ -1449,7 +1492,7 @@
          *   - activeIndex tracking (shared across thumb clicks, swiper, and lightbox)
          *   - Swiper lifecycle for carousel mode
          *   - Lightbox open/close with keyboard nav
-         *   - External variant-mapping via gallery:slide-to event
+         *   - External variant-mapping via PRODUCT_GALLERY_SLIDE_TO_REQUEST event
          */
         static productGallery() {
             return {
@@ -1459,15 +1502,21 @@
                 zoomOpen: false,
                 zoomIndex: 0,
                 _swiper: null,
+                _eventScope: null,
 
                 init() {
                     this.imageCount = Number(this.$el.dataset.imageCount) || 0;
                     this.$nextTick(() => this._initSwiper());
+                    const Events = window.__Theme__.Events;
+                    const events = Events.events;
+                    this._eventScope = Events.createScope();
 
-                    this.on(window, 'gallery:slide-to', (e) => {
+                    const onSlideToRequest = (e) => {
                         if (e.detail?.id && e.detail.id !== this.$el.id) return;
                         if (typeof e.detail?.index === 'number') this.setActive(e.detail.index);
-                    });
+                    };
+
+                    this._eventScope.on(events.PRODUCT_GALLERY_SLIDE_TO_REQUEST, onSlideToRequest);
                 },
 
                 setActive(index) {
@@ -1526,6 +1575,8 @@
                 },
 
                 destroy() {
+                    this._eventScope?.dispose?.();
+                    this._eventScope = null;
                     if (this._swiper?.destroy) this._swiper.destroy(true, true);
                     if (this.zoomOpen) this.closeZoom();
                     this.dispose();

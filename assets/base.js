@@ -353,7 +353,8 @@
 
             this.observer = new MutationObserver((mutations) => {
                 const toDestroy = new Set();
-                const unmountEvent = new CustomEvent('unmount', {
+                const eventNames = window.__Theme__.Events.events;
+                const unmountEvent = new CustomEvent(eventNames.COMPONENT_UNMOUNTED, {
                     bubbles: false,
                 });
 
