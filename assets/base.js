@@ -483,6 +483,7 @@
                     if (Factory && Comps) {
                         Factory.init?.(window.Alpine);
                         Factory.register?.(Comps.DROPDOWN, Comps.dropdown);
+                        Factory.register?.(Comps.MOBILEMENUDRAWER, Comps.mobileMenuDrawer);
                         Factory.register?.(Comps.DRAGSCROLL, Comps.dragScroll);
                         Factory.register?.(Comps.STICKY_HEADER, Comps.stickyHeader);
                         Factory.register?.(Comps.TABCONTROL, Comps.tabControl);
