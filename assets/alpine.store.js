@@ -18,7 +18,9 @@
              */
             show(message, type = 'info', duration = 3000) {
                 const id = Date.now() + Math.random().toString(36).substring(2);
+
                 this.messages.push({ id, message, type });
+
                 if (duration > 0) {
                     setTimeout(() => {
                         this.remove(id);
@@ -33,11 +35,14 @@
             active: null,
             open(id) {
                 if (typeof id !== 'string' || !id.trim()) return;
+
                 this.active = id.trim();
+
                 document.body.style.overflow = 'hidden';
             },
             close() {
                 this.active = null;
+
                 document.body.style.overflow = '';
             },
         },
@@ -47,10 +52,8 @@
             item_count: 0,
             loading: false,
 
-            /** Default request headers for Cart Ajax API */
-            _headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json',
+            _getHttp() {
+                return window.ShopifyHttp;
             },
 
             /**
@@ -59,6 +62,7 @@
              */
             init(data = {}) {
                 if (!data || typeof data !== 'object') return;
+
                 this.items = Array.isArray(data.items) ? data.items : [];
                 this.item_count = typeof data.item_count === 'number' ? data.item_count : 0;
                 this.total_price = typeof data.total_price === 'number' ? data.total_price : 0;
@@ -69,21 +73,21 @@
              * @returns {Promise<Object>} Resolved with cart data or rejects on failure.
              */
             fetchCart() {
+                const Http = this._getHttp();
+
+                if (!Http?.getJSON) return Promise.reject(new Error('Http client unavailable'));
+
                 this.loading = true;
-                return fetch('/cart.js', {
-                    method: 'GET',
-                    headers: this._headers,
+
+                return Http.getJSON('/cart.js', {
                     credentials: 'same-origin',
                 })
-                    .then((res) => {
-                        if (!res.ok) throw new Error('Cart fetch failed');
-                        return res.json();
-                    })
                     .then((data) => {
                         this.items = Array.isArray(data.items) ? data.items : [];
                         this.item_count = typeof data.item_count === 'number' ? data.item_count : 0;
                         this.total_price =
                             typeof data.total_price === 'number' ? data.total_price : 0;
+
                         return data;
                     })
                     .finally(() => {
@@ -98,27 +102,29 @@
              * @returns {Promise<Object>} Resolved with add response or rejects on failure.
              */
             add(items, sections = []) {
+                const Http = this._getHttp();
+
+                if (!Http?.postJSON) return Promise.reject(new Error('Http client unavailable'));
+
                 if (!Array.isArray(items) || items.length === 0)
                     return Promise.reject(new Error('items required'));
+
                 this.loading = true;
                 const body = { items };
+
                 if (Array.isArray(sections) && sections.length > 0) {
                     body.sections = sections.join(',');
                 }
-                return fetch('/cart/add.js', {
-                    method: 'POST',
-                    headers: this._headers,
+
+                return Http.postJSON('/cart/add.js', body, {
                     credentials: 'same-origin',
-                    body: JSON.stringify(body),
                 })
-                    .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
-                    .then(({ ok, data }) => {
-                        if (!ok) return Promise.reject(data);
+                    .then((data) => {
                         if (
                             data.sections &&
-                            typeof window.__Theme__?.SectionRefresher?.render === 'function'
+                            typeof window.ShopifySectionRefresher?.render === 'function'
                         ) {
-                            window.__Theme__.SectionRefresher.render(data.sections);
+                            window.ShopifySectionRefresher.render(data.sections);
                         }
                         return this.fetchCart().then(() => data);
                     })
@@ -128,13 +134,9 @@
                     });
             },
 
-            /**
-             * 修改购物车商品数量
-             * @param {Number|String} lineOrId - 传数字为 line 序号，传字符串为 item.key (推荐)
-             * @param {Number} quantity - 目标数量 (0 为删除)
-             * @param {Array} sections - 需要 SRA 局部刷新的 Section ID 数组
-             */
             change(lineOrId, quantity, sections = []) {
+                const Http = this._getHttp();
+                if (!Http?.postJSON) return Promise.reject(new Error('Http client unavailable'));
                 this.loading = true;
                 const bodyData = { quantity: Number(quantity) };
                 if (typeof lineOrId === 'string') {
@@ -145,39 +147,15 @@
                 if (Array.isArray(sections) && sections.length > 0) {
                     bodyData.sections = sections.join(',');
                 }
-                return fetch('/cart/change.js', {
-                    method: 'POST',
-                    headers: {
-                        ...this._headers,
-                        'Content-Type': 'application/json',
-                        Accept: 'application/json',
-                    },
+                return Http.postJSON('/cart/change.js', bodyData, {
                     credentials: 'same-origin',
-                    body: JSON.stringify(bodyData),
                 })
-                    .then((res) => {
-                        if (!res.ok) throw res;
-                        return res.json();
-                    })
                     .then((parsedState) => {
-                        if (parsedState.sections && Array.isArray(sections)) {
-                            sections.forEach((sectionId) => {
-                                const targetElement = document.getElementById(
-                                    `shopify-section-${sectionId}`,
-                                );
-                                if (targetElement && parsedState.sections[sectionId]) {
-                                    const html = new DOMParser().parseFromString(
-                                        parsedState.sections[sectionId],
-                                        'text/html',
-                                    );
-                                    const sourceElement = html.getElementById(
-                                        `shopify-section-${sectionId}`,
-                                    );
-                                    if (sourceElement) {
-                                        targetElement.innerHTML = sourceElement.innerHTML;
-                                    }
-                                }
-                            });
+                        if (
+                            parsedState.sections &&
+                            typeof window.ShopifySectionRefresher?.render === 'function'
+                        ) {
+                            window.ShopifySectionRefresher.render(parsedState.sections);
                         }
                         this.items = Array.isArray(parsedState.items) ? parsedState.items : [];
                         this.item_count =
@@ -188,20 +166,7 @@
                                 : 0;
                         return parsedState;
                     })
-                    .catch((err) => {
-                        if (err && typeof err.json === 'function') {
-                            return err
-                                .json()
-                                .then((data) =>
-                                    this._handleError({
-                                        ...data,
-                                        status: err.status,
-                                    }),
-                                )
-                                .catch(() => this._handleError({ status: err.status }));
-                        }
-                        return this._handleError(err);
-                    })
+                    .catch(this._handleError)
                     .finally(() => {
                         this.loading = false;
                     });
@@ -213,25 +178,22 @@
              * @returns {Promise<Object>}
              */
             clear(sections = []) {
+                const Http = this._getHttp();
+                if (!Http?.postJSON) return Promise.reject(new Error('Http client unavailable'));
                 this.loading = true;
                 const bodyData = {};
                 if (Array.isArray(sections) && sections.length > 0) {
                     bodyData.sections = sections.join(',');
                 }
-                return fetch('/cart/clear.js', {
-                    method: 'POST',
-                    headers: this._headers,
+                return Http.postJSON('/cart/clear.js', bodyData, {
                     credentials: 'same-origin',
-                    body: JSON.stringify(bodyData),
                 })
-                    .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
-                    .then(({ ok, data }) => {
-                        if (!ok) return Promise.reject(data);
+                    .then((data) => {
                         if (
                             data.sections &&
-                            typeof window.__Theme__?.SectionRefresher?.render === 'function'
+                            typeof window.ShopifySectionRefresher?.render === 'function'
                         ) {
-                            window.__Theme__.SectionRefresher.render(data.sections);
+                            window.ShopifySectionRefresher.render(data.sections);
                         }
                         this.items = Array.isArray(data.items) ? data.items : [];
                         this.item_count = typeof data.item_count === 'number' ? data.item_count : 0;
@@ -251,18 +213,12 @@
              * @returns {Promise<Object>}
              */
             update(data) {
+                const Http = this._getHttp();
+                if (!Http?.postJSON) return Promise.reject(new Error('Http client unavailable'));
                 this.loading = true;
-                return fetch('/cart/update.js', {
-                    method: 'POST',
-                    headers: this._headers,
+                return Http.postJSON('/cart/update.js', data, {
                     credentials: 'same-origin',
-                    body: JSON.stringify(data),
                 })
-                    .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
-                    .then(({ ok, data }) => {
-                        if (!ok) return Promise.reject(data);
-                        return data;
-                    })
                     .catch(this._handleError)
                     .finally(() => {
                         this.loading = false;
@@ -276,12 +232,14 @@
              */
             _handleError(err) {
                 let finalMsg = 'Something went wrong. Please try again.';
+                const data = err?.data && typeof err.data === 'object' ? err.data : null;
+                const status = err?.status ?? data?.status;
 
-                if (err?.description || err?.message) {
-                    finalMsg = err.description || err.message;
-                } else if (err?.status) {
-                    if (err.status === 429) finalMsg = 'Too many requests. Please slow down.';
-                    if (err.status >= 500) finalMsg = 'Server error. Please try again later.';
+                if (data?.description || err?.description || err?.message) {
+                    finalMsg = data?.description || err.description || err.message;
+                } else if (status) {
+                    if (status === 429) finalMsg = 'Too many requests. Please slow down.';
+                    if (status >= 500) finalMsg = 'Server error. Please try again later.';
                 }
 
                 const toast = window.Alpine?.store('toast');

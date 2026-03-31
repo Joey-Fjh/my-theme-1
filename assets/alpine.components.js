@@ -11,6 +11,7 @@
 
         static register(name, cb) {
             if (!this.#alpine) throw new Error('AlpineComponentsFactory not initialized');
+
             if (typeof name !== 'string' || !name.trim())
                 throw new Error('Component name must be a non-empty string');
 
@@ -23,6 +24,7 @@
 
             const enhancedCb = function (...args) {
                 const componentDefinition = cb.apply(this, args);
+
                 const ThemeEvents = window.__Theme__.Events;
                 const eventNames = ThemeEvents.events;
                 const unmountEvent = eventNames.COMPONENT_UNMOUNTED;
@@ -60,6 +62,7 @@
             return {
                 on(target, event, handler, options) {
                     if (!target || typeof target.addEventListener !== 'function') return;
+
                     target.addEventListener(event, handler, options);
                     disposers.push(() => target.removeEventListener(event, handler, options));
                 },
@@ -532,9 +535,9 @@
                  * @param {boolean} updateHistory
                  */
                 _executeFetch(url, updateHistory) {
-                    const ThemeRequest = window.__Theme__?.ThemeRequest;
-                    const SectionRefresher = window.__Theme__?.SectionRefresher;
-                    if (!ThemeRequest || !SectionRefresher) return;
+                    const Http = window.ShopifyHttp;
+                    const SectionRefresher = window.ShopifySectionRefresher;
+                    if (!Http || !SectionRefresher) return;
 
                     if (this.abortController) this.abortController.abort();
                     this.abortController = new AbortController();
@@ -545,7 +548,7 @@
                     const fetchUrl =
                         url + sep + 'sections=' + ids.map(encodeURIComponent).join(',');
 
-                    ThemeRequest.getJSON(fetchUrl, {
+                    Http.getJSON(fetchUrl, {
                         signal: activeController.signal,
                     })
                         .then((data) => {
@@ -562,7 +565,7 @@
                             }
                         })
                         .catch((err) => {
-                            if (err?.name === 'AbortError') return;
+                            if (err?.isAbort || err?.name === 'AbortError') return;
                             if (updateHistory) window.location.href = url;
                         })
                         .finally(() => {
@@ -1213,20 +1216,18 @@
                         );
                     }
 
-                    const ThemeRequest = window.__Theme__?.ThemeRequest;
+                    const Http = window.ShopifyHttp;
 
-                    const request = ThemeRequest
-                        ? ThemeRequest.getJSON(url.toString(), {
-                              signal: controller.signal,
-                          })
-                        : fetch(url.toString(), {
-                              method: 'GET',
-                              headers: { Accept: 'application/json' },
-                              signal: controller.signal,
-                          }).then((res) => {
-                              if (!res.ok) throw new Error('Predictive search failed');
-                              return res.json();
-                          });
+                    if (!Http?.getJSON) {
+                        this.isLoading = false;
+                        this._resetResults();
+                        this.hasEmptyState = true;
+                        return;
+                    }
+
+                    const request = Http.getJSON(url.toString(), {
+                        signal: controller.signal,
+                    });
 
                     request
                         .then((data) => {
@@ -1296,7 +1297,7 @@
                             }
                         })
                         .catch((err) => {
-                            if (err.name === 'AbortError') return;
+                            if (err?.isAbort || err?.name === 'AbortError') return;
                             console.error(err);
                             const toast = this.$store?.toast || window.Alpine?.store?.('toast');
                             if (toast?.show) {
@@ -1421,26 +1422,22 @@
                     this._abortController = new AbortController();
                     const ctrl = this._abortController;
 
-                    const ThemeRequest = window.__Theme__?.ThemeRequest;
-                    const SectionRefresher = window.__Theme__?.SectionRefresher;
+                    const Http = window.ShopifyHttp;
+                    const SectionRefresher = window.ShopifySectionRefresher;
 
-                    const request = ThemeRequest
-                        ? ThemeRequest.fetchWithTimeout(this.url, {
-                              method: 'GET',
-                              headers: { Accept: 'text/html' },
-                              signal: ctrl.signal,
-                          })
-                        : fetch(this.url, {
-                              method: 'GET',
-                              headers: { Accept: 'text/html' },
-                              signal: ctrl.signal,
-                          });
+                    if (!Http?.request) {
+                        this.loaded = false;
+                        return;
+                    }
+
+                    const request = Http.request(this.url, {
+                        method: 'GET',
+                        headers: { Accept: 'text/html' },
+                        signal: ctrl.signal,
+                    });
 
                     request
-                        .then((res) => {
-                            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                            return res.text();
-                        })
+                        .then((res) => res.text())
                         .then((html) => {
                             if (!SectionRefresher || !this.sectionId) return;
 
@@ -1455,7 +1452,7 @@
                             SectionRefresher.render(sections, domMap);
                         })
                         .catch((err) => {
-                            if (err?.name === 'AbortError') return;
+                            if (err?.isAbort || err?.name === 'AbortError') return;
                             console.error('Related products load failed:', err);
                             // allow retry if needed
                             this.loaded = false;
@@ -1679,16 +1676,15 @@
 
                     try {
                         const formData = new FormData(form);
-                        const response = await fetch(form.action, {
+                        const Http = window.ShopifyHttp;
+                        if (!Http?.request) throw new Error('Http client unavailable');
+
+                        const response = await Http.request(form.action, {
                             method: 'POST',
                             body: formData,
                             headers: { Accept: 'text/html' },
                             credentials: 'same-origin',
                         });
-
-                        if (!response.ok) {
-                            throw new Error('Newsletter request failed');
-                        }
 
                         window.Alpine?.store('toast')?.show?.(this.successMessage, 'success');
                         form.reset();
