@@ -20,18 +20,18 @@ my skeleton theme is based on the [Skeleton](http://getskeleton.com/) framework.
    snippets/css-variables.liquid outputs CSS custom properties from Shopify settings and color schemes.
 
 2. Tailwind Theme Bridge (v4)
-   assets/tailwind.input.css maps runtime variables into Tailwind theme tokens (@theme inline).
+   tailwind/tailwind.input.css maps runtime variables into Tailwind theme tokens (@theme inline).
 
 3. Usage Layers
 
-- assets/tailwind.input.css: Tailwind v4 entrypoint and token bridge (@theme inline, breakpoints, and import orchestration)
+- tailwind/tailwind.input.css: Tailwind v4 entrypoint and token bridge (@theme inline, breakpoints, and import orchestration)
 - assets/base.css: global reset and structural defaults (minimal, non-feature-specific)
-- assets/tailwind.typography.css: semantic typography utilities (hxxxl-h6, body-xl-body-xs, heading/body base)
-- assets/tailwind.elements.css: reusable design primitives (surface, btn, field, links, icons, badges)
-- assets/tailwind.components.css: composite UI patterns (.dropdown, .localization-switcher, .tab-control-default)
-- assets/tailwind.snippets.css: snippet-scoped reusable UI blocks (.product-info-blocks and its context variants)
-- assets/tailwind.utilities.css: layout and placement helpers (container-page, place-\*)
-- assets/tailwind.animates.css: shared motion tokens and animation utilities (keyframes, icons-animate-\*, animate-spin-slow)
+- tailwind/tailwind.typography.css: semantic typography utilities (hxxxl-h6, body-xl-body-xs, heading/body base)
+- tailwind/tailwind.elements.css: reusable design primitives (surface, btn, field, links, icons, badges)
+- tailwind/tailwind.components.css: composite UI patterns (.dropdown, .localization-switcher, .tab-control-default)
+- tailwind/tailwind.snippets.css: snippet-scoped reusable UI blocks (.product-info-blocks and its context variants)
+- tailwind/tailwind.utilities.css: layout and placement helpers (container-page, place-\*)
+- tailwind/tailwind.animates.css: shared motion tokens and animation utilities (keyframes, icons-animate-\*, animate-spin-slow)
 - assets/tailwind.output.css: generated compiled CSS artifact (build output, do not edit manually)
 
 4. Token Mapping Table (Source -> Bridge -> Consumption)
