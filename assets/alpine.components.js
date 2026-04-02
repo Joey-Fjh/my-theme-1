@@ -84,6 +84,7 @@
 
     class AlpineComponents {
         static DROPDOWN = 'dropdown';
+        static MOBILEMENUDRAWER = 'mobileMenuDrawer';
         static DRAGSCROLL = 'dragScroll';
         static STICKY_HEADER = 'stickyHeader';
         static TABCONTROL = 'tabControl';
@@ -136,8 +137,6 @@
                 },
             };
         }
-
-        static MOBILEMENUDRAWER = 'mobileMenuDrawer';
 
         static mobileMenuDrawer() {
             return {
