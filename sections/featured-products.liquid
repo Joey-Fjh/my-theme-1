@@ -1,12 +1,15 @@
 <div
     data-section-id="{{ section.id }}"
-    class="featured-products-section full-width"
+    class="
+        featured-products-section full-width
+        color-{{ section.settings.color_scheme }}
+    "
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
     "
 >
-    <div class="layout container-page color-{{ section.settings.color_scheme }}">
+    <div class="layout container-page">
         {%- capture tab_header -%}
             {%- for block in section.blocks -%}
                 <div 
@@ -56,7 +59,7 @@
                     {{ block.shopify_attributes }}
                 >
                     {%- if block.settings.collection_content != blank -%}
-                        <p>{{ block.settings.collection_content }}</p>
+                        <p class="body-md">{{ block.settings.collection_content }}</p>
                     {%- endif -%}
                     
                     <div 
@@ -81,6 +84,7 @@
         {%- endcapture -%}
 
         {%- render 'tab-control',
+            type: 'scrollable',
             initialTabStrategy: 'middle',
             tab_header: tab_header,
             tab_content: tab_content
@@ -92,13 +96,12 @@
     .featured-products-section {
         .product-grid {
             display: grid;
-            grid-template-columns: repeat(var(--product-grid-columns), minmax(0, 1fr));
-            gap: 8px;
-        }
+            grid-template-columns: repeat(var(--product-grid-columns-mobile), minmax(0, 1fr));
+            gap: 3px;
 
-        @media (max-width: 768px) {
-            .product-grid {
-                --product-grid-columns: var(--product-grid-columns-mobile, minmax(0, 1fr));
+            @media (min-width: 768px) {
+                grid-template-columns: repeat(var(--product-grid-columns), minmax(0, 1fr));
+                gap: 8px;
             }
         }
     }
@@ -146,13 +149,14 @@
             "default": 4
         },
         {
-            "type": "range",
+            "type": "select",
             "id": "mobile_items",
-            "label": "Items pre row on mobile",
-            "min": 1,
-            "max": 2,
-            "step": 0.1,
-            "default": 1
+            "label": "Items per row on mobile",
+            "options": [
+                { "value": "1", "label": "1" },
+                { "value": "2", "label": "2" }
+            ],
+            "default": "2"
         },
         {
             "type": "checkbox",
@@ -224,8 +228,7 @@
     ],
     "presets": [
         {
-            "name": "Featured Products",
-            "settings": {}
+            "name": "Featured Products"
         }
     ]
 }

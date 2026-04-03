@@ -121,44 +121,115 @@ Dropdown
 Tab Control
 ========================================================= */
 @layer components {
+    /* 1. Generic Default (Mobile friendly, wrap by default) */
     .tab-control-default {
         position: relative;
         display: flex;
         flex-direction: column;
-        gap: 48px;
-        align-items: center;
+        gap: 24px;
+        width: 100%;
+
+        @media (width >= theme(--breakpoint-pc)) {
+            gap: 48px;
+        }
 
         .tab-header-default {
             display: flex;
-            flex-wrap: nowrap;
-            white-space: nowrap;
-            gap: 64px;
+            flex-wrap: wrap;
+            gap: 16px;
+
+            @media (width >= theme(--breakpoint-pc)) {
+                gap: 32px;
+            }
+        }
+    }
+
+    /* 2. Scrollable (For horizontal scroll on mobile, center on desktop) */
+    .tab-control-scrollable {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: 32px;
+        width: 100%;
+
+        @media (width >= theme(--breakpoint-pc)) {
+            gap: 48px;
         }
 
-        .tab-content-default {
+        .tab-header-scrollable {
+            display: flex;
+            flex-wrap: nowrap;
+            white-space: nowrap;
+            overflow-x: auto;
             width: 100%;
-            overflow: hidden;
+            gap: 24px;
 
-            .tab-enter {
-                transition: all 200ms ease-out;
+            scrollbar-width: none;
+            &::-webkit-scrollbar {
+                display: none;
             }
-            .tab-enter-start {
-                opacity: 0;
-                transform: translateY(6px);
+
+            > * {
+                flex-shrink: 0;
+                padding-top: 0.3em;
+                padding-bottom: 0.3em;
             }
-            .tab-enter-end {
-                opacity: 1;
-                transform: translateY(0);
+
+            @media (width >= theme(--breakpoint-pc)) {
+                gap: 64px;
+                justify-content: center;
             }
-            .tab-leave {
-                transition: all 150ms ease-in;
+        }
+    }
+
+    /* 3. Underlined (Common for pages with section dividers) */
+    .tab-control-underlined {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        width: 100%;
+        align-items: flex-start;
+
+        .tab-header-underlined {
+            display: flex;
+            flex-wrap: wrap;
+            width: 100%;
+            gap: 24px;
+            border-bottom: 1px solid var(--theme-border-soft, #d5d9d6);
+
+            @media (width >= theme(--breakpoint-pc)) {
+                gap: 40px;
             }
-            .tab-leave-start {
-                opacity: 1;
-            }
-            .tab-leave-end {
-                opacity: 0;
-            }
+        }
+    }
+
+    /* Shared Content Transitions */
+    .tab-content-default,
+    .tab-content-scrollable,
+    .tab-content-underlined {
+        width: 100%;
+        overflow: hidden;
+
+        .tab-enter {
+            transition: all 200ms ease-out;
+        }
+        .tab-enter-start {
+            opacity: 0;
+            transform: translateY(6px);
+        }
+        .tab-enter-end {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .tab-leave {
+            transition: all 150ms ease-in;
+        }
+        .tab-leave-start {
+            opacity: 1;
+        }
+        .tab-leave-end {
+            opacity: 0;
         }
     }
 
@@ -170,7 +241,8 @@ Tab Control
             row-gap: 16px;
         }
 
-        .tab-content-default {
+        .tab-content-default,
+        .tab-content-scrollable {
             min-height: 16rem;
         }
     }
