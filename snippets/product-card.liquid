@@ -10,26 +10,20 @@
 {% enddoc %}
 
 <div
-    class="{{ class }} relative bg-white p-4"
+    class="product-card"
     x-data="{ hover: false }"
     x-on:mouseenter="hover = true"
     x-on:mouseleave="hover = false"
 >
     <!-- Category & Settings -->
-    <div class="mb-2 flex items-center justify-between">
+    <div class="product-card__category">
         {% comment %} 预留分类信息 {% endcomment %}
         {% comment %} 预留轮播按钮 {% endcomment %}
     </div>
 
     <!-- Product Image Container -->
-    <div class="relative mb-4 aspect-square">
+    <div class="product-card__image">
         <!-- Product Image -->
-        {% comment %}
-            {%- assign pc_items_safe = pc_items | default: 5 -%}
-            {%- assign mobile_items_safe = mobile_items | default: 2 -%}
-            (min-width: 48rem) calc(100vw / {{pc_items_safe}}), calc(100vw / {{mobile_items_safe}})
-        {% endcomment %}
-
         {%- capture sizes -%}
             (min-width: 48rem) calc(100vw / pc_items), calc(100vw / mobile_items)
         {%- endcapture -%}
@@ -46,22 +40,22 @@
             width: product.featured_image.width,
             sizes: sizes,
             widths: widths,
-            aspect_ratio: image_ratio | default: '1/1'
+            aspect_ratio: '1/1'
         -%}
 
         <!-- Hover Actions -->
         <div
-            class="absolute inset-x-0 bottom-0 m-6 flex flex-col gap-2 transition-opacity duration-300"
+            class="prduct-card__hover-actions"
             :class="hover ? 'opacity-100' : 'opacity-0'"
         >
             <button
-                class="w-full border border-gray-300 bg-white py-2 text-2xl text-gray-800 transition-colors hover:bg-gray-50"
+                class="product-card__btn-primary"
                 data-product-handle="{{ product.handle }}"
             >
                 Quick View
             </button>
             <button
-                class="w-full bg-[#4a5d23] py-2 text-2xl text-white transition-colors hover:bg-[#3d4d1c]"
+                class="product-card__btn-secondary"
                 data-variant-id="{{ product.selected_or_first_available_variant.id }}"
             >
                 Add to Cart
@@ -70,10 +64,12 @@
     </div>
 
     <!-- Product Info -->
-    <div class="flex items-center justify-between">
-        <a href="{{ product.url }}" class="text-2xl font-medium text-gray-800 hover:underline">
+    <div class="product-card__info">
+        <span class="product-card__info-title">
             {{ product.title }}
-        </a>
-        <span class="text-2xl font-medium text-gray-800">{{ product.price | money }}</span>
+        </span>
+        <span class="product-card__info-price">
+            {{ product.price | money }}
+        </span>
     </div>
 </div>

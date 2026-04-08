@@ -324,13 +324,15 @@
                 tabs: [],
                 panels: [],
                 activeIndex: 0,
+                mobileQuery: '(max-width: 47.99rem)',
 
                 init() {
                     this.$nextTick(() => {
                         const count = this.tabs.length;
                         if (count === 0) return;
 
-                        this.activeIndex = initialStrategy === 'first' ? 0 : Math.floor(count / 2);
+                        const nextIndex = initialStrategy === 'first' ? 0 : Math.floor(count / 2);
+                        this.setActive(nextIndex, { centerOnMobile: true, behavior: 'auto' });
                     });
                 },
 
@@ -344,9 +346,13 @@
                     return this.panels.length - 1;
                 },
 
-                setActive(index) {
+                setActive(index, options = {}) {
                     if (index < 0 || index >= this.tabs.length) return;
                     this.activeIndex = index;
+
+                    this.$nextTick(() => {
+                        this.scrollActiveTabIntoView(index, options);
+                    });
                 },
 
                 isActive(index) {
@@ -359,6 +365,63 @@
 
                 prev() {
                     this.setActive((this.activeIndex - 1 + this.tabs.length) % this.tabs.length);
+                },
+
+                isMobileViewport() {
+                    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function')
+                        return false;
+                    return window.matchMedia(this.mobileQuery).matches;
+                },
+
+                getHorizontalScrollParent(el) {
+                    if (!el) return null;
+
+                    let parent = el.parentElement;
+                    while (parent) {
+                        if (parent.scrollWidth > parent.clientWidth) {
+                            const style = window.getComputedStyle(parent);
+                            const overflowX = style.overflowX;
+                            if (overflowX === 'auto' || overflowX === 'scroll') return parent;
+                        }
+                        parent = parent.parentElement;
+                    }
+
+                    return null;
+                },
+
+                scrollActiveTabIntoView(index, options = {}) {
+                    if (!this.isMobileViewport()) return;
+
+                    const tab = this.tabs[index];
+                    if (!(tab instanceof HTMLElement)) return;
+
+                    const scroller = this.getHorizontalScrollParent(tab);
+                    if (!scroller) return;
+
+                    const { centerOnMobile = false, behavior = 'smooth' } = options;
+                    const isEdgeTab = index === 0 || index === this.tabs.length - 1;
+
+                    const tabLeft = tab.offsetLeft;
+                    const tabRight = tabLeft + tab.offsetWidth;
+                    const visibleLeft = scroller.scrollLeft;
+                    const visibleRight = visibleLeft + scroller.clientWidth;
+
+                    if (centerOnMobile && !isEdgeTab) {
+                        const centered = tabLeft - (scroller.clientWidth - tab.offsetWidth) / 2;
+                        const maxScroll = scroller.scrollWidth - scroller.clientWidth;
+                        const nextLeft = Math.min(Math.max(centered, 0), Math.max(maxScroll, 0));
+                        scroller.scrollTo({ left: nextLeft, behavior });
+                        return;
+                    }
+
+                    if (tabLeft < visibleLeft) {
+                        scroller.scrollTo({ left: tabLeft, behavior });
+                        return;
+                    }
+
+                    if (tabRight > visibleRight) {
+                        scroller.scrollTo({ left: tabRight - scroller.clientWidth, behavior });
+                    }
                 },
             };
         }

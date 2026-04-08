@@ -121,7 +121,7 @@ Dropdown
 Tab Control
 ========================================================= */
 @layer components {
-    /* 1. Generic Default (Mobile friendly, wrap by default) */
+    /* 1. Generic Default (Mobile: horizontal scroll, Desktop: wrap) */
     .tab-control-default {
         position: relative;
         display: flex;
@@ -135,34 +135,11 @@ Tab Control
 
         .tab-header-default {
             display: flex;
-            flex-wrap: wrap;
-            gap: 16px;
-
-            @media (width >= theme(--breakpoint-pc)) {
-                gap: 32px;
-            }
-        }
-    }
-
-    /* 2. Scrollable (For horizontal scroll on mobile, center on desktop) */
-    .tab-control-scrollable {
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        gap: 32px;
-        width: 100%;
-
-        @media (width >= theme(--breakpoint-pc)) {
-            gap: 48px;
-        }
-
-        .tab-header-scrollable {
-            display: flex;
             flex-wrap: nowrap;
             white-space: nowrap;
             overflow-x: auto;
             width: 100%;
-            gap: 24px;
+            gap: 16px;
 
             scrollbar-width: none;
             &::-webkit-scrollbar {
@@ -176,13 +153,15 @@ Tab Control
             }
 
             @media (width >= theme(--breakpoint-pc)) {
-                gap: 64px;
-                justify-content: center;
+                flex-wrap: wrap;
+                white-space: normal;
+                overflow-x: visible;
+                gap: 32px;
             }
         }
     }
 
-    /* 3. Underlined (Common for pages with section dividers) */
+    /* 2. Underlined (Common for pages with section dividers) */
     .tab-control-underlined {
         position: relative;
         display: flex;
@@ -193,12 +172,28 @@ Tab Control
 
         .tab-header-underlined {
             display: flex;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
+            white-space: nowrap;
+            overflow-x: auto;
             width: 100%;
             gap: 24px;
             border-bottom: 1px solid var(--theme-border-soft, #d5d9d6);
 
+            scrollbar-width: none;
+            &::-webkit-scrollbar {
+                display: none;
+            }
+
+            > * {
+                flex-shrink: 0;
+                padding-top: 0.3em;
+                padding-bottom: 0.3em;
+            }
+
             @media (width >= theme(--breakpoint-pc)) {
+                flex-wrap: wrap;
+                white-space: normal;
+                overflow-x: visible;
                 gap: 40px;
             }
         }
@@ -206,7 +201,6 @@ Tab Control
 
     /* Shared Content Transitions */
     .tab-content-default,
-    .tab-content-scrollable,
     .tab-content-underlined {
         width: 100%;
         overflow: hidden;
@@ -242,7 +236,7 @@ Tab Control
         }
 
         .tab-content-default,
-        .tab-content-scrollable {
+        .tab-content-underlined {
             min-height: 16rem;
         }
     }
@@ -270,5 +264,50 @@ Dialog
 
     .ui-dialog-drawer-width-default {
         @apply max-w-2/3 pc:max-w-1/3;
+    }
+}
+
+/* =========================================================
+Product-card
+========================================================= */
+@layer components {
+    .product-card {
+        @apply relative flex flex-col gap-3 p-3;
+
+        .product-card__category,
+        .product-card__info {
+            @apply flex cursor-pointer items-center justify-between body-sm pc:body-md;
+        }
+
+        .product-card__image {
+            @apply relative aspect-square flex-1;
+        }
+
+        .prduct-card__hover-actions {
+            @apply absolute inset-x-0 bottom-0 m-3 flex flex-col gap-3 transition-opacity duration-300;
+
+            .product-card__btn-primary,
+            .product-card__btn-secondary {
+                @apply btn;
+            }
+
+            .product-card__btn-primary {
+                @apply btn-primary;
+            }
+
+            .product-card__btn-secondary {
+                @apply btn-secondary;
+            }
+        }
+
+        .product-card__info {
+            .product-card__info-title {
+                @apply hover:underline;
+            }
+
+            .product-card__info-price {
+                @apply font-normal;
+            }
+        }
     }
 }
