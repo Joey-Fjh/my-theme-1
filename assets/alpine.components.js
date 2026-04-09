@@ -101,6 +101,7 @@
         static RELATEDPRODUCTS = 'relatedProducts';
         static NEWSLETTEROVERLAY = 'newsletterOverlay';
         static CARTOVERLAY = 'cartOverlay';
+        static PRODUCTCARD = 'productCard';
 
         static dropdown() {
             return {
@@ -1481,17 +1482,6 @@
             };
         }
 
-        /**
-         * Product recommendations (Ajax lazy-load) — used by sections/product-recommendations.liquid
-         *
-         * Fetches the recommendations section HTML only when it enters viewport.
-         * The response is parsed and only the [data-related-products-content] innerHTML is injected,
-         * then Components.initAll is called to re-bind Alpine/component engine behavior.
-         *
-         * @param {Object} opts
-         * @param {string} opts.url
-         * @param {string} opts.sectionId
-         */
         static relatedProducts({ url, sectionId } = {}) {
             return {
                 ...(AlpineComponentsFactory.useDisposable?.() || {}),
@@ -1587,21 +1577,90 @@
             };
         }
 
-        /**
-         * Product image gallery with multiple layout modes and optional lightbox.
-         *
-         * Layout modes (driven by Liquid, not JS):
-         *   thumbnails — thumb strip + single active main image
-         *   carousel   — Swiper slider with pagination dots
-         *   stacked    — all images laid out vertically
-         *   grid       — CSS grid of all images
-         *
-         * The component manages:
-         *   - activeIndex tracking (shared across thumb clicks, swiper, and lightbox)
-         *   - Swiper lifecycle for carousel mode
-         *   - Lightbox open/close with keyboard nav
-         *   - External variant-mapping via PRODUCT_GALLERY_SLIDE_TO_REQUEST event
-         */
+        static productCard({ imageCount = 1 } = {}) {
+            return {
+                ...AlpineComponentsFactory.useDisposable(),
+                imageHover: false,
+                actionsHover: false,
+                imageCount: Math.max(1, Number(imageCount) || 1),
+                activeImageIndex: 0,
+                isTouchDevice: false,
+                _hoverLeaveTimer: null,
+
+                get hasMultipleImages() {
+                    return this.imageCount > 1;
+                },
+
+                get showHoverActions() {
+                    return this.isTouchDevice || this.imageHover || this.actionsHover;
+                },
+
+                get paginationLabel() {
+                    return `${this.activeImageIndex + 1}/${this.imageCount}`;
+                },
+
+                init() {
+                    this.isTouchDevice = this._detectTouch();
+                },
+
+                _detectTouch() {
+                    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+                        return false;
+                    }
+                    return window.matchMedia('(hover: none), (pointer: coarse)').matches;
+                },
+
+                setImageHover(value) {
+                    if (this._hoverLeaveTimer) {
+                        clearTimeout(this._hoverLeaveTimer);
+                        this._hoverLeaveTimer = null;
+                    }
+
+                    if (value) {
+                        this.imageHover = true;
+                        return;
+                    }
+
+                    // Delay hide slightly so pointer can move from image to bottom actions.
+                    this._hoverLeaveTimer = setTimeout(() => {
+                        this.imageHover = false;
+                    }, 90);
+                },
+
+                setActionsHover(value) {
+                    this.actionsHover = Boolean(value);
+                },
+
+                setActiveImage(index) {
+                    if (!this.hasMultipleImages) return;
+                    this.activeImageIndex = this._normalizeIndex(index);
+                },
+
+                nextImage() {
+                    if (!this.hasMultipleImages) return;
+                    this.setActiveImage(this.activeImageIndex + 1);
+                },
+
+                prevImage() {
+                    if (!this.hasMultipleImages) return;
+                    this.setActiveImage(this.activeImageIndex - 1);
+                },
+
+                _normalizeIndex(index) {
+                    const total = this.imageCount;
+                    return ((Number(index) % total) + total) % total;
+                },
+
+                destroy() {
+                    if (this._hoverLeaveTimer) {
+                        clearTimeout(this._hoverLeaveTimer);
+                        this._hoverLeaveTimer = null;
+                    }
+                    this.dispose();
+                },
+            };
+        }
+
         static productGallery() {
             return {
                 ...AlpineComponentsFactory.useDisposable(),
@@ -1691,12 +1750,6 @@
                 },
             };
         }
-
-        /**
-         * Newsletter overlay logic (delay, expiry, display conditions, submit feedback).
-         *
-         * @param {Object} opts
-         */
         static newsletterOverlay({
             dialogId = '',
             displayMode = 'enable',
@@ -1817,12 +1870,6 @@
             };
         }
 
-        /**
-         * Cart drawer controller: formatting, quantity changes, clear cart and checkout.
-         *
-         * @param {Object} opts
-         * @param {string[]} [opts.sections=[]] - Section IDs to refresh after cart mutations.
-         */
         static cartOverlay({ sections = [] } = {}) {
             return {
                 sections: Array.isArray(sections) ? sections : [],

@@ -503,6 +503,7 @@
                         Factory.register?.(Comps.RELATEDPRODUCTS, Comps.relatedProducts);
                         Factory.register?.(Comps.NEWSLETTEROVERLAY, Comps.newsletterOverlay);
                         Factory.register?.(Comps.CARTOVERLAY, Comps.cartOverlay);
+                        Factory.register?.(Comps.PRODUCTCARD, Comps.productCard);
                     }
                 },
                 { once: true },
