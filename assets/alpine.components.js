@@ -1592,7 +1592,7 @@
                 },
 
                 get showHoverActions() {
-                    return this.isTouchDevice || this.imageHover || this.actionsHover;
+                    return this.imageHover || this.actionsHover;
                 },
 
                 get paginationLabel() {

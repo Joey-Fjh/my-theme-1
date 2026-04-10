@@ -6,7 +6,7 @@
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
     "
 >
-    <div class="bg-[#F9FAFB]">
+    <div class="relative">
         {%- render 'image',
             image: section.settings.image,
             alt: section.settings.image.alt,
@@ -15,34 +15,33 @@
             loading: 'lazy'
         -%}
 
-        <div class="layout container-page color-{{ section.settings.color_scheme }} bg-[#263D29]!">
+        <div class="layout container-page color-{{ section.settings.color_scheme }}">
             {%- assign collection = section.settings.collection -%}
 
             <div class="flex flex-col gap-16">
-                <div class="flex items-center justify-between">
-                    <div>
-                        {%- capture link_content -%}
-                            <h1 class="font-bold">
-                                {%- if section.settings.heading != blank -%}
-                                    {{ section.settings.heading }}
-                                {%- else -%}
-                                    {{ collection.title }}
-                                {%- endif -%}
+                <div class="flex flex-col gap-3 pc:flex-row pc:items-center pc:justify-between">
+                    {%- capture link_content -%}
+                        <h1 class="font-bold">
+                            {%- if section.settings.heading != blank -%}
+                                {{ section.settings.heading }}
+                            {%- else -%}
+                                {{ collection.title }}
+                            {%- endif -%}
 
-                                {%- if collection != nil and collection.products_count > 0 -%}
-                                    <sup class="sup-badge">({{ collection.products_count }})</sup>
-                                {%- endif -%}
-                            </h1>
-                        {%- endcapture -%}
-                        {%- render 'link',
-                            href: collection.url,
-                            content: link_content,
-                            variant: 'underline'
-                        -%}
-                    </div>
-                    <div>
-                        {{ section.settings.description }}
-                    </div>
+                            {%- if collection != nil and collection.products_count > 0 -%}
+                                <sup class="sup-badge">({{ collection.products_count }})</sup>
+                            {%- endif -%}
+                        </h1>
+                    {%- endcapture -%}
+
+                    {%- render 'link',
+                        href: collection.url,
+                        content: link_content,
+                        variant: 'underline',
+                        color: 'current'
+                    -%}
+
+                    <div class="opacity-80">{{ section.settings.description }}</div>
                 </div>
 
                 <div>
@@ -51,23 +50,19 @@
                     {% # theme-check-disable-next-line LiquidHTMLSyntaxError %}
                     {%- for product in collection.products limit: max_items -%}
                         <a
-                            class="flex items-center justify-between p-8 transition-colors duration-300"
+                            class="flex flex-col gap-3 py-8 body-md pc:flex-row pc:items-center pc:justify-between pc:p-8"
                             href="{{ product.url }}"
                             x-data="{hover:false}"
                             @mouseenter="hover = true"
                             @mouseleave="hover = false"
-                            :class=" hover ? 'bg-[#D5FF83]  text-[#263D29]':'' "
+                            :class=" hover ? 'bg-theme-text text-theme-bg':'' "
                         >
-                            <div>
+                            <span class="opacity-80">
                                 {{ product.type | default: 'Momonise' }}
-                            </div>
+                            </span>
 
                             <div class="relative flex items-center gap-3">
-                                <h0>{{ product.title }}</h0>
-
-                                {%- capture sizes -%}
-                                    100px
-                                {%- endcapture -%}
+                                <h2>{{ product.title }}</h2>
 
                                 <div
                                     class="
@@ -75,49 +70,40 @@
                                         absolute
                                         top-1/2
                                         -right-3
-                                        translate-x-full
-                                        -translate-y-1/2 scale-95 opacity-0
-                                        transition-all duration-300
-                                        ease-out
+                                        aspect-100/72
+                                        h-[2.5em] translate-x-full -translate-y-1/2
+                                        scale-95 opacity-0
+                                        transition-all
+                                        duration-300 ease-out
                                     "
                                     :class="hover ? 'opacity-100 scale-100' : ''"
                                 >
                                     {%- render 'image',
-                                        class: 'product-image',
+                                        class: 'w-full h-full object-cover',
                                         image: product.featured_image,
                                         alt: product.featured_image.alt,
                                         width: 100,
-                                        sizes: sizes
+                                        sizes: '100px'
                                     -%}
                                 </div>
                             </div>
 
-                            <div>
+                            <span>
                                 {{ product.price | money }}
-                            </div>
+                            </span>
                         </a>
                     {%- endfor -%}
                 </div>
 
-                <div class="flex flex-col items-center justify-center self-center text-center">
-                    {% render 'icons', icon: 'icon-eyeglasses', size: 'lg' %}
-                    <div>
-                        {{ section.settings.caption }}
-                    </div>
+                <div class="flex flex-col items-center justify-center self-center text-center body-md">
+                    {% render 'icons', icon: 'icon-eyeglasses', size: 'lg', color: 'current' %}
+
+                    {{ section.settings.caption }}
                 </div>
             </div>
         </div>
     </div>
 </div>
-
-{% stylesheet %}
-    .scroll-categories-section {
-        .product-image {
-            width: 100px;
-            height: 72px;
-        }
-    }
-{% endstylesheet %}
 
 {% schema %}
 {
