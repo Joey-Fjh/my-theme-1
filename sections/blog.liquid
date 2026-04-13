@@ -1,6 +1,9 @@
 <div
     data-section-id="{{ section.id }}"
-    class="blog-section full-width relative"
+    class="
+        blog-section full-width relative
+        color-{{ section.settings.color_scheme }}
+    "
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
@@ -10,7 +13,10 @@
     data-component-type="blog"
     data-component-id="{{ section.id }}"
 >
-    <div class="layout layout-no-pb container-page bg-[#EBE4D1] pb-0 text-[#263D29]">
+    <div
+        class="layout layout-no-pb container-page pb-0 text-theme-text"
+        style="background-color: #ebe4d1;"
+    >
         {%- comment -%} Hero {%- endcomment -%}
         <div class="relative py-20 pc:py-40">
             <div class="flex items-start justify-between">
@@ -26,13 +32,17 @@
                     </p>
                 </div>
 
-                <div class="scale-50 opacity-0" data-gsap-badge>
+                <div
+                    class="absolute top-8 right-0 z-10 scale-50 opacity-0 pc:static"
+                    data-gsap-badge
+                >
                     {%- render 'rotating-badge',
                         classes: 'relative justify-self-center',
-                        badge_class: 'text-[#000000]',
-                        center_class: 'text-[#1B2608]',
+                        badge_class: 'text-current',
+                        center_class: 'text-current',
                         unique_id: section.id,
                         size: 100,
+                        size_mobile: 72,
                         badge_text: section.settings.rotate_badge_text,
                         center_text: section.settings.rotate_badge_percent
                     -%}
@@ -41,7 +51,10 @@
         </div>
     </div>
 
-    <div class="layout layout-no-pt container-page bg-[#FBFBFB] text-[#263D29]">
+    <div
+        class="layout layout-no-pt container-page pt-6 text-theme-text pc:pt-8"
+        style="background-color: #fbfbfb;"
+    >
         <div class="relative flex items-center justify-between">
             {%- comment -%} Tab Header (Router Trigger) + Tab Content (fetch replace) {%- endcomment -%}
             <div class="min-w-0 flex-1">
@@ -71,7 +84,7 @@
             @popstate.window="isUrlMatch($el.href) && setActive(index)"
             :tabindex="isActive(index) ? 0 : -1"
             :aria-selected="isActive(index)"
-            :class="isActive(index) ? 'opacity-100 border-b-2 border-[#263D29]' : 'opacity-20 hover:opacity-60'"
+            :class="isActive(index) ? 'opacity-100 border-b-2 border-current' : 'opacity-20 hover:opacity-60'"
             class="flex cursor-pointer flex-wrap items-center gap-x-4 gap-y-2 h2 transition-opacity focus:outline-none"
           >
             All <sup class="sup-badge">({{ blog.articles_count }})</sup>
@@ -88,7 +101,7 @@
               @popstate.window="isUrlMatch($el.href) && setActive(index)"
               :tabindex="isActive(index) ? 0 : -1"
               :aria-selected="isActive(index)"
-              :class="isActive(index) ? 'opacity-100 border-b-2 border-[#263D29]' : 'opacity-20 hover:opacity-60'"
+              :class="isActive(index) ? 'opacity-100 border-b-2 border-current' : 'opacity-20 hover:opacity-60'"
               class="flex cursor-pointer flex-wrap items-center gap-x-4 gap-y-2 h2 transition-opacity focus:outline-none"
             >
               {{ tag }}
@@ -145,9 +158,9 @@
                     {%- if article.url !=blank -%}
                       {%- capture link_content -%}
                         <span>{{ section.settings.link_text }}</span>
-                        {% render 'icons', icon: 'icon-arrow2', size: 'lg', class: 'ml-3' %}
+                        {% render 'icons', icon: 'icon-arrow2', size: 'lg', class: 'ml-3', color: 'current' %}
                         {%- endcapture -%}
-                      {%- render 'link', class: 'opacity-80', href: article.url, content: link_content, variant: "underline" -%}
+                      {%- render 'link', class: 'opacity-80', href: article.url, content: link_content, variant: "underline", color: 'current' -%}
                     {%- endif -%}
                   </article>
                 {% endfor %}
@@ -282,6 +295,12 @@
         "templates": ["blog"]
     },
     "settings": [
+        {
+            "type": "color_scheme",
+            "id": "color_scheme",
+            "label": "Color Scheme",
+            "default": "color-scheme-1"
+        },
         {
             "type": "text",
             "id": "header",

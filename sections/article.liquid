@@ -1,6 +1,6 @@
 <div
     data-section-id="{{ section.id }}"
-    class="article-section full-width"
+    class="article-section full-width color-{{ section.settings.color_scheme }}"
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
@@ -15,7 +15,7 @@
         {%- endcapture -%}
 
         {%- capture widths -%}
-        400,768,1280,1536,2560
+            400,768,1280,1536,2560
         {%- endcapture -%}
 
         {%- assign image = article.image -%}
@@ -33,8 +33,8 @@
         -%}
     </div>
 
-    <div class="layout layout-no-safe layout-no-pb container-page absolute inset-0 max-h-200">
-        <div class="mx-auto flex max-w-1/2 flex-col items-center justify-center gap-5 text-center text-white">
+    <div class="absolute inset-0 z-10 flex max-h-200 items-center justify-center px-6 pc:px-0">
+        <div class="mx-auto flex w-full max-w-full flex-col items-center justify-center gap-5 text-center text-white pc:max-w-1/2">
             <h3
                 class="opacity-80"
             >
@@ -48,10 +48,10 @@
         </div>
     </div>
 
-    <div class="layout layout-no-pt container-page bg-[#FBFBFB] text-[#263D29]">
-        <div class="flex flex-col gap-30 pc:flex-row pc:gap-60">
+    <div class="layout layout-no-pt container-page mt-12 bg-theme-bg text-theme-text">
+        <div class="flex flex-col gap-16 pc:flex-row pc:gap-60">
             {% comment %} Aside Bar {% endcomment %}
-            <aside class="shrink-0 -translate-x-7.5 h2 opacity-0" data-gsap-sidebar>
+            <aside class="shrink-0 -translate-x-7.5 h2 opacity-0 max-pc:hidden" data-gsap-sidebar>
                 <nav class="pc:sticky">
                     <ul
                         id="toc-container"
@@ -63,11 +63,11 @@
                                 <a
                                     href="{{ a.url }}"
                                     class="
-                                        block border-b leading-snug transition-colors duration-200
+                                        block border-b border-theme-border-soft body-md leading-snug transition-colors duration-200
                                         {% if a.id == article.id %}
-                                          text-[#2d3a2e]
+                                          text-theme-text
                                         {% else %}
-                                          text-[#6b6b6b] hover:text-[#2d3a2e]
+                                          text-theme-text/60 hover:text-theme-text
                                         {% endif %}
                                     "
                                 >
@@ -84,19 +84,23 @@
                 class="article-content min-w-0 flex-1 translate-y-7.5 opacity-0"
                 data-gsap-content
             >
-                <div class="flex items-center justify-between border-b border-[#e5e5e5] pb-3">
-                    <h1>{{ article.title }}</h1>
+                <div class="flex items-center justify-between border-b border-theme-border-soft pb-3">
+                    <h1 class="h2">{{ article.title }}</h1>
                     {%- assign date = article.published_at | time_tag: format: 'date' -%}
-                    <p>
+                    <p class="body-sm text-theme-text/70">
                         {{ 'blog.article_metadata_html' | t: date: date, author: article.author }}
                     </p>
                 </div>
-                <div class="py-10">
+                <div class="py-10 body-md">
                     {{ article.content }}
                 </div>
-                <div class="flex flex-col gap-3 border-t border-[#e5e5e5] pt-3">
+                <div class="flex flex-col gap-3 border-t border-theme-border-soft pt-3">
                     {%- if section.settings.show_social -%}
-                        {%- render 'social-icons', type: 'name', class: 'self-end' -%}
+                        {%- render 'social-icons',
+                            type: 'name',
+                            color: 'current',
+                            class: 'self-end'
+                        -%}
                     {%- endif -%}
                 </div>
             </article>
@@ -174,6 +178,12 @@
         "templates": ["article"]
     },
     "settings": [
+        {
+            "type": "color_scheme",
+            "id": "color_scheme",
+            "label": "Color scheme",
+            "default": "scheme-1"
+        },
         {
             "type": "image_picker",
             "id": "image",
