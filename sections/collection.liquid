@@ -10,15 +10,15 @@
     data-component-type="collection"
     data-component-id="{{ section.id }}"
 >
-    <div class="layout container-page pb-0">
+    <div class="layout layout-no-pb container-page pb-0">
         {%- comment -%} Hero {%- endcomment -%}
-        <div class="pc:py-40 relative py-20">
+        <div class="relative py-20 pc:py-40">
             <div class="flex items-start justify-between">
                 <div class="-translate-x-7.5 opacity-0" data-gsap-hero>
-                    <h1 class="hxxxl mb-10 leading-none font-bold">
+                    <h1 class="mb-10 hxxxl leading-none font-bold">
                         {{ section.settings.header | default: 'Products' }}
                     </h1>
-                    <p class="h5 max-w-xl leading-relaxed opacity-80">
+                    <p class="max-w-xl h5 leading-relaxed opacity-80">
                         {{
                             section.settings.description
                             | default: 'Tailored experiences powered by AI intelligence. Discover insights that adapt to your needs.'
@@ -41,7 +41,7 @@
         </div>
     </div>
 
-    <div class="layout-special container-page">
+    <div class="layout layout-no-pt container-page">
         <div class="relative flex items-center justify-between">
             {%- comment -%} Filter trigger + hidden form + drawer {%- endcomment -%}
             <form id="CollectionFiltersForm" class="hidden" @change="onChange()"></form>
@@ -49,22 +49,22 @@
             <button
                 type="button"
                 @click="$store.dialog.open('collection-filters')"
-                class="h2 absolute left-0 z-10 flex shrink-0 cursor-pointer items-center gap-3 self-start"
+                class="absolute left-0 z-10 flex shrink-0 cursor-pointer items-center gap-3 self-start h2"
             >
-                <span class="inline-block h-10 w-10">
-                    {{- 'icon-filter.svg' | inline_asset_content -}}
-                </span>
+                {% render 'icons', icon: 'icon-filter', class: 'h-10 w-10' %}
                 <span>Filter</span>
             </button>
 
             {%- capture drawer_content -%}
-      {%- render 'filters-drawer', filter_source: collection -%}
-    {%- endcapture -%}
+                {%- render 'filters-drawer', filter_source: collection -%}
+            {%- endcapture -%}
 
             {%- render 'ui-dialog',
                 id: 'collection-filters',
                 type: 'drawer',
                 position: 'left',
+                show_close_button: true,
+                close_label: 'Close filters drawer',
                 content: drawer_content
             -%}
 
@@ -98,7 +98,7 @@
           :tabindex="isActive(index) ? 0 : -1"
           :aria-selected="isActive(index)"
           :class="isActive(index) ? 'opacity-100 border-b-2 border-[#263D29]' : 'opacity-50 hover:opacity-100 border-b-2 border-transparent'"
-          class="h2 flex cursor-pointer flex-nowrap items-center gap-1 whitespace-nowrap transition-all duration-300 focus:outline-none"
+          class="flex cursor-pointer flex-nowrap items-center gap-1 h2 whitespace-nowrap transition-all duration-300 focus:outline-none"
         >
           All <sup class="text-[10px] leading-none">({{ collection.all_products_count }})</sup>
         </a>
@@ -115,7 +115,7 @@
             :tabindex="isActive(index) ? 0 : -1"
             :aria-selected="isActive(index)"
             :class="isActive(index) ? 'opacity-100 border-b-2 border-[#263D29]' : 'opacity-50 hover:opacity-100 border-b-2 border-transparent'"
-            class="h2 flex cursor-pointer flex-nowrap items-center gap-1 whitespace-nowrap transition-all duration-300 focus:outline-none"
+            class="flex cursor-pointer flex-nowrap items-center gap-1 h2 whitespace-nowrap transition-all duration-300 focus:outline-none"
           >
             {{ tag }}
           </a>
@@ -134,7 +134,7 @@
 
           {% paginate collection.products by section.settings.products_per_page %}
             <div 
-              class="pc:grid-cols-4 grid grid-cols-1 gap-8 pb-10"
+              class="grid grid-cols-1 gap-8 pb-10 pc:grid-cols-4"
               data-component-kind="section"
               data-component-type="product-grid"
               data-component-id="{{ section.id }}-grid"
@@ -144,7 +144,7 @@
                   {% render 'product-card', product: product %}
                 </div>
               {% else %}
-                <div class="h3 col-span-full py-20 text-center opacity-60">
+                <div class="col-span-full py-20 text-center h3 opacity-60">
                   No products found.
                 </div>
               {% endfor %}
@@ -169,9 +169,10 @@
       {% endcapture %}
 
                 {%- render 'tab-control',
+                    type: 'underlined',
                     custom_class: 'items-start',
                     tab_header: tab_header,
-                    header_class: 'border-b border-[#e5e5e5] flex flex-wrap gap-6 pc:gap-10 px-100 w-full',
+                    header_class: 'gap-6 pc:gap-10 px-100 border-[#e5e5e5]',
                     tab_content: tab_content
                 -%}
             </div>

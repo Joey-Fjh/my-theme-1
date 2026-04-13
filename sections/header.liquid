@@ -1,6 +1,14 @@
+{%- assign size_class = 'w-12 h-12' -%}
+{%- assign mobile_menu_popup_id = 'header-mobile-menu-drawer' -%}
+{%- assign search_overlay_popup_id = 'search-overlay-drawer' -%}
+{%- assign cart_overlay_popup_id = 'cart-overlay-drawer' -%}
+
 <header
     data-section-id="{{ section.id }}"
-    class="header-section full-width color-{{ section.settings.color_scheme }} transition-all duration-300 ease-in-out"
+    class="
+        header-section full-width
+        color-{{ section.settings.color_scheme }}
+    "
     x-data="stickyHeader"
     :class="
         {
@@ -11,18 +19,51 @@
     "
 >
     <div class="container-page">
-        <div class="header__cols-3 grid py-3">
-            <div style="grid-area: logo">
+        <div class="header__cols grid-cols-3 header__cols-{{ section.settings.logo_position }} grid py-3">
+            <div class="flex items-center pc:hidden" style="grid-area: mobile-menu">
+                {%- render 'header-mobile-menu-drawer',
+                    popup_id: mobile_menu_popup_id,
+                    menu_handle: section.settings.menu.handle,
+                    color_scheme: section.settings.mobile_menu_color_scheme
+                -%}
+
+                <button
+                    type="button"
+                    class="cursor-pointer"
+                    @click="$store.dialog.open('{{ mobile_menu_popup_id }}')"
+                    aria-label="Mobile Menu"
+                >
+                    {%- render 'icons',
+                        color: 'current',
+                        icon: 'icon-menu',
+                        class: 'ml-3 h-10 w-10'
+                    -%}
+                </button>
+            </div>
+
+            <div class="header-search hidden items-center justify-start" style="grid-area: search">
+                <button
+                    type="button"
+                    class="cursor-pointer"
+                    @click="$store.dialog.open('{{ search_overlay_popup_id }}')"
+                    aria-label="Search"
+                >
+                    {% render 'icons', icon: 'icon-search', class: size_class, color: 'current' %}
+                </button>
+            </div>
+
+            <div class="header-logo flex items-center justify-start" style="grid-area: logo">
                 {%- assign logo_alt = settings.logo.alt | default: shop.name | escape -%}
                 {%- assign logo_height = settings.logo_width
                     | divided_by: settings.logo.aspect_ratio
                 -%}
                 {%- capture sizes -%}
-          (max-width: {{ settings.logo_width | times: 2 }}px) 50vw, {{ settings.logo_width }}px
-        {%- endcapture -%}
+                    (max-width: {{ settings.logo_width | times: 2 }}px) 50vw, {{ settings.logo_width }}px
+                {%- endcapture -%}
+
                 {%- capture widths -%}
-          {{ settings.logo_width }},{{ settings.logo_width | times: 1.5 | round }},{{ settings.logo_width | times:2 }}
-        {%- endcapture -%}
+                    {{ settings.logo_width }},{{ settings.logo_width | times: 1.5 | round }},{{ settings.logo_width | times:2 }}
+                {%- endcapture -%}
 
                 {%- if settings.logo -%}
                     {% render 'image',
@@ -40,12 +81,16 @@
                         text: shop.name,
                         class: 'h2',
                         variant: 'underline',
-                        href: routes.root_url
+                        href: routes.root_url,
+                        color: 'current'
                     -%}
                 {%- endif -%}
             </div>
 
-            <div class="flex items-center justify-center" style="grid-area: menu">
+            <div
+                class="header-menu flex items-center justify-center max-pc:hidden"
+                style="grid-area: menu"
+            >
                 {%- if section.settings.menu_type == 'super' -%}
                     {%- render 'header-dropdown-super-menu' -%}
                 {%- else -%}
@@ -53,38 +98,44 @@
                 {%- endif -%}
             </div>
 
-            <div class="flex items-center justify-end gap-3" style="grid-area:navigation">
-                {%- assign size_class = 'w-12 h-12' -%}
-
+            <div
+                class="header-navigation flex items-center justify-end gap-3"
+                style="grid-area:navigation"
+            >
                 <button
                     type="button"
-                    class="flex cursor-pointer items-center gap-2"
-                    @click="$store.dialog.open('search-overlay-drawer')"
-                    aria-label="Open search"
+                    class="header-search__right cursor-pointer"
+                    @click="$store.dialog.open('{{ search_overlay_popup_id }}')"
+                    aria-label="Search"
                 >
-                    <span class="{{ size_class }} icons inline-block" aria-hidden="true">
-                        {{ 'icon-search.svg' | inline_asset_content }}
-                    </span>
+                    {% render 'icons', icon: 'icon-search', class: size_class, color: 'current' %}
                 </button>
 
                 <button
                     type="button"
-                    class="relative {{ size_class }} icons inline-flex cursor-pointer items-center justify-center"
-                    @click="$store.dialog.open('cart-overlay-drawer')"
-                    aria-label="Open cart"
+                    class="cursor-pointer"
+                    @click="$store.dialog.open('{{ cart_overlay_popup_id }}')"
+                    aria-label="Cart"
                 >
-                    {{ 'icon-cart.svg' | inline_asset_content }}
-                    <span
-                        x-show="$store.cart.item_count > 0"
-                        x-text="$store.cart.item_count"
-                        x-cloak
-                        class="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-black px-1 text-xs font-medium text-white"
-                    ></span>
+                    {% render 'icons', icon: 'icon-cart', class: size_class, color: 'current' %}
                 </button>
 
-                <span class="icons inline-block h-10 w-10">
-                    {{ 'icon-account.svg' | inline_asset_content }}
-                </span>
+                {% assign account_href = routes.account_login_url %}
+                {% if customer %}
+                    {% assign account_href = routes.account_url %}
+                {% endif %}
+
+                {% capture link_content %}
+                    {% render 'icons', icon: 'icon-account', class: 'h-10 w-10', color: 'current' %}
+                {% endcapture %}
+
+                {% render 'link',
+                    href: account_href,
+                    content: link_content,
+                    variant: 'plain',
+                    class: 'cursor-pointer',
+                    aria_label: 'Account'
+                %}
             </div>
         </div>
     </div>
@@ -113,8 +164,45 @@
     }
 
     .header-section {
-        .header__cols-3 {
-            grid-template-areas: 'logo menu navigation';
+        .header__cols {
+            grid-template-areas: 'mobile-menu logo navigation';
+        }
+
+        @media (min-width: 48rem) {
+            .header__cols {
+                grid-template-areas: 'logo menu navigation';
+            }
+
+            .header__cols-middle {
+                grid-template-areas: 'menu logo navigation';
+            }
+
+            .header__cols-middle > .header-logo {
+                justify-content: center;
+            }
+
+            .header__cols-middle > .header-menu {
+                justify-content: start;
+            }
+
+            .header__cols-middle-center {
+                grid-template-areas:
+                    'search logo navigation'
+                    '. menu .';
+                row-gap: 10px;
+            }
+
+            .header__cols-middle-center > .header-search {
+                display: flex;
+            }
+
+            .header__cols-middle-center .header-search__right {
+                display: none;
+            }
+
+            .header__cols-middle-center > .header-logo {
+                justify-content: center;
+            }
         }
     }
 {% endstylesheet %}
@@ -181,12 +269,12 @@
             "id": "logo_position",
             "options": [
                 {
-                    "value": "top-center",
-                    "label": "Top Center"
+                    "value": "left",
+                    "label": "Left"
                 },
                 {
-                    "value": "middle-left",
-                    "label": "Middle Left"
+                    "value": "middle",
+                    "label": "Middle"
                 },
                 {
                     "value": "middle-center",
@@ -194,24 +282,8 @@
                 }
             ],
             "label": "Logo Position",
-            "default": "middle-left",
+            "default": "left",
             "info": "Edit your logo in [theme settings](/editor?context=theme&category=logo)"
-        },
-        {
-            "type": "select",
-            "id": "mobile_logo_position",
-            "label": "Mobile Logo Position",
-            "options": [
-                {
-                    "value": "center",
-                    "label": "Center"
-                },
-                {
-                    "value": "left",
-                    "label": "Left"
-                }
-            ],
-            "default": "center"
         },
         {
             "type": "header",
@@ -227,6 +299,12 @@
             "type": "color_scheme",
             "id": "menu_color_scheme",
             "label": "Menu Color Scheme",
+            "default": "color-scheme-1"
+        },
+        {
+            "type": "color_scheme",
+            "id": "mobile_menu_color_scheme",
+            "label": "Mobile Menu Color Scheme",
             "default": "color-scheme-1"
         },
         {

@@ -1,12 +1,18 @@
 <div
+    data-component-kind="section"
+    data-component-type="featured-products"
+    data-component-id="{{ section.id }}"
     data-section-id="{{ section.id }}"
-    class="featured-products-section full-width"
+    class="
+        featured-products-section full-width
+        color-{{ section.settings.color_scheme }}
+    "
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
     "
 >
-    <div class="layout container-page color-{{ section.settings.color_scheme }}">
+    <div class="layout container-page">
         {%- capture tab_header -%}
             {%- for block in section.blocks -%}
                 <div 
@@ -21,17 +27,17 @@
                     :class="isActive(index)
                         ? 'opacity-100'
                         : 'opacity-20 hover:opacity-60 focus:opacity-60'"
-                    class="h1 cursor-pointer transition-opacity focus:outline-none"
+                    class="cursor-pointer h1 transition-opacity focus:outline-none"
                     {{ block.shopify_attributes }}
                 >
-                    <span>                        
+                    <div>                        
                         {%- if block.settings.collection_heading != blank -%}
                             {{ block.settings.collection_heading }}
                         {%- else -%}
                             {{ block.settings.collection.title }}
                         {%- endif -%}
                         <sup class="sup-badge">({{ block.settings.collection.products_count }})</sup>
-                    </span>
+                    </div>
                 </div>
             {%- endfor -%}
         {%- endcapture -%}
@@ -56,26 +62,81 @@
                     {{ block.shopify_attributes }}
                 >
                     {%- if block.settings.collection_content != blank -%}
-                        <p>{{ block.settings.collection_content }}</p>
+                        <p class="body-md">{{ block.settings.collection_content }}</p>
                     {%- endif -%}
                     
+                    {%- liquid
+                        assign products = block.settings.collection.products
+                        assign max_items = section.settings.max_items
+                        assign use_slider = false
+                        if section.settings.show_navigation or section.settings.show_pagination or section.settings.show_all
+                            assign use_slider = true
+                        endif
+                    -%}
+
                     <div 
-                        class="product-grid"
+                        class="{% if use_slider %}w-full relative{% else %}product-grid{% endif %}"
                         style="
                             --product-grid-columns: {{ section.settings.pc_items }};
                             --product-grid-columns-mobile: {{ section.settings.mobile_items }};
                         "
                     >
-                        {%- assign products = block.settings.collection.products -%}  
-                        {%- assign max_items = section.settings.max_items -%}
-
-                        {% # theme-check-disable-next-line LiquidHTMLSyntaxError %}
-                        {%- for product in products limit: max_items -%}
-                            {%- render 'product-card', 
-                                product: product
-                            -%}
-                        {%- endfor -%}
+                        {% if use_slider %}
+                            <div 
+                                class="swiper w-full"
+                                data-mobile-items="{{ section.settings.mobile_items }}"
+                                data-pc-items="{{ section.settings.pc_items }}"
+                            >
+                                <div class="swiper-wrapper">
+                        {% endif %}
+                                    {% # theme-check-disable-next-line LiquidHTMLSyntaxError %}
+                                    {%- for product in products limit: max_items -%}
+                                        {%- if use_slider -%}
+                                            <div class="swiper-slide h-auto">
+                                        {%- endif -%}
+                                            {%- render 'product-card', 
+                                                product: product,
+                                                pc_items: section.settings.pc_items,
+                                                mobile_items: section.settings.mobile_items,
+                                                class: 'h-full'
+                                            -%}
+                                        {%- if use_slider -%}
+                                            </div>
+                                        {%- endif -%}
+                                    {%- endfor -%}
+                        {% if use_slider %}
+                                </div>
+                            </div>
+                        {% endif %}
                     </div>
+
+                    {%- if use_slider -%}
+                        <div class="mt-4 flex w-full items-center justify-between pc:mt-6">
+                            <div class="flex items-center gap-4">
+                                {%- if section.settings.show_navigation -%}
+                                    <button class="swiper-button-prev flex items-center justify-center rounded-full border text-theme-text" aria-label="Previous slide">
+                                        {%- render 'icons', icon: 'icon-arrow2', size: 'xl', class: 'rotate-180', color: 'current' -%}
+                                    </button>
+                                {%- endif -%}
+                                
+                                {%- if section.settings.show_pagination -%}
+                                    <div class="swiper-pagination text-theme-text"></div>
+                                {%- endif -%}
+
+                                {%- if section.settings.show_navigation -%}
+                                    <button class="swiper-button-next flex items-center justify-center rounded-full border text-theme-text" aria-label="Next slide">
+                                        {%- render 'icons', icon: 'icon-arrow2', size: 'xl', color: 'current' -%}
+                                    </button>
+                                {%- endif -%}
+                            </div>
+
+                            {%- if section.settings.show_all and block.settings.collection != blank -%}
+                                <a href="{{ block.settings.collection.url }}" class="body-md font-medium underline underline-offset-4 transition-opacity hover:opacity-70">
+                                    View All
+                                </a>
+                            {%- endif -%}
+                        </div>
+                    {%- endif -%}
                 </div>
             {% endfor %}
         {%- endcapture -%}
@@ -83,6 +144,7 @@
         {%- render 'tab-control',
             initialTabStrategy: 'middle',
             tab_header: tab_header,
+            header_class: 'pc:justify-center',
             tab_content: tab_content
         %}
     </div>
@@ -91,18 +153,115 @@
 {% stylesheet %}
     .featured-products-section {
         .product-grid {
+            width: 100%;
             display: grid;
-            grid-template-columns: repeat(var(--product-grid-columns), minmax(0, 1fr));
-            gap: 8px;
+            grid-template-columns: repeat(var(--product-grid-columns-mobile), minmax(0, 1fr));
+            gap: 3px;
+
+            @media (min-width: 768px) {
+                grid-template-columns: repeat(var(--product-grid-columns), minmax(0, 1fr));
+                gap: 8px;
+            }
         }
 
-        @media (max-width: 768px) {
-            .product-grid {
-                --product-grid-columns: var(--product-grid-columns-mobile, minmax(0, 1fr));
+        .swiper {
+            width: 100%;
+            overflow: hidden;
+        }
+        .swiper-wrapper {
+            display: flex;
+        }
+        .swiper-slide {
+            flex-shrink: 0;
+            width: calc(
+                (100% - (var(--product-grid-columns-mobile) - 1) * 3px) /
+                    var(--product-grid-columns-mobile)
+            );
+            margin-right: 3px;
+        }
+        @media (min-width: 768px) {
+            .swiper-slide {
+                width: calc(
+                    (100% - (var(--product-grid-columns) - 1) * 8px) / var(--product-grid-columns)
+                );
+                margin-right: 8px;
             }
+        }
+
+        .swiper-pagination-bullet {
+            background-color: currentColor;
+            opacity: 0.2;
+        }
+        .swiper-pagination-bullet-active {
+            opacity: 1;
+        }
+        .swiper-button-disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
         }
     }
 {% endstylesheet %}
+
+{%- javascript -%}
+    (function () {
+        const Components = window.__Theme__?.Components;
+        if (!Components) return;
+
+        Components.register(
+            'featured-products',
+            {
+                init(el) {
+                    const swipers = [];
+                    const swiperEls = el.querySelectorAll('.swiper');
+
+                    if (swiperEls.length > 0 && typeof Swiper !== 'undefined') {
+                        swiperEls.forEach((swiperEl) => {
+                            const mobileItems =
+                                parseInt(swiperEl.getAttribute('data-mobile-items')) || 2;
+                            const pcItems = parseInt(swiperEl.getAttribute('data-pc-items')) || 4;
+
+                            const options = {
+                                slidesPerView: mobileItems,
+                                spaceBetween: 3,
+                                observer: true,
+                                observeParents: true,
+                                breakpoints: {
+                                    768: {
+                                        slidesPerView: pcItems,
+                                        spaceBetween: 8,
+                                    },
+                                },
+                            };
+
+                            // Link navigation and pagination to the panel's DOM controls
+                            const panel = swiperEl.closest('[role="tabpanel"]');
+                            const nextEl = panel?.querySelector('.swiper-button-next');
+                            const prevEl = panel?.querySelector('.swiper-button-prev');
+                            const paginationEl = panel?.querySelector('.swiper-pagination');
+
+                            if (nextEl && prevEl) {
+                                options.navigation = { nextEl, prevEl };
+                            }
+                            if (paginationEl) {
+                                options.pagination = { el: paginationEl, clickable: true };
+                            }
+
+                            swipers.push(new Swiper(swiperEl, options));
+                        });
+                    }
+
+                    return { swipers };
+                },
+                destroy(el, state) {
+                    if (state?.swipers) {
+                        state.swipers.forEach((s) => s.destroy(true, true));
+                    }
+                },
+            },
+            { lazy: true },
+        );
+    })();
+{%- endjavascript -%}
 
 {% schema %}
 {
@@ -146,13 +305,14 @@
             "default": 4
         },
         {
-            "type": "range",
+            "type": "select",
             "id": "mobile_items",
-            "label": "Items pre row on mobile",
-            "min": 1,
-            "max": 2,
-            "step": 0.1,
-            "default": 1
+            "label": "Items per row on mobile",
+            "options": [
+                { "value": "1", "label": "1" },
+                { "value": "2", "label": "2" }
+            ],
+            "default": "2"
         },
         {
             "type": "checkbox",
@@ -224,8 +384,7 @@
     ],
     "presets": [
         {
-            "name": "Featured Products",
-            "settings": {}
+            "name": "Featured Products"
         }
     ]
 }

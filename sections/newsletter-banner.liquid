@@ -1,13 +1,16 @@
 <div
     data-section-id="{{ section.id }}"
-    class="newsletter-banner-section full-width"
+    class="
+        newsletter-banner-section full-width
+        color-{{ section.settings.color_scheme }}
+    "
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
     "
 >
-    <div class="layout container-page text-[#FFFFFF]">
-        <div class="relative aspect-1392/480 overflow-hidden">
+    <div class="layout container-page">
+        <div class="relative aspect-square overflow-hidden pc:aspect-1392/480">
             {% comment %} Background Image {% endcomment %}
             {%- render 'image',
                 class: '!absolute inset-0',
@@ -26,33 +29,32 @@
             ></div>
 
             {% comment %} Content {% endcomment %}
-            <div class="relative z-10 flex h-full flex-col items-center justify-center gap-6 px-4 text-center opacity-100">
-                <p class="tracking-wide opacity-80">
+            <div class="relative z-10 flex h-full flex-col items-center justify-center gap-4 px-4 text-center text-theme-text opacity-100 pc:gap-6">
+                <p class="body-md opacity-80 pc:body-lg">
                     {{ section.settings.subtitle }}
                 </p>
-                <h1 class="font-medium">
+                <h1 class="h2 pc:h1">
                     {{ section.settings.heading }}
                 </h1>
-                {% form 'customer', class: 'w-full max-w-xl' %}
+                {% form 'customer', class: 'mt-4 w-full max-w-xl pc:mt-0' %}
                     <input type="hidden" name="customer[accepts_marketing]" value="true">
                     <input type="hidden" name="customer[tags]" value="newsletter">
 
-                    <div
-                        class="flex overflow-hidden bg-white"
-                    >
+                    <div class="flex w-full flex-col gap-3 pc:flex-row">
                         <input
                             type="email"
                             name="customer[email]"
                             x-model="email"
                             placeholder="{{ section.settings.placeholder | default: 'Enter your email address' }}"
                             required
-                            class="flex-1 bg-transparent p-5 text-xl text-stone-700 placeholder-stone-400 outline-none"
+                            class="field flex-1"
                         >
                         <button
                             type="submit"
-                            class="flex items-center justify-center px-5 text-stone-500 transition-colors hover:text-stone-800"
+                            class="btn w-full btn-primary pc:w-auto"
                             :disabled="loading"
                         >
+                            <span x-show="!loading" class="pc:hidden">Subscribe</span>
                             <svg
                                 x-show="!loading"
                                 class="h-5 w-5"
@@ -89,6 +91,12 @@
         "groups": ["header", "footer"]
     },
     "settings": [
+        {
+            "type": "color_scheme",
+            "id": "color_scheme",
+            "label": "Color Scheme",
+            "default": "color-scheme-1"
+        },
         {
             "type": "image_picker",
             "id": "background_image",

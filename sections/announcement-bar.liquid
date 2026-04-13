@@ -32,7 +32,7 @@
             "
         >
             {%- if section.settings.show_social -%}
-                {%- render 'social-icons' -%}
+                {%- render 'social-icons', color: 'current' -%}
             {%- endif -%}
 
             {%- if announcement_bar -%}
@@ -41,16 +41,24 @@
                         <div class="swiper h-full w-full">
                             <div class="swiper-wrapper">
                                 {%- for block in section.blocks -%}
-                                    <div class="swiper-slide" {{ block.shopify_attributes }}>
-                                        {%- if block.settings.link != blank -%}
-                                            <a
-                                                href="{{ block.settings.link }}"
-                                                class="hover:underlink inline-block"
-                                            >
-                                                {{ block.settings.text }}
-                                            </a>
-                                        {%- else -%}
-                                            <span>{{ block.settings.text }}</span>
+                                    <div
+                                        class="swiper-slide flex flex-wrap gap-6 body-md text-theme-text"
+                                        {{ block.shopify_attributes }}
+                                    >
+                                        <span class="opacity-60">{{ block.settings.text }}</span>
+
+                                        {%- if section.settings.link != blank -%}
+                                            {%- capture link_content -%}
+                                              <span>{{ section.settings.text }}</span>
+                                              {%- render 'icons', color: 'current' ,icon: 'icon-arrow2', size: 'lg', class:"ml-3" -%}
+                                            {%- endcapture -%}
+
+                                            {%- render 'link',
+                                                href: section.settings.link,
+                                                content: link_content,
+                                                variant: 'underline',
+                                                color: 'current'
+                                            -%}
                                         {%- endif -%}
                                     </div>
                                 {%- endfor -%}
@@ -61,7 +69,7 @@
             {%- endif -%}
 
             <div
-                class="max-pc:hidden flex items-center justify-end gap-2"
+                class=" flex items-center justify-end gap-3 max-pc:hidden"
                 style="grid-area: language-currency"
             >
                 {%- if section.settings.enable_country_selector -%}
@@ -189,6 +197,17 @@
             "default": "scheme-1"
         },
         {
+            "type": "inline_richtext",
+            "id": "text",
+            "default": "See More",
+            "label": "Text"
+        },
+        {
+            "type": "url",
+            "id": "link",
+            "label": "Link"
+        },
+        {
             "type": "header",
             "content": "Public settings"
         },
@@ -228,11 +247,6 @@
                     "id": "text",
                     "default": "Welcome to our store!",
                     "label": "Text"
-                },
-                {
-                    "type": "url",
-                    "id": "link",
-                    "label": "Link"
                 }
             ]
         }
@@ -241,6 +255,12 @@
         {
             "name": "Announcement Bar",
             "blocks": [
+                {
+                    "type": "announcement"
+                },
+                {
+                    "type": "announcement"
+                },
                 {
                     "type": "announcement"
                 }

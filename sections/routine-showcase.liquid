@@ -1,42 +1,40 @@
 <div
     data-section-id="{{ section.id }}"
     class="routine-showcase-section full-width"
-    style="
-        --section-padding-top: {{ section.settings.padding_top }}px;
-        --section-padding-bottom: {{ section.settings.padding_bottom }}px;
-    "
     data-component-kind="section"
     data-component-type="routine-showcase"
     data-component-id="{{ section.id }}"
 >
-    <div class="relative">
+    <div class="relative h-screen overflow-hidden">
         {%- capture sizes -%}
-      (min-width: 80rem) 100vw, (min-width: 48rem) 1280px, 768px
-    {%- endcapture -%}
+            (min-width: 80rem) 100vw, (min-width: 48rem) 1280px, 768px
+        {%- endcapture -%}
 
         {%- capture widths -%}
-      400,768,1280,1440,1536,2560
-    {%- endcapture -%}
+            400,768,1280,1440,1536,2560
+        {%- endcapture -%}
 
-        {%-
-            render 'image',
-            image: section.settings.bg_img,
-            alt: section.settings.bg_img.alt | default: "Background Image",
-            width: section.settings.bg_img.width,
-            sizes: sizes,
-            widths: widths
-        -%}
+        <div class="absolute inset-0">
+            {%-
+                render 'image',
+                image: section.settings.bg_img,
+                alt: section.settings.bg_img.alt | default: "Background Image",
+                width: section.settings.bg_img.width,
+                sizes: sizes,
+                widths: widths
+            -%}
+        </div>
 
-        <div class="layout container-page absolute inset-0">
-            <div class="grid grid-cols-2 grid-rows-[1fr_auto] gap-8 p-4">
-                <div class="flex w-fit flex-col justify-between gap-3">
-                    <div class="swiper-button-prev"></div>
-                    <div class="swiper flex-1" style="margin-left:0;">
+        <div class="layout container-page relative h-full color-{{ section.settings.color_scheme }} bg-transparent!">
+            <div class="grid h-full grid-cols-1 grid-rows-[auto_1fr_auto] py-3 pc:grid-cols-2 pc:grid-rows-[1fr_auto]">
+                <div class="flex flex-row gap-3 max-pc:h-full pc:w-fit pc:flex-col pc:justify-between">
+                    <div class="swiper-button-prev self-center"></div>
+                    <div class="swiper min-w-0 flex-1" style="margin-left:0;">
                         <div class="swiper-wrapper">
                             {%- assign products = section.settings.collection.products -%}
 
                             {%- for product in products -%}
-                                <div class="swiper-slide fw:w-136 w-auto">
+                                <div class="swiper-slide w-auto pc:w-136">
                                     <a
                                         class="relative block h-full"
                                         href="{{ product.url }}"
@@ -54,13 +52,13 @@
 
                                         <div
                                             class="
-                                                absolute right-0 bottom-0 left-0 flex justify-between p-4
-                                                text-xl
+                                                absolute right-0 bottom-0 left-0
+                                                flex items-center justify-between p-2 transition-colors pc:p-4
                                             "
-                                            :class=" hover ? 'bg-[#263D29] text-[#D5FF83]':'bg-[#F8F8F8] text-[#0D1400]' "
+                                            :class=" hover ? 'bg-theme-text text-theme-bg' : 'bg-theme-bg text-theme-text' "
                                         >
-                                            <div class="font-medium">{{ product.title }}</div>
-                                            <div class="opacity-20">
+                                            <div class="truncate h6 pc:h4">{{ product.title }}</div>
+                                            <div class="body-xs text-nowrap opacity-20 pc:body-md">
                                                 {% if forloop.index < 10 %}
                                                     {% assign display_index = forloop.index
                                                         | prepend: '0'
@@ -76,10 +74,10 @@
                             {%- endfor -%}
                         </div>
                     </div>
-                    <div class="swiper-button-next"></div>
+                    <div class="swiper-button-next left-0 self-center"></div>
                 </div>
 
-                <div class="fw:w-3/5 flex w-auto flex-col gap-12 self-center justify-self-end bg-white p-6 text-[#263D29]">
+                <div class="flex w-auto flex-col gap-12 self-center justify-self-end p-6 fw:w-3/5">
                     <div>{{ section.settings.eyebrow }}</div>
 
                     <div class="gap-2">
@@ -88,25 +86,24 @@
                     </div>
 
                     {%- capture link_content -%}
-            <span>{{ section.settings.cta_text }}</span>
-            <span class="ml-3 inline-block h-6 w-6">
-              {{- 'icon-arrow2.svg' | inline_asset_content -}}
-            </span>
-          {%- endcapture -%}
+                        <span>{{ section.settings.cta_text }}</span>
+                        {% render 'icons', icon: 'icon-arrow2', size: 'lg', class: 'ml-3',color:'current' %}
+                    {%- endcapture -%}
 
                     {%- render 'link',
                         href: section.settings.cta_link,
                         content: link_content,
-                        variant: 'underline'
+                        variant: 'underline',
+                        color: 'current'
                     -%}
                 </div>
 
-                <div class="text-xl text-[#263D29] opacity-80">
+                <div class="opacity-80">
                     {{ section.settings.badge_counter }}
                 </div>
 
                 {%- render 'rotating-badge',
-                    classes: 'relative justify-self-center',
+                    classes: 'relative justify-self-center max-pc:hidden',
                     unique_id: section.id,
                     size: 100,
                     badge_text: section.settings.rotate_badge_text,
@@ -130,34 +127,46 @@
 
                     if (!swiperContainer || typeof Swiper === 'undefined') return;
 
-                    const swiper = new Swiper(swiperContainer, {
-                        direction: window.innerWidth <= 760 ? 'horizontal' : 'vertical',
-                        slidesPerView: 4,
-                        autoHeight: true,
-                        spaceBetween: 8,
-                        speed: 300,
-                        loop: false,
-                        allowTouchMove: false,
-                        navigation: {
-                            nextEl: '.swiper-button-next',
-                            prevEl: '.swiper-button-prev',
-                        },
-                        on: {
-                            resize() {
-                                swiper.changeDirection(
-                                    window.innerWidth <= 760 ? 'horizontal' : 'vertical',
-                                );
-                            },
-                        },
-                    });
+                    const mql = window.matchMedia('(min-width: 768px)');
+                    const state = { swiper: null, mql: mql, handler: null };
 
-                    return { swiper };
+                    function createSwiper() {
+                        if (state.swiper) state.swiper.destroy(true, true);
+
+                        const isDesktop = mql.matches;
+
+                        state.swiper = new Swiper(swiperContainer, {
+                            direction: isDesktop ? 'vertical' : 'horizontal',
+                            slidesPerView: isDesktop ? 4 : 2,
+                            grid: isDesktop ? { rows: 1 } : { rows: 2, fill: 'row' },
+                            autoHeight: isDesktop,
+                            spaceBetween: 8,
+                            speed: 300,
+                            loop: false,
+                            allowTouchMove: true,
+                            navigation: {
+                                nextEl: el.querySelector('.swiper-button-next'),
+                                prevEl: el.querySelector('.swiper-button-prev'),
+                            },
+                        });
+                    }
+
+                    state.handler = () => createSwiper();
+
+                    createSwiper();
+                    mql.addEventListener('change', state.handler);
+
+                    return state;
                 },
 
                 destroy(el, state) {
-                    if (!state || !state.swiper) return;
+                    if (!state) return;
 
-                    if (typeof state.swiper.destroy === 'function') {
+                    if (state.mql && state.handler) {
+                        state.mql.removeEventListener('change', state.handler);
+                    }
+
+                    if (state.swiper?.destroy) {
                         state.swiper.destroy(true, true);
                     }
                 },
@@ -172,16 +181,16 @@
         .swiper-button-prev,
         .swiper-button-next {
             --swiper-navigation-size: 18px;
-            --swiper-navigation-color: #000;
-
+            --swiper-navigation-color: currentColor;
             position: relative;
             top: 0;
             margin-top: 0;
         }
 
-        .swiper-button-prev {
-            transform: rotate(90deg);
-            margin: 0 auto;
+        @media (min-width: 768px) {
+            .swiper-button-prev {
+                transform: rotate(90deg);
+            }
         }
     }
 {% endstylesheet %}
@@ -195,6 +204,12 @@
         "groups": ["header", "footer"]
     },
     "settings": [
+        {
+            "type": "color_scheme",
+            "id": "color_scheme",
+            "label": "Color Scheme",
+            "default": "color-scheme-1"
+        },
         {
             "type": "image_picker",
             "id": "bg_img",
@@ -252,30 +267,6 @@
             "id": "rotate_badge_percent",
             "label": "Rotate Badge Percent",
             "default": "100%"
-        },
-        {
-            "type": "header",
-            "content": "Padding"
-        },
-        {
-            "type": "range",
-            "id": "padding_top",
-            "min": 0,
-            "max": 100,
-            "step": 4,
-            "unit": "px",
-            "label": "Padding Top",
-            "default": 0
-        },
-        {
-            "type": "range",
-            "id": "padding_bottom",
-            "min": 0,
-            "max": 100,
-            "step": 4,
-            "unit": "px",
-            "label": "Padding Bottom",
-            "default": 0
         }
     ],
     "presets": [

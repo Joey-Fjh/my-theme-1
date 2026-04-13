@@ -19,12 +19,12 @@
             {%- for block in section.blocks -%}
                 <div class="swiper-slide" {{ block.shopify_attributes }}>
                     {%- capture sizes -%}
-            (min-width: 80rem) 100vw, (min-width: 48rem) 1280px, 768px
-          {%- endcapture -%}
+                        (min-width: 80rem) 100vw, (min-width: 48rem) 1280px, 768px
+                    {%- endcapture -%}
 
                     {%- capture widths -%}
-            400,768,1280,1536,2560
-          {%- endcapture -%}
+                        400,768,1280,1536,2560
+                    {%- endcapture -%}
 
                     {%- assign image_loading = 'lazy' -%}
                     {%- if forloop.first -%}
@@ -41,45 +41,45 @@
                         loading: image_loading
                     -%}
 
-                    <div class="layout container-page absolute inset-0">
-                        <div class="grid grid-cols-3 grid-rows-3">
+                    <div class="layout layout-safe-top container-page absolute inset-0">
+                        <div class="grid grid-cols-1 grid-rows-3 pc:grid-cols-3">
                             <div
-                                class="{{ block.settings.heading_position }} flex h-full w-full items-center"
+                                class="text-theme-text/80 {{ block.settings.caption_position }} flex flex-col justify-around pc:h-full pc:w-full"
                             >
-                                <hxl class="leading-tight font-bold tracking-tight">
-                                    {{ block.settings.headline }}
-                                </hxl>
-                            </div>
-
-                            <div
-                                class="{{ block.settings.caption_position }} flex h-full w-full flex-col justify-around"
-                            >
-                                <p class="leading-relaxed font-light">
+                                <p class="body-md leading-relaxed font-light">
                                     {{ block.settings.year }}
                                 </p>
 
-                                <div class="mt-2 leading-tight font-light">
+                                <div class="mt-2 body-md leading-tight font-light">
                                     {{ block.settings.description }}
                                 </div>
 
                                 {%- capture link_content -%}
-                  <span>{{ block.settings.cta_text }}</span>
-                  <span class="ml-3 inline-block h-6 w-6">
-                    {{- 'icon-arrow2.svg' | inline_asset_content -}}
-                  </span>
-                {%- endcapture -%}
+                                    <span>{{ block.settings.cta_text }}</span>
+                                    {% render 'icons', icon: 'icon-arrow2', size: 'lg', class: 'ml-3',color: 'current' %}
+                                {%- endcapture -%}
+
                                 {%- render 'link',
                                     href: block.settings.cta_link,
                                     content: link_content,
-                                    variant: 'underline'
+                                    variant: 'underline',
+                                    color: 'current'
                                 -%}
                             </div>
 
                             <div
-                                class="{{ block.settings.badge_position }} flex h-full w-full flex-col items-center justify-around"
+                                class="{{ block.settings.heading_position }} flex items-center pc:h-full pc:w-full"
                             >
-                                <div>{{ block.settings.badge_text }}</div>
-                                <div>{{ block.settings.badge_counter }}</div>
+                                <h1 class="hxl leading-tight font-bold tracking-tight">
+                                    {{ block.settings.headline }}
+                                </h1>
+                            </div>
+
+                            <div
+                                class="text-theme-text/80 {{ block.settings.meta_position }} flex flex-col justify-around pc:h-full pc:w-full pc:items-center"
+                            >
+                                <div>{{ block.settings.meta_text }}</div>
+                                <div>{{ block.settings.meta_counter }}</div>
                             </div>
                         </div>
                     </div>
@@ -138,9 +138,6 @@
         );
     })();
 {% endjavascript %}
-
-{% stylesheet %}
-{% endstylesheet %}
 
 {% schema %}
 {
@@ -219,12 +216,6 @@
                 {
                     "type": "header",
                     "content": "Slide Content"
-                },
-                {
-                    "type": "color_scheme",
-                    "id": "color_scheme",
-                    "label": "Color Scheme",
-                    "default": "color-scheme-1"
                 },
                 {
                     "type": "header",
@@ -308,16 +299,16 @@
                 },
                 {
                     "type": "header",
-                    "content": "Badge"
+                    "content": "Meta"
                 },
                 {
                     "type": "paragraph",
-                    "content": "Display a small label like 'AI' or a sequence number (e.g., 002/12). Customize its text, position, and colors below."
+                    "content": "Display a small meta line (e.g., a short label like 'AI') or a sequence number (e.g., 002/12). Customize its text, position, and colors below."
                 },
                 {
                     "type": "select",
-                    "id": "badge_position",
-                    "label": "Badge Position",
+                    "id": "meta_position",
+                    "label": "Meta Position",
                     "options": [
                         { "value": "place-top-left", "label": "Top Left" },
                         { "value": "place-top-center", "label": "Top Center" },
@@ -333,14 +324,14 @@
                 },
                 {
                     "type": "text",
-                    "id": "badge_text",
-                    "label": "Badge Text",
+                    "id": "meta_text",
+                    "label": "Meta Text",
                     "default": "Personalize insight."
                 },
                 {
                     "type": "text",
-                    "id": "badge_counter",
-                    "label": "Counter Number",
+                    "id": "meta_counter",
+                    "label": "Meta Counter Number",
                     "default": "002/12"
                 }
             ]

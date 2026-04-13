@@ -4,76 +4,162 @@
     @param {product} product - The product object to render in the card
     @param {string} [class] - Optional extra CSS class names applied to the card
     @param {string} [image_ratio] - Optional image ratio or class used to control image aspect ratio
+    @param {number} [pc_items] - Optional items on row for image size
+    @param {number} [mobile_items] - Optional mobile items on row for image size
 
     @example
     {% render 'product-card', product: product, class: 'my-product-card' %}
 {% enddoc %}
 
+{%- liquid
+    assign brand = product.type
+    if brand == blank
+        assign brand = product.vendor
+    endif
+
+    assign pc_items = pc_items | default: 4
+    assign mobile_items = mobile_items | default: 2
+
+    assign image_count = product.images.size
+    if image_count == blank or image_count < 1
+        assign image_count = 1
+    endif
+
+    assign aspect_ratio = image_ratio | default: '1/1'
+-%}
+
 <div
-    class="{{ class }} relative bg-white p-4"
-    x-data="{ hover: false }"
-    x-on:mouseenter="hover = true"
-    x-on:mouseleave="hover = false"
+    class="product-card {{ class }}"
+    x-data="productCard({ imageCount: {{ image_count }} })"
+    @mouseleave="setImageHover(false); setActionsHover(false)"
 >
-    <!-- Category & Settings -->
-    <div class="mb-2 flex items-center justify-between">
-        {% comment %} 预留分类信息 {% endcomment %}
-        {% comment %} 预留轮播按钮 {% endcomment %}
+    <div class="product-card__category">
+        <div class="product-card__category-brand" title="{{ brand }}">{{ brand }}</div>
+        <div class="product-card__category-meta">
+            {%- if image_count > 1 -%}
+                <div
+                    class="product-card__pagination"
+                    aria-label="Image pagination"
+                >
+                    {%- if image_count <= 3 -%}
+                        {%- for image in product.images -%}
+                            <button
+                                type="button"
+                                class="product-card__pagination-dot"
+                                :class="{ 'is-active': activeImageIndex === {{ forloop.index0 }} }"
+                                @click.prevent="setActiveImage({{ forloop.index0 }})"
+                                aria-label="Show image {{ forloop.index }}"
+                            ></button>
+                        {%- endfor -%}
+                    {%- else -%}
+                        <div class="product-card__pagination-numeric">
+                            <button
+                                type="button"
+                                class="product-card__pagination-arrow"
+                                @click.prevent="prevImage()"
+                                aria-label="Previous image"
+                            >
+                                {%- render 'icons',
+                                    icon: 'icon-arrow2',
+                                    size: 'xl',
+                                    class: 'rotate-180',
+                                    color: 'current'
+                                -%}
+                            </button>
+                            <span class="product-card__pagination-text" x-text="paginationLabel"
+                                >1 / {{ image_count -}}
+                            </span>
+                            <button
+                                type="button"
+                                class="product-card__pagination-arrow"
+                                @click.prevent="nextImage()"
+                                aria-label="Next image"
+                            >
+                                {%- render 'icons',
+                                    icon: 'icon-arrow2',
+                                    size: 'xl',
+                                    color: 'current'
+                                -%}
+                            </button>
+                        </div>
+                    {%- endif -%}
+                </div>
+            {%- endif -%}
+        </div>
     </div>
 
-    <!-- Product Image Container -->
-    <div class="relative mb-4 aspect-square">
-        <!-- Product Image -->
-        {% comment %}
-            {%- assign pc_items_safe = pc_items | default: 5 -%}
-            {%- assign mobile_items_safe = mobile_items | default: 2 -%}
-            (min-width: 48rem) calc(100vw / {{pc_items_safe}}), calc(100vw / {{mobile_items_safe}})
-        {% endcomment %}
-
+    <div
+        class="product-card__image"
+        @mouseenter="setImageHover(true)"
+        @mouseleave="setImageHover(false)"
+    >
         {%- capture sizes -%}
-            (min-width: 48rem) calc(100vw / pc_items), calc(100vw / mobile_items)
+            (min-width: 48rem) calc(100vw / {{ pc_items }}), calc(100vw / {{ mobile_items }})
         {%- endcapture -%}
 
         {%- capture widths -%}
             200,320,480,640,800
         {%- endcapture -%}
 
-        {%-
-            render 'image',
-            image: product.featured_image,
-            url: product.url,
-            alt: product.featured_image.alt | default: product.title,
-            width: product.featured_image.width,
-            sizes: sizes,
-            widths: widths,
-            aspect_ratio: image_ratio | default: '1/1'
-        -%}
+        <a href="{{ product.url }}" class="product-card__image-link">
+            {%- for image in product.images -%}
+                <div
+                    class="product-card__carousel-slide"
+                    x-show="activeImageIndex === {{ forloop.index0 }}"
+                    x-transition.opacity.duration.200ms
+                >
+                    {%-
+                        render 'image',
+                        image: image,
+                        alt: image.alt | default: product.title,
+                        width: image.width,
+                        sizes: sizes,
+                        widths: widths,
+                        aspect_ratio: aspect_ratio
+                    -%}
+                </div>
+            {%- else -%}
+                <div class="product-card__carousel-slide" x-show="true">
+                    {%-
+                        render 'image',
+                        image: product.featured_image,
+                        alt: product.featured_image.alt | default: product.title,
+                        width: product.featured_image.width,
+                        sizes: sizes,
+                        widths: widths,
+                        aspect_ratio: aspect_ratio
+                    -%}
+                </div>
+            {%- endfor -%}
+        </a>
+    </div>
 
-        <!-- Hover Actions -->
-        <div
-            class="absolute inset-x-0 bottom-0 m-6 flex flex-col gap-2 transition-opacity duration-300"
-            :class="hover ? 'opacity-100' : 'opacity-0'"
-        >
-            <button
-                class="w-full border border-gray-300 bg-white py-2 text-2xl text-gray-800 transition-colors hover:bg-gray-50"
-                data-product-handle="{{ product.handle }}"
-            >
-                Quick View
-            </button>
-            <button
-                class="w-full bg-[#4a5d23] py-2 text-2xl text-white transition-colors hover:bg-[#3d4d1c]"
-                data-variant-id="{{ product.selected_or_first_available_variant.id }}"
-            >
-                Add to Cart
-            </button>
+    <div class="product-card__info">
+        <div class="product-card__info-title" title="{{ product.title }}">
+            {{ product.title }}
+        </div>
+        <div class="product-card__info-price">
+            {{ product.price | money }}
         </div>
     </div>
 
-    <!-- Product Info -->
-    <div class="flex items-center justify-between">
-        <a href="{{ product.url }}" class="text-2xl font-medium text-gray-800 hover:underline">
-            {{ product.title }}
-        </a>
-        <span class="text-2xl font-medium text-gray-800">{{ product.price | money }}</span>
+    <div
+        class="product-card__hover-actions"
+        :class="showHoverActions ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'"
+        @mouseenter="setActionsHover(true)"
+        @mouseleave="setActionsHover(false)"
+    >
+        <button
+            class="product-card__btn-primary"
+            data-product-handle="{{ product.handle }}"
+        >
+            Quick View
+        </button>
+        <button
+            class="product-card__btn-secondary"
+            data-variant-id="{{ product.selected_or_first_available_variant.id }}"
+        >
+            Add to Cart
+        </button>
     </div>
 </div>

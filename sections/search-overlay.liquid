@@ -3,221 +3,203 @@
 <div
     data-section-id="{{ section.id }}"
     class="search-overlay-section"
-    data-component-kind="section"
-    data-component-type="search-overlay"
-    data-component-id="{{ section.id }}"
 >
     {%- capture drawer_content -%}
-    <div
-      class="flex h-full flex-col bg-white text-[#263D29]"
-      x-data="predictiveSearch({ limit: {{ section.settings.search_result_limit | json }} })"
-      x-init='searchUrl = {{ routes.search_url | json }}'
-      @keydown.escape.window="$store.dialog.close()"
-    >
-      <div class="pc:px-6 border-b border-[#D5D9D6] px-5 pt-5 pb-4">
-        <div class="mb-5 flex items-center justify-between gap-4">
-          <h2 id="dialog-title-{{ popup_id }}" class="h3">Search</h2>
-          <button
-            type="button"
-            class="inline-flex h-8 w-8 cursor-pointer items-center justify-center text-[#263D29]/75 transition hover:text-[#263D29]"
-            @click="$store.dialog.close()"
-            aria-label="Close search drawer"
-          >
-            <span class="h-4 w-4">{{ 'icon-trash.svg' | inline_asset_content }}</span>
-          </button>
-        </div>
+        <div
+            class="flex h-full flex-col text-theme-text"
+            x-data="predictiveSearch({ limit: {{ section.settings.search_result_limit | json }} })"
+            x-init='searchUrl = {{ routes.search_url | json }}'
+            @keydown.escape.window="$store.dialog.close()"
+        >
+            <div class="p-6">
+                <div class="mb-5 flex items-center justify-between gap-4">
+                    <h2 id="dialog-title-{{ popup_id }}">Search</h2>
+                    
+                    <button
+                        type="button"
+                        class="inline-flex h-8 w-8 cursor-pointer items-center justify-center text-theme-text/75 transition hover:text-theme-text"
+                        @click="$store.dialog.close()"
+                        aria-label="Close search drawer"
+                    >
+                        {% render 'icons', icon: 'icon-close', size: 'lg', color: 'current' %}
+                    </button>
+                </div>
 
-        <form @submit.prevent="performSearch()" role="search" class="w-full">
-          <div class="flex items-center gap-2 border-b border-[#263D29] pb-2">
-            <span class="h-4 w-4 shrink-0 opacity-70">{{ 'icon-search.svg' | inline_asset_content }}</span>
-            <input
-              id="SearchOverlayInput-{{ section.id }}"
-              type="search"
-              name="q"
-              class="w-full min-w-0 border-none bg-transparent text-base outline-none placeholder:text-[#A0A5A1]"
-              autocomplete="off"
-              placeholder="Search"
-              x-model="query"
-              @input="onInput($event.target.value)"
-              @compositionend="onInput($event.target.value)"
-              @focus="openPanel()"
-              @keydown.enter.prevent="performSearch()"
-            >
-          </div>
-        </form>
-
-        <div x-show="isLoading" class="mt-4">
-          {% render 'loading', size: 'small' %}
-        </div>
-
-        <template x-if="!isLoading && suggestions.length">
-          <ul class="mt-4 flex flex-wrap gap-x-3 gap-y-2">
-            <template x-for="item in suggestions" :key="item.text">
-              <li>
-                <button
-                  type="button"
-                  class="border-b border-[#D5D9D6] text-sm transition-colors hover:border-[#263D29]"
-                  @click="onSuggestionClick(item)"
-                  x-html="highlightSuggestion(item.text)"
-                ></button>
-              </li>
-            </template>
-          </ul>
-        </template>
-      </div>
-
-      <div class="pc:px-6 flex min-h-0 flex-1 flex-col px-5 py-4">
-        <div x-show="!isLoading && hasEmptyState && query" class="py-6 text-center">
-          <p class="h5">No results found for "<span x-text="query"></span>"</p>
-        </div>
-
-        <div x-show="!isLoading && !hasEmptyState" class="flex min-h-0 flex-1 flex-col">
-          {% capture tab_header %}
-            <button
-              type="button"
-              role="tab"
-              x-data="{ index: null }"
-              x-init="index = registerTab($el)"
-              @click="setActive(index); activeTab = 'products'"
-              class="h6 border-b pb-2 tracking-[0.16em] uppercase transition-colors"
-              :class="isActive(index) ? 'text-[#263D29] border-[#263D29]' : 'text-[#A0A5A1] border-transparent hover:text-[#263D29]'"
-            >
-              Products
-            </button>
-
-            <button
-              type="button"
-              role="tab"
-              x-data="{ index: null }"
-              x-init="index = registerTab($el)"
-              @click="setActive(index); activeTab = 'articles'"
-              class="h6 border-b pb-2 tracking-[0.16em] uppercase transition-colors"
-              :class="isActive(index) ? 'text-[#263D29] border-[#263D29]' : 'text-[#A0A5A1] border-transparent hover:text-[#263D29]'"
-            >
-              Articles
-            </button>
-
-            <button
-              type="button"
-              role="tab"
-              x-data="{ index: null }"
-              x-init="index = registerTab($el)"
-              @click="setActive(index); activeTab = 'pages'"
-              class="h6 border-b pb-2 tracking-[0.16em] uppercase transition-colors"
-              :class="isActive(index) ? 'text-[#263D29] border-[#263D29]' : 'text-[#A0A5A1] border-transparent hover:text-[#263D29]'"
-            >
-              Pages
-            </button>
-          {% endcapture %}
-
-          {% capture tab_content %}
-            <div
-              role="tabpanel"
-              x-data="{ index: null }"
-              x-init="index = registerPanel($el)"
-              x-show="activeTab === 'products'"
-              class="h-full overflow-y-auto pr-1"
-            >
-              <div class="grid grid-cols-2 gap-3">
-                <template x-for="product in products" :key="product.id">
-                  <a
-                    class="group block border border-[#E7EAE8] p-3 transition-shadow hover:shadow-sm"
-                    :href="product.url"
-                  >
-                    <div class="mb-3 aspect-square overflow-hidden bg-[#F4F5F3]">
-                      <img
-                        class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-102"
-                        :src="product.image"
-                        :alt="product.title"
-                        width="120"
-                        height="120"
-                      >
+                <form @submit.prevent="performSearch()" role="search" class="w-full">
+                    <div class="flex items-center gap-2 border-b border-theme-border-strong pb-2">
+                        {% render 'icons', icon: 'icon-search', size: 'lg', class: 'shrink-0 opacity-70', color: 'current' %}
+                        <input
+                            id="SearchOverlayInput-{{ section.id }}"
+                            type="search"
+                            name="q"
+                            class="w-full min-w-0 border-none bg-transparent outline-none placeholder:text-theme-text/45"
+                            autocomplete="off"
+                            placeholder="Search"
+                            x-model="query"
+                            @input="onInput($event.target.value)"
+                            @compositionend="onInput($event.target.value)"
+                            @focus="openPanel()"
+                            @keydown.enter.prevent="performSearch()"
+                        >
                     </div>
-                    <p class="line-clamp-2 text-sm" x-text="product.title"></p>
-                    <p class="mt-1 text-sm opacity-80" x-text="product.priceFormatted"></p>
-                  </a>
+                </form>
+
+                <div x-show="isLoading" class="mt-4">
+                    {% render 'loading', size: 'small' %}
+                </div>
+
+                <template x-if="!isLoading && suggestions.length">
+                    <ul class="mt-4 flex flex-wrap gap-x-3 gap-y-2">
+                        <template x-for="item in suggestions" :key="item.text">
+                            <li>
+                                <button
+                                    type="button"
+                                    class="border-b border-theme-border-soft transition-colors hover:border-theme-border-strong"
+                                    @click="onSuggestionClick(item)"
+                                    x-html="highlightSuggestion(item.text)"
+                                ></button>
+                            </li>
+                        </template>
+                    </ul>
                 </template>
-              </div>
-              <p x-show="!products.length" class="py-4 text-sm text-[#A0A5A1]">No products found.</p>
             </div>
 
-            <div
-              role="tabpanel"
-              x-data="{ index: null }"
-              x-init="index = registerPanel($el)"
-              x-show="activeTab === 'articles'"
-              class="h-full overflow-y-auto pr-1"
-            >
-              <ul class="space-y-3">
-                <template x-for="article in articles" :key="article.id">
-                  <li class="border-b border-[#E7EAE8] pb-2">
-                    <a class="text-sm hover:underline" :href="article.url" x-text="article.title"></a>
-                  </li>
-                </template>
-              </ul>
-              <p x-show="!articles.length" class="py-4 text-sm text-[#A0A5A1]">No articles found.</p>
-            </div>
+            <div class="flex min-h-0 flex-1 flex-col px-5 py-4 pc:px-6">
+                <div x-show="!isLoading && hasEmptyState && query" class="py-6 text-center">
+                    <p class="body-md">No results found for "<span x-text="query"></span>"</p>
+                </div>
 
-            <div
-              role="tabpanel"
-              x-data="{ index: null }"
-              x-init="index = registerPanel($el)"
-              x-show="activeTab === 'pages'"
-              class="h-full overflow-y-auto pr-1"
-            >
-              <ul class="space-y-3">
-                <template x-for="page in pages" :key="page.id">
-                  <li class="border-b border-[#E7EAE8] pb-2">
-                    <a class="text-sm hover:underline" :href="page.url" x-text="page.title"></a>
-                  </li>
-                </template>
-              </ul>
-              <p x-show="!pages.length" class="py-4 text-sm text-[#A0A5A1]">No pages found.</p>
-            </div>
-          {% endcapture %}
+                <div x-show="!isLoading && !hasEmptyState" class="flex min-h-0 flex-1 flex-col">
+                    {% capture tab_header %}
+                        <button
+                            type="button"
+                            role="tab"
+                            x-data="{ index: null }"
+                            x-init="index = registerTab($el)"
+                            @click="setActive(index); activeTab = 'products'"
+                            class="border-b pb-2 tracking-[0.16em] uppercase transition-colors"
+                            :class="isActive(index) ? 'text-theme-text border-theme-border-strong' : 'text-theme-text/45 border-transparent hover:text-theme-text'"
+                        >
+                            Products
+                        </button>
 
-          {%- render 'tab-control',
-            initialTabStrategy: 'first',
-            tab_header: tab_header,
-            tab_content: tab_content,
-            header_class: 'flex flex-wrap gap-x-5 gap-y-2 border-b border-[#D5D9D6] mb-4',
-            content_class: 'flex-1 min-h-0',
-            custom_class: 'flex-1 min-h-0 flex flex-col'
-          -%}
+                        <button
+                            type="button"
+                            role="tab"
+                            x-data="{ index: null }"
+                            x-init="index = registerTab($el)"
+                            @click="setActive(index); activeTab = 'articles'"
+                            class="border-b pb-2 tracking-[0.16em] uppercase transition-colors"
+                            :class="isActive(index) ? 'text-theme-text border-theme-border-strong' : 'text-theme-text/45 border-transparent hover:text-theme-text'"
+                        >
+                            Articles
+                        </button>
+
+                        <button
+                            type="button"
+                            role="tab"
+                            x-data="{ index: null }"
+                            x-init="index = registerTab($el)"
+                            @click="setActive(index); activeTab = 'pages'"
+                            class="border-b pb-2 tracking-[0.16em] uppercase transition-colors"
+                            :class="isActive(index) ? 'text-theme-text border-theme-border-strong' : 'text-theme-text/45 border-transparent hover:text-theme-text'"
+                        >
+                            Pages
+                        </button>
+                    {% endcapture %}
+
+                    {% capture tab_content %}
+                        <div
+                            role="tabpanel"
+                            x-data="{ index: null }"
+                            x-init="index = registerPanel($el)"
+                            x-show="activeTab === 'products'"
+                            class="h-full overflow-y-auto pr-1"
+                        >
+                            <div class="grid grid-cols-2 gap-3">
+                                <template x-for="product in products" :key="product.id">
+                                    <a
+                                        class="group block border border-theme-border-soft p-3 transition-shadow hover:shadow-sm"
+                                        :href="product.url"
+                                    >
+                                        <div class="mb-3 aspect-square overflow-hidden bg-theme-bg/60">
+                                        <img
+                                            class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-102"
+                                            :src="product.image"
+                                            :alt="product.title"
+                                            width="120"
+                                            height="120"
+                                        >
+                                        </div>
+                                        <p class="line-clamp-2 body-md" x-text="product.title"></p>
+                                        <p class="mt-1 body-md opacity-80" x-text="product.priceFormatted"></p>
+                                    </a>
+                                </template>
+                            </div>
+                            <p x-show="!products.length" class="py-4 body-md text-theme-text/45">No products found.</p>
+                        </div>
+
+                        <div
+                            role="tabpanel"
+                            x-data="{ index: null }"
+                            x-init="index = registerPanel($el)"
+                            x-show="activeTab === 'articles'"
+                            class="h-full overflow-y-auto pr-1"
+                        >
+                            <ul class="space-y-3">
+                                <template x-for="article in articles" :key="article.id">
+                                    <li class="border-b border-theme-border-soft pb-2">
+                                        <a class="body-md hover:underline" :href="article.url" x-text="article.title"></a>
+                                    </li>
+                                </template>
+                            </ul>
+                            <p x-show="!articles.length" class="py-4 body-md text-theme-text/45">No articles found.</p>
+                        </div>
+
+                        <div
+                            role="tabpanel"
+                            x-data="{ index: null }"
+                            x-init="index = registerPanel($el)"
+                            x-show="activeTab === 'pages'"
+                            class="h-full overflow-y-auto pr-1"
+                        >
+                            <ul class="space-y-3">
+                                <template x-for="page in pages" :key="page.id">
+                                    <li class="border-b border-theme-border-soft pb-2">
+                                        <a class="body-md hover:underline" :href="page.url" x-text="page.title"></a>
+                                    </li>
+                                </template>
+                            </ul>
+                            <p x-show="!pages.length" class="py-4 body-md text-theme-text/45">No pages found.</p>
+                        </div>
+                    {% endcapture %}
+
+                    {%- render 'tab-control',
+                        type: 'underlined',
+                        initialTabStrategy: 'first',
+                        tab_header: tab_header,
+                        tab_content: tab_content,
+                        header_class: 'mb-4 gap-x-5 gap-y-2',
+                        content_class: 'flex-1 min-h-0',
+                        custom_class: 'flex-1 min-h-0 flex flex-col'
+                    -%}
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-  {%- endcapture -%}
+    {%- endcapture -%}
 
     {%- render 'ui-dialog',
         id: popup_id,
         type: 'drawer',
         position: 'right',
-        overlay_class: 'bg-black/35',
+        top_class: 'top-[var(--announcement-bar-height)] pc:top-0',
+        color_scheme: section.settings.color_scheme,
         root_class: 'z-[10010]',
-        drawer_wrapper_class: '!max-w-[40rem] fw:!max-w-[33vw]',
+        drawer_wrapper_class: '!max-w-none pc:!max-w-[33vw]',
         drawer_panel_class: 'overflow-hidden',
         content: drawer_content
     -%}
 </div>
-
-{%- javascript -%}
-    (function () {
-        const Components = window.__Theme__?.Components;
-        if (!Components) return;
-
-        Components.register(
-            'search-overlay',
-            {
-                init() {
-                    return {};
-                },
-                destroy() {},
-            },
-            { lazy: false },
-        );
-    })();
-{%- endjavascript -%}
 
 {% schema %}
 {
@@ -229,6 +211,12 @@
     },
     "limit": 1,
     "settings": [
+        {
+            "type": "color_scheme",
+            "id": "color_scheme",
+            "label": "Color scheme",
+            "default": "scheme-1"
+        },
         {
             "type": "range",
             "id": "search_result_limit",

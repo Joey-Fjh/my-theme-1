@@ -3,6 +3,7 @@
 
     Accepts:
     - type: {String} 'icon' | 'name' (Optional, default: icon)
+    - color: {String} 'theme' | 'current' | 'currentColor' (Optional, default: theme)
     - class: {String} Additional class for the <ul> (optional)
     - font_class: {String} Additional class for the <span> (optional)
     - size:  {String} 'small' | 'medium' | 'large' (optional, default: medium)
@@ -12,6 +13,12 @@
 {%- endcomment -%}
 
 {% assign type = type | default: 'icon' %}
+{% assign social_color = color | default: 'theme' %}
+{% assign social_list_color_class = 'text-theme-icon' %}
+{% if social_color == 'current' or social_color == 'currentColor' %}
+    {% assign social_list_color_class = 'text-current' %}
+{% endif %}
+{% assign social_link_class = 'inline-flex items-center justify-center icons-animate-breathe transition-all duration-200 ease-in-out' %}
 
 {%- assign size_class = '' -%}
 {%- case size -%}
@@ -23,248 +30,52 @@
         {%- assign size_class = 'w-8 h-8' -%}
 {%- endcase -%}
 
+{%- assign social_platforms = 'facebook,instagram,youtube,tiktok,twitter,pinterest,snapchat,tumblr,vimeo'
+    | split: ','
+-%}
 {%- assign has_any_social = false -%}
-{%- unless settings.social_facebook_link == blank -%}
-    {%- assign has_any_social = true -%}
-{%- endunless -%}
-{%- unless settings.social_instagram_link == blank -%}
-    {%- assign has_any_social = true -%}
-{%- endunless -%}
-{%- unless settings.social_youtube_link == blank -%}
-    {%- assign has_any_social = true -%}
-{%- endunless -%}
-{%- unless settings.social_tiktok_link == blank -%}
-    {%- assign has_any_social = true -%}
-{%- endunless -%}
-{%- unless settings.social_twitter_link == blank -%}
-    {%- assign has_any_social = true -%}
-{%- endunless -%}
-{%- unless settings.social_pinterest_link == blank -%}
-    {%- assign has_any_social = true -%}
-{%- endunless -%}
-{%- unless settings.social_snapchat_link == blank -%}
-    {%- assign has_any_social = true -%}
-{%- endunless -%}
-{%- unless settings.social_tumblr_link == blank -%}
-    {%- assign has_any_social = true -%}
-{%- endunless -%}
-{%- unless settings.social_vimeo_link == blank -%}
-    {%- assign has_any_social = true -%}
-{%- endunless -%}
+{%- for platform in social_platforms -%}
+    {%- assign social_setting_key = 'social_' | append: platform | append: '_link' -%}
+    {%- assign social_url = settings[social_setting_key] -%}
+    {%- unless social_url == blank -%}
+        {%- assign has_any_social = true -%}
+        {%- break -%}
+    {%- endunless -%}
+{%- endfor -%}
 
 {%- if has_any_social -%}
     <ul
-        class="social-icons max-pc:hidden flex flex-wrap items-center gap-5 {% if class %} {{ class }}{% endif %}"
+        class="social-icons flex flex-wrap items-center gap-5 max-pc:hidden {{ social_list_color_class }} {% if class %} {{ class }}{% endif %}"
         role="list"
     >
-        {%- if settings.social_facebook_link != blank -%}
-            <li class="flex items-center">
-                <a
-                    class="icons icons-animate-breathe inline-flex items-center justify-center"
-                    href="{{ settings.social_facebook_link }}"
-                    target="_blank"
-                    rel="noopener"
-                    aria-label="facebook"
-                >
-                    {% if type == 'icon' %}
-                        <span class="inline-block {{ size_class }}">
-                            {{- 'icon-facebook.svg' | inline_asset_content -}}
-                        </span>
-                    {% else %}
-                        <span class="{{ font_class }}">facebook</span>
-                    {% endif %}
-                </a>
-            </li>
-        {%- endif -%}
-
-        {%- if settings.social_instagram_link != blank -%}
-            <li class="flex items-center">
-                <a
-                    class="icons icons-animate-breathe inline-flex items-center justify-center"
-                    href="{{ settings.social_instagram_link }}"
-                    target="_blank"
-                    rel="noopener"
-                    aria-label="instagram"
-                >
-                    {% if type == 'icon' %}
-                        <span class="inline-block {{ size_class }}">
-                            {{- 'icon-instagram.svg' | inline_asset_content -}}
-                        </span>
-                    {% else %}
-                        <span class="{{ font_class }}">instagram</span>
-                    {% endif %}
-                </a>
-            </li>
-        {%- endif -%}
-
-        {%- if settings.social_youtube_link != blank -%}
-            <li class="flex items-center">
-                <a
-                    class="icons icons-animate-breathe inline-flex items-center justify-center"
-                    href="{{ settings.social_youtube_link }}"
-                    target="_blank"
-                    rel="noopener"
-                    aria-label="youtube"
-                >
-                    {% if type == 'icon' %}
-                        <span class="inline-block {{ size_class }}">
-                            {{- 'icon-youtube.svg' | inline_asset_content -}}
-                        </span>
-                    {% else %}
-                        <span class="{{ font_class }}">youtube</span>
-                    {% endif %}
-                </a>
-            </li>
-        {%- endif -%}
-
-        {%- if settings.social_tiktok_link != blank -%}
-            <li class="flex items-center">
-                <a
-                    class="icons icons-animate-breathe inline-flex items-center justify-center"
-                    href="{{ settings.social_tiktok_link }}"
-                    target="_blank"
-                    rel="noopener"
-                    aria-label="tiktok"
-                >
-                    {% if type == 'icon' %}
-                        <span class="inline-block {{ size_class }}">
-                            {{- 'icon-tiktok.svg' | inline_asset_content -}}
-                        </span>
-                    {% else %}
-                        <span class="{{ font_class }}">tiktok</span>
-                    {% endif %}
-                </a>
-            </li>
-        {%- endif -%}
-
-        {%- if settings.social_twitter_link != blank -%}
-            <li class="flex items-center">
-                <a
-                    class="icons icons-animate-breathe inline-flex items-center justify-center"
-                    href="{{ settings.social_twitter_link }}"
-                    target="_blank"
-                    rel="noopener"
-                    aria-label="twitter"
-                >
-                    {% if type == 'icon' %}
-                        <span class="inline-block {{ size_class }}">
-                            {{- 'icon-twitter.svg' | inline_asset_content -}}
-                        </span>
-                    {% else %}
-                        <span class="{{ font_class }}">twitter</span>
-                    {% endif %}
-                </a>
-            </li>
-        {%- endif -%}
-
-        {%- if settings.social_pinterest_link != blank -%}
-            <li class="flex items-center">
-                <a
-                    class="icons icons-animate-breathe inline-flex items-center justify-center"
-                    href="{{ settings.social_pinterest_link }}"
-                    target="_blank"
-                    rel="noopener"
-                    aria-label="pinterest"
-                >
-                    {% if type == 'icon' %}
-                        <span class="inline-block {{ size_class }}">
-                            {{- 'icon-pinterest.svg' | inline_asset_content -}}
-                        </span>
-                    {% else %}
-                        <span class="{{ font_class }}">pinterest</span>
-                    {% endif %}
-                </a>
-            </li>
-        {%- endif -%}
-
-        {%- if settings.social_snapchat_link != blank -%}
-            <li class="flex items-center">
-                <a
-                    class="icons icons-animate-breathe inline-flex items-center justify-center"
-                    href="{{ settings.social_snapchat_link }}"
-                    target="_blank"
-                    rel="noopener"
-                    aria-label="snapchat"
-                >
-                    {% if type == 'icon' %}
-                        <span class="inline-block {{ size_class }}">
-                            {{- 'icon-snapchat.svg' | inline_asset_content -}}
-                        </span>
-                    {% else %}
-                        <span class="{{ font_class }}">snapchat</span>
-                    {% endif %}
-                </a>
-            </li>
-        {%- endif -%}
-
-        {%- if settings.social_tumblr_link != blank -%}
-            <li class="flex items-center">
-                <a
-                    class="icons icons-animate-breathe inline-flex items-center justify-center"
-                    href="{{ settings.social_tumblr_link }}"
-                    target="_blank"
-                    rel="noopener"
-                    aria-label="tumblr"
-                >
-                    {% if type == 'icon' %}
-                        <span class="inline-block {{ size_class }}">
-                            {{- 'icon-tumblr.svg' | inline_asset_content -}}
-                        </span>
-                    {% else %}
-                        <span class="{{ font_class }}">tumblr</span>
-                    {% endif %}
-                </a>
-            </li>
-        {%- endif -%}
-
-        {%- if settings.social_vimeo_link != blank -%}
-            <li class="flex items-center">
-                <a
-                    class="icons icons-animate-breathe inline-flex items-center justify-center"
-                    href="{{ settings.social_vimeo_link }}"
-                    target="_blank"
-                    rel="noopener"
-                    aria-label="vimeo"
-                >
-                    {% if type == 'icon' %}
-                        <span class="inline-block {{ size_class }}">
-                            {{- 'icon-vimeo.svg' | inline_asset_content -}}
-                        </span>
-                    {% else %}
-                        <span class="{{ font_class }}">vimeo</span>
-                    {% endif %}
-                </a>
-            </li>
-        {%- endif -%}
+        {%- for platform in social_platforms -%}
+            {%- assign social_setting_key = 'social_' | append: platform | append: '_link' -%}
+            {%- assign social_url = settings[social_setting_key] -%}
+            {%- if social_url != blank -%}
+                {%- assign social_icon_name = 'icon-' | append: platform -%}
+                <li class="flex items-center" style="--i: {{ forloop.index0 }};">
+                    {%- capture social_link_content -%}
+                        {% if type == 'icon' %}
+                            {% render 'icons',
+                                icon: social_icon_name,
+                                class: size_class,
+                                color: 'current'
+                            %}
+                        {% else %}
+                            <span class="{{ font_class }}">{{ platform }}</span>
+                        {% endif %}
+                    {%- endcapture -%}
+                    {%- render 'link',
+                        href: social_url,
+                        class: social_link_class,
+                        variant: 'plain',
+                        content: social_link_content,
+                        target: '_blank',
+                        aria_label: platform,
+                        attributes: 'rel="noopener"'
+                    -%}
+                </li>
+            {%- endif -%}
+        {%- endfor -%}
     </ul>
 {%- endif -%}
-
-<style>
-    .social-icons > li:nth-child(1) {
-        --i: 0;
-    }
-    .social-icons > li:nth-child(2) {
-        --i: 1;
-    }
-    .social-icons > li:nth-child(3) {
-        --i: 2;
-    }
-    .social-icons > li:nth-child(4) {
-        --i: 3;
-    }
-    .social-icons > li:nth-child(5) {
-        --i: 4;
-    }
-    .social-icons > li:nth-child(6) {
-        --i: 5;
-    }
-    .social-icons > li:nth-child(7) {
-        --i: 6;
-    }
-    .social-icons > li:nth-child(8) {
-        --i: 7;
-    }
-    .social-icons > li:nth-child(9) {
-        --i: 8;
-    }
-</style>

@@ -1,0 +1,206 @@
+{%- assign popup_id = popup_id | default: 'header-mobile-menu-drawer' -%}
+{%- assign menu_handle = menu_handle | default: blank -%}
+{%- assign menu_obj = linklists[menu_handle] -%}
+{%- assign color_scheme = color_scheme | default: '' -%}
+{%- assign account_href = routes.account_login_url -%}
+{%- if customer -%}
+    {%- assign account_href = routes.account_url -%}
+{%- endif -%}
+
+{%- if menu_obj != blank and menu_obj.links != blank -%}
+    {%- capture drawer_content -%}
+        <div
+            class="flex h-full flex-col text-theme-text"
+            x-data="mobileMenuDrawer"
+            @keydown.escape.window="$store.dialog.close()"
+        >
+            <h2 id="dialog-title-{{ popup_id }}" class="sr-only">
+                Menu
+            </h2>
+
+            <div class="p-6">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-9">
+                        {%- capture search_content -%}
+                            {% render 'icons', icon: 'icon-search', size: 'xl', color: 'current' %}
+                        {%- endcapture -%}
+
+                        {%- render 'link',
+                            href: routes.search_url,
+                            aria_label: 'Search',
+                            content: search_content,
+                            variant: 'plain',
+                            color: 'current',
+                            attributes: '@click="$store.dialog.close()"'
+                        -%}
+
+                        {%- capture cart_content -%}
+                            {% render 'icons', icon: 'icon-cart', size: 'xl', color: 'current' %}
+                        {%- endcapture -%}
+
+                        {%- render 'link',
+                            href: routes.cart_url,
+                            aria_label: 'Cart',
+                            content: cart_content,
+                            variant: 'plain',
+                            color: 'current',
+                            attributes: '@click="$store.dialog.close()"'
+                        -%}
+
+                        {%- capture account_content -%}
+                            {% render 'icons', icon: 'icon-account', size: 'xl', color: 'current' %}
+                        {%- endcapture -%}
+
+                        {%- render 'link',
+                            href: account_href,
+                            aria_label: 'Account',
+                            content: account_content,
+                            variant: 'plain',
+                            color: 'current',
+                            attributes: '@click="$store.dialog.close()"'
+                        -%}
+                    </div>
+
+                    <button
+                        type="button"
+                        @click="$store.dialog.close()"
+                        aria-label="Close mobile menu"
+                    >
+                        {% render 'icons', icon: 'icon-close', size: 'xl', color: 'current' %}
+                    </button>
+                </div>
+            </div>
+
+            <div class="min-h-0 flex-1 overflow-y-auto p-6">
+                <template x-if="!thirdLevelLinks.length">
+                    <div>
+                        <ul x-ref="topMenu" class="space-y-4" role="list">
+                            {%- for link in menu_obj.links -%}
+                                <li data-has-children="{% if link.links != blank %}true{% else %}false{% endif %}">
+                                    {%- if link.links == blank -%}
+                                        {%- capture top_attributes -%}
+                                            {%- if link.current -%}
+                                                aria-current="page"
+                                            {%- endif -%}
+                                        {%- endcapture -%}
+                                        
+                                        {% render 'link',
+                                            text: link.title | escape,
+                                            href: link.url,
+                                            variant: 'underline',
+                                            class: 'inline-flex items-center body-md text-theme-text/90',
+                                            attributes: top_attributes,
+                                            color: 'current'
+                                        %}
+                                    {%- else -%}
+                                        <button
+                                            type="button"
+                                            class="inline-flex cursor-pointer items-center gap-2 body-md text-theme-text/90"
+                                            @click="openTop({{ forloop.index0 }})"
+                                            :aria-expanded="activeTopIndex === {{ forloop.index0 }}"
+                                        >
+                                            <span>{{ link.title | escape }}</span>
+                                            <span
+                                                class="inline-flex transition-transform duration-200"
+                                                :class="activeTopIndex === {{ forloop.index0 }} ? 'rotate-180' : ''"
+                                            >
+                                                {% render 'icons', icon: 'icon-arrow', size:'lg', color: 'current' %}
+                                            </span>
+                                        </button>
+
+                                        <div x-show="activeTopIndex === {{ forloop.index0 }}" class="pt-4">
+                                            <ul class="space-y-4" role="list">
+                                                {%- for child in link.links -%}
+                                                    <li class="text-theme-text/55">
+                                                        {%- if child.links == blank -%}
+                                                            {%- capture child_attributes -%}
+                                                                {%- if child.current -%}
+                                                                    aria-current="page"
+                                                                {%- endif -%}
+                                                            {%- endcapture -%}
+
+                                                            {% render 'link',
+                                                                text: child.title | escape,
+                                                                href: child.url,
+                                                                variant: 'underline',
+                                                                class: 'inline-flex items-center body-lg leading-[1.2] font-light text-theme-text/90',
+                                                                attributes: child_attributes,
+                                                                color: 'current'
+                                                            %}
+                                                        {%- else -%}
+                                                            {%- capture third_payload -%}
+                                                                {
+                                                                    "title": {{ child.title | json }},
+                                                                    "links": [
+                                                                        {%- for grandchild in child.links -%}
+                                                                            { "title": {{ grandchild.title | json }}, "url": {{ grandchild.url | json }} }{% unless forloop.last %},{% endunless %}
+                                                                        {%- endfor -%}
+                                                                    ]
+                                                                }
+                                                            {%- endcapture -%}
+
+                                                            <button
+                                                                type="button"
+                                                                class="inline-flex cursor-pointer items-end gap-1 body-lg leading-[1.2] font-light text-theme-text/90"
+                                                                data-third-payload="{{ third_payload | strip | escape }}"
+                                                                @click="openThirdLevelFromButton($el)"
+                                                            >
+                                                                <span class="decoration-1 underline-offset-3">
+                                                                    {{ child.title | escape }}
+                                                                </span>
+                                                            </button>
+                                                        {%- endif -%}
+                                                    </li>
+                                                {%- endfor -%}
+                                            </ul>
+                                        </div>
+                                    {%- endif -%}
+                                </li>
+                            {%- endfor -%}
+                        </ul>
+                    </div>
+                </template>
+
+                <template x-if="thirdLevelLinks.length">
+                    <div class="h-full">
+                        <button
+                            type="button"
+                            class="mb-6 inline-flex cursor-pointer items-center gap-3 text-theme-text"
+                            @click="backToSecondLevel()"
+                            aria-label="Back to second level menu"
+                        >
+                            <span class="inline-flex rotate-90">
+                                {% render 'icons', icon: 'icon-arrow', size:"lg", color: 'current' %}
+                            </span>
+                            <span class="body-md" x-text="thirdLevelParentTitle"></span>
+                        </button>
+
+                        <ul class="space-y-4 text-theme-text/80" role="list">
+                            <template x-for="item in thirdLevelLinks" :key="item.url + item.title">
+                                <li>
+                                    <a
+                                        :href="item.url"
+                                        class="inline-flex items-center body-md leading-tight"
+                                        x-text="item.title"
+                                    ></a>
+                                </li>
+                            </template>
+                        </ul>
+                    </div>
+                </template>
+            </div>
+        </div>
+    {%- endcapture -%}
+
+    {%- render 'ui-dialog',
+        id: popup_id,
+        type: 'drawer',
+        position: 'left',
+        top_class: 'top-[var(--announcement-bar-height)]',
+        root_class: 'z-[10010]',
+        color_scheme: color_scheme,
+        drawer_wrapper_class: '!max-w-none',
+        drawer_panel_class: 'overflow-hidden',
+        content: drawer_content
+    -%}
+{%- endif -%}

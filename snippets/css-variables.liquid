@@ -1,9 +1,3 @@
-{% liquid
-    assign body_font_bold = settings.type_body_font | font_modify: 'weight', 'bold'
-    assign body_font_italic = settings.type_body_font | font_modify: 'style', 'italic'
-    assign body_font_bold_italic = body_font_bold | font_modify: 'style', 'italic'
-%}
-
 {% style %}
     {%- comment -%} Heading Custom font --- @font-face {%- endcomment -%}
     {% if settings.use_custom_heading_font and settings.custom_heading_font_url != blank %}
@@ -28,6 +22,12 @@
     {% endif %}
 
     {% unless settings.use_custom_body_font and settings.custom_body_font_url != blank %}
+        {% liquid
+            assign body_font_bold = settings.type_body_font | font_modify: 'weight', 'bold'
+            assign body_font_italic = settings.type_body_font | font_modify: 'style', 'italic'
+            assign body_font_bold_italic = body_font_bold | font_modify: 'style', 'italic'
+        %}
+
         {{ settings.type_body_font | font_face: font_display: 'swap' }}
         {{ body_font_bold | font_face: font_display: 'swap' }}
         {{ body_font_italic | font_face: font_display: 'swap' }}
@@ -54,14 +54,26 @@
             {% endif %}
 
             --color-foreground: {{ scheme.settings.text_color.red }}, {{ scheme.settings.text_color.green }}, {{ scheme.settings.text_color.blue }};
+
             --color-icons: {{ scheme.settings.icons_color.red }}, {{ scheme.settings.icons_color.green }}, {{ scheme.settings.icons_color.blue }};
+
             --color-links: {{ scheme.settings.links_color.red }}, {{ scheme.settings.links_color.green }}, {{ scheme.settings.links_color.blue }};
+
+            --color-border: {{ scheme.settings.border_color.red }}, {{ scheme.settings.border_color.green }}, {{ scheme.settings.border_color.blue }};
+            --color-border-strong: {{ scheme.settings.border_strong_color.red }}, {{ scheme.settings.border_strong_color.green }}, {{ scheme.settings.border_strong_color.blue }};
+
+            --color-focus-ring: {{ scheme.settings.focus_ring_color.red }}, {{ scheme.settings.focus_ring_color.green }}, {{ scheme.settings.focus_ring_color.blue }};
+
             --color-primary-button: {{ scheme.settings.primary_button_background_color.red }}, {{ scheme.settings.primary_button_background_color.green }}, {{ scheme.settings.primary_button_background_color.blue }};
             --color-primary-button-text: {{ scheme.settings.primary_button_label_color.red }}, {{ scheme.settings.primary_button_label_color.green }}, {{ scheme.settings.primary_button_label_color.blue }};
             --color-primary-button-border: {{ scheme.settings.primary_button_border_color.red }}, {{ scheme.settings.primary_button_border_color.green }}, {{ scheme.settings.primary_button_border_color.blue }};
             --color-secondary-button: {{ scheme.settings.secondary_button_background_color.red }}, {{ scheme.settings.secondary_button_background_color.green }}, {{ scheme.settings.secondary_button_background_color.blue }};
             --color-secondary-button-text: {{ scheme.settings.secondary_button_label_color.red }}, {{ scheme.settings.secondary_button_label_color.green }}, {{ scheme.settings.secondary_button_label_color.blue }};
             --color-secondary-button-border: {{ scheme.settings.secondary_button_border_color.red }}, {{ scheme.settings.secondary_button_border_color.green }}, {{ scheme.settings.secondary_button_border_color.blue }};
+
+            --color-badge-background: {{ scheme.settings.badge_background_color.red }}, {{ scheme.settings.badge_background_color.green }}, {{ scheme.settings.badge_background_color.blue }};
+            --color-badge-foreground: {{ scheme.settings.badge_label_color.red }}, {{ scheme.settings.badge_label_color.green }}, {{ scheme.settings.badge_label_color.blue }};
+            --color-badge-border: {{ scheme.settings.badge_border_color.red }}, {{ scheme.settings.badge_border_color.green }}, {{ scheme.settings.badge_border_color.blue }};
         }
     {% endfor %}
 
@@ -116,5 +128,29 @@
 
         --input-margin-offset: {% if settings.input_shadow_vertical_offset != 0 and settings.input_shadow_opacity > 0 %}{{ settings.input_shadow_vertical_offset | abs }}{% else %}0{% endif %}px;
         --inputs-radius-outset: {% if settings.input_radius > 0 %}{{ settings.input_radius | plus: settings.input_border_thickness }}{% else %}0{% endif %}px;
+
+        {% comment %} Button Variables {% endcomment %}
+        --button-radius: {{ settings.button_radius }}px;
+        --button-border-width: {{ settings.button_border_thickness }}px;
+        --button-shadow-opacity: {{ settings.button_shadow_opacity | divided_by: 100.0 }};
+        --button-shadow-horizontal-offset: {{ settings.button_shadow_horizontal_offset }}px;
+        --button-shadow-vertical-offset: {{ settings.button_shadow_vertical_offset }}px;
+        --button-shadow-blur-radius: {{ settings.button_shadow_blur }}px;
+
+        {%  comment  %} Surfaces {% endcomment %}
+        --surface-radius: {{ settings.surface_radius }}px;
+        --surface-border-width: {{ settings.surface_border_thickness }}px;
+        --surface-shadow-opacity: {{ settings.surface_shadow_opacity | divided_by: 100.0 }};
+        --surface-shadow-horizontal-offset: {{ settings.surface_shadow_horizontal_offset }}px;
+        --surface-shadow-vertical-offset: {{ settings.surface_shadow_vertical_offset }}px;
+        --surface-shadow-blur-radius: {{ settings.surface_shadow_blur }}px;
+
+        {% comment %} Shared Opacity & Focus {% endcomment %}
+        --border-opacity: 0.12;
+        --focus-ring-opacity: 0.35;
+        --focus-ring-width: {{ settings.focus_ring_width | default: 2 }}px;
+        --focus-ring-offset: {{ settings.focus_ring_offset | default: 2 }}px;
+        --dialog-overlay-rgb: 0, 0, 0;
+        --dialog-overlay-opacity: 0.45;
     }
 {% endstyle %}

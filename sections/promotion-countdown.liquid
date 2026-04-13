@@ -1,13 +1,16 @@
 <div
     data-section-id="{{ section.id }}"
-    class="promotion-countdown-section full-width"
+    class="
+        promotion-countdown-section full-width
+        color-{{ section.settings.color_scheme }}
+    "
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
     "
 >
     <div class="layout container-page">
-        <div class="flex flex-col gap-6 text-center text-[#263D29]">
+        <div class="flex flex-col gap-6 text-center text-theme-text">
             <h3 class="opacity-80">
                 {{ section.settings.sub_heading }}
             </h3>
@@ -17,7 +20,7 @@
         </div>
 
         <div
-            class="mt-25 mb-8 flex items-center justify-center gap-2 md:gap-4"
+            class="mt-25 mb-8 flex items-center justify-center gap-2 pc:gap-4"
             x-data="countdownTimer('{{ section.settings.end_date }}')"
         >
             <!-- Days -->
@@ -25,49 +28,43 @@
                 <div class="flex justify-center gap-1">
                     {% render 'flip-digit', value: 'days', length: 3, unit: 'day' %}
                 </div>
-                <span class="mt-3 block text-sm text-gray-600 md:text-base">
+                <span class="mt-3 block body-md text-theme-text/70">
                     {{- section.settings.days_label -}}
                 </span>
             </div>
 
-            <span class="mt-6 self-start text-3xl font-light text-gray-400 md:mt-10 md:text-5xl"
-                >:</span
-            >
+            <span class="mt-6 self-start h1 font-light text-theme-text/40 pc:mt-10">:</span>
 
             <!-- Hours -->
             <div class="text-center">
                 <div class="flex justify-center gap-1">
                     {% render 'flip-digit', value: 'hours', length: 2, unit: 'hour' %}
                 </div>
-                <span class="mt-3 block text-sm text-gray-600 md:text-base">
+                <span class="mt-3 block body-md text-theme-text/70">
                     {{- section.settings.hours_label -}}
                 </span>
             </div>
 
-            <span class="mt-6 self-start text-3xl font-light text-gray-400 md:mt-10 md:text-5xl"
-                >:</span
-            >
+            <span class="mt-6 self-start h1 font-light text-theme-text/40 pc:mt-10">:</span>
 
             <!-- Minutes -->
             <div class="text-center">
                 <div class="flex justify-center gap-1">
                     {% render 'flip-digit', value: 'minutes', length: 2, unit: 'minute' %}
                 </div>
-                <span class="mt-3 block text-sm text-gray-600 md:text-base">
+                <span class="mt-3 block body-md text-theme-text/70">
                     {{- section.settings.minutes_label -}}
                 </span>
             </div>
 
-            <span class="mt-6 self-start text-3xl font-light text-gray-400 md:mt-10 md:text-5xl"
-                >:</span
-            >
+            <span class="mt-6 self-start h1 font-light text-theme-text/40 pc:mt-10">:</span>
 
             <!-- Seconds -->
             <div class="text-center">
                 <div class="flex justify-center gap-1">
                     {% render 'flip-digit', value: 'seconds', length: 2, unit: 'second' %}
                 </div>
-                <span class="mt-3 block text-sm text-gray-600 md:text-base">
+                <span class="mt-3 block body-md text-theme-text/70">
                     {{- section.settings.seconds_label -}}
                 </span>
             </div>
@@ -77,16 +74,15 @@
         {% if section.settings.show_cta %}
             {%- capture link_content -%}
                 <span>{{ section.settings.cta_text }}</span>
-                <span class="ml-3 inline-block h-6 w-6">
-                    {{- 'icon-arrow2.svg' | inline_asset_content -}}
-                </span>
+                {% render 'icons', icon: 'icon-arrow2', size: 'lg', class: 'ml-3',color:'current' %}
             {%- endcapture -%}
 
             {%- render 'link',
-                class: 'justify-self-center text-black',
+                class: 'justify-self-center',
                 href: section.settings.cta_link,
                 content: link_content,
-                variant: 'underline'
+                variant: 'underline',
+                color: 'current'
             -%}
         {% endif %}
     </div>
@@ -101,6 +97,12 @@
         "groups": ["header", "footer"]
     },
     "settings": [
+        {
+            "type": "color_scheme",
+            "id": "color_scheme",
+            "label": "Color Scheme",
+            "default": "color-scheme-1"
+        },
         {
             "type": "inline_richtext",
             "id": "sub_heading",

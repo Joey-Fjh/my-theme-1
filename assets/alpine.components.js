@@ -11,6 +11,7 @@
 
         static register(name, cb) {
             if (!this.#alpine) throw new Error('AlpineComponentsFactory not initialized');
+
             if (typeof name !== 'string' || !name.trim())
                 throw new Error('Component name must be a non-empty string');
 
@@ -24,6 +25,10 @@
             const enhancedCb = function (...args) {
                 const componentDefinition = cb.apply(this, args);
 
+                const ThemeEvents = window.__Theme__.Events;
+                const eventNames = ThemeEvents.events;
+                const unmountEvent = eventNames.COMPONENT_UNMOUNTED;
+
                 if (typeof componentDefinition.dispose !== 'function') {
                     return componentDefinition;
                 }
@@ -36,7 +41,7 @@
                         typeof this.on === 'function' &&
                         typeof this.destroy === 'function'
                     ) {
-                        this.on(this.$el, 'unmount', this.destroy.bind(this));
+                        this.on(this.$el, unmountEvent, this.destroy.bind(this));
                     }
 
                     if (originalInit) {
@@ -57,6 +62,7 @@
             return {
                 on(target, event, handler, options) {
                     if (!target || typeof target.addEventListener !== 'function') return;
+
                     target.addEventListener(event, handler, options);
                     disposers.push(() => target.removeEventListener(event, handler, options));
                 },
@@ -78,6 +84,8 @@
 
     class AlpineComponents {
         static DROPDOWN = 'dropdown';
+        static MOBILEMENUDRAWER = 'mobileMenuDrawer';
+        static DRAGSCROLL = 'dragScroll';
         static STICKY_HEADER = 'stickyHeader';
         static TABCONTROL = 'tabControl';
         static BEFOREAFTERCOMPARISON = 'beforeAfterComparison';
@@ -93,6 +101,7 @@
         static RELATEDPRODUCTS = 'relatedProducts';
         static NEWSLETTEROVERLAY = 'newsletterOverlay';
         static CARTOVERLAY = 'cartOverlay';
+        static PRODUCTCARD = 'productCard';
 
         static dropdown() {
             return {
@@ -126,6 +135,148 @@
                     }
 
                     this.openEls.length = from;
+                },
+            };
+        }
+
+        static mobileMenuDrawer() {
+            return {
+                activeTopIndex: -1,
+                thirdLevelParentTitle: '',
+                thirdLevelLinks: [],
+
+                init() {
+                    const menu = this.$refs.topMenu;
+                    if (!menu) return;
+
+                    const firstWithChildren = Array.from(menu.children).findIndex(
+                        (item) => item.dataset.hasChildren === 'true',
+                    );
+                    this.activeTopIndex = firstWithChildren >= 0 ? firstWithChildren : -1;
+                },
+
+                openTop(index) {
+                    this.thirdLevelParentTitle = '';
+                    this.thirdLevelLinks = [];
+                    this.activeTopIndex = this.activeTopIndex === index ? -1 : index;
+                },
+
+                openThirdLevel(title, links) {
+                    this.thirdLevelParentTitle = title || '';
+                    this.thirdLevelLinks = Array.isArray(links) ? links : [];
+                },
+
+                openThirdLevelFromButton(button) {
+                    if (!button) return;
+                    const payload = button.getAttribute('data-third-payload');
+                    if (!payload) return;
+
+                    try {
+                        const parsed = JSON.parse(payload);
+                        this.openThirdLevel(parsed.title, parsed.links);
+                    } catch (_) {
+                        this.openThirdLevel('', []);
+                    }
+                },
+
+                backToSecondLevel() {
+                    this.thirdLevelParentTitle = '';
+                    this.thirdLevelLinks = [];
+                },
+            };
+        }
+
+        static dragScroll({ axis = 'x', threshold = 6, clickGuardMs = 100 } = {}) {
+            return {
+                ...AlpineComponentsFactory.useDisposable(),
+                axis,
+                threshold,
+                clickGuardMs,
+                _pointerDown: false,
+                _dragging: false,
+                _startX: 0,
+                _startY: 0,
+                _startScrollLeft: 0,
+                _startScrollTop: 0,
+                _suppressClickUntil: 0,
+
+                init() {
+                    this.on(this.$el, 'pointerdown', this.onPointerDown.bind(this));
+                    this.on(window, 'pointermove', this.onPointerMove.bind(this), {
+                        passive: false,
+                    });
+                    this.on(window, 'pointerup', this.endDrag.bind(this));
+                    this.on(window, 'pointercancel', this.endDrag.bind(this));
+                    this.on(this.$el, 'click', this.onClickCapture.bind(this), true);
+                    this.on(this.$el, 'dragstart', this.onDragStart.bind(this));
+                },
+
+                onPointerDown(event) {
+                    if (event.button !== 0) return;
+
+                    this._pointerDown = true;
+                    this._dragging = false;
+                    this._startX = event.clientX;
+                    this._startY = event.clientY;
+                    this._startScrollLeft = this.$el.scrollLeft;
+                    this._startScrollTop = this.$el.scrollTop;
+                    this.$el.classList.add('is-pointer-down');
+                },
+
+                onPointerMove(event) {
+                    if (!this._pointerDown) return;
+
+                    const deltaX = event.clientX - this._startX;
+                    const deltaY = event.clientY - this._startY;
+                    const distance = this.axis === 'y' ? Math.abs(deltaY) : Math.abs(deltaX);
+
+                    if (!this._dragging && distance >= this.threshold) {
+                        this._dragging = true;
+                        this.$el.classList.add('is-dragging');
+                    }
+
+                    if (!this._dragging) return;
+
+                    if (this.axis === 'y') {
+                        this.$el.scrollTop = this._startScrollTop - deltaY;
+                    } else {
+                        this.$el.scrollLeft = this._startScrollLeft - deltaX;
+                    }
+
+                    event.preventDefault();
+                },
+
+                endDrag() {
+                    if (!this._pointerDown) return;
+
+                    this._pointerDown = false;
+                    this.$el.classList.remove('is-pointer-down');
+
+                    if (this._dragging) {
+                        this._suppressClickUntil = performance.now() + this.clickGuardMs;
+                    }
+
+                    requestAnimationFrame(() => {
+                        this._dragging = false;
+                        this.$el.classList.remove('is-dragging');
+                    });
+                },
+
+                onClickCapture(event) {
+                    if (performance.now() < this._suppressClickUntil) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                },
+
+                onDragStart(event) {
+                    event.preventDefault();
+                },
+
+                destroy() {
+                    this.$el.classList.remove('is-dragging');
+                    this.$el.classList.remove('is-pointer-down');
+                    this.dispose();
                 },
             };
         }
@@ -174,13 +325,15 @@
                 tabs: [],
                 panels: [],
                 activeIndex: 0,
+                mobileQuery: '(max-width: 47.99rem)',
 
                 init() {
                     this.$nextTick(() => {
                         const count = this.tabs.length;
                         if (count === 0) return;
 
-                        this.activeIndex = initialStrategy === 'first' ? 0 : Math.floor(count / 2);
+                        const nextIndex = initialStrategy === 'first' ? 0 : Math.floor(count / 2);
+                        this.setActive(nextIndex, { centerOnMobile: true, behavior: 'auto' });
                     });
                 },
 
@@ -194,9 +347,13 @@
                     return this.panels.length - 1;
                 },
 
-                setActive(index) {
+                setActive(index, options = {}) {
                     if (index < 0 || index >= this.tabs.length) return;
                     this.activeIndex = index;
+
+                    this.$nextTick(() => {
+                        this.scrollActiveTabIntoView(index, options);
+                    });
                 },
 
                 isActive(index) {
@@ -209,6 +366,63 @@
 
                 prev() {
                     this.setActive((this.activeIndex - 1 + this.tabs.length) % this.tabs.length);
+                },
+
+                isMobileViewport() {
+                    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function')
+                        return false;
+                    return window.matchMedia(this.mobileQuery).matches;
+                },
+
+                getHorizontalScrollParent(el) {
+                    if (!el) return null;
+
+                    let parent = el.parentElement;
+                    while (parent) {
+                        if (parent.scrollWidth > parent.clientWidth) {
+                            const style = window.getComputedStyle(parent);
+                            const overflowX = style.overflowX;
+                            if (overflowX === 'auto' || overflowX === 'scroll') return parent;
+                        }
+                        parent = parent.parentElement;
+                    }
+
+                    return null;
+                },
+
+                scrollActiveTabIntoView(index, options = {}) {
+                    if (!this.isMobileViewport()) return;
+
+                    const tab = this.tabs[index];
+                    if (!(tab instanceof HTMLElement)) return;
+
+                    const scroller = this.getHorizontalScrollParent(tab);
+                    if (!scroller) return;
+
+                    const { centerOnMobile = false, behavior = 'smooth' } = options;
+                    const isEdgeTab = index === 0 || index === this.tabs.length - 1;
+
+                    const tabLeft = tab.offsetLeft;
+                    const tabRight = tabLeft + tab.offsetWidth;
+                    const visibleLeft = scroller.scrollLeft;
+                    const visibleRight = visibleLeft + scroller.clientWidth;
+
+                    if (centerOnMobile && !isEdgeTab) {
+                        const centered = tabLeft - (scroller.clientWidth - tab.offsetWidth) / 2;
+                        const maxScroll = scroller.scrollWidth - scroller.clientWidth;
+                        const nextLeft = Math.min(Math.max(centered, 0), Math.max(maxScroll, 0));
+                        scroller.scrollTo({ left: nextLeft, behavior });
+                        return;
+                    }
+
+                    if (tabLeft < visibleLeft) {
+                        scroller.scrollTo({ left: tabLeft, behavior });
+                        return;
+                    }
+
+                    if (tabRight > visibleRight) {
+                        scroller.scrollTo({ left: tabRight - scroller.clientWidth, behavior });
+                    }
                 },
             };
         }
@@ -433,9 +647,9 @@
                  * @param {boolean} updateHistory
                  */
                 _executeFetch(url, updateHistory) {
-                    const ThemeRequest = window.__Theme__?.ThemeRequest;
-                    const SectionRefresher = window.__Theme__?.SectionRefresher;
-                    if (!ThemeRequest || !SectionRefresher) return;
+                    const Http = window.ShopifyHttp;
+                    const SectionRefresher = window.ShopifySectionRefresher;
+                    if (!Http || !SectionRefresher) return;
 
                     if (this.abortController) this.abortController.abort();
                     this.abortController = new AbortController();
@@ -446,7 +660,7 @@
                     const fetchUrl =
                         url + sep + 'sections=' + ids.map(encodeURIComponent).join(',');
 
-                    ThemeRequest.getJSON(fetchUrl, {
+                    Http.getJSON(fetchUrl, {
                         signal: activeController.signal,
                     })
                         .then((data) => {
@@ -463,7 +677,7 @@
                             }
                         })
                         .catch((err) => {
-                            if (err?.name === 'AbortError') return;
+                            if (err?.isAbort || err?.name === 'AbortError') return;
                             if (updateHistory) window.location.href = url;
                         })
                         .finally(() => {
@@ -568,7 +782,7 @@
         }
 
         /**
-         * Reactive product price display — listens for variant:change and updates
+         * Reactive product price display — listens for PRODUCT_VARIANT_CHANGED and updates
          * the visible price / compare-at-price using Intl.NumberFormat.
          *
          * @param {Object}  opts
@@ -587,6 +801,7 @@
                 ...AlpineComponentsFactory.useDisposable(),
                 price,
                 comparePrice,
+                _eventScope: null,
 
                 get formattedPrice() {
                     return fmt.format(this.price / 100);
@@ -599,15 +814,23 @@
                 },
 
                 init() {
-                    this.on(window, 'variant:change', (e) => {
+                    const Events = window.__Theme__.Events;
+                    const events = Events.events;
+                    this._eventScope = Events.createScope();
+
+                    const onVariantChange = (e) => {
                         if (e.detail?.sectionId !== sectionId) return;
                         const v = e.detail.variant;
                         this.price = v?.price || 0;
                         this.comparePrice = v?.compare_at_price || 0;
-                    });
+                    };
+
+                    this._eventScope.on(events.PRODUCT_VARIANT_CHANGED, onVariantChange);
                 },
 
                 destroy() {
+                    this._eventScope?.dispose?.();
+                    this._eventScope = null;
                     this.dispose();
                 },
             };
@@ -633,8 +856,13 @@
                 selectedOptions: {},
                 currentVariant: null,
                 currentVariantId: null,
+                _eventScope: null,
 
                 init() {
+                    const Events = window.__Theme__.Events;
+                    const events = Events.events;
+                    this._eventScope = Events.createScope();
+
                     const jsonEl = document.getElementById(`ProductVariants-${this.sectionId}`);
                     if (jsonEl) {
                         try {
@@ -650,14 +878,16 @@
 
                     this.$nextTick(() => this._dispatchChange());
 
-                    this.on(window, 'variant-picker:set', (e) => {
+                    const onVariantSetRequest = (e) => {
                         if (e.detail?.sectionId !== this.sectionId) return;
                         if (e.detail.options) {
                             Object.assign(this.selectedOptions, e.detail.options);
                             this._resolveVariant();
                             this._dispatchChange();
                         }
-                    });
+                    };
+
+                    this._eventScope.on(events.PRODUCT_VARIANT_SET_REQUEST, onVariantSetRequest);
                 },
 
                 _optionNames: [],
@@ -709,25 +939,21 @@
 
                 _dispatchChange() {
                     const variant = this.currentVariant;
+                    const Events = window.__Theme__.Events;
+                    const events = Events.events;
+                    const detail = {
+                        sectionId: this.sectionId,
+                        productId: this.productId,
+                        variant,
+                    };
 
-                    window.dispatchEvent(
-                        new CustomEvent('variant:change', {
-                            detail: {
-                                sectionId: this.sectionId,
-                                productId: this.productId,
-                                variant,
-                            },
-                        }),
-                    );
+                    Events.emit(events.PRODUCT_VARIANT_CHANGED, detail);
 
                     if (variant?.featured_image?.position) {
-                        window.dispatchEvent(
-                            new CustomEvent('gallery:slide-to', {
-                                detail: {
-                                    index: variant.featured_image.position - 1,
-                                },
-                            }),
-                        );
+                        const galleryDetail = {
+                            index: variant.featured_image.position - 1,
+                        };
+                        Events.emit(events.PRODUCT_GALLERY_SLIDE_TO_REQUEST, galleryDetail);
                     }
 
                     this._updateUrl(variant);
@@ -755,6 +981,8 @@
                 },
 
                 destroy() {
+                    this._eventScope?.dispose?.();
+                    this._eventScope = null;
                     this.dispose();
                 },
             };
@@ -762,16 +990,18 @@
 
         /**
          * Reusable quantity selector with boundary clamping and toast feedback.
-         * Dispatches 'quantity:change' (bubbles) so parent contexts (cart, product)
+         * Dispatches PRODUCT_QUANTITY_CHANGED (bubbles) so parent contexts (cart, product)
          * can react without the component knowing the business layer.
-         * When sectionId is provided, auto-updates max from variant inventory via variant:change.
+         * When sectionId is provided, auto-updates max from variant inventory via
+         * PRODUCT_VARIANT_CHANGED.
          *
          * @param {Object}      opts
          * @param {number}      [opts.value=1]
          * @param {number}      [opts.min=1]
          * @param {number|null} [opts.max=null]    - null = unlimited
          * @param {number}      [opts.step=1]
-         * @param {string|null} [opts.sectionId=null] - when set, listens for variant:change to sync max with inventory
+         * @param {string|null} [opts.sectionId=null] - when set, listens for
+         * PRODUCT_VARIANT_CHANGED to sync max with inventory
          */
         static QuantitySelector({
             value = 1,
@@ -786,6 +1016,7 @@
                 min,
                 max,
                 step,
+                _eventScope: null,
 
                 get canDecrement() {
                     return this.qty > this.min;
@@ -796,7 +1027,11 @@
 
                 init() {
                     if (!sectionId) return;
-                    this.on(window, 'variant:change', (e) => {
+                    const Events = window.__Theme__.Events;
+                    const events = Events.events;
+                    this._eventScope = Events.createScope();
+
+                    const onVariantChange = (e) => {
                         if (e.detail?.sectionId !== sectionId) return;
                         const variant = e.detail.variant;
                         if (!variant) return;
@@ -812,7 +1047,9 @@
                             this.qty = this.max;
                             this._notify();
                         }
-                    });
+                    };
+
+                    this._eventScope.on(events.PRODUCT_VARIANT_CHANGED, onVariantChange);
                 },
 
                 increment() {
@@ -855,7 +1092,13 @@
                 },
 
                 _notify() {
-                    this.$dispatch('quantity:change', { value: this.qty });
+                    const Events = window.__Theme__.Events;
+                    const events = Events.events;
+                    const detail = { value: this.qty };
+                    Events.emit(events.PRODUCT_QUANTITY_CHANGED, detail, {
+                        target: this.$el,
+                        bubbles: true,
+                    });
                 },
 
                 _toast(msg) {
@@ -863,13 +1106,15 @@
                 },
 
                 destroy() {
+                    this._eventScope?.dispose?.();
+                    this._eventScope = null;
                     if (sectionId) this.dispose();
                 },
             };
         }
 
         /**
-         * Product buy-buttons — syncs with VariantPicker via variant:change,
+         * Product buy-buttons — syncs with VariantPicker via PRODUCT_VARIANT_CHANGED,
          * handles AJAX add-to-cart through $store.cart, and shows toast feedback.
          *
          * @param {Object}      opts
@@ -886,6 +1131,7 @@
                 available,
                 variantId,
                 isLoading: false,
+                _eventScope: null,
 
                 get buttonText() {
                     if (!this.variantId) return 'Unavailable';
@@ -894,12 +1140,18 @@
                 },
 
                 init() {
-                    this.on(window, 'variant:change', (e) => {
+                    const Events = window.__Theme__.Events;
+                    const events = Events.events;
+                    this._eventScope = Events.createScope();
+
+                    const onVariantChange = (e) => {
                         if (e.detail?.sectionId !== this.sectionId) return;
                         const variant = e.detail.variant;
                         this.variantId = variant?.id || null;
                         this.available = variant?.available || false;
-                    });
+                    };
+
+                    this._eventScope.on(events.PRODUCT_VARIANT_CHANGED, onVariantChange);
                 },
 
                 _getQuantity() {
@@ -940,6 +1192,8 @@
                 },
 
                 destroy() {
+                    this._eventScope?.dispose?.();
+                    this._eventScope = null;
                     this.dispose();
                 },
             };
@@ -1074,20 +1328,18 @@
                         );
                     }
 
-                    const ThemeRequest = window.__Theme__?.ThemeRequest;
+                    const Http = window.ShopifyHttp;
 
-                    const request = ThemeRequest
-                        ? ThemeRequest.getJSON(url.toString(), {
-                              signal: controller.signal,
-                          })
-                        : fetch(url.toString(), {
-                              method: 'GET',
-                              headers: { Accept: 'application/json' },
-                              signal: controller.signal,
-                          }).then((res) => {
-                              if (!res.ok) throw new Error('Predictive search failed');
-                              return res.json();
-                          });
+                    if (!Http?.getJSON) {
+                        this.isLoading = false;
+                        this._resetResults();
+                        this.hasEmptyState = true;
+                        return;
+                    }
+
+                    const request = Http.getJSON(url.toString(), {
+                        signal: controller.signal,
+                    });
 
                     request
                         .then((data) => {
@@ -1157,7 +1409,7 @@
                             }
                         })
                         .catch((err) => {
-                            if (err.name === 'AbortError') return;
+                            if (err?.isAbort || err?.name === 'AbortError') return;
                             console.error(err);
                             const toast = this.$store?.toast || window.Alpine?.store?.('toast');
                             if (toast?.show) {
@@ -1230,17 +1482,6 @@
             };
         }
 
-        /**
-         * Product recommendations (Ajax lazy-load) — used by sections/product-recommendations.liquid
-         *
-         * Fetches the recommendations section HTML only when it enters viewport.
-         * The response is parsed and only the [data-related-products-content] innerHTML is injected,
-         * then Components.initAll is called to re-bind Alpine/component engine behavior.
-         *
-         * @param {Object} opts
-         * @param {string} opts.url
-         * @param {string} opts.sectionId
-         */
         static relatedProducts({ url, sectionId } = {}) {
             return {
                 ...(AlpineComponentsFactory.useDisposable?.() || {}),
@@ -1282,26 +1523,22 @@
                     this._abortController = new AbortController();
                     const ctrl = this._abortController;
 
-                    const ThemeRequest = window.__Theme__?.ThemeRequest;
-                    const SectionRefresher = window.__Theme__?.SectionRefresher;
+                    const Http = window.ShopifyHttp;
+                    const SectionRefresher = window.ShopifySectionRefresher;
 
-                    const request = ThemeRequest
-                        ? ThemeRequest.fetchWithTimeout(this.url, {
-                              method: 'GET',
-                              headers: { Accept: 'text/html' },
-                              signal: ctrl.signal,
-                          })
-                        : fetch(this.url, {
-                              method: 'GET',
-                              headers: { Accept: 'text/html' },
-                              signal: ctrl.signal,
-                          });
+                    if (!Http?.request) {
+                        this.loaded = false;
+                        return;
+                    }
+
+                    const request = Http.request(this.url, {
+                        method: 'GET',
+                        headers: { Accept: 'text/html' },
+                        signal: ctrl.signal,
+                    });
 
                     request
-                        .then((res) => {
-                            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                            return res.text();
-                        })
+                        .then((res) => res.text())
                         .then((html) => {
                             if (!SectionRefresher || !this.sectionId) return;
 
@@ -1316,7 +1553,7 @@
                             SectionRefresher.render(sections, domMap);
                         })
                         .catch((err) => {
-                            if (err?.name === 'AbortError') return;
+                            if (err?.isAbort || err?.name === 'AbortError') return;
                             console.error('Related products load failed:', err);
                             // allow retry if needed
                             this.loaded = false;
@@ -1340,21 +1577,90 @@
             };
         }
 
-        /**
-         * Product image gallery with multiple layout modes and optional lightbox.
-         *
-         * Layout modes (driven by Liquid, not JS):
-         *   thumbnails — thumb strip + single active main image
-         *   carousel   — Swiper slider with pagination dots
-         *   stacked    — all images laid out vertically
-         *   grid       — CSS grid of all images
-         *
-         * The component manages:
-         *   - activeIndex tracking (shared across thumb clicks, swiper, and lightbox)
-         *   - Swiper lifecycle for carousel mode
-         *   - Lightbox open/close with keyboard nav
-         *   - External variant-mapping via gallery:slide-to event
-         */
+        static productCard({ imageCount = 1 } = {}) {
+            return {
+                ...AlpineComponentsFactory.useDisposable(),
+                imageHover: false,
+                actionsHover: false,
+                imageCount: Math.max(1, Number(imageCount) || 1),
+                activeImageIndex: 0,
+                isTouchDevice: false,
+                _hoverLeaveTimer: null,
+
+                get hasMultipleImages() {
+                    return this.imageCount > 1;
+                },
+
+                get showHoverActions() {
+                    return this.imageHover || this.actionsHover;
+                },
+
+                get paginationLabel() {
+                    return `${this.activeImageIndex + 1}/${this.imageCount}`;
+                },
+
+                init() {
+                    this.isTouchDevice = this._detectTouch();
+                },
+
+                _detectTouch() {
+                    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+                        return false;
+                    }
+                    return window.matchMedia('(hover: none), (pointer: coarse)').matches;
+                },
+
+                setImageHover(value) {
+                    if (this._hoverLeaveTimer) {
+                        clearTimeout(this._hoverLeaveTimer);
+                        this._hoverLeaveTimer = null;
+                    }
+
+                    if (value) {
+                        this.imageHover = true;
+                        return;
+                    }
+
+                    // Delay hide slightly so pointer can move from image to bottom actions.
+                    this._hoverLeaveTimer = setTimeout(() => {
+                        this.imageHover = false;
+                    }, 90);
+                },
+
+                setActionsHover(value) {
+                    this.actionsHover = Boolean(value);
+                },
+
+                setActiveImage(index) {
+                    if (!this.hasMultipleImages) return;
+                    this.activeImageIndex = this._normalizeIndex(index);
+                },
+
+                nextImage() {
+                    if (!this.hasMultipleImages) return;
+                    this.setActiveImage(this.activeImageIndex + 1);
+                },
+
+                prevImage() {
+                    if (!this.hasMultipleImages) return;
+                    this.setActiveImage(this.activeImageIndex - 1);
+                },
+
+                _normalizeIndex(index) {
+                    const total = this.imageCount;
+                    return ((Number(index) % total) + total) % total;
+                },
+
+                destroy() {
+                    if (this._hoverLeaveTimer) {
+                        clearTimeout(this._hoverLeaveTimer);
+                        this._hoverLeaveTimer = null;
+                    }
+                    this.dispose();
+                },
+            };
+        }
+
         static productGallery() {
             return {
                 ...AlpineComponentsFactory.useDisposable(),
@@ -1363,15 +1669,21 @@
                 zoomOpen: false,
                 zoomIndex: 0,
                 _swiper: null,
+                _eventScope: null,
 
                 init() {
                     this.imageCount = Number(this.$el.dataset.imageCount) || 0;
                     this.$nextTick(() => this._initSwiper());
+                    const Events = window.__Theme__.Events;
+                    const events = Events.events;
+                    this._eventScope = Events.createScope();
 
-                    this.on(window, 'gallery:slide-to', (e) => {
+                    const onSlideToRequest = (e) => {
                         if (e.detail?.id && e.detail.id !== this.$el.id) return;
                         if (typeof e.detail?.index === 'number') this.setActive(e.detail.index);
-                    });
+                    };
+
+                    this._eventScope.on(events.PRODUCT_GALLERY_SLIDE_TO_REQUEST, onSlideToRequest);
                 },
 
                 setActive(index) {
@@ -1430,18 +1742,14 @@
                 },
 
                 destroy() {
+                    this._eventScope?.dispose?.();
+                    this._eventScope = null;
                     if (this._swiper?.destroy) this._swiper.destroy(true, true);
                     if (this.zoomOpen) this.closeZoom();
                     this.dispose();
                 },
             };
         }
-
-        /**
-         * Newsletter overlay logic (delay, expiry, display conditions, submit feedback).
-         *
-         * @param {Object} opts
-         */
         static newsletterOverlay({
             dialogId = '',
             displayMode = 'enable',
@@ -1532,16 +1840,15 @@
 
                     try {
                         const formData = new FormData(form);
-                        const response = await fetch(form.action, {
+                        const Http = window.ShopifyHttp;
+                        if (!Http?.request) throw new Error('Http client unavailable');
+
+                        const response = await Http.request(form.action, {
                             method: 'POST',
                             body: formData,
                             headers: { Accept: 'text/html' },
                             credentials: 'same-origin',
                         });
-
-                        if (!response.ok) {
-                            throw new Error('Newsletter request failed');
-                        }
 
                         window.Alpine?.store('toast')?.show?.(this.successMessage, 'success');
                         form.reset();
@@ -1563,12 +1870,6 @@
             };
         }
 
-        /**
-         * Cart drawer controller: formatting, quantity changes, clear cart and checkout.
-         *
-         * @param {Object} opts
-         * @param {string[]} [opts.sections=[]] - Section IDs to refresh after cart mutations.
-         */
         static cartOverlay({ sections = [] } = {}) {
             return {
                 sections: Array.isArray(sections) ? sections : [],

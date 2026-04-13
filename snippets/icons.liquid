@@ -1,0 +1,55 @@
+{% doc %}
+    Renders an inline SVG icon from the assets folder.
+
+    @param {string} icon - The name of the SVG icon file (e.g., 'icon-arrow2')
+    @param {string} [name] - Fallback parameter for the icon name if `icon` is not provided
+    @param {string} [size] - The size variant of the icon ('xs', 'sm', 'md', 'lg', 'xl'). Default is 'md' (h-5 w-5).
+    @param {string} [class] - Optional extra Tailwind classes applied to the wrapping span
+    @param {string} [color] - Optional color mode. Use 'current' or 'currentColor' to inherit the text color from the parent element. Defaults to 'theme'.
+
+    @example {%- render 'icons', icon: 'icon-arrow2', size: 'xs', class: 'rotate-180', color: 'currentColor' -%}
+{% enddoc %}
+
+{%- liquid
+    assign icon_name = icon | default: name | default: ''
+    assign icon_size = size | default: 'md'
+    assign extra_class = class | default: ''
+    assign icon_color = color | default: 'theme'
+
+    case icon_size
+        when 'xs'
+            assign size_class = 'h-3 w-3'
+        when 'sm'
+            assign size_class = 'h-4 w-4'
+        when 'lg'
+            assign size_class = 'h-6 w-6'
+        when 'xl'
+            assign size_class = 'h-8 w-8'
+        else
+            assign size_class = 'h-5 w-5'
+    endcase
+
+    assign icon_file = icon_name
+    unless icon_file contains '.svg'
+        assign icon_file = icon_file | append: '.svg'
+    endunless
+
+    assign icon_class = 'icons inline-block shrink-0 align-middle'
+    assign icon_class = icon_class | append: ' ' | append: size_class
+    if extra_class != blank
+        assign icon_class = icon_class | append: ' ' | append: extra_class
+    endif
+-%}
+
+{%- if icon_name != blank -%}
+    <span
+        class="{{ icon_class }}"
+        {% if icon_color == 'current' or icon_color == 'currentColor' %}
+            style="color: currentColor;"
+        {% elsif icon_color == 'theme' %}
+            style="color: var(--color-theme-icon, currentColor);"
+        {% endif %}
+    >
+        {{- icon_file | inline_asset_content -}}
+    </span>
+{%- endif -%}

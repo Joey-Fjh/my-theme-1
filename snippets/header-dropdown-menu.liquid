@@ -1,10 +1,3 @@
-{% comment %}
-    Renders a standard dropdown style menu for the header.
-
-    Usage:
-    {% render 'header-dropdown-menu' %}
-{% endcomment %}
-
 <nav
     class="header-dropdown-menu"
     x-data="dropdown"
@@ -25,18 +18,28 @@
                             id="HeaderMenu-{{ link.handle }}"
                             @click.stop.prevent="toggle($el.parentElement)"
                         >
-                            <div class="links links-underline flex items-center gap-3">
+                            {% capture link_content %}
                                 <span>
                                     {{ link.title | escape }}
                                 </span>
-                                <span class="icons dropdown-icon dropdown-icon--down inline-block h-6 w-6">
-                                    {{ 'icon-arrow.svg' | inline_asset_content }}
-                                </span>
-                            </div>
+                                {% render 'icons',
+                                    icon: 'icon-arrow',
+                                    size: 'lg',
+                                    class: 'dropdown-icon dropdown-icon--down',
+                                    color:'current'
+                                %}
+                            {% endcapture %}
+
+                            {% render 'link',
+                                content: link_content,
+                                variant: 'underline',
+                                class: 'flex items-center gap-3',
+                                color: 'current'
+                            %}
                         </summary>
 
                         <ul
-                            class="dropdown-panel dropdown-open mt-2 rounded-md color-{{ section.settings.menu_color_scheme }} p-3"
+                            class="dropdown-panel dropdown-open color-{{ section.settings.menu_color_scheme }} mt-2 rounded-md p-3"
                             role="list"
                             tabindex="-1"
                         >
@@ -44,16 +47,25 @@
                                 <li>
                                     {%- if childlink.links == blank -%}
                                         {% capture childlink_classes %}
-                      block px-4 py-2
-                      {% if childlink.current %} font-medium{% endif %}
-                    {% endcapture %}
-                                        {%- capture childlink_attributes -%}
-                      {%- if childlink.current -%}
-                        aria-current="page"
-                      {%- endif -%}
-                    {%- endcapture -%}
+                                            block px-4 py-2
+                                            {% if childlink.current %} font-medium {% endif %}
+                                        {% endcapture %}
 
-                                        {%- render 'link', text: childlink.title | escape , class: childlink_classes, href: childlink.url, variant: "underline", attributes: childlink_attributes -%}
+                                        {%- capture childlink_attributes -%}
+                                            {%- if childlink.current -%}
+                                                aria-current="page"
+                                            {%- endif -%}
+                                        {%- endcapture -%}
+
+                                        {%-
+                                            render 'link',
+                                            text: childlink.title | escape,
+                                            class: childlink_classes,
+                                            href: childlink.url,
+                                            variant: "underline",
+                                            attributes: childlink_attributes,
+                                            color:'current'
+                                        -%}
                                     {%- else -%}
                                         <details
                                             class="dropdown"
@@ -65,17 +77,24 @@
                                                 id="HeaderMenu-{{ childlink.handle }}"
                                                 @click.stop.prevent="toggle($el.parentElement)"
                                             >
-                                                <div class="links links-underline flex items-center gap-3">
-                                                    <span class="links links-underline">
+                                                {% capture link_content %}
+                                                    <span>
                                                         {{ childlink.title | escape }}
                                                     </span>
-                                                    <span class="icons dropdown-icon dropdown-icon--tilt inline-block h-6 w-6">
-                                                        {{
-                                                            'icon-arrow1.svg'
-                                                            | inline_asset_content
-                                                        }}
-                                                    </span>
-                                                </div>
+                                                    {% render 'icons',
+                                                        icon: 'icon-arrow1',
+                                                        size: 'lg',
+                                                        class: 'dropdown-icon dropdown-icon--tilt',
+                                                        color: 'current'
+                                                    %}
+                                                {% endcapture %}
+
+                                                {% render 'link',
+                                                    content: link_content,
+                                                    variant: 'underline',
+                                                    class: 'flex items-center gap-3',
+                                                    color: 'current'
+                                                %}
                                             </summary>
 
                                             <ul
@@ -85,16 +104,25 @@
                                                 {%- for grandChildLink in childlink.links -%}
                                                     <li>
                                                         {%- capture grand_child_link_classes -%}
-                              block px-4 py-2 
-                              {% if grandChildLink.current %} font-medium {% endif %}
-                            {%- endcapture -%}
-                                                        {%- capture grand_child_link_attributes -%}
-                              {%- if grandChildLink.current -%}
-                                aria-current="page"
-                              {%- endif -%}
-                            {%- endcapture -%}
+                                                            block px-4 py-2 
+                                                            {% if grandChildLink.current %} font-medium {% endif %}
+                                                        {%- endcapture -%}
 
-                                                        {%- render 'link', text: grandChildLink.title | escape, class: grand_child_link_classes, href: grandChildLink.url, variant: "underline", attributes: grand_child_link_attributes -%}
+                                                        {%- capture grand_child_link_attributes -%}
+                                                            {%- if grandChildLink.current -%}
+                                                                aria-current="page"
+                                                            {%- endif -%}
+                                                        {%- endcapture -%}
+
+                                                        {%-
+                                                            render 'link',
+                                                            text: grandChildLink.title | escape,
+                                                            class: grand_child_link_classes,
+                                                            href: grandChildLink.url,
+                                                            variant: "underline",
+                                                            attributes: grand_child_link_attributes,
+                                                            color:'current'
+                                                        -%}
                                                     </li>
                                                 {%- endfor -%}
                                             </ul>
@@ -106,12 +134,19 @@
                     </details>
                 {%- else -%}
                     {%- capture link_attributes -%}
-            {%- if link.current -%}
-              aria-current="page"
-            {%- endif -%}
-          {%- endcapture -%}
+                        {%- if link.current -%}
+                            aria-current="page"
+                        {%- endif -%}
+                    {%- endcapture -%}
 
-                    {%- render 'link', text: link.title | escape, href: link.url, variant: "underline", attributes: link_attributes -%}
+                    {%-
+                        render 'link',
+                        text: link.title | escape,
+                        href: link.url,
+                        variant: "underline",
+                        attributes: link_attributes,
+                        color:'current'
+                    -%}
                 {%- endif -%}
             </li>
         {%- endfor -%}

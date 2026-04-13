@@ -1,54 +1,55 @@
 <div
     data-section-id="{{ section.id }}"
-    class="about-stats-section full-width"
+    class="about-stats-section full-width color-{{ section.settings.color_scheme }}"
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
     "
 >
-    <div class="layout container-page bg-[#F3F3F3] text-[#263D29]">
-        <div class="pc:flex-row pc:gap-85 flex flex-col gap-12">
+    <div class="layout container-page bg-theme-bg text-theme-text">
+        <div class="flex flex-col gap-20 pc:flex-row pc:gap-80">
             {% comment %} Image {% endcomment %}
-            <div class="pc:h-fit pc:w-40 fw:w-48 relative h-64 w-full shrink-0 overflow-hidden">
+            <div class="relative h-48 w-48 shrink-0 overflow-hidden pc:h-fit">
                 {%- render 'image',
                     image: section.settings.image,
                     alt: section.settings.image.alt,
                     width: section.settings.image.width
                 -%}
             </div>
+
             {% comment %} Content {% endcomment %}
-            <div class="flex flex-1 flex-col gap-20">
-                <p class="opacity-80">
+            <div class="flex flex-1 flex-col gap-12 pc:gap-20">
+                <p class="body-md opacity-80">
                     {{ section.settings.year }}
                 </p>
 
-                <div class="h1 leading-relaxed">
+                <div class="h2 pc:h1">
                     {{ section.settings.description }}
                 </div>
 
                 {%- if section.settings.link != blank -%}
                     {%- capture link_content -%}
                         <span>{{ section.settings.link_text }}</span>
-                        <span class="ml-3 inline-block h-6 w-6">
-                            {{- 'icon-arrow2.svg' | inline_asset_content -}}
-                        </span>
+                        {% render 'icons', icon: 'icon-arrow2', size: 'lg', class: 'ml-3', color: 'current' %}
                     {%- endcapture -%}
+
                     {%- render 'link',
                         href: section.settings.link,
                         content: link_content,
-                        variant: 'underline'
+                        variant: 'underline',
+                        color: 'current'
                     -%}
                 {%- endif -%}
 
                 {% comment %} Stats {% endcomment %}
-                <div class="pc:gap-16 fw:gap-24 flex gap-12">
+                <div class="flex gap-12 pc:gap-16 fw:gap-24">
                     {%- for block in section.blocks -%}
                         <div
                             class="mt-25"
                             {{ block.shopify_attributes }}
                         >
-                            <p class="mb-2 opacity-80">{{ block.settings.label }}</p>
-                            <p class="h1 font-bold">{{ block.settings.value }}</p>
+                            <p class="mb-2 h4 opacity-80 pc:h3">{{ block.settings.label }}</p>
+                            <p class="h2 pc:h1">{{ block.settings.value }}</p>
                         </div>
                     {%- endfor -%}
                 </div>
@@ -66,6 +67,12 @@
         "groups": ["header", "footer"]
     },
     "settings": [
+        {
+            "type": "color_scheme",
+            "id": "color_scheme",
+            "label": "Color scheme",
+            "default": "scheme-1"
+        },
         {
             "type": "image_picker",
             "id": "image",

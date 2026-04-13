@@ -1,27 +1,72 @@
+{%- liquid
+    assign aspect_ratio = section.settings.image_ratio
+    if aspect_ratio == 'auto'
+        if section.settings.after_img != blank
+            assign aspect_ratio = section.settings.after_img.aspect_ratio
+        elsif section.settings.before_img != blank
+            assign aspect_ratio = section.settings.before_img.aspect_ratio
+        else
+            assign aspect_ratio = '16/9'
+        endif
+    endif
+-%}
+
 <div
     data-section-id="{{ section.id }}"
-    class="before-after-comparison-section full-width"
+    class="
+        before-after-comparison-section full-width
+        color-{{ section.settings.color_scheme }}
+    "
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
     "
 >
     <div class="layout container-page">
-        <div class="flex flex-col gap-6 text-center text-[#263D29]">
-            <h3 class="opacity-80">
+        <div class="flex flex-col gap-6 text-center text-theme-text">
+            <h3 class="h3 opacity-80">
                 {{ section.settings.sub_heading }}
             </h3>
-            <h1 class="font-bold">
+            <h1 class="h1 font-bold">
                 {{ section.settings.heading }}
             </h1>
         </div>
 
+        {% comment %} Mobile Layout (Stacked) {% endcomment %}
+        <div class="mt-10 flex flex-col gap-6 pc:hidden">
+            <div class="relative overflow-hidden rounded-lg">
+                {%- render 'image',
+                    image: section.settings.before_img,
+                    alt: section.settings.before_img.alt,
+                    width: section.settings.before_img.width,
+                    aspect_ratio: aspect_ratio
+                -%}
+                <div class="absolute bottom-4 left-4 z-10 rounded border-2 border-theme-text px-3 py-2 h5 tracking-wider text-theme-text backdrop-blur-sm">
+                    {{ section.settings.before_label }}
+                </div>
+            </div>
+
+            <div class="relative overflow-hidden rounded-lg">
+                {%- render 'image',
+                    image: section.settings.after_img,
+                    alt: section.settings.after_img.alt,
+                    width: section.settings.after_img.width,
+                    aspect_ratio: aspect_ratio
+                -%}
+                <div class="absolute right-4 bottom-4 z-10 rounded border-2 border-theme-text px-3 py-2 h5 tracking-wider text-theme-text backdrop-blur-sm">
+                    {{ section.settings.after_label }}
+                </div>
+            </div>
+        </div>
+
+        {% comment %} Desktop Layout (Slider) {% endcomment %}
         <div
-            class="mt-25"
+            class="mt-25 hidden pc:block"
             x-data="beforeAfterComparison()"
         >
             <div
-                class="relative aspect-video cursor-ew-resize overflow-hidden rounded-lg select-none"
+                class="relative cursor-ew-resize overflow-hidden rounded-lg select-none"
+                style="aspect-ratio: {{ aspect_ratio }};"
                 x-ref="container"
                 @mousedown="startDrag($event)"
                 @touchstart.passive="startDrag($event)"
@@ -49,30 +94,30 @@
                 >
                     {%- render 'image',
                         image: section.settings.before_img,
-                        alt: section.settings.after_img.alt,
-                        width: section.settings.after_img.width,
+                        alt: section.settings.before_img.alt,
+                        width: section.settings.before_img.width,
                         extra_attributes: 'draggable="false"'
                     -%}
                 </div>
 
                 {% comment %} Silder Line {% endcomment %}
                 <div
-                    class="absolute top-0 bottom-0 z-10 w-2 -translate-x-1/2 bg-white/90 transition-[left] duration-75 ease-out"
+                    class="absolute top-0 bottom-0 z-10 w-2 -translate-x-1/2 bg-theme-bg/90 transition-[left] duration-75 ease-out"
                     :class="{'transition-none' : isDragging }"
                     :style="`left: ${position}%`"
                 >
                     {% comment %} Handle {% endcomment %}
                     <div
                         class="
-                            absolute top-1/2 left-1/2 flex h-24 w-24 -translate-x-1/2 -translate-y-1/2 cursor-grab items-center justify-center gap-0 rounded-full bg-white shadow-lg
-                            transition-transform duration-200 hover:scale-110 focus:ring-2 focus:ring-white/50 focus:outline-none active:cursor-grabbing
+                            absolute top-1/2 left-1/2 flex h-24 w-24 -translate-x-1/2 -translate-y-1/2 cursor-grab items-center justify-center gap-0 rounded-full bg-theme-bg shadow-surface
+                            transition-transform duration-200 hover:scale-110 focus:ring-2 focus:ring-focus focus:outline-none active:cursor-grabbing
                         "
                         @mousedown.stop="startDrag($event)"
                         @touchstart.stop.passive="startDrag($event)"
                         aria-label="Drag to compare images"
                     >
                         <svg
-                            class="h-12 w-12 text-neutral-700"
+                            class="h-12 w-12 text-theme-text"
                             viewBox="0 0 24 24"
                             fill="none"
                             stroke="currentColor"
@@ -83,7 +128,7 @@
                             <path d="M15 18L9 12L15 6"/>
                         </svg>
                         <svg
-                            class="-ml-2 h-12 w-12 text-neutral-700"
+                            class="-ml-2 h-12 w-12 text-theme-text"
                             viewBox="0 0 24 24"
                             fill="none"
                             stroke="currentColor"
@@ -97,12 +142,12 @@
                 </div>
 
                 {% comment %} Before Label {% endcomment %}
-                <div class="absolute bottom-10 left-10 z-10 rounded border-2 border-white p-4 text-3xl font-medium tracking-wider text-white backdrop-blur-sm">
+                <div class="absolute bottom-10 left-10 z-10 rounded border-2 border-theme-text p-4 h3 tracking-wider text-theme-text backdrop-blur-sm">
                     {{ section.settings.before_label }}
                 </div>
 
                 {% comment %} After Label {% endcomment %}
-                <div class="absolute right-10 bottom-10 z-10 rounded border-2 border-white p-4 text-3xl font-medium tracking-wider text-white backdrop-blur-sm">
+                <div class="absolute right-10 bottom-10 z-10 rounded border-2 border-theme-text p-4 h3 tracking-wider text-theme-text backdrop-blur-sm">
                     {{ section.settings.after_label }}
                 </div>
             </div>
@@ -120,6 +165,12 @@
     },
     "settings": [
         {
+            "type": "color_scheme",
+            "id": "color_scheme",
+            "label": "Color Scheme",
+            "default": "color-scheme-1"
+        },
+        {
             "type": "inline_richtext",
             "id": "sub_heading",
             "label": "Sub Heading",
@@ -130,6 +181,30 @@
             "id": "heading",
             "label": "Heading",
             "default": "Up To 50% Off Everything"
+        },
+        {
+            "type": "select",
+            "id": "image_ratio",
+            "label": "Image ratio",
+            "options": [
+                {
+                    "value": "auto",
+                    "label": "Adapt to image"
+                },
+                {
+                    "value": "16/9",
+                    "label": "Wide (16:9)"
+                },
+                {
+                    "value": "4/3",
+                    "label": "Landscape (4:3)"
+                },
+                {
+                    "value": "1/1",
+                    "label": "Square (1:1)"
+                }
+            ],
+            "default": "16/9"
         },
         {
             "type": "image_picker",

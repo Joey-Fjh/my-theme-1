@@ -12,14 +12,14 @@
     data-component-id="{{ section.id }}"
 >
     <div class="layout container-page bg-[#F3F3F3]">
-        <div class="pc:grid-cols-[1fr_auto] pc:gap-12 grid grid-cols-1 gap-10 p-6">
+        <div class="grid grid-cols-1 gap-10 p-6 pc:grid-cols-[1fr_auto] pc:gap-12">
             {%- comment -%} Left: Cart list (Liquid-rendered for SRA) {%- endcomment -%}
             <div class="flex flex-col gap-9 text-[#263D29]">
                 <h1 class="hxxl font-bold">Cart</h1>
 
                 <ul class="flex flex-col divide-y divide-[#e5e5e5]">
                     {%- for item in cart.items -%}
-                        <li class="pc:gap-6 flex flex-wrap items-center gap-4 py-6 first:pt-0">
+                        <li class="flex flex-wrap items-center gap-4 py-6 first:pt-0 pc:gap-6">
                             <div class="flex h-50 w-50 shrink-0 items-center justify-center overflow-hidden rounded">
                                 {%- if item.image -%}
                                     {% render 'image',
@@ -38,10 +38,10 @@
                                 <p class="h6 tracking-wide uppercase">
                                     {{ item.vendor | default: ' ' }}
                                 </p>
-                                <a href="{{ item.url }}" class="h3 block font-bold hover:underline">
+                                <a href="{{ item.url }}" class="block h3 font-bold hover:underline">
                                     {{ item.product.title }}
                                 </a>
-                                <p class="h6 mt-auto font-medium">
+                                <p class="mt-auto h6 font-medium">
                                     {{ item.final_line_price | money }}
                                 </p>
                             </div>
@@ -53,9 +53,11 @@
                                     aria-label="Remove {{ item.product.title }}"
                                     @click.prevent="$store.cart.change('{{ item.key }}', 0, ['{{ section.id }}'])"
                                 >
-                                    <span class="inline-block h-full w-full">
-                                        {{ 'icon-trash.svg' | inline_asset_content }}
-                                    </span>
+                                    {% render 'icons',
+                                        icon: 'icon-trash',
+                                        class: 'h-full w-full',
+                                        color: 'current'
+                                    %}
                                 </a>
 
                                 {% assign max_qty = null %}
@@ -89,8 +91,8 @@
             </div>
 
             {%- comment -%} Right: Order Summary card {%- endcomment -%}
-            <aside class="pc:sticky self-start">
-                <div class="pc:p-9 rounded-lg border border-[#e5e5e5] bg-white p-6 shadow-md">
+            <aside class="self-start pc:sticky">
+                <div class="rounded-lg border border-[#e5e5e5] bg-white p-6 shadow-md pc:p-9">
                     <h2 class="h2 font-bold text-[#111]">Order Summary</h2>
 
                     {%- comment -%} Accordion: Order Special Instruction + Estimate Shipping {%- endcomment -%}
