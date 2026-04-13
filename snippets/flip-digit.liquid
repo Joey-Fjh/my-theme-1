@@ -8,55 +8,59 @@
 
 <template x-for="(digit, i) in $data.getValue('{{ value }}').split('')" :key="`{{ unit }}-${i}`">
     <div
-        class="md:h-32 md:w-20 lg:h-36 lg:w-24 relative h-20 w-12 perspective-[1000px]"
-        x-data="{ prev: digit, oldDigit: digit }"
-        x-effect="if (digit !== oldDigit) { prev = oldDigit; oldDigit = digit; }"
+        class="relative h-20 w-12 rounded-sm bg-theme-text perspective-[1000px] pc:h-32 pc:w-20 fw:h-36 fw:w-24"
+        x-data="{ prev: digit, current: digit, oldDigit: digit, flipping: false }"
+        x-effect="if (digit !== oldDigit) { current = digit; oldDigit = digit; flipping = true; setTimeout(() => { prev = current; flipping = false; }, 600); }"
     >
-        <!-- upper half -->
-        <div
-            class="
-                absolute inset-x-0 top-0 h-1/2 origin-bottom overflow-hidden
-                rounded-t-sm border-b border-[#1a231a]
-                bg-[#2d3b2d] transition-transform duration-500
-            "
-            :class="{ '-rotate-x-90': prev !== digit }"
-            style="transform-style: preserve-3d;"
-        >
+        <!-- Background Top (shows NEW digit) -->
+        <div class="absolute inset-x-0 top-0 h-1/2 overflow-hidden rounded-t-sm border-b border-theme-bg/20 bg-theme-text brightness-95">
             <span
-                class="
-                    md:text-6xl lg:text-7xl absolute inset-0 flex
-                    items-center justify-center text-4xl font-bold text-[#c8e650]
-                "
+                class="absolute inset-x-0 top-0 flex h-[200%] items-center justify-center h0 font-bold text-theme-bg"
+                x-text="current"
+            ></span>
+        </div>
+
+        <!-- Background Bottom (shows OLD digit until flip completes) -->
+        <div class="absolute inset-x-0 bottom-0 h-1/2 overflow-hidden rounded-b-sm bg-theme-text">
+            <span
+                class="absolute inset-x-0 bottom-0 flex h-[200%] items-center justify-center h0 font-bold text-theme-bg"
                 x-text="prev"
             ></span>
         </div>
 
-        <!-- lower half -->
+        <!-- Flipping Top (shows OLD digit, flips down) -->
         <div
-            class="
-                absolute inset-x-0 bottom-0 h-1/2 origin-top overflow-hidden
-                rounded-b-sm
-                bg-[#354435] transition-transform delay-150 duration-500
-            "
+            class="absolute inset-x-0 top-0 z-10 h-1/2 origin-bottom overflow-hidden rounded-t-sm border-b border-theme-bg/20 bg-theme-text brightness-95"
+            :class="flipping ? 'transition-transform duration-300 ease-in [transform:rotateX(-90deg)]' : '[transform:rotateX(0deg)]'"
+            style="backface-visibility: hidden;"
         >
             <span
-                class="
-                    md:text-6xl lg:text-7xl absolute inset-0 flex
-                    items-center justify-center text-4xl font-bold text-[#c8e650]
-                "
-                x-text="digit"
+                class="absolute inset-x-0 top-0 flex h-[200%] items-center justify-center h0 font-bold text-theme-bg"
+                x-text="prev"
+            ></span>
+        </div>
+
+        <!-- Flipping Bottom (shows NEW digit, flips down from 90deg) -->
+        <div
+            class="absolute inset-x-0 bottom-0 z-10 h-1/2 origin-top overflow-hidden rounded-b-sm bg-theme-text"
+            :class="flipping ? 'transition-transform duration-300 ease-out delay-300 [transform:rotateX(0deg)]' : '[transform:rotateX(90deg)]'"
+            style="backface-visibility: hidden;"
+        >
+            <span
+                class="absolute inset-x-0 bottom-0 flex h-[200%] items-center justify-center h0 font-bold text-theme-bg"
+                x-text="current"
             ></span>
         </div>
 
         <!-- center line -->
-        <div class="absolute top-1/2 right-0 left-0 h-px bg-[#1a231a]"></div>
+        <div class="absolute top-1/2 right-0 left-0 z-20 h-px bg-theme-bg/20"></div>
 
         <!-- Border decoration -->
         <div
-            class="absolute top-1/2 left-0 h-2 w-1 -translate-y-1/2 rounded-r-sm bg-[#1a231a]"
+            class="absolute top-1/2 left-0 z-20 h-2 w-1 -translate-y-1/2 rounded-r-sm bg-theme-bg/20"
         ></div>
         <div
-            class="absolute top-1/2 right-0 h-2 w-1 -translate-y-1/2 rounded-l-sm bg-[#1a231a]"
+            class="absolute top-1/2 right-0 z-20 h-2 w-1 -translate-y-1/2 rounded-l-sm bg-theme-bg/20"
         ></div>
     </div>
 </template>
