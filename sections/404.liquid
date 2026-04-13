@@ -9,10 +9,10 @@
     data-component-type="404"
     data-component-id="{{ section.id }}"
 >
-    <div class="layout container-page bg-[#F3F3F3] text-[#263D29]">
+    <div class="layout container-page flex min-h-[60vh] flex-col justify-center bg-theme-bg text-theme-text pc:min-h-[80vh]">
         <div class="flex flex-col gap-40 overflow-hidden">
             {%- comment -%} Main Content {%- endcomment -%}
-            <div class="relative">
+            <div class="relative p-3">
                 <h1
                     class="hxxl font-bold pc:hxxxl"
                 >
@@ -30,10 +30,7 @@
                 </p>
 
                 {%- if section.settings.show_button -%}
-                    <a
-                        href="{{ section.settings.button_link | default: '/' }}"
-                        class="                            mt-8 btn btn-primary"
-                    >
+                    {%- capture button_content -%}
                         {{ section.settings.button_text | default: 'Back to Home' }}
 
                         {% render 'icons',
@@ -42,14 +39,22 @@
                             class: 'ml-3',
                             color: 'current'
                         %}
-                    </a>
+                    {%- endcapture -%}
+
+                    {%
+                        render 'link',
+                        href: section.settings.button_link | default: '/',
+                        class: 'mt-8 btn btn-primary inline-flex items-center justify-center',
+                        variant: 'plain',
+                        content: button_content
+                    %}
                 {%- endif -%}
             </div>
 
             {%- comment -%} Brand Watermark {%- endcomment -%}
             {% render 'watermark',
                 container_class: 'relative w-full overflow-hidden pointer-events-none select-none',
-                text_class: 'font-bold text-[#e4e3df]',
+                text_class: 'font-bold text-theme-text opacity-10',
                 text: section.settings.watermark_text
             %}
         </div>
