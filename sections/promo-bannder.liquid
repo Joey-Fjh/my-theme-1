@@ -1,6 +1,9 @@
 <div
     data-section-id="{{ section.id }}"
-    class="promo-banner-section full-width"
+    class="
+        promo-banner-section full-width
+        color-{{ section.settings.color_scheme }}
+    "
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
@@ -8,7 +11,7 @@
 >
     <div class="layout container-page">
         {% comment %} Hero Banner {% endcomment %}
-        <div class="relative mb-2 aspect-16/7 overflow-hidden fw:aspect-16/6">
+        <div class="relative mb-2 aspect-4/5 overflow-hidden pc:aspect-16/7 fw:aspect-16/6">
             {%- render 'image',
                 image: section.settings.hero_image,
                 alt: section.settings.hero_image.alt,
@@ -18,9 +21,10 @@
 
             {%- if section.settings.show_badge -%}
                 {%- render 'rotating-badge',
-                    classes: 'absolute right-20 top-20 z-10',
+                    classes: 'absolute right-4 top-4 z-10 pc:right-20 pc:top-20',
                     unique_id: section.id,
                     size: 100,
+                    size_mobile: 76,
                     badge_text: section.settings.badge_text,
                     center_text: section.settings.badge_value
                 -%}
@@ -28,13 +32,13 @@
 
             <div class="absolute inset-0 flex flex-col justify-end gap-6 p-6 pc:p-10 fw:p-14">
                 {%- if section.settings.hero_subtitle != blank -%}
-                    <p class="text-2xl tracking-wide text-white/80 pc:text-3xl">
+                    <p class="body-xl tracking-wide text-theme-text/80">
                         {{ section.settings.hero_subtitle }}
                     </p>
                 {%- endif -%}
 
                 {%- if section.settings.hero_heading != blank -%}
-                    <h1 class="font-light tracking-tight text-white">
+                    <h1 class="h1 font-light tracking-tight text-theme-text">
                         {{ section.settings.hero_heading }}
                     </h1>
                 {%- endif -%}
@@ -42,13 +46,13 @@
                 {%- if section.settings.hero_link != blank -%}
                     {%- capture link_content -%}
                         <span>{{ section.settings.hero_link_text }}</span>
-                        {% render 'icons', icon: 'icon-arrow2', size: 'lg', class: 'ml-3' %}
+                        {% render 'icons', icon: 'icon-arrow2', size: 'lg', class: 'ml-3', color: 'current' %}
                     {%- endcapture -%}
                     {%- render 'link',
-                        class: 'text-white',
                         href: section.settings.hero_link,
                         content: link_content,
-                        variant: 'underline'
+                        variant: 'underline',
+                        color: 'current'
                     -%}
                 {%- endif -%}
             </div>
@@ -58,26 +62,26 @@
         <div class="grid grid-cols-1 gap-2 pc:grid-cols-2">
             {%- for block in section.blocks -%}
                 <div
-                    class="pc:aspect-4/3.5 relative aspect-4/3 overflow-hidden"
+                    class="pc:aspect-4/3.5 relative aspect-square overflow-hidden"
                     {{ block.shopify_attributes }}
                 >
                     {%- render 'image',
                         image: block.settings.image,
                         alt: block.settings.image.alt,
                         width: block.settings.image.width,
-                        sizes: '(max-width: 768px) 100vw, 50vw',
+                        sizes: '(max-width: 767px) 100vw, 50vw',
                         loading: 'lazy'
                     -%}
 
                     <div class="absolute inset-0 flex flex-col justify-end gap-6 p-6 pc:p-8">
                         {%- if block.settings.subtitle != blank -%}
-                            <p class="mb-1 text-2xl tracking-wide text-white/80 pc:text-3xl">
+                            <p class="mb-1 body-xl tracking-wide text-theme-text/80">
                                 {{ block.settings.subtitle }}
                             </p>
                         {%- endif -%}
 
                         {%- if block.settings.heading != blank -%}
-                            <h2 class="font-light tracking-tight text-white">
+                            <h2 class="h2 font-light tracking-tight text-theme-text">
                                 {{ block.settings.heading }}
                             </h2>
                         {%- endif -%}
@@ -85,13 +89,13 @@
                         {%- if block.settings.link != blank -%}
                             {%- capture link_content -%}
                                 <span>{{ block.settings.link_text }}</span>
-                                {% render 'icons', icon: 'icon-arrow2', size: 'lg', class: 'ml-3' %}
+                                {% render 'icons', icon: 'icon-arrow2', size: 'lg', class: 'ml-3', color: 'current' %}
                             {%- endcapture -%}
                             {%- render 'link',
-                                class: 'text-white',
                                 href: block.settings.link,
                                 content: link_content,
-                                variant: 'underline'
+                                variant: 'underline',
+                                color: 'current'
                             -%}
                         {%- endif -%}
                     </div>
@@ -110,6 +114,12 @@
         "groups": ["header", "footer"]
     },
     "settings": [
+        {
+            "type": "color_scheme",
+            "id": "color_scheme",
+            "label": "Color Scheme",
+            "default": "color-scheme-1"
+        },
         {
             "type": "header",
             "content": "Hero Banner"
