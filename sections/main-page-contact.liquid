@@ -1,6 +1,6 @@
 <div
     data-section-id="{{ section.id }}"
-    class="main-page-contact-section full-width"
+    class="main-page-contact-section full-width color-{{ section.settings.color_scheme }}"
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
@@ -9,13 +9,13 @@
     data-component-type="main-page-contact"
     data-component-id="{{ section.id }}"
 >
-    <div class="layout container-page bg-[#F3F3F3] text-[#263D29]">
+    <div class="layout container-page bg-theme-bg text-theme-text">
         {%- comment -%} Main Content: Image + Form {%- endcomment -%}
-        <div class="relative z-1 mx-auto max-w-5/6">
-            <div class="grid grid-cols-1 gap-0 overflow-hidden rounded-lg bg-white shadow-[0_4px_40px_rgba(0,0,0,0.06)] pc:grid-cols-2">
+        <div class="relative z-1 mx-auto w-full max-w-full pc:max-w-5/6">
+            <div class="grid grid-cols-1 gap-0 overflow-hidden bg-theme-bg shadow-surface pc:grid-cols-2">
                 {%- comment -%} Left: Image {%- endcomment -%}
                 <div
-                    class="relative aspect-528/582 -translate-x-7.5 overflow-hidden opacity-0 pc:aspect-auto"
+                    class="relative hidden aspect-528/582 -translate-x-7.5 overflow-hidden opacity-0 pc:block pc:aspect-auto"
                     data-gsap-image
                 >
                     {% capture sizes %}
@@ -37,44 +37,47 @@
                     %}
 
                     {%- comment -%} hCaptcha Notice {%- endcomment -%}
-                    <p class="absolute right-4 bottom-4 left-4 leading-snug text-white/80">
+                    <p class="absolute right-4 bottom-4 left-4 body-sm leading-snug text-white/80">
                         This site is protected by hCaptcha and the hCaptcha<br>
-                        <a
-                            href="https://www.hcaptcha.com/privacy"
-                            class="underline hover:text-white"
-                            target="_blank"
-                            rel="noopener"
-                            >Privacy Policy</a
-                        >
+                        {% render 'link',
+                            text: 'Privacy Policy',
+                            href: 'https://www.hcaptcha.com/privacy',
+                            class: 'underline',
+                            target: '_blank',
+                            attributes: 'rel="noopener"',
+                            color: 'current'
+                        %}
                         and
-                        <a
-                            href="https://www.hcaptcha.com/terms"
-                            class="underline hover:text-white"
-                            target="_blank"
-                            rel="noopener"
-                            >Terms of Service</a
-                        >
+                        {% render 'link',
+                            text: 'Terms of Service',
+                            href: 'https://www.hcaptcha.com/terms',
+                            class: 'underline',
+                            target: '_blank',
+                            attributes: 'rel="noopener"',
+                            color: 'current'
+                        %}
                         apply.
                     </p>
                 </div>
                 {%- comment -%} Right: Form {%- endcomment -%}
                 <div
-                    class="flex translate-x-7.5 flex-col justify-center px-6 py-10 opacity-0 pc:px-10 fw:px-12"
+                    class="flex translate-x-7.5 flex-col justify-center px-6 py-8 opacity-0 pc:px-10 pc:py-10 fw:px-12"
+                    style="background-color: {{ section.settings.form_background_color }};"
                     data-gsap-form
                 >
-                    <h1 class="text-center leading-tight font-bold">
+                    <h1 class="text-center h2 text-primary">
                         {{ section.settings.heading | default: 'Reach Us For Radiance' }}
                     </h1>
-                    <p class="mt-3 text-center leading-relaxed opacity-80">
+                    <p class="mt-3 text-center body-md text-primary/70">
                         {{
                             section.settings.description
                             | default: 'Unlock personalized experiences with our AI technology. Get insights that evolve with your preferences.'
                         }}
                     </p>
 
-                    {%- form 'contact', class: 'mt-8 flex flex-col gap-10' -%}
+                    {%- form 'contact', class: 'mt-6 flex flex-col gap-5 pc:mt-8 pc:gap-6' -%}
                         {%- if form.posted_successfully? -%}
-                            <div class="rounded bg-green-50 p-4 text-center text-xl text-green-800">
+                            <div class="rounded bg-green-50 p-4 text-center body-md text-green-800">
                                 {{
                                     section.settings.success_message
                                     | default: 'Thank you for your message. We will get back to you soon.'
@@ -83,15 +86,17 @@
                         {%- endif -%}
 
                         {%- if form.errors -%}
-                            <div class="rounded bg-red-50 p-4 text-xl text-red-700">
+                            <div class="rounded bg-red-50 p-4 body-md text-red-700">
                                 {{ form.errors | default_errors }}
                             </div>
                         {%- endif -%}
 
                         {%- comment -%} First name & Last name {%- endcomment -%}
-                        <div class="grid grid-cols-1 gap-5 pc:grid-cols-2">
+                        <div class="grid grid-cols-1 gap-4 pc:grid-cols-2 pc:gap-5">
                             <div class="flex flex-col gap-1.5">
-                                <label for="ContactFirstName" class="text-xl font-medium opacity-80"
+                                <label
+                                    for="ContactFirstName"
+                                    class="body-md font-medium text-primary/80"
                                     >First name</label
                                 >
                                 <input
@@ -100,11 +105,13 @@
                                     name="contact[first_name]"
                                     placeholder="Enter your first name"
                                     autocomplete="given-name"
-                                    class="h-18 w-full rounded border border-[#e5e4e0] bg-[#f5f4f0] px-4 text-xl placeholder-[#9a9a9a] opacity-40 transition-colors outline-none focus:border-[#2d3a2e] focus:ring-1 focus:ring-[#2d3a2e]"
+                                    class="h-12 field border-theme-border-soft bg-theme-bg body-md text-theme-text shadow-none placeholder:text-theme-text/50 pc:h-14"
                                 >
                             </div>
                             <div class="flex flex-col gap-1.5">
-                                <label for="ContactLastName" class="text-xl font-medium opacity-80"
+                                <label
+                                    for="ContactLastName"
+                                    class="body-md font-medium text-primary/80"
                                     >Last name</label
                                 >
                                 <input
@@ -113,15 +120,17 @@
                                     name="contact[last_name]"
                                     placeholder="Enter your last name"
                                     autocomplete="family-name"
-                                    class="h-18 w-full rounded border border-[#e5e4e0] bg-[#f5f4f0] px-4 text-xl placeholder-[#9a9a9a] opacity-40 transition-colors outline-none focus:border-[#2d3a2e] focus:ring-1 focus:ring-[#2d3a2e]"
+                                    class="h-12 field border-theme-border-soft bg-theme-bg body-md text-theme-text shadow-none placeholder:text-theme-text/50 pc:h-14"
                                 >
                             </div>
                         </div>
 
                         {%- comment -%} Email & Phone {%- endcomment -%}
-                        <div class="grid grid-cols-1 gap-5 pc:grid-cols-2">
+                        <div class="grid grid-cols-1 gap-4 pc:grid-cols-2 pc:gap-5">
                             <div class="flex flex-col gap-1.5">
-                                <label for="ContactEmail" class="text-xl font-medium opacity-80"
+                                <label
+                                    for="ContactEmail"
+                                    class="body-md font-medium text-primary/80"
                                     >Email</label
                                 >
                                 <input
@@ -131,11 +140,13 @@
                                     placeholder="Enter your email address"
                                     autocomplete="email"
                                     required
-                                    class="h-18 w-full rounded border border-[#e5e4e0] bg-[#f5f4f0] px-4 text-xl placeholder-[#9a9a9a] opacity-40 transition-colors outline-none focus:border-[#2d3a2e] focus:ring-1 focus:ring-[#2d3a2e]"
+                                    class="h-12 field border-theme-border-soft bg-theme-bg body-md text-theme-text shadow-none placeholder:text-theme-text/50 pc:h-14"
                                 >
                             </div>
-                            <div class="flex flex-col gap-1.5">
-                                <label for="ContactPhone" class="text-xl font-medium opacity-80"
+                            <div class="hidden flex-col gap-1.5 pc:flex">
+                                <label
+                                    for="ContactPhone"
+                                    class="body-md font-medium text-primary/80"
                                     >Phone</label
                                 >
                                 <input
@@ -144,14 +155,14 @@
                                     name="contact[phone]"
                                     placeholder="Enter your phone number"
                                     autocomplete="tel"
-                                    class="h-18 w-full rounded border border-[#e5e4e0] bg-[#f5f4f0] px-4 text-xl placeholder-[#9a9a9a] opacity-40 transition-colors outline-none focus:border-[#2d3a2e] focus:ring-1 focus:ring-[#2d3a2e]"
+                                    class="h-12 field border-theme-border-soft bg-theme-bg body-md text-theme-text shadow-none placeholder:text-theme-text/50 pc:h-14"
                                 >
                             </div>
                         </div>
 
                         {%- comment -%} Message {%- endcomment -%}
                         <div class="flex flex-col gap-1.5">
-                            <label for="ContactMessage" class="text-xl font-medium opacity-80"
+                            <label for="ContactMessage" class="body-md font-medium text-primary/80"
                                 >Message</label
                             >
                             <textarea
@@ -159,14 +170,14 @@
                                 name="contact[body]"
                                 placeholder="Enter your message"
                                 rows="4"
-                                class="w-full resize-none rounded border border-[#e5e4e0] bg-[#f5f4f0] px-4 py-3 text-xl placeholder-[#9a9a9a] opacity-40 transition-colors outline-none focus:border-[#2d3a2e] focus:ring-1 focus:ring-[#2d3a2e]"
+                                class="min-h-24 field w-full resize-none border-theme-border-soft bg-theme-bg py-3 body-md text-theme-text shadow-none placeholder:text-theme-text/50 pc:min-h-28"
                             ></textarea>
                         </div>
 
                         {%- comment -%} Submit {%- endcomment -%}
                         <button
                             type="submit"
-                            class="h-24 w-full cursor-pointer rounded bg-[#243A27] text-2xl font-medium text-white transition-colors hover:bg-[#3d4d3f] active:bg-[#222c23]"
+                            class="btn h-12 w-full border-primary-border bg-primary body-md text-primary-text shadow-none hover:brightness-110 pc:h-14"
                         >
                             {{ section.settings.button_text | default: 'Send' }}
                         </button>
@@ -178,7 +189,7 @@
         {%- comment -%} Brand Watermark {%- endcomment -%}
         {% render 'watermark',
             container_class: 'absolute left-0 bottom-0 right-0 z-0 overflow-hidden pointer-events-none select-none',
-            text_class: 'tracking-wide font-bold text-[#e4e3df]',
+            text_class: 'tracking-wide font-bold text-theme-text opacity-10',
             html_attr: 'data-gsap-watermark',
             text: section.settings.watermark_text
         %}
@@ -221,7 +232,7 @@
                                 },
                                 {
                                     opacity: 1,
-                                    x: 30,
+                                    x: 0,
                                     duration: 1,
                                     ease: 'power3.out',
                                 },
@@ -255,6 +266,18 @@
         "templates": ["page"]
     },
     "settings": [
+        {
+            "type": "color_scheme",
+            "id": "color_scheme",
+            "label": "Color scheme",
+            "default": "scheme-1"
+        },
+        {
+            "type": "color",
+            "id": "form_background_color",
+            "label": "Form background color",
+            "default": "#ffffff"
+        },
         {
             "type": "image_picker",
             "id": "image",
