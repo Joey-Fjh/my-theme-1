@@ -1,6 +1,6 @@
 <div
     data-section-id="{{ section.id }}"
-    class="collections-section full-width h-full"
+    class="collections-section full-width h-full color-{{ section.settings.color_scheme }}"
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
@@ -9,11 +9,11 @@
     data-component-type="collections"
     data-component-id="{{ section.id }}"
 >
-    <div class="layout container-page bg-[#F3F3F3]">
-        <div class="relative my-25 text-center text-[#263D29]">
-            <div class="flex flex-col gap-6">
-                <h1 class="font-bold tracking-tighter">Latest Brand</h1>
-                <p class="opacity-80">
+    <div class="layout container-page bg-theme-bg text-theme-text">
+        <div class="relative mb-8 pt-14 text-center pc:mb-10 pc:pt-25">
+            <div class="mx-auto flex flex-col gap-3 pc:gap-6">
+                <h1>Latest Brand</h1>
+                <p class="body-sm opacity-80 pc:body-md">
                     Tailored experiences powered by AI intelligence. Discover insights that adapt to
                     your needs.
                 </p>
@@ -22,10 +22,11 @@
             {%- if section.settings.show_badge -%}
                 {%- render 'rotating-badge',
                     classes: 'absolute right-0 top-0 z-10',
-                    badge_class: 'text-[#263D29] opacity-80',
-                    center_class: 'text-[#263D29]',
+                    badge_class: 'text-theme-text opacity-80',
+                    center_class: 'text-theme-text',
                     unique_id: section.id,
                     size: 100,
+                    size_mobile: 60,
                     badge_text: section.settings.badge_text,
                     center_text: section.settings.badge_value
                 -%}
@@ -36,27 +37,29 @@
             <div>
                 {% comment %} Collection Grid {% endcomment %}
                 <div
-                    class="grid grid-cols-2 gap-3 p-4 pc:grid-cols-3 fw:grid-cols-4"
+                    class="grid grid-cols-2 gap-1.5 pb-8 pc:grid-cols-3 pc:gap-2 pc:pb-10 fw:grid-cols-4"
                     data-collection-grid
                 >
                     {%- for collection in collections -%}
                         <a
                             href="{{ collection.url }}"
                             class="
-                                group block translate-y-7.5 overflow-hidden rounded-lg
-                                bg-white opacity-0 transition-shadow duration-300 hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)]
+                                group block translate-y-7.5 overflow-hidden
+                                bg-theme-bg opacity-0 transition-shadow duration-300
+                                hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)]
+                                max-pc:shadow-[0_8px_30px_rgba(0,0,0,0.08)]
                             "
                             data-gsap-card
                         >
                             {%- comment -%} Image {%- endcomment -%}
-                            <div class="relative aspect-square overflow-hidden bg-[#f5f5f5]">
+                            <div class="relative aspect-square overflow-hidden bg-theme-bg">
                                 {%- capture sizes -%}
-                  (max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw
-                {%- endcapture -%}
+                                    (max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw
+                                {%- endcapture -%}
 
                                 {%- capture widths -%}
-                  300,450,600
-                {%- endcapture -%}
+                                    300,450,600
+                                {%- endcapture -%}
 
                                 {%- assign image_loading = 'lazy' -%}
                                 {%- if forloop.index <= 4 -%}
@@ -77,13 +80,13 @@
                             </div>
 
                             {%- comment -%} Info {%- endcomment -%}
-                            <div class="flex items-center justify-between border-t border-[#e5e5e5] px-4 py-3">
-                                <span class="text-xl leading-snug font-medium text-[#1a1a1a]">
+                            <div class="flex items-center justify-between gap-2 px-2 py-1.5 pc:px-3 pc:py-2">
+                                <span class="line-clamp-1 body-md">
                                     {{- collection.title -}}
                                 </span>
                                 {% render 'icons',
                                     icon: 'icon-arrow2',
-                                    size: 'xl',
+                                    size: 'lg',
                                     class: 'transition-transform duration-300 group-hover:translate-x-1',
                                     color: 'current'
                                 %}
@@ -152,6 +155,12 @@
         "templates": ["list-collections"]
     },
     "settings": [
+        {
+            "type": "color_scheme",
+            "id": "color_scheme",
+            "label": "Color scheme",
+            "default": "scheme-1"
+        },
         {
             "type": "range",
             "id": "collections_per_page",
