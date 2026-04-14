@@ -1,0 +1,199 @@
+{% doc %}
+    Search results tabs (products/articles/pages) for full search page.
+
+    Purpose:
+    - Keep `sections/search.liquid` focused on orchestration and query params.
+    - Render tab header, panel, and pagination for server-side search results.
+
+    Parameters:
+    -
+
+    @param {string} section_id - Current section id, used by `sectionPagination(...)`.
+
+    -
+
+    @param {number} active_tab_index - Initial active tab index derived from `request.params.type`.
+
+    -
+
+    @param {string} products_url - Search URL targeting product type.
+
+    -
+
+    @param {string} articles_url - Search URL targeting article type.
+
+    -
+
+    @param {string} pages_url - Search URL targeting page type.
+
+    -
+
+    @param {string} param_type - Active result type (`product`, `article`, `page`) for rendering result list.
+
+    -
+
+    @param {number} search_per_page - Pagination size.
+
+    Dependencies: - Expects global `search` object and `sectionPagination` Alpine component to be
+    available.
+{% enddoc %}
+
+<div
+    class="mt-20 w-full"
+    x-data="sectionPagination('{{ section_id }}', ['[data-search-tabs-header]','[data-search-tabs-panel]'])"
+>
+    {% capture results_tab_header %}
+        <div
+            class="mx-auto flex max-w-1/2 gap-40 pt-6 tracking-[0.16em] text-theme-text uppercase"
+            data-search-tabs-header
+        >
+            <span class="hidden" x-init="$nextTick(() => { setActive({{ active_tab_index }}) })"></span>
+
+            <a
+                href="{{ products_url }}"
+                role="tab"
+                x-data="{ index: null }"
+                x-init="index = registerTab($el);"
+                :id="`tab-${index}`"
+                aria-controls="search-results-panel"
+                @click.prevent="loadUrl($el.href); setActive(index)"
+                @popstate.window="isUrlMatch($el.href) && setActive(index)"
+                :tabindex="isActive(index) ? 0 : -1"
+                :aria-selected="isActive(index)"
+                class="inline-flex cursor-pointer items-baseline gap-1 border-b pb-2 leading-tight transition-opacity"
+                :class="isActive(index)
+                ? 'text-theme-text font-medium border-theme-text'
+                : 'text-theme-text/60 hover:text-theme-text border-transparent'
+                "
+            >
+                Products
+            </a>
+
+            <a
+                href="{{ articles_url }}"
+                role="tab"
+                x-data="{ index: null }"
+                x-init="index = registerTab($el);"
+                :id="`tab-${index}`"
+                aria-controls="search-results-panel"
+                @click.prevent="loadUrl($el.href); setActive(index)"
+                @popstate.window="isUrlMatch($el.href) && setActive(index)"
+                :tabindex="isActive(index) ? 0 : -1"
+                :aria-selected="isActive(index)"
+                class="inline-flex cursor-pointer items-baseline gap-1 border-b pb-2 leading-tight transition-opacity"
+                :class="isActive(index)
+                ? 'text-theme-text font-medium border-theme-text'
+                : 'text-theme-text/60 hover:text-theme-text border-transparent'
+                "
+            >
+                Articles
+            </a>
+
+            <a
+                href="{{ pages_url }}"
+                role="tab"
+                x-data="{ index: null }"
+                x-init="index = registerTab($el);"
+                :id="`tab-${index}`"
+                aria-controls="search-results-panel"
+                @click.prevent="loadUrl($el.href); setActive(index)"
+                @popstate.window="isUrlMatch($el.href) && setActive(index)"
+                :tabindex="isActive(index) ? 0 : -1"
+                :aria-selected="isActive(index)"
+                class="inline-flex cursor-pointer items-baseline gap-1 border-b pb-2 leading-tight transition-opacity"
+                :class="isActive(index)
+                ? 'text-theme-text font-medium border-theme-text'
+                : 'text-theme-text/60 hover:text-theme-text border-transparent'
+                "
+            >
+                Pages
+            </a>
+        </div>
+    {% endcapture %}
+
+    {% capture results_tab_content %}
+        <div
+            role="tabpanel"
+            id="search-results-panel"
+            x-data="{ index: null }"
+            x-init="index = registerPanel($el)"
+            class="relative mt-6 w-full"
+            data-search-tabs-panel
+        >
+            {% render 'loading', overlay: true, size: 'large' %}
+
+            {% unless search.results_count == 0 %}
+                <div class="mb-6 text-theme-text">
+                    <p class="h6 tracking-[0.16em] uppercase opacity-70">
+                        <span class="opacity-60">
+                            Search for <span class="truncate h6 opacity-60">“{{ search.terms | escape }}”</span> : {{ search.results_count }}
+                        </span>
+                    </p>
+                </div>
+            {% endunless %}
+
+            {% paginate search.results by search_per_page %}
+                {%- if search.results_count == 0 -%}
+                    <div class="py-16 text-center text-theme-text">
+                        <p class="h5 opacity-80">No results found.</p>
+                    </div>
+                {%- else -%}
+                    {%- case param_type -%}
+                        {%- when 'product' -%}
+                            <div class="grid grid-cols-2 gap-6 pc:grid-cols-4">
+                                {%- for item in search.results -%}
+                                    {%- if item.object_type == 'product' -%}
+                                        {% render 'product-card',
+                                            product: item
+                                        %}
+                                    {%- endif -%}
+                                {%- endfor -%}
+                            </div>
+
+                        {%- when 'article' -%}
+                            <ul class="space-y-4">
+                                {%- for item in search.results -%}
+                                    {%- if item.object_type == 'article' -%}
+                                        <li class="border-b border-theme-border-soft pb-3">
+                                            <a class="text-theme-text hover:underline" href="{{ item.url }}">{{ item.title }}</a>
+                                        </li>
+                                    {%- endif -%}
+                                {%- endfor -%}
+                            </ul>
+
+                        {%- when 'page' -%}
+                            <ul class="space-y-4">
+                                {%- for item in search.results -%}
+                                    {%- if item.object_type == 'page' -%}
+                                        <li class="border-b border-theme-border-soft pb-3">
+                                            <a class="text-theme-text hover:underline" href="{{ item.url }}">{{ item.title }}</a>
+                                        </li>
+                                    {%- endif -%}
+                                {%- endfor -%}
+                            </ul>
+                    {%- endcase -%}
+
+                    <div
+                        class="mt-10"
+                        @click="
+                            let link = $event.target.closest('nav.pagination a');
+                            if (link) {
+                                $event.preventDefault();
+                                loadUrl(link.href);
+                            }
+                        "
+                    >
+                        {% render 'pagination', paginate_obj: paginate %}
+                    </div>
+                {%- endif -%}
+            {% endpaginate %}
+        </div>
+    {% endcapture %}
+
+    {%- render 'tab-control',
+        type: 'underlined',
+        initialTabStrategy: 'first',
+        tab_header: results_tab_header,
+        tab_content: results_tab_content
+    -%}
+</div>

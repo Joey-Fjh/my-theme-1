@@ -1227,21 +1227,46 @@
                 hasEmptyState: false,
                 _debouncedFetch: null,
                 _abortController: null,
+                _initialSearchPerformed: false,
                 /** @type {string|null} Last term we scheduled a request for (debounced). */
                 _lastScheduledTerm: null,
                 /** @type {string|null} Last term we successfully resolved and rendered results for. */
                 _lastResolvedTerm: null,
 
                 init() {
+                    this._applyDatasetConfig();
+
                     if (Utils) {
                         // Slightly longer debounce reduces request spam during continuous typing.
                         this._debouncedFetch = Utils.debounce((term) => this._fetch(term), 500);
                     }
 
-                    if (this.query) {
+                    this._hydrateInitialQuery();
+                },
+
+                _applyDatasetConfig() {
+                    const dataset = this.$el?.dataset;
+                    if (!dataset) return;
+
+                    if (dataset.predictiveSearchUrl) {
+                        this.searchUrl = dataset.predictiveSearchUrl;
+                    }
+
+                    if (typeof dataset.predictiveSearchQuery === 'string') {
+                        this.query = dataset.predictiveSearchQuery;
+                    }
+
+                    this._initialSearchPerformed = dataset.predictiveSearchPerformed === 'true';
+                },
+
+                _hydrateInitialQuery() {
+                    if (this.query && !this._initialSearchPerformed) {
                         this.openPanel();
                         this.onInput(this.query);
+                        return;
                     }
+
+                    this.isOpen = false;
                 },
 
                 openPanel() {
