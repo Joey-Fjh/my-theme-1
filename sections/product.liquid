@@ -2,7 +2,7 @@
 
 <div
     data-section-id="{{ section.id }}"
-    class="product-section full-width"
+    class="product-section full-width color-{{ section.settings.color_scheme }}"
     style="
         --section-padding-top: {{ section.settings.padding_top | default: 0 }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom | default: 0 }}px;
@@ -12,15 +12,20 @@
     data-component-id="{{ section.id }}"
 >
     <div
-        class="layout container-page bg-[#F3F3F3]"
+        class="layout container-page bg-theme-bg text-theme-text"
         style="{% if layout == 'stacked' %}overflow: clip;{% endif %}"
     >
-        <div class="grid w-full min-w-0 grid-cols-1 gap-8 pc:grid-cols-2 pc:gap-12">
+        <div
+            class="grid w-full min-w-0 grid-cols-1 items-start gap-8 pc:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] pc:gap-12 fw:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]"
+        >
             <div class="min-w-0">
                 {%- render 'product-gallery',
                     images: product.images,
                     layout: layout,
                     thumb_position: 'left',
+                    zoom: 'true',
+                    zoom_overlay_color: section.settings.zoom_overlay_color,
+                    zoom_overlay_opacity: section.settings.zoom_overlay_opacity,
                     aspect_ratio: '576/622'
                 -%}
             </div>
@@ -52,6 +57,12 @@
     },
     "settings": [
         {
+            "type": "color_scheme",
+            "id": "color_scheme",
+            "label": "Color scheme",
+            "default": "scheme-1"
+        },
+        {
             "type": "select",
             "id": "gallery_layout",
             "label": "Image layout",
@@ -62,6 +73,22 @@
                 { "value": "grid", "label": "Grid" }
             ],
             "default": "thumbnails"
+        },
+        {
+            "type": "color",
+            "id": "zoom_overlay_color",
+            "label": "Zoom overlay color",
+            "default": "#000000"
+        },
+        {
+            "type": "range",
+            "id": "zoom_overlay_opacity",
+            "min": 0,
+            "max": 100,
+            "step": 5,
+            "unit": "%",
+            "label": "Zoom overlay opacity",
+            "default": 90
         },
         {
             "type": "header",

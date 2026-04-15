@@ -1,9 +1,48 @@
 <section
     data-section-id="{{ section.id }}"
-    class="product-comparison-table-section full-width"
+    class="product-comparison-table-section full-width color-{{ section.settings.color_scheme }}"
+    {% liquid
+        assign comparison_palette = section.settings.comparison_palette | default: 'neutral'
+        assign comparison_heading_rgb = '38 61 41'
+        assign comparison_muted_rgb = '88 96 92'
+        assign comparison_surface_rgb = '249 249 249'
+        assign comparison_highlight_rgb = '244 241 232'
+        assign comparison_success_rgb = '34 142 88'
+        assign comparison_danger_rgb = '224 74 74'
+
+        case comparison_palette
+            when 'sage'
+                assign comparison_heading_rgb = '33 70 57'
+                assign comparison_muted_rgb = '76 92 85'
+                assign comparison_surface_rgb = '243 247 244'
+                assign comparison_highlight_rgb = '232 241 235'
+                assign comparison_success_rgb = '32 129 86'
+                assign comparison_danger_rgb = '193 74 74'
+            when 'warm'
+                assign comparison_heading_rgb = '79 57 40'
+                assign comparison_muted_rgb = '108 96 84'
+                assign comparison_surface_rgb = '250 246 240'
+                assign comparison_highlight_rgb = '245 236 224'
+                assign comparison_success_rgb = '74 131 83'
+                assign comparison_danger_rgb = '188 88 72'
+            when 'mocha'
+                assign comparison_heading_rgb = '64 52 47'
+                assign comparison_muted_rgb = '97 89 84'
+                assign comparison_surface_rgb = '247 243 239'
+                assign comparison_highlight_rgb = '239 232 226'
+                assign comparison_success_rgb = '58 121 83'
+                assign comparison_danger_rgb = '177 73 73'
+        endcase
+    %}
     style="
         --section-padding-top: {{ section.settings.padding_top | default: 0 }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom | default: 0 }}px;
+        --comparison-heading-rgb: {{ comparison_heading_rgb }};
+        --comparison-muted-rgb: {{ comparison_muted_rgb }};
+        --comparison-surface-rgb: {{ comparison_surface_rgb }};
+        --comparison-highlight-rgb: {{ comparison_highlight_rgb }};
+        --comparison-success-rgb: {{ comparison_success_rgb }};
+        --comparison-danger-rgb: {{ comparison_danger_rgb }};
     "
     data-component-kind="section"
     data-component-type="product-comparison-table"
@@ -11,12 +50,12 @@
 >
     <div
         class="layout container-page mx-auto pb-8"
-        style="--comparison-table-min-width: {{ section.settings.products.size | times: 280 | plus: 320 }}px;"
+        style="--comparison-table-min-width: {{ section.settings.products.size | times: 192 | plus: 160 }}px;"
     >
         {% if section.settings.heading != blank %}
-            <h1 class="mb-8 text-center h0 text-[#263D29]">
+            <h2 class="mb-8 text-center h1 text-[rgb(var(--comparison-heading-rgb))] pc:mb-10">
                 {{ section.settings.heading }}
-            </h1>
+            </h2>
         {% endif %}
         {% if section.settings.products != blank and section.blocks.size > 0 %}
             <div
@@ -36,7 +75,7 @@
                                 {% comment %} Row header (first column) — frozen when horizontal scroll {% endcomment %}
                                 <th
                                     scope="row"
-                                    class="comparison-table__sticky-col sticky left-0 z-10 w-48 min-w-48 border border-gray-200 bg-[#F9F9F9] p-6 align-middle h6 font-medium text-gray-600 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.06)]"
+                                    class="comparison-table__sticky-col sticky left-0 z-10 w-28 min-w-28 border border-theme-border-soft bg-[rgb(var(--comparison-surface-rgb))] px-3 py-4 align-middle body-sm font-medium text-[rgb(var(--comparison-muted-rgb))] shadow-[4px_0_8px_-2px_rgba(0,0,0,0.06)] pc:w-36 pc:min-w-36 pc:px-4 pc:py-5"
                                 >
                                     {% case block.type %}
                                         {% when 'header' %}
@@ -63,7 +102,7 @@
                                         {% assign is_highlight = true %}
                                     {% endif %}
                                     <td
-                                        class="min-w-60 border border-gray-200 p-6 align-middle {% if is_highlight %}bg-[#F4F1E8]{% else %}bg-transparent{% endif %}"
+                                        class="min-w-48 border border-theme-border-soft p-3 align-middle pc:min-w-52 pc:p-4 {% if is_highlight %}bg-[rgb(var(--comparison-highlight-rgb))]{% else %}bg-transparent{% endif %}"
                                     >
                                         {% case block.type %}
                                             {% when 'header' %}
@@ -71,7 +110,7 @@
                                                     href="{{ item.url }}"
                                                     class="comparison-table-product-link flex w-full cursor-pointer flex-col items-center text-inherit no-underline"
                                                 >
-                                                    <div class="mb-4 aspect-3/4 w-full overflow-hidden rounded bg-[#F9F9F9]">
+                                                    <div class="mb-4 aspect-3/4 w-full overflow-hidden rounded bg-[rgb(var(--comparison-surface-rgb))]">
                                                         {%-
                                                             render 'image',
                                                             image: item.featured_image,
@@ -83,7 +122,7 @@
                                                             alt: item.featured_image.alt | default: item.title
                                                         -%}
                                                     </div>
-                                                    <span class="text-center h5 font-bold text-[#263D29]">
+                                                    <span class="text-center h5 font-bold text-[rgb(var(--comparison-heading-rgb))]">
                                                         {{- item.title -}}
                                                     </span>
                                                 </a>
@@ -96,7 +135,7 @@
                                                     {% if item.compare_at_price != blank
                                                         and item.compare_at_price > item.price
                                                     %}
-                                                        <span class="h6 text-gray-500 line-through">
+                                                        <span class="body-sm text-[rgb(var(--comparison-muted-rgb))] line-through">
                                                             {{- item.compare_at_price | money -}}
                                                         </span>
                                                     {% endif %}
@@ -110,7 +149,7 @@
                                                         size: 'sm',
                                                         wrapper_class: 'mb-0 inline-flex items-baseline'
                                                     -%}
-                                                    <span class="h6 leading-none text-gray-600"
+                                                    <span class="body-sm leading-none text-[rgb(var(--comparison-muted-rgb))]"
                                                         >4.5</span
                                                     >
                                                 </div>
@@ -124,7 +163,7 @@
                                                     {% assign meta_ns = meta_parts[0] %}
                                                     {% assign meta_key_name = meta_parts[1] %}
                                                     {% assign meta_val = item.metafields[meta_ns][meta_key_name] %}
-                                                    <div class="h6 text-gray-600">
+                                                    <div class="body-sm text-[rgb(var(--comparison-muted-rgb))]">
                                                         {% if meta_val != blank
                                                             and meta_val.value != blank
                                                         %}
@@ -136,20 +175,26 @@
                                                         {% endif %}
                                                     </div>
                                                 {% else %}
-                                                    <span class="h6 text-gray-400">—</span>
+                                                    <span class="body-sm text-[rgb(var(--comparison-muted-rgb)/0.7)]"
+                                                        >—</span
+                                                    >
                                                 {% endif %}
 
                                             {% when 'availability' %}
                                                 {% if item.available %}
-                                                    <span class="h6 text-[#263D29]">In stock</span>
+                                                    <span class="body-sm text-[rgb(var(--comparison-success-rgb))]"
+                                                        >In stock</span
+                                                    >
                                                 {% else %}
-                                                    <span class="h6 text-red-500"
+                                                    <span class="body-sm text-[rgb(var(--comparison-danger-rgb))]"
                                                         >Out of Stock</span
                                                     >
                                                 {% endif %}
 
                                             {% else %}
-                                                <span class="text-gray-400">—</span>
+                                                <span class="text-[rgb(var(--comparison-muted-rgb)/0.7)]"
+                                                    >—</span
+                                                >
                                         {% endcase %}
                                     </td>
                                 {% endfor %}
@@ -332,10 +377,28 @@
     },
     "settings": [
         {
+            "type": "color_scheme",
+            "id": "color_scheme",
+            "label": "Color scheme",
+            "default": "scheme-1"
+        },
+        {
             "type": "text",
             "id": "heading",
             "label": "Section heading",
             "default": "Similar Comparison Products"
+        },
+        {
+            "type": "select",
+            "id": "comparison_palette",
+            "label": "Comparison palette",
+            "default": "neutral",
+            "options": [
+                { "value": "neutral", "label": "Neutral" },
+                { "value": "sage", "label": "Sage" },
+                { "value": "warm", "label": "Warm" },
+                { "value": "mocha", "label": "Mocha" }
+            ]
         },
         {
             "type": "product_list",
