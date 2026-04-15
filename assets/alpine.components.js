@@ -1272,6 +1272,21 @@
                 openPanel() {
                     if (!this.query) return;
                     this.isOpen = true;
+
+                    const term = this.query.trim();
+                    if (!term || this.isLoading) return;
+
+                    const hasResults =
+                        this.suggestions.length ||
+                        this.products.length ||
+                        this.articles.length ||
+                        this.pages.length;
+
+                    // After landing on search results page, query may exist but panel data is empty.
+                    // Trigger one fetch on open so users don't need to type again.
+                    if (!hasResults) {
+                        this.onInput(term);
+                    }
                 },
 
                 closePanel() {
