@@ -1,12 +1,29 @@
 {% doc %}
-    Filters drawer — rendered inside ui-dialog (drawer, left).
-  Global reuse: works for both Collection and Search via filter_host.
-  No <form> here; all inputs bind to the external form via form="CollectionFiltersForm".
-  All controls auto-submit via
+    Filters drawer content, typically rendered inside `ui-dialog` as a left drawer.
+  Global reuse: works for both Collection and Search via `filter_host`.
+  No `<form>` lives in this snippet. All inputs bind to the external
+  `CollectionFiltersForm` via the `form` attribute, and all controls auto-submit via
+  `
 
-    @change="onChange" (resolved through Alpine scope chain).
+    @change="onChange"` resolved through the surrounding Alpine scope.
+    Supports Shopify filter types: - `boolean` - `list` - `price_range`
+
+    Expected parent integration: - A form with id `CollectionFiltersForm` - An Alpine scope exposing
+    `onChange` - A dialog wrapper that handles open / close state
+
+    Example: {% render 'filters-drawer', filter_source: collection %}
 
     @param {object} filter_source - Optional. Pass search or collection to drive filters.
+    @param {string} [drawer_class] - Optional root drawer class override.
+    @param {string} [divider_class] - Optional border color class for section dividers.
+    @param {string} [muted_text_class] - Optional muted text style for helper labels.
+    @param {string} [filter_label_class] - Optional filter label typography classes.
+    @param {string} [count_text_class] - Optional result count text classes.
+    @param {string} [chip_bg_class] - Optional chip background classes for boolean filters.
+    @param {string} [track_bg_class] - Optional inactive range/toggle track background classes.
+    @param {string} [active_bg_class] - Optional active range/toggle background classes.
+    @param {string} [input_shell_class] - Optional wrapper classes for price inputs.
+    @param {string} [footer_button_class] - Optional footer CTA button classes.
 
     @default collection | search (Liquid default when snippet included from section)
 {% enddoc %}
@@ -31,7 +48,7 @@
 <div class="{{ drawer_class }}">
     {%- comment -%} Header {%- endcomment -%}
     <div class="flex items-center justify-between border-b px-6 py-5 {{ divider_class }}">
-        <h2 id="dialog-title-collection-filters" class="h3 font-bold">Filters</h2>
+        <h2 id="dialog-title-collection-filters">Filters</h2>
         <button
             type="button"
             @click="$store.dialog.close()"
@@ -46,137 +63,138 @@
     <div class="flex-1 overflow-y-auto px-6 py-4">
         {%- for filter in filter_host.filters -%}
             {%- capture filter_content -%}
-        {%- case filter.type -%}
-          {%- when 'boolean' -%}
-            <div class="flex flex-col gap-1">
-              {%- for value in filter.values -%}
-                <label class="flex cursor-pointer items-center justify-between rounded-lg px-4 py-3.5 {{ chip_bg_class }}">
-                  <span class="{{ filter_label_class }}">{{ value.label }}</span>
-                  <span class="relative inline-flex h-7 w-12 items-center">
-                    <input
-                      type="checkbox"
-                      class="peer sr-only"
-                      name="{{ value.param_name }}"
-                      value="{{ value.value }}"
-                      form="CollectionFiltersForm"
-                      {% if value.active %}checked{% endif %}
-                      @change="onChange"
-                    >
-                    <span class="absolute inset-0 rounded-full {{ track_bg_class }} transition-colors peer-checked:{{ active_bg_class }}"></span>
-                    <span class="absolute top-1 left-1 h-5 w-5 rounded-full bg-theme-bg shadow-sm transition-transform peer-checked:translate-x-5"></span>
-                  </span>
-                </label>
-              {%- endfor -%}
-            </div>
+                {%- case filter.type -%}
+                    {%- when 'boolean' -%}
+                        <div class="flex flex-col gap-1">
+                            {%- for value in filter.values -%}
+                                <label class="flex cursor-pointer items-center justify-between rounded-lg px-4 py-3.5 {{ chip_bg_class }}">
+                                    <span class="{{ filter_label_class }}">{{ value.label }}</span>
+                                    <span class="relative inline-flex h-7 w-12 items-center">
+                                        <input
+                                            type="checkbox"
+                                            class="peer sr-only"
+                                            name="{{ value.param_name }}"
+                                            value="{{ value.value }}"
+                                            form="CollectionFiltersForm"
+                                            {% if value.active %}checked{% endif %}
+                                            @change="onChange"
+                                        >
+                                            <span class="absolute inset-0 rounded-full {{ track_bg_class }} transition-colors peer-checked:{{ active_bg_class }}"></span>
+                                            <span class="absolute top-1 left-1 h-5 w-5 rounded-full bg-theme-bg shadow-sm transition-transform peer-checked:translate-x-5"></span>
+                                    </span>
+                                </label>
+                            {%- endfor -%}
+                        </div>
 
-          {%- when 'list' -%}
-            <div class="flex flex-col">
-              {%- for value in filter.values -%}
-                <label class="flex cursor-pointer items-center gap-3 py-3 {% unless forloop.last %}border-b {{ divider_class }}{% endunless %}">
-                  <input
-                    type="checkbox"
-                    class="filter-checkbox"
-                    name="{{ value.param_name }}"
-                    value="{{ value.value }}"
-                    form="CollectionFiltersForm"
-                    {% if value.active %}checked{% endif %}
-                    @change="onChange"
-                  >
-                  <span class="{{ filter_label_class }}">{{ value.label }}</span>
-                  <span class="ml-auto {{ count_text_class }}">({{ value.count }})</span>
-                </label>
-              {%- endfor -%}
-            </div>
+                    {%- when 'list' -%}
+                        <div class="flex flex-col">
+                            {%- for value in filter.values -%}
+                                <label class="flex cursor-pointer items-center gap-3 py-3 {% unless forloop.last %}border-b {{ divider_class }}{% endunless %}">
+                                <input
+                                    type="checkbox"
+                                    class="filter-checkbox"
+                                    name="{{ value.param_name }}"
+                                    value="{{ value.value }}"
+                                    form="CollectionFiltersForm"
+                                    {% if value.active %}checked{% endif %}
+                                    @change="onChange"
+                                >
+                                    <span class="{{ filter_label_class }}">{{ value.label }}</span>
+                                    <span class="ml-auto {{ count_text_class }}">({{ value.count }})</span>
+                                </label>
+                            {%- endfor -%}
+                        </div>
 
-          {%- when 'price_range' -%}
-            {%- assign range_max = filter.range_max | money_without_currency | plus: 0 -%}
-            {%- assign current_min = filter.min_value.value | default: 0 | plus: 0 -%}
-            {%- assign current_max = filter.max_value.value | default: range_max | plus: 0 -%}
+                    {%- when 'price_range' -%}
+                        {%- assign range_max = filter.range_max | money_without_currency | plus: 0 -%}
+                        {%- assign current_min = filter.min_value.value | default: 0 | plus: 0 -%}
+                        {%- assign current_max = filter.max_value.value | default: range_max | plus: 0 -%}
 
-            <div
-              class="flex flex-col gap-5 py-3"
-              x-data="{
-                min: {{ current_min }},
-                max: {{ current_max }},
-                ceil: {{ range_max }},
-                minPct() { return this.ceil ? (this.min / this.ceil) * 100 : 0 },
-                maxPct() { return this.ceil ? 100 - (this.max / this.ceil) * 100 : 0 },
-                clampMin() { this.min = Math.max(0, Math.min(this.min, this.max)) },
-                clampMax() { this.max = Math.min(this.ceil, Math.max(this.max, this.min)) }
-              }"
-            >
-              {%- comment -%} Dual-thumb range slider {%- endcomment -%}
-              <div class="relative flex h-10 w-full items-center">
-                <div class="absolute inset-x-0 h-0.5 rounded-full {{ track_bg_class }}"></div>
-                <div
-                  class="absolute h-0.5 rounded-full {{ active_bg_class }}"
-                  :style="`left:${minPct()}%;right:${maxPct()}%`"
-                ></div>
-                <input
-                  type="range"
-                  min="0"
-                  :max="ceil"
-                  x-model.number="min"
-                  @input="clampMin()"
-                  @change.debounce.500ms="$refs.inputMin.value = min; onChange"
-                  class="price-range-thumb pointer-events-none absolute inset-x-0 z-10 w-full appearance-none bg-transparent"
-                >
-                <input
-                  type="range"
-                  min="0"
-                  :max="ceil"
-                  x-model.number="max"
-                  @input="clampMax()"
-                  @change.debounce.500ms="$refs.inputMax.value = max; onChange"
-                  class="price-range-thumb pointer-events-none absolute inset-x-0 z-20 w-full appearance-none bg-transparent"
-                >
-              </div>
+                        <div
+                            class="flex flex-col gap-5 py-3"
+                            x-data="{
+                                min: {{ current_min }},
+                                max: {{ current_max }},
+                                ceil: {{ range_max }},
+                                minPct() { return this.ceil ? (this.min / this.ceil) * 100 : 0 },
+                                maxPct() { return this.ceil ? 100 - (this.max / this.ceil) * 100 : 0 },
+                                clampMin() { this.min = Math.max(0, Math.min(this.min, this.max)) },
+                                clampMax() { this.max = Math.min(this.ceil, Math.max(this.max, this.min)) }
+                            }"
+                        >
+                            {%- comment -%} Dual-thumb range slider {%- endcomment -%}
+                            <div class="relative flex h-10 w-full items-center">
+                                <div class="absolute inset-x-0 h-0.5 rounded-full {{ track_bg_class }}"></div>
+                                <div
+                                    class="absolute h-0.5 rounded-full {{ active_bg_class }}"
+                                    :style="`left:${minPct()}%;right:${maxPct()}%`"
+                                ></div>
 
-              {%- comment -%} From / To number inputs {%- endcomment -%}
-              <div class="flex items-center gap-4">
-                <div class="flex-1">
-                  <label class="mb-1 block {{ muted_text_class }}" for="Filter-{{ filter.label | handleize }}-GTE">From</label>
-                  <div class="{{ input_shell_class }}">
-                    <span class="mr-1 opacity-50">$</span>
-                    <input
-                      x-ref="inputMin"
-                      id="Filter-{{ filter.label | handleize }}-GTE"
-                      type="number"
-                      name="{{ filter.min_value.param_name }}"
-                      :value="min"
-                      min="0"
-                      max="{{ range_max }}"
-                      placeholder="0"
-                      form="CollectionFiltersForm"
-                      @input.debounce.500ms="min = +$el.value; clampMin(); $el.value = min; onChange"
-                      class="w-full appearance-none bg-transparent outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                    >
-                  </div>
-                </div>
-                <div class="flex-1">
-                  <label class="mb-1 block {{ muted_text_class }}" for="Filter-{{ filter.label | handleize }}-LTE">To</label>
-                  <div class="{{ input_shell_class }}">
-                    <span class="mr-1 opacity-50">$</span>
-                    <input
-                      x-ref="inputMax"
-                      id="Filter-{{ filter.label | handleize }}-LTE"
-                      type="number"
-                      name="{{ filter.max_value.param_name }}"
-                      :value="max"
-                      min="0"
-                      max="{{ range_max }}"
-                      placeholder="{{ range_max }}"
-                      form="CollectionFiltersForm"
-                      @input.debounce.500ms="max = +$el.value; clampMax(); $el.value = max; onChange"
-                      class="w-full appearance-none bg-transparent outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                    >
-                  </div>
-                </div>
-              </div>
-            </div>
+                                <input
+                                    type="range"
+                                    min="0"
+                                    :max="ceil"
+                                    x-model.number="min"
+                                    @input="clampMin()"
+                                    @change.debounce.500ms="$refs.inputMin.value = min; onChange"
+                                    class="price-range-thumb pointer-events-none absolute inset-x-0 z-10 w-full appearance-none bg-transparent"
+                                >
 
-        {%- endcase -%}
-      {%- endcapture -%}
+                                <input
+                                    type="range"
+                                    min="0"
+                                    :max="ceil"
+                                    x-model.number="max"
+                                    @input="clampMax()"
+                                    @change.debounce.500ms="$refs.inputMax.value = max; onChange"
+                                    class="price-range-thumb pointer-events-none absolute inset-x-0 z-20 w-full appearance-none bg-transparent"
+                                >
+                            </div>
+
+                            {%- comment -%} From / To number inputs {%- endcomment -%}
+                            <div class="flex items-center gap-4">
+                                <div class="flex-1">
+                                    <label class="mb-1 block {{ muted_text_class }}" for="Filter-{{ filter.label | handleize }}-GTE">From</label>
+                                    <div class="{{ input_shell_class }}">
+                                        <span class="mr-1 opacity-50">$</span>
+                                        <input
+                                            x-ref="inputMin"
+                                            id="Filter-{{ filter.label | handleize }}-GTE"
+                                            type="number"
+                                            name="{{ filter.min_value.param_name }}"
+                                            :value="min"
+                                            min="0"
+                                            max="{{ range_max }}"
+                                            placeholder="0"
+                                            form="CollectionFiltersForm"
+                                            @input.debounce.500ms="min = +$el.value; clampMin(); $el.value = min; onChange"
+                                            class="w-full appearance-none bg-transparent outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                        >
+                                    </div>
+                                </div>
+                                <div class="flex-1">
+                                    <label class="mb-1 block {{ muted_text_class }}" for="Filter-{{ filter.label | handleize }}-LTE">To</label>
+                                    <div class="{{ input_shell_class }}">
+                                        <span class="mr-1 opacity-50">$</span>
+                                        <input
+                                            x-ref="inputMax"
+                                            id="Filter-{{ filter.label | handleize }}-LTE"
+                                            type="number"
+                                            name="{{ filter.max_value.param_name }}"
+                                            :value="max"
+                                            min="0"
+                                            max="{{ range_max }}"
+                                            placeholder="{{ range_max }}"
+                                            form="CollectionFiltersForm"
+                                            @input.debounce.500ms="max = +$el.value; clampMax(); $el.value = max; onChange"
+                                            class="w-full appearance-none bg-transparent outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                        >
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                {%- endcase -%}
+            {%- endcapture -%}
 
             {%- render 'accordion',
                 titles: filter.label,

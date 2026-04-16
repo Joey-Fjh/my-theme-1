@@ -1,0 +1,118 @@
+{% doc %}
+    Inline filters for collection/search pages.
+
+    @param {object} filter_source - Optional. Pass collection/search object.
+    @param {string} [mode] - Optional. 'horizontal' or 'vertical'. Default: 'horizontal'.
+    @param {string} [wrapper_class] - Optional wrapper class override.
+{% enddoc %}
+
+{%- assign filter_host = filter_source | default: collection | default: search -%}
+{%- assign render_mode = mode | default: 'horizontal' -%}
+{%- assign wrapper_class = wrapper_class | default: '' -%}
+
+<div
+    {% if render_mode == 'horizontal' %}
+        x-data="{ activeFilter: null }"
+    {% endif %}
+    class="{{ wrapper_class }} {% if render_mode == 'horizontal' %}flex flex-wrap items-center gap-6{% else %}flex flex-col gap-4{% endif %}"
+>
+    {% if render_mode == 'horizontal' %}
+        <span class="flex shrink-0 items-center gap-2 h2">
+            {% render 'icons', icon: 'icon-filter', class: 'h-10 w-10', color: 'currentColor' %}
+            <span>Filter:</span>
+        </span>
+    {% endif %}
+
+    {%- for filter in filter_host.filters -%}
+        <details
+            {% if render_mode == 'horizontal' %}
+                :open="activeFilter === '{{ forloop.index0 }}'"
+                @toggle="
+                    if ($el.open) {
+                        activeFilter = '{{ forloop.index0 }}';
+                    } else if (activeFilter === '{{ forloop.index0 }}') {
+                        activeFilter = null;
+                    }
+                "
+            {% endif %}
+            class="group {% if render_mode == 'horizontal' %}relative{% if forloop.first %} ml-4{% endif %}{% endif %}"
+        >
+            <summary class="flex cursor-pointer list-none items-center gap-2 h2 marker:content-none">
+                <span>{{ filter.label }}</span>
+                {% render 'icons',
+                    icon: 'icon-caret-down',
+                    class: 'h-4 w-4 transition-transform group-open:rotate-180'
+                %}
+            </summary>
+
+            <div
+                class="
+                    mt-3
+                    {% if render_mode == 'horizontal' %}
+                        absolute top-full left-0 z-20 min-w-80 rounded-input border border-theme-border-soft bg-theme-bg p-4 shadow-surface
+                    {% else %}
+                        rounded-input border border-theme-border-soft p-4
+                    {% endif %}
+                "
+            >
+                {%- case filter.type -%}
+                    {%- when 'boolean', 'list' -%}
+                        <div class="flex flex-col gap-2">
+                            {%- for value in filter.values -%}
+                                <label class="flex cursor-pointer items-center gap-2 body-md">
+                                    <input
+                                        type="checkbox"
+                                        name="{{ value.param_name }}"
+                                        value="{{ value.value }}"
+                                        form="CollectionFiltersForm"
+                                        {% if value.active %}
+                                            checked
+                                        {% endif %}
+                                        @change="onChange()"
+                                        class="filter-checkbox"
+                                    >
+                                    <span>{{ value.label }}</span>
+                                    <span class="opacity-60">({{ value.count }})</span>
+                                </label>
+                            {%- endfor -%}
+                        </div>
+                    {%- when 'price_range' -%}
+                        {%- assign range_max = filter.range_max
+                            | money_without_currency
+                            | plus: 0
+                        -%}
+                        <div class="grid grid-cols-2 gap-3">
+                            <label class="flex flex-col gap-1 body-sm">
+                                <span class="opacity-60">Min</span>
+                                <input
+                                    type="number"
+                                    name="{{ filter.min_value.param_name }}"
+                                    value="{{ filter.min_value.value | default: '' }}"
+                                    min="0"
+                                    max="{{ range_max }}"
+                                    placeholder="0"
+                                    form="CollectionFiltersForm"
+                                    @change="onChange()"
+                                    class="rounded-input border border-theme-border-soft px-3 py-2 body-md outline-none"
+                                >
+                            </label>
+                            <label class="flex flex-col gap-1 body-sm">
+                                <span class="opacity-60">Max</span>
+                                <input
+                                    type="number"
+                                    name="{{ filter.max_value.param_name }}"
+                                    value="{{ filter.max_value.value | default: '' }}"
+                                    min="0"
+                                    max="{{ range_max }}"
+                                    placeholder="{{ range_max }}"
+                                    form="CollectionFiltersForm"
+                                    @change="onChange()"
+                                    class="rounded-input border border-theme-border-soft px-3 py-2 body-md outline-none"
+                                >
+                            </label>
+                        </div>
+                {%- endcase -%}
+            </div>
+        </details>
+    {%- endfor -%}
+</div>

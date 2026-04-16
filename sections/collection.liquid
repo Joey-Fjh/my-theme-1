@@ -21,7 +21,7 @@
                     <h1 class="mb-10 hxxxl leading-none font-bold">
                         {{ section.settings.header | default: 'Products' }}
                     </h1>
-                    <p class="max-w-xl h5 leading-relaxed opacity-80">
+                    <p class="max-w-xl body-md leading-relaxed opacity-80">
                         {{
                             section.settings.description
                             | default: 'Tailored experiences powered by AI intelligence. Discover insights that adapt to your needs.'
@@ -45,149 +45,267 @@
     </div>
 
     <div class="layout layout-no-pt container-page">
-        <div class="relative flex items-center justify-between">
-            {%- comment -%} Filter trigger + hidden form + drawer {%- endcomment -%}
+        {%- liquid
+            assign mobile_grid_class = 'grid-cols-1'
+            if section.settings.mobile_card_columns == '2'
+                assign mobile_grid_class = 'grid-cols-2'
+            endif
+            assign desktop_grid_class = 'pc:grid-cols-4'
+            if section.settings.desktop_card_columns == '3'
+                assign desktop_grid_class = 'pc:grid-cols-3'
+            endif
+
+            assign enable_filtering = section.settings.enable_filtering
+            assign enable_sorting = section.settings.enable_sorting
+            assign filter_type = section.settings.filter_type | default: 'drawer'
+            assign is_drawer_filter = false
+            assign is_horizontal_filter = false
+            assign is_vertical_filter = false
+
+            if filter_type == 'horizontal'
+                assign is_horizontal_filter = true
+            elsif filter_type == 'vertical'
+                assign is_vertical_filter = true
+            else
+                assign is_drawer_filter = true
+            endif
+        -%}
+
+        <div class="flex flex-col gap-6 pc:gap-6">
+            {%- comment -%} Hidden form powers all filter/sort controls {%- endcomment -%}
             <form id="CollectionFiltersForm" class="hidden" @change="onChange()"></form>
-            <button
-                type="button"
-                @click="$store.dialog.open('collection-filters')"
-                class="absolute left-0 z-10 flex shrink-0 cursor-pointer items-center gap-3 self-start h2"
-            >
-                {% render 'icons', icon: 'icon-filter', class: 'h-10 w-10', color: 'currentColor' %}
-                <span class="body-md">Filter</span>
-            </button>
 
-            {%- capture drawer_content -%}
-                    {%- render 'filters-drawer', filter_source: collection -%}
-                {%- endcapture -%}
+            {%- if enable_filtering or enable_sorting -%}
+                <div class="flex items-center justify-between gap-4 pc:hidden">
+                    {%- if enable_filtering -%}
+                        <button
+                            type="button"
+                            @click="$store.dialog.open('collection-filters')"
+                            class="flex shrink-0 cursor-pointer items-center gap-3 h2"
+                        >
+                            {% render 'icons',
+                                icon: 'icon-filter',
+                                class: 'h-10 w-10',
+                                color: 'currentColor'
+                            %}
+                            <span>Filter</span>
+                        </button>
+                    {%- endif -%}
 
-            {%- render 'ui-dialog',
-                id: 'collection-filters',
-                type: 'drawer',
-                position: 'left',
-                show_close_button: true,
-                close_label: 'Close filters drawer',
-                content: drawer_content
-            -%}
+                    {%- if enable_sorting -%}
+                        {%- render 'sort-by-dropdown',
+                            results: collection,
+                            form_id: 'CollectionFiltersForm',
+                            class: 'h2 shrink-0'
+                        -%}
+                    {%- endif -%}
+                </div>
+            {%- endif -%}
 
-            {% comment %} Tab Control {% endcomment %}
-            <div class="min-w-0 flex-1">
-                {%- liquid
-                    assign active_tab_index = 0
-                    assign current_tag_handle = current_tags | first | handleize
-                    if current_tags != blank
-                        for tag in collection.all_tags
-                            assign tag_handle = tag | handleize
-                            if current_tag_handle == tag_handle
-                                assign active_tab_index = forloop.index
-                                break
-                            endif
-                        endfor
-                    endif
-                -%}
+            {%- if is_horizontal_filter and enable_filtering or enable_sorting -%}
+                <div class="hidden pc:flex pc:items-center pc:justify-between pc:gap-6">
+                    {%- if enable_filtering -%}
+                        {%- render 'filters-inline',
+                            filter_source: collection,
+                            mode: 'horizontal',
+                            wrapper_class: 'items-center'
+                        -%}
+                    {%- else -%}
+                        <div></div>
+                    {%- endif -%}
 
-                {% capture tab_header %}
-                    <span class="hidden" x-init="$nextTick(() => { setActive({{ active_tab_index }}) })"></span>
+                    {%- if enable_sorting -%}
+                        {%- render 'sort-by-dropdown',
+                            results: collection,
+                            form_id: 'CollectionFiltersForm',
+                            class: 'h2 shrink-0'
+                        -%}
+                    {%- endif -%}
+                </div>
+            {%- endif -%}
 
-                    <a
-                        href="{{ collection.url }}"
-                        role="tab"
-                        x-data="{ index: null }"
-                        x-init="index = registerTab($el);"
-                        :id="`tab-${index}`"
-                        aria-controls="collection-panel"
-                        @click.prevent="setActive(index); /* loadUrl($el.href) 后续再加 */"
-                        :tabindex="isActive(index) ? 0 : -1"
-                        :aria-selected="isActive(index)"
-                        :class="isActive(index) ? 'opacity-100 border-b-2 border-current' : 'opacity-50 hover:opacity-100 border-b-2 border-transparent'"
-                        class="flex cursor-pointer flex-nowrap items-center gap-1 h2 whitespace-nowrap transition-all duration-300 focus:outline-none"
-                    >
-                        All <sup class="body-xs leading-none">({{ collection.all_products_count }})</sup>
-                    </a>
+            <div class="{% if enable_filtering and is_vertical_filter %}pc:grid pc:grid-cols-[30rem_minmax(0,1fr)] pc:gap-10{% endif %}">
+                {%- if enable_filtering and is_vertical_filter -%}
+                    <aside class="hidden pc:block">
+                        <div class="sticky top-20 border-r border-theme-border-soft pr-6">
+                            {%- render 'filters-inline',
+                                filter_source: collection,
+                                mode: 'vertical'
+                            -%}
+                        </div>
+                    </aside>
+                {%- endif -%}
 
-                    {%- for tag in collection.all_tags -%}
+                <div class="min-w-0">
+                    {% comment %} Tab Control {% endcomment %}
+                    {%- liquid
+                        assign active_tab_index = 0
+                        assign current_tag_handle = current_tags | first | handleize
+                        if current_tags != blank
+                            for tag in collection.all_tags
+                                assign tag_handle = tag | handleize
+                                if current_tag_handle == tag_handle
+                                    assign active_tab_index = forloop.index
+                                    break
+                                endif
+                            endfor
+                        endif
+                    -%}
+
+                    {% capture desktop_filter %}
+                        {%- if enable_filtering and is_drawer_filter -%}
+                            <div class="hidden pc:flex pc:items-center pc:pb-3">
+                                <button
+                                    type="button"
+                                    @click="$store.dialog.open('collection-filters')"
+                                    class="flex shrink-0 cursor-pointer items-center gap-2.5 h2"
+                                >
+                                    {% render 'icons', icon: 'icon-filter', class: 'h-10 w-10', color: 'currentColor' %}
+                                    <span>Filter</span>
+                                </button>
+                            </div>
+                        {%- else -%}
+                            <div class="hidden pc:block"></div>
+                        {%- endif -%}
+                    {% endcapture %}
+
+                    {% capture desktop_sort %}
+                        {%- if enable_sorting and is_horizontal_filter == false -%}
+                            <div class="hidden pc:flex pc:items-center pc:justify-end pc:pb-3">
+                                {%- render 'sort-by-dropdown',
+                                    results: collection,
+                                    form_id: 'CollectionFiltersForm',
+                                    class: 'h2 shrink-0'
+                                -%}
+                            </div>
+                        {%- else -%}
+                            <div class="hidden pc:block"></div>
+                        {%- endif -%}
+                    {% endcapture %}
+
+                    {% capture tab_header %}
+                        <span class="hidden" x-init="$nextTick(() => { setActive({{ active_tab_index }}) })"></span>
+
                         <a
-                            href="{{ collection.url }}/{{ tag | handleize }}"
+                            href="{{ collection.url }}"
                             role="tab"
                             x-data="{ index: null }"
                             x-init="index = registerTab($el);"
                             :id="`tab-${index}`"
                             aria-controls="collection-panel"
-                            @click.prevent="setActive(index)"
+                            @click.prevent="setActive(index); /* loadUrl($el.href) 后续再加 */"
                             :tabindex="isActive(index) ? 0 : -1"
                             :aria-selected="isActive(index)"
                             :class="isActive(index) ? 'opacity-100 border-b-2 border-current' : 'opacity-50 hover:opacity-100 border-b-2 border-transparent'"
-                        class="flex cursor-pointer flex-nowrap items-center gap-1 h2 whitespace-nowrap transition-all duration-300 focus:outline-none"
+                            class="flex cursor-pointer flex-nowrap items-center gap-1 h2 whitespace-nowrap transition-all duration-300 focus:outline-none"
                         >
-                            {{ tag }}
+                            All <sup class="leading-none">({{ collection.all_products_count }})</sup>
                         </a>
-                    {%- endfor -%}
-                {% endcapture %}
 
-                {% capture tab_content %}
-                    <div 
-                        role="tabpanel"
-                        id="collection-panel"
-                        x-data="{ index: null }"
-                        x-init="index = registerPanel($el)"
-                        class="relative w-full"
-                    >
-                        {% render 'loading', overlay: true, size: 'large' %}
-
-                        {% paginate collection.products by section.settings.products_per_page %}
-                            <div 
-                                class="grid grid-cols-1 gap-8 pb-10 pc:grid-cols-4"
-                                data-component-kind="section"
-                                data-component-type="product-grid"
-                                data-component-id="{{ section.id }}-grid"
+                        {%- for tag in collection.all_tags -%}
+                            <a
+                                href="{{ collection.url }}/{{ tag | handleize }}"
+                                role="tab"
+                                x-data="{ index: null }"
+                                x-init="index = registerTab($el);"
+                                :id="`tab-${index}`"
+                                aria-controls="collection-panel"
+                                @click.prevent="setActive(index)"
+                                :tabindex="isActive(index) ? 0 : -1"
+                                :aria-selected="isActive(index)"
+                                :class="isActive(index) ? 'opacity-100 border-b-2 border-current' : 'opacity-50 hover:opacity-100 border-b-2 border-transparent'"
+                                class="flex cursor-pointer flex-nowrap items-center gap-1 h2 whitespace-nowrap transition-all duration-300 focus:outline-none"
                             >
-                                {% for product in collection.products %}
-                                    <div class="group translate-y-7.5 opacity-0" data-gsap-card>
-                                        {% render 
-                                            'product-card', 
-                                            product: product 
-                                        %}
-                                    </div>
-                                {% else %}
-                                    <div class="col-span-full py-20 text-center h3 opacity-60">
-                                        No products found.
-                                    </div>
-                                {% endfor %}
-                            </div>
+                                {{ tag }}
+                            </a>
+                        {%- endfor -%}
+                    {% endcapture %}
 
-                            <div
-                                class="collection-pagination-wrapper mt-8"
-                                @click="
-                                    let link = $event.target.closest('nav.pagination a');
-                                    if (link) { 
-                                        $event.preventDefault(); 
-                                        /* 暂时写死 loadUrl，等后续我们合并 SortBy 时再改这里 */
-                                        loadUrl(link.href);
-                                    }
-                                "
-                            >
-                                {% render 'pagination', paginate_obj: paginate %}
-                            </div>
-                            
-                        {% endpaginate %}
-                    </div>
-                {% endcapture %}
+                    {% capture tab_content %}
+                        <div 
+                            role="tabpanel"
+                            id="collection-panel"
+                            x-data="{ index: null }"
+                            x-init="index = registerPanel($el)"
+                            class="relative w-full"
+                        >
+                            {% render 'loading', overlay: true, size: 'large' %}
 
-                {%- render 'tab-control',
-                    custom_class: 'items-start',
-                    tab_header: tab_header,
-                    header_class: 'gap-6 pc:gap-10 px-100 border-b border-theme-border-soft',
-                    tab_content: tab_content
-                -%}
+                            {% paginate collection.products by section.settings.products_per_page %}
+                                <div 
+                                    class="grid {{ mobile_grid_class }} {{ desktop_grid_class }} gap-x-4 gap-y-8 pb-10"
+                                    data-component-kind="section"
+                                    data-component-type="product-grid"
+                                    data-component-id="{{ section.id }}-grid"
+                                >
+                                    {% for product in collection.products %}
+                                        <div class="group translate-y-7.5 opacity-0" data-gsap-card>
+                                            {% render 
+                                                'product-card', 
+                                                product: product 
+                                            %}
+                                        </div>
+                                    {% else %}
+                                        <div class="col-span-full py-20 text-center h3 opacity-60">
+                                            No products found.
+                                        </div>
+                                    {% endfor %}
+                                </div>
+
+                                <div
+                                    class="collection-pagination-wrapper mt-8"
+                                    @click="
+                                        let link = $event.target.closest('nav.pagination a');
+                                        if (link) { 
+                                            $event.preventDefault(); 
+                                            loadUrl(link.href);
+                                        }
+                                    "
+                                >
+                                    {% render 'pagination', paginate_obj: paginate %}
+                                </div>
+                            {% endpaginate %}
+                        </div>
+                    {% endcapture %}
+
+                    {%- liquid
+                        assign header_outer_class_value = 'w-full pc:grid pc:grid-cols-[max-content_minmax(0,1fr)_max-content] pc:items-end pc:gap-12'
+                        assign header_class_value = 'gap-6 pc:gap-12 max-pc:border-b max-pc:border-theme-border-soft'
+                        if is_horizontal_filter == false
+                            assign header_outer_class_value = header_outer_class_value | append: ' pc:border-b pc:border-theme-border-soft'
+                        else
+                            assign header_class_value = header_class_value | append: ' pc:border-0'
+                        endif
+                    -%}
+
+                    {%- render 'tab-control',
+                        custom_class: 'items-start gap-6 pc:gap-6',
+                        header_outer_class: header_outer_class_value,
+                        header_before: desktop_filter,
+                        tab_header: tab_header,
+                        header_class: header_class_value,
+                        header_after: desktop_sort,
+                        tab_content: tab_content
+                    -%}
+                </div>
             </div>
-
-            {%- render 'sort-by-dropdown',
-                results: collection,
-                form_id: 'CollectionFiltersForm',
-                class: 'absolute right-0 z-10 h2 shrink-0 self-start'
-            -%}
         </div>
     </div>
+
+    {%- if enable_filtering -%}
+        {%- capture drawer_content -%}
+            {%- render 'filters-drawer', filter_source: collection -%}
+        {%- endcapture -%}
+
+        {%- render 'ui-dialog',
+            id: 'collection-filters',
+            type: 'drawer',
+            position: 'left',
+            show_close_button: true,
+            close_label: 'Close filters drawer',
+            content: drawer_content
+        -%}
+    {%- endif -%}
 </div>
 
 {% javascript %}
@@ -378,6 +496,71 @@
             "step": 3,
             "default": 12,
             "label": "Products per page"
+        },
+        {
+            "type": "checkbox",
+            "id": "enable_filtering",
+            "default": true,
+            "label": "Enable filtering",
+            "info": "Customize filters with the [Search & Discovery app](https://help.shopify.com/manual/online-store/search-and-discovery/filters)"
+        },
+        {
+            "type": "select",
+            "id": "filter_type",
+            "label": "Desktop filter layout",
+            "default": "horizontal",
+            "options": [
+                {
+                    "value": "horizontal",
+                    "label": "Horizontal"
+                },
+                {
+                    "value": "vertical",
+                    "label": "Vertical"
+                },
+                {
+                    "value": "drawer",
+                    "label": "Drawer"
+                }
+            ]
+        },
+        {
+            "type": "checkbox",
+            "id": "enable_sorting",
+            "default": true,
+            "label": "Enable sorting"
+        },
+        {
+            "type": "select",
+            "id": "desktop_card_columns",
+            "label": "Desktop product card columns",
+            "default": "4",
+            "options": [
+                {
+                    "value": "3",
+                    "label": "3 columns"
+                },
+                {
+                    "value": "4",
+                    "label": "4 columns"
+                }
+            ]
+        },
+        {
+            "type": "select",
+            "id": "mobile_card_columns",
+            "label": "Mobile product card columns",
+            "default": "2",
+            "options": [
+                {
+                    "value": "1",
+                    "label": "1 column"
+                },
+                {
+                    "value": "2",
+                    "label": "2 columns"
+                }
+            ]
         },
         {
             "type": "header",
