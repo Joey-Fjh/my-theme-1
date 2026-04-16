@@ -8,7 +8,14 @@
 
 <section
     data-section-id="{{ section.id }}"
-    class="product-recommendations-section full-width color-{{ section.settings.color_scheme }} bg-theme-bg text-theme-text"
+    class="
+        product-recommendations-section full-width color-{{ section.settings.color_scheme }}
+        bg-theme-bg text-theme-text
+    "
+    style="
+        --section-padding-top: {{ section.settings.padding_top | default: 0 }}px;
+        --section-padding-bottom: {{ section.settings.padding_bottom | default: 0 }}px;
+    "
     data-component-kind="section"
     data-component-type="product-recommendations"
     data-component-id="{{ section.id }}"
@@ -20,15 +27,17 @@
 
         <div
             class="layout container-page py-12 pc:py-16"
-            x-data="relatedProducts({ url: {{ rec_url | strip_newlines | json }}, sectionId: {{ section.id | json }} })"
+            data-related-products-url="{{ rec_url | strip_newlines | escape }}"
+            data-related-products-section-id="{{ section.id }}"
+            x-data="relatedProducts()"
         >
             <div data-related-products-content>
                 {%- if recommendations.performed -%}
                     {%- if recommendations.products_count > 0 -%}
                         <div class="flex flex-col items-start justify-between gap-4 pc:flex-row pc:gap-8">
-                            <h2 class="h2">{{ heading }}</h2>
+                            <h1>{{ heading }}</h1>
                             {%- if description != blank -%}
-                                <p class="max-w-md body-sm leading-relaxed text-theme-text/70">
+                                <p class="max-w-md body-md leading-relaxed text-theme-text/70">
                                     {{ description }}
                                 </p>
                             {%- endif -%}
@@ -36,30 +45,27 @@
 
                         <div class="mt-8 grid grid-cols-2 gap-6 pc:grid-cols-4">
                             {%- for product in recommendations.products -%}
-                                {% render 'product-card',
-                                    product: product,
-                                    class: 'border border-theme-border-soft'
-                                %}
+                                {% render 'product-card', product: product %}
                             {%- endfor -%}
                         </div>
                     {%- else -%}
                         <div class="flex flex-col items-start justify-between gap-4 pc:flex-row pc:gap-8">
-                            <h2 class="h2">{{ heading }}</h2>
+                            <h1>{{ heading }}</h1>
                             {%- if description != blank -%}
-                                <p class="max-w-md body-sm leading-relaxed text-theme-text/70">
+                                <p class="max-w-md body-md leading-relaxed text-theme-text/70">
                                     {{ description }}
                                 </p>
                             {%- endif -%}
                         </div>
-                        <p class="mt-8 body-sm text-theme-text/70" role="status" aria-live="polite">
+                        <p class="mt-8 body-md text-theme-text/70" role="status" aria-live="polite">
                             No related products available right now.
                         </p>
                     {%- endif -%}
                 {%- else -%}
                     <div class="flex flex-col items-start justify-between gap-4 pc:flex-row pc:gap-8">
-                        <h2 class="h2">{{ heading }}</h2>
+                        <h1>{{ heading }}</h1>
                         {%- if description != blank -%}
-                            <p class="max-w-md body-sm leading-relaxed text-theme-text/70">
+                            <p class="max-w-md body-md leading-relaxed text-theme-text/70">
                                 {{ description }}
                             </p>
                         {%- endif -%}
@@ -84,7 +90,7 @@
                     </div>
 
                     <p
-                        class="mt-6 body-sm text-theme-text/70"
+                        class="mt-6 body-md text-theme-text/70"
                         role="status"
                         aria-live="polite"
                         x-show="uiState == 'loading'"
@@ -98,12 +104,12 @@
                         x-show="uiState == 'timeout'"
                         x-cloak
                     >
-                        <p class="body-sm text-theme-text/70" role="status" aria-live="polite">
+                        <p class="body-md text-theme-text/70" role="status" aria-live="polite">
                             Request timed out. You can retry loading related products.
                         </p>
                         <button
                             type="button"
-                            class="border border-theme-border-soft px-3 py-2 body-sm transition-opacity hover:opacity-70"
+                            class="border border-theme-border-soft px-3 py-2 body-md transition-opacity hover:opacity-70"
                             @click="retry()"
                         >
                             Retry
@@ -115,12 +121,12 @@
                         x-show="uiState == 'error'"
                         x-cloak
                     >
-                        <p class="body-sm text-theme-text/70" role="status" aria-live="polite">
+                        <p class="body-md text-theme-text/70" role="status" aria-live="polite">
                             Failed to load related products.
                         </p>
                         <button
                             type="button"
-                            class="border border-theme-border-soft px-3 py-2 body-sm transition-opacity hover:opacity-70"
+                            class="border border-theme-border-soft px-3 py-2 body-md transition-opacity hover:opacity-70"
                             @click="retry()"
                         >
                             Retry
@@ -167,6 +173,30 @@
             "max": 12,
             "step": 1,
             "default": 4
+        },
+        {
+            "type": "header",
+            "content": "Padding"
+        },
+        {
+            "type": "range",
+            "id": "padding_top",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "Padding Top",
+            "default": 0
+        },
+        {
+            "type": "range",
+            "id": "padding_bottom",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "Padding Bottom",
+            "default": 0
         }
     ],
     "presets": [

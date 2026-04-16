@@ -16,96 +16,102 @@
         -%}
 
         {%- capture tab_header -%}
-      {%- liquid
-        assign index = 0
-      -%}
-      {%- for block in section.blocks -%}
-        {%- case block.type -%}
-          {%- when 'description' -%}
-            {%- assign heading = 'Description' -%}
-          {%- when 'richtext' -%}
-            {%- assign heading = block.settings.heading | default: 'Specification' -%}
-          {%- when '@app' -%}
-            {%- assign heading = reviews_heading -%}
-          {%- else -%}
-            {%- continue -%}
-        {%- endcase -%}
+            {%- liquid
+                assign index = 0
+            -%}
+            
+            {%- for block in section.blocks -%}
+                {%- case block.type -%}
+                    {%- when 'description' -%}
+                        {%- assign heading = 'Description' -%}
+                    
+                    {%- when 'richtext' -%}
+                        {%- assign heading = block.settings.heading | default: 'Specification' -%}
+                    
+                    {%- when '@app' -%}
+                        {%- assign heading = reviews_heading -%}
+                    
+                    {%- else -%}
+                        {%- continue -%}
+                {%- endcase -%}
 
-        {%- assign has_tabs = true -%}
-        {%- assign index = index | plus: 1 -%}
+                {%- assign has_tabs = true -%}
+                {%- assign index = index | plus: 1 -%}
 
-        <button
-          type="button"
-          role="tab"
-          x-data="{ index: null }"
-          x-init="index = registerTab($el)"
-          :id="`tab-${index}`"
-          :aria-controls="`panel-${index}`"
-          @click="setActive(index)"
-          :tabindex="isActive(index) ? 0 : -1"
-          :aria-selected="isActive(index)"
-          :class="isActive(index)
-            ? 'text-theme-text border-b-2 border-current opacity-100'
-            : 'text-theme-text border-b-2 border-transparent opacity-60 hover:opacity-100 hover:border-theme-border-soft'"
-          class="-mb-px bg-transparent px-4 py-3 h6 whitespace-nowrap transition-colors focus:outline-none"
-          {{ block.shopify_attributes }}
-        >
-          {{ heading }}
-        </button>
-      {%- endfor -%}
-    {%- endcapture -%}
+                <button
+                    type="button"
+                    role="tab"
+                    x-data="{ index: null }"
+                    x-init="index = registerTab($el)"
+                    :id="`tab-${index}`"
+                    :aria-controls="`panel-${index}`"
+                    @click="setActive(index)"
+                    :tabindex="isActive(index) ? 0 : -1"
+                    :aria-selected="isActive(index)"
+                    :class="isActive(index)
+                        ? 'text-theme-text border-b-2 border-current opacity-100'
+                        : 'text-theme-text border-b-2 border-transparent opacity-60 hover:opacity-100 hover:border-theme-border-soft'"
+                    class="-mb-px bg-transparent px-4 py-3 h6 whitespace-nowrap transition-colors focus:outline-none"
+                    {{ block.shopify_attributes }}
+                >
+                    {{ heading }}
+                </button>
+            {%- endfor -%}
+        {%- endcapture -%}
 
         {%- capture tab_content -%}
-      {%- liquid
-        assign index = 0
-      -%}
-      {%- for block in section.blocks -%}
-        {%- case block.type -%}
-          {%- when 'description' -%}
-          {%- when 'richtext' -%}
-          {%- when '@app' -%}
-          {%- else -%}
-            {%- continue -%}
-        {%- endcase -%}
+            {%- liquid
+                assign index = 0
+            -%}
 
-        {%- assign index = index | plus: 1 -%}
+            {%- for block in section.blocks -%}
+                {%- case block.type -%}
+                    {%- when 'description' -%}
+                    {%- when 'richtext' -%}
+                    {%- when '@app' -%}
+                    
+                    {%- else -%}
+                        {%- continue -%}
+                {%- endcase -%}
 
-        <div
-          {{ block.shopify_attributes }}
-          role="tabpanel"
-          x-data="{ index: null }"
-          x-init="index = registerPanel($el)"
-          :id="`panel-${index}`"
-          :aria-labelledby="`tab-${index}`"
-          x-show="isActive(index)"
-          x-cloak
-          class="py-6"
-        >
-          {%- case block.type -%}
-            {%- when 'description' -%}
-              {%- if product and product.description != blank -%}
-                <div class="prose max-w-none">
-                  {{ product.description }}
+                {%- assign index = index | plus: 1 -%}
+
+                <div
+                    {{ block.shopify_attributes }}
+                    role="tabpanel"
+                    x-data="{ index: null }"
+                    x-init="index = registerPanel($el)"
+                    :id="`panel-${index}`"
+                    :aria-labelledby="`tab-${index}`"
+                    x-show="isActive(index)"
+                    x-cloak
+                    class="py-6"
+                >
+                    {%- case block.type -%}
+                        {%- when 'description' -%}
+                            {%- if product and product.description != blank -%}
+                                <div class="prose max-w-none">
+                                    {{ product.description }}
+                                </div>
+                            {%- else -%}
+                                <p class="body-md text-theme-text opacity-60">No description available.</p>
+                            {%- endif -%}
+
+                        {%- when 'richtext' -%}
+                            {%- if block.settings.content != blank -%}
+                                <div class="prose max-w-none">
+                                    {{ block.settings.content }}
+                                </div>
+                            {%- else -%}
+                                <p class="body-md text-theme-text opacity-60">No content configured.</p>
+                            {%- endif -%}
+
+                        {%- when '@app' -%}
+                            {%- render block -%}
+                    {%- endcase -%}
                 </div>
-              {%- else -%}
-                <p class="body-sm text-theme-text opacity-60">No description available.</p>
-              {%- endif -%}
-
-            {%- when 'richtext' -%}
-              {%- if block.settings.content != blank -%}
-                <div class="prose max-w-none">
-                  {{ block.settings.content }}
-                </div>
-              {%- else -%}
-                <p class="body-sm text-theme-text opacity-60">No content configured.</p>
-              {%- endif -%}
-
-            {%- when '@app' -%}
-              {%- render block -%}
-          {%- endcase -%}
-        </div>
-      {%- endfor -%}
-    {%- endcapture -%}
+            {%- endfor -%}
+        {%- endcapture -%}
 
         {%- if has_tabs -%}
             {%- render 'tab-control',
@@ -119,34 +125,13 @@
             -%}
         {%- else -%}
             <div class="py-8 text-center">
-                <p class="h5 text-theme-text opacity-60">
+                <p class="body-md text-theme-text opacity-60">
                     Add blocks to this section to show product tabs.
                 </p>
             </div>
         {%- endif -%}
     </div>
 </section>
-
-{%- javascript -%}
-    (function () {
-        const Components = window.__Theme__?.Components;
-        if (!Components) return;
-
-        Components.register(
-            'product-tabs',
-            {
-                init(el) {
-                    return {};
-                },
-                destroy(el, state) {},
-            },
-            { lazy: true },
-        );
-    })();
-{%- endjavascript -%}
-
-{%- stylesheet -%}
-{%- endstylesheet -%}
 
 {% schema %}
 {

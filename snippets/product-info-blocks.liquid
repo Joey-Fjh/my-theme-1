@@ -48,14 +48,11 @@
                         {%- assign current_variant = product.selected_or_first_available_variant -%}
                         <div
                             class="product-info-blocks__price"
-                            x-data="
-                                ProductPrice({
-                                  sectionId: '{{ section.id }}',
-                                  price: {{ current_variant.price | default: 0 }},
-                                  comparePrice: {{ current_variant.compare_at_price | default: 0 }},
-                                  currency: '{{ shop.currency }}'
-                                })
-                            "
+                            data-section-id="{{ section.id }}"
+                            data-price="{{ current_variant.price | default: 0 }}"
+                            data-compare-price="{{ current_variant.compare_at_price | default: 0 }}"
+                            data-currency="{{ shop.currency }}"
+                            x-data="ProductPrice()"
                         >
                             <span
                                 class="product-info-blocks__price-main h4"
@@ -143,7 +140,7 @@
 
             {%- when 'inventory_status' -%}
                 <div
-                    class="inventory-status-placeholder product-info-blocks__inventory h6"
+                    class="inventory-status-placeholder product-info-blocks__inventory"
                     {{ block.shopify_attributes }}
                 >
                     Inventory Status: In Stock

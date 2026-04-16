@@ -792,34 +792,44 @@
          * @param {string}  [opts.currency='USD']   - ISO 4217 currency code
          */
         static ProductPrice({ sectionId, price = 0, comparePrice = 0, currency = 'USD' } = {}) {
-            const fmt = new Intl.NumberFormat(undefined, {
-                style: 'currency',
-                currency,
-            });
-
             return {
                 ...AlpineComponentsFactory.useDisposable(),
+                sectionId,
                 price,
                 comparePrice,
+                currency,
                 _eventScope: null,
 
+                _formatPrice(value) {
+                    return new Intl.NumberFormat(undefined, {
+                        style: 'currency',
+                        currency: this.currency,
+                    }).format(value / 100);
+                },
+
                 get formattedPrice() {
-                    return fmt.format(this.price / 100);
+                    return this._formatPrice(this.price);
                 },
                 get formattedComparePrice() {
-                    return fmt.format(this.comparePrice / 100);
+                    return this._formatPrice(this.comparePrice);
                 },
                 get hasComparePrice() {
                     return this.comparePrice > this.price;
                 },
 
                 init() {
+                    const dataset = this.$el?.dataset || {};
+                    this.sectionId = this.sectionId || dataset.sectionId || '';
+                    this.price = Number(dataset.price ?? this.price ?? 0);
+                    this.comparePrice = Number(dataset.comparePrice ?? this.comparePrice ?? 0);
+                    this.currency = dataset.currency || this.currency || 'USD';
+
                     const Events = window.__Theme__.Events;
                     const events = Events.events;
                     this._eventScope = Events.createScope();
 
                     const onVariantChange = (e) => {
-                        if (e.detail?.sectionId !== sectionId) return;
+                        if (e.detail?.sectionId !== this.sectionId) return;
                         const v = e.detail.variant;
                         this.price = v?.price || 0;
                         this.comparePrice = v?.compare_at_price || 0;
@@ -1522,11 +1532,11 @@
             };
         }
 
-        static relatedProducts({ url, sectionId } = {}) {
+        static relatedProducts() {
             return {
                 ...(AlpineComponentsFactory.useDisposable?.() || {}),
-                url,
-                sectionId,
+                url: '',
+                sectionId: '',
                 _observer: null,
                 _abortController: null,
                 _loadingTimer: null,
@@ -1537,6 +1547,9 @@
                 requestTimeoutMs: 10000,
 
                 init() {
+                    this.url = this.$el?.dataset?.relatedProductsUrl || '';
+                    this.sectionId = this.$el?.dataset?.relatedProductsSectionId || '';
+
                     if (!this.url || this.loaded) return;
 
                     if (!('IntersectionObserver' in window)) {

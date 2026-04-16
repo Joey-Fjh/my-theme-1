@@ -199,6 +199,16 @@ Use for self-contained UI — toggles, dropdowns, accordions, hover states:
 </div>
 ```
 
+For Liquid-driven dynamic values, avoid embedding complex Liquid output directly inside `x-data` expressions (for example nested objects with `{{ ... | json }}`), because malformed quoting can break Alpine parsing. Prefer `data-*` attributes on the element and read values inside the Alpine component implementation (for example in `init()` via `this.$el.dataset`), while keeping `x-data` invocation simple.
+
+```html
+<div
+    data-api-url="{{ api_url | escape }}"
+    data-section-id="{{ section.id }}"
+    x-data="myComponent()"
+></div>
+```
+
 ### Registered Alpine Components
 
 Complex, reusable behaviors are defined in `assets/alpine.components.js` and registered via `AlpineComponentsFactory`. Keep the main skill principle-based; treat code as the source of truth for the current component inventory.
