@@ -19,18 +19,77 @@
 {%- assign init_state = initial_active | default: 0 -%}
 {%- assign icon_style = icon_type | default: 'chevron' -%}
 {%- assign icon_dim = icon_size | default: 'w-5 h-5' -%}
-{%- assign icon_color_class = icon_color_class | default: 'text-[#5a5a5a]' -%}
+{%- assign icon_color_class = icon_color_class | default: 'text-current' -%}
 {%- assign icon_rotate = 'rotate-180' -%}
 {%- if icon_style == 'plus' -%}{%- assign icon_rotate = 'rotate-45' -%}{%- endif -%}
+{%- assign has_single_item = false -%}
+{%- if item_title != blank -%}
+    {%- assign has_single_item = true -%}
+{%- endif -%}
 
 <div
-    x-data="{ active: {{ init_state }} }"
+    x-data="{ active: {% if has_single_item %}{% if init_state == 'null' %}null{% else %}0{% endif %}{% else %}{{ init_state }}{% endif %} }"
     class="{{ wrapper_class | default: 'flex flex-col gap-8' }}"
 >
-    {%- if blocks -%}
+    {%- if has_single_item -%}
+        <div class="{{ item_class | default: 'border-t border-theme-border-soft first:border-t-0' }}">
+            <button
+                type="button"
+                @click="active = active === 0 ? null : 0"
+                class="group flex w-full cursor-pointer items-center justify-between py-5 text-left"
+            >
+                <div class="flex min-w-0 flex-1 items-center gap-3">
+                    <h3
+                        class="h4 transition-colors duration-300"
+                        :class="
+                            {
+                                '{{ title_active_class | default: 'text-current' }}': active === 0,
+                                '{{ title_inactive_class | default: 'text-current opacity-70' }}': active !== 0
+                            }
+                        "
+                    >
+                        {{ item_title }}
+                    </h3>
+
+                    {%- if show_clear and clear_url != blank -%}
+                        <a
+                            href="{{ clear_url }}"
+                            class="inline-flex h-5 w-5 items-center justify-center opacity-65 transition-opacity hover:opacity-100"
+                            aria-label="Clear {{ clear_label | default: item_title }}"
+                            @click.stop
+                        >
+                            {% render 'icons', icon: 'icon-close', size: 'xs', color: 'current' %}
+                        </a>
+                    {%- endif -%}
+                </div>
+
+                <span
+                    class="ml-4 inline-block shrink-0 {{ icon_dim }} {{ icon_color_class }} transition-transform duration-300"
+                    :class="{ '{{ icon_rotate }}': active === 0 }"
+                >
+                    {%- if icon_style == 'chevron' -%}
+                        {% render 'icons', icon: 'icon-arrow', class: icon_dim, color: 'current' %}
+                    {%- elsif icon_style == 'plus' -%}
+                        {% render 'icons', icon: 'icon-plus', class: icon_dim, color: 'current' %}
+                    {%- endif -%}
+                </span>
+            </button>
+
+            <div
+                class="grid transition-all duration-300 ease-in-out"
+                :class="active === 0 ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'"
+            >
+                <div class="-m-1 overflow-hidden p-1">
+                    <div class="{{ content_class | default: 'body-md pb-5 pr-8 leading-relaxed text-current opacity-75' }}">
+                        {{ item_content }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {%- elsif blocks -%}
         {%- for block in blocks -%}
             <div
-                class="{{ item_class | default: 'border-t border-[#d4d4d4] first:border-t-0' }}"
+                class="{{ item_class | default: 'border-t border-theme-border-soft first:border-t-0' }}"
                 {{ block.shopify_attributes }}
             >
                 <button
@@ -39,11 +98,11 @@
                     class="group flex w-full cursor-pointer items-center justify-between py-5 text-left"
                 >
                     <h2
-                        class="font-bold transition-colors duration-300"
+                        class="h4 transition-colors duration-300"
                         :class="
                             {
-                                '{{ title_active_class | default: 'text-[#2d3a2e]' }}': active === {{ forloop.index0 }},
-                                '{{ title_inactive_class | default: 'text-[#5a5a5a]' }}': active !== {{ forloop.index0 }}
+                                '{{ title_active_class | default: 'text-current' }}': active === {{ forloop.index0 }},
+                                '{{ title_inactive_class | default: 'text-current opacity-70' }}': active !== {{ forloop.index0 }}
                             }
                         "
                     >
@@ -75,7 +134,7 @@
                     :class="active === {{ forloop.index0 }} ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'"
                 >
                     <div class="-m-1 overflow-hidden p-1">
-                        <div class="{{ content_class | default: 'pb-5 text-[#6b6b6b] leading-relaxed pr-8' }}">
+                        <div class="{{ content_class | default: 'body-md pb-5 pr-8 leading-relaxed text-current opacity-75' }}">
                             {{ block.settings.text }}
                         </div>
                     </div>
@@ -87,18 +146,18 @@
         {%- assign content_array = contents | split: '|' -%}
 
         {%- for title in title_array -%}
-            <div class="{{ item_class | default: 'border-t border-[#d4d4d4] first:border-t-0' }}">
+            <div class="{{ item_class | default: 'border-t border-theme-border-soft first:border-t-0' }}">
                 <button
                     type="button"
                     @click="active = active === {{ forloop.index0 }} ? null : {{ forloop.index0 }}"
                     class="group flex w-full cursor-pointer items-center justify-between py-5 text-left"
                 >
                     <h2
-                        class="font-bold transition-colors duration-300"
+                        class="h4 transition-colors duration-300"
                         :class="
                             {
-                                '{{ title_active_class | default: 'text-[#2d3a2e]' }}': active === {{ forloop.index0 }},
-                                '{{ title_inactive_class | default: 'text-[#5a5a5a]' }}': active !== {{ forloop.index0 }}
+                                '{{ title_active_class | default: 'text-current' }}': active === {{ forloop.index0 }},
+                                '{{ title_inactive_class | default: 'text-current opacity-70' }}': active !== {{ forloop.index0 }}
                             }
                         "
                     >
@@ -130,7 +189,7 @@
                     :class="active === {{ forloop.index0 }} ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'"
                 >
                     <div class="-m-1 overflow-hidden p-1">
-                        <div class="{{ content_class | default: 'pb-5 text-[#6b6b6b] leading-relaxed pr-8' }}">
+                        <div class="{{ content_class | default: 'body-md pb-5 pr-8 leading-relaxed text-current opacity-75' }}">
                             {{ content_array[forloop.index0] }}
                         </div>
                     </div>

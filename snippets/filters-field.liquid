@@ -1,0 +1,283 @@
+{% doc %}
+    Shared single-filter field renderer for drawer/inline variants.
+
+    @param {object} filter - Required. One filter item from `filter_host.filters`.
+    @param {string} [mode] - Optional. 'horizontal' | 'vertical' | 'drawer'. Default: 'horizontal'.
+    @param {string} [ui_variant] - Optional. 'popover' | 'panel'. Default: popover for horizontal, panel otherwise.
+    @param {string} [filter_index] - Optional index used by horizontal Alpine toggle state.
+    @param {boolean} [is_first] - Optional. Adds left offset class to the first horizontal item.
+    @param {string} [divider_class] - Optional divider class token.
+    @param {string} [muted_text_class] - Optional helper text classes.
+    @param {string} [filter_label_class] - Optional label text classes.
+    @param {string} [count_text_class] - Optional count text classes.
+{% enddoc %}
+
+{%- assign render_mode = mode | default: 'horizontal' -%}
+{%- assign field_index = filter_index | default: 0 -%}
+{%- assign field_is_first = is_first | default: false -%}
+{%- assign effective_ui_variant = ui_variant -%}
+
+{%- if effective_ui_variant == blank -%}
+    {%- if render_mode == 'horizontal' -%}
+        {%- assign effective_ui_variant = 'popover' -%}
+    {%- else -%}
+        {%- assign effective_ui_variant = 'panel' -%}
+    {%- endif -%}
+{%- endif -%}
+
+{%- assign divider_class = divider_class | default: 'border-theme-border-soft' -%}
+{%- assign muted_text_class = muted_text_class | default: 'body-sm opacity-60' -%}
+{%- assign filter_label_class = filter_label_class | default: 'body-md leading-snug' -%}
+{%- assign count_text_class = count_text_class | default: 'body-sm opacity-60' -%}
+
+{%- capture field_content -%}
+    {%- case filter.type -%}
+        {%- when 'boolean' -%}
+            {%- if effective_ui_variant == 'panel' -%}
+                <div class="flex flex-col gap-2">
+                    {%- for value in filter.values -%}
+                        <label class="flex cursor-pointer items-center justify-between bg-theme-border-soft px-3 py-2.5">
+                            <span class="{{ filter_label_class }}">{{ value.label }}</span>
+                            <span class="relative inline-flex h-5 w-9 items-center">
+                                <input
+                                    type="checkbox"
+                                    class="peer sr-only"
+                                    name="{{ value.param_name }}"
+                                    value="{{ value.value }}"
+                                    form="CollectionFiltersForm"
+                                    {% if value.active %}checked{% endif %}
+                                    @change="onChange()"
+                                >
+                                <span class="absolute inset-0 rounded-full bg-theme-border transition-colors peer-checked:bg-theme-text"></span>
+                                <span class="absolute left-0.5 h-4 w-4 rounded-full bg-theme-bg shadow-sm transition-transform peer-checked:translate-x-4"></span>
+                            </span>
+                        </label>
+                    {%- endfor -%}
+                </div>
+            {%- else -%}
+                <div class="flex flex-col gap-2">
+                    {%- for value in filter.values -%}
+                        <label class="flex cursor-pointer items-center gap-2 body-md">
+                            <input
+                                type="checkbox"
+                                name="{{ value.param_name }}"
+                                value="{{ value.value }}"
+                                form="CollectionFiltersForm"
+                                {% if value.active %}checked{% endif %}
+                                @change="onChange()"
+                                class="filter-checkbox"
+                            >
+                            <span>{{ value.label }}</span>
+                            <span class="opacity-60">({{ value.count }})</span>
+                        </label>
+                    {%- endfor -%}
+                </div>
+            {%- endif -%}
+
+        {%- when 'list' -%}
+            {%- if effective_ui_variant == 'panel' -%}
+                <div class="flex flex-col gap-3 pt-1">
+                    {%- for value in filter.values -%}
+                        <label class="flex cursor-pointer items-center gap-3">
+                            <input
+                                type="checkbox"
+                                class="filter-checkbox"
+                                name="{{ value.param_name }}"
+                                value="{{ value.value }}"
+                                form="CollectionFiltersForm"
+                                {% if value.active %}checked{% endif %}
+                                @change="onChange()"
+                            >
+                            <span class="{{ filter_label_class }}">{{ value.label }}</span>
+                            <span class="ml-auto {{ count_text_class }}">({{ value.count }})</span>
+                        </label>
+                    {%- endfor -%}
+                </div>
+            {%- else -%}
+                <div class="flex flex-col gap-2">
+                    {%- for value in filter.values -%}
+                        <label class="flex cursor-pointer items-center gap-2 body-md">
+                            <input
+                                type="checkbox"
+                                name="{{ value.param_name }}"
+                                value="{{ value.value }}"
+                                form="CollectionFiltersForm"
+                                {% if value.active %}
+                                    checked
+                                {% endif %}
+                                @change="onChange()"
+                                class="filter-checkbox"
+                            >
+                            <span>{{ value.label }}</span>
+                            <span class="opacity-60">({{ value.count }})</span>
+                        </label>
+                    {%- endfor -%}
+                </div>
+            {%- endif -%}
+
+        {%- when 'price_range' -%}
+            {%- assign range_max = filter.range_max | money_without_currency | plus: 0 -%}
+            
+            {%- if effective_ui_variant == 'panel' -%}
+                {%- assign current_min = filter.min_value.value | default: 0 | plus: 0 -%}
+                {%- assign current_max = filter.max_value.value | default: range_max | plus: 0 -%}
+                
+                <div
+                    class="flex flex-col gap-3 pt-1"
+                    x-data="collectionFilterField({
+                        min: {{ current_min }},
+                        max: {{ current_max }},
+                        ceil: {{ range_max }}
+                    })"
+                >
+                    <div
+                        class="relative flex h-8 w-full items-center transition-opacity"
+                        :class="{ 'opacity-50 cursor-not-allowed': isLoading }"
+                    >
+                        <div class="absolute inset-x-0 h-px rounded-full bg-theme-border"></div>
+                        <div
+                            class="absolute h-px rounded-full bg-theme-text"
+                            :style="`left:${minPct()}%;right:${maxPct()}%`"
+                        ></div>
+                        <input
+                            type="range"
+                            min="0"
+                            :max="ceil"
+                            x-model.number="min"
+                            @input="clampMin()"
+                            @change.debounce.500ms="$refs.inputMin.value = min; onChange()"
+                            :disabled="isLoading"
+                            :class="(min === max && max === ceil) ? 'z-30' : 'z-10'"
+                            class="price-range-thumb pointer-events-none absolute inset-x-0 w-full appearance-none bg-transparent"
+                        >
+                        <input
+                            type="range"
+                            min="0"
+                            :max="ceil"
+                            x-model.number="max"
+                            @input="clampMax()"
+                            @change.debounce.500ms="$refs.inputMax.value = max; onChange()"
+                            :disabled="isLoading"
+                            :class="(min === max && min === 0) ? 'z-30' : 'z-20'"
+                            class="price-range-thumb pointer-events-none absolute inset-x-0 w-full appearance-none bg-transparent"
+                        >
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="mb-1 block {{ muted_text_class }}" for="Filter-{{ filter.label | handleize }}-GTE">From</label>
+                            <div class="flex items-center border-b {{ divider_class }} bg-theme-border-soft px-3 py-2">
+                                <span class="mr-1 opacity-60">$</span>
+                                <input
+                                    x-ref="inputMin"
+                                    id="Filter-{{ filter.label | handleize }}-GTE"
+                                    type="number"
+                                    name="{{ filter.min_value.param_name }}"
+                                    :value="min"
+                                    min="0"
+                                    max="{{ range_max }}"
+                                    placeholder="0"
+                                    form="CollectionFiltersForm"
+                                    @input.debounce.500ms="setMinFromInput($el.value); $el.value = min; onChange()"
+                                    :disabled="isLoading"
+                                    :class="{ 'cursor-not-allowed opacity-60': isLoading }"
+                                    class="w-full appearance-none bg-transparent outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                >
+                            </div>
+                        </div>
+                        <div>
+                            <label class="mb-1 block {{ muted_text_class }}" for="Filter-{{ filter.label | handleize }}-LTE">To</label>
+                            <div class="flex items-center border-b {{ divider_class }} bg-theme-border-soft px-3 py-2">
+                                <span class="mr-1 opacity-60">$</span>
+                                <input
+                                    x-ref="inputMax"
+                                    id="Filter-{{ filter.label | handleize }}-LTE"
+                                    type="number"
+                                    name="{{ filter.max_value.param_name }}"
+                                    :value="max"
+                                    min="0"
+                                    max="{{ range_max }}"
+                                    placeholder="{{ range_max }}"
+                                    form="CollectionFiltersForm"
+                                    @input.debounce.500ms="setMaxFromInput($el.value); $el.value = max; onChange()"
+                                    :disabled="isLoading"
+                                    :class="{ 'cursor-not-allowed opacity-60': isLoading }"
+                                    class="w-full appearance-none bg-transparent outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                >
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {%- else -%}
+                {%- assign range_max = filter.range_max | money_without_currency | plus: 0 -%}
+                <div class="grid grid-cols-2 gap-3">
+                    <label class="flex flex-col gap-1 body-sm">
+                        <span class="opacity-60">Min</span>
+                        <input
+                            type="number"
+                            name="{{ filter.min_value.param_name }}"
+                            value="{{ filter.min_value.value | default: '' }}"
+                            min="0"
+                            max="{{ range_max }}"
+                            placeholder="0"
+                            form="CollectionFiltersForm"
+                            @change="onChange()"
+                            class="rounded-input border border-theme-border-soft px-3 py-2 body-md outline-none"
+                        >
+                    </label>
+                    <label class="flex flex-col gap-1 body-sm">
+                        <span class="opacity-60">Max</span>
+                        <input
+                            type="number"
+                            name="{{ filter.max_value.param_name }}"
+                            value="{{ filter.max_value.value | default: '' }}"
+                            min="0"
+                            max="{{ range_max }}"
+                            placeholder="{{ range_max }}"
+                            form="CollectionFiltersForm"
+                            @change="onChange()"
+                            class="rounded-input border border-theme-border-soft px-3 py-2 body-md outline-none"
+                        >
+                    </label>
+                </div>
+            {%- endif -%}
+    {%- endcase -%}
+{%- endcapture -%}
+
+{%- if render_mode == 'drawer' -%}
+    {{ field_content }}
+{%- else -%}
+    <details
+        {% if render_mode == 'horizontal' %}
+            :open="activeFilter === '{{ field_index }}'"
+            @toggle="
+                if ($el.open) {
+                    activeFilter = '{{ field_index }}';
+                } else if (activeFilter === '{{ field_index }}') {
+                    activeFilter = null;
+                }
+            "
+        {% endif %}
+        class="group {% if render_mode == 'horizontal' %}relative{% if field_is_first %} ml-4{% endif %}{% endif %}"
+    >
+        <summary class="flex cursor-pointer list-none items-center gap-2 h2 marker:content-none">
+            <span>{{ filter.label }}</span>
+            {% render 'icons',
+                icon: 'icon-caret-down',
+                class: 'h-4 w-4 transition-transform group-open:rotate-180'
+            %}
+        </summary>
+
+        <div
+            class="
+                mt-3
+                {% if render_mode == 'horizontal' %}
+                    absolute top-full left-0 z-20 min-w-80 rounded-input border border-theme-border-soft bg-theme-bg p-4 shadow-surface
+                {% else %}
+                    rounded-input border border-theme-border-soft p-4
+                {% endif %}
+            "
+        >
+            {{ field_content }}
+        </div>
+    </details>
+{%- endif -%}

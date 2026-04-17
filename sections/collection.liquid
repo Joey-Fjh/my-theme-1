@@ -1,7 +1,7 @@
 <div
     data-section-id="{{ section.id }}"
     class="
-        collection-section full-width relative
+        collection-section full-width
         color-{{ section.settings.color_scheme }}
     "
     style="
@@ -50,6 +50,7 @@
             if section.settings.mobile_card_columns == '2'
                 assign mobile_grid_class = 'grid-cols-2'
             endif
+
             assign desktop_grid_class = 'pc:grid-cols-4'
             if section.settings.desktop_card_columns == '3'
                 assign desktop_grid_class = 'pc:grid-cols-3'
@@ -58,6 +59,7 @@
             assign enable_filtering = section.settings.enable_filtering
             assign enable_sorting = section.settings.enable_sorting
             assign filter_type = section.settings.filter_type | default: 'drawer'
+
             assign is_drawer_filter = false
             assign is_horizontal_filter = false
             assign is_vertical_filter = false
@@ -72,9 +74,12 @@
         -%}
 
         <div class="flex flex-col gap-6 pc:gap-6">
-            {%- comment -%} Hidden form powers all filter/sort controls {%- endcomment -%}
+            {%- comment -%} Hidden form all filter/sort controls {%- endcomment -%}
             <form id="CollectionFiltersForm" class="hidden" @change="onChange()"></form>
 
+            {%- comment -%}
+                Mobile-only (pc:hidden)
+            {%- endcomment -%}
             {%- if enable_filtering or enable_sorting -%}
                 <div class="flex items-center justify-between gap-4 pc:hidden">
                     {%- if enable_filtering -%}
@@ -102,36 +107,46 @@
                 </div>
             {%- endif -%}
 
-            {%- if is_horizontal_filter and enable_filtering or enable_sorting -%}
-                <div class="hidden pc:flex pc:items-center pc:justify-between pc:gap-6">
-                    {%- if enable_filtering -%}
-                        {%- render 'filters-inline',
-                            filter_source: collection,
-                            mode: 'horizontal',
-                            wrapper_class: 'items-center'
-                        -%}
-                    {%- else -%}
-                        <div></div>
-                    {%- endif -%}
+            {%- comment -%}
+                Desktop horizontal (max-pc:hidden)
+            {%- endcomment -%}
+            {%- if is_horizontal_filter -%}
+                {%- if enable_filtering or enable_sorting -%}
+                    <div class="hidden pc:flex pc:items-center pc:justify-between pc:gap-6">
+                        {%- if enable_filtering -%}
+                            {%- render 'filter-horizontal',
+                                filter_source: collection,
+                                wrapper_class: 'items-center'
+                            -%}
+                        {%- else -%}
+                            <div></div>
+                        {%- endif -%}
 
-                    {%- if enable_sorting -%}
-                        {%- render 'sort-by-dropdown',
-                            results: collection,
-                            form_id: 'CollectionFiltersForm',
-                            class: 'h2 shrink-0'
-                        -%}
-                    {%- endif -%}
-                </div>
+                        {%- if enable_sorting -%}
+                            {%- render 'sort-by-dropdown',
+                                results: collection,
+                                form_id: 'CollectionFiltersForm',
+                                class: 'h2 shrink-0'
+                            -%}
+                        {%- endif -%}
+                    </div>
+                {%- endif -%}
             {%- endif -%}
 
-            <div class="{% if enable_filtering and is_vertical_filter %}pc:grid pc:grid-cols-[30rem_minmax(0,1fr)] pc:gap-10{% endif %}">
+            {%- comment -%}
+                Desktop vertical (max-pc:hidden)
+            {%- endcomment -%}
+            <div
+                class="
+                    {% if enable_filtering and is_vertical_filter %}
+                        pc:grid pc:grid-cols-[30rem_minmax(0,1fr)] pc:gap-10
+                    {% endif %}
+                "
+            >
                 {%- if enable_filtering and is_vertical_filter -%}
                     <aside class="hidden pc:block">
                         <div class="sticky top-20 border-r border-theme-border-soft pr-6">
-                            {%- render 'filters-inline',
-                                filter_source: collection,
-                                mode: 'vertical'
-                            -%}
+                            {%- render 'filter-vertical', filter_source: collection -%}
                         </div>
                     </aside>
                 {%- endif -%}
@@ -153,6 +168,7 @@
                     -%}
 
                     {% capture desktop_filter %}
+                        {%- comment -%} Tab header left slot: desktop Filter button when filter_type Drawer and enable_filtering; else spacer (grid column still reserved). {%- endcomment -%}
                         {%- if enable_filtering and is_drawer_filter -%}
                             <div class="hidden pc:flex pc:items-center pc:pb-3">
                                 <button
@@ -170,14 +186,19 @@
                     {% endcapture %}
 
                     {% capture desktop_sort %}
-                        {%- if enable_sorting and is_horizontal_filter == false -%}
-                            <div class="hidden pc:flex pc:items-center pc:justify-end pc:pb-3">
-                                {%- render 'sort-by-dropdown',
-                                    results: collection,
-                                    form_id: 'CollectionFiltersForm',
-                                    class: 'h2 shrink-0'
-                                -%}
-                            </div>
+                        {%- comment -%} Tab header right slot: sort when enable_sorting and desktop is not Horizontal (horizontal row above already renders sort). Vertical/Drawer use this slot. {%- endcomment -%}
+                        {%- if enable_sorting -%}
+                            {%- if is_horizontal_filter == false -%}
+                                <div class="hidden pc:flex pc:items-center pc:justify-end pc:pb-3">
+                                    {%- render 'sort-by-dropdown',
+                                        results: collection,
+                                        form_id: 'CollectionFiltersForm',
+                                        class: 'h2 shrink-0'
+                                    -%}
+                                </div>
+                            {%- else -%}
+                                <div class="hidden pc:block"></div>
+                            {%- endif -%}
                         {%- else -%}
                             <div class="hidden pc:block"></div>
                         {%- endif -%}
@@ -268,6 +289,7 @@
                         </div>
                     {% endcapture %}
 
+                    {%- comment -%} Tab strip chrome: full-width bottom border on desktop when filter_type is not Horizontal (horizontal filters live in their own row); horizontal mode removes pc border from the tab row. {%- endcomment -%}
                     {%- liquid
                         assign header_outer_class_value = 'w-full pc:grid pc:grid-cols-[max-content_minmax(0,1fr)_max-content] pc:items-end pc:gap-12'
                         assign header_class_value = 'gap-6 pc:gap-12 max-pc:border-b max-pc:border-theme-border-soft'
@@ -292,6 +314,7 @@
         </div>
     </div>
 
+    {%- comment -%} Filters drawer dialog: only when enable_filtering {%- endcomment -%}
     {%- if enable_filtering -%}
         {%- capture drawer_content -%}
             {%- render 'filters-drawer', filter_source: collection -%}
@@ -301,7 +324,10 @@
             id: 'collection-filters',
             type: 'drawer',
             position: 'left',
-            show_close_button: true,
+            top_class: 'top-0',
+            root_class: 'z-10140',
+            drawer_wrapper_class: 'max-pc:w-4/5 max-pc:max-w-none max-pc:top-3 max-pc:bottom-3 max-pc:left-1/2 max-pc:right-auto max-pc:-translate-x-1/2',
+            show_close_button: false,
             close_label: 'Close filters drawer',
             content: drawer_content
         -%}

@@ -494,6 +494,10 @@
                         Factory.register?.(Comps.COUNTDOWNTIMER, Comps.countdownTimer);
                         Factory.register?.(Comps.SECTIONPAGINATION, Comps.sectionPagination);
                         Factory.register?.(Comps.COLLECTIONFILTERS, Comps.collectionFilters);
+                        Factory.register?.(
+                            Comps.COLLECTIONFILTERFIELD,
+                            Comps.collectionFilterField,
+                        );
                         Factory.register?.(Comps.PRODUCTGALLERY, Comps.productGallery);
                         Factory.register?.(Comps.PRODUCTPRICE, Comps.ProductPrice);
                         Factory.register?.(Comps.VARIANTPICKER, Comps.VariantPicker);

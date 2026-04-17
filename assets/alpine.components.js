@@ -92,6 +92,7 @@
         static COUNTDOWNTIMER = 'countdownTimer';
         static SECTIONPAGINATION = 'sectionPagination';
         static COLLECTIONFILTERS = 'collectionFilters';
+        static COLLECTIONFILTERFIELD = 'collectionFilterField';
         static PRODUCTGALLERY = 'productGallery';
         static PRODUCTPRICE = 'ProductPrice';
         static VARIANTPICKER = 'VariantPicker';
@@ -777,6 +778,57 @@
                     if (page) params.set('page', page);
                     else params.delete('page');
                     this.loadUrl(this._buildUrl(params));
+                },
+            };
+        }
+
+        /**
+         * Local filter field behavior wrapper for price range controls.
+         * Keeps range math consistent across drawer/inline render variants.
+         */
+        static collectionFilterField({ min = 0, max = 0, ceil = 0 } = {}) {
+            return {
+                min: Number(min) || 0,
+                max: Number(max) || 0,
+                ceil: Math.max(0, Number(ceil) || 0),
+
+                init() {
+                    if (this.ceil <= 0) {
+                        this.min = 0;
+                        this.max = 0;
+                        return;
+                    }
+                    this.min = Math.max(0, Math.min(this.min, this.ceil));
+                    this.max = Math.max(0, Math.min(this.max, this.ceil));
+                    if (this.min > this.max) this.max = this.min;
+                },
+
+                minPct() {
+                    return this.ceil ? (this.min / this.ceil) * 100 : 0;
+                },
+
+                maxPct() {
+                    return this.ceil ? 100 - (this.max / this.ceil) * 100 : 0;
+                },
+
+                clampMin() {
+                    this.min = Math.max(0, Math.min(Number(this.min) || 0, this.ceil));
+                    if (this.min > this.max) this.max = this.min;
+                },
+
+                clampMax() {
+                    this.max = Math.min(this.ceil, Math.max(Number(this.max) || 0, 0));
+                    if (this.max < this.min) this.min = this.max;
+                },
+
+                setMinFromInput(value) {
+                    this.min = Number(value) || 0;
+                    this.clampMin();
+                },
+
+                setMaxFromInput(value) {
+                    this.max = Number(value) || 0;
+                    this.clampMax();
                 },
             };
         }
