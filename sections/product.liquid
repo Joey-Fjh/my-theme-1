@@ -1,4 +1,6 @@
 {% assign layout = section.settings.gallery_layout | default: 'thumbnails' %}
+{% assign thumb_position = section.settings.thumbnail_position | default: 'left' %}
+{% assign media_locks_info_height = true %}
 
 <div
     data-section-id="{{ section.id }}"
@@ -16,13 +18,19 @@
         style="{% if layout == 'stacked' %}overflow: clip;{% endif %}"
     >
         <div
-            class="grid w-full min-w-0 grid-cols-1 items-start gap-8 pc:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] pc:gap-12 fw:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]"
+            class="grid w-full min-w-0 grid-cols-1 items-start gap-8 pc:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] pc:items-stretch pc:gap-12 fw:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]"
         >
-            <div class="min-w-0">
+            <div
+                class="min-w-0 {% if media_locks_info_height %}overflow-hidden{% endif %}"
+                {% if media_locks_info_height %}
+                    data-product-media-panel
+                {% endif %}
+            >
                 {%- render 'product-gallery',
                     images: product.images,
                     layout: layout,
-                    thumb_position: 'left',
+                    thumb_position: thumb_position,
+                    thumbnail_visible_count: section.settings.thumbnail_visible_count,
                     zoom: 'true',
                     zoom_overlay_color: section.settings.zoom_overlay_color,
                     zoom_overlay_opacity: section.settings.zoom_overlay_opacity,
@@ -30,9 +38,14 @@
                 -%}
             </div>
 
-            <div class="min-w-0">
+            <div
+                class="min-w-0 {% if media_locks_info_height %}min-h-0 overflow-hidden pc:contain-[size]{% endif %}"
+                {% if media_locks_info_height %}
+                    data-product-info-panel
+                {% endif %}
+            >
                 <div
-                    class="self-start"
+                    class="{% if media_locks_info_height %}min-h-0{% else %}self-start{% endif %}"
                     style="{% if layout == 'stacked' %}position: sticky;top: calc(var(--header-height) + var(--announcement-bar-height));{% endif %}"
                 >
                     {%- render 'product-info-blocks',
@@ -46,6 +59,123 @@
         </div>
     </div>
 </div>
+
+{%- javascript -%}
+    (function () {
+        const Components = window.__Theme__?.Components;
+        if (!Components) return;
+
+        function constrainDescription(el) {
+            const mediaPanel = el.querySelector('[data-product-media-panel]');
+            const infoBlocks = el.querySelector('[data-product-info-panel] .product-info-blocks');
+            const descriptionBlock = infoBlocks?.querySelector(
+                '.product-info-blocks__description-block',
+            );
+            const description = descriptionBlock?.querySelector(
+                '.product-info-blocks__description',
+            );
+            if (!mediaPanel || !infoBlocks || !descriptionBlock || !description) return {};
+
+            const desktopQuery = window.matchMedia('(min-width: 48rem)');
+            let frame = 0;
+
+            const reset = () => {
+                infoBlocks.style.removeProperty('max-height');
+                descriptionBlock.style.removeProperty('max-height');
+                description.style.removeProperty('max-height');
+            };
+
+            const sync = () => {
+                if (frame) cancelAnimationFrame(frame);
+                frame = requestAnimationFrame(() => {
+                    frame = 0;
+
+                    if (!desktopQuery.matches) {
+                        reset();
+                        return;
+                    }
+
+                    const mediaHeight = mediaPanel.getBoundingClientRect().height;
+                    if (mediaHeight <= 0) {
+                        reset();
+                        return;
+                    }
+
+                    const rootStyles = window.getComputedStyle(document.documentElement);
+                    const headerHeight =
+                        parseFloat(rootStyles.getPropertyValue('--header-height')) || 0;
+                    const announcementHeight =
+                        parseFloat(rootStyles.getPropertyValue('--announcement-bar-height')) || 0;
+                    const viewportHeight = window.visualViewport?.height || window.innerHeight;
+                    const maxReferenceHeight = Math.max(
+                        360,
+                        viewportHeight - headerHeight - announcementHeight,
+                    );
+                    const referenceHeight = Math.min(mediaHeight, maxReferenceHeight);
+
+                    const styles = window.getComputedStyle(infoBlocks);
+                    const gap = parseFloat(styles.rowGap || styles.gap) || 0;
+                    const paddingY =
+                        (parseFloat(styles.paddingTop) || 0) +
+                        (parseFloat(styles.paddingBottom) || 0);
+                    const children = Array.from(infoBlocks.children).filter(
+                        (child) => child instanceof HTMLElement,
+                    );
+                    const otherBlocksHeight = children.reduce((total, child) => {
+                        if (child === descriptionBlock) return total;
+                        return total + child.getBoundingClientRect().height;
+                    }, 0);
+                    const gapsHeight = gap * Math.max(children.length - 1, 0);
+                    const available = Math.max(
+                        0,
+                        referenceHeight - paddingY - gapsHeight - otherBlocksHeight,
+                    );
+
+                    infoBlocks.style.maxHeight = `${Math.round(referenceHeight)}px`;
+                    descriptionBlock.style.maxHeight = `${Math.floor(available)}px`;
+                    description.style.maxHeight = `${Math.floor(available)}px`;
+                });
+            };
+
+            const resizeObserver = new ResizeObserver(sync);
+            resizeObserver.observe(mediaPanel);
+            Array.from(infoBlocks.children).forEach((child) => resizeObserver.observe(child));
+
+            window.addEventListener('resize', sync);
+            desktopQuery.addEventListener('change', sync);
+            sync();
+
+            return {
+                description,
+                descriptionBlock,
+                desktopQuery,
+                frame,
+                infoBlocks,
+                reset,
+                resizeObserver,
+                sync,
+            };
+        }
+
+        Components.register(
+            'product',
+            {
+                init(el) {
+                    return constrainDescription(el);
+                },
+
+                destroy(el, state) {
+                    if (state?.frame) cancelAnimationFrame(state.frame);
+                    state?.resizeObserver?.disconnect?.();
+                    window.removeEventListener('resize', state?.sync);
+                    state?.desktopQuery?.removeEventListener?.('change', state?.sync);
+                    state?.reset?.();
+                },
+            },
+            { lazy: true },
+        );
+    })();
+{%- endjavascript -%}
 
 {% schema %}
 {
@@ -73,6 +203,30 @@
                 { "value": "grid", "label": "Grid" }
             ],
             "default": "thumbnails"
+        },
+        {
+            "type": "select",
+            "id": "thumbnail_position",
+            "label": "Thumbnail position",
+            "options": [
+                { "value": "left", "label": "Left" },
+                { "value": "bottom", "label": "Bottom" }
+            ],
+            "default": "left",
+            "info": "Applies when Image layout is set to Thumbnails."
+        },
+        {
+            "type": "select",
+            "id": "thumbnail_visible_count",
+            "label": "Visible thumbnails",
+            "options": [
+                { "value": "3", "label": "3" },
+                { "value": "4", "label": "4" },
+                { "value": "5", "label": "5" },
+                { "value": "6", "label": "6" }
+            ],
+            "default": "4",
+            "info": "Applies when Image layout is set to Thumbnails and thumbnail position is left."
         },
         {
             "type": "color",

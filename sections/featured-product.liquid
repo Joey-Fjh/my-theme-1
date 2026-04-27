@@ -13,18 +13,21 @@
     data-component-id="{{ section.id }}"
 >
     <div class="layout container-page">
-        <div class="grid w-full grid-cols-1 items-stretch gap-8 pc:grid-cols-2 pc:gap-12">
-            <div class="h-full min-w-0">
+        <div
+            class="grid w-full grid-cols-1 items-start gap-8 pc:grid-cols-2 pc:items-stretch pc:gap-12"
+        >
+            <div class="min-w-0 overflow-hidden" data-product-media-panel>
                 {% assign thumb_position = section.settings.thumb_position | default: 'left' %}
                 {%- render 'product-gallery',
                     images: section.settings.product.images,
                     layout: 'thumbnails',
                     thumb_position: thumb_position,
+                    thumbnail_visible_count: section.settings.thumbnail_visible_count,
                     aspect_ratio: '576/622'
                 -%}
             </div>
 
-            <div class="h-full min-w-0">
+            <div class="min-h-0 min-w-0 overflow-hidden pc:contain-[size]" data-product-info-panel>
                 {%- render 'product-info-blocks',
                     product: section.settings.product,
                     section: section,
@@ -35,6 +38,111 @@
         </div>
     </div>
 </div>
+
+{%- javascript -%}
+    (function () {
+        const Components = window.__Theme__?.Components;
+        if (!Components) return;
+
+        function constrainDescription(el) {
+            const mediaPanel = el.querySelector('[data-product-media-panel]');
+            const infoBlocks = el.querySelector('[data-product-info-panel] .product-info-blocks');
+            const descriptionBlock = infoBlocks?.querySelector(
+                '.product-info-blocks__description-block',
+            );
+            const description = descriptionBlock?.querySelector(
+                '.product-info-blocks__description',
+            );
+            if (!mediaPanel || !infoBlocks || !descriptionBlock || !description) return {};
+
+            const desktopQuery = window.matchMedia('(min-width: 48rem)');
+            let frame = 0;
+
+            const reset = () => {
+                infoBlocks.style.removeProperty('max-height');
+                descriptionBlock.style.removeProperty('max-height');
+                description.style.removeProperty('max-height');
+            };
+
+            const sync = () => {
+                if (frame) cancelAnimationFrame(frame);
+                frame = requestAnimationFrame(() => {
+                    frame = 0;
+
+                    if (!desktopQuery.matches) {
+                        reset();
+                        return;
+                    }
+
+                    const mediaHeight = mediaPanel.getBoundingClientRect().height;
+                    if (mediaHeight <= 0) {
+                        reset();
+                        return;
+                    }
+
+                    const styles = window.getComputedStyle(infoBlocks);
+                    const gap = parseFloat(styles.rowGap || styles.gap) || 0;
+                    const paddingY =
+                        (parseFloat(styles.paddingTop) || 0) +
+                        (parseFloat(styles.paddingBottom) || 0);
+                    const children = Array.from(infoBlocks.children).filter(
+                        (child) => child instanceof HTMLElement,
+                    );
+                    const otherBlocksHeight = children.reduce((total, child) => {
+                        if (child === descriptionBlock) return total;
+                        return total + child.getBoundingClientRect().height;
+                    }, 0);
+                    const gapsHeight = gap * Math.max(children.length - 1, 0);
+                    const available = Math.max(
+                        0,
+                        mediaHeight - paddingY - gapsHeight - otherBlocksHeight,
+                    );
+
+                    infoBlocks.style.maxHeight = `${Math.round(mediaHeight)}px`;
+                    descriptionBlock.style.maxHeight = `${Math.floor(available)}px`;
+                    description.style.maxHeight = `${Math.floor(available)}px`;
+                });
+            };
+
+            const resizeObserver = new ResizeObserver(sync);
+            resizeObserver.observe(mediaPanel);
+            Array.from(infoBlocks.children).forEach((child) => resizeObserver.observe(child));
+
+            window.addEventListener('resize', sync);
+            desktopQuery.addEventListener('change', sync);
+            sync();
+
+            return {
+                description,
+                descriptionBlock,
+                desktopQuery,
+                frame,
+                infoBlocks,
+                reset,
+                resizeObserver,
+                sync,
+            };
+        }
+
+        Components.register(
+            'featured-product',
+            {
+                init(el) {
+                    return constrainDescription(el);
+                },
+
+                destroy(el, state) {
+                    if (state?.frame) cancelAnimationFrame(state.frame);
+                    state?.resizeObserver?.disconnect?.();
+                    window.removeEventListener('resize', state?.sync);
+                    state?.desktopQuery?.removeEventListener?.('change', state?.sync);
+                    state?.reset?.();
+                },
+            },
+            { lazy: true },
+        );
+    })();
+{%- endjavascript -%}
 
 {% schema %}
 {
@@ -65,6 +173,18 @@
                 { "value": "bottom", "label": "Bottom" }
             ],
             "default": "left"
+        },
+        {
+            "type": "select",
+            "id": "thumbnail_visible_count",
+            "label": "Visible thumbnails",
+            "options": [
+                { "value": "3", "label": "3" },
+                { "value": "4", "label": "4" },
+                { "value": "5", "label": "5" },
+                { "value": "6", "label": "6" }
+            ],
+            "default": "4"
         },
         {
             "type": "header",

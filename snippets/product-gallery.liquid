@@ -5,6 +5,7 @@
     @param {array}   images          - Array of image objects (e.g. product.images, product.media | where: 'media_type', 'image')
     @param {string}  layout          - 'thumbnails' | 'carousel' | 'stacked' | 'grid' (default: thumbnails)
     @param {string}  thumb_position  - 'left' | 'bottom' (default: left, only for thumbnails layout)
+    @param {number}  thumbnail_visible_count - Number of visible thumbnails in left layout (default: 4)
     @param {boolean} zoom            - Enable click-to-zoom lightbox (default: false)
     @param {string}  zoom_overlay_color   - Lightbox overlay color (default: '#000000')
     @param {number}  zoom_overlay_opacity - Lightbox overlay opacity in percent 0-100 (default: 90)
@@ -15,6 +16,7 @@
 
 {%- assign layout = layout | default: 'thumbnails' -%}
 {%- assign thumb_position = thumb_position | default: 'left' -%}
+{%- assign thumbnail_visible_count = thumbnail_visible_count | default: 4 -%}
 {%- assign image_count = images | size -%}
 {%- assign zoom_overlay_color = zoom_overlay_color | default: '#000000' -%}
 {%- assign zoom_overlay_opacity = zoom_overlay_opacity | default: 90 -%}
@@ -33,7 +35,7 @@
     {%- liquid
         case layout
             when 'thumbnails'
-                render 'product-gallery-thumbnails', images: images, thumb_position: thumb_position, zoom: zoom, aspect_ratio: aspect_ratio
+                render 'product-gallery-thumbnails', images: images, thumb_position: thumb_position, thumbnail_visible_count: thumbnail_visible_count, zoom: zoom, aspect_ratio: aspect_ratio
             when 'carousel'
                 render 'product-gallery-carousel', images: images, zoom: zoom, aspect_ratio: aspect_ratio
             when 'stacked'
