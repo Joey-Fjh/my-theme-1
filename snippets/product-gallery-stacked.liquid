@@ -8,13 +8,11 @@
 {% endcomment %}
 
 {%- assign first_img = images.first -%}
-{%- if first_img.width != blank and first_img.height != blank -%}
+{%- assign gallery_aspect = aspect_ratio -%}
+{%- if gallery_aspect == blank and first_img.width != blank and first_img.height != blank -%}
     {%- assign gallery_aspect = first_img.width | append: '/' | append: first_img.height -%}
-{%- else -%}
-    {%- assign gallery_aspect = images.first.aspect_ratio
-        | default: aspect_ratio
-        | default: '3/4'
-    -%}
+{%- elsif gallery_aspect == blank -%}
+    {%- assign gallery_aspect = images.first.aspect_ratio | default: '3/4' -%}
 {%- endif -%}
 
 <div class="flex w-full min-w-0 flex-col gap-4">
