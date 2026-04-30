@@ -61,30 +61,43 @@
                                 {{ product.type | default: 'Momonise' }}
                             </span>
 
-                            <div class="relative flex items-center gap-3">
-                                <h2>{{ product.title }}</h2>
+                            <div class="relative flex items-center gap-4">
+                                <h2 class="h1">{{ product.title }}</h2>
 
                                 <div
                                     class="
-                                        pointer-events-none
                                         absolute
                                         top-1/2
-                                        -right-3
+                                        -right-4
                                         aspect-100/72
-                                        h-[2.5em] translate-x-full -translate-y-1/2
+                                        h-30 translate-x-full -translate-y-1/2
                                         scale-95 opacity-0
                                         transition-all
                                         duration-300 ease-out
                                     "
                                     :class="hover ? 'opacity-100 scale-100' : ''"
                                 >
-                                    {%- render 'image',
-                                        class: 'w-full h-full object-cover',
-                                        image: product.featured_image,
-                                        alt: product.featured_image.alt,
-                                        width: 100,
-                                        sizes: '100px'
-                                    -%}
+                                    {%- if product.featured_image != blank -%}
+                                        {%- render 'image-magnifier',
+                                            class: 'h-full w-full',
+                                            image: product.featured_image,
+                                            alt: product.featured_image.alt,
+                                            width: 220,
+                                            sizes: '220px',
+                                            zoom_width: 1200,
+                                            preview_mode: 'contain',
+                                            preview_width: 280,
+                                            preview_height: 200
+                                        -%}
+                                    {%- else -%}
+                                        {%- render 'image',
+                                            class: 'h-full w-full',
+                                            image: product.featured_image,
+                                            alt: product.featured_image.alt,
+                                            width: 220,
+                                            sizes: '220px'
+                                        -%}
+                                    {%- endif -%}
                                 </div>
                             </div>
 

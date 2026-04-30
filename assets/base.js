@@ -508,6 +508,8 @@
                         Factory.register?.(Comps.NEWSLETTEROVERLAY, Comps.newsletterOverlay);
                         Factory.register?.(Comps.CARTOVERLAY, Comps.cartOverlay);
                         Factory.register?.(Comps.PRODUCTCARD, Comps.productCard);
+                        Factory.register?.(Comps.IMAGELIGHTBOX, Comps.imageLightbox);
+                        Factory.register?.(Comps.IMAGEMAGNIFIER, Comps.imageMagnifier);
                     }
                 },
                 { once: true },

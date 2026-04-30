@@ -1,0 +1,189 @@
+{% doc %}
+    Renders a clickable image lightbox behavior, or just the lightbox overlay when used inside an existing imageLightbox Alpine scope.
+
+    @param {image} [image] - Single image used for standalone trigger and overlay
+    @param [images] - Optional image collection for multi-image overlays
+    @param {boolean} [render_trigger] - Render the clickable image trigger (default: true)
+    @param {number} [image_index] - Initial image index for standalone trigger
+    @param {string} [class] - Optional class for the standalone wrapper
+    @param {string} [trigger_class] - Optional class for the trigger button
+    @param {string} [img_class] - Optional class for the rendered image
+    @param {number} [width] - Image render width
+    @param {number} [height] - Image render height
+    @param {string} [crop] - Image crop position
+    @param {string} [widths] - Responsive image widths
+    @param {string} [sizes] - Responsive image sizes
+    @param {string} [loading] - Image loading mode
+    @param {string} [alt] - Image alt text
+    @param {string} [aspect_ratio] - Optional image aspect ratio
+    @param {string} [overlay_color] - Lightbox overlay color
+    @param {number} [overlay_opacity] - Lightbox overlay opacity in percent
+{% enddoc %}
+
+{%- liquid
+    assign should_render_trigger = true
+    if render_trigger == false or render_trigger == 'false'
+        assign should_render_trigger = false
+    endif
+
+    assign image_index = image_index | default: 0
+    assign overlay_color = overlay_color | default: '#000000'
+    assign overlay_opacity = overlay_opacity | default: 90
+    assign lightbox_count = images | size
+
+    if lightbox_count == 0 and image != blank
+        assign lightbox_count = 1
+    endif
+
+    assign trigger_class = trigger_class | default: 'block h-full w-full cursor-zoom-in'
+    assign img_class = img_class | default: 'w-full h-full object-cover'
+    assign width = width | default: 1200
+    assign loading = loading | default: 'lazy'
+-%}
+
+{%- if should_render_trigger -%}
+    <div
+        x-data="imageLightbox({ imageCount: {{ lightbox_count }} })"
+        class="image-lightbox {{ class }}"
+        @keydown.escape.window="lightboxOpen && closeLightbox()"
+        @keydown.right.window="lightboxOpen && nextLightbox()"
+        @keydown.left.window="lightboxOpen && prevLightbox()"
+    >
+        <button
+            type="button"
+            class="{{ trigger_class }}"
+            @click="openLightbox({{ image_index }})"
+            aria-label="Open image zoom"
+        >
+            {%- render 'image',
+                image: image,
+                width: width,
+                height: height,
+                crop: crop,
+                img_class: img_class,
+                alt: alt,
+                sizes: sizes,
+                widths: widths,
+                loading: loading,
+                aspect_ratio: aspect_ratio
+            -%}
+        </button>
+{%- endif -%}
+
+<template x-teleport="body">
+    <div
+        x-show="lightboxOpen"
+        x-cloak
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+        class="fixed inset-0 z-10120 flex items-center justify-center"
+        @click.self="closeLightbox()"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Image zoom"
+    >
+        <div
+            class="pointer-events-none absolute inset-0"
+            style="background-color: {{ overlay_color }}; opacity: {{ overlay_opacity | times: 0.01 }};"
+            aria-hidden="true"
+        ></div>
+
+        <button
+            type="button"
+            @click="closeLightbox()"
+            class="absolute top-4 right-4 z-10140 flex h-10 w-10 rotate-45 cursor-pointer items-center justify-center text-white/80 transition-colors hover:text-white"
+            aria-label="Close zoom"
+        >
+            {% render 'icons', icon: 'icon-plus', size: 'lg', color: 'current' %}
+        </button>
+
+        {%- if lightbox_count > 1 -%}
+            <button
+                type="button"
+                @click.stop="prevLightbox()"
+                class="absolute left-4 z-10140 flex h-10 w-10 cursor-pointer items-center justify-center text-white/80 transition-colors hover:text-white"
+                aria-label="Previous image"
+            >
+                <svg
+                    class="h-6 w-6 rotate-90"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    aria-hidden="true"
+                >
+                    <path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z"/>
+                </svg>
+            </button>
+            <button
+                type="button"
+                @click.stop="nextLightbox()"
+                class="absolute right-4 z-10140 flex h-10 w-10 cursor-pointer items-center justify-center text-white/80 transition-colors hover:text-white"
+                aria-label="Next image"
+            >
+                <svg
+                    class="h-6 w-6 -rotate-90"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    aria-hidden="true"
+                >
+                    <path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z"/>
+                </svg>
+            </button>
+        {%- endif -%}
+
+        <div class="relative max-h-[90vh] max-w-[90vw] overflow-hidden">
+            {%- if images != blank -%}
+                {%- for lightbox_image in images -%}
+                    {%- assign media_image = lightbox_image.preview_image
+                        | default: lightbox_image
+                    -%}
+
+                    <div
+                        x-show="lightboxIndex === {{ forloop.index0 }}"
+                        x-transition:enter="transition ease-out duration-200"
+                        x-transition:enter-start="opacity-0 scale-95"
+                        x-transition:enter-end="opacity-100 scale-100"
+                        class="flex items-center justify-center"
+                    >
+                        {%- render 'image',
+                            image: media_image,
+                            width: 2400,
+                            img_class: 'max-w-[90vw] max-h-[90vh] object-contain',
+                            alt: media_image.alt,
+                            sizes: '90vw',
+                            widths: '800,1200,1800,2400',
+                            loading: 'lazy'
+                        -%}
+                    </div>
+                {%- endfor -%}
+            {%- elsif image != blank -%}
+                <div class="flex items-center justify-center">
+                    {%- render 'image',
+                        image: image,
+                        width: 2400,
+                        img_class: 'max-w-[90vw] max-h-[90vh] object-contain',
+                        alt: alt,
+                        sizes: '90vw',
+                        widths: '800,1200,1800,2400',
+                        loading: 'lazy'
+                    -%}
+                </div>
+            {%- endif -%}
+        </div>
+
+        {%- if lightbox_count > 1 -%}
+            <div
+                class="absolute bottom-4 left-1/2 z-10140 -translate-x-1/2 text-white/60"
+                aria-live="polite"
+                x-text="lightboxLabel"
+            ></div>
+        {%- endif -%}
+    </div>
+</template>
+
+{%- if should_render_trigger -%}
+    </div>
+{%- endif -%}

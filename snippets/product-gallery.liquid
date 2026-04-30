@@ -7,6 +7,11 @@
     @param {string}  thumb_position  - 'left' | 'bottom' (default: left, only for thumbnails layout)
     @param {number}  thumbnail_visible_count - Number of visible thumbnails in left layout (default: 4)
     @param {boolean} zoom            - Enable click-to-zoom lightbox (default: false)
+    @param {boolean} magnifier       - Enable desktop hover magnifier on gallery images (default: false)
+    @param {number}  magnifier_zoom_scale - Background scale multiplier for magnifier (default: 2)
+    @param {number}  magnifier_preview_width - Optional fixed magnifier preview width in pixels
+    @param {number}  magnifier_preview_height - Optional fixed magnifier preview height in pixels
+    @param {number}  magnifier_preview_max_width - Maximum magnifier preview width in pixels
     @param {string}  zoom_overlay_color   - Lightbox overlay color (default: '#000000')
     @param {number}  zoom_overlay_opacity - Lightbox overlay opacity in percent 0-100 (default: 90)
     @param {string}  aspect_ratio    - CSS aspect-ratio for main images (e.g. '1/1', '4/3'; default: natural)
@@ -17,6 +22,18 @@
 {%- assign layout = layout | default: 'thumbnails' -%}
 {%- assign thumb_position = thumb_position | default: 'left' -%}
 {%- assign thumbnail_visible_count = thumbnail_visible_count | default: 4 -%}
+{%- assign zoom_enabled = false -%}
+{%- if zoom == true or zoom == 'true' -%}
+    {%- assign zoom_enabled = true -%}
+{%- endif -%}
+{%- assign magnifier_enabled = false -%}
+{%- if magnifier == true or magnifier == 'true' -%}
+    {%- assign magnifier_enabled = true -%}
+{%- endif -%}
+{%- assign magnifier_zoom_scale = magnifier_zoom_scale | default: 2 -%}
+{%- assign magnifier_preview_width = magnifier_preview_width | default: 0 -%}
+{%- assign magnifier_preview_height = magnifier_preview_height | default: 0 -%}
+{%- assign magnifier_preview_max_width = magnifier_preview_max_width | default: 560 -%}
 {%- assign image_count = images | size -%}
 {%- assign zoom_overlay_color = zoom_overlay_color | default: '#000000' -%}
 {%- assign zoom_overlay_opacity = zoom_overlay_opacity | default: 90 -%}
@@ -28,123 +45,36 @@
     {% if id %}
         id="{{ id }}"
     {% endif %}
-    @keydown.escape.window="zoomOpen && closeZoom()"
-    @keydown.right.window="zoomOpen && zoomNext()"
-    @keydown.left.window="zoomOpen && zoomPrev()"
 >
-    {%- liquid
-        case layout
-            when 'thumbnails'
-                render 'product-gallery-thumbnails', images: images, thumb_position: thumb_position, thumbnail_visible_count: thumbnail_visible_count, zoom: zoom, aspect_ratio: aspect_ratio
-            when 'carousel'
-                render 'product-gallery-carousel', images: images, zoom: zoom, aspect_ratio: aspect_ratio
-            when 'stacked'
-                render 'product-gallery-stacked', images: images, zoom: zoom, aspect_ratio: aspect_ratio
-            when 'grid'
-                render 'product-gallery-grid', images: images, zoom: zoom, aspect_ratio: aspect_ratio
-        endcase
-    -%}
+    <div
+        class="h-full w-full"
+        {% if zoom_enabled %}
+            x-data="imageLightbox({ imageCount: {{ image_count }} })"
+            @keydown.escape.window="lightboxOpen && closeLightbox()"
+            @keydown.right.window="lightboxOpen && nextLightbox()"
+            @keydown.left.window="lightboxOpen && prevLightbox()"
+        {% endif %}
+    >
+        {%- liquid
+            case layout
+                when 'thumbnails'
+                    render 'product-gallery-thumbnails', images: images, thumb_position: thumb_position, thumbnail_visible_count: thumbnail_visible_count, zoom: zoom_enabled, magnifier: magnifier_enabled, magnifier_zoom_scale: magnifier_zoom_scale, magnifier_preview_width: magnifier_preview_width, magnifier_preview_height: magnifier_preview_height, magnifier_preview_max_width: magnifier_preview_max_width, aspect_ratio: aspect_ratio
+                when 'carousel'
+                    render 'product-gallery-carousel', images: images, zoom: zoom_enabled, magnifier: magnifier_enabled, magnifier_zoom_scale: magnifier_zoom_scale, magnifier_preview_width: magnifier_preview_width, magnifier_preview_height: magnifier_preview_height, magnifier_preview_max_width: magnifier_preview_max_width, aspect_ratio: aspect_ratio
+                when 'stacked'
+                    render 'product-gallery-stacked', images: images, zoom: zoom_enabled, magnifier: magnifier_enabled, magnifier_zoom_scale: magnifier_zoom_scale, magnifier_preview_width: magnifier_preview_width, magnifier_preview_height: magnifier_preview_height, magnifier_preview_max_width: magnifier_preview_max_width, aspect_ratio: aspect_ratio
+                when 'grid'
+                    render 'product-gallery-grid', images: images, zoom: zoom_enabled, magnifier: magnifier_enabled, magnifier_zoom_scale: magnifier_zoom_scale, magnifier_preview_width: magnifier_preview_width, magnifier_preview_height: magnifier_preview_height, magnifier_preview_max_width: magnifier_preview_max_width, aspect_ratio: aspect_ratio
+            endcase
+        -%}
 
-    {%- if zoom -%}
-        <template x-teleport="body">
-            <div
-                x-show="zoomOpen"
-                x-cloak
-                x-transition:enter="transition ease-out duration-300"
-                x-transition:enter-start="opacity-0"
-                x-transition:enter-end="opacity-100"
-                x-transition:leave="transition ease-in duration-200"
-                x-transition:leave-start="opacity-100"
-                x-transition:leave-end="opacity-0"
-                class="fixed inset-0 z-10120 flex items-center justify-center"
-                @click.self="closeZoom()"
-                role="dialog"
-                aria-modal="true"
-                aria-label="Image zoom"
-            >
-                <div
-                    class="pointer-events-none absolute inset-0"
-                    style="background-color: {{ zoom_overlay_color }}; opacity: {{ zoom_overlay_opacity | times: 0.01 }};"
-                    aria-hidden="true"
-                ></div>
-
-                <button
-                    type="button"
-                    @click="closeZoom()"
-                    class="absolute top-4 right-4 z-10140 flex h-10 w-10 rotate-45 cursor-pointer items-center justify-center text-white/80 transition-colors hover:text-white"
-                    aria-label="Close zoom"
-                >
-                    {% render 'icons', icon: 'icon-plus', size: 'lg', color: 'current' %}
-                </button>
-
-                {%- if image_count > 1 -%}
-                    <button
-                        type="button"
-                        @click.stop="zoomPrev()"
-                        class="absolute left-4 z-10140 flex h-10 w-10 cursor-pointer items-center justify-center text-white/80 transition-colors hover:text-white"
-                        aria-label="Previous image"
-                    >
-                        <svg
-                            class="h-6 w-6 rotate-90"
-                            viewBox="0 0 24 24"
-                            fill="currentColor"
-                            aria-hidden="true"
-                        >
-                            <path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z"/>
-                        </svg>
-                    </button>
-                    <button
-                        type="button"
-                        @click.stop="zoomNext()"
-                        class="absolute right-4 z-10140 flex h-10 w-10 cursor-pointer items-center justify-center text-white/80 transition-colors hover:text-white"
-                        aria-label="Next image"
-                    >
-                        <svg
-                            class="h-6 w-6 -rotate-90"
-                            viewBox="0 0 24 24"
-                            fill="currentColor"
-                            aria-hidden="true"
-                        >
-                            <path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z"/>
-                        </svg>
-                    </button>
-                {%- endif -%}
-
-                <div
-                    class="relative max-h-[90vh] max-w-[90vw] overflow-hidden"
-                >
-                    {%- for image in images -%}
-                        {%- assign media_image = image.preview_image | default: image -%}
-
-                        <div
-                            x-show="zoomIndex === {{ forloop.index0 }}"
-                            x-transition:enter="transition ease-out duration-200"
-                            x-transition:enter-start="opacity-0 scale-95"
-                            x-transition:enter-end="opacity-100 scale-100"
-                            class="flex items-center justify-center"
-                        >
-                            {%- render 'image',
-                                image: media_image,
-                                width: 2400,
-                                img_class: 'max-w-[90vw] max-h-[90vh] object-contain',
-                                alt: media_image.alt,
-                                sizes: '90vw',
-                                widths: '800,1200,1800,2400',
-                                loading: 'lazy'
-                            -%}
-                        </div>
-                    {%- endfor -%}
-                </div>
-
-                {%- if image_count > 1 -%}
-                    <div
-                        class="absolute bottom-4 left-1/2 z-10140 -translate-x-1/2 text-white/60"
-                        aria-live="polite"
-                    >
-                        <span x-text="zoomIndex + 1"></span> / {{ image_count }}
-                    </div>
-                {%- endif -%}
-            </div>
-        </template>
-    {%- endif -%}
+        {%- if zoom_enabled -%}
+            {%- render 'image-lightbox',
+                images: images,
+                render_trigger: false,
+                overlay_color: zoom_overlay_color,
+                overlay_opacity: zoom_overlay_opacity
+            -%}
+        {%- endif -%}
+    </div>
 </div>

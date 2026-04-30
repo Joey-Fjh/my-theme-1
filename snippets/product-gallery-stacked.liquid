@@ -4,6 +4,11 @@
 
     @param {array}   images       - Image objects
     @param {boolean} zoom         - Enable click on images
+    @param {boolean} magnifier    - Enable desktop hover magnifier on images
+    @param {number}  magnifier_zoom_scale - Background scale multiplier for magnifier
+    @param {number}  magnifier_preview_width - Optional fixed magnifier preview width in pixels
+    @param {number}  magnifier_preview_height - Optional fixed magnifier preview height in pixels
+    @param {number}  magnifier_preview_max_width - Maximum magnifier preview width in pixels
     @param {string}  aspect_ratio - Optional CSS aspect-ratio (fallback when first image has no ratio)
 {% endcomment %}
 
@@ -22,18 +27,34 @@
             class="min-w-0 overflow-hidden rounded-sm"
             style="aspect-ratio: {{ gallery_aspect }}; {% if zoom %}cursor: zoom-in;{% endif %}"
             {% if zoom %}
-                @click="openZoom({{ forloop.index0 }})"
+                @click="openLightbox({{ forloop.index0 }})"
             {% endif %}
         >
-            {%- render 'image',
-                image: media_image,
-                width: 1200,
-                img_class: 'w-full h-full object-cover',
-                alt: media_image.alt,
-                sizes: '(min-width: 48rem) 50vw, 100vw',
-                widths: '400,600,800,1200',
-                loading: 'lazy'
-            -%}
+            {%- if magnifier -%}
+                {%- render 'image-magnifier',
+                    image: media_image,
+                    width: 1200,
+                    img_class: 'w-full h-full object-cover',
+                    alt: media_image.alt,
+                    sizes: '(min-width: 48rem) 50vw, 100vw',
+                    widths: '400,600,800,1200',
+                    loading: 'lazy',
+                    zoom_scale: magnifier_zoom_scale,
+                    preview_width: magnifier_preview_width,
+                    preview_height: magnifier_preview_height,
+                    preview_max_width: magnifier_preview_max_width
+                -%}
+            {%- else -%}
+                {%- render 'image',
+                    image: media_image,
+                    width: 1200,
+                    img_class: 'w-full h-full object-cover',
+                    alt: media_image.alt,
+                    sizes: '(min-width: 48rem) 50vw, 100vw',
+                    widths: '400,600,800,1200',
+                    loading: 'lazy'
+                -%}
+            {%- endif -%}
         </div>
     {%- endfor -%}
 </div>
