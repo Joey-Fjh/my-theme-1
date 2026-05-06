@@ -1,7 +1,7 @@
 <div
     data-section-id="{{ section.id }}"
     class="
-        featured-product-section full-width
+        featured-product-section full-width bg-theme-bg text-theme-text
         color-{{ section.settings.color_scheme }}
     "
     style="
@@ -14,7 +14,7 @@
 >
     <div class="layout container-page">
         <div
-            class="grid w-full grid-cols-1 items-start gap-8 pc:grid-cols-2 pc:items-stretch pc:gap-12"
+            class="grid w-full min-w-0 grid-cols-1 items-start gap-8 pc:grid-cols-2 pc:gap-10 fw:gap-12"
         >
             <div class="min-w-0 overflow-hidden" data-product-media-panel>
                 {% assign thumb_position = section.settings.thumb_position | default: 'left' %}
@@ -27,13 +27,15 @@
                 -%}
             </div>
 
-            <div class="min-h-0 min-w-0 overflow-hidden pc:contain-[size]" data-product-info-panel>
-                {%- render 'product-info-blocks',
-                    product: section.settings.product,
-                    section: section,
-                    context: 'featured',
-                    container_class: 'p-6 pc:p-10'
-                -%}
+            <div class="min-w-0" data-product-info-panel>
+                <div class="self-start">
+                    {%- render 'product-info-blocks',
+                        product: section.settings.product,
+                        section: section,
+                        context: 'featured',
+                        container_class: 'p-6 pc:p-10'
+                    -%}
+                </div>
             </div>
         </div>
     </div>
@@ -80,6 +82,18 @@
                         return;
                     }
 
+                    const rootStyles = window.getComputedStyle(document.documentElement);
+                    const headerHeight =
+                        parseFloat(rootStyles.getPropertyValue('--header-height')) || 0;
+                    const announcementHeight =
+                        parseFloat(rootStyles.getPropertyValue('--announcement-bar-height')) || 0;
+                    const viewportHeight = window.visualViewport?.height || window.innerHeight;
+                    const maxReferenceHeight = Math.max(
+                        360,
+                        viewportHeight - headerHeight - announcementHeight,
+                    );
+                    const referenceHeight = Math.min(mediaHeight, maxReferenceHeight);
+
                     const styles = window.getComputedStyle(infoBlocks);
                     const gap = parseFloat(styles.rowGap || styles.gap) || 0;
                     const paddingY =
@@ -95,10 +109,9 @@
                     const gapsHeight = gap * Math.max(children.length - 1, 0);
                     const available = Math.max(
                         0,
-                        mediaHeight - paddingY - gapsHeight - otherBlocksHeight,
+                        referenceHeight - paddingY - gapsHeight - otherBlocksHeight,
                     );
 
-                    infoBlocks.style.maxHeight = `${Math.round(mediaHeight)}px`;
                     descriptionBlock.style.maxHeight = `${Math.floor(available)}px`;
                     description.style.maxHeight = `${Math.floor(available)}px`;
                 });

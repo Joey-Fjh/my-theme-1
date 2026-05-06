@@ -50,13 +50,13 @@
                 {%- comment -%} ═══ Dropdown mode ═══ {%- endcomment -%}
                 <div class="flex flex-col gap-2">
                     <label
-                        class="{% if context == 'product' %}body-sm text-theme-text/80{% else %}body-md text-theme-bg/80{% endif %}"
+                        class="{% if context == 'product' %}body-sm{% else %}body-md{% endif %} text-theme-text/80"
                         for="OptionDropdown-{{ section.id }}-{{ forloop.index0 }}"
                     >
                         {{ option.name }}:
                         <span
                             x-text="selectedOptions['{{ option_name_escaped }}']"
-                            class="ml-1 font-medium {% if context == 'product' %}text-theme-text{% else %}text-theme-bg{% endif %}"
+                            class="ml-1 font-medium text-theme-text"
                         >
                             {{- option.selected_value -}}
                         </span>
@@ -65,7 +65,7 @@
                     <div class="relative">
                         <select
                             id="OptionDropdown-{{ section.id }}-{{ forloop.index0 }}"
-                            class="{% if context == 'product' %}body-sm{% else %}body-md{% endif %} w-full cursor-pointer appearance-none rounded-sm border px-4 py-3 focus:outline-none {% if context == 'product' %}border-theme-border text-theme-text focus:border-theme-border-strong{% else %}border-theme-bg/20 bg-theme-text text-theme-bg focus:border-theme-bg/60{% endif %}"
+                            class="{% if context == 'product' %}body-sm{% else %}body-md{% endif %} w-full cursor-pointer appearance-none rounded-sm border border-theme-border px-4 py-3 text-theme-text focus:border-theme-border-strong focus:outline-none"
                             name="options[{{ option_name_escaped }}]"
                             form="{{ product_form_id }}"
                             x-model="selectedOptions['{{ option_name_escaped }}']"
@@ -73,7 +73,7 @@
                         >
                             {%- for value in option.values -%}
                                 <option
-                                    class="{% if context == 'product' %}bg-theme-bg text-theme-text{% else %}bg-theme-text text-theme-bg{% endif %}"
+                                    class="bg-theme-bg text-theme-text"
                                     value="{{ value | escape }}"
                                     {% unless value.available %}
                                         disabled
@@ -89,7 +89,7 @@
                             {%- endfor -%}
                         </select>
                         <span
-                            class="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 {% if context == 'product' %}text-theme-text/60{% else %}text-theme-bg/60{% endif %}"
+                            class="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-theme-text/60"
                             aria-hidden="true"
                         >
                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
@@ -106,11 +106,11 @@
                     role="radiogroup"
                     aria-label="{{ option.name }}"
                 >
-                    <legend class="{% if context == 'product' %}body-sm text-theme-text/80{% else %}body-md text-theme-bg/80{% endif %}">
+                    <legend class="{% if context == 'product' %}body-sm{% else %}body-md{% endif %} text-theme-text/80">
                         {{ option.name }}:
                         <span
                             x-text="selectedOptions['{{ option_name_escaped }}']"
-                            class="ml-1 font-medium {% if context == 'product' %}text-theme-text{% else %}text-theme-bg{% endif %}"
+                            class="ml-1 font-medium text-theme-text"
                         >
                             {{- option.selected_value -}}
                         </span>
@@ -158,11 +158,11 @@
                                         data-option-value-id="{{ value.id }}"
                                     >
                                     <span
-                                        class="block h-8 w-8 border transition-all {{ shape_class }} {% if context == 'product' %}border-theme-border{% else %}border-theme-bg/20{% endif %}"
+                                        class="block h-8 w-8 border transition-all {{ shape_class }} border-theme-border"
                                         :class="
                                             selectedOptions['{{ option_name_escaped }}'] === '{{ escaped_value }}'
-                                            ? '{% if context == 'product' %}ring-2 ring-theme-text ring-offset-2 ring-offset-theme-bg{% else %}ring-2 ring-theme-bg ring-offset-2 ring-offset-theme-text{% endif %}'
-                                            : '{% if context == 'product' %}hover:border-theme-border-strong{% else %}hover:border-theme-bg/50{% endif %}'
+                                            ? 'ring-2 ring-theme-text ring-offset-2 ring-offset-theme-bg'
+                                            : 'hover:border-theme-border-strong'
                                         "
                                         {%- if swatch_bg %}
                                             style="background: {{ swatch_bg }}; background-size: cover;"
@@ -173,7 +173,7 @@
                                     {%- unless value.available -%}
                                         <span class="pointer-events-none absolute inset-0 flex items-center justify-center opacity-60">
                                             <span
-                                                class="block h-10 w-1 -translate-y-1 rotate-45 {% if context == 'product' %}bg-theme-text/70{% else %}bg-theme-bg/70{% endif %}"
+                                                class="block h-10 w-1 -translate-y-1 rotate-45 bg-theme-text/70"
                                             ></span>
                                         </span>
                                     {%- endunless -%}
@@ -202,8 +202,8 @@
                                         :class="
                                             [
                                               selectedOptions['{{ option_name_escaped }}'] === '{{ escaped_value }}'
-                                                ? '{% if context == 'product' %}border-theme-border-strong text-theme-text{% else %}border-theme-bg text-theme-bg{% endif %}'
-                                                : '{% if context == 'product' %}border-theme-border text-theme-text/70 hover:border-theme-border-strong hover:text-theme-text{% else %}border-theme-bg/20 text-theme-bg/80 hover:border-theme-bg/50 hover:text-theme-bg{% endif %}',
+                                                ? 'border-theme-border-strong text-theme-text'
+                                                : 'border-theme-border text-theme-text/70 hover:border-theme-border-strong hover:text-theme-text',
                                               !isValueAvailable('{{ option_name_escaped }}', '{{ escaped_value }}') && 'opacity-40 line-through'
                                             ]
                                         "
