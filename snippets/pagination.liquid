@@ -34,102 +34,24 @@
 
 {%- if pagination_data and pagination_data.pages > 1 -%}
     <nav
-        class="pagination flex items-center justify-center gap-1 py-10"
+        class="pagination py-10"
         role="navigation"
     >
-        {%- comment -%} PREVIOUS {%- endcomment -%}
-        {%- if pagination_data.previous -%}
-            <a
-                href="{{ pagination_data.previous.url }}"
-                class="
-                    pagination__prev
-                    inline-flex h-8 items-center gap-1 rounded
-                    px-2 transition-colors
-                    {% case pagination_style %}
-                      {% when 'minimal' %}
-                        hover:underline
-                      {% when 'outline' %}
-                        border hover:bg-[#f5f5f5]
-                      {% else %}
-                        hover:bg-[#f5f5f5]
-                    {% endcase %}
-                "
-                style="
-                    color: {{ pagination_text_color }};
-                    font-size: {{ pagination_font_size }}px;
-                    border-radius: {{ pagination_border_radius }}px;
-                    {% if pagination_style == 'outline' %}
-                      border-color: rgba(0,0,0,0.12);
-                    {% endif %}
-                "
-            >
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                >
-                    <path d="m15 18-6-6 6-6"/>
-                </svg>
-                {% comment %} <span>{{ 'pagination.previous' | t }}</span> {% endcomment %}
-                <span>Previous</span>
-            </a>
-        {%- else -%}
-            <span
-                class="
-                    pagination__prev pagination__prev--disabled
-                    pointer-events-none inline-flex h-8 items-center gap-1
-                    rounded px-2 opacity-40
-                    {% if pagination_style == 'outline' %}
-                      border
-                    {% endif %}
-                "
-                style="
-                    color: {{ pagination_text_color }};
-                    font-size: {{ pagination_font_size }}px;
-                    border-radius: {{ pagination_border_radius }}px;
-                    {% if pagination_style == 'outline' %}
-                      border-color: rgba(0,0,0,0.06);
-                    {% endif %}
-                "
-                aria-disabled="true"
-            >
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                >
-                    <path d="m15 18-6-6 6-6"/>
-                </svg>
-            </span>
-        {%- endif -%}
-
-        {%- comment -%} PAGES {%- endcomment -%}
-        {%- for part in pagination_data.parts -%}
-            {%- if part.is_link -%}
+        <div class="pagination__inner mx-auto flex w-fit max-w-full items-center gap-1">
+            {%- comment -%} PREVIOUS {%- endcomment -%}
+            {%- if pagination_data.previous -%}
                 <a
-                    href="{{ part.url }}"
+                    href="{{ pagination_data.previous.url }}"
                     class="
-                        pagination__page
-                        inline-flex h-8 min-w-8 items-center justify-center rounded
+                        pagination__prev
+                        inline-flex h-8 items-center gap-1 rounded
                         px-2 transition-colors
                         {% case pagination_style %}
-                          {% when 'minimal' %}
+                        {% when 'minimal' %}
                             hover:underline
-                          {% when 'outline' %}
+                        {% when 'outline' %}
                             border hover:bg-[#f5f5f5]
-                          {% else %}
+                        {% else %}
                             hover:bg-[#f5f5f5]
                         {% endcase %}
                     "
@@ -138,140 +60,241 @@
                         font-size: {{ pagination_font_size }}px;
                         border-radius: {{ pagination_border_radius }}px;
                         {% if pagination_style == 'outline' %}
-                          border-color: rgba(0,0,0,0.12);
+                        border-color: rgba(0,0,0,0.12);
                         {% endif %}
                     "
                 >
-                    {{- part.title -}}
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path d="m15 18-6-6 6-6"/>
+                    </svg>
+                    {% comment %} <span>{{ 'pagination.previous' | t }}</span> {% endcomment %}
+                    <span>Previous</span>
                 </a>
             {%- else -%}
-                {%- if part.title == pagination_data.current_page -%}
-                    <span
-                        class="
-                            pagination__page pagination__page--current
-                            inline-flex h-8 min-w-8 items-center justify-center rounded
-                            px-2
-                            {% if pagination_style == 'minimal' %}
-                              font-medium underline
-                            {% endif %}
-                        "
-                        style="
-                            {% if pagination_style == 'default' %}
-                              background-color: {{ pagination_current_bg }};
-                              color: {{ pagination_current_text }};
-                            {% elsif pagination_style == 'outline' %}
-                              border: 1px solid {{ pagination_current_bg }};
-                              color: {{ pagination_current_bg }};
-                            {% else %}
-                              color: {{ pagination_text_color }};
-                            {% endif %}
-                            font-size: {{ pagination_font_size }}px;
-                            border-radius: {{ pagination_border_radius }}px;
-                        "
-                        aria-current="page"
+                <span
+                    class="
+                        pagination__prev pagination__prev--disabled
+                        pointer-events-none inline-flex h-8 items-center gap-1
+                        rounded px-2 opacity-40
+                        {% if pagination_style == 'outline' %}
+                        border
+                        {% endif %}
+                    "
+                    style="
+                        color: {{ pagination_text_color }};
+                        font-size: {{ pagination_font_size }}px;
+                        border-radius: {{ pagination_border_radius }}px;
+                        {% if pagination_style == 'outline' %}
+                        border-color: rgba(0,0,0,0.06);
+                        {% endif %}
+                    "
+                    aria-disabled="true"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
                     >
-                        {{- part.title -}}
-                    </span>
-                {%- else -%}
-                    <span
-                        class="
-                            pagination__page pagination__page--ellipsis
-                            inline-flex h-8 min-w-8 items-center justify-center px-2
-                        "
-                        style="
-                            color: {{ pagination_text_color }};
-                            font-size: {{ pagination_font_size }}px;
-                        "
-                    >
-                        {{- part.title -}}
-                    </span>
-                {%- endif -%}
+                        <path d="m15 18-6-6 6-6"/>
+                    </svg>
+                </span>
             {%- endif -%}
-        {%- endfor -%}
 
-        {%- comment -%} NEXT {%- endcomment -%}
-        {%- if pagination_data.next -%}
-            <a
-                href="{{ pagination_data.next.url }}"
-                class="
-                    pagination__next
-                    inline-flex h-8 items-center gap-1 rounded
-                    px-2 transition-colors
-                    {% case pagination_style %}
-                      {% when 'minimal' %}
-                        hover:underline
-                      {% when 'outline' %}
-                        border hover:bg-[#f5f5f5]
-                      {% else %}
-                        hover:bg-[#f5f5f5]
-                    {% endcase %}
-                "
-                style="
-                    color: {{ pagination_text_color }};
-                    font-size: {{ pagination_font_size }}px;
-                    border-radius: {{ pagination_border_radius }}px;
-                    {% if pagination_style == 'outline' %}
-                      border-color: rgba(0,0,0,0.12);
-                    {% endif %}
-                "
-            >
-                {% comment %} <span>{{ 'pagination.next' | t }}</span> {% endcomment %}
-                <span>Next</span>
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
+            {%- comment -%} PAGES {%- endcomment -%}
+            <div class="pagination__pages-wrap max-w-full min-w-0 overflow-x-auto">
+                <div class="pagination__pages mx-auto inline-flex min-w-max items-center gap-1">
+                    {%- for part in pagination_data.parts -%}
+                        {%- if part.is_link -%}
+                            <a
+                                href="{{ part.url }}"
+                                class="
+                                    pagination__page
+                                    inline-flex h-8 min-w-8 items-center justify-center rounded
+                                    px-2 transition-colors
+                                    {% case pagination_style %}
+                                    {% when 'minimal' %}
+                                        hover:underline
+                                    {% when 'outline' %}
+                                        border hover:bg-[#f5f5f5]
+                                    {% else %}
+                                        hover:bg-[#f5f5f5]
+                                    {% endcase %}
+                                "
+                                style="
+                                    color: {{ pagination_text_color }};
+                                    font-size: {{ pagination_font_size }}px;
+                                    border-radius: {{ pagination_border_radius }}px;
+                                    {% if pagination_style == 'outline' %}
+                                    border-color: rgba(0,0,0,0.12);
+                                    {% endif %}
+                                "
+                            >
+                                {{- part.title -}}
+                            </a>
+                        {%- else -%}
+                            {%- if part.title == pagination_data.current_page -%}
+                                <span
+                                    class="
+                                        pagination__page pagination__page--current
+                                        inline-flex h-8 min-w-8 items-center justify-center rounded
+                                        px-2
+                                        {% if pagination_style == 'minimal' %}
+                                        font-medium underline
+                                        {% endif %}
+                                    "
+                                    style="
+                                        {% if pagination_style == 'default' %}
+                                        background-color: {{ pagination_current_bg }};
+                                        color: {{ pagination_current_text }};
+                                        {% elsif pagination_style == 'outline' %}
+                                        border: 1px solid {{ pagination_current_bg }};
+                                        color: {{ pagination_current_bg }};
+                                        {% else %}
+                                        color: {{ pagination_text_color }};
+                                        {% endif %}
+                                        font-size: {{ pagination_font_size }}px;
+                                        border-radius: {{ pagination_border_radius }}px;
+                                    "
+                                    aria-current="page"
+                                >
+                                    {{- part.title -}}
+                                </span>
+                            {%- else -%}
+                                <span
+                                    class="
+                                        pagination__page pagination__page--ellipsis
+                                        inline-flex h-8 min-w-8 items-center justify-center px-2
+                                    "
+                                    style="
+                                        color: {{ pagination_text_color }};
+                                        font-size: {{ pagination_font_size }}px;
+                                    "
+                                >
+                                    {{- part.title -}}
+                                </span>
+                            {%- endif -%}
+                        {%- endif -%}
+                    {%- endfor -%}
+                </div>
+            </div>
+
+            {%- comment -%} NEXT {%- endcomment -%}
+            {%- if pagination_data.next -%}
+                <a
+                    href="{{ pagination_data.next.url }}"
+                    class="
+                        pagination__next
+                        inline-flex h-8 items-center gap-1 rounded
+                        px-2 transition-colors
+                        {% case pagination_style %}
+                        {% when 'minimal' %}
+                            hover:underline
+                        {% when 'outline' %}
+                            border hover:bg-[#f5f5f5]
+                        {% else %}
+                            hover:bg-[#f5f5f5]
+                        {% endcase %}
+                    "
+                    style="
+                        color: {{ pagination_text_color }};
+                        font-size: {{ pagination_font_size }}px;
+                        border-radius: {{ pagination_border_radius }}px;
+                        {% if pagination_style == 'outline' %}
+                        border-color: rgba(0,0,0,0.12);
+                        {% endif %}
+                    "
                 >
-                    <path d="m9 18 6-6-6-6"/>
-                </svg>
-            </a>
-        {%- else -%}
-            <span
-                class="
-                    pagination__next pagination__next--disabled
-                    pointer-events-none inline-flex h-8 items-center gap-1
-                    rounded px-2 opacity-40
-                    {% if pagination_style == 'outline' %}
-                      border
-                    {% endif %}
-                "
-                style="
-                    color: {{ pagination_text_color }};
-                    font-size: {{ pagination_font_size }}px;
-                    border-radius: {{ pagination_border_radius }}px;
-                    {% if pagination_style == 'outline' %}
-                      border-color: rgba(0,0,0,0.06);
-                    {% endif %}
-                "
-                aria-disabled="true"
-            >
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
+                    {% comment %} <span>{{ 'pagination.next' | t }}</span> {% endcomment %}
+                    <span>Next</span>
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path d="m9 18 6-6-6-6"/>
+                    </svg>
+                </a>
+            {%- else -%}
+                <span
+                    class="
+                        pagination__next pagination__next--disabled
+                        pointer-events-none inline-flex h-8 items-center gap-1
+                        rounded px-2 opacity-40
+                        {% if pagination_style == 'outline' %}
+                        border
+                        {% endif %}
+                    "
+                    style="
+                        color: {{ pagination_text_color }};
+                        font-size: {{ pagination_font_size }}px;
+                        border-radius: {{ pagination_border_radius }}px;
+                        {% if pagination_style == 'outline' %}
+                        border-color: rgba(0,0,0,0.06);
+                        {% endif %}
+                    "
+                    aria-disabled="true"
                 >
-                    <path d="m9 18 6-6-6-6"/>
-                </svg>
-            </span>
-        {%- endif -%}
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path d="m9 18 6-6-6-6"/>
+                    </svg>
+                </span>
+            {%- endif -%}
+        </div>
     </nav>
 {%- endif -%}
 
 {% stylesheet %}
     .pagination {
         list-style: none;
+    }
+
+    .pagination__prev,
+    .pagination__next,
+    .pagination__prev--disabled,
+    .pagination__next--disabled {
+        flex-shrink: 0;
+        white-space: nowrap;
+    }
+
+    .pagination__pages-wrap {
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .pagination__pages-wrap::-webkit-scrollbar {
+        display: none;
     }
 
     .pagination__page--ellipsis {

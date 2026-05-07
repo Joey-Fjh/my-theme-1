@@ -245,79 +245,126 @@ Dialog
 Product-card
 ========================================================= */
 @layer components {
-    .product-card {
-        @apply relative flex flex-col gap-3 p-3;
+    .product-card-shell {
+        @apply flex flex-col gap-3 p-3;
 
-        .product-card__category,
-        .product-card__info {
-            @apply flex cursor-pointer items-center justify-between body-sm pc:body-md;
+        .product-card-shell__meta,
+        .product-card-shell__info {
+            @apply flex items-center justify-between body-sm pc:body-md;
         }
 
-        .product-card__category {
+        .product-card-shell__meta {
             @apply gap-3;
-
-            .product-card__category-brand {
-                text-transform: uppercase;
-                @apply min-w-0 truncate;
-            }
-
-            .product-card__category-meta {
-                @apply flex shrink-0 items-center justify-end;
-            }
         }
 
-        .product-card__pagination {
+        .product-card-shell__brand {
+            text-transform: uppercase;
+            @apply min-w-0 truncate tracking-widest text-theme-text;
+        }
+
+        .product-card-shell__meta-side {
+            @apply flex shrink-0 items-center justify-end text-theme-text;
+        }
+
+        .product-card-shell__pagination {
             @apply flex items-center gap-3 transition-colors duration-300;
             scrollbar-width: none;
             &::-webkit-scrollbar {
                 display: none;
             }
+        }
 
-            .product-card__pagination-dot {
-                @apply relative h-3 w-3 shrink-0 cursor-pointer rounded-full transition-all duration-300;
-                background-color: color-mix(in srgb, currentColor 20%, transparent);
+        .product-card-shell__pagination-dot {
+            @apply relative h-3 w-3 shrink-0 cursor-pointer rounded-full transition-all duration-300;
+            background-color: color-mix(in srgb, currentColor 20%, transparent);
+        }
+
+        .product-card-shell__pagination-dot.is-active {
+            @apply h-4 w-4 bg-transparent;
+            border: 1px solid currentColor;
+        }
+
+        .product-card-shell__pagination-dot.is-active::after {
+            content: '';
+            @apply absolute top-1/2 left-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-current;
+        }
+
+        .product-card-shell__pagination-numeric {
+            @apply flex items-center gap-3;
+        }
+
+        .product-card-shell__pagination-arrow {
+            @apply flex shrink-0 cursor-pointer items-center justify-center transition-opacity hover:opacity-70;
+        }
+
+        .product-card-shell__pagination-text {
+            @apply text-center font-medium;
+        }
+
+        .product-card-shell__media {
+            @apply relative aspect-square flex-1 overflow-hidden;
+        }
+
+        .product-card-shell__media-link {
+            @apply relative block h-full w-full;
+        }
+
+        .product-card-shell__media-frame {
+            @apply h-full w-full overflow-hidden bg-theme-bg;
+        }
+
+        .product-card-shell__image {
+            @apply h-full w-full object-cover transition-transform duration-300;
+        }
+
+        .product-card-shell__info {
+            @apply gap-3;
+        }
+
+        .product-card-shell__title {
+            @apply min-w-0 flex-1 truncate text-theme-text hover:underline;
+        }
+
+        .product-card-shell__price {
+            @apply shrink-0 text-theme-text;
+        }
+    }
+
+    .product-card-shell--interactive:hover .product-card-shell__image {
+        transform: scale(1.05);
+    }
+
+    .product-card {
+        @apply relative;
+
+        .product-card__category,
+        .product-card__info {
+            @apply cursor-pointer;
+        }
+
+        .product-card__category {
+            .product-card__category-brand {
+                @apply text-theme-text;
             }
 
-            .product-card__pagination-dot.is-active {
-                @apply h-4 w-4 bg-transparent;
-                border: 1px solid currentColor;
-            }
-
-            .product-card__pagination-dot.is-active::after {
-                content: '';
-                @apply absolute top-1/2 left-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-current;
-            }
-
-            .product-card__pagination-numeric {
-                @apply flex items-center gap-3;
-            }
-
-            .product-card__pagination-arrow {
-                @apply flex shrink-0 cursor-pointer items-center justify-center transition-opacity hover:opacity-70;
-            }
-
-            .product-card__pagination-text {
-                @apply text-center font-medium;
+            .product-card__category-meta {
+                @apply text-theme-text;
             }
         }
 
         .product-card__info {
-            @apply gap-3;
-
             .product-card__info-title {
-                @apply min-w-0 flex-1 truncate hover:underline;
+                @apply text-theme-text;
             }
 
             .product-card__info-price {
-                @apply shrink-0;
+                @apply text-theme-text;
             }
         }
 
         .product-card__image {
-            @apply relative aspect-square flex-1 overflow-hidden;
-
             .product-card__image-link {
-                @apply relative block h-full w-full;
+                @apply h-full w-full;
             }
 
             .product-card__carousel-slide {
@@ -341,5 +388,299 @@ Product-card
                 @apply btn-secondary;
             }
         }
+    }
+}
+
+/* =========================================================
+Rich text (RTE)
+Standard:
+- `.rte` handles shared rich-text structure and the default long-form media treatment.
+- `rte--compact` reduces vertical rhythm for short supporting copy.
+- `rte--supporting` is for secondary content areas where media should stay
+  smaller and align with the copy instead of centering like a main editorial image.
+
+Used to style backend rich-text HTML output:
+- {{ page.content }}
+- {{ article.content }}
+- {{ product.description }}
+- {{ block.settings.<richtext> }} / {{ section.settings.<richtext> }}
+========================================================= */
+@layer components {
+    .rte {
+        @apply leading-relaxed;
+
+        word-break: break-word;
+    }
+
+    .rte::after {
+        content: '';
+        display: block;
+        clear: both;
+    }
+
+    .rte > * + * {
+        margin-top: 1.2em;
+    }
+
+    .rte :is(h1, h2, h3, h4, h5, h6) {
+        @apply font-semibold text-theme-text;
+
+        margin-top: 1.6em;
+        margin-bottom: 0.6em;
+    }
+
+    .rte :is(h1, h2, h3, h4, h5, h6):first-child {
+        margin-top: 0;
+    }
+
+    .rte h1 {
+        @apply h0;
+    }
+
+    .rte h2 {
+        @apply h1;
+    }
+
+    .rte h3 {
+        @apply h2;
+    }
+
+    .rte h4 {
+        @apply h3;
+    }
+
+    .rte h5 {
+        @apply h4;
+    }
+
+    .rte h6 {
+        @apply h5;
+    }
+
+    .rte :is(h1, h2, h3, h4, h5, h6) {
+        font-weight: 700;
+    }
+
+    .rte p {
+        margin: 0;
+    }
+
+    .rte :is(strong, b) {
+        font-weight: 700;
+    }
+
+    .rte :is(em, i) {
+        font-style: italic;
+    }
+
+    .rte ul,
+    .rte ol {
+        list-style-position: outside;
+        margin: 0.75em 0;
+    }
+
+    .rte ul {
+        list-style: circle;
+        padding-left: 1.45em;
+    }
+
+    .rte ul ul {
+        list-style: disc;
+    }
+
+    .rte ul ul ul {
+        list-style: square;
+    }
+
+    .rte ol {
+        list-style: decimal;
+        padding-left: 1.6em;
+    }
+
+    .rte ol ol {
+        list-style: lower-alpha;
+    }
+
+    .rte ol ol ol {
+        list-style: lower-roman;
+    }
+
+    .rte li + li {
+        margin-top: 0.4em;
+    }
+
+    .rte li {
+        display: list-item;
+    }
+
+    .rte li::marker {
+        color: currentColor;
+        font-weight: 500;
+    }
+
+    .rte li > :is(h1, h2, h3, h4, h5, h6):first-child {
+        margin-top: 0;
+        margin-bottom: 0.45em;
+        line-height: 1.25;
+    }
+
+    .rte li > p {
+        margin: 0;
+    }
+
+    .rte li > :is(ul, ol) {
+        margin-top: 0.4em;
+    }
+
+    .rte ul > li > ul {
+        padding-left: 1.2em;
+    }
+
+    .rte ol > li > ul {
+        padding-left: 1.35em;
+    }
+
+    .rte ul > li > ol {
+        padding-left: 1.35em;
+    }
+
+    .rte ol > li > ol {
+        padding-left: 1.25em;
+    }
+
+    .rte a {
+        @apply text-theme-link underline underline-offset-4 transition-opacity hover:opacity-80;
+    }
+
+    .rte blockquote {
+        @apply border-l border-theme-border-strong pl-5 text-theme-text/80 italic;
+    }
+
+    .rte :is(p, div):has(> img:only-child) {
+        margin: 1.25em 0;
+    }
+
+    .rte a:has(> img) {
+        display: inline-block;
+        max-width: 100%;
+        text-decoration: none;
+    }
+
+    .rte img {
+        display: block;
+        width: auto;
+        max-width: min(100%, 48rem);
+        height: auto;
+        margin-inline: auto;
+        border-radius: 0.25rem;
+    }
+
+    .rte figure {
+        margin: 1.5em auto;
+        display: flex;
+        max-width: min(100%, 48rem);
+        flex-direction: column;
+        gap: 0.75em;
+    }
+
+    .rte figure > img {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .rte figcaption {
+        @apply body-sm text-theme-text/60;
+
+        text-align: center;
+    }
+
+    .rte hr {
+        @apply border-theme-border-soft;
+
+        margin: 2em 0;
+    }
+
+    .rte :is(code, pre) {
+        @apply bg-theme-text/5 text-theme-text;
+
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.9em;
+    }
+
+    .rte code {
+        padding: 0.15em 0.35em;
+        border-radius: 0.25rem;
+    }
+
+    .rte pre {
+        padding: 1em;
+        border-radius: 0.5rem;
+        overflow-x: auto;
+    }
+
+    .rte pre code {
+        padding: 0;
+        background: transparent;
+    }
+
+    .rte table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+    }
+
+    .rte :is(th, td) {
+        @apply border border-theme-border-soft;
+
+        padding: 0.75em 1em;
+        text-align: left;
+    }
+
+    .rte th {
+        @apply bg-theme-text/5;
+    }
+
+    .rte > *:first-child {
+        margin-top: 0;
+    }
+
+    .rte > *:last-child {
+        margin-bottom: 0;
+    }
+
+    .rte.rte--supporting {
+        max-width: 42rem;
+    }
+
+    .rte.rte--supporting :is(p, div):has(> img:only-child),
+    .rte.rte--supporting figure {
+        margin-inline: 0;
+    }
+
+    .rte.rte--supporting img,
+    .rte.rte--supporting figure {
+        max-width: min(100%, 36rem);
+    }
+
+    .rte.rte--supporting img {
+        margin-inline: 0;
+    }
+
+    .rte.rte--supporting figcaption {
+        text-align: left;
+    }
+}
+
+/* Compact variant: keep paragraph spacing but reduce vertical rhythm.
+   Use as `class="rte rte--compact"` on short marketing descriptions
+   inside hero/banner blocks. */
+@layer components {
+    .rte.rte--compact > * + * {
+        margin-top: 0.6em;
+    }
+
+    .rte.rte--compact :is(h1, h2, h3, h4, h5, h6) {
+        margin-top: 0.8em;
+        margin-bottom: 0.3em;
     }
 }

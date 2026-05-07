@@ -1,0 +1,202 @@
+{% doc %}
+    Predictive search dropdown panel.
+
+    Purpose:
+    - Keep `sections/search.liquid` concise by moving dropdown panel markup here.
+    - Render recommendation list + tabbed predictive results without changing Alpine behavior.
+
+    Required parent scope (from `x-data="predictiveSearch"`):
+    - State: `isOpen`, `isLoading`, `query`, `hasEmptyState`, `suggestions`, `products`, `articles`, `pages`
+    - Methods: `onSuggestionClick`, `highlightSuggestion`, `performSearch`
+    - Tab-control bindings exposed in parent scope: `registerTab`, `registerPanel`, `setActive`, `isActive`, `activeTab`
+{% enddoc %}
+
+<div
+    x-cloak
+    x-show="isOpen"
+    class="absolute left-0 z-30 w-full overflow-hidden border border-theme-border-soft bg-theme-bg shadow-surface"
+>
+    <div class="flex max-h-[min(80dvh,44rem)] min-h-100 flex-col pc:flex-row">
+        <aside class="w-full shrink-0 border-b border-theme-border-soft px-6 py-6 pc:w-62.5 pc:border-r pc:border-b-0">
+            <p class="h6 tracking-[0.16em] text-theme-text/60 uppercase">Recommendation</p>
+
+            <template x-if="isLoading">
+                <div class="space-y-4">
+                    <div class="h-4 w-full animate-pulse bg-theme-border-soft"></div>
+                    <div class="h-4 w-2/3 animate-pulse bg-theme-border-soft"></div>
+                </div>
+            </template>
+
+            <template x-if="!isLoading && suggestions.length">
+                <ul class="space-y-4">
+                    <template x-for="(item, index) in suggestions" :key="item.text">
+                        <li class="border-b border-theme-border-soft pb-2">
+                            <button
+                                type="button"
+                                class="w-full text-left h5 text-theme-text transition-opacity hover:opacity-70"
+                                @click="onSuggestionClick(item)"
+                                x-html="highlightSuggestion(item.text)"
+                            ></button>
+                        </li>
+                    </template>
+                </ul>
+            </template>
+
+            <template x-if="!isLoading && !suggestions.length && query && !hasEmptyState">
+                <p class="text-theme-text/60 italic">No suggestions</p>
+            </template>
+        </aside>
+
+        <div class="relative flex min-w-0 flex-1 flex-col overflow-y-auto px-6 py-6">
+            <div
+                x-show="isLoading"
+                class="absolute inset-0 z-10 flex items-center justify-center bg-theme-bg/90"
+            >
+                {% render 'loading' %}
+            </div>
+
+            <div
+                x-show="!isLoading && hasEmptyState && query"
+                class="mt-10 flex h-full flex-col items-center justify-center text-center"
+            >
+                <p class="font-medium text-theme-text">
+                    Not found for "<span x-text="query"></span>"
+                </p>
+            </div>
+
+            <div
+                x-show="!isLoading && !hasEmptyState"
+                class="flex w-full flex-1 flex-col"
+            >
+                {% capture tab_header %}
+                    <div class="flex w-full gap-8 tracking-[0.16em] uppercase">
+                        <button
+                            type="button"
+                            role="tab"
+                            x-data="{ index: null }"
+                            x-init="index = registerTab($el)"
+                            @click="setActive(index); activeTab = 'products'"
+                            class="-mb-px inline-flex items-baseline gap-1 border-b pb-2 leading-tight"
+                            :class="isActive(index)
+                                ? 'text-theme-text font-medium border-theme-text'
+                                : 'text-theme-text/60 hover:text-theme-text border-transparent'
+                            "
+                        >
+                            Products
+                            <sup x-show="products.length" x-text="`(${products.length})`" class="align-super text-[0.75em] leading-none"></sup>
+                        </button>
+                        
+                        <button
+                            type="button"
+                            role="tab"
+                            x-data="{ index: null }"
+                            x-init="index = registerTab($el)"
+                            @click="setActive(index); activeTab = 'articles'"
+                            class="-mb-px inline-flex items-baseline gap-1 border-b pb-2 leading-tight"
+                            :class="isActive(index)
+                                ? 'text-theme-text font-medium border-theme-text'
+                                : 'text-theme-text/60 hover:text-theme-text border-transparent'
+                            "
+                        >
+                            Articles
+                            <sup x-show="articles.length" x-text="`(${articles.length})`" class="align-super text-[0.75em] leading-none"></sup>
+                        </button>
+
+                        <button
+                            type="button"
+                            role="tab"
+                            x-data="{ index: null }"
+                            x-init="index = registerTab($el)"
+                            @click="setActive(index); activeTab = 'pages'"
+                            class="-mb-px inline-flex items-baseline gap-1 border-b pb-2 leading-tight"
+                            :class="isActive(index)
+                                ? 'text-theme-text font-medium border-theme-text'
+                                : 'text-theme-text/60 hover:text-theme-text border-transparent'
+                            "
+                        >
+                            Pages
+                            <sup x-show="pages.length" x-text="`(${pages.length})`" class="align-super text-[0.75em] leading-none"></sup>
+                        </button>
+                    </div>
+                {% endcapture %}
+
+                {% capture tab_content %}
+                    <div
+                        role="tabpanel"
+                        x-data="{ index: null }"
+                        x-init="index = registerPanel($el)"
+                        x-show="activeTab === 'products'"
+                    >
+                        <div class="grid grid-cols-2 gap-6 pc:grid-cols-2">
+                            <template x-for="product in products" :key="product.id">
+                                {%- render 'predictive-search-product-card',
+                                    class: 'bg-theme-border-soft/35 transition-shadow hover:shadow-surface',
+                                    frame_class: 'bg-theme-bg'
+                                -%}
+                            </template>
+                        </div>
+                    </div>
+
+                    <div
+                        role="tabpanel"
+                        x-data="{ index: null }"
+                        x-init="index = registerPanel($el)"
+                        x-show="activeTab === 'articles'"
+                    >
+                        <ul class="space-y-4">
+                            <template x-for="article in articles" :key="article.id">
+                                <li>
+                                    <a
+                                        class="text-theme-text hover:underline"
+                                        :href="article.url"
+                                        x-text="article.title"
+                                    ></a>
+                                </li>
+                            </template>
+                        </ul>
+
+                        <p x-show="!articles.length" class="text-theme-text/60">No articles found.</p>
+                    </div>
+
+                    <div
+                        role="tabpanel"
+                        x-data="{ index: null }"
+                        x-init="index = registerPanel($el)"
+                        x-show="activeTab === 'pages'"
+                    >
+                        <ul class="space-y-4">
+                            <template x-for="page in pages" :key="page.id">
+                                <li>
+                                    <a
+                                        class="text-theme-text hover:underline"
+                                        :href="page.url"
+                                        x-text="page.title"
+                                    ></a>
+                                </li>
+                            </template>
+                        </ul>
+
+                        <p x-show="!pages.length" class="text-theme-text/60">No pages found.</p>
+                    </div>
+                {% endcapture %}
+
+                {%- render 'tab-control',
+                    initialTabStrategy: 'first',
+                    tab_header: tab_header,
+                    tab_content: tab_content,
+                    custom_class: 'w-full flex-1'
+                -%}
+            </div>
+
+            <button
+                type="button"
+                class="mt-auto flex w-full items-center justify-between border-t border-theme-border-soft pt-4 text-theme-text hover:opacity-70"
+                @click="performSearch()"
+                x-show="query && !hasEmptyState"
+            >
+                <span> Search for "<span class="font-medium" x-text="query"></span>" </span>
+                <span>→</span>
+            </button>
+        </div>
+    </div>
+</div>

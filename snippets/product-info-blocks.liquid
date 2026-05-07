@@ -29,16 +29,16 @@
                 <div {{ block.shopify_attributes }}>
                     {%- if product != blank -%}
                         {%- if context == 'main' -%}
-                            <h1 class="product-info-blocks__title h1">
+                            <h1 class="product-info-blocks__title">
                                 {{ product.title }}
                             </h1>
                         {%- else -%}
-                            <h2 class="product-info-blocks__title h2">
+                            <h2 class="product-info-blocks__title">
                                 {{ product.title }}
                             </h2>
                         {%- endif -%}
                     {%- else -%}
-                        <h2 class="product-info-blocks__title h2">Example Product Title</h2>
+                        <h2 class="product-info-blocks__title">Example Product Title</h2>
                     {%- endif -%}
                 </div>
 
@@ -48,14 +48,11 @@
                         {%- assign current_variant = product.selected_or_first_available_variant -%}
                         <div
                             class="product-info-blocks__price"
-                            x-data="
-                                ProductPrice({
-                                  sectionId: '{{ section.id }}',
-                                  price: {{ current_variant.price | default: 0 }},
-                                  comparePrice: {{ current_variant.compare_at_price | default: 0 }},
-                                  currency: '{{ shop.currency }}'
-                                })
-                            "
+                            data-section-id="{{ section.id }}"
+                            data-price="{{ current_variant.price | default: 0 }}"
+                            data-compare-price="{{ current_variant.compare_at_price | default: 0 }}"
+                            data-currency="{{ shop.currency }}"
+                            x-data="ProductPrice()"
                         >
                             <span
                                 class="product-info-blocks__price-main h4"
@@ -79,17 +76,23 @@
                 </div>
 
             {%- when 'description' -%}
-                <div {{ block.shopify_attributes }}>
+                <div class="product-info-blocks__description-block" {{ block.shopify_attributes }}>
                     {%- if product != blank and product.description != blank -%}
-                        <div class="product-info-blocks__description h6">
+                        <div
+                            class="product-info-blocks__description body-md{% if context != 'featured' %} rte{% endif %}"
+                            x-data="dragScroll({ axis: 'y' })"
+                        >
                             {%- if context == 'featured' -%}
-                                {{ product.description | strip_html | truncate: 150 }}
+                                {{ product.description | strip_html }}
                             {%- else -%}
                                 {{ product.description }}
                             {%- endif -%}
                         </div>
                     {%- else -%}
-                        <div class="product-info-blocks__description h6">
+                        <div
+                            class="product-info-blocks__description body-md"
+                            x-data="dragScroll({ axis: 'y' })"
+                        >
                             Discover our innovative skincare serum pack, infused with advanced AI
                             insights to tailor your beauty routine. Each serum is designed to meet
                             your unique skin needs, ensuring a personalized experience that enhances
@@ -108,11 +111,25 @@
 
             {%- when 'quantity_selector' -%}
                 <div {{ block.shopify_attributes }}>
+                    {%- liquid
+                        assign quantity_wrapper_class = 'flex items-center border border-theme-border-soft rounded-sm w-max'
+                        assign quantity_button_class = 'flex h-10 w-10 cursor-pointer items-center justify-center text-current transition-opacity hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-30'
+                        assign quantity_input_class = 'w-[4ch] appearance-none border-b border-current bg-transparent p-0 text-center h6 font-medium text-current [-moz-appearance:textfield] focus:ring-0 focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'
+
+                        if context == 'product'
+                            assign quantity_wrapper_class = 'inline-flex items-center gap-3 w-max text-theme-text'
+                            assign quantity_button_class = 'flex h-8 w-8 cursor-pointer items-center justify-center text-current transition-opacity hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-30'
+                            assign quantity_input_class = 'w-[3ch] appearance-none border-b border-current bg-transparent p-0 text-center body-md text-current [-moz-appearance:textfield] focus:ring-0 focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'
+                        endif
+                    -%}
                     {%- render 'quantity-selector',
                         value: 1,
                         min: 1,
                         product_form_id: product_form_id,
-                        section_id: section.id
+                        section_id: section.id,
+                        wrapper_class: quantity_wrapper_class,
+                        button_class: quantity_button_class,
+                        input_class: quantity_input_class
                     -%}
                 </div>
 
@@ -129,7 +146,7 @@
 
             {%- when 'inventory_status' -%}
                 <div
-                    class="inventory-status-placeholder product-info-blocks__inventory h6"
+                    class="inventory-status-placeholder product-info-blocks__inventory"
                     {{ block.shopify_attributes }}
                 >
                     Inventory Status: In Stock

@@ -4,8 +4,12 @@
     @param {string} [initialTabStrategy] - Optional. Defines which tab is active on initial render. Default is 'first'. Possible values: 'first', 'middle'.
     @param {string} [type] - Optional. The type of the tab panel.
     @param {string} [custom_class] - Optional. Extra Tailwind classes for the outermost wrapper.
+    @param {string} [scroll_mode] - Optional. Scroll behavior mode. Possible values: 'mobile', 'always'. Default is 'mobile'.
     @param {string} [header_class] - Optional. Extra Tailwind classes for the tablist (header) wrapper.
     @param {string} [content_class] - Optional. Extra Tailwind classes for the tabpanel (content) wrapper.
+    @param {string} [header_outer_class] - Optional. Extra Tailwind classes for the header row wrapper.
+    @param {string} [header_before] - Optional. Markup rendered before the tablist.
+    @param {string} [header_after] - Optional. Markup rendered after the tablist.
     @param {string} tab_header - The header HTML for the tab panel. Should include tab triggers.
     @param {string} tab_content - The content HTML for the tab panel. Should include one or more tab panels.
 
@@ -18,6 +22,7 @@
 {%- liquid
     assign initial_tab_strategy = initialTabStrategy | default: 'first'
     assign type = type | default: 'default'
+    assign scroll_mode = scroll_mode | default: 'mobile'
 
     assign base_control_class = 'tab-control-' | append: type
     assign base_header_class = 'tab-header-' | append: type
@@ -26,14 +31,32 @@
 
 <div
     class="{{ base_control_class }} {{ custom_class }}"
-    x-data="tabControl('{{ initial_tab_strategy }}')"
+    x-data="tabControl('{{ initial_tab_strategy }}', { scrollMode: '{{ scroll_mode }}' })"
 >
     <div
-        role="tablist"
-        aria-label="Tab Control"
-        class="{{ base_header_class }} {{ header_class }}"
+        class="{{ header_outer_class }}"
     >
-        {{ tab_header }}
+        {% if header_before != blank %}
+            <div class="shrink-0">
+                {{ header_before }}
+            </div>
+        {% endif %}
+
+        <div class="min-w-0">
+            <div
+                role="tablist"
+                aria-label="Tab Control"
+                class="{{ base_header_class }} {{ header_class }}"
+            >
+                {{ tab_header }}
+            </div>
+        </div>
+
+        {% if header_after != blank %}
+            <div class="shrink-0">
+                {{ header_after }}
+            </div>
+        {% endif %}
     </div>
     <div
         class="{{ base_content_class }} {{ content_class }}"

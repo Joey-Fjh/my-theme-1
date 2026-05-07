@@ -1,8 +1,16 @@
 {% assign layout = section.settings.gallery_layout | default: 'thumbnails' %}
+{% assign thumb_position = section.settings.thumbnail_position | default: 'left' %}
+{% assign media_is_sticky = false %}
+{% assign info_is_sticky = false %}
+{% if layout == 'thumbnails' or layout == 'carousel' %}
+    {% assign media_is_sticky = true %}
+{% elsif layout == 'stacked' or layout == 'grid' %}
+    {% assign info_is_sticky = true %}
+{% endif %}
 
 <div
     data-section-id="{{ section.id }}"
-    class="product-section full-width"
+    class="product-section full-width color-{{ section.settings.color_scheme }} bg-theme-bg text-theme-text"
     style="
         --section-padding-top: {{ section.settings.padding_top | default: 0 }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom | default: 0 }}px;
@@ -11,24 +19,32 @@
     data-component-type="product"
     data-component-id="{{ section.id }}"
 >
-    <div
-        class="layout container-page bg-[#F3F3F3]"
-        style="{% if layout == 'stacked' %}overflow: clip;{% endif %}"
-    >
-        <div class="grid w-full min-w-0 grid-cols-1 gap-8 pc:grid-cols-2 pc:gap-12">
-            <div class="min-w-0">
+    <div class="layout container-page">
+        <div
+            class="grid w-full min-w-0 grid-cols-1 items-start gap-8 pc:grid-cols-2 pc:gap-10 fw:gap-12"
+        >
+            <div
+                class="min-w-0 overflow-hidden"
+                style="{% if media_is_sticky %}position: sticky;top: calc(var(--header-height) + var(--announcement-bar-height));{% endif %}"
+                data-product-media-panel
+            >
                 {%- render 'product-gallery',
                     images: product.images,
                     layout: layout,
-                    thumb_position: 'left',
+                    thumb_position: thumb_position,
+                    thumbnail_visible_count: section.settings.thumbnail_visible_count,
+                    zoom: 'true',
+                    magnifier: 'true',
+                    zoom_overlay_color: section.settings.zoom_overlay_color,
+                    zoom_overlay_opacity: section.settings.zoom_overlay_opacity,
                     aspect_ratio: '576/622'
                 -%}
             </div>
 
-            <div class="min-w-0">
+            <div class="min-w-0" data-product-info-panel>
                 <div
                     class="self-start"
-                    style="{% if layout == 'stacked' %}position: sticky;top: calc(var(--header-height) + var(--announcement-bar-height));{% endif %}"
+                    style="{% if info_is_sticky %}position: sticky;top: calc(var(--header-height) + var(--announcement-bar-height));{% endif %}"
                 >
                     {%- render 'product-info-blocks',
                         product: product,
@@ -42,6 +58,122 @@
     </div>
 </div>
 
+{%- javascript -%}
+    (function () {
+        const Components = window.__Theme__?.Components;
+        if (!Components) return;
+
+        function constrainDescription(el) {
+            const mediaPanel = el.querySelector('[data-product-media-panel]');
+            const infoBlocks = el.querySelector('[data-product-info-panel] .product-info-blocks');
+            const descriptionBlock = infoBlocks?.querySelector(
+                '.product-info-blocks__description-block',
+            );
+            const description = descriptionBlock?.querySelector(
+                '.product-info-blocks__description',
+            );
+            if (!mediaPanel || !infoBlocks || !descriptionBlock || !description) return {};
+
+            const desktopQuery = window.matchMedia('(min-width: 48rem)');
+            let frame = 0;
+
+            const reset = () => {
+                descriptionBlock.style.removeProperty('max-height');
+                description.style.removeProperty('max-height');
+            };
+
+            const sync = () => {
+                if (frame) cancelAnimationFrame(frame);
+                frame = requestAnimationFrame(() => {
+                    frame = 0;
+
+                    if (!desktopQuery.matches) {
+                        reset();
+                        return;
+                    }
+
+                    const mediaHeight = mediaPanel.getBoundingClientRect().height;
+                    if (mediaHeight <= 0) {
+                        reset();
+                        return;
+                    }
+
+                    const rootStyles = window.getComputedStyle(document.documentElement);
+                    const headerHeight =
+                        parseFloat(rootStyles.getPropertyValue('--header-height')) || 0;
+                    const announcementHeight =
+                        parseFloat(rootStyles.getPropertyValue('--announcement-bar-height')) || 0;
+                    const viewportHeight = window.visualViewport?.height || window.innerHeight;
+                    const maxReferenceHeight = Math.max(
+                        360,
+                        viewportHeight - headerHeight - announcementHeight,
+                    );
+                    const referenceHeight = Math.min(mediaHeight, maxReferenceHeight);
+
+                    const styles = window.getComputedStyle(infoBlocks);
+                    const gap = parseFloat(styles.rowGap || styles.gap) || 0;
+                    const paddingY =
+                        (parseFloat(styles.paddingTop) || 0) +
+                        (parseFloat(styles.paddingBottom) || 0);
+                    const children = Array.from(infoBlocks.children).filter(
+                        (child) => child instanceof HTMLElement,
+                    );
+                    const otherBlocksHeight = children.reduce((total, child) => {
+                        if (child === descriptionBlock) return total;
+                        return total + child.getBoundingClientRect().height;
+                    }, 0);
+                    const gapsHeight = gap * Math.max(children.length - 1, 0);
+                    const available = Math.max(
+                        0,
+                        referenceHeight - paddingY - gapsHeight - otherBlocksHeight,
+                    );
+
+                    // Keep the description scroll area aligned with the available space beside media.
+                    descriptionBlock.style.maxHeight = `${Math.floor(available)}px`;
+                    description.style.maxHeight = `${Math.floor(available)}px`;
+                });
+            };
+
+            const resizeObserver = new ResizeObserver(sync);
+            resizeObserver.observe(mediaPanel);
+            Array.from(infoBlocks.children).forEach((child) => resizeObserver.observe(child));
+
+            window.addEventListener('resize', sync);
+            desktopQuery.addEventListener('change', sync);
+            sync();
+
+            return {
+                description,
+                descriptionBlock,
+                desktopQuery,
+                frame,
+                infoBlocks,
+                reset,
+                resizeObserver,
+                sync,
+            };
+        }
+
+        Components.register(
+            'product',
+            {
+                init(el) {
+                    return constrainDescription(el);
+                },
+
+                destroy(el, state) {
+                    if (state?.frame) cancelAnimationFrame(state.frame);
+                    state?.resizeObserver?.disconnect?.();
+                    window.removeEventListener('resize', state?.sync);
+                    state?.desktopQuery?.removeEventListener?.('change', state?.sync);
+                    state?.reset?.();
+                },
+            },
+            { lazy: true },
+        );
+    })();
+{%- endjavascript -%}
+
 {% schema %}
 {
     "name": "t:general.product",
@@ -51,6 +183,12 @@
         "groups": ["header", "footer"]
     },
     "settings": [
+        {
+            "type": "color_scheme",
+            "id": "color_scheme",
+            "label": "Color scheme",
+            "default": "scheme-1"
+        },
         {
             "type": "select",
             "id": "gallery_layout",
@@ -62,6 +200,46 @@
                 { "value": "grid", "label": "Grid" }
             ],
             "default": "thumbnails"
+        },
+        {
+            "type": "select",
+            "id": "thumbnail_position",
+            "label": "Thumbnail position",
+            "options": [
+                { "value": "left", "label": "Left" },
+                { "value": "bottom", "label": "Bottom" }
+            ],
+            "default": "left",
+            "info": "Applies when Image layout is set to Thumbnails."
+        },
+        {
+            "type": "select",
+            "id": "thumbnail_visible_count",
+            "label": "Visible thumbnails",
+            "options": [
+                { "value": "3", "label": "3" },
+                { "value": "4", "label": "4" },
+                { "value": "5", "label": "5" },
+                { "value": "6", "label": "6" }
+            ],
+            "default": "4",
+            "info": "Applies when Image layout is set to Thumbnails and thumbnail position is left."
+        },
+        {
+            "type": "color",
+            "id": "zoom_overlay_color",
+            "label": "Zoom overlay color",
+            "default": "#000000"
+        },
+        {
+            "type": "range",
+            "id": "zoom_overlay_opacity",
+            "min": 0,
+            "max": 100,
+            "step": 5,
+            "unit": "%",
+            "label": "Zoom overlay opacity",
+            "default": 90
         },
         {
             "type": "header",

@@ -10,39 +10,24 @@
     @param {string} [overlay_class] - Tailwind classes for overlay background (default: 'bg-dialog-overlay').
     @param {boolean} [show_overlay] - Whether to render the overlay (default: true).
     @param {string} [root_class] - Extra classes for root wrapper.
-    @param {string} [modal_wrapper_class] - Extra classes for modal outer wrapper.
-    @param {string} [modal_panel_width_class] - Width classes for modal panel (default: 'ui-dialog-modal-width-default').
-    @param {string} [modal_panel_height_class] - Height classes for modal panel (default: 'ui-dialog-modal-height-default').
-    @param {string} [modal_panel_base_class] - Base semantic classes for modal panel (default: 'ui-dialog-modal-panel').
-    @param {string} [modal_panel_class] - Extra classes for modal panel.
-    @param {string} [drawer_wrapper_class] - Extra classes for drawer outer wrapper.
-    @param {string} [drawer_width_class] - Width classes for drawer wrapper (default: 'ui-dialog-drawer-width-default').
+    @param {string} [modal_wrapper_class] - Classes for modal outer wrapper.
+    @param {string} [modal_panel_class] - Classes for modal panel.
+    @param {string} [drawer_wrapper_class] - Classes for drawer wrapper, including width/position overrides.
     @param {string} [drawer_panel_base_class] - Base semantic classes for drawer panel (default: 'ui-dialog-drawer-panel').
     @param {string} [drawer_panel_class] - Extra classes for drawer panel.
     @param {string} [content]  - HTML content (use capture in parent and pass as content).
 {% endcomment %}
 
-{%- assign dialog_id = id -%}
 {%- assign dialog_type = type | default: 'modal' -%}
 {%- assign dialog_position = position | default: 'right' -%}
-{%- assign dialog_modal_placement = modal_placement | default: 'center' -%}
 {%- assign dialog_top_class = top_class | default: 'top-0' -%}
-{%- assign dialog_color_scheme = color_scheme | default: '' -%}
 {%- assign overlay_bg = overlay_class | default: 'bg-dialog-overlay' -%}
 {%- assign dialog_show_overlay = show_overlay | default: true -%}
 
 {%- assign root_classes = root_class | default: '' -%}
 {%- assign modal_wrapper_classes = modal_wrapper_class | default: '' -%}
-{%- assign modal_panel_width_classes = modal_panel_width_class
-    | default: 'ui-dialog-modal-width-default'
--%}
-{%- assign modal_panel_height_classes = modal_panel_height_class
-    | default: 'ui-dialog-modal-height-default'
--%}
-{%- assign modal_panel_base_classes = modal_panel_base_class | default: 'ui-dialog-modal-panel' -%}
 {%- assign modal_panel_classes = modal_panel_class | default: '' -%}
 {%- assign drawer_wrapper_classes = drawer_wrapper_class | default: '' -%}
-{%- assign drawer_width_classes = drawer_width_class | default: 'ui-dialog-drawer-width-default' -%}
 {%- assign drawer_panel_base_classes = drawer_panel_base_class
     | default: 'ui-dialog-drawer-panel'
 -%}
@@ -51,28 +36,40 @@
 {%- assign dialog_close_label = close_label | default: 'Close dialog' -%}
 
 {%- liquid
-    assign color_scope_class = ''
-    if dialog_color_scheme != blank
-        assign color_scope_class = 'color-' | append: dialog_color_scheme
+    assign modal_panel_classes = 'ui-dialog-modal-panel ui-dialog-modal-width-default ui-dialog-modal-height-default ' | append: modal_panel_classes | strip
+    assign drawer_wrapper_classes = 'ui-dialog-drawer-width-default ' | append: drawer_wrapper_classes | strip
+    assign color_scope_class = color_scheme | default: ''
+    if color_scope_class != blank
+        assign color_scope_class = 'color-' | append: color_scope_class
+    else
+        assign color_scope_class = ''
     endif
--%}
 
-{%- liquid
     assign modal_placement_classes = 'items-center justify-center'
-
-    case dialog_modal_placement
+    case modal_placement | default: 'center'
         when 'bottom-left'
             assign modal_placement_classes = 'items-end justify-start'
         when 'bottom-right'
             assign modal_placement_classes = 'items-end justify-end'
-        when 'center'
-            assign modal_placement_classes = 'items-center justify-center'
     endcase
 -%}
 
+{%- capture dialog_close_button_markup -%}
+    {%- if dialog_show_close_button -%}
+        <button
+            type="button"
+            class="absolute top-3 right-3 z-10 inline-flex h-8 w-8 cursor-pointer items-center justify-center text-theme-text/75 transition hover:text-theme-text"
+            @click="$store.dialog.close()"
+            aria-label="{{ dialog_close_label | escape }}"
+        >
+            {% render 'icons', icon: 'icon-close', size: 'lg', color: 'current' %}
+        </button>
+    {%- endif -%}
+{%- endcapture -%}
+
 <div
     x-data="{}"
-    x-show="$store.dialog.active === '{{ dialog_id | escape }}'"
+    x-show="$store.dialog.active === '{{ id | escape }}'"
     x-cloak
     class="fixed inset-0 z-100 {{ root_classes }}"
     @keydown.escape.window="$store.dialog.close()"
@@ -95,7 +92,6 @@
             class="
                 fixed bottom-0 z-101 w-full
                 {{ dialog_top_class }}
-                {{ drawer_width_classes }}
                 {% if dialog_position == 'left' %}
                     left-0
                 {% else %}
@@ -106,7 +102,7 @@
             "
             role="dialog"
             aria-modal="true"
-            aria-labelledby="dialog-title-{{ dialog_id | escape }}"
+            aria-labelledby="dialog-title-{{ id | escape }}"
             @click.stop
         >
             <div
@@ -118,16 +114,7 @@
                 x-transition:leave-start="translate-x-0"
                 x-transition:leave-end="{% if dialog_position == 'left' %}-translate-x-full{% else %}translate-x-full{% endif %}"
             >
-                {%- if dialog_show_close_button -%}
-                    <button
-                        type="button"
-                        class="absolute top-3 right-3 z-10 inline-flex h-8 w-8 cursor-pointer items-center justify-center text-theme-text/75 transition hover:text-theme-text"
-                        @click="$store.dialog.close()"
-                        aria-label="{{ dialog_close_label | escape }}"
-                    >
-                        {% render 'icons', icon: 'icon-close', size: 'lg', color: 'current' %}
-                    </button>
-                {%- endif -%}
+                {{ dialog_close_button_markup }}
                 {{ content }}
             </div>
         </div>
@@ -142,15 +129,10 @@
             "
             role="dialog"
             aria-modal="true"
-            aria-labelledby="dialog-title-{{ dialog_id | escape }}"
+            aria-labelledby="dialog-title-{{ id | escape }}"
         >
             <div
-                class="
-                    {{ modal_panel_width_classes }}
-                    {{ modal_panel_height_classes }}
-                    {{ modal_panel_base_classes }}
-                    {{ modal_panel_classes }}
-                "
+                class="{{ modal_panel_classes }}"
                 @click.stop
                 x-transition:enter="transition ease-out duration-200"
                 x-transition:enter-start="opacity-0 scale-95"
@@ -159,16 +141,7 @@
                 x-transition:leave-start="opacity-100 scale-100"
                 x-transition:leave-end="opacity-0 scale-95"
             >
-                {%- if dialog_show_close_button -%}
-                    <button
-                        type="button"
-                        class="absolute top-3 right-3 z-10 inline-flex h-8 w-8 cursor-pointer items-center justify-center text-theme-text/75 transition hover:text-theme-text"
-                        @click="$store.dialog.close()"
-                        aria-label="{{ dialog_close_label | escape }}"
-                    >
-                        {% render 'icons', icon: 'icon-close', size: 'lg', color: 'current' %}
-                    </button>
-                {%- endif -%}
+                {{ dialog_close_button_markup }}
                 {{ content }}
             </div>
         </div>

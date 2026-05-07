@@ -1,0 +1,28 @@
+{% doc %}
+    Horizontal inline filters for collection/search pages.
+
+    @param {object} filter_source - Optional. Pass collection/search object.
+    @param {string} [wrapper_class] - Optional wrapper class override.
+{% enddoc %}
+
+{%- assign filter_host = filter_source | default: collection | default: search -%}
+{%- assign wrapper_class = wrapper_class | default: '' -%}
+
+<div
+    x-data="{ activeFilter: null }"
+    class="{{ wrapper_class }} flex flex-wrap items-center gap-6"
+>
+    <span class="flex shrink-0 items-center gap-2 h2">
+        {% render 'icons', icon: 'icon-filter', class: 'h-10 w-10', color: 'currentColor' %}
+        <span>Filter:</span>
+    </span>
+
+    {%- for filter in filter_host.filters -%}
+        {%- render 'filters-field',
+            filter: filter,
+            mode: 'horizontal',
+            filter_index: forloop.index0,
+            is_first: forloop.first
+        -%}
+    {%- endfor -%}
+</div>

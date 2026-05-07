@@ -494,6 +494,10 @@
                         Factory.register?.(Comps.COUNTDOWNTIMER, Comps.countdownTimer);
                         Factory.register?.(Comps.SECTIONPAGINATION, Comps.sectionPagination);
                         Factory.register?.(Comps.COLLECTIONFILTERS, Comps.collectionFilters);
+                        Factory.register?.(
+                            Comps.COLLECTIONFILTERFIELD,
+                            Comps.collectionFilterField,
+                        );
                         Factory.register?.(Comps.PRODUCTGALLERY, Comps.productGallery);
                         Factory.register?.(Comps.PRODUCTPRICE, Comps.ProductPrice);
                         Factory.register?.(Comps.VARIANTPICKER, Comps.VariantPicker);
@@ -503,7 +507,10 @@
                         Factory.register?.(Comps.RELATEDPRODUCTS, Comps.relatedProducts);
                         Factory.register?.(Comps.NEWSLETTEROVERLAY, Comps.newsletterOverlay);
                         Factory.register?.(Comps.CARTOVERLAY, Comps.cartOverlay);
+                        Factory.register?.(Comps.CARDGALLERY, Comps.cardGallery);
                         Factory.register?.(Comps.PRODUCTCARD, Comps.productCard);
+                        Factory.register?.(Comps.IMAGELIGHTBOX, Comps.imageLightbox);
+                        Factory.register?.(Comps.IMAGEMAGNIFIER, Comps.imageMagnifier);
                     }
                 },
                 { once: true },

@@ -1,6 +1,9 @@
 <div
     data-section-id="{{ section.id }}"
-    class="collection-section full-width relative bg-[#F3F3F3] text-[#263D29]"
+    class="
+        collection-section full-width
+        color-{{ section.settings.color_scheme }}
+    "
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
@@ -18,12 +21,12 @@
                     <h1 class="mb-10 hxxxl leading-none font-bold">
                         {{ section.settings.header | default: 'Products' }}
                     </h1>
-                    <p class="max-w-xl h5 leading-relaxed opacity-80">
+                    <div class="rte rte--compact max-w-xl body-md leading-relaxed opacity-80">
                         {{
                             section.settings.description
-                            | default: 'Tailored experiences powered by AI intelligence. Discover insights that adapt to your needs.'
+                            | default: '<p>Tailored experiences powered by AI intelligence. Discover insights that adapt to your needs.</p>'
                         }}
-                    </p>
+                    </div>
                 </div>
 
                 <div class="scale-50 opacity-0" data-gsap-badge>
@@ -42,148 +45,294 @@
     </div>
 
     <div class="layout layout-no-pt container-page">
-        <div class="relative flex items-center justify-between">
-            {%- comment -%} Filter trigger + hidden form + drawer {%- endcomment -%}
+        {%- liquid
+            assign mobile_grid_class = 'grid-cols-1'
+            if section.settings.mobile_card_columns == '2'
+                assign mobile_grid_class = 'grid-cols-2'
+            endif
+
+            assign desktop_grid_class = 'pc:grid-cols-4'
+            if section.settings.desktop_card_columns == '3'
+                assign desktop_grid_class = 'pc:grid-cols-3'
+            endif
+
+            assign enable_filtering = section.settings.enable_filtering
+            assign enable_sorting = section.settings.enable_sorting
+            assign filter_type = section.settings.filter_type | default: 'drawer'
+
+            assign is_drawer_filter = false
+            assign is_horizontal_filter = false
+            assign is_vertical_filter = false
+
+            if filter_type == 'horizontal'
+                assign is_horizontal_filter = true
+            elsif filter_type == 'vertical'
+                assign is_vertical_filter = true
+            else
+                assign is_drawer_filter = true
+            endif
+        -%}
+
+        <div class="flex flex-col gap-6 pc:gap-6">
+            {%- comment -%} Hidden form all filter/sort controls {%- endcomment -%}
             <form id="CollectionFiltersForm" class="hidden" @change="onChange()"></form>
 
-            <button
-                type="button"
-                @click="$store.dialog.open('collection-filters')"
-                class="absolute left-0 z-10 flex shrink-0 cursor-pointer items-center gap-3 self-start h2"
-            >
-                {% render 'icons', icon: 'icon-filter', class: 'h-10 w-10' %}
-                <span>Filter</span>
-            </button>
+            {%- comment -%}
+                Mobile-only (pc:hidden)
+            {%- endcomment -%}
+            {%- if enable_filtering or enable_sorting -%}
+                <div class="flex items-center justify-between gap-4 pc:hidden">
+                    {%- if enable_filtering -%}
+                        <button
+                            type="button"
+                            @click="$store.dialog.open('collection-filters')"
+                            class="flex shrink-0 cursor-pointer items-center gap-3 h2"
+                        >
+                            {% render 'icons',
+                                icon: 'icon-filter',
+                                class: 'h-10 w-10',
+                                color: 'currentColor'
+                            %}
+                            <span>Filter</span>
+                        </button>
+                    {%- endif -%}
 
-            {%- capture drawer_content -%}
-                {%- render 'filters-drawer', filter_source: collection -%}
-            {%- endcapture -%}
-
-            {%- render 'ui-dialog',
-                id: 'collection-filters',
-                type: 'drawer',
-                position: 'left',
-                show_close_button: true,
-                close_label: 'Close filters drawer',
-                content: drawer_content
-            -%}
-
-            {% comment %} Tab Control {% endcomment %}
-            <div class="min-w-0 flex-1">
-                {%- liquid
-                    assign active_tab_index = 0
-                    assign current_tag_handle = current_tags | first | handleize
-                    if current_tags != blank
-                        for tag in collection.all_tags
-                            assign tag_handle = tag | handleize
-                            if current_tag_handle == tag_handle
-                                assign active_tab_index = forloop.index
-                                break
-                            endif
-                        endfor
-                    endif
-                -%}
-
-                {% capture tab_header %}
-        <span class="hidden" x-init="$nextTick(() => { setActive({{ active_tab_index }}) })"></span>
-
-        <a
-          href="{{ collection.url }}"
-          role="tab"
-          x-data="{ index: null }"
-          x-init="index = registerTab($el);"
-          :id="`tab-${index}`"
-          aria-controls="collection-panel"
-          @click.prevent="setActive(index); /* loadUrl($el.href) 后续再加 */"
-          :tabindex="isActive(index) ? 0 : -1"
-          :aria-selected="isActive(index)"
-          :class="isActive(index) ? 'opacity-100 border-b-2 border-[#263D29]' : 'opacity-50 hover:opacity-100 border-b-2 border-transparent'"
-          class="flex cursor-pointer flex-nowrap items-center gap-1 h2 whitespace-nowrap transition-all duration-300 focus:outline-none"
-        >
-          All <sup class="text-[10px] leading-none">({{ collection.all_products_count }})</sup>
-        </a>
-
-        {%- for tag in collection.all_tags -%}
-          <a
-            href="{{ collection.url }}/{{ tag | handleize }}"
-            role="tab"
-            x-data="{ index: null }"
-            x-init="index = registerTab($el);"
-            :id="`tab-${index}`"
-            aria-controls="collection-panel"
-            @click.prevent="setActive(index); /* loadUrl($el.href) 后续再加 */"
-            :tabindex="isActive(index) ? 0 : -1"
-            :aria-selected="isActive(index)"
-            :class="isActive(index) ? 'opacity-100 border-b-2 border-[#263D29]' : 'opacity-50 hover:opacity-100 border-b-2 border-transparent'"
-            class="flex cursor-pointer flex-nowrap items-center gap-1 h2 whitespace-nowrap transition-all duration-300 focus:outline-none"
-          >
-            {{ tag }}
-          </a>
-        {%- endfor -%}
-      {% endcapture %}
-
-                {% capture tab_content %}
-        <div 
-          role="tabpanel"
-          id="collection-panel"
-          x-data="{ index: null }"
-          x-init="index = registerPanel($el)"
-          class="relative w-full"
-        >
-          {% render 'loading', overlay: true, size: 'large' %}
-
-          {% paginate collection.products by section.settings.products_per_page %}
-            <div 
-              class="grid grid-cols-1 gap-8 pb-10 pc:grid-cols-4"
-              data-component-kind="section"
-              data-component-type="product-grid"
-              data-component-id="{{ section.id }}-grid"
-            >
-              {% for product in collection.products %}
-                <div class="group translate-y-7.5 opacity-0" data-gsap-card>
-                  {% render 'product-card', product: product %}
+                    {%- if enable_sorting -%}
+                        {%- render 'sort-by-dropdown',
+                            results: collection,
+                            form_id: 'CollectionFiltersForm',
+                            class: 'h2 shrink-0'
+                        -%}
+                    {%- endif -%}
                 </div>
-              {% else %}
-                <div class="col-span-full py-20 text-center h3 opacity-60">
-                  No products found.
-                </div>
-              {% endfor %}
-            </div>
+            {%- endif -%}
 
+            {%- comment -%}
+                Desktop horizontal (max-pc:hidden)
+            {%- endcomment -%}
+            {%- if is_horizontal_filter -%}
+                {%- if enable_filtering or enable_sorting -%}
+                    <div class="hidden pc:flex pc:items-center pc:justify-between pc:gap-6">
+                        {%- if enable_filtering -%}
+                            {%- render 'filter-horizontal',
+                                filter_source: collection,
+                                wrapper_class: 'items-center'
+                            -%}
+                        {%- else -%}
+                            <div></div>
+                        {%- endif -%}
+
+                        {%- if enable_sorting -%}
+                            {%- render 'sort-by-dropdown',
+                                results: collection,
+                                form_id: 'CollectionFiltersForm',
+                                class: 'h2 shrink-0'
+                            -%}
+                        {%- endif -%}
+                    </div>
+                {%- endif -%}
+            {%- endif -%}
+
+            {%- comment -%}
+                Desktop vertical (max-pc:hidden)
+            {%- endcomment -%}
             <div
-              class="collection-pagination-wrapper mt-8"
-              @click="
-                let link = $event.target.closest('nav.pagination a');
-                if (link) { 
-                  $event.preventDefault(); 
-                  /* 暂时写死 loadUrl，等后续我们合并 SortBy 时再改这里 */
-                  loadUrl(link.href);
-                }
-              "
+                class="
+                    {% if enable_filtering and is_vertical_filter %}
+                        pc:grid pc:grid-cols-[30rem_minmax(0,1fr)] pc:gap-10
+                    {% endif %}
+                "
             >
-              {% render 'pagination', paginate_obj: paginate %}
-            </div>
-            
-          {% endpaginate %}
-        </div>
-      {% endcapture %}
+                {%- if enable_filtering and is_vertical_filter -%}
+                    <aside class="hidden pc:block">
+                        <div class="sticky top-20 border-r border-theme-border-soft pr-6">
+                            {%- render 'filter-vertical', filter_source: collection -%}
+                        </div>
+                    </aside>
+                {%- endif -%}
 
-                {%- render 'tab-control',
-                    type: 'underlined',
-                    custom_class: 'items-start',
-                    tab_header: tab_header,
-                    header_class: 'gap-6 pc:gap-10 px-100 border-[#e5e5e5]',
-                    tab_content: tab_content
-                -%}
-            </div>
+                <div class="min-w-0">
+                    {% comment %} Tab Control {% endcomment %}
+                    {%- liquid
+                        assign active_tab_index = 0
+                        assign current_tag_handle = current_tags | first | handleize
+                        if current_tags != blank
+                            for tag in collection.all_tags
+                                assign tag_handle = tag | handleize
+                                if current_tag_handle == tag_handle
+                                    assign active_tab_index = forloop.index
+                                    break
+                                endif
+                            endfor
+                        endif
+                    -%}
 
-            {%- render 'sort-by-dropdown',
-                results: collection,
-                form_id: 'CollectionFiltersForm',
-                class: 'absolute right-0 z-10 h2 shrink-0 self-start'
-            -%}
+                    {% capture desktop_filter %}
+                        {%- comment -%} Tab header left slot: desktop Filter button when filter_type Drawer and enable_filtering; else spacer (grid column still reserved). {%- endcomment -%}
+                        {%- if enable_filtering and is_drawer_filter -%}
+                            <div class="hidden pc:flex pc:items-center pc:pb-3">
+                                <button
+                                    type="button"
+                                    @click="$store.dialog.open('collection-filters')"
+                                    class="flex shrink-0 cursor-pointer items-center gap-2.5 h2"
+                                >
+                                    {% render 'icons', icon: 'icon-filter', class: 'h-10 w-10', color: 'currentColor' %}
+                                    <span>Filter</span>
+                                </button>
+                            </div>
+                        {%- else -%}
+                            <div class="hidden pc:block"></div>
+                        {%- endif -%}
+                    {% endcapture %}
+
+                    {% capture desktop_sort %}
+                        {%- comment -%} Tab header right slot: sort when enable_sorting and desktop is not Horizontal (horizontal row above already renders sort). Vertical/Drawer use this slot. {%- endcomment -%}
+                        {%- if enable_sorting -%}
+                            {%- if is_horizontal_filter == false -%}
+                                <div class="hidden pc:flex pc:items-center pc:justify-end pc:pb-3">
+                                    {%- render 'sort-by-dropdown',
+                                        results: collection,
+                                        form_id: 'CollectionFiltersForm',
+                                        class: 'h2 shrink-0'
+                                    -%}
+                                </div>
+                            {%- else -%}
+                                <div class="hidden pc:block"></div>
+                            {%- endif -%}
+                        {%- else -%}
+                            <div class="hidden pc:block"></div>
+                        {%- endif -%}
+                    {% endcapture %}
+
+                    {% capture tab_header %}
+                        <span class="hidden" x-init="$nextTick(() => { setActive({{ active_tab_index }}) })"></span>
+
+                        <a
+                            href="{{ collection.url }}"
+                            role="tab"
+                            x-data="{ index: null }"
+                            x-init="index = registerTab($el);"
+                            :id="`tab-${index}`"
+                            aria-controls="collection-panel"
+                            @click.prevent="setActive(index); /* loadUrl($el.href) 后续再加 */"
+                            :tabindex="isActive(index) ? 0 : -1"
+                            :aria-selected="isActive(index)"
+                            :class="isActive(index) ? 'opacity-100 border-b-2 border-current' : 'opacity-50 hover:opacity-100 border-b-2 border-transparent'"
+                            class="flex cursor-pointer flex-nowrap items-center gap-1 h2 whitespace-nowrap transition-all duration-300 focus:outline-none"
+                        >
+                            All
+                            <sup class="leading-none">({{ collection.all_products_count | default: 0 }})</sup>
+                        </a>
+
+                        {%- for tag in collection.all_tags -%}
+                            <a
+                                href="{{ collection.url }}/{{ tag | handleize }}"
+                                role="tab"
+                                x-data="{ index: null }"
+                                x-init="index = registerTab($el);"
+                                :id="`tab-${index}`"
+                                aria-controls="collection-panel"
+                                @click.prevent="setActive(index)"
+                                :tabindex="isActive(index) ? 0 : -1"
+                                :aria-selected="isActive(index)"
+                                :class="isActive(index) ? 'opacity-100 border-b-2 border-current' : 'opacity-50 hover:opacity-100 border-b-2 border-transparent'"
+                                class="flex cursor-pointer flex-nowrap items-center gap-1 h2 whitespace-nowrap transition-all duration-300 focus:outline-none"
+                            >
+                                {{ tag }}
+                            </a>
+                        {%- endfor -%}
+                    {% endcapture %}
+
+                    {% capture tab_content %}
+                        <div 
+                            role="tabpanel"
+                            id="collection-panel"
+                            x-data="{ index: null }"
+                            x-init="index = registerPanel($el)"
+                            class="relative w-full"
+                        >
+                            {% render 'loading', overlay: true, size: 'large' %}
+
+                            {% paginate collection.products by section.settings.products_per_page %}
+                                <div 
+                                    class="grid {{ mobile_grid_class }} {{ desktop_grid_class }} gap-x-4 gap-y-8 pb-10"
+                                    data-component-kind="section"
+                                    data-component-type="product-grid"
+                                    data-component-id="{{ section.id }}-grid"
+                                >
+                                    {% for product in collection.products %}
+                                        <div class="group translate-y-7.5 opacity-0" data-gsap-card>
+                                            {% render 
+                                                'product-card', 
+                                                product: product 
+                                            %}
+                                        </div>
+                                    {% else %}
+                                        <div class="col-span-full py-20 text-center h3 opacity-60">
+                                            No products found.
+                                        </div>
+                                    {% endfor %}
+                                </div>
+
+                                <div
+                                    class="collection-pagination-wrapper mt-8"
+                                    @click="
+                                        let link = $event.target.closest('nav.pagination a');
+                                        if (link) { 
+                                            $event.preventDefault(); 
+                                            loadUrl(link.href);
+                                        }
+                                    "
+                                >
+                                    {% render 'pagination', paginate_obj: paginate %}
+                                </div>
+                            {% endpaginate %}
+                        </div>
+                    {% endcapture %}
+
+                    {%- comment -%} Tab strip chrome: full-width bottom border on desktop when filter_type is not Horizontal (horizontal filters live in their own row); horizontal mode removes pc border from the tab row. {%- endcomment -%}
+                    {%- liquid
+                        assign header_outer_class_value = 'w-full pc:grid pc:grid-cols-[max-content_minmax(0,1fr)_max-content] pc:items-end pc:gap-12'
+                        assign header_class_value = 'gap-6 pc:gap-12 max-pc:border-b max-pc:border-theme-border-soft'
+                        if is_horizontal_filter == false
+                            assign header_outer_class_value = header_outer_class_value | append: ' pc:border-b pc:border-theme-border-soft'
+                        else
+                            assign header_class_value = header_class_value | append: ' pc:border-0'
+                        endif
+                    -%}
+
+                    {%- render 'tab-control',
+                        custom_class: 'items-start gap-6 pc:gap-6',
+                        header_outer_class: header_outer_class_value,
+                        header_before: desktop_filter,
+                        tab_header: tab_header,
+                        header_class: header_class_value,
+                        header_after: desktop_sort,
+                        tab_content: tab_content
+                    -%}
+                </div>
+            </div>
         </div>
     </div>
+
+    {%- comment -%} Filters drawer dialog: only when enable_filtering {%- endcomment -%}
+    {%- if enable_filtering -%}
+        {%- capture drawer_content -%}
+            {%- render 'filters-drawer', filter_source: collection -%}
+        {%- endcapture -%}
+
+        {%- render 'ui-dialog',
+            id: 'collection-filters',
+            type: 'drawer',
+            position: 'left',
+            top_class: 'top-0',
+            root_class: 'z-10140',
+            drawer_wrapper_class: 'max-pc:w-4/5 max-pc:max-w-none max-pc:top-3 max-pc:bottom-3 max-pc:left-1/2 max-pc:right-auto max-pc:-translate-x-1/2',
+            show_close_button: false,
+            close_label: 'Close filters drawer',
+            content: drawer_content
+        -%}
+    {%- endif -%}
 </div>
 
 {% javascript %}
@@ -290,8 +439,8 @@
         width: 20px;
         height: 20px;
         border-radius: 50%;
-        border: 2px solid #263d29;
-        background: #fff;
+        border: 2px solid rgb(var(--color-foreground));
+        background: rgb(var(--color-background));
         cursor: pointer;
         pointer-events: auto;
     }
@@ -299,8 +448,8 @@
         width: 20px;
         height: 20px;
         border-radius: 50%;
-        border: 2px solid #263d29;
-        background: #fff;
+        border: 2px solid rgb(var(--color-foreground));
+        background: rgb(var(--color-background));
         cursor: pointer;
         pointer-events: auto;
     }
@@ -309,7 +458,7 @@
         appearance: none;
         width: 1.25rem;
         height: 1.25rem;
-        border: 1.5px solid #c4c4c4;
+        border: 1.5px solid color-mix(in srgb, rgb(var(--color-foreground)) 30%, transparent);
         border-radius: 0.2rem;
         flex-shrink: 0;
         cursor: pointer;
@@ -318,8 +467,8 @@
             border-color 0.15s;
     }
     .filter-checkbox:checked {
-        background-color: #263d29;
-        border-color: #263d29;
+        background-color: rgb(var(--color-foreground));
+        border-color: rgb(var(--color-foreground));
         background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
         background-size: 100% 100%;
         background-position: center;
@@ -337,15 +486,21 @@
     },
     "settings": [
         {
-            "type": "text",
+            "type": "color_scheme",
+            "id": "color_scheme",
+            "label": "Color Scheme",
+            "default": "color-scheme-1"
+        },
+        {
+            "type": "inline_richtext",
             "id": "header",
             "default": "Products",
             "label": "Header"
         },
         {
-            "type": "textarea",
+            "type": "richtext",
             "id": "description",
-            "default": "Tailored experiences powered by AI intelligence. Discover insights that adapt to your needs.",
+            "default": "<p>Tailored experiences powered by AI intelligence. Discover insights that adapt to your needs.</p>",
             "label": "Description"
         },
         {
@@ -368,6 +523,71 @@
             "step": 3,
             "default": 12,
             "label": "Products per page"
+        },
+        {
+            "type": "checkbox",
+            "id": "enable_filtering",
+            "default": true,
+            "label": "Enable filtering",
+            "info": "Customize filters with the [Search & Discovery app](https://help.shopify.com/manual/online-store/search-and-discovery/filters)"
+        },
+        {
+            "type": "select",
+            "id": "filter_type",
+            "label": "Desktop filter layout",
+            "default": "horizontal",
+            "options": [
+                {
+                    "value": "horizontal",
+                    "label": "Horizontal"
+                },
+                {
+                    "value": "vertical",
+                    "label": "Vertical"
+                },
+                {
+                    "value": "drawer",
+                    "label": "Drawer"
+                }
+            ]
+        },
+        {
+            "type": "checkbox",
+            "id": "enable_sorting",
+            "default": true,
+            "label": "Enable sorting"
+        },
+        {
+            "type": "select",
+            "id": "desktop_card_columns",
+            "label": "Desktop product card columns",
+            "default": "4",
+            "options": [
+                {
+                    "value": "3",
+                    "label": "3 columns"
+                },
+                {
+                    "value": "4",
+                    "label": "4 columns"
+                }
+            ]
+        },
+        {
+            "type": "select",
+            "id": "mobile_card_columns",
+            "label": "Mobile product card columns",
+            "default": "2",
+            "options": [
+                {
+                    "value": "1",
+                    "label": "1 column"
+                },
+                {
+                    "value": "2",
+                    "label": "2 columns"
+                }
+            ]
         },
         {
             "type": "header",

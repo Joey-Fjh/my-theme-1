@@ -1,0 +1,136 @@
+{% doc %}
+    Shared lightweight predictive-search product card.
+
+    Expects an Alpine `product` object in scope with:
+    - `title`
+    - `vendor`
+    - `priceFormatted`
+    - `url`
+    - `image`
+    - `images`
+
+    @param {string} [class] - Optional extra classes on the root card.
+    @param {string} [frame_class] - Optional extra classes for the media frame.
+{% enddoc %}
+
+{%- assign predictive_card_class = class | default: '' -%}
+{%- assign predictive_frame_class = frame_class | default: '' -%}
+
+<div
+    class="product-card-shell {{ predictive_card_class }}"
+    x-data="
+        cardGallery({
+            imageCount: Array.isArray(product.images) && product.images.length ? product.images.length : 1,
+            enableImageNavigation: Array.isArray(product.images) && product.images.length > 1
+        })
+    "
+>
+    <div class="product-card-shell__meta">
+        <span
+            class="product-card-shell__brand"
+            x-text="product.vendor || 'Product'"
+        ></span>
+
+        <div
+            class="product-card-shell__pagination"
+            x-show="canNavigateImages"
+            x-cloak
+            aria-label="Image navigation"
+        >
+            <template x-if="product.images && product.images.length <= 3">
+                <div class="flex items-center gap-3">
+                    <template
+                        x-for="(image, imageIndex) in product.images"
+                        :key="image.url || imageIndex"
+                    >
+                        <button
+                            type="button"
+                            class="product-card-shell__pagination-dot"
+                            :class="{ 'is-active': activeImageIndex === imageIndex }"
+                            @click.prevent="setActiveImage(imageIndex)"
+                            :aria-label="`Show image ${imageIndex + 1}`"
+                        ></button>
+                    </template>
+                </div>
+            </template>
+
+            <template x-if="product.images && product.images.length > 3">
+                <div class="product-card-shell__pagination-numeric">
+                    <button
+                        type="button"
+                        class="product-card-shell__pagination-arrow"
+                        @click.prevent="prevImage()"
+                        aria-label="Previous image"
+                    >
+                        {%- render 'icons',
+                            icon: 'icon-arrow2',
+                            size: 'xl',
+                            class: 'rotate-180',
+                            color: 'current'
+                        -%}
+                    </button>
+                    <span
+                        class="product-card-shell__pagination-text"
+                        x-text="imageNavigationLabel"
+                    ></span>
+                    <button
+                        type="button"
+                        class="product-card-shell__pagination-arrow"
+                        @click.prevent="nextImage()"
+                        aria-label="Next image"
+                    >
+                        {%- render 'icons', icon: 'icon-arrow2', size: 'xl', color: 'current' -%}
+                    </button>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <a :href="product.url" class="product-card-shell__media-link">
+        <div class="product-card-shell__media">
+            <template x-if="product.images && product.images.length">
+                <template
+                    x-for="(image, imageIndex) in product.images"
+                    :key="image.url || imageIndex"
+                >
+                    <div
+                        class="absolute inset-0"
+                        x-show="activeImageIndex === imageIndex"
+                        x-transition.opacity.duration.200ms
+                    >
+                        <div class="product-card-shell__media-frame {{ predictive_frame_class }}">
+                            <img
+                                class="product-card-shell__image"
+                                :src="image.url"
+                                :alt="image.alt || product.title"
+                                width="120"
+                                height="120"
+                            >
+                        </div>
+                    </div>
+                </template>
+            </template>
+
+            <template x-if="!product.images || !product.images.length">
+                <div class="product-card-shell__media-frame {{ predictive_frame_class }}">
+                    <img
+                        class="product-card-shell__image"
+                        :src="product.image"
+                        :alt="product.title"
+                        width="120"
+                        height="120"
+                    >
+                </div>
+            </template>
+        </div>
+    </a>
+
+    <div class="product-card-shell__info">
+        <a
+            class="product-card-shell__title"
+            :href="product.url"
+            x-text="product.title"
+        ></a>
+        <p class="product-card-shell__price" x-text="product.priceFormatted"></p>
+    </div>
+</div>

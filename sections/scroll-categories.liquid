@@ -6,100 +6,103 @@
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
     "
 >
-    <div class="relative">
-        {%- render 'image',
-            image: section.settings.image,
-            alt: section.settings.image.alt,
-            width: section.settings.image.width,
-            sizes: '100vw',
-            loading: 'lazy'
-        -%}
+    <div class="layout container-page color-{{ section.settings.color_scheme }}">
+        {%- assign collection = section.settings.collection -%}
 
-        <div class="layout container-page color-{{ section.settings.color_scheme }}">
-            {%- assign collection = section.settings.collection -%}
+        <div class="flex flex-col gap-16">
+            <div class="flex flex-col gap-3 pc:flex-row pc:items-center pc:justify-between">
+                {%- capture link_content -%}
+                    <h1 class="font-bold">
+                        {%- if section.settings.heading != blank -%}
+                            {{ section.settings.heading }}
+                        {%- else -%}
+                            {{ collection.title }}
+                        {%- endif -%}
 
-            <div class="flex flex-col gap-16">
-                <div class="flex flex-col gap-3 pc:flex-row pc:items-center pc:justify-between">
-                    {%- capture link_content -%}
-                        <h1 class="font-bold">
-                            {%- if section.settings.heading != blank -%}
-                                {{ section.settings.heading }}
-                            {%- else -%}
-                                {{ collection.title }}
-                            {%- endif -%}
+                        {%- if collection != nil and collection.products_count > 0 -%}
+                            <sup class="sup-badge">({{ collection.products_count }})</sup>
+                        {%- endif -%}
+                    </h1>
+                {%- endcapture -%}
 
-                            {%- if collection != nil and collection.products_count > 0 -%}
-                                <sup class="sup-badge">({{ collection.products_count }})</sup>
-                            {%- endif -%}
-                        </h1>
-                    {%- endcapture -%}
+                {%- render 'link',
+                    href: collection.url,
+                    content: link_content,
+                    variant: 'underline',
+                    color: 'current'
+                -%}
 
-                    {%- render 'link',
-                        href: collection.url,
-                        content: link_content,
-                        variant: 'underline',
-                        color: 'current'
-                    -%}
+                <div class="rte rte--compact opacity-80">{{ section.settings.description }}</div>
+            </div>
 
-                    <div class="opacity-80">{{ section.settings.description }}</div>
-                </div>
+            <div>
+                {%- assign max_items = section.settings.max_items -%}
 
-                <div>
-                    {%- assign max_items = section.settings.max_items -%}
+                {% # theme-check-disable-next-line LiquidHTMLSyntaxError %}
+                {%- for product in collection.products limit: max_items -%}
+                    <a
+                        class="flex flex-col gap-3 py-8 body-md pc:flex-row pc:items-center pc:justify-between pc:p-8"
+                        href="{{ product.url }}"
+                        x-data="{hover:false}"
+                        @mouseenter="hover = true"
+                        @mouseleave="hover = false"
+                        :class=" hover ? 'bg-theme-text text-theme-bg':'' "
+                    >
+                        <span class="opacity-80">
+                            {{ product.type | default: 'Momonise' }}
+                        </span>
 
-                    {% # theme-check-disable-next-line LiquidHTMLSyntaxError %}
-                    {%- for product in collection.products limit: max_items -%}
-                        <a
-                            class="flex flex-col gap-3 py-8 body-md pc:flex-row pc:items-center pc:justify-between pc:p-8"
-                            href="{{ product.url }}"
-                            x-data="{hover:false}"
-                            @mouseenter="hover = true"
-                            @mouseleave="hover = false"
-                            :class=" hover ? 'bg-theme-text text-theme-bg':'' "
-                        >
-                            <span class="opacity-80">
-                                {{ product.type | default: 'Momonise' }}
-                            </span>
+                        <div class="relative flex items-center gap-4">
+                            <h2 class="h1">{{ product.title }}</h2>
 
-                            <div class="relative flex items-center gap-3">
-                                <h2>{{ product.title }}</h2>
-
-                                <div
-                                    class="
-                                        pointer-events-none
-                                        absolute
-                                        top-1/2
-                                        -right-3
-                                        aspect-100/72
-                                        h-[2.5em] translate-x-full -translate-y-1/2
-                                        scale-95 opacity-0
-                                        transition-all
-                                        duration-300 ease-out
-                                    "
-                                    :class="hover ? 'opacity-100 scale-100' : ''"
-                                >
-                                    {%- render 'image',
-                                        class: 'w-full h-full object-cover',
+                            <div
+                                class="
+                                    absolute
+                                    top-1/2
+                                    -right-4
+                                    aspect-100/72
+                                    h-30 translate-x-full -translate-y-1/2
+                                    scale-95 opacity-0
+                                    transition-all
+                                    duration-300 ease-out
+                                "
+                                :class="hover ? 'opacity-100 scale-100' : ''"
+                            >
+                                {%- if product.featured_image != blank -%}
+                                    {%- render 'image-magnifier',
+                                        class: 'h-full w-full',
                                         image: product.featured_image,
                                         alt: product.featured_image.alt,
-                                        width: 100,
-                                        sizes: '100px'
+                                        width: 220,
+                                        sizes: '220px',
+                                        zoom_width: 1200,
+                                        preview_mode: 'contain',
+                                        preview_width: 280,
+                                        preview_height: 200
                                     -%}
-                                </div>
+                                {%- else -%}
+                                    {%- render 'image',
+                                        class: 'h-full w-full',
+                                        image: product.featured_image,
+                                        alt: product.featured_image.alt,
+                                        width: 220,
+                                        sizes: '220px'
+                                    -%}
+                                {%- endif -%}
                             </div>
+                        </div>
 
-                            <span>
-                                {{ product.price | money }}
-                            </span>
-                        </a>
-                    {%- endfor -%}
-                </div>
+                        <span>
+                            {{ product.price | money }}
+                        </span>
+                    </a>
+                {%- endfor -%}
+            </div>
 
-                <div class="flex flex-col items-center justify-center self-center text-center body-md">
-                    {% render 'icons', icon: 'icon-eyeglasses', size: 'lg', color: 'current' %}
+            <div class="rte rte--compact flex flex-col items-center justify-center self-center text-center body-md">
+                {% render 'icons', icon: 'icon-eyeglasses', size: 'lg', color: 'current' %}
 
-                    {{ section.settings.caption }}
-                </div>
+                {{ section.settings.caption }}
             </div>
         </div>
     </div>
@@ -128,11 +131,6 @@
             "step": 1,
             "default": 4,
             "label": "Maximum items"
-        },
-        {
-            "type": "image_picker",
-            "id": "image",
-            "label": "Image"
         },
         {
             "type": "inline_richtext",

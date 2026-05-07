@@ -4,7 +4,13 @@
 
     @param {array}   images          - Image objects
     @param {string}  thumb_position  - 'left' | 'bottom'
+    @param {number}  thumbnail_visible_count - Number of visible thumbnails in left layout
     @param {boolean} zoom            - Enable click on main image
+    @param {boolean} magnifier       - Enable desktop hover magnifier on main image
+    @param {number}  magnifier_zoom_scale - Background scale multiplier for magnifier
+    @param {number}  magnifier_preview_width - Optional fixed magnifier preview width in pixels
+    @param {number}  magnifier_preview_height - Optional fixed magnifier preview height in pixels
+    @param {number}  magnifier_preview_max_width - Maximum magnifier preview width in pixels
     @param {string}  aspect_ratio    - Optional CSS aspect-ratio (fallback when first image has no ratio)
 {% endcomment %}
 
@@ -13,33 +19,41 @@
     {%- assign is_left = false -%}
 {%- endif -%}
 
-{%- comment -%} Dynamic gallery aspect from first image; fallback to passed aspect_ratio or 3/4 {%- endcomment -%}
+{%- comment -%} Product pages pass a design ratio so uploaded image orientation cannot resize the gallery. {%- endcomment -%}
 {%- assign first_img = images.first -%}
-{%- if first_img.width != blank and first_img.height != blank -%}
+{%- assign thumbnail_visible_count = thumbnail_visible_count | default: 4 | plus: 0 -%}
+{%- if thumbnail_visible_count < 3 -%}
+    {%- assign thumbnail_visible_count = 3 -%}
+{%- elsif thumbnail_visible_count > 6 -%}
+    {%- assign thumbnail_visible_count = 6 -%}
+{%- endif -%}
+{%- assign gallery_aspect = aspect_ratio -%}
+{%- if gallery_aspect == blank and first_img.width != blank and first_img.height != blank -%}
     {%- assign gallery_aspect = first_img.width | append: '/' | append: first_img.height -%}
-{%- else -%}
-    {%- assign gallery_aspect = images.first.aspect_ratio
-        | default: aspect_ratio
-        | default: '3/4'
-    -%}
+{%- elsif gallery_aspect == blank -%}
+    {%- assign gallery_aspect = images.first.aspect_ratio | default: '3/4' -%}
 {%- endif -%}
 
 <div
     class="
         {% if is_left %}
-          flex flex-col pc:flex-row gap-4 min-w-0 w-full h-full
+          flex flex-col pc:flex-row gap-4 pc:gap-2 min-w-0 w-full h-full
         {% else %}
-          flex flex-col gap-3 min-w-0 w-full
+          flex flex-col gap-3 min-w-0 w-full pc:h-[calc(100vh-var(--header-height)-var(--announcement-bar-height))]
         {% endif %}
     "
 >
     <div
+        style="--thumbnail-visible-count: {{ thumbnail_visible_count }};"
+        {% unless is_left %}
+            x-data="dragScroll({ axis: 'x' })"
+        {% endunless %}
         class="
             relative z-0 shrink-0
             {% if is_left %}
-              order-last w-full flex flex-nowrap gap-2 overflow-x-auto pc:order-first pc:w-20 pc:flex-col pc:overflow-y-auto pc:overflow-x-hidden pc:max-h-[min(80vh,720px)] [&::-webkit-scrollbar]:hidden
+              no-scrollbar order-last w-full flex flex-nowrap gap-2 overflow-x-auto pc:order-first pc:w-1/5 pc:self-stretch pc:flex-col pc:overflow-y-auto pc:overflow-x-hidden
             {% else %}
-              order-last w-full min-w-0 flex flex-nowrap gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden
+              no-scrollbar order-last w-full min-w-0 flex flex-nowrap gap-2 overflow-x-auto pc:min-h-0 pc:flex-[1_0_0%]
             {% endif %}
         "
         role="tablist"
@@ -48,14 +62,14 @@
         {%- if is_left -%}
             {%- for image in images -%}
                 {%- assign media_image = image.preview_image | default: image -%}
-                {%- assign thumb_sizes = '80px' -%}
-                {%- assign thumb_widths = '80,160,240' -%}
+                {%- assign thumb_sizes = '(min-width: 48rem) clamp(104px, 10vw, 136px), 80px' -%}
+                {%- assign thumb_widths = '80,160,240,320,400' -%}
                 <button
                     type="button"
                     role="tab"
                     :aria-selected="activeIndex === {{ forloop.index0 }}"
                     @click="setActive({{ forloop.index0 }})"
-                    class="block h-20 w-20 shrink-0 cursor-pointer overflow-hidden rounded-sm border-2 transition-all duration-200 pc:aspect-square pc:h-auto pc:w-full"
+                    class="block h-20 w-20 shrink-0 cursor-pointer overflow-hidden rounded-sm border-2 transition-all duration-200 pc:h-[calc((100%-((var(--thumbnail-visible-count)-1)*0.25rem))/var(--thumbnail-visible-count))] pc:w-full"
                     :class="
                         activeIndex === {{ forloop.index0 }}
                         ? 'border-focus'
@@ -84,7 +98,7 @@
                     role="tab"
                     :aria-selected="activeIndex === {{ forloop.index0 }}"
                     @click="setActive({{ forloop.index0 }})"
-                    class="block h-20 w-20 shrink-0 cursor-pointer overflow-hidden rounded-sm border-2 transition-all duration-200"
+                    class="block h-20 w-20 shrink-0 cursor-pointer overflow-hidden rounded-sm border-2 transition-all duration-200 pc:h-full pc:w-[calc((100%-((var(--thumbnail-visible-count)-1)*0.5rem))/var(--thumbnail-visible-count))]"
                     :class="
                         activeIndex === {{ forloop.index0 }}
                         ? 'border-focus'
@@ -107,7 +121,12 @@
     </div>
 
     <div
-        class="relative min-w-0 flex-1 overflow-hidden rounded-sm bg-theme-bg"
+        class="
+            relative min-w-0 flex-1 overflow-hidden rounded-sm bg-theme-bg
+            {% unless is_left %}
+              pc:min-h-0 pc:flex-[4_1_0%]
+            {% endunless %}
+        "
         style="aspect-ratio: {{ gallery_aspect }};"
         role="tabpanel"
     >
@@ -122,19 +141,35 @@
                     : 'opacity-0 z-0 pointer-events-none'
                 "
                 {% if zoom %}
-                    @click="openZoom({{ forloop.index0 }})"
+                    @click="openLightbox({{ forloop.index0 }})"
                     style="cursor: zoom-in"
                 {% endif %}
             >
-                {%- render 'image',
-                    image: media_image,
-                    width: 1200,
-                    img_class: 'w-full h-full object-cover',
-                    alt: media_image.alt,
-                    sizes: '(min-width: 48rem) 50vw, 100vw',
-                    widths: '400,600,800,1200',
-                    loading: 'lazy'
-                -%}
+                {%- if magnifier -%}
+                    {%- render 'image-magnifier',
+                        image: media_image,
+                        width: 1200,
+                        img_class: 'w-full h-full object-cover',
+                        alt: media_image.alt,
+                        sizes: '(min-width: 48rem) 50vw, 100vw',
+                        widths: '400,600,800,1200',
+                        loading: 'lazy',
+                        zoom_scale: magnifier_zoom_scale,
+                        preview_width: magnifier_preview_width,
+                        preview_height: magnifier_preview_height,
+                        preview_max_width: magnifier_preview_max_width
+                    -%}
+                {%- else -%}
+                    {%- render 'image',
+                        image: media_image,
+                        width: 1200,
+                        img_class: 'w-full h-full object-cover',
+                        alt: media_image.alt,
+                        sizes: '(min-width: 48rem) 50vw, 100vw',
+                        widths: '400,600,800,1200',
+                        loading: 'lazy'
+                    -%}
+                {%- endif -%}
             </div>
         {%- endfor -%}
     </div>

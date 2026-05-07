@@ -1,187 +1,112 @@
 {% doc %}
-    Filters drawer — rendered inside ui-dialog (drawer, left).
-  Global reuse: works for both Collection and Search via filter_host.
-  No <form> here; all inputs bind to the external form via form="CollectionFiltersForm".
-  All controls auto-submit via
+    Filters drawer content, typically rendered inside `ui-dialog` as a left drawer.
+  Global reuse: works for both Collection and Search via `filter_host`.
+  No `<form>` lives in this snippet. All inputs bind to the external
+  `CollectionFiltersForm` via the `form` attribute, and all controls auto-submit via
+  `
 
-    @change="onChange" (resolved through Alpine scope chain).
+    @change="onChange"` resolved through the surrounding Alpine scope.
+    Supports Shopify filter types: - `boolean` - `list` - `price_range`
+
+    Expected parent integration: - A form with id `CollectionFiltersForm` - An Alpine scope exposing
+    `onChange` - A dialog wrapper that handles open / close state
+
+    Example: {% render 'filters-drawer', filter_source: collection %}
 
     @param {object} filter_source - Optional. Pass search or collection to drive filters.
+    @param {string} [drawer_class] - Optional root drawer class override.
+    @param {string} [divider_class] - Optional border color class for section dividers.
+    @param {string} [muted_text_class] - Optional muted text style for helper labels.
+    @param {string} [filter_label_class] - Optional filter label typography classes.
+    @param {string} [count_text_class] - Optional result count text classes.
+    @param {string} [chip_bg_class] - Optional chip background classes for boolean filters.
+    @param {string} [track_bg_class] - Optional inactive range/toggle track background classes.
+    @param {string} [active_bg_class] - Optional active range/toggle background classes.
+    @param {string} [input_shell_class] - Optional wrapper classes for price inputs.
+    @param {string} [footer_button_class] - Optional footer CTA button classes.
 
     @default collection | search (Liquid default when snippet included from section)
 {% enddoc %}
 
 {%- assign filter_host = filter_source | default: collection | default: search -%}
-{%- assign result_count = filter_host.products_count | default: filter_host.results_count -%}
+{%- assign result_count = filter_host.products_count
+    | default: filter_host.results_count
+    | default: 0
+-%}
+{%- assign drawer_class = drawer_class
+    | default: 'flex h-full flex-col bg-theme-bg text-theme-text'
+-%}
+{%- assign divider_class = divider_class | default: 'border-theme-border-soft' -%}
+{%- assign muted_text_class = muted_text_class | default: 'body-sm opacity-60' -%}
+{%- assign filter_label_class = filter_label_class | default: 'body-md leading-snug' -%}
+{%- assign count_text_class = count_text_class | default: 'body-sm opacity-60' -%}
+{%- assign footer_button_class = footer_button_class
+    | default: 'w-full cursor-pointer rounded-none bg-theme-text px-4 py-4 text-center body-md font-medium text-theme-bg transition-opacity hover:opacity-90'
+-%}
 
-<div class="flex h-full flex-col text-[#263D29]">
-    {%- comment -%} Header {%- endcomment -%}
-    <div class="flex items-center justify-between border-b border-[#e5e5e5] px-6 py-5">
-        <h2 id="dialog-title-collection-filters" class="h3 font-bold">Filters</h2>
+<div class="{{ drawer_class }}">
+    <div class="flex items-center justify-between border-b px-4 py-4 pc:px-6 {{ divider_class }}">
+        <h2 id="dialog-title-collection-filters">Filters</h2>
         <button
             type="button"
             @click="$store.dialog.close()"
-            class="-mr-2 flex h-10 w-10 rotate-45 cursor-pointer items-center justify-center text-[#263D29]"
+            class="-mr-2 flex h-9 w-9 cursor-pointer items-center justify-center text-current"
             aria-label="Close"
         >
-            {% render 'icons', icon: 'icon-plus', color: 'current' %}
+            {% render 'icons', icon: 'icon-close', size: 'md', color: 'current' %}
         </button>
     </div>
 
-    {%- comment -%} Scrollable filter body {%- endcomment -%}
-    <div class="flex-1 overflow-y-auto px-6 py-4">
+    <div class="flex-1 overflow-y-auto px-4 py-2 pc:px-6">
         {%- for filter in filter_host.filters -%}
+            {%- assign has_active_value = false -%}
+            {%- if filter.type == 'price_range' -%}
+                {%- if filter.min_value.value != blank or filter.max_value.value != blank -%}
+                    {%- assign has_active_value = true -%}
+                {%- endif -%}
+            {%- else -%}
+                {%- for value in filter.values -%}
+                    {%- if value.active -%}
+                        {%- assign has_active_value = true -%}
+                        {%- break -%}
+                    {%- endif -%}
+                {%- endfor -%}
+            {%- endif -%}
+
             {%- capture filter_content -%}
-        {%- case filter.type -%}
-          {%- when 'boolean' -%}
-            <div class="flex flex-col gap-1">
-              {%- for value in filter.values -%}
-                <label class="flex cursor-pointer items-center justify-between rounded-lg bg-[#f5f5f5] px-4 py-3.5">
-                  <span class="leading-snug">{{ value.label }}</span>
-                  <span class="relative inline-flex h-7 w-12 items-center">
-                    <input
-                      type="checkbox"
-                      class="peer sr-only"
-                      name="{{ value.param_name }}"
-                      value="{{ value.value }}"
-                      form="CollectionFiltersForm"
-                      {% if value.active %}checked{% endif %}
-                      @change="onChange"
-                    >
-                    <span class="absolute inset-0 rounded-full bg-[#d4d4d4] transition-colors peer-checked:bg-[#263D29]"></span>
-                    <span class="absolute top-1 left-1 h-5 w-5 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-5"></span>
-                  </span>
-                </label>
-              {%- endfor -%}
-            </div>
+                {%- render 'filters-field',
+                    filter: filter,
+                    mode: 'drawer',
+                    ui_variant: 'panel',
+                    divider_class: divider_class,
+                    muted_text_class: muted_text_class,
+                    filter_label_class: filter_label_class,
+                    count_text_class: count_text_class
+                -%}
+            {%- endcapture -%}
 
-          {%- when 'list' -%}
-            <div class="flex flex-col">
-              {%- for value in filter.values -%}
-                <label class="flex cursor-pointer items-center gap-3 py-3 {% unless forloop.last %}border-b border-[#e5e5e5]{% endunless %}">
-                  <input
-                    type="checkbox"
-                    class="filter-checkbox"
-                    name="{{ value.param_name }}"
-                    value="{{ value.value }}"
-                    form="CollectionFiltersForm"
-                    {% if value.active %}checked{% endif %}
-                    @change="onChange"
-                  >
-                  <span class="leading-snug">{{ value.label }}</span>
-                  <span class="ml-auto text-sm opacity-50">({{ value.count }})</span>
-                </label>
-              {%- endfor -%}
-            </div>
-
-          {%- when 'price_range' -%}
-            {%- assign range_max = filter.range_max | money_without_currency | plus: 0 -%}
-            {%- assign current_min = filter.min_value.value | default: 0 | plus: 0 -%}
-            {%- assign current_max = filter.max_value.value | default: range_max | plus: 0 -%}
-
-            <div
-              class="flex flex-col gap-5 py-3"
-              x-data="{
-                min: {{ current_min }},
-                max: {{ current_max }},
-                ceil: {{ range_max }},
-                minPct() { return this.ceil ? (this.min / this.ceil) * 100 : 0 },
-                maxPct() { return this.ceil ? 100 - (this.max / this.ceil) * 100 : 0 },
-                clampMin() { this.min = Math.max(0, Math.min(this.min, this.max)) },
-                clampMax() { this.max = Math.min(this.ceil, Math.max(this.max, this.min)) }
-              }"
-            >
-              {%- comment -%} Dual-thumb range slider {%- endcomment -%}
-              <div class="relative flex h-10 w-full items-center">
-                <div class="absolute inset-x-0 h-0.5 rounded-full bg-[#d4d4d4]"></div>
-                <div
-                  class="absolute h-0.5 rounded-full bg-[#263D29]"
-                  :style="`left:${minPct()}%;right:${maxPct()}%`"
-                ></div>
-                <input
-                  type="range"
-                  min="0"
-                  :max="ceil"
-                  x-model.number="min"
-                  @input="clampMin()"
-                  @change.debounce.500ms="$refs.inputMin.value = min; onChange"
-                  class="price-range-thumb pointer-events-none absolute inset-x-0 z-10 w-full appearance-none bg-transparent"
-                >
-                <input
-                  type="range"
-                  min="0"
-                  :max="ceil"
-                  x-model.number="max"
-                  @input="clampMax()"
-                  @change.debounce.500ms="$refs.inputMax.value = max; onChange"
-                  class="price-range-thumb pointer-events-none absolute inset-x-0 z-20 w-full appearance-none bg-transparent"
-                >
-              </div>
-
-              {%- comment -%} From / To number inputs {%- endcomment -%}
-              <div class="flex items-center gap-4">
-                <div class="flex-1">
-                  <label class="mb-1 block text-sm opacity-60" for="Filter-{{ filter.label | handleize }}-GTE">From</label>
-                  <div class="flex items-center rounded border border-[#d4d4d4] px-3 py-2">
-                    <span class="mr-1 opacity-50">$</span>
-                    <input
-                      x-ref="inputMin"
-                      id="Filter-{{ filter.label | handleize }}-GTE"
-                      type="number"
-                      name="{{ filter.min_value.param_name }}"
-                      :value="min"
-                      min="0"
-                      max="{{ range_max }}"
-                      placeholder="0"
-                      form="CollectionFiltersForm"
-                      @input.debounce.500ms="min = +$el.value; clampMin(); $el.value = min; onChange"
-                      class="w-full appearance-none bg-transparent outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                    >
-                  </div>
-                </div>
-                <div class="flex-1">
-                  <label class="mb-1 block text-sm opacity-60" for="Filter-{{ filter.label | handleize }}-LTE">To</label>
-                  <div class="flex items-center rounded border border-[#d4d4d4] px-3 py-2">
-                    <span class="mr-1 opacity-50">$</span>
-                    <input
-                      x-ref="inputMax"
-                      id="Filter-{{ filter.label | handleize }}-LTE"
-                      type="number"
-                      name="{{ filter.max_value.param_name }}"
-                      :value="max"
-                      min="0"
-                      max="{{ range_max }}"
-                      placeholder="{{ range_max }}"
-                      form="CollectionFiltersForm"
-                      @input.debounce.500ms="max = +$el.value; clampMax(); $el.value = max; onChange"
-                      class="w-full appearance-none bg-transparent outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                    >
-                  </div>
-                </div>
-              </div>
-            </div>
-
-        {%- endcase -%}
-      {%- endcapture -%}
-
-            {%- render 'accordion',
-                titles: filter.label,
-                contents: filter_content,
+            {% render 'accordion',
+                item_title: filter.label,
+                item_content: filter_content,
                 initial_active: 0,
-                icon_type: 'plus',
-                wrapper_class: 'flex flex-col',
-                item_class: 'border-t border-[#d4d4d4] first:border-t-0',
-                content_class: 'pb-2'
-            -%}
+                wrapper_class: 'flex flex-col gap-0',
+                item_class: 'py-0',
+                title_active_class: 'text-theme-text',
+                title_inactive_class: 'text-theme-text',
+                icon_color_class: 'text-theme-text',
+                content_class: 'pb-4 text-theme-text',
+                show_clear: has_active_value,
+                clear_url: filter.url_to_remove,
+                clear_label: filter.label
+            %}
         {%- endfor -%}
     </div>
 
-    {%- comment -%} Sticky footer — close only, filters auto-submit on change {%- endcomment -%}
-    <div class="sticky bottom-0 border-t border-[#e5e5e5] bg-white px-6 py-5">
+    <div class="sticky bottom-0 border-t bg-theme-bg px-4 py-4 pc:px-6 {{ divider_class }}">
         <button
             type="button"
             @click="$store.dialog.close()"
-            class="w-full cursor-pointer rounded-sm bg-[#263D29] py-4 text-center font-medium text-white transition-opacity hover:opacity-90"
+            class="{{ footer_button_class }}"
         >
             View Result <sup class="opacity-60">({{ result_count }})</sup>
         </button>

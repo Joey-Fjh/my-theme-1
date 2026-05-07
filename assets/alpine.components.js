@@ -92,6 +92,7 @@
         static COUNTDOWNTIMER = 'countdownTimer';
         static SECTIONPAGINATION = 'sectionPagination';
         static COLLECTIONFILTERS = 'collectionFilters';
+        static COLLECTIONFILTERFIELD = 'collectionFilterField';
         static PRODUCTGALLERY = 'productGallery';
         static PRODUCTPRICE = 'ProductPrice';
         static VARIANTPICKER = 'VariantPicker';
@@ -101,11 +102,46 @@
         static RELATEDPRODUCTS = 'relatedProducts';
         static NEWSLETTEROVERLAY = 'newsletterOverlay';
         static CARTOVERLAY = 'cartOverlay';
+        static CARDGALLERY = 'cardGallery';
         static PRODUCTCARD = 'productCard';
+        static IMAGELIGHTBOX = 'imageLightbox';
+        static IMAGEMAGNIFIER = 'imageMagnifier';
 
         static dropdown() {
+            const ThemeEvents = window.__Theme__.Events;
+            const headerMenuActiveEvent = ThemeEvents?.events?.HEADER_MENU_ACTIVE_CHANGED;
+
             return {
                 openEls: [],
+
+                emitHeaderMenuActive(active) {
+                    if (!headerMenuActiveEvent || typeof ThemeEvents?.emit !== 'function') return;
+
+                    ThemeEvents.emit(headerMenuActiveEvent, { active: Boolean(active) });
+                },
+
+                onHeaderEnter() {
+                    this.emitHeaderMenuActive(true);
+                },
+
+                onHeaderLeave() {
+                    this.emitHeaderMenuActive(false);
+                },
+
+                onHeaderFocusIn() {
+                    this.emitHeaderMenuActive(true);
+                },
+
+                onHeaderFocusOut(event) {
+                    if (this.$el.contains(event?.relatedTarget)) return;
+
+                    this.emitHeaderMenuActive(false);
+                },
+
+                closeAndDeactivate(from = 0) {
+                    this.close(from);
+                    this.emitHeaderMenuActive(false);
+                },
 
                 toggle(target) {
                     const current = target.closest('[data-dropdown]');
@@ -287,9 +323,18 @@
                 lastY: window.scrollY,
                 isHidden: false,
                 isTop: true,
+                isMenuActive: false,
 
                 init() {
+                    const ThemeEvents = window.__Theme__.Events;
+                    const headerMenuActiveEvent = ThemeEvents?.events?.HEADER_MENU_ACTIVE_CHANGED;
+
                     this.on(window, 'scroll', this.onScroll.bind(this), false);
+                    if (!headerMenuActiveEvent) return;
+
+                    this.on(window, headerMenuActiveEvent, (event) => {
+                        this.isMenuActive = Boolean(event?.detail?.active);
+                    });
                 },
 
                 onScroll() {
@@ -320,17 +365,37 @@
             };
         }
 
-        static tabControl(initialStrategy = 'first') {
+        static tabControl(initialStrategy = 'first', options = {}) {
             return {
+                ...AlpineComponentsFactory.useDisposable(),
                 tabs: [],
                 panels: [],
                 activeIndex: 0,
                 mobileQuery: '(max-width: 47.99rem)',
+                scrollMode: options.scrollMode === 'always' ? 'always' : 'mobile',
+                scroller: null,
+                _pointerDown: false,
+                _dragging: false,
+                _startX: 0,
+                _startScrollLeft: 0,
+                _suppressClickUntil: 0,
 
                 init() {
                     this.$nextTick(() => {
                         const count = this.tabs.length;
                         if (count === 0) return;
+
+                        this.scroller = this.getHorizontalScrollParent(this.tabs[0]);
+                        if (this.scrollMode === 'always' && this.scroller) {
+                            this.on(this.scroller, 'pointerdown', this.onPointerDown.bind(this));
+                            this.on(window, 'pointermove', this.onPointerMove.bind(this), {
+                                passive: false,
+                            });
+                            this.on(window, 'pointerup', this.endDrag.bind(this));
+                            this.on(window, 'pointercancel', this.endDrag.bind(this));
+                            this.on(this.scroller, 'click', this.onClickCapture.bind(this), true);
+                            this.on(window, 'resize', this.onResize.bind(this));
+                        }
 
                         const nextIndex = initialStrategy === 'first' ? 0 : Math.floor(count / 2);
                         this.setActive(nextIndex, { centerOnMobile: true, behavior: 'auto' });
@@ -374,6 +439,19 @@
                     return window.matchMedia(this.mobileQuery).matches;
                 },
 
+                shouldScrollActiveTabIntoView() {
+                    return this.scrollMode === 'always' || this.isMobileViewport();
+                },
+
+                canDragScroll() {
+                    return (
+                        this.scrollMode === 'always' &&
+                        !this.isMobileViewport() &&
+                        this.scroller &&
+                        this.scroller.scrollWidth > this.scroller.clientWidth
+                    );
+                },
+
                 getHorizontalScrollParent(el) {
                     if (!el) return null;
 
@@ -391,13 +469,14 @@
                 },
 
                 scrollActiveTabIntoView(index, options = {}) {
-                    if (!this.isMobileViewport()) return;
+                    if (!this.shouldScrollActiveTabIntoView()) return;
 
                     const tab = this.tabs[index];
                     if (!(tab instanceof HTMLElement)) return;
 
                     const scroller = this.getHorizontalScrollParent(tab);
                     if (!scroller) return;
+                    this.scroller = scroller;
 
                     const { centerOnMobile = false, behavior = 'smooth' } = options;
                     const isEdgeTab = index === 0 || index === this.tabs.length - 1;
@@ -423,6 +502,60 @@
                     if (tabRight > visibleRight) {
                         scroller.scrollTo({ left: tabRight - scroller.clientWidth, behavior });
                     }
+                },
+
+                onPointerDown(event) {
+                    if (!this.canDragScroll()) return;
+                    if (event.pointerType === 'mouse' && event.button !== 0) return;
+
+                    this._pointerDown = true;
+                    this._dragging = false;
+                    this._startX = event.clientX;
+                    this._startScrollLeft = this.scroller.scrollLeft;
+                },
+
+                onPointerMove(event) {
+                    if (!this._pointerDown || !this.scroller) return;
+
+                    const deltaX = event.clientX - this._startX;
+                    if (!this._dragging && Math.abs(deltaX) >= 6) {
+                        this._dragging = true;
+                    }
+
+                    if (!this._dragging) return;
+
+                    this.scroller.scrollLeft = this._startScrollLeft - deltaX;
+                    event.preventDefault();
+                },
+
+                endDrag() {
+                    if (!this._pointerDown) return;
+
+                    this._pointerDown = false;
+                    if (this._dragging) {
+                        this._suppressClickUntil = Date.now() + 100;
+                    }
+                    this._dragging = false;
+                },
+
+                onClickCapture(event) {
+                    if (Date.now() >= this._suppressClickUntil) return;
+
+                    event.preventDefault();
+                    event.stopPropagation();
+                },
+
+                onResize() {
+                    this.$nextTick(() => {
+                        this.scrollActiveTabIntoView(this.activeIndex, {
+                            centerOnMobile: true,
+                            behavior: 'auto',
+                        });
+                    });
+                },
+
+                destroy() {
+                    this.dispose();
                 },
             };
         }
@@ -782,6 +915,57 @@
         }
 
         /**
+         * Local filter field behavior wrapper for price range controls.
+         * Keeps range math consistent across drawer/inline render variants.
+         */
+        static collectionFilterField({ min = 0, max = 0, ceil = 0 } = {}) {
+            return {
+                min: Number(min) || 0,
+                max: Number(max) || 0,
+                ceil: Math.max(0, Number(ceil) || 0),
+
+                init() {
+                    if (this.ceil <= 0) {
+                        this.min = 0;
+                        this.max = 0;
+                        return;
+                    }
+                    this.min = Math.max(0, Math.min(this.min, this.ceil));
+                    this.max = Math.max(0, Math.min(this.max, this.ceil));
+                    if (this.min > this.max) this.max = this.min;
+                },
+
+                minPct() {
+                    return this.ceil ? (this.min / this.ceil) * 100 : 0;
+                },
+
+                maxPct() {
+                    return this.ceil ? 100 - (this.max / this.ceil) * 100 : 0;
+                },
+
+                clampMin() {
+                    this.min = Math.max(0, Math.min(Number(this.min) || 0, this.ceil));
+                    if (this.min > this.max) this.max = this.min;
+                },
+
+                clampMax() {
+                    this.max = Math.min(this.ceil, Math.max(Number(this.max) || 0, 0));
+                    if (this.max < this.min) this.min = this.max;
+                },
+
+                setMinFromInput(value) {
+                    this.min = Number(value) || 0;
+                    this.clampMin();
+                },
+
+                setMaxFromInput(value) {
+                    this.max = Number(value) || 0;
+                    this.clampMax();
+                },
+            };
+        }
+
+        /**
          * Reactive product price display — listens for PRODUCT_VARIANT_CHANGED and updates
          * the visible price / compare-at-price using Intl.NumberFormat.
          *
@@ -792,34 +976,44 @@
          * @param {string}  [opts.currency='USD']   - ISO 4217 currency code
          */
         static ProductPrice({ sectionId, price = 0, comparePrice = 0, currency = 'USD' } = {}) {
-            const fmt = new Intl.NumberFormat(undefined, {
-                style: 'currency',
-                currency,
-            });
-
             return {
                 ...AlpineComponentsFactory.useDisposable(),
+                sectionId,
                 price,
                 comparePrice,
+                currency,
                 _eventScope: null,
 
+                _formatPrice(value) {
+                    return new Intl.NumberFormat(undefined, {
+                        style: 'currency',
+                        currency: this.currency,
+                    }).format(value / 100);
+                },
+
                 get formattedPrice() {
-                    return fmt.format(this.price / 100);
+                    return this._formatPrice(this.price);
                 },
                 get formattedComparePrice() {
-                    return fmt.format(this.comparePrice / 100);
+                    return this._formatPrice(this.comparePrice);
                 },
                 get hasComparePrice() {
                     return this.comparePrice > this.price;
                 },
 
                 init() {
+                    const dataset = this.$el?.dataset || {};
+                    this.sectionId = this.sectionId || dataset.sectionId || '';
+                    this.price = Number(dataset.price ?? this.price ?? 0);
+                    this.comparePrice = Number(dataset.comparePrice ?? this.comparePrice ?? 0);
+                    this.currency = dataset.currency || this.currency || 'USD';
+
                     const Events = window.__Theme__.Events;
                     const events = Events.events;
                     this._eventScope = Events.createScope();
 
                     const onVariantChange = (e) => {
-                        if (e.detail?.sectionId !== sectionId) return;
+                        if (e.detail?.sectionId !== this.sectionId) return;
                         const v = e.detail.variant;
                         this.price = v?.price || 0;
                         this.comparePrice = v?.compare_at_price || 0;
@@ -1227,26 +1421,66 @@
                 hasEmptyState: false,
                 _debouncedFetch: null,
                 _abortController: null,
+                _initialSearchPerformed: false,
                 /** @type {string|null} Last term we scheduled a request for (debounced). */
                 _lastScheduledTerm: null,
                 /** @type {string|null} Last term we successfully resolved and rendered results for. */
                 _lastResolvedTerm: null,
 
                 init() {
+                    this._applyDatasetConfig();
+
                     if (Utils) {
                         // Slightly longer debounce reduces request spam during continuous typing.
                         this._debouncedFetch = Utils.debounce((term) => this._fetch(term), 500);
                     }
 
-                    if (this.query) {
+                    this._hydrateInitialQuery();
+                },
+
+                _applyDatasetConfig() {
+                    const dataset = this.$el?.dataset;
+                    if (!dataset) return;
+
+                    if (dataset.predictiveSearchUrl) {
+                        this.searchUrl = dataset.predictiveSearchUrl;
+                    }
+
+                    if (typeof dataset.predictiveSearchQuery === 'string') {
+                        this.query = dataset.predictiveSearchQuery;
+                    }
+
+                    this._initialSearchPerformed = dataset.predictiveSearchPerformed === 'true';
+                },
+
+                _hydrateInitialQuery() {
+                    if (this.query && !this._initialSearchPerformed) {
                         this.openPanel();
                         this.onInput(this.query);
+                        return;
                     }
+
+                    this.isOpen = false;
                 },
 
                 openPanel() {
                     if (!this.query) return;
                     this.isOpen = true;
+
+                    const term = this.query.trim();
+                    if (!term || this.isLoading) return;
+
+                    const hasResults =
+                        this.suggestions.length ||
+                        this.products.length ||
+                        this.articles.length ||
+                        this.pages.length;
+
+                    // After landing on search results page, query may exist but panel data is empty.
+                    // Trigger one fetch on open so users don't need to type again.
+                    if (!hasResults) {
+                        this.onInput(term);
+                    }
                 },
 
                 closePanel() {
@@ -1366,6 +1600,35 @@
                                     finalPrice = fmt.format(p.price / 100);
                                 }
 
+                                const imageCandidates = [];
+                                const pushImage = (image) => {
+                                    if (!image) return;
+                                    const url = typeof image === 'string' ? image : image?.url;
+                                    if (!url) return;
+                                    imageCandidates.push({
+                                        url,
+                                        alt:
+                                            (typeof image === 'object' && image?.alt) ||
+                                            p.title ||
+                                            '',
+                                    });
+                                };
+
+                                pushImage(p.featured_image);
+                                pushImage(p.image);
+
+                                (p.variants || []).forEach((variant) => {
+                                    pushImage(variant?.featured_image);
+                                    pushImage(variant?.image);
+                                });
+
+                                const seenImageUrls = new Set();
+                                const images = imageCandidates.filter((image) => {
+                                    if (!image?.url || seenImageUrls.has(image.url)) return false;
+                                    seenImageUrls.add(image.url);
+                                    return true;
+                                });
+
                                 return {
                                     id: p.id,
                                     title: p.title,
@@ -1375,6 +1638,7 @@
                                         typeof p.image === 'string'
                                             ? p.image
                                             : p.image?.url || p.featured_image?.url || '',
+                                    images,
                                     url: p.url,
                                 };
                             });
@@ -1482,16 +1746,24 @@
             };
         }
 
-        static relatedProducts({ url, sectionId } = {}) {
+        static relatedProducts() {
             return {
                 ...(AlpineComponentsFactory.useDisposable?.() || {}),
-                url,
-                sectionId,
+                url: '',
+                sectionId: '',
                 _observer: null,
                 _abortController: null,
+                _loadingTimer: null,
+                _requestTimeout: null,
                 loaded: false,
+                uiState: 'idle',
+                loadingSeconds: 0,
+                requestTimeoutMs: 10000,
 
                 init() {
+                    this.url = this.$el?.dataset?.relatedProductsUrl || '';
+                    this.sectionId = this.$el?.dataset?.relatedProductsSectionId || '';
+
                     if (!this.url || this.loaded) return;
 
                     if (!('IntersectionObserver' in window)) {
@@ -1515,8 +1787,42 @@
                     this._observer.observe(this.$el);
                 },
 
+                _resetLoadingIndicators() {
+                    if (this._loadingTimer) {
+                        clearInterval(this._loadingTimer);
+                        this._loadingTimer = null;
+                    }
+                    if (this._requestTimeout) {
+                        clearTimeout(this._requestTimeout);
+                        this._requestTimeout = null;
+                    }
+                    this.loadingSeconds = 0;
+                },
+
+                _startLoadingIndicators(ctrl) {
+                    this._resetLoadingIndicators();
+                    this.loadingSeconds = 0;
+                    this.uiState = 'loading';
+
+                    this._loadingTimer = setInterval(() => {
+                        this.loadingSeconds += 1;
+                    }, 1000);
+
+                    this._requestTimeout = setTimeout(() => {
+                        if (this._abortController !== ctrl) return;
+                        this.uiState = 'timeout';
+                        this.loaded = false;
+                        ctrl.abort();
+                    }, this.requestTimeoutMs);
+                },
+
+                retry() {
+                    if (!this.url || this.uiState === 'loading') return;
+                    this.load();
+                },
+
                 load() {
-                    if (this.loaded || !this.url) return;
+                    if (this.loaded || !this.url || this.uiState === 'loading') return;
                     this.loaded = true;
 
                     if (this._abortController) this._abortController.abort();
@@ -1528,8 +1834,11 @@
 
                     if (!Http?.request) {
                         this.loaded = false;
+                        this.uiState = 'error';
                         return;
                     }
+
+                    this._startLoadingIndicators(ctrl);
 
                     const request = Http.request(this.url, {
                         method: 'GET',
@@ -1540,7 +1849,11 @@
                     request
                         .then((res) => res.text())
                         .then((html) => {
-                            if (!SectionRefresher || !this.sectionId) return;
+                            if (!SectionRefresher || !this.sectionId) {
+                                this.loaded = false;
+                                this.uiState = 'error';
+                                return;
+                            }
 
                             const sections = { [this.sectionId]: html };
                             const domMap = {
@@ -1551,14 +1864,17 @@
                             };
 
                             SectionRefresher.render(sections, domMap);
+                            this.uiState = 'success';
                         })
                         .catch((err) => {
                             if (err?.isAbort || err?.name === 'AbortError') return;
                             console.error('Related products load failed:', err);
                             // allow retry if needed
                             this.loaded = false;
+                            this.uiState = 'error';
                         })
                         .finally(() => {
+                            this._resetLoadingIndicators();
                             if (this._abortController === ctrl) {
                                 this._abortController = null;
                             }
@@ -1571,32 +1887,112 @@
 
                     if (this._abortController) this._abortController.abort();
                     this._abortController = null;
+                    this._resetLoadingIndicators();
 
                     if (this.dispose) this.dispose();
                 },
             };
         }
 
-        static productCard({ imageCount = 1 } = {}) {
+        static cardGallery({
+            imageCount = 1,
+            enableImageNavigation = true,
+            enableImagePagination,
+        } = {}) {
+            if (enableImagePagination !== undefined && enableImageNavigation === true) {
+                enableImageNavigation = enableImagePagination;
+            }
+
             return {
-                ...AlpineComponentsFactory.useDisposable(),
-                imageHover: false,
-                actionsHover: false,
                 imageCount: Math.max(1, Number(imageCount) || 1),
+                enableImageNavigation: enableImageNavigation !== false,
                 activeImageIndex: 0,
-                isTouchDevice: false,
-                _hoverLeaveTimer: null,
 
                 get hasMultipleImages() {
                     return this.imageCount > 1;
                 },
 
+                get canNavigateImages() {
+                    return this.enableImageNavigation && this.hasMultipleImages;
+                },
+
+                get canPaginateImages() {
+                    return this.canNavigateImages;
+                },
+
+                get canShowHoverActions() {
+                    return this.hoverMode === 'actions';
+                },
+
+                get canShowVariantPanel() {
+                    return this.hoverMode === 'variants';
+                },
+
                 get showHoverActions() {
+                    if (!this.canShowHoverActions) return false;
                     return this.imageHover || this.actionsHover;
                 },
 
-                get paginationLabel() {
+                get imageNavigationLabel() {
                     return `${this.activeImageIndex + 1}/${this.imageCount}`;
+                },
+
+                get paginationLabel() {
+                    return this.imageNavigationLabel;
+                },
+
+                setActiveImage(index) {
+                    if (!this.canNavigateImages) return;
+                    this.activeImageIndex = this._normalizeIndex(index);
+                },
+
+                nextImage() {
+                    if (!this.canNavigateImages) return;
+                    this.setActiveImage(this.activeImageIndex + 1);
+                },
+
+                prevImage() {
+                    if (!this.canNavigateImages) return;
+                    this.setActiveImage(this.activeImageIndex - 1);
+                },
+
+                _normalizeIndex(index) {
+                    const total = this.imageCount;
+                    return ((Number(index) % total) + total) % total;
+                },
+            };
+        }
+
+        static productCard({
+            imageCount = 1,
+            hoverMode = 'actions',
+            enableImageNavigation = true,
+            enableImagePagination,
+        } = {}) {
+            if (enableImagePagination !== undefined && enableImageNavigation === true) {
+                enableImageNavigation = enableImagePagination;
+            }
+
+            return {
+                ...AlpineComponentsFactory.useDisposable(),
+                ...AlpineComponents.cardGallery({ imageCount, enableImageNavigation }),
+                imageHover: false,
+                actionsHover: false,
+                hoverMode,
+                isTouchDevice: false,
+                _hoverLeaveTimer: null,
+
+                get canShowHoverActions() {
+                    return this.hoverMode === 'actions';
+                },
+
+                get canShowVariantPanel() {
+                    return this.hoverMode === 'variants';
+                },
+
+                get showHoverActions() {
+                    if (!this.canShowHoverActions) return false;
+                    return this.imageHover || this.actionsHover;
                 },
 
                 init() {
@@ -1628,27 +2024,8 @@
                 },
 
                 setActionsHover(value) {
+                    if (!this.canShowHoverActions) return;
                     this.actionsHover = Boolean(value);
-                },
-
-                setActiveImage(index) {
-                    if (!this.hasMultipleImages) return;
-                    this.activeImageIndex = this._normalizeIndex(index);
-                },
-
-                nextImage() {
-                    if (!this.hasMultipleImages) return;
-                    this.setActiveImage(this.activeImageIndex + 1);
-                },
-
-                prevImage() {
-                    if (!this.hasMultipleImages) return;
-                    this.setActiveImage(this.activeImageIndex - 1);
-                },
-
-                _normalizeIndex(index) {
-                    const total = this.imageCount;
-                    return ((Number(index) % total) + total) % total;
                 },
 
                 destroy() {
@@ -1661,13 +2038,265 @@
             };
         }
 
+        static imageLightbox({ imageCount = 1, initialIndex = 0 } = {}) {
+            return {
+                ...AlpineComponentsFactory.useDisposable(),
+                imageCount: Math.max(1, Number(imageCount) || 1),
+                lightboxOpen: false,
+                lightboxIndex: Math.max(0, Number(initialIndex) || 0),
+                _previousBodyOverflow: null,
+
+                get lightboxLabel() {
+                    return `${this.lightboxIndex + 1} / ${this.imageCount}`;
+                },
+
+                openLightbox(index = this.lightboxIndex) {
+                    this.lightboxIndex = this._normalizeIndex(index);
+                    this.lightboxOpen = true;
+                    this._lockBodyScroll();
+                },
+
+                closeLightbox() {
+                    this.lightboxOpen = false;
+                    this._unlockBodyScroll();
+                },
+
+                nextLightbox() {
+                    this.lightboxIndex = this._normalizeIndex(this.lightboxIndex + 1);
+                },
+
+                prevLightbox() {
+                    this.lightboxIndex = this._normalizeIndex(this.lightboxIndex - 1);
+                },
+
+                _normalizeIndex(index) {
+                    const total = this.imageCount;
+                    return ((Number(index) % total) + total) % total;
+                },
+
+                _lockBodyScroll() {
+                    if (this._previousBodyOverflow === null) {
+                        this._previousBodyOverflow = document.body.style.overflow || '';
+                    }
+                    document.body.style.overflow = 'hidden';
+                },
+
+                _unlockBodyScroll() {
+                    if (this._previousBodyOverflow === null) return;
+                    document.body.style.overflow = this._previousBodyOverflow;
+                    this._previousBodyOverflow = null;
+                },
+
+                destroy() {
+                    if (this.lightboxOpen) this.closeLightbox();
+                    this.dispose();
+                },
+            };
+        }
+
+        static imageMagnifier({
+            scale = 2,
+            previewMode = 'magnify',
+            previewWidth = 0,
+            previewHeight = 0,
+            previewMaxWidth = 560,
+            previewGap = 12,
+        } = {}) {
+            return {
+                ...AlpineComponentsFactory.useDisposable(),
+                active: false,
+                imageReady: false,
+                previewFrameStyle: '',
+                previewImageStyle: '',
+                scale: Math.max(1, Number(scale) || 2),
+                previewMode,
+                previewWidth: Math.max(0, Number(previewWidth) || 0),
+                previewHeight: Math.max(0, Number(previewHeight) || 0),
+                previewMaxWidth: Math.max(240, Number(previewMaxWidth) || 560),
+                previewGap: Math.max(0, Number(previewGap) || 12),
+                zoomImage: '',
+                zoomImageLoaded: false,
+                disabled: false,
+                _frame: 0,
+                _isHovering: false,
+                _preloadPromise: null,
+                _pointer: null,
+
+                init() {
+                    this.scale = Math.max(1, Number(this.$el.dataset.zoomScale) || this.scale);
+                    this.previewMode = this.$el.dataset.previewMode || this.previewMode;
+                    this.previewWidth = this._readPositiveNumber(
+                        this.$el.dataset.previewWidth,
+                        this.previewWidth,
+                    );
+                    this.previewHeight = this._readPositiveNumber(
+                        this.$el.dataset.previewHeight,
+                        this.previewHeight,
+                    );
+                    this.previewMaxWidth =
+                        Math.max(240, Number(this.$el.dataset.previewMaxWidth)) ||
+                        this.previewMaxWidth;
+                    this.previewGap =
+                        Math.max(0, Number(this.$el.dataset.previewGap)) || this.previewGap;
+                    this.zoomImage = this.$el.dataset.zoomImage || '';
+                    this.disabled = this._detectTouch();
+                },
+
+                openMagnifier(event) {
+                    if (this.disabled || !this._isMousePointer(event)) return;
+                    this._isHovering = true;
+                    this.imageReady = this.zoomImageLoaded;
+                    this.moveMagnifier(event);
+                    if (this._syncPreview()) {
+                        this.active = true;
+                    }
+                    this._preloadZoomImage().then(() => {
+                        if (!this._isHovering) return;
+                        this._syncPreview();
+                        this.imageReady = true;
+                    });
+                },
+
+                moveMagnifier(event) {
+                    if (this.disabled || !this._isMousePointer(event)) return;
+                    this._pointer = {
+                        x: event.clientX,
+                        y: event.clientY,
+                        target: event.currentTarget,
+                    };
+
+                    if (this._frame) return;
+                    this._frame = requestAnimationFrame(() => {
+                        this._frame = 0;
+                        this._syncPreview();
+                    });
+                },
+
+                closeMagnifier() {
+                    this.active = false;
+                    this._isHovering = false;
+                    this._pointer = null;
+                },
+
+                _syncPreview() {
+                    if (!this._pointer?.target || !this.zoomImage) return false;
+
+                    const rect = this._pointer.target.getBoundingClientRect();
+                    const x = this._clamp((this._pointer.x - rect.left) / rect.width, 0, 1);
+                    const y = this._clamp((this._pointer.y - rect.top) / rect.height, 0, 1);
+                    const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+                    const viewportHeight =
+                        window.innerHeight || document.documentElement.clientHeight;
+                    const width = this.previewWidth
+                        ? Math.min(this.previewWidth, viewportWidth - this.previewGap * 2)
+                        : Math.min(this.previewMaxWidth, viewportWidth * 0.45);
+                    const height = this.previewHeight
+                        ? Math.min(this.previewHeight, viewportHeight - this.previewGap * 2)
+                        : Math.min(rect.height, viewportHeight - this.previewGap * 2);
+                    const canPlaceRight = rect.right + this.previewGap + width <= viewportWidth;
+                    const left = canPlaceRight
+                        ? rect.right + this.previewGap
+                        : Math.max(this.previewGap, rect.left - this.previewGap - width);
+                    const top = this._clamp(
+                        rect.top,
+                        this.previewGap,
+                        Math.max(this.previewGap, viewportHeight - height - this.previewGap),
+                    );
+                    const safeUrl = String(this.zoomImage).replace(/"/g, '\\"');
+                    const frameStyles = [
+                        `position: fixed`,
+                        `left: ${Math.round(left)}px`,
+                        `top: ${Math.round(top)}px`,
+                        `width: ${Math.round(width)}px`,
+                        `height: ${Math.round(height)}px`,
+                        `--image-magnifier-position: ${x * 100}% ${y * 100}%`,
+                    ];
+                    const imageStyles = [
+                        `background-image: url("${safeUrl}")`,
+                        `background-repeat: no-repeat`,
+                    ];
+
+                    if (this.previewMode === 'contain') {
+                        imageStyles.push('background-position: center');
+                        imageStyles.push('background-size: contain');
+                    } else {
+                        imageStyles.push('background-position: var(--image-magnifier-position)');
+                        imageStyles.push(`background-size: ${this.scale * 100}%`);
+                    }
+
+                    this.previewFrameStyle = frameStyles.join(';');
+                    this.previewImageStyle = imageStyles.join(';');
+                    return true;
+                },
+
+                _preloadZoomImage() {
+                    if (this.zoomImageLoaded) return Promise.resolve();
+                    if (this._preloadPromise) return this._preloadPromise;
+
+                    this._preloadPromise = new Promise((resolve) => {
+                        if (!this.zoomImage) {
+                            resolve();
+                            return;
+                        }
+
+                        const image = new Image();
+                        image.onload = () => {
+                            const decode = image.decode?.();
+                            if (decode?.then) {
+                                decode
+                                    .catch(() => {})
+                                    .finally(() => {
+                                        this.zoomImageLoaded = true;
+                                        resolve();
+                                    });
+                                return;
+                            }
+
+                            this.zoomImageLoaded = true;
+                            resolve();
+                        };
+                        image.onerror = () => {
+                            this.zoomImageLoaded = true;
+                            resolve();
+                        };
+                        image.src = this.zoomImage;
+                    });
+
+                    return this._preloadPromise;
+                },
+
+                _detectTouch() {
+                    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+                        return false;
+                    }
+                    return window.matchMedia('(hover: none), (pointer: coarse)').matches;
+                },
+
+                _isMousePointer(event) {
+                    return !event?.pointerType || event.pointerType === 'mouse';
+                },
+
+                _clamp(value, min, max) {
+                    return Math.min(Math.max(value, min), max);
+                },
+
+                _readPositiveNumber(value, fallback = 0) {
+                    const number = Number(value);
+                    return Number.isFinite(number) && number > 0 ? number : fallback;
+                },
+
+                destroy() {
+                    if (this._frame) cancelAnimationFrame(this._frame);
+                    this.dispose();
+                },
+            };
+        }
+
         static productGallery() {
             return {
                 ...AlpineComponentsFactory.useDisposable(),
                 activeIndex: 0,
                 imageCount: 0,
-                zoomOpen: false,
-                zoomIndex: 0,
                 _swiper: null,
                 _eventScope: null,
 
@@ -1701,25 +2330,6 @@
                     this.setActive((this.activeIndex - 1 + this.imageCount) % this.imageCount);
                 },
 
-                openZoom(index) {
-                    this.zoomIndex = typeof index === 'number' ? index : this.activeIndex;
-                    this.zoomOpen = true;
-                    document.body.style.overflow = 'hidden';
-                },
-
-                closeZoom() {
-                    this.zoomOpen = false;
-                    document.body.style.overflow = '';
-                },
-
-                zoomNext() {
-                    this.zoomIndex = (this.zoomIndex + 1) % this.imageCount;
-                },
-
-                zoomPrev() {
-                    this.zoomIndex = (this.zoomIndex - 1 + this.imageCount) % this.imageCount;
-                },
-
                 _initSwiper() {
                     if (typeof Swiper === 'undefined') return;
 
@@ -1745,7 +2355,6 @@
                     this._eventScope?.dispose?.();
                     this._eventScope = null;
                     if (this._swiper?.destroy) this._swiper.destroy(true, true);
-                    if (this.zoomOpen) this.closeZoom();
                     this.dispose();
                 },
             };

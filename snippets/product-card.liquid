@@ -6,6 +6,11 @@
     @param {string} [image_ratio] - Optional image ratio or class used to control image aspect ratio
     @param {number} [pc_items] - Optional items on row for image size
     @param {number} [mobile_items] - Optional mobile items on row for image size
+    @param {string} [card_mode] - Optional. 'full' | 'lite'. Defaults to 'full'.
+    @param {boolean} [show_hover_actions] - Optional. Defaults to true. Disable Quick View / Add to Cart layer when false.
+    @param {boolean} [show_image_navigation] - Optional. Defaults to true. Hide image navigation controls when false.
+    @param {boolean} [show_image_pagination] - Deprecated alias for `show_image_navigation`.
+    @param {string} [hover_mode] - Optional. 'actions' | 'none' | 'variants'. Defaults to 'actions'.
 
     @example
     {% render 'product-card', product: product, class: 'my-product-card' %}
@@ -25,37 +30,92 @@
         assign image_count = 1
     endif
 
+    assign card_mode = card_mode | default: 'full'
     assign aspect_ratio = image_ratio | default: '1/1'
+    assign hover_mode = hover_mode | default: 'actions'
+    assign show_hover_actions_enabled = true
+    assign show_image_navigation_enabled = true
+    assign show_hover_actions_explicit = false
+    assign show_image_navigation_explicit = false
+
+    if show_hover_actions != null
+        assign show_hover_actions_explicit = true
+    endif
+
+    if show_image_navigation != null
+        assign show_image_navigation_explicit = true
+    elsif show_image_pagination != null
+        assign show_image_navigation_explicit = true
+        assign show_image_navigation = show_image_pagination
+    endif
+
+    if card_mode == 'lite'
+        assign hover_mode = 'none'
+        assign show_hover_actions_enabled = false
+        assign show_image_navigation_enabled = false
+    endif
+
+    if show_hover_actions_explicit
+        if show_hover_actions == false or show_hover_actions == 'false'
+            assign show_hover_actions_enabled = false
+        else
+            assign show_hover_actions_enabled = true
+        endif
+    endif
+
+    if show_image_navigation_explicit
+        if show_image_navigation == false or show_image_navigation == 'false'
+            assign show_image_navigation_enabled = false
+        else
+            assign show_image_navigation_enabled = true
+        endif
+    endif
+
+    if show_hover_actions_enabled == false and hover_mode == 'actions'
+        assign hover_mode = 'none'
+    endif
 -%}
 
 <div
-    class="product-card {{ class }}"
-    x-data="productCard({ imageCount: {{ image_count }} })"
+    class="product-card product-card-shell {{ class }}"
+    data-card-mode="{{ card_mode | escape }}"
+    data-image-count="{{ image_count }}"
+    data-hover-mode="{{ hover_mode | escape }}"
+    data-enable-image-navigation="{{ show_image_navigation_enabled }}"
+    x-data="
+        productCard({
+            imageCount: Number($el.dataset.imageCount || 1),
+            hoverMode: $el.dataset.hoverMode || 'actions',
+            enableImageNavigation: $el.dataset.enableImageNavigation !== 'false'
+        })
+    "
     @mouseleave="setImageHover(false); setActionsHover(false)"
 >
-    <div class="product-card__category">
-        <div class="product-card__category-brand" title="{{ brand }}">{{ brand }}</div>
-        <div class="product-card__category-meta">
-            {%- if image_count > 1 -%}
+    <div class="product-card__category product-card-shell__meta">
+        <div class="product-card__category-brand product-card-shell__brand" title="{{ brand }}">
+            {{ brand }}
+        </div>
+        <div class="product-card__category-meta product-card-shell__meta-side">
+            {%- if show_image_navigation_enabled and image_count > 1 -%}
                 <div
-                    class="product-card__pagination"
-                    aria-label="Image pagination"
+                    class="product-card-shell__pagination"
+                    aria-label="Image navigation"
                 >
                     {%- if image_count <= 3 -%}
                         {%- for image in product.images -%}
                             <button
                                 type="button"
-                                class="product-card__pagination-dot"
+                                class="product-card-shell__pagination-dot"
                                 :class="{ 'is-active': activeImageIndex === {{ forloop.index0 }} }"
                                 @click.prevent="setActiveImage({{ forloop.index0 }})"
                                 aria-label="Show image {{ forloop.index }}"
                             ></button>
                         {%- endfor -%}
                     {%- else -%}
-                        <div class="product-card__pagination-numeric">
+                        <div class="product-card-shell__pagination-numeric">
                             <button
                                 type="button"
-                                class="product-card__pagination-arrow"
+                                class="product-card-shell__pagination-arrow"
                                 @click.prevent="prevImage()"
                                 aria-label="Previous image"
                             >
@@ -66,12 +126,14 @@
                                     color: 'current'
                                 -%}
                             </button>
-                            <span class="product-card__pagination-text" x-text="paginationLabel"
+                            <span
+                                class="product-card-shell__pagination-text"
+                                x-text="imageNavigationLabel"
                                 >1 / {{ image_count -}}
                             </span>
                             <button
                                 type="button"
-                                class="product-card__pagination-arrow"
+                                class="product-card-shell__pagination-arrow"
                                 @click.prevent="nextImage()"
                                 aria-label="Next image"
                             >
@@ -89,7 +151,7 @@
     </div>
 
     <div
-        class="product-card__image"
+        class="product-card__image product-card-shell__media"
         @mouseenter="setImageHover(true)"
         @mouseleave="setImageHover(false)"
     >
@@ -101,7 +163,7 @@
             200,320,480,640,800
         {%- endcapture -%}
 
-        <a href="{{ product.url }}" class="product-card__image-link">
+        <a href="{{ product.url }}" class="product-card__image-link product-card-shell__media-link">
             {%- for image in product.images -%}
                 <div
                     class="product-card__carousel-slide"
@@ -115,7 +177,9 @@
                         width: image.width,
                         sizes: sizes,
                         widths: widths,
-                        aspect_ratio: aspect_ratio
+                        aspect_ratio: aspect_ratio,
+                        class: 'product-card-shell__media-frame',
+                        img_class: 'product-card-shell__image'
                     -%}
                 </div>
             {%- else -%}
@@ -127,39 +191,43 @@
                         width: product.featured_image.width,
                         sizes: sizes,
                         widths: widths,
-                        aspect_ratio: aspect_ratio
+                        aspect_ratio: aspect_ratio,
+                        class: 'product-card-shell__media-frame',
+                        img_class: 'product-card-shell__image'
                     -%}
                 </div>
             {%- endfor -%}
         </a>
     </div>
 
-    <div class="product-card__info">
-        <div class="product-card__info-title" title="{{ product.title }}">
+    <div class="product-card__info product-card-shell__info">
+        <div class="product-card__info-title product-card-shell__title" title="{{ product.title }}">
             {{ product.title }}
         </div>
-        <div class="product-card__info-price">
+        <div class="product-card__info-price product-card-shell__price">
             {{ product.price | money }}
         </div>
     </div>
 
-    <div
-        class="product-card__hover-actions"
-        :class="showHoverActions ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'"
-        @mouseenter="setActionsHover(true)"
-        @mouseleave="setActionsHover(false)"
-    >
-        <button
-            class="product-card__btn-primary"
-            data-product-handle="{{ product.handle }}"
+    {%- if show_hover_actions_enabled -%}
+        <div
+            class="product-card__hover-actions"
+            :class="showHoverActions ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'"
+            @mouseenter="setActionsHover(true)"
+            @mouseleave="setActionsHover(false)"
         >
-            Quick View
-        </button>
-        <button
-            class="product-card__btn-secondary"
-            data-variant-id="{{ product.selected_or_first_available_variant.id }}"
-        >
-            Add to Cart
-        </button>
-    </div>
+            <button
+                class="product-card__btn-primary"
+                data-product-handle="{{ product.handle }}"
+            >
+                Quick View
+            </button>
+            <button
+                class="product-card__btn-secondary"
+                data-variant-id="{{ product.selected_or_first_available_variant.id }}"
+            >
+                Add to Cart
+            </button>
+        </div>
+    {%- endif -%}
 </div>

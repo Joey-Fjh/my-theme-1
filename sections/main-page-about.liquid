@@ -1,6 +1,9 @@
 <div
     data-section-id="{{ section.id }}"
-    class="main-page-about-section full-width"
+    class="
+        main-page-about-section full-width relative overflow-hidden color-{{ section.settings.color_scheme }}
+        min-h-168 pc:min-h-0
+    "
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
@@ -9,7 +12,10 @@
     data-component-type="main-page-about"
     data-component-id="{{ section.id }}"
 >
-    <div data-gsap-image>
+    <div
+        data-gsap-image
+        class="absolute inset-0 h-full w-full pc:static pc:h-auto"
+    >
         {%- capture sizes -%}
             (min-width: 80rem) 100vw, (min-width: 48rem) 1280px, 768px
         {%- endcapture -%}
@@ -24,30 +30,32 @@
             alt: section.settings.image_alt | default: 'About Us' | escape,
             width: section.settings.image.width,
             sizes: sizes,
-            widths: widths
+            widths: widths,
+            class: 'h-full w-full pc:h-auto',
+            img_class: 'h-full w-full object-cover object-center'
         -%}
     </div>
 
     <div class="layout container-page absolute inset-0">
-        <div class="mx-auto flex max-w-1/2 flex-col items-center justify-center gap-5 text-center text-white">
+        <div class="mx-auto flex h-full w-full max-w-lg flex-col items-center justify-start gap-3 px-6 pt-28 text-center text-white pc:max-w-1/2 pc:justify-center pc:gap-5 pc:pt-0">
             <h3
                 data-gsap-item
-                class="text-[#D5FF83]"
+                class="h5 text-theme-text pc:h3"
             >
-                About Eccenova
+                {{ section.settings.eyebrow }}
             </h3>
             <h1
                 data-gsap-item
-                class="hxl font-bold"
+                class="h2 font-bold pc:hxl"
             >
-                A Gentle Approach to Better Skin
+                {{ section.settings.heading }}
             </h1>
-            <h3
+            <div
                 data-gsap-item
-                class="opacity-80"
+                class="rte rte--compact body-sm opacity-80 pc:body-md"
             >
-                Because your skin deserves more than promises.
-            </h3>
+                {{ section.settings.description }}
+            </div>
         </div>
     </div>
 </div>
@@ -125,9 +133,33 @@
     },
     "settings": [
         {
+            "type": "color_scheme",
+            "id": "color_scheme",
+            "label": "Color scheme",
+            "default": "scheme-1"
+        },
+        {
             "type": "image_picker",
             "id": "image",
             "label": "Image"
+        },
+        {
+            "type": "inline_richtext",
+            "id": "eyebrow",
+            "default": "About Eccenova",
+            "label": "Eyebrow text"
+        },
+        {
+            "type": "inline_richtext",
+            "id": "heading",
+            "default": "A Gentle Approach to Better Skin",
+            "label": "Heading"
+        },
+        {
+            "type": "richtext",
+            "id": "description",
+            "default": "<p>Because your skin deserves more than promises.</p>",
+            "label": "Description"
         },
         {
             "type": "text",

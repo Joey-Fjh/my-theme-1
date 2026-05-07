@@ -8,7 +8,7 @@
         <div
             class="flex h-full flex-col text-theme-text"
             x-data="predictiveSearch({ limit: {{ section.settings.search_result_limit | json }} })"
-            x-init='searchUrl = {{ routes.search_url | json }}'
+            data-predictive-search-url="{{ routes.search_url }}"
             @keydown.escape.window="$store.dialog.close()"
         >
             <div class="p-6">
@@ -118,22 +118,9 @@
                         >
                             <div class="grid grid-cols-2 gap-3">
                                 <template x-for="product in products" :key="product.id">
-                                    <a
-                                        class="group block border border-theme-border-soft p-3 transition-shadow hover:shadow-sm"
-                                        :href="product.url"
-                                    >
-                                        <div class="mb-3 aspect-square overflow-hidden bg-theme-bg/60">
-                                        <img
-                                            class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-102"
-                                            :src="product.image"
-                                            :alt="product.title"
-                                            width="120"
-                                            height="120"
-                                        >
-                                        </div>
-                                        <p class="line-clamp-2 body-md" x-text="product.title"></p>
-                                        <p class="mt-1 body-md opacity-80" x-text="product.priceFormatted"></p>
-                                    </a>
+                                    {%- render 'predictive-search-product-card',
+                                        class: 'transition-shadow hover:shadow-sm'
+                                    -%}
                                 </template>
                             </div>
                             <p x-show="!products.length" class="py-4 body-md text-theme-text/45">No products found.</p>
@@ -206,9 +193,6 @@
     "name": "Search Overlay",
     "tag": "section",
     "class": "section",
-    "enabled_on": {
-        "groups": ["custom.overlay"]
-    },
     "limit": 1,
     "settings": [
         {

@@ -13,6 +13,16 @@
     "
 >
     <div class="layout container-page">
+        {%- liquid
+            assign pc_tab_header_behavior = section.settings.pc_tab_header_behavior | default: 'wrap'
+            assign tab_header_class = 'featured-products__tab-header pc:justify-center'
+            assign tab_scroll_mode = 'mobile'
+            if pc_tab_header_behavior != 'wrap'
+                assign tab_header_class = 'featured-products__tab-header pc:flex-nowrap pc:justify-center pc:overflow-x-auto pc:whitespace-nowrap'
+                assign tab_scroll_mode = 'always'
+            endif
+        -%}
+
         {%- capture tab_header -%}
             {%- for block in section.blocks -%}
                 <div 
@@ -36,7 +46,9 @@
                         {%- else -%}
                             {{ block.settings.collection.title }}
                         {%- endif -%}
-                        <sup class="sup-badge">({{ block.settings.collection.products_count }})</sup>
+                        <sup class="sup-badge">
+                            ({{ block.settings.collection.products_count | default: 0 }})
+                        </sup>
                     </div>
                 </div>
             {%- endfor -%}
@@ -143,10 +155,20 @@
 
         {%- render 'tab-control',
             initialTabStrategy: 'middle',
+            scroll_mode: tab_scroll_mode,
             tab_header: tab_header,
-            header_class: 'pc:justify-center',
+            header_class: tab_header_class,
             tab_content: tab_content
         %}
+
+        {%- render 'image',
+            image: section.settings.image,
+            alt: section.settings.image.alt,
+            width: section.settings.image.width,
+            sizes: '(min-width: 48rem) 28rem, 18rem',
+            loading: 'lazy',
+            placeholder_aspect_ratio: '16/5'
+        -%}
     </div>
 </div>
 
@@ -333,6 +355,21 @@
             "default": false
         },
         {
+            "type": "select",
+            "id": "pc_tab_header_behavior",
+            "label": "Desktop tab header behavior",
+            "options": [
+                { "value": "wrap", "label": "Wrap to multiple lines" },
+                { "value": "scroll", "label": "Horizontal drag/scroll" }
+            ],
+            "default": "wrap"
+        },
+        {
+            "type": "image_picker",
+            "id": "image",
+            "label": "Image"
+        },
+        {
             "type": "header",
             "content": "Padding"
         },
@@ -368,7 +405,7 @@
                     "label": "Select Collection"
                 },
                 {
-                    "type": "text",
+                    "type": "inline_richtext",
                     "id": "collection_heading",
                     "label": "Collection Heading",
                     "default": "Featured Collection"
@@ -384,7 +421,8 @@
     ],
     "presets": [
         {
-            "name": "Featured Products"
+            "name": "Featured Products",
+            "blocks": [{ "type": "collection" }, { "type": "collection" }, { "type": "collection" }]
         }
     ]
 }
