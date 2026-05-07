@@ -9,12 +9,82 @@
     <div class="layout container-page bg-theme-bg text-theme-text">
         <div class="flex flex-col gap-20 pc:flex-row pc:gap-80">
             {% comment %} Image {% endcomment %}
-            <div class="relative h-48 w-48 shrink-0 overflow-hidden pc:h-fit">
-                {%- render 'image',
-                    image: section.settings.image,
-                    alt: section.settings.image.alt,
-                    width: section.settings.image.width
-                -%}
+            {%- liquid
+                assign primary_image = section.settings.image
+                assign secondary_image = section.settings.image_secondary
+                assign display_image = primary_image | default: secondary_image
+                assign has_both_images = false
+                if primary_image != blank and secondary_image != blank
+                    assign has_both_images = true
+                endif
+            -%}
+            <div class="relative shrink-0">
+                {%- if has_both_images -%}
+                    <div class="flex w-full gap-4 pc:hidden">
+                        <div class="h-56 w-1/2 overflow-hidden">
+                            {%- render 'image',
+                                image: primary_image,
+                                alt: primary_image.alt,
+                                width: primary_image.width
+                            -%}
+                        </div>
+                        <div class="h-56 w-1/2 overflow-hidden">
+                            {%- render 'image',
+                                image: secondary_image,
+                                alt: secondary_image.alt,
+                                width: secondary_image.width
+                            -%}
+                        </div>
+                    </div>
+
+                    <div
+                        class="relative hidden h-100 w-64 pc:block"
+                        x-data="{ activeImage: 'primary' }"
+                    >
+                        <button
+                            type="button"
+                            class="absolute left-0 h-64 w-64 overflow-hidden transition-all duration-500 ease-out"
+                            :class="activeImage === 'primary' ? 'top-0 z-20 opacity-100' : 'top-36 z-10 opacity-95'"
+                            @click="activeImage = 'primary'"
+                            aria-label="Show first image"
+                        >
+                            {%- render 'image',
+                                image: primary_image,
+                                alt: primary_image.alt,
+                                width: primary_image.width
+                            -%}
+                        </button>
+
+                        <button
+                            type="button"
+                            class="absolute left-0 h-64 w-64 overflow-hidden transition-all duration-500 ease-out"
+                            :class="activeImage === 'secondary' ? 'top-0 z-20 opacity-100' : 'top-36 z-10 opacity-95'"
+                            @click="activeImage = 'secondary'"
+                            aria-label="Show second image"
+                        >
+                            {%- render 'image',
+                                image: secondary_image,
+                                alt: secondary_image.alt,
+                                width: secondary_image.width
+                            -%}
+                        </button>
+                    </div>
+                {%- else -%}
+                    <div class="h-56 w-56 overflow-hidden pc:hidden">
+                        {%- render 'image',
+                            image: display_image,
+                            alt: display_image.alt,
+                            width: display_image.width
+                        -%}
+                    </div>
+                    <div class="hidden h-64 w-64 overflow-hidden pc:block">
+                        {%- render 'image',
+                            image: display_image,
+                            alt: display_image.alt,
+                            width: display_image.width
+                        -%}
+                    </div>
+                {%- endif -%}
             </div>
 
             {% comment %} Content {% endcomment %}
@@ -77,6 +147,11 @@
             "type": "image_picker",
             "id": "image",
             "label": "Image"
+        },
+        {
+            "type": "image_picker",
+            "id": "image_secondary",
+            "label": "Secondary Image"
         },
         {
             "type": "text",

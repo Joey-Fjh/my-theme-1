@@ -9,7 +9,7 @@
     data-component-type="article"
     data-component-id="{{ section.id }}"
 >
-    <div class="max-h-200 overflow-hidden">
+    <div class="article-hero relative overflow-hidden pc:max-h-200">
         {%- capture sizes -%}
             (min-width: 80rem) 100vw, (min-width: 48rem) 1280px, 768px
         {%- endcapture -%}
@@ -28,42 +28,48 @@
             image: image,
             alt: image.alt | default: section.settings.image_alt | escape,
             width: image.width,
+            class: 'h-full w-full',
+            img_class: 'h-full w-full object-cover object-center',
             sizes: sizes,
             widths: widths
         -%}
-    </div>
 
-    <div class="absolute inset-0 z-10 flex max-h-200 items-center justify-center px-6 pc:px-0">
-        <div class="mx-auto flex w-full max-w-full flex-col items-center justify-center gap-5 text-center text-white pc:max-w-1/2">
-            <h3
-                class="opacity-80"
+        <div class="article-hero__overlay absolute inset-0 z-10">
+            <div
+                class="article-hero__content mx-auto flex h-full w-full max-w-lg flex-col items-center justify-center gap-4 px-6 text-center text-theme-text pc:max-w-1/2 pc:gap-5"
             >
-                cateogires
-            </h3>
-            <h1
-                class="hxl font-bold"
-            >
-                {{ article.title }}
-            </h1>
+                {%- if section.settings.eyebrow != blank -%}
+                    <h3 class="opacity-80">
+                        {{ section.settings.eyebrow }}
+                    </h3>
+                {%- endif -%}
+
+                <h1 class="font-bold pc:hxl">
+                    {{ article.title }}
+                </h1>
+            </div>
         </div>
     </div>
 
     <div class="layout layout-no-pt container-page mt-12 bg-theme-bg text-theme-text">
         <div class="flex flex-col gap-16 pc:flex-row pc:gap-60">
             {% comment %} Aside Bar {% endcomment %}
-            <aside class="shrink-0 -translate-x-7.5 h2 opacity-0 max-pc:hidden" data-gsap-sidebar>
+            <aside
+                class="shrink-0 -translate-x-7.5 h2 opacity-0 max-pc:hidden pc:w-fit pc:max-w-1/3"
+                data-gsap-sidebar
+            >
                 <nav class="pc:sticky">
                     <ul
                         id="toc-container"
-                        class="flex flex-row gap-9 overflow-x-auto pc:flex-col pc:overflow-x-hidden"
+                        class="flex w-fit max-w-full flex-row gap-9 overflow-x-auto pc:flex-col pc:overflow-x-hidden"
                     >
                         {% # theme-check-disable-next-line LiquidHTMLSyntaxError %}
                         {%- for a in blog.articles limit: section.settings.max_items -%}
-                            <li>
+                            <li class="min-w-0">
                                 <a
                                     href="{{ a.url }}"
                                     class="
-                                        block border-b border-theme-border-soft body-md leading-snug transition-colors duration-200
+                                        inline-block max-w-full truncate border-b border-theme-border-soft body-md leading-snug transition-colors duration-200
                                         {% if a.id == article.id %}
                                           text-theme-text
                                         {% else %}
@@ -167,6 +173,25 @@
 {%- endjavascript -%}
 
 {%- stylesheet -%}
+    .article-hero {
+        height: 55svh;
+        min-height: 32rem;
+    }
+
+    .article-hero__content {
+        padding-top: calc(var(--announcement-bar-height) + var(--header-height) + 1.5rem);
+    }
+
+    @media (min-width: 48rem) {
+        .article-hero {
+            height: auto;
+            min-height: 0;
+        }
+
+        .article-hero__content {
+            padding-top: 0;
+        }
+    }
 {%- endstylesheet -%}
 
 {% schema %}
@@ -194,6 +219,12 @@
             "id": "image_alt",
             "default": "About Us",
             "label": "Image alt text"
+        },
+        {
+            "type": "inline_richtext",
+            "id": "eyebrow",
+            "default": "categories",
+            "label": "Eyebrow text"
         },
         {
             "type": "range",

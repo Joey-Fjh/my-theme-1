@@ -1,9 +1,6 @@
 <div
     data-section-id="{{ section.id }}"
-    class="
-        blog-section full-width relative
-        color-{{ section.settings.color_scheme }}
-    "
+    class="        blog-section full-width relative"
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
@@ -14,8 +11,11 @@
     data-component-id="{{ section.id }}"
 >
     <div
-        class="layout layout-no-pb container-page pb-0 text-theme-text"
-        style="background-color: #ebe4d1;"
+        class="
+            layout layout-no-pb container-page
+            color-{{ section.settings.header_color_scheme }}
+            bg-theme-bg pb-0 text-theme-text
+        "
     >
         {%- comment -%} Hero {%- endcomment -%}
         <div class="relative py-20 pc:py-40">
@@ -24,12 +24,12 @@
                     <h1 class="mb-10 hxxxl leading-none font-bold">
                         {{ section.settings.header | default: 'Blog' }}
                     </h1>
-                    <p class="max-w-xl h5 leading-relaxed opacity-80">
+                    <div class="max-w-xl h5 leading-relaxed opacity-80">
                         {{
                             section.settings.description
-                            | default: 'Tailored experiences powered by AI intelligence. Discover insights that adapt to your needs.'
+                            | default: '<p>Tailored experiences powered by AI intelligence. Discover insights that adapt to your needs.</p>'
                         }}
-                    </p>
+                    </div>
                 </div>
 
                 <div
@@ -52,8 +52,11 @@
     </div>
 
     <div
-        class="layout layout-no-pt container-page pt-6 text-theme-text pc:pt-8"
-        style="background-color: #fbfbfb;"
+        class="
+            layout layout-no-pt container-page
+            color-{{ section.settings.color_scheme }}
+            bg-theme-bg pt-6 text-theme-text pc:pt-8
+        "
     >
         <div class="relative flex items-center justify-between">
             {%- comment -%} Tab Header (Router Trigger) + Tab Content (fetch replace) {%- endcomment -%}
@@ -87,7 +90,7 @@
             :class="isActive(index) ? 'opacity-100 border-b-2 border-current' : 'opacity-20 hover:opacity-60'"
             class="flex cursor-pointer flex-wrap items-center gap-x-4 gap-y-2 h2 transition-opacity focus:outline-none"
           >
-            All <sup class="sup-badge">({{ blog.articles_count }})</sup>
+            All <sup class="sup-badge">({{ blog.articles_count | default: 0 }})</sup>
           </a>
           {%- for tag in blog.all_tags -%}
             <a
@@ -140,7 +143,7 @@
 
                       {%- render 'image', 
                         url: article.url,
-                        img_class:'w-full h-full transition-transform duration-[600ms] ease-[cubic-bezier(0.25,0.46,0.45,0.94)] group-hover:scale-105',
+                        img_class:'h-full w-full object-cover transition-transform duration-[600ms] ease-[cubic-bezier(0.25,0.46,0.45,0.94)] group-hover:scale-105',
                         image: article.image,
                         alt: article.title,
                         width: article.image.width,
@@ -297,20 +300,26 @@
     "settings": [
         {
             "type": "color_scheme",
-            "id": "color_scheme",
-            "label": "Color Scheme",
+            "id": "header_color_scheme",
+            "label": "Header Color Scheme",
             "default": "color-scheme-1"
         },
         {
-            "type": "text",
+            "type": "color_scheme",
+            "id": "color_scheme",
+            "label": "Tab Control Color Scheme",
+            "default": "color-scheme-1"
+        },
+        {
+            "type": "inline_richtext",
             "id": "header",
             "default": "Blog",
             "label": "Header"
         },
         {
-            "type": "textarea",
+            "type": "richtext",
             "id": "description",
-            "default": "Tailored experiences powered by AI intelligence. Discover insights that adapt to your needs.",
+            "default": "<p>Tailored experiences powered by AI intelligence. Discover insights that adapt to your needs.</p>",
             "label": "Description"
         },
         {

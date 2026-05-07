@@ -323,17 +323,37 @@
             };
         }
 
-        static tabControl(initialStrategy = 'first') {
+        static tabControl(initialStrategy = 'first', options = {}) {
             return {
+                ...AlpineComponentsFactory.useDisposable(),
                 tabs: [],
                 panels: [],
                 activeIndex: 0,
                 mobileQuery: '(max-width: 47.99rem)',
+                scrollMode: options.scrollMode === 'always' ? 'always' : 'mobile',
+                scroller: null,
+                _pointerDown: false,
+                _dragging: false,
+                _startX: 0,
+                _startScrollLeft: 0,
+                _suppressClickUntil: 0,
 
                 init() {
                     this.$nextTick(() => {
                         const count = this.tabs.length;
                         if (count === 0) return;
+
+                        this.scroller = this.getHorizontalScrollParent(this.tabs[0]);
+                        if (this.scrollMode === 'always' && this.scroller) {
+                            this.on(this.scroller, 'pointerdown', this.onPointerDown.bind(this));
+                            this.on(window, 'pointermove', this.onPointerMove.bind(this), {
+                                passive: false,
+                            });
+                            this.on(window, 'pointerup', this.endDrag.bind(this));
+                            this.on(window, 'pointercancel', this.endDrag.bind(this));
+                            this.on(this.scroller, 'click', this.onClickCapture.bind(this), true);
+                            this.on(window, 'resize', this.onResize.bind(this));
+                        }
 
                         const nextIndex = initialStrategy === 'first' ? 0 : Math.floor(count / 2);
                         this.setActive(nextIndex, { centerOnMobile: true, behavior: 'auto' });
@@ -377,6 +397,19 @@
                     return window.matchMedia(this.mobileQuery).matches;
                 },
 
+                shouldScrollActiveTabIntoView() {
+                    return this.scrollMode === 'always' || this.isMobileViewport();
+                },
+
+                canDragScroll() {
+                    return (
+                        this.scrollMode === 'always' &&
+                        !this.isMobileViewport() &&
+                        this.scroller &&
+                        this.scroller.scrollWidth > this.scroller.clientWidth
+                    );
+                },
+
                 getHorizontalScrollParent(el) {
                     if (!el) return null;
 
@@ -394,13 +427,14 @@
                 },
 
                 scrollActiveTabIntoView(index, options = {}) {
-                    if (!this.isMobileViewport()) return;
+                    if (!this.shouldScrollActiveTabIntoView()) return;
 
                     const tab = this.tabs[index];
                     if (!(tab instanceof HTMLElement)) return;
 
                     const scroller = this.getHorizontalScrollParent(tab);
                     if (!scroller) return;
+                    this.scroller = scroller;
 
                     const { centerOnMobile = false, behavior = 'smooth' } = options;
                     const isEdgeTab = index === 0 || index === this.tabs.length - 1;
@@ -426,6 +460,60 @@
                     if (tabRight > visibleRight) {
                         scroller.scrollTo({ left: tabRight - scroller.clientWidth, behavior });
                     }
+                },
+
+                onPointerDown(event) {
+                    if (!this.canDragScroll()) return;
+                    if (event.pointerType === 'mouse' && event.button !== 0) return;
+
+                    this._pointerDown = true;
+                    this._dragging = false;
+                    this._startX = event.clientX;
+                    this._startScrollLeft = this.scroller.scrollLeft;
+                },
+
+                onPointerMove(event) {
+                    if (!this._pointerDown || !this.scroller) return;
+
+                    const deltaX = event.clientX - this._startX;
+                    if (!this._dragging && Math.abs(deltaX) >= 6) {
+                        this._dragging = true;
+                    }
+
+                    if (!this._dragging) return;
+
+                    this.scroller.scrollLeft = this._startScrollLeft - deltaX;
+                    event.preventDefault();
+                },
+
+                endDrag() {
+                    if (!this._pointerDown) return;
+
+                    this._pointerDown = false;
+                    if (this._dragging) {
+                        this._suppressClickUntil = Date.now() + 100;
+                    }
+                    this._dragging = false;
+                },
+
+                onClickCapture(event) {
+                    if (Date.now() >= this._suppressClickUntil) return;
+
+                    event.preventDefault();
+                    event.stopPropagation();
+                },
+
+                onResize() {
+                    this.$nextTick(() => {
+                        this.scrollActiveTabIntoView(this.activeIndex, {
+                            centerOnMobile: true,
+                            behavior: 'auto',
+                        });
+                    });
+                },
+
+                destroy() {
+                    this.dispose();
                 },
             };
         }
