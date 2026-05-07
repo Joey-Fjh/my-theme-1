@@ -108,8 +108,40 @@
         static IMAGEMAGNIFIER = 'imageMagnifier';
 
         static dropdown() {
+            const ThemeEvents = window.__Theme__.Events;
+            const headerMenuActiveEvent = ThemeEvents?.events?.HEADER_MENU_ACTIVE_CHANGED;
+
             return {
                 openEls: [],
+
+                emitHeaderMenuActive(active) {
+                    if (!headerMenuActiveEvent || typeof ThemeEvents?.emit !== 'function') return;
+
+                    ThemeEvents.emit(headerMenuActiveEvent, { active: Boolean(active) });
+                },
+
+                onHeaderEnter() {
+                    this.emitHeaderMenuActive(true);
+                },
+
+                onHeaderLeave() {
+                    this.emitHeaderMenuActive(false);
+                },
+
+                onHeaderFocusIn() {
+                    this.emitHeaderMenuActive(true);
+                },
+
+                onHeaderFocusOut(event) {
+                    if (this.$el.contains(event?.relatedTarget)) return;
+
+                    this.emitHeaderMenuActive(false);
+                },
+
+                closeAndDeactivate(from = 0) {
+                    this.close(from);
+                    this.emitHeaderMenuActive(false);
+                },
 
                 toggle(target) {
                     const current = target.closest('[data-dropdown]');
@@ -291,9 +323,18 @@
                 lastY: window.scrollY,
                 isHidden: false,
                 isTop: true,
+                isMenuActive: false,
 
                 init() {
+                    const ThemeEvents = window.__Theme__.Events;
+                    const headerMenuActiveEvent = ThemeEvents?.events?.HEADER_MENU_ACTIVE_CHANGED;
+
                     this.on(window, 'scroll', this.onScroll.bind(this), false);
+                    if (!headerMenuActiveEvent) return;
+
+                    this.on(window, headerMenuActiveEvent, (event) => {
+                        this.isMenuActive = Boolean(event?.detail?.active);
+                    });
                 },
 
                 onScroll() {

@@ -2,24 +2,32 @@
 {%- assign mobile_menu_popup_id = 'header-mobile-menu-drawer' -%}
 {%- assign search_overlay_popup_id = 'search-overlay-drawer' -%}
 {%- assign cart_overlay_popup_id = 'cart-overlay-drawer' -%}
+{%- assign is_homepage = false -%}
+{%- if request.page_type == 'index' -%}
+    {%- assign is_homepage = true -%}
+{%- endif -%}
 
 <header
     data-section-id="{{ section.id }}"
     class="
         header-section full-width
         color-{{ section.settings.color_scheme }}
+        bg-theme-bg text-theme-text
+        {% if is_homepage %}is-homepage{% else %}is-innerpage{% endif %}
     "
     x-data="stickyHeader"
     :class="
         {
           'is-top': isTop,
           'is-hidden' : isHidden,
-          'is-scrolled': !isTop
+          'is-scrolled': !isTop,
+          'is-menu-active': isMenuActive,
+          'is-mobile-menu-active': $store.dialog?.active === '{{ mobile_menu_popup_id }}'
         }
     "
 >
     <div class="container-page">
-        <div class="header__cols grid-cols-3 header__cols-{{ section.settings.logo_position }} grid py-3">
+        <div class="header__cols grid-cols-3 header__cols-{{ section.settings.logo_position }} grid py-5">
             <div class="flex items-center pc:hidden" style="grid-area: mobile-menu">
                 {%- render 'header-mobile-menu-drawer',
                     popup_id: mobile_menu_popup_id,
@@ -79,7 +87,7 @@
                 {%- else -%}
                     {%- render 'link',
                         text: shop.name,
-                        class: 'h2',
+                        class: 'h2 header-logo__text',
                         variant: 'underline',
                         href: routes.root_url,
                         color: 'current'
@@ -150,27 +158,76 @@
         z-index: 9998;
     }
 
-    .header > header.is-top {
-        background-color: transparent;
+    .header > header {
+        background-image: var(--gradient-background);
+        box-shadow: none;
+        transition:
+            background-color 0.24s ease,
+            box-shadow 0.24s ease,
+            transform 0.24s ease;
     }
 
     .header > header.is-hidden {
         transform: translateY(calc(-100% - var(--announcement-bar-height)));
     }
 
-    .header > header.is-scrolled {
+    .header > header.is-scrolled,
+    .header > header.is-menu-active,
+    .header > header.is-mobile-menu-active,
+    .header > header:has(.header-menu details.dropdown[open]) {
+        box-shadow: 0 1px 10px rgba(0, 0, 0, 0.06);
+    }
+
+    .header
+        > header.is-homepage.is-top:not(:hover):not(:focus-within):not(.is-menu-active):not(
+            .is-mobile-menu-active
+        ):not(:has(.header-menu details.dropdown[open])) {
         background-color: transparent;
+        background-image: none;
+    }
+
+    .header > header.is-homepage.is-top:hover,
+    .header > header.is-homepage.is-top:focus-within,
+    .header > header.is-homepage.is-top.is-menu-active,
+    .header > header.is-homepage.is-top.is-mobile-menu-active {
+        background-image: var(--gradient-background);
         box-shadow: 0 1px 10px rgba(0, 0, 0, 0.06);
     }
 
     .header-section {
         .header__cols {
             grid-template-areas: 'mobile-menu logo navigation';
+            grid-template-columns: auto minmax(0, 1fr) auto;
+            align-items: center;
+            column-gap: 1rem;
+        }
+
+        .header-logo {
+            min-width: 0;
+        }
+
+        .header-logo > * {
+            min-width: 0;
+            max-width: 100%;
+        }
+
+        .header-logo .header-logo__text {
+            display: block;
+            width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .header-navigation {
+            min-width: max-content;
         }
 
         @media (min-width: 48rem) {
             .header__cols {
                 grid-template-areas: 'logo menu navigation';
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                column-gap: 0;
             }
 
             .header__cols-middle {
