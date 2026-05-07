@@ -102,6 +102,7 @@
         static RELATEDPRODUCTS = 'relatedProducts';
         static NEWSLETTEROVERLAY = 'newsletterOverlay';
         static CARTOVERLAY = 'cartOverlay';
+        static CARDGALLERY = 'cardGallery';
         static PRODUCTCARD = 'productCard';
         static IMAGELIGHTBOX = 'imageLightbox';
         static IMAGEMAGNIFIER = 'imageMagnifier';
@@ -1558,6 +1559,35 @@
                                     finalPrice = fmt.format(p.price / 100);
                                 }
 
+                                const imageCandidates = [];
+                                const pushImage = (image) => {
+                                    if (!image) return;
+                                    const url = typeof image === 'string' ? image : image?.url;
+                                    if (!url) return;
+                                    imageCandidates.push({
+                                        url,
+                                        alt:
+                                            (typeof image === 'object' && image?.alt) ||
+                                            p.title ||
+                                            '',
+                                    });
+                                };
+
+                                pushImage(p.featured_image);
+                                pushImage(p.image);
+
+                                (p.variants || []).forEach((variant) => {
+                                    pushImage(variant?.featured_image);
+                                    pushImage(variant?.image);
+                                });
+
+                                const seenImageUrls = new Set();
+                                const images = imageCandidates.filter((image) => {
+                                    if (!image?.url || seenImageUrls.has(image.url)) return false;
+                                    seenImageUrls.add(image.url);
+                                    return true;
+                                });
+
                                 return {
                                     id: p.id,
                                     title: p.title,
@@ -1567,6 +1597,7 @@
                                         typeof p.image === 'string'
                                             ? p.image
                                             : p.image?.url || p.featured_image?.url || '',
+                                    images,
                                     url: p.url,
                                 };
                             });
@@ -1822,26 +1853,105 @@
             };
         }
 
-        static productCard({ imageCount = 1 } = {}) {
+        static cardGallery({
+            imageCount = 1,
+            enableImageNavigation = true,
+            enableImagePagination,
+        } = {}) {
+            if (enableImagePagination !== undefined && enableImageNavigation === true) {
+                enableImageNavigation = enableImagePagination;
+            }
+
             return {
-                ...AlpineComponentsFactory.useDisposable(),
-                imageHover: false,
-                actionsHover: false,
                 imageCount: Math.max(1, Number(imageCount) || 1),
+                enableImageNavigation: enableImageNavigation !== false,
                 activeImageIndex: 0,
-                isTouchDevice: false,
-                _hoverLeaveTimer: null,
 
                 get hasMultipleImages() {
                     return this.imageCount > 1;
                 },
 
+                get canNavigateImages() {
+                    return this.enableImageNavigation && this.hasMultipleImages;
+                },
+
+                get canPaginateImages() {
+                    return this.canNavigateImages;
+                },
+
+                get canShowHoverActions() {
+                    return this.hoverMode === 'actions';
+                },
+
+                get canShowVariantPanel() {
+                    return this.hoverMode === 'variants';
+                },
+
                 get showHoverActions() {
+                    if (!this.canShowHoverActions) return false;
                     return this.imageHover || this.actionsHover;
                 },
 
-                get paginationLabel() {
+                get imageNavigationLabel() {
                     return `${this.activeImageIndex + 1}/${this.imageCount}`;
+                },
+
+                get paginationLabel() {
+                    return this.imageNavigationLabel;
+                },
+
+                setActiveImage(index) {
+                    if (!this.canNavigateImages) return;
+                    this.activeImageIndex = this._normalizeIndex(index);
+                },
+
+                nextImage() {
+                    if (!this.canNavigateImages) return;
+                    this.setActiveImage(this.activeImageIndex + 1);
+                },
+
+                prevImage() {
+                    if (!this.canNavigateImages) return;
+                    this.setActiveImage(this.activeImageIndex - 1);
+                },
+
+                _normalizeIndex(index) {
+                    const total = this.imageCount;
+                    return ((Number(index) % total) + total) % total;
+                },
+            };
+        }
+
+        static productCard({
+            imageCount = 1,
+            hoverMode = 'actions',
+            enableImageNavigation = true,
+            enableImagePagination,
+        } = {}) {
+            if (enableImagePagination !== undefined && enableImageNavigation === true) {
+                enableImageNavigation = enableImagePagination;
+            }
+
+            return {
+                ...AlpineComponentsFactory.useDisposable(),
+                ...AlpineComponents.cardGallery({ imageCount, enableImageNavigation }),
+                imageHover: false,
+                actionsHover: false,
+                hoverMode,
+                isTouchDevice: false,
+                _hoverLeaveTimer: null,
+
+                get canShowHoverActions() {
+                    return this.hoverMode === 'actions';
+                },
+
+                get canShowVariantPanel() {
+                    return this.hoverMode === 'variants';
+                },
+
+                get showHoverActions() {
+                    if (!this.canShowHoverActions) return false;
+                    return this.imageHover || this.actionsHover;
                 },
 
                 init() {
@@ -1873,27 +1983,8 @@
                 },
 
                 setActionsHover(value) {
+                    if (!this.canShowHoverActions) return;
                     this.actionsHover = Boolean(value);
-                },
-
-                setActiveImage(index) {
-                    if (!this.hasMultipleImages) return;
-                    this.activeImageIndex = this._normalizeIndex(index);
-                },
-
-                nextImage() {
-                    if (!this.hasMultipleImages) return;
-                    this.setActiveImage(this.activeImageIndex + 1);
-                },
-
-                prevImage() {
-                    if (!this.hasMultipleImages) return;
-                    this.setActiveImage(this.activeImageIndex - 1);
-                },
-
-                _normalizeIndex(index) {
-                    const total = this.imageCount;
-                    return ((Number(index) % total) + total) % total;
                 },
 
                 destroy() {

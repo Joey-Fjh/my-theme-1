@@ -204,6 +204,126 @@
                 justify-content: center;
             }
         }
+
+        .header-dropdown-super-menu {
+            .header-super-menu-panel {
+                min-height: clamp(18rem, 36vw, 28rem);
+            }
+
+            .header-super-menu-layout {
+                display: grid;
+                gap: 3rem;
+                min-height: inherit;
+                align-items: start;
+            }
+
+            .header-super-menu-layout--full {
+                grid-template-columns: minmax(0, 1fr);
+            }
+
+            .header-super-menu-main {
+                display: flex;
+                min-width: 0;
+                min-height: inherit;
+                padding: 1rem 0 5rem;
+            }
+
+            .header-super-menu-columns {
+                display: grid;
+                width: 100%;
+                align-items: start;
+                grid-template-columns: repeat(var(--super-menu-column-count), minmax(0, 1fr));
+                gap: 2rem 3.2rem;
+            }
+
+            .header-super-menu-column {
+                display: flex;
+                min-width: 0;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 2rem;
+            }
+
+            .header-super-menu-child-item {
+                width: 100%;
+            }
+
+            .header-super-menu-child-link {
+                padding: 0;
+                white-space: nowrap;
+            }
+
+            .header-super-menu-child-link--has-children {
+                width: fit-content;
+                max-width: 100%;
+            }
+
+            .header-super-menu-grandchildren-links a {
+                display: inline-block;
+                max-width: 100%;
+                text-wrap: pretty;
+                overflow-wrap: anywhere;
+            }
+
+            .header-super-menu-grandchildren-links {
+                display: flex;
+                width: 100%;
+                min-height: 7.5rem;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1.2rem;
+            }
+
+            .header-super-menu-series {
+                min-width: 0;
+                min-height: inherit;
+                padding-left: 2rem;
+            }
+
+            .header-super-menu-series-tabs {
+                min-width: 0;
+                min-height: inherit;
+                padding: 0 0 5rem;
+            }
+
+            .header-super-menu-series-tabs .tab-content-default {
+                min-width: 0;
+            }
+
+            .header-super-menu-series .tab-header-default {
+                color: var(--color-theme-text);
+            }
+
+            .header-super-menu-series .product-card {
+                color: var(--color-theme-text);
+                padding: 0;
+            }
+
+            .header-super-menu-series .product-card-shell__meta,
+            .header-super-menu-series .product-card-shell__info,
+            .header-super-menu-series .product-card-shell__meta-side,
+            .header-super-menu-series .product-card-shell__brand,
+            .header-super-menu-series .product-card-shell__title,
+            .header-super-menu-series .product-card-shell__price {
+                color: var(--color-theme-text);
+            }
+
+            .header-super-menu-series .product-card-shell__media-frame {
+                background-color: transparent;
+            }
+
+            @media (min-width: 64rem) {
+                .header-super-menu-layout--with-series {
+                    grid-template-columns:
+                        minmax(0, var(--super-menu-primary-width))
+                        minmax(0, var(--super-menu-secondary-width));
+                }
+
+                .header-super-menu-columns {
+                    gap: 2.4rem 4rem;
+                }
+            }
+        }
     }
 {% endstylesheet %}
 
@@ -339,6 +459,17 @@
             "label": "Enable Product Series Tabs",
             "default": false,
             "visible_if": "{{ section.settings.menu_type == 'super' }}"
+        },
+        {
+            "type": "range",
+            "id": "super_menu_primary_width",
+            "label": "Super Menu Left Column Width",
+            "min": 30,
+            "max": 70,
+            "step": 1,
+            "unit": "%",
+            "default": 42,
+            "visible_if": "{{ section.settings.menu_type == 'super' and section.settings.enable_super_menu_series }}"
         },
         {
             "type": "collection",

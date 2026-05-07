@@ -507,6 +507,7 @@
                         Factory.register?.(Comps.RELATEDPRODUCTS, Comps.relatedProducts);
                         Factory.register?.(Comps.NEWSLETTEROVERLAY, Comps.newsletterOverlay);
                         Factory.register?.(Comps.CARTOVERLAY, Comps.cartOverlay);
+                        Factory.register?.(Comps.CARDGALLERY, Comps.cardGallery);
                         Factory.register?.(Comps.PRODUCTCARD, Comps.productCard);
                         Factory.register?.(Comps.IMAGELIGHTBOX, Comps.imageLightbox);
                         Factory.register?.(Comps.IMAGEMAGNIFIER, Comps.imageMagnifier);
