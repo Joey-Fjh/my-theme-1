@@ -64,3 +64,93 @@ The goal is to ensure that all icons:
 - Inherit color from their parent (currentColor)
 - Have consistent, predictable markup
 - Stay lightweight and maintainable
+
+---
+
+# RTE Standard
+
+This theme uses a shared RTE system so rich text behaves consistently across pages, articles, product descriptions, and supporting content blocks.
+
+Reference sources:
+
+- Shopify docs: `richtext` outputs block HTML, `inline_richtext` outputs inline HTML without an outer `<p>`.
+- Dawn: shared `rte` styling is reused for long-form and product-related content instead of redefining rich-text styles per section.
+
+- https://shopify.dev/storefronts/themes/architecture/settings/input-settings
+- https://github.com/Shopify/dawn/blob/main/sections/main-product.liquid
+
+## Quick Decision Guide
+
+Use this when adding or reviewing a content field:
+
+1. If the source is `page.content` or `article.content`, always use `.rte`.
+2. If the source is `product.description`, use `.rte`.
+   If the description appears in a secondary panel like tabs, use `.rte rte--supporting`.
+3. If the source is a Shopify `richtext` setting:
+   Use `.rte rte--compact` when the section should support paragraphs, lists, links, and consistent formatting.
+   Keep local typography only when the section is intentionally art-directed and shared RTE behavior would visibly change the design.
+4. If the source is `inline_richtext`, do not use `.rte`.
+   Style it as local UI text.
+
+## Core Rules
+
+1. Never output a Shopify `richtext` value inside a `<p>` or heading tag.
+   `richtext` already renders block-level HTML such as `<p>` and `<ul>`.
+2. Prefer modifiers over one-off section-specific overrides.
+   Use `.rte--compact` or `.rte--supporting` instead of creating another custom rich-text class unless the section truly needs a custom system.
+3. `.rte` is structural, not a typography reset.
+   Keep font size, text color, alignment, and breakpoint-specific display styling on the section/snippet wrapper classes.
+4. Adjust global RTE behavior in [tailwind.components.css](/d:/project/shopify_project/my-theme-1/tailwind/tailwind.components.css:346).
+   Adjust template classification in the section/snippet markup by changing which RTE class is applied.
+
+## RTE Variants
+
+| Class              | Purpose                                                  | Typical use                                          |
+| ------------------ | -------------------------------------------------------- | ---------------------------------------------------- |
+| `.rte`             | Shared rich-text structure and content formatting        | page body, article body, main product description    |
+| `.rte--compact`    | Same formatting model with tighter vertical rhythm       | hero descriptions, cards, short supporting rich text |
+| `.rte--supporting` | Supporting-content mode with smaller, left-aligned media | product tabs, secondary description panels           |
+
+## Current Project Mapping
+
+### Full `.rte`
+
+- [sections/page.liquid](/d:/project/shopify_project/my-theme-1/sections/page.liquid:16)
+- [sections/article.liquid](/d:/project/shopify_project/my-theme-1/sections/article.liquid:100)
+- [snippets/product-info-blocks.liquid](/d:/project/shopify_project/my-theme-1/snippets/product-info-blocks.liquid:82)
+
+### `.rte rte--supporting`
+
+- [sections/product-tabs.liquid](/d:/project/shopify_project/my-theme-1/sections/product-tabs.liquid:93)
+
+### `.rte rte--compact`
+
+- [sections/promise-section.liquid](/d:/project/shopify_project/my-theme-1/sections/promise-section.liquid:54)
+- [sections/404.liquid](/d:/project/shopify_project/my-theme-1/sections/404.liquid:24)
+- [sections/blog.liquid](/d:/project/shopify_project/my-theme-1/sections/blog.liquid:26)
+- [sections/collection.liquid](/d:/project/shopify_project/my-theme-1/sections/collection.liquid:23)
+- [sections/footer.liquid](/d:/project/shopify_project/my-theme-1/sections/footer.liquid:88)
+- [sections/main-page-about.liquid](/d:/project/shopify_project/my-theme-1/sections/main-page-about.liquid:54)
+- [sections/main-page-contact.liquid](/d:/project/shopify_project/my-theme-1/sections/main-page-contact.liquid:70)
+- [sections/philosophy-section.liquid](/d:/project/shopify_project/my-theme-1/sections/philosophy-section.liquid:28)
+- [sections/philosophy-section.liquid](/d:/project/shopify_project/my-theme-1/sections/philosophy-section.liquid:79)
+- [sections/product-recommendations.liquid](/d:/project/shopify_project/my-theme-1/sections/product-recommendations.liquid:32)
+- [sections/scroll-categories.liquid](/d:/project/shopify_project/my-theme-1/sections/scroll-categories.liquid:35)
+- [sections/scroll-categories.liquid](/d:/project/shopify_project/my-theme-1/sections/scroll-categories.liquid:81)
+
+## Intentional Exceptions
+
+These richtext outputs still use local typography on purpose because they are either strongly art-directed or inside a reusable component where shared RTE behavior could have wider side effects:
+
+- [sections/about-stats.liquid](/d:/project/shopify_project/my-theme-1/sections/about-stats.liquid:96)
+- [sections/newsletter-overlay.liquid](/d:/project/shopify_project/my-theme-1/sections/newsletter-overlay.liquid:70)
+- [snippets/accordion.liquid](/d:/project/shopify_project/my-theme-1/snippets/accordion.liquid:138)
+
+If any of these areas later need stronger paragraph/list/link consistency, migrate them deliberately into `.rte`, `.rte--compact`, or `.rte--supporting`.
+
+## Maintenance Notes
+
+- The main place to change shared RTE behavior is [tailwind.components.css](/d:/project/shopify_project/my-theme-1/tailwind/tailwind.components.css:346).
+- The main place to decide which behavior a block gets is the section or snippet markup where the class is assigned.
+- `.rte` should not be used to force a section back to `body-md`; keep display typography on the wrapper that owns the layout.
+- A structural correctness fix was applied in [sections/footer.liquid](/d:/project/shopify_project/my-theme-1/sections/footer.liquid:88): a `richtext` output wrapper was changed from `<p>` to `<div>` to avoid invalid nested block markup.

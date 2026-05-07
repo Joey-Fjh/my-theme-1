@@ -346,6 +346,12 @@ Product-card
 
 /* =========================================================
 Rich text (RTE)
+Standard:
+- `.rte` handles shared rich-text structure and the default long-form media treatment.
+- `rte--compact` reduces vertical rhythm for short supporting copy.
+- `rte--supporting` is for secondary content areas where media should stay
+  smaller and align with the copy instead of centering like a main editorial image.
+
 Used to style backend rich-text HTML output:
 - {{ page.content }}
 - {{ article.content }}
@@ -354,7 +360,7 @@ Used to style backend rich-text HTML output:
 ========================================================= */
 @layer components {
     .rte {
-        @apply body-md leading-relaxed text-theme-text;
+        @apply leading-relaxed;
 
         word-break: break-word;
     }
@@ -593,6 +599,28 @@ Used to style backend rich-text HTML output:
 
     .rte > *:last-child {
         margin-bottom: 0;
+    }
+
+    .rte.rte--supporting {
+        max-width: 42rem;
+    }
+
+    .rte.rte--supporting :is(p, div):has(> img:only-child),
+    .rte.rte--supporting figure {
+        margin-inline: 0;
+    }
+
+    .rte.rte--supporting img,
+    .rte.rte--supporting figure {
+        max-width: min(100%, 36rem);
+    }
+
+    .rte.rte--supporting img {
+        margin-inline: 0;
+    }
+
+    .rte.rte--supporting figcaption {
+        text-align: left;
     }
 }
 
