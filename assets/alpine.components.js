@@ -98,6 +98,7 @@
         static VARIANTPICKER = 'VariantPicker';
         static QUANTITYSELECTOR = 'QuantitySelector';
         static BUYBUTTONS = 'BuyButtons';
+        static PICKUPAVAILABILITY = 'PickupAvailability';
         static PREDICTIVESEARCH = 'predictiveSearch';
         static RELATEDPRODUCTS = 'relatedProducts';
         static NEWSLETTEROVERLAY = 'newsletterOverlay';
@@ -1388,6 +1389,167 @@
                 destroy() {
                     this._eventScope?.dispose?.();
                     this._eventScope = null;
+                    this.dispose();
+                },
+            };
+        }
+
+        /**
+         * Product pickup availability — fetches server-rendered pickup availability
+         * markup for the selected variant and refreshes when PRODUCT_VARIANT_CHANGED fires.
+         *
+         * @param {Object}      opts
+         * @param {string}      opts.sectionId
+         * @param {number|null} [opts.variantId=null]
+         * @param {string}      [opts.rootUrl='/']
+         * @param {string}      [opts.loadingText='Checking store pickup availability...']
+         * @param {string}      [opts.errorText='Unable to load pickup availability right now.']
+         * @param {string}      [opts.retryText='Try again']
+         */
+        static PickupAvailability({
+            sectionId,
+            variantId = null,
+            rootUrl = '/',
+            loadingText = 'Checking store pickup availability...',
+            errorText = 'Unable to load pickup availability right now.',
+            retryText = 'Try again',
+        } = {}) {
+            return {
+                ...AlpineComponentsFactory.useDisposable(),
+                sectionId,
+                variantId,
+                rootUrl,
+                loadingText,
+                errorText,
+                retryText,
+                isLoading: false,
+                hasContent: false,
+                showError: false,
+                _abortController: null,
+                _eventScope: null,
+
+                init() {
+                    const dataset = this.$el?.dataset || {};
+                    this.sectionId = this.sectionId || dataset.sectionId || '';
+                    this.rootUrl = dataset.rootUrl || this.rootUrl || '/';
+                    this.variantId = Number(dataset.variantId || this.variantId || 0) || null;
+                    this.loadingText = dataset.loadingText || this.loadingText;
+                    this.errorText = dataset.errorText || this.errorText;
+                    this.retryText = dataset.retryText || this.retryText;
+
+                    const Events = window.__Theme__.Events;
+                    const events = Events.events;
+                    this._eventScope = Events.createScope();
+
+                    const onVariantChange = (e) => {
+                        if (e.detail?.sectionId !== this.sectionId) return;
+                        this.variantId = e.detail?.variant?.id || null;
+                        this.load();
+                    };
+
+                    this._eventScope.on(events.PRODUCT_VARIANT_CHANGED, onVariantChange);
+
+                    this.load();
+                },
+
+                get requestUrl() {
+                    if (!this.variantId) return '';
+                    const normalizedRoot = String(this.rootUrl || '/').replace(/\/?$/, '/');
+                    return `${normalizedRoot}variants/${this.variantId}/?section_id=pickup-availability`;
+                },
+
+                retry() {
+                    if (this.isLoading) return;
+                    this.load();
+                },
+
+                get contentTarget() {
+                    return this.$el?.querySelector('[data-pickup-availability-content]') || null;
+                },
+
+                buildDomMap() {
+                    if (!this.sectionId) return {};
+                    return {
+                        'pickup-availability': {
+                            targetSelector: `[data-pickup-availability-root="${CSS.escape(this.sectionId)}"]`,
+                            innerSelectors: ['[data-pickup-availability-content]'],
+                        },
+                    };
+                },
+
+                clearContent() {
+                    this.hasContent = false;
+                    this.showError = false;
+                    this.contentTarget?.replaceChildren();
+                },
+
+                load() {
+                    if (!this.requestUrl) {
+                        this.clearContent();
+                        return;
+                    }
+
+                    if (this._abortController) this._abortController.abort();
+                    this._abortController = new AbortController();
+                    const ctrl = this._abortController;
+
+                    this.isLoading = true;
+                    this.showError = false;
+                    this.hasContent = false;
+                    this.contentTarget?.replaceChildren();
+
+                    const Http = window.ShopifyHttp;
+                    const SectionRefresher = window.ShopifySectionRefresher;
+                    if (!Http?.request || !SectionRefresher) {
+                        this.isLoading = false;
+                        this.showError = true;
+                        return;
+                    }
+
+                    Http.request(this.requestUrl, {
+                        method: 'GET',
+                        headers: { Accept: 'text/html' },
+                        signal: ctrl.signal,
+                    })
+                        .then((res) => res.text())
+                        .then((html) => {
+                            const doc = new DOMParser().parseFromString(html, 'text/html');
+                            const rendered = doc.querySelector(
+                                '[data-pickup-availability-content]',
+                            );
+                            const isEmpty = rendered?.dataset?.empty === 'true';
+
+                            if (!rendered || isEmpty) {
+                                this.clearContent();
+                                return;
+                            }
+
+                            SectionRefresher.render(
+                                { 'pickup-availability': html },
+                                this.buildDomMap(),
+                            );
+                            this.hasContent = true;
+                            this.showError = false;
+                        })
+                        .catch((err) => {
+                            if (err?.isAbort || err?.name === 'AbortError') return;
+                            console.error('Pickup availability load failed:', err);
+                            this.clearContent();
+                            this.showError = true;
+                        })
+                        .finally(() => {
+                            if (this._abortController === ctrl) {
+                                this._abortController = null;
+                            }
+                            this.isLoading = false;
+                        });
+                },
+
+                destroy() {
+                    this._eventScope?.dispose?.();
+                    this._eventScope = null;
+                    if (this._abortController) this._abortController.abort();
+                    this._abortController = null;
                     this.dispose();
                 },
             };

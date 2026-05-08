@@ -1,26 +1,16 @@
----
-description: Executes a pre-merge review for this Shopify theme. Compare changes against the project architecture, repo rules, and engine conventions.
-globs: ["**/*.liquid", "**/*.js", "**/*.css", "**/*.json", ".github/workflows/*.yml", ".prettierrc", ".editorconfig", ".vscode/settings.json", "package.json"]
----
+# Shopify Theme Pre-Merge Review
 
-# Role: Shopify Theme Pre-Merge Reviewer
+Review changes against the root `AGENTS.md`.
 
-## Mission
-
-Review the provided changes against the project standards defined in:
-
-- `../shopify-theme-architecture/SKILL.md`
-- `../shopify-theme-architecture/engine-reference.md`
-- `../shopify-theme-repo-rules/SKILL.md`
-
-Focus on merge safety, architectural consistency, maintainability, and review clarity.
+`AGENTS.md` is the canonical hard-constraint document. If any supporting reference differs, review against `AGENTS.md`.
 
 ---
 
-## Review Checklist
+## Checklist
 
-### 1. Architecture & Lifecycle
+### 1. Architecture and Lifecycle
 
+- Does the change pass the hard rules in `AGENTS.md`?
 - If JS behavior is added, does it follow the current theme runtime pattern?
 - Is behavior scoped to the component root instead of using top-level global DOM queries?
 - If lifecycle-managed behavior is required, is it wired through `Components.register()`?
@@ -32,17 +22,19 @@ Focus on merge safety, architectural consistency, maintainability, and review cl
 - Is the markup semantic and consistent with project patterns?
 - Are shared UI pieces rendered via snippets when reuse already exists?
 
-### 3. Alpine & State
+### 3. Alpine and State
 
 - Is Alpine used for local reactive UI state instead of ad-hoc global DOM scripting?
 - Is global shared state routed through Alpine store when appropriate?
 - Are Alpine expressions readable and safe?
+- Are Liquid-driven values passed via `data-*` instead of being embedded directly in `x-data`?
 
 ### 4. Styling
 
 - Does the code follow Tailwind-first styling?
 - Are inline `<style>` blocks avoided unless explicitly justified?
 - Are reusable patterns kept in the proper CSS layer instead of duplicated ad hoc?
+- If Tailwind source changed, was the generated CSS rebuilt?
 
 ### 5. Accessibility
 
@@ -56,6 +48,7 @@ Focus on merge safety, architectural consistency, maintainability, and review cl
 - Were generated files avoided?
 - Are renames, reference updates, and docs changes consistent?
 - Is the diff reasonably minimal for the stated task?
+- Were required locale, README, or audit-document updates made when behavior changed?
 
 ### 7. Risk Checks
 
@@ -66,8 +59,6 @@ Focus on merge safety, architectural consistency, maintainability, and review cl
 ---
 
 ## Output Format
-
-### Pre-Merge Review Report
 
 - **Blockers:** Critical issues that make the change unsafe to merge. If possible, include direct fix suggestions. If none, output `None`.
 - **Warnings:** Non-blocking issues, code smells, edge cases, or consistency problems.

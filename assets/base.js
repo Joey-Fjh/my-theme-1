@@ -503,6 +503,7 @@
                         Factory.register?.(Comps.VARIANTPICKER, Comps.VariantPicker);
                         Factory.register?.(Comps.QUANTITYSELECTOR, Comps.QuantitySelector);
                         Factory.register?.(Comps.BUYBUTTONS, Comps.BuyButtons);
+                        Factory.register?.(Comps.PICKUPAVAILABILITY, Comps.PickupAvailability);
                         Factory.register?.(Comps.PREDICTIVESEARCH, Comps.predictiveSearch);
                         Factory.register?.(Comps.RELATEDPRODUCTS, Comps.relatedProducts);
                         Factory.register?.(Comps.NEWSLETTEROVERLAY, Comps.newsletterOverlay);

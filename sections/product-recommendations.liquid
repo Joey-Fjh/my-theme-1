@@ -1,9 +1,22 @@
 {%- liquid
-    assign heading = section.settings.heading | default: 'Related Product'
+    assign recommendation_type = section.settings.recommendation_type | default: 'related'
+    assign default_heading = 'Related products'
+    if recommendation_type == 'complementary'
+        assign default_heading = 'Complementary products'
+    endif
+    assign heading = section.settings.heading | default: default_heading
     assign description = section.settings.description
     assign limit = section.settings.limit | default: 4
-
-    assign base_url = routes.product_recommendations_url
+    assign empty_text = 'No related products available right now.'
+    assign loading_text = 'Loading related products...'
+    assign timeout_text = 'Request timed out. You can retry loading related products.'
+    assign error_text = 'Failed to load related products.'
+    if recommendation_type == 'complementary'
+        assign empty_text = 'No complementary products available right now.'
+        assign loading_text = 'Loading complementary products...'
+        assign timeout_text = 'Request timed out. You can retry loading complementary products.'
+        assign error_text = 'Failed to load complementary products.'
+    endif
 -%}
 
 <section
@@ -20,133 +33,40 @@
     data-component-type="product-recommendations"
     data-component-id="{{ section.id }}"
 >
-    {%- if product -%}
-        {%- capture rec_url -%}
-            {{- base_url -}}?product_id={{ product.id }}&section_id={{ section.id }}&limit={{ limit }}&intent=related
-        {%- endcapture -%}
-
-        <div
-            class="layout container-page py-12 pc:py-16"
-            data-related-products-url="{{ rec_url | strip_newlines | escape }}"
-            data-related-products-section-id="{{ section.id }}"
-            x-data="relatedProducts()"
-        >
-            <div data-related-products-content>
-                {%- if recommendations.performed -%}
-                    {%- if recommendations.products_count > 0 -%}
-                        <div class="flex flex-col items-start justify-between gap-4 pc:flex-row pc:gap-8">
-                            <h1>{{ heading }}</h1>
-                            {%- if description != blank -%}
-                                <div class="rte rte--compact max-w-md body-md leading-relaxed text-theme-text/70">
-                                    {{ description }}
-                                </div>
-                            {%- endif -%}
-                        </div>
-
-                        <div class="mt-8 grid grid-cols-2 gap-6 pc:grid-cols-4">
-                            {%- for product in recommendations.products -%}
-                                {% render 'product-card', product: product %}
-                            {%- endfor -%}
-                        </div>
-                    {%- else -%}
-                        <div class="flex flex-col items-start justify-between gap-4 pc:flex-row pc:gap-8">
-                            <h1>{{ heading }}</h1>
-                            {%- if description != blank -%}
-                                <div class="rte rte--compact max-w-md body-md leading-relaxed text-theme-text/70">
-                                    {{ description }}
-                                </div>
-                            {%- endif -%}
-                        </div>
-                        <p class="mt-8 body-md text-theme-text/70" role="status" aria-live="polite">
-                            No related products available right now.
-                        </p>
-                    {%- endif -%}
-                {%- else -%}
-                    <div class="flex flex-col items-start justify-between gap-4 pc:flex-row pc:gap-8">
-                        <h1>{{ heading }}</h1>
-                        {%- if description != blank -%}
-                            <div class="rte rte--compact max-w-md body-md leading-relaxed text-theme-text/70">
-                                {{ description }}
-                            </div>
-                        {%- endif -%}
-                    </div>
-
-                    <div
-                        class="mt-8 grid grid-cols-2 gap-6 pc:grid-cols-4"
-                        x-show="uiState == 'idle' || uiState == 'loading'"
-                        x-cloak
-                    >
-                        {%- for i in (1..limit) -%}
-                            <div class="border border-theme-border-soft bg-theme-bg p-4">
-                                <div class="aspect-square animate-pulse bg-theme-border-soft"></div>
-                                <div
-                                    class="mt-4 h-4 w-3/4 animate-pulse bg-theme-border-soft"
-                                ></div>
-                                <div
-                                    class="mt-2 h-4 w-1/2 animate-pulse bg-theme-border-soft"
-                                ></div>
-                            </div>
-                        {%- endfor -%}
-                    </div>
-
-                    <p
-                        class="mt-6 body-md text-theme-text/70"
-                        role="status"
-                        aria-live="polite"
-                        x-show="uiState == 'loading'"
-                        x-cloak
-                    >
-                        Loading related products... <span x-text="loadingSeconds"></span>s
-                    </p>
-
-                    <div
-                        class="mt-6 flex flex-wrap items-center gap-3"
-                        x-show="uiState == 'timeout'"
-                        x-cloak
-                    >
-                        <p class="body-md text-theme-text/70" role="status" aria-live="polite">
-                            Request timed out. You can retry loading related products.
-                        </p>
-                        <button
-                            type="button"
-                            class="border border-theme-border-soft px-3 py-2 body-md transition-opacity hover:opacity-70"
-                            @click="retry()"
-                        >
-                            Retry
-                        </button>
-                    </div>
-
-                    <div
-                        class="mt-6 flex flex-wrap items-center gap-3"
-                        x-show="uiState == 'error'"
-                        x-cloak
-                    >
-                        <p class="body-md text-theme-text/70" role="status" aria-live="polite">
-                            Failed to load related products.
-                        </p>
-                        <button
-                            type="button"
-                            class="border border-theme-border-soft px-3 py-2 body-md transition-opacity hover:opacity-70"
-                            @click="retry()"
-                        >
-                            Retry
-                        </button>
-                    </div>
-                {%- endif -%}
-            </div>
-        </div>
-    {%- endif -%}
+    {% render 'product-recommendations-section',
+        product: product,
+        section: section,
+        heading: heading,
+        description: description,
+        limit: limit,
+        intent: recommendation_type,
+        empty_text: empty_text,
+        loading_text: loading_text,
+        timeout_text: timeout_text,
+        error_text: error_text,
+        retry_text: 'Retry'
+    %}
 </section>
 
 {% schema %}
 {
-    "name": "Related products",
+    "name": "Product recommendations",
     "tag": "section",
     "class": "section",
     "enabled_on": {
         "templates": ["product"]
     },
     "settings": [
+        {
+            "type": "select",
+            "id": "recommendation_type",
+            "label": "Recommendation type",
+            "options": [
+                { "value": "related", "label": "Related products" },
+                { "value": "complementary", "label": "Complementary products" }
+            ],
+            "default": "related"
+        },
         {
             "type": "color_scheme",
             "id": "color_scheme",
@@ -201,7 +121,7 @@
     ],
     "presets": [
         {
-            "name": "Related products"
+            "name": "Product recommendations"
         }
     ]
 }

@@ -3,6 +3,7 @@
     Syncs with VariantPicker via variant:change events.
     Uses $store.cart.add() for AJAX add-to-cart with toast feedback.
     Supports Shopify dynamic checkout (Buy it now) via {{ form | payment_button }}.
+    Supports pickup availability on PDP via a separate Alpine fetch component.
 
     @param {Object}  product           - Product object
     @param {Object}  [block]           - Block object (for shopify_attributes + settings)
@@ -97,6 +98,52 @@
                 {%- endif -%}
             </div>
         {%- endform -%}
+
+        {%- if context == 'product' and current_variant != blank -%}
+            <div
+                class="mt-4"
+                data-pickup-availability-root="{{ section_id }}"
+                data-section-id="{{ section_id }}"
+                data-root-url="{{ routes.root_url }}"
+                data-variant-id="{{ current_variant.id }}"
+                data-loading-text="{{ 'products.product.pickup_availability.loading' | t | escape }}"
+                data-error-text="{{ 'products.product.pickup_availability.error' | t | escape }}"
+                data-retry-text="{{ 'products.product.pickup_availability.retry' | t | escape }}"
+                x-data="PickupAvailability()"
+            >
+                <div
+                    x-show="isLoading"
+                    x-cloak
+                    class="rounded-sm border border-theme-border-soft px-4 py-3 body-sm text-theme-text/70"
+                    role="status"
+                    aria-live="polite"
+                    x-text="loadingText"
+                ></div>
+
+                <div
+                    x-show="showError"
+                    x-cloak
+                    class="flex flex-wrap items-center gap-3 rounded-sm border border-theme-border-soft px-4 py-3"
+                >
+                    <p
+                        class="body-sm text-theme-text/70"
+                        role="status"
+                        aria-live="polite"
+                        x-text="errorText"
+                    ></p>
+                    <button
+                        type="button"
+                        class="body-sm font-medium underline underline-offset-4 transition-opacity hover:opacity-70"
+                        @click="retry()"
+                        x-text="retryText"
+                    ></button>
+                </div>
+
+                <div x-show="hasContent" x-cloak>
+                    <div data-pickup-availability-content></div>
+                </div>
+            </div>
+        {%- endif -%}
     </div>
 
 {%- else -%}
