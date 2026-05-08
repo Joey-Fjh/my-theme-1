@@ -1,0 +1,129 @@
+{% doc %}
+    Active filter chips / clear-all renderer for collection filter layouts.
+
+    @param {object} filter_source - Optional. Pass collection/search object.
+    @param {string} [layout] - Optional. 'drawer' | 'vertical' | 'horizontal'. Default: 'vertical'.
+    @param {boolean} [show_label] - Optional. Whether to render the leading "Filter:" label. Default: true.
+{% enddoc %}
+
+{%- assign filter_host = filter_source | default: collection | default: search -%}
+{%- assign active_layout = layout | default: 'vertical' -%}
+{%- assign show_label = show_label | default: true, allow_false: true -%}
+{%- assign active_filter_count = 0 -%}
+
+{%- for filter in filter_host.filters -%}
+    {%- assign active_filter_count = active_filter_count | plus: filter.active_values.size -%}
+    {%- if filter.type == 'price_range' -%}
+        {%- if filter.min_value.value != blank or filter.max_value.value != blank -%}
+            {%- assign active_filter_count = active_filter_count | plus: 1 -%}
+        {%- endif -%}
+    {%- endif -%}
+{%- endfor -%}
+
+{%- if active_filter_count > 0 -%}
+    {%- assign clear_all_url = filter_host.url | default: request.path -%}
+
+    {%- if active_layout == 'horizontal' -%}
+        <div class="flex flex-wrap items-center gap-3">
+            {%- if show_label -%}
+                <span class="shrink-0 body-md">{{ 'collections.filters.active_label' | t }}</span>
+            {%- endif -%}
+
+            {%- for filter in filter_host.filters -%}
+                {%- for value in filter.active_values -%}
+                    <a
+                        href="{{ value.url_to_remove }}"
+                        class="inline-flex min-h-10 items-center gap-2 rounded-full border border-theme-border-soft px-4 py-2 body-md transition-colors hover:border-theme-text"
+                        aria-label="{{ 'collections.filters.remove_filter' | t: filter: filter.label }}"
+                        @click.prevent="if (typeof buildFilterActionUrl === 'function' && typeof loadUrl === 'function') { loadUrl(buildFilterActionUrl($el.href)); } else { window.location.assign($el.href); }"
+                    >
+                        <span>{{ value.label }}</span>
+                        {% render 'icons', icon: 'icon-close', size: 'xs', color: 'current' %}
+                    </a>
+                {%- endfor -%}
+
+                {%- if filter.type == 'price_range' -%}
+                    {%- if filter.min_value.value != blank or filter.max_value.value != blank -%}
+                        <a
+                            href="{{ filter.url_to_remove }}"
+                            class="inline-flex min-h-10 items-center gap-2 rounded-full border border-theme-border-soft px-4 py-2 body-md transition-colors hover:border-theme-text"
+                            aria-label="{{ 'collections.filters.remove_filter' | t: filter: filter.label }}"
+                            @click.prevent="if (typeof buildFilterActionUrl === 'function' && typeof loadUrl === 'function') { loadUrl(buildFilterActionUrl($el.href)); } else { window.location.assign($el.href); }"
+                        >
+                            <span>
+                                {{ filter.min_value.value | default: 0 | money }} -
+                                {{ filter.max_value.value | default: filter.range_max | money }}
+                            </span>
+                            {% render 'icons', icon: 'icon-close', size: 'xs', color: 'current' %}
+                        </a>
+                    {%- endif -%}
+                {%- endif -%}
+            {%- endfor -%}
+
+            <a
+                href="{{ clear_all_url }}"
+                class="shrink-0 body-md underline underline-offset-4 transition-opacity hover:opacity-70"
+                @click.prevent="if (typeof buildFilterActionUrl === 'function' && typeof loadUrl === 'function') { loadUrl(buildFilterActionUrl($el.href)); } else { window.location.assign($el.href); }"
+            >
+                {{ 'collections.filters.clear_all' | t }}
+            </a>
+        </div>
+    {%- else -%}
+        <div class="flex flex-col gap-4 border-b border-theme-border-soft pb-6">
+            <div class="flex items-center justify-between gap-4">
+                {%- if show_label -%}
+                    <span class="shrink-0 body-md">
+                        {{- 'collections.filters.active_label' | t -}}
+                    </span>
+                {%- endif -%}
+
+                <a
+                    href="{{ clear_all_url }}"
+                    class="body-md underline underline-offset-4 transition-opacity hover:opacity-70"
+                    @click.prevent="if (typeof buildFilterActionUrl === 'function' && typeof loadUrl === 'function') { loadUrl(buildFilterActionUrl($el.href)); } else { window.location.assign($el.href); }"
+                >
+                    {{ 'collections.filters.clear_all' | t }}
+                </a>
+            </div>
+
+            <div class="flex flex-wrap gap-3">
+                {%- for filter in filter_host.filters -%}
+                    {%- for value in filter.active_values -%}
+                        <a
+                            href="{{ value.url_to_remove }}"
+                            class="inline-flex min-h-10 items-center gap-2 rounded-full border border-theme-border-soft px-4 py-2 body-md transition-colors hover:border-theme-text"
+                            aria-label="{{ 'collections.filters.remove_filter' | t: filter: filter.label }}"
+                            @click.prevent="if (typeof buildFilterActionUrl === 'function' && typeof loadUrl === 'function') { loadUrl(buildFilterActionUrl($el.href)); } else { window.location.assign($el.href); }"
+                        >
+                            <span>{{ filter.label }}: {{ value.label }}</span>
+                            {% render 'icons', icon: 'icon-close', size: 'xs', color: 'current' %}
+                        </a>
+                    {%- endfor -%}
+
+                    {%- if filter.type == 'price_range' -%}
+                        {%- if filter.min_value.value != blank
+                            or filter.max_value.value != blank
+                        -%}
+                            <a
+                                href="{{ filter.url_to_remove }}"
+                                class="inline-flex min-h-10 items-center gap-2 rounded-full border border-theme-border-soft px-4 py-2 body-md transition-colors hover:border-theme-text"
+                                aria-label="{{ 'collections.filters.remove_filter' | t: filter: filter.label }}"
+                                @click.prevent="if (typeof buildFilterActionUrl === 'function' && typeof loadUrl === 'function') { loadUrl(buildFilterActionUrl($el.href)); } else { window.location.assign($el.href); }"
+                            >
+                                <span>
+                                    {{ filter.min_value.value | default: 0 | money }} -
+                                    {{ filter.max_value.value | default: filter.range_max | money }}
+                                </span>
+                                {% render 'icons',
+                                    icon: 'icon-close',
+                                    size: 'xs',
+                                    color: 'current'
+                                %}
+                            </a>
+                        {%- endif -%}
+                    {%- endif -%}
+                {%- endfor -%}
+            </div>
+        </div>
+    {%- endif -%}
+{%- endif -%}

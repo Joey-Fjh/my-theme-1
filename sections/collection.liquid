@@ -8,7 +8,7 @@
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
     "
-    x-data="collectionFilters('{{ section.id }}', ['[role=&quot;tabpanel&quot;]','.sup-badge'])"
+    x-data="collectionFilters('{{ section.id }}', ['[data-collection-dynamic-content]','[data-collection-drawer-shell]'])"
     data-component-kind="section"
     data-component-type="collection"
     data-component-id="{{ section.id }}"
@@ -73,7 +73,7 @@
             endif
         -%}
 
-        <div class="flex flex-col gap-6 pc:gap-6">
+        <div data-collection-dynamic-content class="flex flex-col gap-6 pc:gap-6">
             {%- comment -%} Hidden form all filter/sort controls {%- endcomment -%}
             <form id="CollectionFiltersForm" class="hidden" @change="onChange()"></form>
 
@@ -112,23 +112,26 @@
             {%- endcomment -%}
             {%- if is_horizontal_filter -%}
                 {%- if enable_filtering or enable_sorting -%}
-                    <div class="hidden pc:flex pc:items-center pc:justify-between pc:gap-6">
-                        {%- if enable_filtering -%}
-                            {%- render 'filter-horizontal',
-                                filter_source: collection,
-                                wrapper_class: 'items-center'
-                            -%}
-                        {%- else -%}
-                            <div></div>
-                        {%- endif -%}
+                    <div class="hidden pc:flex pc:flex-col pc:gap-4">
+                        <div class="flex items-center justify-between gap-6">
+                            {%- if enable_filtering -%}
+                                {%- render 'filter-horizontal',
+                                    filter_source: collection,
+                                    show_more_limit: section.settings.filter_visible_values_limit,
+                                    wrapper_class: 'min-w-0 flex-1'
+                                -%}
+                            {%- else -%}
+                                <div></div>
+                            {%- endif -%}
 
-                        {%- if enable_sorting -%}
-                            {%- render 'sort-by-dropdown',
-                                results: collection,
-                                form_id: 'CollectionFiltersForm',
-                                class: 'h2 shrink-0'
-                            -%}
-                        {%- endif -%}
+                            {%- if enable_sorting -%}
+                                {%- render 'sort-by-dropdown',
+                                    results: collection,
+                                    form_id: 'CollectionFiltersForm',
+                                    class: 'h2 shrink-0 self-start'
+                                -%}
+                            {%- endif -%}
+                        </div>
                     </div>
                 {%- endif -%}
             {%- endif -%}
@@ -146,7 +149,10 @@
                 {%- if enable_filtering and is_vertical_filter -%}
                     <aside class="hidden pc:block">
                         <div class="sticky top-20 border-r border-theme-border-soft pr-6">
-                            {%- render 'filter-vertical', filter_source: collection -%}
+                            {%- render 'filter-vertical',
+                                filter_source: collection,
+                                show_more_limit: section.settings.filter_visible_values_limit
+                            -%}
                         </div>
                     </aside>
                 {%- endif -%}
@@ -155,14 +161,25 @@
                     {% comment %} Tab Control {% endcomment %}
                     {%- liquid
                         assign active_tab_index = 0
-                        assign current_tag_handle = current_tags | first | handleize
-                        if current_tags != blank
-                            for tag in collection.all_tags
-                                assign tag_handle = tag | handleize
-                                if current_tag_handle == tag_handle
-                                    assign active_tab_index = forloop.index
+                        assign all_products_collection = collections.all
+
+                        if all_products_collection != blank and collection.handle == all_products_collection.handle
+                            assign active_tab_index = 0
+                        else
+                            assign rendered_tab_index = 0
+                            assign rendered_tab_index = 1
+
+                            for tab_collection in collections
+                                if tab_collection == blank or tab_collection.handle == 'all'
+                                    continue
+                                endif
+
+                                if tab_collection.handle == collection.handle
+                                    assign active_tab_index = rendered_tab_index
                                     break
                                 endif
+
+                                assign rendered_tab_index = rendered_tab_index | plus: 1
                             endfor
                         endif
                     -%}
@@ -208,37 +225,42 @@
                         <span class="hidden" x-init="$nextTick(() => { setActive({{ active_tab_index }}) })"></span>
 
                         <a
-                            href="{{ collection.url }}"
+                            href="{{ all_products_collection.url | default: routes.all_products_collection_url }}"
                             role="tab"
                             x-data="{ index: null }"
                             x-init="index = registerTab($el);"
                             :id="`tab-${index}`"
                             aria-controls="collection-panel"
-                            @click.prevent="setActive(index); /* loadUrl($el.href) 后续再加 */"
+                            @click.prevent="window.location.assign(buildCollectionTabUrl($el.href))"
                             :tabindex="isActive(index) ? 0 : -1"
                             :aria-selected="isActive(index)"
                             :class="isActive(index) ? 'opacity-100 border-b-2 border-current' : 'opacity-50 hover:opacity-100 border-b-2 border-transparent'"
                             class="flex cursor-pointer flex-nowrap items-center gap-1 h2 whitespace-nowrap transition-all duration-300 focus:outline-none"
                         >
                             All
-                            <sup class="leading-none">({{ collection.all_products_count | default: 0 }})</sup>
+                            <sup class="leading-none">({{ all_products_collection.all_products_count | default: 0 }})</sup>
                         </a>
 
-                        {%- for tag in collection.all_tags -%}
+                        {%- for tab_collection in collections -%}
+                            {%- if tab_collection == blank or tab_collection.handle == 'all' -%}
+                                {%- continue -%}
+                            {%- endif -%}
+
                             <a
-                                href="{{ collection.url }}/{{ tag | handleize }}"
+                                href="{{ tab_collection.url }}"
                                 role="tab"
                                 x-data="{ index: null }"
                                 x-init="index = registerTab($el);"
                                 :id="`tab-${index}`"
                                 aria-controls="collection-panel"
-                                @click.prevent="setActive(index)"
+                                @click.prevent="window.location.assign(buildCollectionTabUrl($el.href))"
                                 :tabindex="isActive(index) ? 0 : -1"
                                 :aria-selected="isActive(index)"
                                 :class="isActive(index) ? 'opacity-100 border-b-2 border-current' : 'opacity-50 hover:opacity-100 border-b-2 border-transparent'"
                                 class="flex cursor-pointer flex-nowrap items-center gap-1 h2 whitespace-nowrap transition-all duration-300 focus:outline-none"
                             >
-                                {{ tag }}
+                                {{ tab_collection.title }}
+                                <sup class="leading-none">({{ tab_collection.all_products_count | default: 0 }})</sup>
                             </a>
                         {%- endfor -%}
                     {% endcapture %}
@@ -276,13 +298,7 @@
 
                                 <div
                                     class="collection-pagination-wrapper mt-8"
-                                    @click="
-                                        let link = $event.target.closest('nav.pagination a');
-                                        if (link) { 
-                                            $event.preventDefault(); 
-                                            loadUrl(link.href);
-                                        }
-                                    "
+                                    @click="onPaginate($event)"
                                 >
                                     {% render 'pagination', paginate_obj: paginate %}
                                 </div>
@@ -318,20 +334,25 @@
     {%- comment -%} Filters drawer dialog: only when enable_filtering {%- endcomment -%}
     {%- if enable_filtering -%}
         {%- capture drawer_content -%}
-            {%- render 'filters-drawer', filter_source: collection -%}
+            {%- render 'filters-drawer',
+                filter_source: collection,
+                show_more_limit: section.settings.filter_visible_values_limit
+            -%}
         {%- endcapture -%}
 
-        {%- render 'ui-dialog',
-            id: 'collection-filters',
-            type: 'drawer',
-            position: 'left',
-            top_class: 'top-0',
-            root_class: 'z-10140',
-            drawer_wrapper_class: 'max-pc:w-4/5 max-pc:max-w-none max-pc:top-3 max-pc:bottom-3 max-pc:left-1/2 max-pc:right-auto max-pc:-translate-x-1/2',
-            show_close_button: false,
-            close_label: 'Close filters drawer',
-            content: drawer_content
-        -%}
+        <div data-collection-drawer-shell>
+            {%- render 'ui-dialog',
+                id: 'collection-filters',
+                type: 'drawer',
+                position: 'left',
+                top_class: 'top-0',
+                root_class: 'z-10140',
+                drawer_wrapper_class: 'max-pc:w-4/5 max-pc:max-w-none max-pc:top-3 max-pc:bottom-3 max-pc:left-1/2 max-pc:right-auto max-pc:-translate-x-1/2',
+                show_close_button: false,
+                close_label: 'Close filters drawer',
+                content: drawer_content
+            -%}
+        </div>
     {%- endif -%}
 </div>
 
@@ -550,6 +571,15 @@
                     "label": "Drawer"
                 }
             ]
+        },
+        {
+            "type": "range",
+            "id": "filter_visible_values_limit",
+            "min": 3,
+            "max": 12,
+            "step": 1,
+            "default": 6,
+            "label": "Visible filter values before show more"
         },
         {
             "type": "checkbox",

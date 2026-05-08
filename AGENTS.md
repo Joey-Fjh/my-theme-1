@@ -507,6 +507,49 @@ locales/                       Translation files
 
 ---
 
+## Abstraction Boundary Discipline
+
+Shared abstractions (base classes, registered Alpine components used by 2+ sections, public utilities like `ShopifyHttp` / `SectionRefresher` / `sectionPagination`) carry a **contract** that every consumer silently depends on. Extending the contract for a new use case can break existing consumers in ways that surface far from the change.
+
+Before extending any shared abstraction, apply the three-question gate below. **If any answer triggers, do NOT extend the abstraction.**
+
+Extension is allowed only when the new use case shares the same core invariants as the existing callers. If you believe the abstraction can be safely extended, explicitly state which invariants remain unchanged in the task summary or code review notes.
+
+### Three-Question Gate
+
+1. **Invariants** -- Does the new use case share the same invariants as existing callers (target DOM identity, rendering context, lifecycle assumptions)? Or only the surface syntax (URL strings, fetch calls, similar-looking inputs)?
+    - Repository example: `sectionPagination` assumes **the same section in the same page context** is being refreshed with different parameters. A collection tab that changes the collection pathname does **not** share that invariant, even if it still uses a URL and an HTTP request.
+2. **Naming** -- Does the new method/parameter read naturally on the existing class? Awkward names like `sectionPagination.loadCollectionTab()` (pagination has no semantic relationship with cross-section navigation) are early signals of mis-fit.
+3. **Branching parameter** -- Are you adding an enum or boolean that **switches core behavior** (not just a side-effect)?
+    - Side-effect toggles like `updateHistory`, `silent`, `signal` are fine.
+    - Core-behavior toggles like `refreshMode: 'full' | 'partial'` or `mode: 'replace' | 'append'` are red flags -- they encode two different operations into one method.
+
+### Resolution When the Gate Triggers
+
+Pick one, in this order of preference:
+
+1. **Simpler, non-shared solution** -- e.g., real browser navigation instead of SRA refresh; inline the logic at the call site if it is truly a one-off.
+    - If the new use case behaves more like navigation than local state refresh, prefer native page navigation over extending a shared refresh abstraction.
+2. **New dedicated component** -- a clear name with a single responsibility, even if it duplicates a few lines from an existing component.
+3. **Refactor the existing abstraction first** -- only after the new boundary is well understood; never pre-emptively.
+
+NEVER pick "add a parameter to the existing public method to make the new case work."
+
+### Anti-Pattern Table
+
+| Bad                                                                                       | Correct                                                                                      |
+| ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Add `mode: 'a' \| 'b'` to a shared method to support a divergent new case                 | New method or new component with a single responsibility                                     |
+| Add a `data-*` attribute on a shared component root that only one branch reads internally | Pass the value through the call site or scope it to the consumer                             |
+| Reuse a base class because the URL pattern looks similar                                  | Compare invariants (target DOM, rendering context, lifecycle), not surface syntax            |
+| Copy a hot snippet of behavior into a shared base class to "make it reusable"             | Wait for a third real consumer before generalizing -- two is coincidence, three is a pattern |
+
+### Why This Matters
+
+A shared abstraction's contract is consumed by every caller. Extending it for one new caller silently changes the contract for all the others, and the resulting bugs surface in code that has nothing to do with the change. Boundary discipline is a stability investment, not a code-style preference.
+
+---
+
 ## Repo Safety Rules
 
 1. NEVER edit minified vendor files (`vendor-*.min.js`, `vendor-*.min.css`).
@@ -531,6 +574,8 @@ Before considering a task complete, verify all applicable items below.
 4. Cross-component communication uses `ThemeEvents`, not direct DOM coupling.
 5. HTTP requests use `window.ShopifyHttp`.
 6. AJAX DOM refresh uses `window.ShopifySectionRefresher.render()`.
+7. Before extending any shared abstraction (base class, public utility, component used by 2+ sections), the three-question gate in `Abstraction Boundary Discipline` has been applied. Adding a new core-behavior-switching parameter to a public method is treated as a red flag, not as a routine change.
+   If the abstraction was still extended, the changed invariants and the existing consumers checked against them have been explicitly listed.
 
 ### Product Page
 

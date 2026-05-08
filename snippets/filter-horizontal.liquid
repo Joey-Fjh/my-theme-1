@@ -3,26 +3,44 @@
 
     @param {object} filter_source - Optional. Pass collection/search object.
     @param {string} [wrapper_class] - Optional wrapper class override.
+    @param {number} [show_more_limit] - Optional visible item count before progressive expansion. Default: 6.
+    @param {number} [show_more_step] - Optional items added per click. Default: show_more_limit.
 {% enddoc %}
 
 {%- assign filter_host = filter_source | default: collection | default: search -%}
 {%- assign wrapper_class = wrapper_class | default: '' -%}
+{%- assign show_more_limit = show_more_limit | default: 6 -%}
+{%- assign show_more_step = show_more_step | default: show_more_limit -%}
 
 <div
     x-data="{ activeFilter: null }"
-    class="{{ wrapper_class }} flex flex-wrap items-center gap-6"
+    class="{{ wrapper_class }} flex flex-col gap-4"
 >
-    <span class="flex shrink-0 items-center gap-2 h2">
-        {% render 'icons', icon: 'icon-filter', class: 'h-10 w-10', color: 'currentColor' %}
-        <span>Filter:</span>
-    </span>
+    <div class="flex items-center gap-4">
+        <span class="flex shrink-0 items-center gap-2 body-md font-medium">
+            {% render 'icons', icon: 'icon-filter', class: 'h-8 w-8', color: 'currentColor' %}
+            <span>{{ 'collections.filters.active_label' | t }}</span>
+        </span>
 
-    {%- for filter in filter_host.filters -%}
-        {%- render 'filters-field',
-            filter: filter,
-            mode: 'horizontal',
-            filter_index: forloop.index0,
-            is_first: forloop.first
-        -%}
-    {%- endfor -%}
+        <div class="min-w-0 flex-1">
+            {% render 'active-filters',
+                filter_source: filter_host,
+                layout: 'horizontal',
+                show_label: false
+            %}
+        </div>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-4">
+        {%- for filter in filter_host.filters -%}
+            {%- render 'filters-field',
+                filter: filter,
+                mode: 'horizontal',
+                show_more_limit: show_more_limit,
+                show_more_step: show_more_step,
+                filter_index: forloop.index0,
+                is_first: forloop.first
+            -%}
+        {%- endfor -%}
+    </div>
 </div>

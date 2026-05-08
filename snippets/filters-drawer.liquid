@@ -24,6 +24,8 @@
     @param {string} [active_bg_class] - Optional active range/toggle background classes.
     @param {string} [input_shell_class] - Optional wrapper classes for price inputs.
     @param {string} [footer_button_class] - Optional footer CTA button classes.
+    @param {number} [show_more_limit] - Optional visible item count before progressive expansion. Default: 6.
+    @param {number} [show_more_step] - Optional items added per click. Default: show_more_limit.
 
     @default collection | search (Liquid default when snippet included from section)
 {% enddoc %}
@@ -40,6 +42,8 @@
 {%- assign muted_text_class = muted_text_class | default: 'body-sm opacity-60' -%}
 {%- assign filter_label_class = filter_label_class | default: 'body-md leading-snug' -%}
 {%- assign count_text_class = count_text_class | default: 'body-sm opacity-60' -%}
+{%- assign show_more_limit = show_more_limit | default: 6 -%}
+{%- assign show_more_step = show_more_step | default: show_more_limit -%}
 {%- assign footer_button_class = footer_button_class
     | default: 'w-full cursor-pointer rounded-none bg-theme-text px-4 py-4 text-center body-md font-medium text-theme-bg transition-opacity hover:opacity-90'
 -%}
@@ -58,48 +62,16 @@
     </div>
 
     <div class="flex-1 overflow-y-auto px-4 py-2 pc:px-6">
-        {%- for filter in filter_host.filters -%}
-            {%- assign has_active_value = false -%}
-            {%- if filter.type == 'price_range' -%}
-                {%- if filter.min_value.value != blank or filter.max_value.value != blank -%}
-                    {%- assign has_active_value = true -%}
-                {%- endif -%}
-            {%- else -%}
-                {%- for value in filter.values -%}
-                    {%- if value.active -%}
-                        {%- assign has_active_value = true -%}
-                        {%- break -%}
-                    {%- endif -%}
-                {%- endfor -%}
-            {%- endif -%}
-
-            {%- capture filter_content -%}
-                {%- render 'filters-field',
-                    filter: filter,
-                    mode: 'drawer',
-                    ui_variant: 'panel',
-                    divider_class: divider_class,
-                    muted_text_class: muted_text_class,
-                    filter_label_class: filter_label_class,
-                    count_text_class: count_text_class
-                -%}
-            {%- endcapture -%}
-
-            {% render 'accordion',
-                item_title: filter.label,
-                item_content: filter_content,
-                initial_active: 0,
-                wrapper_class: 'flex flex-col gap-0',
-                item_class: 'py-0',
-                title_active_class: 'text-theme-text',
-                title_inactive_class: 'text-theme-text',
-                icon_color_class: 'text-theme-text',
-                content_class: 'pb-4 text-theme-text',
-                show_clear: has_active_value,
-                clear_url: filter.url_to_remove,
-                clear_label: filter.label
-            %}
-        {%- endfor -%}
+        {% render 'filters-groups',
+            filter_source: filter_host,
+            layout: 'drawer',
+            show_more_limit: show_more_limit,
+            show_more_step: show_more_step,
+            divider_class: divider_class,
+            muted_text_class: muted_text_class,
+            filter_label_class: filter_label_class,
+            count_text_class: count_text_class
+        %}
     </div>
 
     <div class="sticky bottom-0 border-t bg-theme-bg px-4 py-4 pc:px-6 {{ divider_class }}">

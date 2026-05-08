@@ -3,13 +3,31 @@
 
     @param {object} filter_source - Optional. Pass collection/search object.
     @param {string} [wrapper_class] - Optional wrapper class override.
+    @param {number} [show_more_limit] - Optional visible item count before progressive expansion. Default: 6.
+    @param {number} [show_more_step] - Optional items added per click. Default: show_more_limit.
+    @param {string} [divider_class] - Optional divider class token.
+    @param {string} [muted_text_class] - Optional helper text classes.
+    @param {string} [filter_label_class] - Optional filter label typography classes.
+    @param {string} [count_text_class] - Optional count text classes.
 {% enddoc %}
 
 {%- assign filter_host = filter_source | default: collection | default: search -%}
 {%- assign wrapper_class = wrapper_class | default: '' -%}
+{%- assign show_more_limit = show_more_limit | default: 6 -%}
+{%- assign show_more_step = show_more_step | default: show_more_limit -%}
+{%- assign divider_class = divider_class | default: 'border-theme-border-soft' -%}
+{%- assign muted_text_class = muted_text_class | default: 'body-sm opacity-60' -%}
+{%- assign filter_label_class = filter_label_class | default: 'body-md leading-snug' -%}
+{%- assign count_text_class = count_text_class | default: 'body-sm opacity-60' -%}
 
-<div class="{{ wrapper_class }} flex flex-col gap-4">
-    {%- for filter in filter_host.filters -%}
-        {%- render 'filters-field', filter: filter, mode: 'vertical' -%}
-    {%- endfor -%}
-</div>
+{% render 'filters-groups',
+    filter_source: filter_host,
+    layout: 'vertical',
+    wrapper_class: wrapper_class,
+    show_more_limit: show_more_limit,
+    show_more_step: show_more_step,
+    divider_class: divider_class,
+    muted_text_class: muted_text_class,
+    filter_label_class: filter_label_class,
+    count_text_class: count_text_class
+%}

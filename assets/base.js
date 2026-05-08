@@ -498,6 +498,7 @@
                             Comps.COLLECTIONFILTERFIELD,
                             Comps.collectionFilterField,
                         );
+                        Factory.register?.(Comps.PROGRESSIVELIST, Comps.progressiveList);
                         Factory.register?.(Comps.PRODUCTGALLERY, Comps.productGallery);
                         Factory.register?.(Comps.PRODUCTPRICE, Comps.ProductPrice);
                         Factory.register?.(Comps.VARIANTPICKER, Comps.VariantPicker);
