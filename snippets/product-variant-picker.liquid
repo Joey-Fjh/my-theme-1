@@ -12,20 +12,21 @@
 {% endcomment %}
 
 {%- assign context = context | default: 'featured' -%}
+{%- assign section_id = section_id | default: section.id -%}
 
 {%- unless product.has_only_default_variant -%}
-    {%- assign product_form_id = product_form_id | default: 'product-form-' | append: section.id -%}
+    {%- assign product_form_id = product_form_id | default: 'product-form-' | append: section_id -%}
 
-    <script id="ProductVariants-{{ section.id }}" type="application/json">
+    <script id="ProductVariants-{{ section_id }}" type="application/json">
         {{ product.variants | json }}
     </script>
 
     <div
-        id="VariantPicker-{{ section.id }}"
+        id="VariantPicker-{{ section_id }}"
         class="flex flex-col gap-3 pc:gap-4"
         x-data="
             VariantPicker({
-              sectionId: '{{ section.id }}',
+              sectionId: '{{ section_id }}',
               productId: {{ product.id }},
               productFormId: '{{ product_form_id }}'
             })
@@ -51,7 +52,7 @@
                 <div class="flex flex-col gap-2">
                     <label
                         class="{% if context == 'product' %}body-sm{% else %}body-md{% endif %} text-theme-text/80"
-                        for="OptionDropdown-{{ section.id }}-{{ forloop.index0 }}"
+                        for="OptionDropdown-{{ section_id }}-{{ forloop.index0 }}"
                     >
                         {{ option.name }}:
                         <span
@@ -64,7 +65,7 @@
 
                     <div class="relative">
                         <select
-                            id="OptionDropdown-{{ section.id }}-{{ forloop.index0 }}"
+                            id="OptionDropdown-{{ section_id }}-{{ forloop.index0 }}"
                             class="{% if context == 'product' %}body-sm{% else %}body-md{% endif %} w-full cursor-pointer appearance-none rounded-sm border border-theme-border px-4 py-3 text-theme-text focus:border-theme-border-strong focus:outline-none"
                             name="options[{{ option_name_escaped }}]"
                             form="{{ product_form_id }}"
@@ -141,7 +142,7 @@
                                 endif
                             -%}
 
-                            {%- capture input_id -%}VariantOption-{{ section.id }}-{{ option.position }}-{{ forloop.index0 }}{%- endcapture -%}
+                            {%- capture input_id -%}VariantOption-{{ section_id }}-{{ option.position }}-{{ forloop.index0 }}{%- endcapture -%}
 
                             {%- if render_swatch -%}
                                 {%- comment -%} ——— Swatch ——— {%- endcomment -%}

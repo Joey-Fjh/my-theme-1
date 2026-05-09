@@ -17,32 +17,44 @@
 {%- assign product_form_id = product_form_id | default: 'product-form-' | append: section.id -%}
 {%- assign section_id = section_id | default: section.id -%}
 {%- assign context = context | default: 'featured' -%}
+{%- assign open_cart_on_add = open_cart_on_add | default: false -%}
+{%- assign open_dialog_id = open_dialog_id | default: '' -%}
+{%- assign success_message = success_message | default: 'Added to cart!' -%}
+{%- assign show_buy_now = show_buy_now | default: false -%}
 
 {%- if product != blank -%}
     {%- assign current_variant = product.selected_or_first_available_variant -%}
-    {%- assign show_dynamic_checkout = block.settings.show_dynamic_checkout | default: false -%}
+    {%- assign show_dynamic_checkout = show_dynamic_checkout
+        | default: block.settings.show_dynamic_checkout
+        | default: false
+    -%}
 
     {%- if context == 'product' -%}
         {%- assign available_classes = 'btn-primary' -%}
-        {%- assign unavailable_classes = 'btn-secondary opacity-50' -%}
+        {%- if show_buy_now == true or show_buy_now == 'true' -%}
+            {%- assign available_classes = 'btn-secondary' -%}
+        {%- endif -%}
+        {%- assign unavailable_classes = 'border-theme-border-soft bg-theme-border-soft text-theme-text/45 opacity-100' -%}
     {%- else -%}
         {%- if show_dynamic_checkout -%}
             {%- assign available_classes = 'btn-secondary' -%}
         {%- else -%}
             {%- assign available_classes = 'btn-primary' -%}
         {%- endif -%}
-        {%- assign unavailable_classes = 'btn-secondary opacity-50' -%}
+        {%- assign unavailable_classes = 'border-theme-border-soft bg-theme-border-soft text-theme-text/45 opacity-100' -%}
     {%- endif -%}
 
     <div
-        x-data="
-            BuyButtons({
-              sectionId: '{{ section_id }}',
-              productFormId: '{{ product_form_id }}',
-              available: {{ current_variant.available | default: false }},
-              variantId: {{ current_variant.id | default: 'null' }}
-            })
-        "
+        data-section-id="{{ section_id }}"
+        data-product-form-id="{{ product_form_id }}"
+        data-available="{{ current_variant.available | default: false }}"
+        data-variant-id="{{ current_variant.id | default: '' }}"
+        data-open-cart-on-add="{{ open_cart_on_add | json | escape }}"
+        data-open-dialog-id="{{ open_dialog_id | escape }}"
+        data-success-message="{{ success_message | escape }}"
+        data-show-buy-now="{{ show_buy_now | json | escape }}"
+        data-request-sections="{% if request_sections == false or request_sections == 'false' %}{% else %}{{ request_sections | join: ',' | escape }}{% endif %}"
+        x-data="BuyButtons()"
         {{ block.shopify_attributes }}
     >
         {%- form 'product',
@@ -90,6 +102,19 @@
                         ></span>
                     </span>
                 </button>
+
+                {%- if show_buy_now == true or show_buy_now == 'true' -%}
+                    <button
+                        type="button"
+                        class="relative btn w-full btn-primary disabled:cursor-not-allowed disabled:opacity-50"
+                        :disabled="!available || isLoading"
+                        @click.prevent="buyNow()"
+                        x-show="available"
+                        x-cloak
+                    >
+                        Buy it now
+                    </button>
+                {%- endif -%}
 
                 {%- if show_dynamic_checkout -%}
                     <div class="shopify-payment-button-wrapper" :class="{ 'hidden': !available }">

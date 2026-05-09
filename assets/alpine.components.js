@@ -1615,13 +1615,28 @@
          * @param {boolean}     [opts.available=true]
          * @param {number|null} [opts.variantId=null]
          */
-        static BuyButtons({ sectionId, productFormId, available = true, variantId = null } = {}) {
+        static BuyButtons({
+            sectionId,
+            productFormId,
+            available = true,
+            variantId = null,
+            openCartOnAdd = false,
+            openDialogId = '',
+            successMessage = 'Added to cart!',
+            requestSections = '',
+            showBuyNow = false,
+        } = {}) {
             return {
                 ...AlpineComponentsFactory.useDisposable(),
                 sectionId,
                 productFormId,
                 available,
                 variantId,
+                openCartOnAdd,
+                openDialogId,
+                successMessage,
+                requestSections,
+                showBuyNow,
                 isLoading: false,
                 _eventScope: null,
 
@@ -1632,6 +1647,43 @@
                 },
 
                 init() {
+                    const dataset = this.$el?.dataset || {};
+                    this.sectionId = this.sectionId || dataset.sectionId || '';
+                    this.productFormId = this.productFormId || dataset.productFormId || '';
+
+                    if (dataset.available !== undefined && dataset.available !== '') {
+                        this.available = dataset.available === 'true';
+                    }
+
+                    if (dataset.variantId !== undefined && dataset.variantId !== '') {
+                        this.variantId = Number(dataset.variantId) || null;
+                    }
+
+                    if (dataset.openCartOnAdd !== undefined && dataset.openCartOnAdd !== '') {
+                        this.openCartOnAdd = dataset.openCartOnAdd === 'true';
+                    }
+
+                    if (dataset.openDialogId !== undefined) {
+                        this.openDialogId = dataset.openDialogId || '';
+                    }
+
+                    if (dataset.successMessage !== undefined) {
+                        this.successMessage = dataset.successMessage || '';
+                    }
+
+                    if (dataset.showBuyNow !== undefined && dataset.showBuyNow !== '') {
+                        this.showBuyNow = dataset.showBuyNow === 'true';
+                    }
+
+                    if (dataset.requestSections !== undefined) {
+                        this.requestSections = dataset.requestSections
+                            ? dataset.requestSections
+                                  .split(',')
+                                  .map((value) => value.trim())
+                                  .filter(Boolean)
+                            : [];
+                    }
+
                     const Events = window.__Theme__.Events;
                     const events = Events.events;
                     this._eventScope = Events.createScope();
@@ -1657,6 +1709,19 @@
                     return qtyInput ? parseInt(qtyInput.value) || 1 : 1;
                 },
 
+                _getSections() {
+                    return Array.isArray(this.requestSections)
+                        ? this.requestSections
+                        : typeof this.requestSections === 'string' && this.requestSections.trim()
+                          ? this.requestSections
+                                .split(',')
+                                .map((value) => value.trim())
+                                .filter(Boolean)
+                          : this.sectionId
+                            ? [this.sectionId]
+                            : [];
+                },
+
                 addToCart() {
                     if (!this.available || !this.variantId || this.isLoading) return;
 
@@ -1667,15 +1732,46 @@
                         return;
                     }
 
-                    cart.add(
-                        [{ id: this.variantId, quantity: this._getQuantity() }],
-                        [this.sectionId],
-                    )
+                    const sections = this._getSections();
+
+                    cart.add([{ id: this.variantId, quantity: this._getQuantity() }], sections)
                         .then(() => {
-                            window.Alpine?.store('toast')?.show?.('Added to cart!', 'success');
+                            if (this.openCartOnAdd && this.openDialogId) {
+                                window.Alpine?.store('dialog')?.open?.(this.openDialogId);
+                            }
+
+                            if (this.successMessage) {
+                                window.Alpine?.store('toast')?.show?.(
+                                    this.successMessage,
+                                    'success',
+                                );
+                            }
                         })
                         .catch((err) => {
                             const msg = err?.message || 'Could not add to cart. Please try again.';
+                            window.Alpine?.store('toast')?.show?.(msg, 'error');
+                        })
+                        .finally(() => {
+                            this.isLoading = false;
+                        });
+                },
+
+                buyNow() {
+                    if (!this.available || !this.variantId || this.isLoading) return;
+
+                    this.isLoading = true;
+                    const cart = window.Alpine?.store('cart');
+                    if (!cart) {
+                        this.isLoading = false;
+                        return;
+                    }
+
+                    cart.add([{ id: this.variantId, quantity: this._getQuantity() }], [])
+                        .then(() => {
+                            window.location.assign('/checkout');
+                        })
+                        .catch((err) => {
+                            const msg = err?.message || 'Could not continue to checkout.';
                             window.Alpine?.store('toast')?.show?.(msg, 'error');
                         })
                         .finally(() => {
@@ -2425,8 +2521,13 @@
         static productCard({
             imageCount = 1,
             hoverMode = 'actions',
+            hasVariantPanel = true,
             enableImageNavigation = true,
             enableImagePagination,
+            quickViewDialogId = '',
+            cartDialogId = '',
+            primaryVariantId = 0,
+            primaryVariantAvailable = false,
         } = {}) {
             if (enableImagePagination !== undefined && enableImageNavigation === true) {
                 enableImageNavigation = enableImagePagination;
@@ -2438,6 +2539,12 @@
                 imageHover: false,
                 actionsHover: false,
                 hoverMode,
+                hasVariantPanel: Boolean(hasVariantPanel),
+                quickViewDialogId,
+                cartDialogId,
+                primaryVariantId: Number(primaryVariantId) || 0,
+                primaryVariantAvailable: Boolean(primaryVariantAvailable),
+                isAddingToCart: false,
                 isTouchDevice: false,
                 _hoverLeaveTimer: null,
 
@@ -2446,7 +2553,7 @@
                 },
 
                 get canShowVariantPanel() {
-                    return this.hoverMode === 'variants';
+                    return this.hoverMode === 'variants' && this.hasVariantPanel;
                 },
 
                 get showHoverActions() {
@@ -2454,7 +2561,39 @@
                     return this.imageHover || this.actionsHover;
                 },
 
+                get showVariantPanel() {
+                    if (!this.canShowVariantPanel) return false;
+                    return this.imageHover;
+                },
+
                 init() {
+                    const dataset = this.$el?.dataset || {};
+                    this.imageCount = Math.max(
+                        1,
+                        Number(dataset.imageCount || this.imageCount) || 1,
+                    );
+                    this.hoverMode = dataset.hoverMode || this.hoverMode || 'actions';
+                    if (dataset.hasVariantPanel !== undefined && dataset.hasVariantPanel !== '') {
+                        this.hasVariantPanel = dataset.hasVariantPanel === 'true';
+                    }
+                    if (
+                        dataset.enableImageNavigation !== undefined &&
+                        dataset.enableImageNavigation !== ''
+                    ) {
+                        this.enableImageNavigation = dataset.enableImageNavigation !== 'false';
+                    }
+                    this.quickViewDialogId =
+                        dataset.quickViewDialogId || this.quickViewDialogId || '';
+                    this.cartDialogId = dataset.cartDialogId || this.cartDialogId || '';
+                    if (dataset.primaryVariantId !== undefined && dataset.primaryVariantId !== '') {
+                        this.primaryVariantId = Number(dataset.primaryVariantId) || 0;
+                    }
+                    if (
+                        dataset.primaryVariantAvailable !== undefined &&
+                        dataset.primaryVariantAvailable !== ''
+                    ) {
+                        this.primaryVariantAvailable = dataset.primaryVariantAvailable === 'true';
+                    }
                     this.isTouchDevice = this._detectTouch();
                 },
 
@@ -2485,6 +2624,42 @@
                 setActionsHover(value) {
                     if (!this.canShowHoverActions) return;
                     this.actionsHover = Boolean(value);
+                },
+
+                openQuickView() {
+                    if (!this.quickViewDialogId) return;
+                    this.$store?.dialog?.open?.(this.quickViewDialogId);
+                },
+
+                addPrimaryVariantToCart() {
+                    if (
+                        !this.primaryVariantAvailable ||
+                        !this.primaryVariantId ||
+                        this.isAddingToCart
+                    ) {
+                        return;
+                    }
+
+                    const cart = this.$store?.cart;
+                    if (!cart?.add) return;
+
+                    this.isAddingToCart = true;
+
+                    cart.add([{ id: this.primaryVariantId, quantity: 1 }], [])
+                        .then(() => {
+                            if (this.cartDialogId) {
+                                this.$store?.dialog?.open?.(this.cartDialogId);
+                            } else {
+                                this.$store?.toast?.show?.('Added to cart!', 'success');
+                            }
+                        })
+                        .catch((err) => {
+                            const msg = err?.message || 'Could not add to cart. Please try again.';
+                            this.$store?.toast?.show?.(msg, 'error');
+                        })
+                        .finally(() => {
+                            this.isAddingToCart = false;
+                        });
                 },
 
                 destroy() {
