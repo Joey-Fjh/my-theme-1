@@ -46,6 +46,7 @@
                                 fixed top-[calc(var(--announcement-bar-height)+var(--header-height))] right-0 left-0
                                 max-w-none rounded-none px-8 py-5
                                 color-{{ section.settings.menu_color_scheme }}
+                                bg-theme-bg text-theme-text
                             "
                             style="min-width:auto;"
                         >
@@ -72,7 +73,7 @@
                                                     {%- endcapture -%}
 
                                                     {%- capture child_link_class -%}
-                                                        block header-super-menu-child-link
+                                                        block header-super-menu-child-link text-theme-text
                                                         {%- if childlink.links != blank -%}
                                                             header-super-menu-child-link--has-children
                                                         {%- endif -%}
@@ -112,6 +113,7 @@
                                                                     text: grandchild.title | escape,
                                                                     href: grandchild.url,
                                                                     variant: 'underline',
+                                                                    class: 'text-theme-text',
                                                                     attributes: grand_link_attributes,
                                                                     color:'current'
                                                                 -%}
@@ -124,7 +126,9 @@
                                     </div>
 
                                     {%- if section.settings.enable_super_menu_series -%}
-                                        <div class="header-super-menu-series">
+                                        <div
+                                            class="header-super-menu-series color-{{ section.settings.menu_color_scheme }} text-theme-text"
+                                        >
                                             {%- capture super_tab_header -%}
                                                 {%- for i in (1..3) -%}
                                                     {%- assign collection_key = 'super_collection_' | append: i -%}
@@ -137,7 +141,7 @@
                                                             x-data="{ index: null }"
                                                             x-init="index = registerTab($el)"
                                                             @click="setActive(index)"
-                                                            class="border-b-2 pb-2 text-theme-text transition-colors"
+                                                            class="border-b-2 pb-2 text-current transition-colors"
                                                             :class="isActive(index) 
                                                                 ? 'border-current opacity-100' 
                                                                 : 'border-transparent opacity-60 hover:opacity-100'
@@ -175,7 +179,7 @@
                                                                             card_mode: 'lite',
                                                                             show_image_navigation: true,
                                                                             scope_id: section.id,
-                                                                            color_scheme: section.settings.color_scheme
+                                                                            color_scheme: section.settings.menu_color_scheme
                                                                         %}
                                                                     {%- else -%}
                                                                         <p class="opacity-60">No products found in this collection.</p>

@@ -40,7 +40,7 @@
     assign drawer_wrapper_classes = 'ui-dialog-drawer-width-default ' | append: drawer_wrapper_classes | strip
     assign color_scope_class = color_scheme | default: ''
     if color_scope_class != blank
-        assign color_scope_class = 'color-' | append: color_scope_class
+        assign color_scope_class = 'color-' | append: color_scope_class | append: ' bg-theme-bg text-theme-text'
     else
         assign color_scope_class = ''
     endif
@@ -124,7 +124,6 @@
                 pointer-events-none fixed inset-x-0 bottom-0 z-101 flex p-4
                 {{ dialog_top_class }}
                 {{ modal_placement_classes }}
-                {{ color_scope_class }}
                 {{ modal_wrapper_classes }}
             "
             role="dialog"
@@ -132,7 +131,7 @@
             aria-labelledby="dialog-title-{{ id | escape }}"
         >
             <div
-                class="{{ modal_panel_classes }}"
+                class="{{ modal_panel_classes }}{% if color_scheme != blank %} {{ color_scope_class }}{% endif %}"
                 @click.stop
                 x-transition:enter="transition ease-out duration-200"
                 x-transition:enter-start="opacity-0 scale-95"

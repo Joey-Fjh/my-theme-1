@@ -103,7 +103,18 @@
     data-cart-dialog-id="cart-overlay-drawer"
     data-primary-variant-id="{{ selected_variant.id }}"
     data-primary-variant-available="{{ selected_variant.available }}"
-    x-data="productCard()"
+    x-data="
+        productCard({
+            imageCount: Number($el.dataset.imageCount || 1),
+            hoverMode: $el.dataset.hoverMode || 'actions',
+            hasVariantPanel: $el.dataset.hasVariantPanel === 'true',
+            enableImageNavigation: $el.dataset.enableImageNavigation !== 'false',
+            quickViewDialogId: $el.dataset.quickViewDialogId || '',
+            cartDialogId: $el.dataset.cartDialogId || '',
+            primaryVariantId: Number($el.dataset.primaryVariantId || 0),
+            primaryVariantAvailable: $el.dataset.primaryVariantAvailable === 'true'
+        })
+    "
     @mouseleave="setImageHover(false); setActionsHover(false)"
 >
     <div class="product-card__category product-card-shell__meta">
@@ -143,7 +154,8 @@
                             </button>
                             <span
                                 class="product-card-shell__pagination-text"
-                                x-text="imageNavigationLabel"
+                                aria-live="polite"
+                                x-text="`${activeImageIndex + 1}/${imageCount}`"
                                 >1 / {{ image_count -}}
                             </span>
                             <button
@@ -322,9 +334,10 @@
     {%- render 'ui-dialog',
         id: quick_view_dialog_id,
         type: 'modal',
+        color_scheme: color_scheme,
         root_class: 'z-[10020]',
         modal_wrapper_class: 'items-center justify-center px-3 py-4 pc:px-[8vw] pc:py-[5vh]',
-        modal_panel_class: 'h-full w-full !max-h-full !max-w-full overflow-hidden rounded-sm bg-theme-bg shadow-xl',
+        modal_panel_class: 'h-full w-full !max-h-full !max-w-full overflow-hidden rounded-sm shadow-xl',
         show_close_button: true,
         close_label: 'Close quick view',
         content: quick_view_content
