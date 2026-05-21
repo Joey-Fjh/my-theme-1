@@ -1888,8 +1888,6 @@
 
                     this.isLoading = true;
                     this.showError = false;
-                    this.hasContent = false;
-                    this.contentTarget?.replaceChildren();
 
                     const Http = window.ShopifyHttp;
                     const SectionRefresher = window.ShopifySectionRefresher;
@@ -1927,7 +1925,6 @@
                         .catch((err) => {
                             if (err?.isAbort || err?.name === 'AbortError') return;
                             console.error('Pickup availability load failed:', err);
-                            this.clearContent();
                             this.showError = true;
                         })
                         .finally(() => {
@@ -1974,6 +1971,7 @@
                 activeTab: 'products',
                 activeSuggestionId: null,
                 hasEmptyState: false,
+                hasSearched: false,
                 _debouncedFetch: null,
                 _abortController: null,
                 _initialSearchPerformed: false,
@@ -2072,6 +2070,7 @@
                     this.isOpen = true;
                     this.isLoading = true;
                     this.hasEmptyState = false;
+                    this.hasSearched = true;
 
                     if (this._debouncedFetch) {
                         this._lastScheduledTerm = term;
@@ -2088,6 +2087,7 @@
                     this.articles = [];
                     this.pages = [];
                     this.hasEmptyState = false;
+                    this.hasSearched = false;
                 },
 
                 _fetch(term) {
@@ -2645,11 +2645,15 @@
 
                     this.isAddingToCart = true;
 
-                    cart.add([{ id: this.primaryVariantId, quantity: 1 }], [])
+                    const request = cart.add([{ id: this.primaryVariantId, quantity: 1 }], []);
+
+                    if (this.cartDialogId) {
+                        this.$store?.dialog?.open?.(this.cartDialogId);
+                    }
+
+                    request
                         .then(() => {
-                            if (this.cartDialogId) {
-                                this.$store?.dialog?.open?.(this.cartDialogId);
-                            } else {
+                            if (!this.cartDialogId) {
                                 this.$store?.toast?.show?.('Added to cart!', 'success');
                             }
                         })
@@ -3116,7 +3120,10 @@
         static cartOverlay({ sections = [] } = {}) {
             return {
                 sections: Array.isArray(sections) ? sections : [],
+                dialogId: '',
                 pending: {},
+                _syncPromise: null,
+                _lastSyncedAt: 0,
 
                 get cart() {
                     return (
@@ -3125,6 +3132,7 @@
                             item_count: 0,
                             total_price: 0,
                             loading: false,
+                            hasFetched: false,
                         }
                     );
                 },
@@ -3139,6 +3147,68 @@
 
                 get canCheckout() {
                     return !this.isEmpty && !this.cart.loading;
+                },
+
+                get hasFetched() {
+                    return Boolean(this.cart.hasFetched);
+                },
+
+                get hasVisibleItems() {
+                    return this.items.length > 0;
+                },
+
+                get showInitialLoading() {
+                    return Boolean(this.cart.loading && !this.hasVisibleItems);
+                },
+
+                get showEmpty() {
+                    return Boolean(!this.cart.loading && this.hasFetched && this.isEmpty);
+                },
+
+                get showItems() {
+                    return this.hasVisibleItems;
+                },
+
+                init() {
+                    this.dialogId = this.$el?.dataset?.dialogId || '';
+
+                    this.$watch('isOpen', (isOpen) => {
+                        if (isOpen) {
+                            this.syncCart({ force: true }).catch(() => {});
+                        }
+                    });
+                },
+
+                get isOpen() {
+                    return Boolean(this.dialogId && this.$store?.dialog?.active === this.dialogId);
+                },
+
+                syncCart({ force = false } = {}) {
+                    if (typeof this.cart.fetchCart !== 'function') return Promise.resolve();
+                    if (this.cart.loading) return this._syncPromise || Promise.resolve();
+
+                    const now = Date.now();
+                    if (!force && now - this._lastSyncedAt < 1000) {
+                        return this._syncPromise || Promise.resolve();
+                    }
+
+                    if (this._syncPromise) return this._syncPromise;
+
+                    this._syncPromise = this.cart
+                        .fetchCart()
+                        .then((data) => {
+                            this._lastSyncedAt = Date.now();
+                            return data;
+                        })
+                        .catch((err) => {
+                            // Keep the drawer usable if a cart read fails; add/change handlers surface errors.
+                            return Promise.reject(err);
+                        })
+                        .finally(() => {
+                            this._syncPromise = null;
+                        });
+
+                    return this._syncPromise;
                 },
 
                 formatMoney(cents) {

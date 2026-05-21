@@ -6,7 +6,7 @@
     - Render recommendation list + tabbed predictive results without changing Alpine behavior.
 
     Required parent scope (from `x-data="predictiveSearch"`):
-    - State: `isOpen`, `isLoading`, `query`, `hasEmptyState`, `suggestions`, `products`, `articles`, `pages`
+    - State: `isOpen`, `isLoading`, `query`, `hasSearched`, `hasEmptyState`, `suggestions`, `products`, `articles`, `pages`
     - Methods: `onSuggestionClick`, `highlightSuggestion`, `performSearch`
     - Tab-control bindings exposed in parent scope: `registerTab`, `registerPanel`, `setActive`, `isActive`, `activeTab`
 {% enddoc %}
@@ -42,7 +42,7 @@
                 </ul>
             </template>
 
-            <template x-if="!isLoading && !suggestions.length && query && !hasEmptyState">
+            <template x-if="!isLoading && hasSearched && !suggestions.length && query && !hasEmptyState">
                 <p class="text-theme-text/60 italic">No suggestions</p>
             </template>
         </aside>
@@ -65,7 +65,7 @@
             </div>
 
             <div
-                x-show="!isLoading && !hasEmptyState"
+                x-show="!isLoading && hasSearched && !hasEmptyState"
                 class="flex w-full flex-1 flex-col"
             >
                 {% capture tab_header %}
@@ -192,7 +192,7 @@
                 type="button"
                 class="mt-auto flex w-full items-center justify-between border-t border-theme-border-soft pt-4 text-theme-text hover:opacity-70"
                 @click="performSearch()"
-                x-show="query && !hasEmptyState"
+                x-show="query && hasSearched && !hasEmptyState"
             >
                 <span> Search for "<span class="font-medium" x-text="query"></span>" </span>
                 <span>→</span>

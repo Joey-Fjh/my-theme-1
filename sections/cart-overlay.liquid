@@ -6,80 +6,98 @@
 >
     {%- capture drawer_content -%}
         <div
+            data-dialog-id="{{ popup_id }}"
             class="flex h-full flex-col text-theme-text"
             x-data="cartOverlay({ sections: ['{{ section.id }}'] })"
             @keydown.escape.window="$store.dialog.close()"
-            :class="{ 'opacity-70 pointer-events-none': $store.cart.loading }"
+            :class="{ 'opacity-70': $store.cart.loading && showItems }"
         >
             <div class="p-6">
                 <div class="flex items-center justify-between gap-4">
-                    <h2 id="dialog-title-{{ popup_id }}">Cart</h2>
+                    <h2 id="dialog-title-{{ popup_id }}" class="h3 font-semibold">Cart</h2>
                     <button
                         type="button"
-                        class="inline-flex h-8 w-8 cursor-pointer items-center justify-center text-theme-text/75 transition hover:text-theme-text"
+                        class="inline-flex h-11 w-11 cursor-pointer items-center justify-center text-theme-text/75 transition hover:text-theme-text"
                         @click="$store.dialog.close()"
                         aria-label="Close cart drawer"
                     >
-                        {% render 'icons', icon: 'icon-close', size: 'lg', color: 'current' %}
+                        {% render 'icons', icon: 'icon-close', size: 'xl', color: 'current' %}
                     </button>
                 </div>
             </div>
 
             <div class="min-h-0 flex-1 overflow-y-auto px-5 py-4 pc:px-6">
-                <div x-show="isEmpty" class="flex h-full items-center justify-center text-center">
+                <div
+                    x-show="showInitialLoading"
+                    class="flex h-full items-center justify-center text-center"
+                    role="status"
+                    aria-live="polite"
+                >
+                    <p class="body-md">Loading cart...</p>
+                </div>
+
+                <div x-show="showEmpty" class="flex h-full items-center justify-center text-center">
                     <p class="body-md">Your cart is empty.</p>
                 </div>
 
-                <ul x-show="!isEmpty" class="flex flex-col divide-y divide-theme-border-soft">
+                <ul x-show="showItems" class="flex flex-col divide-y divide-theme-border-soft">
                     <template x-for="item in items" :key="item.key">
-                        <li class="flex gap-3 py-4">
-                            <a :href="item.url" class="h-20 w-20 shrink-0 overflow-hidden bg-theme-bg/60">
+                        <li class="grid grid-cols-[minmax(6rem,0.95fr)_minmax(0,1.35fr)_auto] gap-4 py-3">
+                            <a
+                                :href="item.url"
+                                class="flex aspect-square w-full items-center justify-center overflow-hidden bg-theme-bg/50"
+                            >
                                 <img
-                                    class="h-full w-full object-cover"
+                                    class="h-full w-full object-contain p-3"
                                     :src="typeof item.image === 'string' ? item.image : (item.image?.url || item.featured_image?.url || '')"
                                     :alt="item.product_title || item.title || 'Cart product'"
-                                    width="80"
-                                    height="80"
+                                    width="120"
+                                    height="120"
+                                    loading="lazy"
                                 >
                             </a>
 
-                            <div class="flex min-w-0 flex-1 flex-col">
-                                <p class="body-md tracking-[0.14em] uppercase opacity-70" x-text="item.vendor || ''"></p>
-                                <a :href="item.url" class="mt-1 line-clamp-2 body-md leading-tight hover:underline" x-text="item.product_title || item.title"></a>
-                                <p class="mt-2 body-md" x-text="linePrice(item)"></p>
+                            <div class="flex min-w-0 flex-col py-1">
+                                <p class="body-md tracking-[0.08em] uppercase opacity-70" x-text="item.vendor || ''"></p>
+                                <a
+                                    :href="item.url"
+                                    class="mt-1 line-clamp-2 body-md leading-tight hover:underline"
+                                    x-text="item.product_title || item.title"
+                                ></a>
+                                <p class="mt-auto pt-4 body-md" x-text="linePrice(item)"></p>
                             </div>
 
-                            <div class="flex shrink-0 flex-col items-end justify-between gap-3">
+                            <div class="flex shrink-0 flex-col items-end justify-between py-1">
                                 <button
                                     type="button"
-                                    class="inline-flex h-6 w-6 cursor-pointer items-center justify-center opacity-75 hover:opacity-100"
+                                    class="inline-flex h-10 w-10 cursor-pointer items-center justify-center opacity-75 hover:opacity-100"
                                     @click="remove(item)"
                                     :aria-label="'Remove ' + (item.product_title || item.title || 'item')"
                                 >
-                                    {% render 'icons', icon: 'icon-trash', size: 'sm', color: 'current' %}
+                                    {% render 'icons', icon: 'icon-trash', size: 'xl', color: 'current' %}
                                 </button>
 
-                                <div class="flex items-center gap-2 border border-theme-border-soft px-1.5 py-0.5">
+                                <div class="flex items-center gap-2">
                                     <button
                                         type="button"
-                                        class="inline-flex h-6 w-6 cursor-pointer items-center justify-center disabled:opacity-35"
+                                        class="inline-flex h-10 w-10 cursor-pointer items-center justify-center disabled:opacity-35"
                                         @click="decrement(item)"
                                         :disabled="Number(item.quantity || 0) <= 1"
                                         aria-label="Decrease quantity"
                                     >
-                                        {% render 'icons', icon: 'icon-minus', size: 'sm', color: 'current' %}
+                                        {% render 'icons', icon: 'icon-minus', size: 'xl', color: 'current' %}
                                     </button>
 
-                                    <span class="min-w-[2ch] text-center body-md tabular-nums" x-text="item.quantity"></span>
+                                    <span class="min-w-9 border-b border-theme-border-strong px-2 pb-1 text-center body-md tabular-nums" x-text="item.quantity"></span>
                                     
                                     <button
                                         type="button"
-                                        class="inline-flex h-6 w-6 cursor-pointer items-center justify-center disabled:opacity-35"
+                                        class="inline-flex h-10 w-10 cursor-pointer items-center justify-center disabled:opacity-35"
                                         @click="increment(item)"
                                         :disabled="maxQty(item) !== null && Number(item.quantity || 0) >= maxQty(item)"
                                         aria-label="Increase quantity"
                                     >
-                                        {% render 'icons', icon: 'icon-plus', size: 'sm', color: 'current' %}
+                                        {% render 'icons', icon: 'icon-plus', size: 'xl', color: 'current' %}
                                     </button>
                                 </div>
                             </div>
@@ -87,37 +105,38 @@
                     </template>
                 </ul>
 
-                <div x-show="!isEmpty" class="pt-4 text-center">
+                <div x-show="showItems" class="pt-4 text-center">
                     {%- render 'link', 
                         text: 'Add More Product', 
                         href: routes.all_products_collection_url, 
-                        variant: 'underline'
+                        variant: 'underline',
+                        class: 'body-md'
                     -%}
                 </div>
             </div>
 
             <div class="mt-auto border-t border-theme-border-soft bg-theme-bg px-5 py-4 pc:px-6">
                 <div class="mb-3 flex items-center justify-between">
-                    <p class="body-md tracking-[0.12em] uppercase">Total</p>
+                    <p class="body-md font-semibold tracking-[0.12em] uppercase">Total</p>
                     <p class="body-md" x-text="formatMoney($store.cart.total_price)"></p>
                 </div>
 
                 <div class="grid grid-cols-1 gap-2">
                     <button
                         type="button"
-                        class="w-full cursor-pointer border border-theme-border-strong px-4 py-3 text-theme-text transition-colors hover:bg-theme-bg/80 disabled:cursor-not-allowed disabled:opacity-45"
+                        class="w-full cursor-pointer border border-theme-border-strong px-4 py-3 body-md text-theme-text transition-colors hover:bg-theme-bg/80 disabled:cursor-not-allowed disabled:opacity-45"
                         @click="clearCart()"
                         :disabled="isEmpty || $store.cart.loading"
                     >
-                        Clear out
+                        Clear all<sup class="sup-badge" x-text="'(' + $store.cart.item_count + ')'"></sup>
                     </button>
                     <button
                         type="button"
-                        class="w-full cursor-pointer border border-primary-border bg-primary px-4 py-3 text-primary-text transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45"
+                        class="w-full cursor-pointer border border-primary-border bg-primary px-4 py-3 body-md text-primary-text transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45"
                         @click="goCheckout()"
                         :disabled="!canCheckout"
                     >
-                        Checkout <sup class="sup-badge" x-text="'(' + $store.cart.item_count + ')'"></sup>
+                        Checkout<sup class="sup-badge" x-text="'(' + $store.cart.item_count + ')'"></sup>
                     </button>
                 </div>
             </div>

@@ -51,6 +51,8 @@
             total_price: 0,
             item_count: 0,
             loading: false,
+            hasFetched: false,
+            fetchError: null,
 
             _getHttp() {
                 return window.ShopifyHttp;
@@ -66,6 +68,11 @@
                 this.items = Array.isArray(data.items) ? data.items : [];
                 this.item_count = typeof data.item_count === 'number' ? data.item_count : 0;
                 this.total_price = typeof data.total_price === 'number' ? data.total_price : 0;
+                this.hasFetched =
+                    Array.isArray(data.items) ||
+                    typeof data.item_count === 'number' ||
+                    typeof data.total_price === 'number';
+                this.fetchError = null;
             },
 
             /**
@@ -78,6 +85,7 @@
                 if (!Http?.getJSON) return Promise.reject(new Error('Http client unavailable'));
 
                 this.loading = true;
+                this.fetchError = null;
 
                 return Http.getJSON('/cart.js', {
                     credentials: 'same-origin',
@@ -87,8 +95,14 @@
                         this.item_count = typeof data.item_count === 'number' ? data.item_count : 0;
                         this.total_price =
                             typeof data.total_price === 'number' ? data.total_price : 0;
+                        this.hasFetched = true;
+                        this.fetchError = null;
 
                         return data;
+                    })
+                    .catch((err) => {
+                        this.fetchError = err;
+                        throw err;
                     })
                     .finally(() => {
                         this.loading = false;
@@ -128,7 +142,11 @@
                         }
                         return this.fetchCart().then(() => data);
                     })
-                    .catch(this._handleError)
+                    .catch((err) =>
+                        this.fetchCart()
+                            .catch(() => {})
+                            .then(() => this._handleError(err)),
+                    )
                     .finally(() => {
                         this.loading = false;
                     });
@@ -164,6 +182,8 @@
                             typeof parsedState.total_price === 'number'
                                 ? parsedState.total_price
                                 : 0;
+                        this.hasFetched = true;
+                        this.fetchError = null;
                         return parsedState;
                     })
                     .catch(this._handleError)
@@ -199,6 +219,8 @@
                         this.item_count = typeof data.item_count === 'number' ? data.item_count : 0;
                         this.total_price =
                             typeof data.total_price === 'number' ? data.total_price : 0;
+                        this.hasFetched = true;
+                        this.fetchError = null;
                         return data;
                     })
                     .catch(this._handleError)
