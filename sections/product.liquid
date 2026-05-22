@@ -1,12 +1,7 @@
 {% assign layout = section.settings.gallery_layout | default: 'thumbnails' %}
 {% assign thumb_position = section.settings.thumbnail_position | default: 'left' %}
-{% assign media_is_sticky = false %}
-{% assign info_is_sticky = false %}
-{% if layout == 'thumbnails' or layout == 'carousel' %}
-    {% assign media_is_sticky = true %}
-{% elsif layout == 'stacked' or layout == 'grid' %}
-    {% assign info_is_sticky = true %}
-{% endif %}
+{% assign desktop_media_width = section.settings.desktop_media_width | default: 60 | plus: 0 %}
+{% assign desktop_info_width = 100 | minus: desktop_media_width %}
 
 <div
     data-section-id="{{ section.id }}"
@@ -19,32 +14,43 @@
     data-component-type="product"
     data-component-id="{{ section.id }}"
 >
-    <div class="layout container-page">
+    <div class="layout container-page overflow-visible!">
         <div
-            class="grid w-full min-w-0 grid-cols-1 items-start gap-8 pc:grid-cols-2 pc:gap-10 fw:gap-12"
+            class="grid w-full min-w-0 grid-cols-1 items-start gap-8 pc:grid-cols-[minmax(0,var(--product-media-fr))_minmax(0,var(--product-info-fr))] pc:items-stretch pc:gap-10 fw:gap-12"
+            style="
+                --product-media-fr: {{ desktop_media_width }}fr;
+                --product-info-fr: {{ desktop_info_width }}fr;
+            "
         >
             <div
-                class="min-w-0 overflow-hidden"
-                style="{% if media_is_sticky %}position: sticky;top: calc(var(--header-height) + var(--announcement-bar-height));{% endif %}"
-                data-product-media-panel
+                class="flex min-w-0 flex-col gap-8"
+                data-product-media-column
             >
-                {%- render 'product-gallery',
-                    images: product.images,
-                    layout: layout,
-                    thumb_position: thumb_position,
-                    thumbnail_visible_count: section.settings.thumbnail_visible_count,
-                    zoom: 'true',
-                    magnifier: 'true',
-                    zoom_overlay_color: section.settings.zoom_overlay_color,
-                    zoom_overlay_opacity: section.settings.zoom_overlay_opacity,
-                    aspect_ratio: '576/622'
-                -%}
+                <div
+                    class="min-w-0 overflow-hidden"
+                    data-product-media-panel
+                    data-product-media-sticky-target
+                >
+                    {%- render 'product-gallery',
+                        images: product.images,
+                        layout: layout,
+                        thumb_position: thumb_position,
+                        thumbnail_visible_count: section.settings.thumbnail_visible_count,
+                        zoom: 'true',
+                        magnifier: 'true',
+                        magnifier_preview_width: section.settings.magnifier_preview_size,
+                        magnifier_preview_height: section.settings.magnifier_preview_size,
+                        zoom_overlay_color: section.settings.zoom_overlay_color,
+                        zoom_overlay_opacity: section.settings.zoom_overlay_opacity,
+                        aspect_ratio: '3/4'
+                    -%}
+                </div>
             </div>
 
             <div class="min-w-0" data-product-info-panel>
                 <div
                     class="self-start"
-                    style="{% if info_is_sticky %}position: sticky;top: calc(var(--header-height) + var(--announcement-bar-height));{% endif %}"
+                    data-product-info-sticky-target
                 >
                     {%- render 'product-info-blocks',
                         product: product,
@@ -61,104 +67,14 @@
 {%- javascript -%}
     (function () {
         const Components = window.__Theme__?.Components;
-        if (!Components) return;
-
-        function constrainDescription(el) {
-            const mediaPanel = el.querySelector('[data-product-media-panel]');
-            const infoBlocks = el.querySelector('[data-product-info-panel] .product-info-blocks');
-            const descriptionBlock = infoBlocks?.querySelector(
-                '.product-info-blocks__description-block',
-            );
-            const description = descriptionBlock?.querySelector(
-                '.product-info-blocks__description',
-            );
-            if (!mediaPanel || !infoBlocks || !descriptionBlock || !description) return {};
-
-            const desktopQuery = window.matchMedia('(min-width: 48rem)');
-            let frame = 0;
-
-            const reset = () => {
-                descriptionBlock.style.removeProperty('max-height');
-                description.style.removeProperty('max-height');
-            };
-
-            const sync = () => {
-                if (frame) cancelAnimationFrame(frame);
-                frame = requestAnimationFrame(() => {
-                    frame = 0;
-
-                    if (!desktopQuery.matches) {
-                        reset();
-                        return;
-                    }
-
-                    const mediaHeight = mediaPanel.getBoundingClientRect().height;
-                    if (mediaHeight <= 0) {
-                        reset();
-                        return;
-                    }
-
-                    const rootStyles = window.getComputedStyle(document.documentElement);
-                    const headerHeight =
-                        parseFloat(rootStyles.getPropertyValue('--header-height')) || 0;
-                    const announcementHeight =
-                        parseFloat(rootStyles.getPropertyValue('--announcement-bar-height')) || 0;
-                    const viewportHeight = window.visualViewport?.height || window.innerHeight;
-                    const maxReferenceHeight = Math.max(
-                        360,
-                        viewportHeight - headerHeight - announcementHeight,
-                    );
-                    const referenceHeight = Math.min(mediaHeight, maxReferenceHeight);
-
-                    const styles = window.getComputedStyle(infoBlocks);
-                    const gap = parseFloat(styles.rowGap || styles.gap) || 0;
-                    const paddingY =
-                        (parseFloat(styles.paddingTop) || 0) +
-                        (parseFloat(styles.paddingBottom) || 0);
-                    const children = Array.from(infoBlocks.children).filter(
-                        (child) => child instanceof HTMLElement,
-                    );
-                    const otherBlocksHeight = children.reduce((total, child) => {
-                        if (child === descriptionBlock) return total;
-                        return total + child.getBoundingClientRect().height;
-                    }, 0);
-                    const gapsHeight = gap * Math.max(children.length - 1, 0);
-                    const available = Math.max(
-                        0,
-                        referenceHeight - paddingY - gapsHeight - otherBlocksHeight,
-                    );
-
-                    // Keep the description scroll area aligned with the available space beside media.
-                    descriptionBlock.style.maxHeight = `${Math.floor(available)}px`;
-                    description.style.maxHeight = `${Math.floor(available)}px`;
-                });
-            };
-
-            const resizeObserver = new ResizeObserver(sync);
-            resizeObserver.observe(mediaPanel);
-            Array.from(infoBlocks.children).forEach((child) => resizeObserver.observe(child));
-
-            window.addEventListener('resize', sync);
-            desktopQuery.addEventListener('change', sync);
-            sync();
-
-            return {
-                description,
-                descriptionBlock,
-                desktopQuery,
-                frame,
-                infoBlocks,
-                reset,
-                resizeObserver,
-                sync,
-            };
-        }
+        const Utils = window.__Theme__?.Utils;
+        if (!Components || !Utils?.setupProductLayout) return;
 
         Components.register(
             'product',
             {
                 init(el) {
-                    return constrainDescription(el);
+                    return Utils.setupProductLayout(el);
                 },
 
                 destroy(el, state) {
@@ -213,9 +129,19 @@
             "info": "Applies when Image layout is set to Thumbnails."
         },
         {
+            "type": "range",
+            "id": "desktop_media_width",
+            "min": 40,
+            "max": 60,
+            "step": 1,
+            "unit": "%",
+            "label": "Desktop media width",
+            "default": 60
+        },
+        {
             "type": "select",
             "id": "thumbnail_visible_count",
-            "label": "Visible thumbnails",
+            "label": "Bottom visible thumbnails",
             "options": [
                 { "value": "3", "label": "3" },
                 { "value": "4", "label": "4" },
@@ -223,7 +149,17 @@
                 { "value": "6", "label": "6" }
             ],
             "default": "4",
-            "info": "Applies when Image layout is set to Thumbnails and thumbnail position is left."
+            "info": "Applies when Image layout is set to Thumbnails and thumbnail position is bottom."
+        },
+        {
+            "type": "range",
+            "id": "magnifier_preview_size",
+            "min": 240,
+            "max": 520,
+            "step": 20,
+            "unit": "px",
+            "label": "Magnifier preview size",
+            "default": 360
         },
         {
             "type": "color",

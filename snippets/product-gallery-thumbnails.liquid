@@ -1,10 +1,10 @@
 {% comment %}
-    Gallery layout: thumbnails — thumb strip + single active main image.
+    Gallery layout: thumbnails - thumb strip + single active main image.
     Internal sub-snippet; always rendered inside product-gallery.liquid's x-data scope.
 
     @param {array}   images          - Image objects
     @param {string}  thumb_position  - 'left' | 'bottom'
-    @param {number}  thumbnail_visible_count - Number of visible thumbnails in left layout
+    @param {number}  thumbnail_visible_count - Number of visible thumbnails in bottom thumbnail layout
     @param {boolean} zoom            - Enable click on main image
     @param {boolean} magnifier       - Enable desktop hover magnifier on main image
     @param {number}  magnifier_zoom_scale - Background scale multiplier for magnifier
@@ -37,9 +37,9 @@
 <div
     class="
         {% if is_left %}
-          flex flex-col pc:flex-row gap-4 pc:gap-2 min-w-0 w-full h-full
+          flex flex-col pc:grid pc:grid-cols-[minmax(auto,10%)_auto] gap-4 pc:gap-2 min-w-0 w-full h-full
         {% else %}
-          flex flex-col gap-3 min-w-0 w-full pc:h-[calc(100vh-var(--header-height)-var(--announcement-bar-height))]
+          flex flex-col gap-3 min-w-0 w-full
         {% endif %}
     "
 >
@@ -51,7 +51,7 @@
         class="
             relative z-0 shrink-0
             {% if is_left %}
-              no-scrollbar order-last w-full flex flex-nowrap gap-2 overflow-x-auto pc:order-first pc:w-1/5 pc:self-stretch pc:flex-col pc:overflow-y-auto pc:overflow-x-hidden
+              no-scrollbar order-last w-full flex flex-nowrap gap-2 overflow-x-auto pc:order-first pc:w-full pc:self-stretch pc:flex-col pc:overflow-y-auto pc:overflow-x-hidden
             {% else %}
               no-scrollbar order-last w-full min-w-0 flex flex-nowrap gap-2 overflow-x-auto pc:min-h-0 pc:flex-[1_0_0%]
             {% endif %}
@@ -69,7 +69,7 @@
                     role="tab"
                     :aria-selected="activeIndex === {{ forloop.index0 }}"
                     @click="setActive({{ forloop.index0 }})"
-                    class="block h-20 w-20 shrink-0 cursor-pointer overflow-hidden rounded-sm border-2 transition-all duration-200 pc:h-[calc((100%-((var(--thumbnail-visible-count)-1)*0.25rem))/var(--thumbnail-visible-count))] pc:w-full"
+                    class="block aspect-[3/4] w-20 shrink-0 cursor-pointer overflow-hidden rounded-sm border-2 transition-all duration-200 pc:w-full"
                     :class="
                         activeIndex === {{ forloop.index0 }}
                         ? 'border-focus'
@@ -84,7 +84,7 @@
                         sizes: thumb_sizes,
                         widths: thumb_widths,
                         loading: 'lazy',
-                        aspect_ratio: '1/1'
+                        aspect_ratio: '3/4'
                     -%}
                 </button>
             {%- endfor -%}
@@ -98,7 +98,7 @@
                     role="tab"
                     :aria-selected="activeIndex === {{ forloop.index0 }}"
                     @click="setActive({{ forloop.index0 }})"
-                    class="block h-20 w-20 shrink-0 cursor-pointer overflow-hidden rounded-sm border-2 transition-all duration-200 pc:h-full pc:w-[calc((100%-((var(--thumbnail-visible-count)-1)*0.5rem))/var(--thumbnail-visible-count))]"
+                    class="block aspect-[3/4] w-20 shrink-0 cursor-pointer overflow-hidden rounded-sm border-2 transition-all duration-200 pc:w-[calc((100%-((var(--thumbnail-visible-count)-1)*0.5rem))/var(--thumbnail-visible-count))]"
                     :class="
                         activeIndex === {{ forloop.index0 }}
                         ? 'border-focus'
@@ -113,7 +113,7 @@
                         sizes: thumb_sizes,
                         widths: thumb_widths,
                         loading: 'lazy',
-                        aspect_ratio: '1/1'
+                        aspect_ratio: '3/4'
                     -%}
                 </button>
             {%- endfor -%}
