@@ -9,6 +9,8 @@
     @param {Object}  [block]           - Block object (for shopify_attributes + settings)
     @param {string}  [product_form_id] - Form ID (default: 'product-form-' + section.id)
     @param {string}  [section_id]      - Section ID for SRA refresh after add
+    @param {string}  [layout]          - Button layout: 'stack' or 'purchase_group'
+    @param {Object}  [quantity_block]  - Optional quantity selector block rendered in purchase_group layout
 
     Usage:
     {% render 'buy-buttons', product: product, block: block, product_form_id: product_form_id, section_id: section.id %}
@@ -21,6 +23,11 @@
 {%- assign open_dialog_id = open_dialog_id | default: '' -%}
 {%- assign success_message = success_message | default: 'Added to cart!' -%}
 {%- assign show_buy_now = show_buy_now | default: false -%}
+{%- assign layout = layout | default: 'stack' -%}
+{%- assign show_quantity_control = false -%}
+{%- if quantity_block != blank or show_quantity == true or show_quantity == 'true' -%}
+    {%- assign show_quantity_control = true -%}
+{%- endif -%}
 
 {%- if product != blank -%}
     {%- assign current_variant = product.selected_or_first_available_variant -%}
@@ -71,37 +78,108 @@
                 :disabled="!available"
             >
 
-            <div class="flex flex-col gap-3">
-                <button
-                    type="submit"
-                    name="add"
-                    class="relative btn w-full disabled:cursor-not-allowed"
-                    :class="
-                        available
-                        ? '{{ available_classes }} disabled:opacity-70'
-                        : '{{ unavailable_classes }}'
-                    "
-                    :disabled="!available || isLoading"
-                    @click.prevent="addToCart()"
-                >
-                    <span
-                        class="inline-block transition-opacity"
-                        :class="{ 'opacity-0': isLoading }"
-                        x-text="buttonText"
-                    >
-                        {%- if current_variant.available %}Add to cart{% else %}Sold out{% endif -%}
-                    </span>
-                    <span
-                        x-show="isLoading"
-                        x-cloak
-                        class="absolute inset-0 flex items-center justify-center"
-                        aria-hidden="true"
+            <div
+                class="
+                    {%- if layout == 'purchase_group' -%}
+                        buy-buttons__actions buy-buttons__actions--purchase-group
+                        {%- if show_quantity_control %} buy-buttons__actions--with-quantity{% else %} buy-buttons__actions--without-quantity{% endif -%}
+                    {%- else -%}
+                        flex flex-col gap-3
+                    {%- endif -%}
+                "
+            >
+                {%- if layout == 'purchase_group' -%}
+                    <div class="buy-buttons__primary-row">
+                        {%- if show_quantity_control -%}
+                            <div
+                                class="buy-buttons__quantity"
+                                {% if quantity_block != blank %}
+                                    {{ quantity_block.shopify_attributes }}
+                                {% endif %}
+                            >
+                                {%- render 'quantity-selector',
+                                    value: 1,
+                                    min: 1,
+                                    product_form_id: product_form_id,
+                                    section_id: section_id,
+                                    wrapper_class: quantity_wrapper_class,
+                                    button_class: quantity_button_class,
+                                    input_class: quantity_input_class
+                                -%}
+                            </div>
+                        {%- endif -%}
+
+                        <button
+                            type="submit"
+                            name="add"
+                            class="relative btn w-full disabled:cursor-not-allowed"
+                            :class="
+                                available
+                                ? '{{ available_classes }} disabled:opacity-70'
+                                : '{{ unavailable_classes }}'
+                            "
+                            :disabled="!available || isLoading"
+                            @click.prevent="addToCart()"
+                        >
+                            <span
+                                class="inline-block transition-opacity"
+                                :class="{ 'opacity-0': isLoading }"
+                                x-text="buttonText"
+                            >
+                                {%- if current_variant.available -%}
+                                    Add to cart
+                                {%- else -%}
+                                    Sold out
+                                {%- endif -%}
+                            </span>
+                            <span
+                                x-show="isLoading"
+                                x-cloak
+                                class="absolute inset-0 flex items-center justify-center"
+                                aria-hidden="true"
+                            >
+                                <span
+                                    class="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent"
+                                ></span>
+                            </span>
+                        </button>
+                    </div>
+                {%- else -%}
+                    <button
+                        type="submit"
+                        name="add"
+                        class="relative btn w-full disabled:cursor-not-allowed"
+                        :class="
+                            available
+                            ? '{{ available_classes }} disabled:opacity-70'
+                            : '{{ unavailable_classes }}'
+                        "
+                        :disabled="!available || isLoading"
+                        @click.prevent="addToCart()"
                     >
                         <span
-                            class="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent"
-                        ></span>
-                    </span>
-                </button>
+                            class="inline-block transition-opacity"
+                            :class="{ 'opacity-0': isLoading }"
+                            x-text="buttonText"
+                        >
+                            {%- if current_variant.available -%}
+                                Add to cart
+                            {%- else -%}
+                                Sold out
+                            {%- endif -%}
+                        </span>
+                        <span
+                            x-show="isLoading"
+                            x-cloak
+                            class="absolute inset-0 flex items-center justify-center"
+                            aria-hidden="true"
+                        >
+                            <span
+                                class="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent"
+                            ></span>
+                        </span>
+                    </button>
+                {%- endif -%}
 
                 {%- if show_buy_now == true or show_buy_now == 'true' -%}
                     <button
@@ -139,7 +217,7 @@
                 <div
                     x-show="isLoading"
                     x-cloak
-                    class="rounded-sm border border-theme-border-soft px-4 py-3 body-sm text-theme-text/70"
+                    class="rounded-sm border border-theme-border-soft px-4 py-3 body-md text-theme-text/70"
                     role="status"
                     aria-live="polite"
                     x-text="loadingText"
@@ -151,14 +229,14 @@
                     class="flex flex-wrap items-center gap-3 rounded-sm border border-theme-border-soft px-4 py-3"
                 >
                     <p
-                        class="body-sm text-theme-text/70"
+                        class="body-md text-theme-text/70"
                         role="status"
                         aria-live="polite"
                         x-text="errorText"
                     ></p>
                     <button
                         type="button"
-                        class="body-sm font-medium underline underline-offset-4 transition-opacity hover:opacity-70"
+                        class="body-md font-medium underline underline-offset-4 transition-opacity hover:opacity-70"
                         @click="retry()"
                         x-text="retryText"
                     ></button>

@@ -2,6 +2,20 @@
 {% assign thumb_position = section.settings.thumbnail_position | default: 'left' %}
 {% assign desktop_media_width = section.settings.desktop_media_width | default: 60 | plus: 0 %}
 {% assign desktop_info_width = 100 | minus: desktop_media_width %}
+{% assign has_gallery_blocks = false %}
+{% for block in section.blocks %}
+    {% if block.type == 'description' and block.settings.position_desktop == 'gallery' %}
+        {% assign has_gallery_blocks = true %}
+    {% elsif block.type == 'collapsible_tab' and block.settings.position_desktop == 'gallery' %}
+        {% assign has_gallery_blocks = true %}
+    {% elsif block.type == 'share' and block.settings.position_desktop == 'gallery' %}
+        {% assign has_gallery_blocks = true %}
+    {% elsif block.type == 'callout' and block.settings.position_desktop == 'gallery' %}
+        {% assign has_gallery_blocks = true %}
+    {% elsif block.type == 'spacer' and block.settings.position_desktop == 'gallery' %}
+        {% assign has_gallery_blocks = true %}
+    {% endif %}
+{% endfor %}
 
 <div
     data-section-id="{{ section.id }}"
@@ -45,6 +59,15 @@
                         aspect_ratio: '3/4'
                     -%}
                 </div>
+
+                {%- if has_gallery_blocks -%}
+                    {%- render 'product-info-blocks',
+                        product: product,
+                        section: section,
+                        context: 'product',
+                        render_column: 'gallery'
+                    -%}
+                {%- endif -%}
             </div>
 
             <div class="min-w-0" data-product-info-panel>
@@ -56,7 +79,8 @@
                         product: product,
                         section: section,
                         context: 'product',
-                        container_class: 'p-6 pc:p-10'
+                        render_column: 'form',
+                        container_class: 'px-6 py-4 pc:px-10 pc:py-6'
                     -%}
                 </div>
             </div>
@@ -212,6 +236,11 @@
             "limit": 1
         },
         {
+            "type": "vendor",
+            "name": "Vendor",
+            "limit": 1
+        },
+        {
             "type": "price",
             "name": "Price",
             "limit": 1
@@ -219,7 +248,19 @@
         {
             "type": "description",
             "name": "Description",
-            "limit": 1
+            "limit": 1,
+            "settings": [
+                {
+                    "type": "select",
+                    "id": "position_desktop",
+                    "label": "Position (desktop)",
+                    "options": [
+                        { "value": "form", "label": "Form column" },
+                        { "value": "gallery", "label": "Gallery column" }
+                    ],
+                    "default": "form"
+                }
+            ]
         },
         {
             "type": "variant_picker",
@@ -255,6 +296,40 @@
             "limit": 1
         },
         {
+            "type": "inventory_notice",
+            "name": "Inventory notice",
+            "limit": 1,
+            "settings": [
+                {
+                    "type": "range",
+                    "id": "low_stock_threshold",
+                    "min": 1,
+                    "max": 50,
+                    "step": 1,
+                    "label": "Low stock threshold",
+                    "info": "The low stock notice displays if your inventory is equal to or lower than this number.",
+                    "default": 5
+                },
+                {
+                    "type": "select",
+                    "id": "alignment",
+                    "label": "Alignment",
+                    "options": [
+                        { "value": "left", "label": "Left" },
+                        { "value": "center", "label": "Center" },
+                        { "value": "right", "label": "Right" }
+                    ],
+                    "default": "left"
+                },
+                {
+                    "type": "checkbox",
+                    "id": "show_stock_number",
+                    "label": "Display stock number",
+                    "default": true
+                }
+            ]
+        },
+        {
             "type": "buy_buttons",
             "name": "Buy buttons",
             "limit": 1,
@@ -264,6 +339,332 @@
                     "id": "show_dynamic_checkout",
                     "label": "Show dynamic checkout buttons",
                     "info": "Using the payment methods available on your store, customers see their preferred option, like PayPal or Apple Pay.",
+                    "default": true
+                }
+            ]
+        },
+        {
+            "type": "custom_liquid",
+            "name": "Custom liquid",
+            "settings": [
+                {
+                    "type": "liquid",
+                    "id": "custom_liquid",
+                    "label": "Custom liquid"
+                }
+            ]
+        },
+        {
+            "type": "collapsible_tab",
+            "name": "Collapsible tab",
+            "settings": [
+                {
+                    "type": "select",
+                    "id": "position_desktop",
+                    "label": "Position (desktop)",
+                    "options": [
+                        { "value": "form", "label": "Form column" },
+                        { "value": "gallery", "label": "Gallery column" }
+                    ],
+                    "default": "form"
+                },
+                {
+                    "type": "text",
+                    "id": "heading",
+                    "label": "Heading",
+                    "default": "Collapsible tab"
+                },
+                {
+                    "type": "select",
+                    "id": "icon",
+                    "label": "Icon",
+                    "options": [
+                        { "value": "none", "label": "None" },
+                        { "value": "icon-account", "label": "Account" },
+                        { "value": "icon-arrow", "label": "Arrow" },
+                        { "value": "icon-arrow1", "label": "Arrow 1" },
+                        { "value": "icon-arrow2", "label": "Arrow 2" },
+                        { "value": "icon-cart", "label": "Cart" },
+                        { "value": "icon-check", "label": "Check" },
+                        { "value": "icon-close", "label": "Close" },
+                        { "value": "icon-eye", "label": "Eye" },
+                        { "value": "icon-eyeglasses", "label": "Eyeglasses" },
+                        { "value": "icon-facebook", "label": "Facebook" },
+                        { "value": "icon-filter", "label": "Filter" },
+                        { "value": "icon-instagram", "label": "Instagram" },
+                        { "value": "icon-menu", "label": "Menu" },
+                        { "value": "icon-minus", "label": "Minus" },
+                        { "value": "icon-plus", "label": "Plus" },
+                        { "value": "icon-search", "label": "Search" },
+                        { "value": "icon-snapchat", "label": "Snapchat" },
+                        { "value": "icon-sortby", "label": "Sort by" },
+                        { "value": "icon-tiktok", "label": "TikTok" },
+                        { "value": "icon-trash", "label": "Trash" },
+                        { "value": "icon-tumblr", "label": "Tumblr" },
+                        { "value": "icon-twitter", "label": "Twitter" },
+                        { "value": "icon-vimeo", "label": "Vimeo" },
+                        { "value": "icon-youtube", "label": "YouTube" },
+                        { "value": "custom", "label": "Custom SVG" }
+                    ],
+                    "default": "icon-check"
+                },
+                {
+                    "type": "range",
+                    "id": "icon_size",
+                    "min": 12,
+                    "max": 48,
+                    "step": 1,
+                    "unit": "px",
+                    "label": "Icon size",
+                    "default": 20
+                },
+                {
+                    "type": "color",
+                    "id": "icon_color",
+                    "label": "Icon color",
+                    "default": "#2D4634"
+                },
+                {
+                    "type": "html",
+                    "id": "svg_icon_code",
+                    "label": "SVG icon code",
+                    "info": "Used only when Icon is set to Custom SVG."
+                },
+                {
+                    "type": "richtext",
+                    "id": "text",
+                    "label": "Text",
+                    "default": "<p>Share information about your product, shipping, returns, or materials.</p>"
+                },
+                {
+                    "type": "image_picker",
+                    "id": "image",
+                    "label": "Image"
+                },
+                {
+                    "type": "range",
+                    "id": "image_width",
+                    "min": 100,
+                    "max": 1000,
+                    "step": 20,
+                    "unit": "px",
+                    "label": "Image width",
+                    "default": 1000
+                },
+                {
+                    "type": "select",
+                    "id": "alignment",
+                    "label": "Alignment",
+                    "options": [
+                        { "value": "left", "label": "Left" },
+                        { "value": "center", "label": "Center" },
+                        { "value": "right", "label": "Right" }
+                    ],
+                    "default": "left"
+                },
+                {
+                    "type": "url",
+                    "id": "link",
+                    "label": "Link"
+                },
+                {
+                    "type": "page",
+                    "id": "dynamic_content",
+                    "label": "Dynamic content",
+                    "info": "This content will replace anything you have added to the fields above."
+                },
+                {
+                    "type": "checkbox",
+                    "id": "use_page_title",
+                    "label": "Use page title for tab heading",
+                    "default": false
+                },
+                {
+                    "type": "checkbox",
+                    "id": "open_by_default",
+                    "label": "Open tab by default",
+                    "default": false
+                }
+            ]
+        },
+        {
+            "type": "share",
+            "name": "Share",
+            "settings": [
+                {
+                    "type": "paragraph",
+                    "content": "Share links use the current product URL."
+                },
+                {
+                    "type": "select",
+                    "id": "position_desktop",
+                    "label": "Position (desktop)",
+                    "options": [
+                        { "value": "form", "label": "Form column" },
+                        { "value": "gallery", "label": "Gallery column" }
+                    ],
+                    "default": "form"
+                },
+                {
+                    "type": "select",
+                    "id": "alignment",
+                    "label": "Alignment",
+                    "options": [
+                        { "value": "left", "label": "Left" },
+                        { "value": "center", "label": "Center" },
+                        { "value": "right", "label": "Right" }
+                    ],
+                    "default": "center"
+                }
+            ]
+        },
+        {
+            "type": "callout",
+            "name": "Callout",
+            "settings": [
+                {
+                    "type": "select",
+                    "id": "position_desktop",
+                    "label": "Position (desktop)",
+                    "options": [
+                        { "value": "form", "label": "Form column" },
+                        { "value": "gallery", "label": "Gallery column" }
+                    ],
+                    "default": "form"
+                },
+                {
+                    "type": "select",
+                    "id": "icon",
+                    "label": "Icon",
+                    "options": [
+                        { "value": "none", "label": "None" },
+                        { "value": "icon-account", "label": "Account" },
+                        { "value": "icon-arrow", "label": "Arrow" },
+                        { "value": "icon-arrow1", "label": "Arrow 1" },
+                        { "value": "icon-arrow2", "label": "Arrow 2" },
+                        { "value": "icon-cart", "label": "Cart" },
+                        { "value": "icon-check", "label": "Check" },
+                        { "value": "icon-close", "label": "Close" },
+                        { "value": "icon-eye", "label": "Eye" },
+                        { "value": "icon-eyeglasses", "label": "Eyeglasses" },
+                        { "value": "icon-facebook", "label": "Facebook" },
+                        { "value": "icon-filter", "label": "Filter" },
+                        { "value": "icon-instagram", "label": "Instagram" },
+                        { "value": "icon-menu", "label": "Menu" },
+                        { "value": "icon-minus", "label": "Minus" },
+                        { "value": "icon-plus", "label": "Plus" },
+                        { "value": "icon-search", "label": "Search" },
+                        { "value": "icon-snapchat", "label": "Snapchat" },
+                        { "value": "icon-sortby", "label": "Sort by" },
+                        { "value": "icon-tiktok", "label": "TikTok" },
+                        { "value": "icon-trash", "label": "Trash" },
+                        { "value": "icon-tumblr", "label": "Tumblr" },
+                        { "value": "icon-twitter", "label": "Twitter" },
+                        { "value": "icon-vimeo", "label": "Vimeo" },
+                        { "value": "icon-youtube", "label": "YouTube" },
+                        { "value": "custom", "label": "Custom SVG" }
+                    ],
+                    "default": "icon-check"
+                },
+                {
+                    "type": "html",
+                    "id": "svg_icon_code",
+                    "label": "SVG icon code",
+                    "info": "Used only when Icon is set to Custom SVG."
+                },
+                {
+                    "type": "range",
+                    "id": "icon_size",
+                    "min": 12,
+                    "max": 48,
+                    "step": 1,
+                    "unit": "px",
+                    "label": "Icon size",
+                    "default": 24
+                },
+                {
+                    "type": "text",
+                    "id": "heading",
+                    "label": "Heading"
+                },
+                {
+                    "type": "checkbox",
+                    "id": "bold",
+                    "label": "Bold",
+                    "default": false
+                },
+                {
+                    "type": "richtext",
+                    "id": "text",
+                    "label": "Text",
+                    "default": "<p>For every purchase you make, 5% will be donated directly to the Ocean Cleanup project.</p>"
+                },
+                {
+                    "type": "header",
+                    "content": "Colors"
+                },
+                {
+                    "type": "color",
+                    "id": "background_color",
+                    "label": "Background color",
+                    "default": "#D6EDFF"
+                },
+                {
+                    "type": "color",
+                    "id": "text_color",
+                    "label": "Text color",
+                    "default": "#3481C2"
+                },
+                {
+                    "type": "checkbox",
+                    "id": "show_border",
+                    "label": "Show border",
+                    "default": false
+                }
+            ]
+        },
+        {
+            "type": "spacer",
+            "name": "Spacer",
+            "settings": [
+                {
+                    "type": "select",
+                    "id": "position_desktop",
+                    "label": "Position (desktop)",
+                    "options": [
+                        { "value": "form", "label": "Form column" },
+                        { "value": "gallery", "label": "Gallery column" }
+                    ],
+                    "default": "form"
+                },
+                {
+                    "type": "select",
+                    "id": "top_spacing",
+                    "label": "Top spacing",
+                    "options": [
+                        { "value": "none", "label": "None" },
+                        { "value": "small", "label": "Small" },
+                        { "value": "medium", "label": "Medium" },
+                        { "value": "large", "label": "Large" }
+                    ],
+                    "default": "small"
+                },
+                {
+                    "type": "select",
+                    "id": "bottom_spacing",
+                    "label": "Bottom spacing",
+                    "options": [
+                        { "value": "none", "label": "None" },
+                        { "value": "small", "label": "Small" },
+                        { "value": "medium", "label": "Medium" },
+                        { "value": "large", "label": "Large" }
+                    ],
+                    "default": "small"
+                },
+                {
+                    "type": "checkbox",
+                    "id": "show_dividing_line",
+                    "label": "Show dividing line",
                     "default": false
                 }
             ]
@@ -274,11 +675,13 @@
             "name": "t:general.product",
             "settings": {},
             "blocks": [
+                { "type": "vendor" },
                 { "type": "title" },
                 { "type": "price" },
                 { "type": "description" },
                 { "type": "variant_picker" },
                 { "type": "quantity_selector" },
+                { "type": "inventory_notice" },
                 { "type": "buy_buttons" }
             ]
         }
