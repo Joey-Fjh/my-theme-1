@@ -11,6 +11,8 @@
     @param {boolean} [show_image_navigation] - Optional. Defaults to true. Hide image navigation controls when false.
     @param {boolean} [show_image_pagination] - Deprecated alias for `show_image_navigation`.
     @param {string} [hover_mode] - Optional. 'actions' | 'none' | 'variants'. Defaults to 'actions'.
+    @param {string} [scope_id] - Optional stable scope used for nested dialog/form ids.
+    @param {string} [color_scheme] - Optional color scheme passed to quick view modal content.
 
     @example
     {% render 'product-card', product: product, class: 'my-product-card' %}
@@ -33,6 +35,8 @@
     assign card_mode = card_mode | default: 'full'
     assign aspect_ratio = image_ratio | default: '1/1'
     assign hover_mode = hover_mode | default: 'actions'
+    assign scope_id = scope_id | default: 'card'
+    assign color_scheme = color_scheme | default: ''
     assign show_hover_actions_enabled = true
     assign show_image_navigation_enabled = true
     assign show_hover_actions_explicit = false
@@ -74,6 +78,18 @@
     if show_hover_actions_enabled == false and hover_mode == 'actions'
         assign hover_mode = 'none'
     endif
+
+    if hover_mode == 'variants'
+        assign show_hover_actions_enabled = false
+    endif
+
+    assign has_variant_panel = true
+    if product.has_only_default_variant
+        assign has_variant_panel = false
+    endif
+
+    assign selected_variant = product.selected_or_first_available_variant
+    assign quick_view_dialog_id = scope_id | append: '-quick-view-' | append: product.id
 -%}
 
 <div
@@ -81,12 +97,22 @@
     data-card-mode="{{ card_mode | escape }}"
     data-image-count="{{ image_count }}"
     data-hover-mode="{{ hover_mode | escape }}"
+    data-has-variant-panel="{{ has_variant_panel }}"
     data-enable-image-navigation="{{ show_image_navigation_enabled }}"
+    data-quick-view-dialog-id="{{ quick_view_dialog_id | escape }}"
+    data-cart-dialog-id="cart-overlay-drawer"
+    data-primary-variant-id="{{ selected_variant.id }}"
+    data-primary-variant-available="{{ selected_variant.available }}"
     x-data="
         productCard({
             imageCount: Number($el.dataset.imageCount || 1),
             hoverMode: $el.dataset.hoverMode || 'actions',
-            enableImageNavigation: $el.dataset.enableImageNavigation !== 'false'
+            hasVariantPanel: $el.dataset.hasVariantPanel === 'true',
+            enableImageNavigation: $el.dataset.enableImageNavigation !== 'false',
+            quickViewDialogId: $el.dataset.quickViewDialogId || '',
+            cartDialogId: $el.dataset.cartDialogId || '',
+            primaryVariantId: Number($el.dataset.primaryVariantId || 0),
+            primaryVariantAvailable: $el.dataset.primaryVariantAvailable === 'true'
         })
     "
     @mouseleave="setImageHover(false); setActionsHover(false)"
@@ -128,7 +154,8 @@
                             </button>
                             <span
                                 class="product-card-shell__pagination-text"
-                                x-text="imageNavigationLabel"
+                                aria-live="polite"
+                                x-text="`${activeImageIndex + 1}/${imageCount}`"
                                 >1 / {{ image_count -}}
                             </span>
                             <button
@@ -198,16 +225,72 @@
                 </div>
             {%- endfor -%}
         </a>
+
+        {%- if hover_mode == 'variants' -%}
+            <button
+                type="button"
+                class="product-card__quick-view-trigger"
+                :class="imageHover ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'"
+                @click.prevent.stop="openQuickView()"
+                aria-label="Quick view {{ product.title | escape }}"
+            >
+                {% render 'icons', icon: 'icon-eye', size: 'lg', color: 'current' %}
+            </button>
+
+            {%- if has_variant_panel -%}
+                <div
+                    class="product-card__variant-shell"
+                    :class="showVariantPanel ? 'is-visible' : ''"
+                    @mouseenter="setImageHover(true)"
+                    @mouseleave="setImageHover(false)"
+                >
+                    <div class="product-card__variant-heading">
+                        <div
+                            class="product-card__variant-title product-card-shell__title"
+                            title="{{ product.title }}"
+                        >
+                            {{ product.title }}
+                        </div>
+                        <div class="product-card__variant-price product-card-shell__price">
+                            {{ product.price | money }}
+                        </div>
+                    </div>
+
+                    <div class="product-card__variant-body" x-data="dragScroll({ axis: 'y' })">
+                        {% render 'product-card-variant-panel', product: product, limit: 8 %}
+                    </div>
+                </div>
+            {%- else -%}
+                <div class="product-card__variant-shell product-card__variant-shell--static is-visible">
+                    <div class="product-card__variant-heading">
+                        <div
+                            class="product-card__variant-title product-card-shell__title"
+                            title="{{ product.title }}"
+                        >
+                            {{ product.title }}
+                        </div>
+                        <div class="product-card__variant-price product-card-shell__price">
+                            {{ product.price | money }}
+                        </div>
+                    </div>
+                </div>
+            {%- endif -%}
+        {%- endif -%}
     </div>
 
-    <div class="product-card__info product-card-shell__info">
-        <div class="product-card__info-title product-card-shell__title" title="{{ product.title }}">
-            {{ product.title }}
+    {%- unless hover_mode == 'variants' -%}
+        <div class="product-card__info product-card-shell__info">
+            <div
+                class="product-card__info-title product-card-shell__title"
+                title="{{ product.title }}"
+            >
+                {{ product.title }}
+            </div>
+            <div class="product-card__info-price product-card-shell__price">
+                {{ product.price | money }}
+            </div>
         </div>
-        <div class="product-card__info-price product-card-shell__price">
-            {{ product.price | money }}
-        </div>
-    </div>
+    {%- endunless -%}
 
     {%- if show_hover_actions_enabled -%}
         <div
@@ -219,15 +302,44 @@
             <button
                 class="product-card__btn-primary"
                 data-product-handle="{{ product.handle }}"
+                @click.prevent.stop="openQuickView()"
             >
                 Quick View
             </button>
             <button
                 class="product-card__btn-secondary"
                 data-variant-id="{{ product.selected_or_first_available_variant.id }}"
+                :disabled="!primaryVariantAvailable || isAddingToCart"
+                :class="{ 'is-disabled': !primaryVariantAvailable }"
+                @click.prevent.stop="addPrimaryVariantToCart()"
             >
-                Add to Cart
+                <span x-show="!isAddingToCart && primaryVariantAvailable">Add to Cart</span>
+                <span x-show="!isAddingToCart && !primaryVariantAvailable">Sold out</span>
+                <span x-show="isAddingToCart" x-cloak>Adding...</span>
             </button>
         </div>
     {%- endif -%}
 </div>
+
+{%- capture quick_view_content -%}
+    {%- render 'product-quick-view',
+        product: product,
+        dialog_id: quick_view_dialog_id,
+        section_id: quick_view_dialog_id,
+        color_scheme: color_scheme
+    -%}
+{%- endcapture -%}
+
+<template x-teleport="body">
+    {%- render 'ui-dialog',
+        id: quick_view_dialog_id,
+        type: 'modal',
+        color_scheme: color_scheme,
+        root_class: 'z-[10020]',
+        modal_wrapper_class: 'items-center justify-center px-3 py-4 pc:px-[8vw] pc:py-[5vh]',
+        modal_panel_class: 'h-full w-full !max-h-full !max-w-full overflow-hidden rounded-sm shadow-xl',
+        show_close_button: true,
+        close_label: 'Close quick view',
+        content: quick_view_content
+    -%}
+</template>

@@ -1,0 +1,96 @@
+{% doc %}
+    Compact hover panel content for variant-mode product cards.
+
+    @param {product} product - Product object to inspect.
+{% enddoc %}
+
+{%- liquid
+    assign color_option_position = 0
+    assign size_option_position = 0
+
+    for option in product.options_with_values
+        assign option_name = option.name | downcase
+        if color_option_position == 0
+            if option_name contains 'color' or option_name contains 'colour'
+                assign color_option_position = option.position
+            endif
+        endif
+        if size_option_position == 0 and option_name contains 'size'
+            assign size_option_position = option.position
+        endif
+    endfor
+-%}
+
+<div class="product-card__variant-panel" aria-hidden="true">
+    <div class="product-card__variant-table-wrap" x-data="dragScroll({ axis: 'x' })">
+        <div class="product-card__variant-table">
+            {%- for variant in product.variants -%}
+                {%- liquid
+                    assign size_label = variant.title
+                    if size_option_position > 0
+                        assign size_index = size_option_position | minus: 1
+                        assign size_label = variant.options[size_index]
+                    endif
+
+                    assign color_label = ''
+                    assign swatch_style = ''
+                    if color_option_position > 0
+                        assign color_index = color_option_position | minus: 1
+                        assign color_label = variant.options[color_index]
+
+                        for option in product.options_with_values
+                            if option.position != color_option_position
+                                continue
+                            endif
+
+                            for value in option.values
+                                assign option_value_label = value | append: ''
+                                if option_value_label != color_label
+                                    continue
+                                endif
+
+                                if value.swatch.image
+                                    assign swatch_image = value.swatch.image | image_url: width: 48
+                                    assign swatch_style = 'background-image:url(' | append: swatch_image | append: ');background-size:cover;background-position:center;'
+                                elsif value.swatch.color
+                                    assign swatch_style = 'background-color:rgb(' | append: value.swatch.color.rgb | append: ');'
+                                endif
+
+                                break
+                            endfor
+                        endfor
+                    endif
+
+                    assign stock_label = 'In stock'
+                    if variant.available == false
+                        assign stock_label = 'Sold out'
+                    endif
+                -%}
+
+                <div class="product-card__variant-row">
+                    <span class="product-card__variant-cell product-card__variant-cell--label">
+                        {{ size_label }}
+                    </span>
+
+                    <span class="product-card__variant-cell product-card__variant-cell--color">
+                        {%- if color_label != blank -%}
+                            <span
+                                class="product-card__variant-swatch"
+                                {% if swatch_style != blank %}
+                                    style="{{ swatch_style }}"
+                                {% endif %}
+                            ></span>
+                            <span class="truncate">{{ color_label }}</span>
+                        {%- else -%}
+                            <span class="truncate">{{ variant.title }}</span>
+                        {%- endif -%}
+                    </span>
+
+                    <span class="product-card__variant-cell product-card__variant-cell--meta{% unless variant.available %} is-unavailable{% endunless %}">
+                        {{ stock_label }}
+                    </span>
+                </div>
+            {%- endfor -%}
+        </div>
+    </div>
+</div>

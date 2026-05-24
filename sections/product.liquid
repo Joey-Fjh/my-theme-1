@@ -1,12 +1,21 @@
 {% assign layout = section.settings.gallery_layout | default: 'thumbnails' %}
 {% assign thumb_position = section.settings.thumbnail_position | default: 'left' %}
-{% assign media_is_sticky = false %}
-{% assign info_is_sticky = false %}
-{% if layout == 'thumbnails' or layout == 'carousel' %}
-    {% assign media_is_sticky = true %}
-{% elsif layout == 'stacked' or layout == 'grid' %}
-    {% assign info_is_sticky = true %}
-{% endif %}
+{% assign desktop_media_width = section.settings.desktop_media_width | default: 60 | plus: 0 %}
+{% assign desktop_info_width = 100 | minus: desktop_media_width %}
+{% assign has_gallery_blocks = false %}
+{% for block in section.blocks %}
+    {% if block.type == 'description' and block.settings.position_desktop == 'gallery' %}
+        {% assign has_gallery_blocks = true %}
+    {% elsif block.type == 'collapsible_tab' and block.settings.position_desktop == 'gallery' %}
+        {% assign has_gallery_blocks = true %}
+    {% elsif block.type == 'share' and block.settings.position_desktop == 'gallery' %}
+        {% assign has_gallery_blocks = true %}
+    {% elsif block.type == 'callout' and block.settings.position_desktop == 'gallery' %}
+        {% assign has_gallery_blocks = true %}
+    {% elsif block.type == 'spacer' and block.settings.position_desktop == 'gallery' %}
+        {% assign has_gallery_blocks = true %}
+    {% endif %}
+{% endfor %}
 
 <div
     data-section-id="{{ section.id }}"
@@ -19,38 +28,59 @@
     data-component-type="product"
     data-component-id="{{ section.id }}"
 >
-    <div class="layout container-page">
+    <div class="layout container-page overflow-visible!">
         <div
-            class="grid w-full min-w-0 grid-cols-1 items-start gap-8 pc:grid-cols-2 pc:gap-10 fw:gap-12"
+            class="grid w-full min-w-0 grid-cols-1 items-start gap-8 pc:grid-cols-[minmax(0,var(--product-media-fr))_minmax(0,var(--product-info-fr))] pc:items-stretch pc:gap-10 fw:gap-12"
+            style="
+                --product-media-fr: {{ desktop_media_width }}fr;
+                --product-info-fr: {{ desktop_info_width }}fr;
+            "
         >
             <div
-                class="min-w-0 overflow-hidden"
-                style="{% if media_is_sticky %}position: sticky;top: calc(var(--header-height) + var(--announcement-bar-height));{% endif %}"
-                data-product-media-panel
+                class="flex min-w-0 flex-col gap-8"
+                data-product-media-column
             >
-                {%- render 'product-gallery',
-                    images: product.images,
-                    layout: layout,
-                    thumb_position: thumb_position,
-                    thumbnail_visible_count: section.settings.thumbnail_visible_count,
-                    zoom: 'true',
-                    magnifier: 'true',
-                    zoom_overlay_color: section.settings.zoom_overlay_color,
-                    zoom_overlay_opacity: section.settings.zoom_overlay_opacity,
-                    aspect_ratio: '576/622'
-                -%}
+                <div
+                    class="min-w-0 overflow-hidden"
+                    data-product-media-panel
+                    data-product-media-sticky-target
+                >
+                    {%- render 'product-gallery',
+                        images: product.images,
+                        layout: layout,
+                        thumb_position: thumb_position,
+                        thumbnail_visible_count: section.settings.thumbnail_visible_count,
+                        zoom: 'true',
+                        magnifier: 'true',
+                        magnifier_preview_width: section.settings.magnifier_preview_size,
+                        magnifier_preview_height: section.settings.magnifier_preview_size,
+                        zoom_overlay_color: section.settings.zoom_overlay_color,
+                        zoom_overlay_opacity: section.settings.zoom_overlay_opacity,
+                        aspect_ratio: '3/4'
+                    -%}
+                </div>
+
+                {%- if has_gallery_blocks -%}
+                    {%- render 'product-info-blocks',
+                        product: product,
+                        section: section,
+                        context: 'product',
+                        render_column: 'gallery'
+                    -%}
+                {%- endif -%}
             </div>
 
             <div class="min-w-0" data-product-info-panel>
                 <div
                     class="self-start"
-                    style="{% if info_is_sticky %}position: sticky;top: calc(var(--header-height) + var(--announcement-bar-height));{% endif %}"
+                    data-product-info-sticky-target
                 >
                     {%- render 'product-info-blocks',
                         product: product,
                         section: section,
                         context: 'product',
-                        container_class: 'p-6 pc:p-10'
+                        render_column: 'form',
+                        container_class: 'px-6 py-4 pc:px-10 pc:py-6'
                     -%}
                 </div>
             </div>
@@ -61,104 +91,14 @@
 {%- javascript -%}
     (function () {
         const Components = window.__Theme__?.Components;
-        if (!Components) return;
-
-        function constrainDescription(el) {
-            const mediaPanel = el.querySelector('[data-product-media-panel]');
-            const infoBlocks = el.querySelector('[data-product-info-panel] .product-info-blocks');
-            const descriptionBlock = infoBlocks?.querySelector(
-                '.product-info-blocks__description-block',
-            );
-            const description = descriptionBlock?.querySelector(
-                '.product-info-blocks__description',
-            );
-            if (!mediaPanel || !infoBlocks || !descriptionBlock || !description) return {};
-
-            const desktopQuery = window.matchMedia('(min-width: 48rem)');
-            let frame = 0;
-
-            const reset = () => {
-                descriptionBlock.style.removeProperty('max-height');
-                description.style.removeProperty('max-height');
-            };
-
-            const sync = () => {
-                if (frame) cancelAnimationFrame(frame);
-                frame = requestAnimationFrame(() => {
-                    frame = 0;
-
-                    if (!desktopQuery.matches) {
-                        reset();
-                        return;
-                    }
-
-                    const mediaHeight = mediaPanel.getBoundingClientRect().height;
-                    if (mediaHeight <= 0) {
-                        reset();
-                        return;
-                    }
-
-                    const rootStyles = window.getComputedStyle(document.documentElement);
-                    const headerHeight =
-                        parseFloat(rootStyles.getPropertyValue('--header-height')) || 0;
-                    const announcementHeight =
-                        parseFloat(rootStyles.getPropertyValue('--announcement-bar-height')) || 0;
-                    const viewportHeight = window.visualViewport?.height || window.innerHeight;
-                    const maxReferenceHeight = Math.max(
-                        360,
-                        viewportHeight - headerHeight - announcementHeight,
-                    );
-                    const referenceHeight = Math.min(mediaHeight, maxReferenceHeight);
-
-                    const styles = window.getComputedStyle(infoBlocks);
-                    const gap = parseFloat(styles.rowGap || styles.gap) || 0;
-                    const paddingY =
-                        (parseFloat(styles.paddingTop) || 0) +
-                        (parseFloat(styles.paddingBottom) || 0);
-                    const children = Array.from(infoBlocks.children).filter(
-                        (child) => child instanceof HTMLElement,
-                    );
-                    const otherBlocksHeight = children.reduce((total, child) => {
-                        if (child === descriptionBlock) return total;
-                        return total + child.getBoundingClientRect().height;
-                    }, 0);
-                    const gapsHeight = gap * Math.max(children.length - 1, 0);
-                    const available = Math.max(
-                        0,
-                        referenceHeight - paddingY - gapsHeight - otherBlocksHeight,
-                    );
-
-                    // Keep the description scroll area aligned with the available space beside media.
-                    descriptionBlock.style.maxHeight = `${Math.floor(available)}px`;
-                    description.style.maxHeight = `${Math.floor(available)}px`;
-                });
-            };
-
-            const resizeObserver = new ResizeObserver(sync);
-            resizeObserver.observe(mediaPanel);
-            Array.from(infoBlocks.children).forEach((child) => resizeObserver.observe(child));
-
-            window.addEventListener('resize', sync);
-            desktopQuery.addEventListener('change', sync);
-            sync();
-
-            return {
-                description,
-                descriptionBlock,
-                desktopQuery,
-                frame,
-                infoBlocks,
-                reset,
-                resizeObserver,
-                sync,
-            };
-        }
+        const Utils = window.__Theme__?.Utils;
+        if (!Components || !Utils?.setupProductLayout) return;
 
         Components.register(
             'product',
             {
                 init(el) {
-                    return constrainDescription(el);
+                    return Utils.setupProductLayout(el);
                 },
 
                 destroy(el, state) {
@@ -213,9 +153,19 @@
             "info": "Applies when Image layout is set to Thumbnails."
         },
         {
+            "type": "range",
+            "id": "desktop_media_width",
+            "min": 40,
+            "max": 60,
+            "step": 1,
+            "unit": "%",
+            "label": "Desktop media width",
+            "default": 60
+        },
+        {
             "type": "select",
             "id": "thumbnail_visible_count",
-            "label": "Visible thumbnails",
+            "label": "Bottom visible thumbnails",
             "options": [
                 { "value": "3", "label": "3" },
                 { "value": "4", "label": "4" },
@@ -223,7 +173,17 @@
                 { "value": "6", "label": "6" }
             ],
             "default": "4",
-            "info": "Applies when Image layout is set to Thumbnails and thumbnail position is left."
+            "info": "Applies when Image layout is set to Thumbnails and thumbnail position is bottom."
+        },
+        {
+            "type": "range",
+            "id": "magnifier_preview_size",
+            "min": 240,
+            "max": 520,
+            "step": 20,
+            "unit": "px",
+            "label": "Magnifier preview size",
+            "default": 360
         },
         {
             "type": "color",
@@ -268,8 +228,16 @@
     ],
     "blocks": [
         {
+            "type": "@app"
+        },
+        {
             "type": "title",
             "name": "Title",
+            "limit": 1
+        },
+        {
+            "type": "vendor",
+            "name": "Vendor",
             "limit": 1
         },
         {
@@ -280,7 +248,19 @@
         {
             "type": "description",
             "name": "Description",
-            "limit": 1
+            "limit": 1,
+            "settings": [
+                {
+                    "type": "select",
+                    "id": "position_desktop",
+                    "label": "Position (desktop)",
+                    "options": [
+                        { "value": "form", "label": "Form column" },
+                        { "value": "gallery", "label": "Gallery column" }
+                    ],
+                    "default": "form"
+                }
+            ]
         },
         {
             "type": "variant_picker",
@@ -316,6 +296,40 @@
             "limit": 1
         },
         {
+            "type": "inventory_notice",
+            "name": "Inventory notice",
+            "limit": 1,
+            "settings": [
+                {
+                    "type": "range",
+                    "id": "low_stock_threshold",
+                    "min": 1,
+                    "max": 50,
+                    "step": 1,
+                    "label": "Low stock threshold",
+                    "info": "The low stock notice displays if your inventory is equal to or lower than this number.",
+                    "default": 5
+                },
+                {
+                    "type": "select",
+                    "id": "alignment",
+                    "label": "Alignment",
+                    "options": [
+                        { "value": "left", "label": "Left" },
+                        { "value": "center", "label": "Center" },
+                        { "value": "right", "label": "Right" }
+                    ],
+                    "default": "left"
+                },
+                {
+                    "type": "checkbox",
+                    "id": "show_stock_number",
+                    "label": "Display stock number",
+                    "default": true
+                }
+            ]
+        },
+        {
             "type": "buy_buttons",
             "name": "Buy buttons",
             "limit": 1,
@@ -325,6 +339,332 @@
                     "id": "show_dynamic_checkout",
                     "label": "Show dynamic checkout buttons",
                     "info": "Using the payment methods available on your store, customers see their preferred option, like PayPal or Apple Pay.",
+                    "default": true
+                }
+            ]
+        },
+        {
+            "type": "custom_liquid",
+            "name": "Custom liquid",
+            "settings": [
+                {
+                    "type": "liquid",
+                    "id": "custom_liquid",
+                    "label": "Custom liquid"
+                }
+            ]
+        },
+        {
+            "type": "collapsible_tab",
+            "name": "Collapsible tab",
+            "settings": [
+                {
+                    "type": "select",
+                    "id": "position_desktop",
+                    "label": "Position (desktop)",
+                    "options": [
+                        { "value": "form", "label": "Form column" },
+                        { "value": "gallery", "label": "Gallery column" }
+                    ],
+                    "default": "form"
+                },
+                {
+                    "type": "text",
+                    "id": "heading",
+                    "label": "Heading",
+                    "default": "Collapsible tab"
+                },
+                {
+                    "type": "select",
+                    "id": "icon",
+                    "label": "Icon",
+                    "options": [
+                        { "value": "none", "label": "None" },
+                        { "value": "icon-account", "label": "Account" },
+                        { "value": "icon-arrow", "label": "Arrow" },
+                        { "value": "icon-arrow1", "label": "Arrow 1" },
+                        { "value": "icon-arrow2", "label": "Arrow 2" },
+                        { "value": "icon-cart", "label": "Cart" },
+                        { "value": "icon-check", "label": "Check" },
+                        { "value": "icon-close", "label": "Close" },
+                        { "value": "icon-eye", "label": "Eye" },
+                        { "value": "icon-eyeglasses", "label": "Eyeglasses" },
+                        { "value": "icon-facebook", "label": "Facebook" },
+                        { "value": "icon-filter", "label": "Filter" },
+                        { "value": "icon-instagram", "label": "Instagram" },
+                        { "value": "icon-menu", "label": "Menu" },
+                        { "value": "icon-minus", "label": "Minus" },
+                        { "value": "icon-plus", "label": "Plus" },
+                        { "value": "icon-search", "label": "Search" },
+                        { "value": "icon-snapchat", "label": "Snapchat" },
+                        { "value": "icon-sortby", "label": "Sort by" },
+                        { "value": "icon-tiktok", "label": "TikTok" },
+                        { "value": "icon-trash", "label": "Trash" },
+                        { "value": "icon-tumblr", "label": "Tumblr" },
+                        { "value": "icon-twitter", "label": "Twitter" },
+                        { "value": "icon-vimeo", "label": "Vimeo" },
+                        { "value": "icon-youtube", "label": "YouTube" },
+                        { "value": "custom", "label": "Custom SVG" }
+                    ],
+                    "default": "icon-check"
+                },
+                {
+                    "type": "range",
+                    "id": "icon_size",
+                    "min": 12,
+                    "max": 48,
+                    "step": 1,
+                    "unit": "px",
+                    "label": "Icon size",
+                    "default": 20
+                },
+                {
+                    "type": "color",
+                    "id": "icon_color",
+                    "label": "Icon color",
+                    "default": "#2D4634"
+                },
+                {
+                    "type": "html",
+                    "id": "svg_icon_code",
+                    "label": "SVG icon code",
+                    "info": "Used only when Icon is set to Custom SVG."
+                },
+                {
+                    "type": "richtext",
+                    "id": "text",
+                    "label": "Text",
+                    "default": "<p>Share information about your product, shipping, returns, or materials.</p>"
+                },
+                {
+                    "type": "image_picker",
+                    "id": "image",
+                    "label": "Image"
+                },
+                {
+                    "type": "range",
+                    "id": "image_width",
+                    "min": 100,
+                    "max": 1000,
+                    "step": 20,
+                    "unit": "px",
+                    "label": "Image width",
+                    "default": 1000
+                },
+                {
+                    "type": "select",
+                    "id": "alignment",
+                    "label": "Alignment",
+                    "options": [
+                        { "value": "left", "label": "Left" },
+                        { "value": "center", "label": "Center" },
+                        { "value": "right", "label": "Right" }
+                    ],
+                    "default": "left"
+                },
+                {
+                    "type": "url",
+                    "id": "link",
+                    "label": "Link"
+                },
+                {
+                    "type": "page",
+                    "id": "dynamic_content",
+                    "label": "Dynamic content",
+                    "info": "This content will replace anything you have added to the fields above."
+                },
+                {
+                    "type": "checkbox",
+                    "id": "use_page_title",
+                    "label": "Use page title for tab heading",
+                    "default": false
+                },
+                {
+                    "type": "checkbox",
+                    "id": "open_by_default",
+                    "label": "Open tab by default",
+                    "default": false
+                }
+            ]
+        },
+        {
+            "type": "share",
+            "name": "Share",
+            "settings": [
+                {
+                    "type": "paragraph",
+                    "content": "Share links use the current product URL."
+                },
+                {
+                    "type": "select",
+                    "id": "position_desktop",
+                    "label": "Position (desktop)",
+                    "options": [
+                        { "value": "form", "label": "Form column" },
+                        { "value": "gallery", "label": "Gallery column" }
+                    ],
+                    "default": "form"
+                },
+                {
+                    "type": "select",
+                    "id": "alignment",
+                    "label": "Alignment",
+                    "options": [
+                        { "value": "left", "label": "Left" },
+                        { "value": "center", "label": "Center" },
+                        { "value": "right", "label": "Right" }
+                    ],
+                    "default": "center"
+                }
+            ]
+        },
+        {
+            "type": "callout",
+            "name": "Callout",
+            "settings": [
+                {
+                    "type": "select",
+                    "id": "position_desktop",
+                    "label": "Position (desktop)",
+                    "options": [
+                        { "value": "form", "label": "Form column" },
+                        { "value": "gallery", "label": "Gallery column" }
+                    ],
+                    "default": "form"
+                },
+                {
+                    "type": "select",
+                    "id": "icon",
+                    "label": "Icon",
+                    "options": [
+                        { "value": "none", "label": "None" },
+                        { "value": "icon-account", "label": "Account" },
+                        { "value": "icon-arrow", "label": "Arrow" },
+                        { "value": "icon-arrow1", "label": "Arrow 1" },
+                        { "value": "icon-arrow2", "label": "Arrow 2" },
+                        { "value": "icon-cart", "label": "Cart" },
+                        { "value": "icon-check", "label": "Check" },
+                        { "value": "icon-close", "label": "Close" },
+                        { "value": "icon-eye", "label": "Eye" },
+                        { "value": "icon-eyeglasses", "label": "Eyeglasses" },
+                        { "value": "icon-facebook", "label": "Facebook" },
+                        { "value": "icon-filter", "label": "Filter" },
+                        { "value": "icon-instagram", "label": "Instagram" },
+                        { "value": "icon-menu", "label": "Menu" },
+                        { "value": "icon-minus", "label": "Minus" },
+                        { "value": "icon-plus", "label": "Plus" },
+                        { "value": "icon-search", "label": "Search" },
+                        { "value": "icon-snapchat", "label": "Snapchat" },
+                        { "value": "icon-sortby", "label": "Sort by" },
+                        { "value": "icon-tiktok", "label": "TikTok" },
+                        { "value": "icon-trash", "label": "Trash" },
+                        { "value": "icon-tumblr", "label": "Tumblr" },
+                        { "value": "icon-twitter", "label": "Twitter" },
+                        { "value": "icon-vimeo", "label": "Vimeo" },
+                        { "value": "icon-youtube", "label": "YouTube" },
+                        { "value": "custom", "label": "Custom SVG" }
+                    ],
+                    "default": "icon-check"
+                },
+                {
+                    "type": "html",
+                    "id": "svg_icon_code",
+                    "label": "SVG icon code",
+                    "info": "Used only when Icon is set to Custom SVG."
+                },
+                {
+                    "type": "range",
+                    "id": "icon_size",
+                    "min": 12,
+                    "max": 48,
+                    "step": 1,
+                    "unit": "px",
+                    "label": "Icon size",
+                    "default": 24
+                },
+                {
+                    "type": "text",
+                    "id": "heading",
+                    "label": "Heading"
+                },
+                {
+                    "type": "checkbox",
+                    "id": "bold",
+                    "label": "Bold",
+                    "default": false
+                },
+                {
+                    "type": "richtext",
+                    "id": "text",
+                    "label": "Text",
+                    "default": "<p>For every purchase you make, 5% will be donated directly to the Ocean Cleanup project.</p>"
+                },
+                {
+                    "type": "header",
+                    "content": "Colors"
+                },
+                {
+                    "type": "color",
+                    "id": "background_color",
+                    "label": "Background color",
+                    "default": "#D6EDFF"
+                },
+                {
+                    "type": "color",
+                    "id": "text_color",
+                    "label": "Text color",
+                    "default": "#3481C2"
+                },
+                {
+                    "type": "checkbox",
+                    "id": "show_border",
+                    "label": "Show border",
+                    "default": false
+                }
+            ]
+        },
+        {
+            "type": "spacer",
+            "name": "Spacer",
+            "settings": [
+                {
+                    "type": "select",
+                    "id": "position_desktop",
+                    "label": "Position (desktop)",
+                    "options": [
+                        { "value": "form", "label": "Form column" },
+                        { "value": "gallery", "label": "Gallery column" }
+                    ],
+                    "default": "form"
+                },
+                {
+                    "type": "select",
+                    "id": "top_spacing",
+                    "label": "Top spacing",
+                    "options": [
+                        { "value": "none", "label": "None" },
+                        { "value": "small", "label": "Small" },
+                        { "value": "medium", "label": "Medium" },
+                        { "value": "large", "label": "Large" }
+                    ],
+                    "default": "small"
+                },
+                {
+                    "type": "select",
+                    "id": "bottom_spacing",
+                    "label": "Bottom spacing",
+                    "options": [
+                        { "value": "none", "label": "None" },
+                        { "value": "small", "label": "Small" },
+                        { "value": "medium", "label": "Medium" },
+                        { "value": "large", "label": "Large" }
+                    ],
+                    "default": "small"
+                },
+                {
+                    "type": "checkbox",
+                    "id": "show_dividing_line",
+                    "label": "Show dividing line",
                     "default": false
                 }
             ]
@@ -335,11 +675,13 @@
             "name": "t:general.product",
             "settings": {},
             "blocks": [
+                { "type": "vendor" },
                 { "type": "title" },
                 { "type": "price" },
                 { "type": "description" },
                 { "type": "variant_picker" },
                 { "type": "quantity_selector" },
+                { "type": "inventory_notice" },
                 { "type": "buy_buttons" }
             ]
         }

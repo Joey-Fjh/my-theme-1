@@ -25,41 +25,78 @@
 
         {% comment %} Article Grid {% endcomment %}
         <div class="grid gap-6 pc:grid-cols-3">
-            {%- for block in section.blocks -%}
-                <article
-                    class="group"
-                    {{ block.shopify_attributes }}
-                >
-                    <div class="relative mb-4 aspect-4/3 overflow-hidden">
-                        {%- render 'image',
-                            class: 'transition-transform duration-300 group-hover:scale-105',
-                            image: block.settings.image,
-                            alt: block.settings.image.alt,
-                            width: block.settings.image.width
-                        -%}
-                    </div>
+            {%- if section.settings.blog != blank -%}
+                {%- for article in section.settings.blog.articles
+                    limit: section.settings.articles_limit
+                -%}
+                    <article class="group">
+                        <div class="relative mb-4 aspect-4/3 overflow-hidden">
+                            {%- render 'image',
+                                class: 'transition-transform duration-300 group-hover:scale-105',
+                                image: article.image,
+                                alt: article.title,
+                                width: article.image.width
+                            -%}
+                        </div>
 
-                    <h4 class="mb-3 opacity-80">
-                        {{ block.settings.subtitle }}
-                    </h4>
-                    <h3 class="mb-3">
-                        {{ block.settings.title }}
-                    </h3>
-                    {%- if block.settings.link != blank -%}
-                        {%- capture link_content -%}
-                            <span class="body-base">{{ block.settings.link_text }}</span>
-                            {% render 'icons', icon: 'icon-arrow2', size: 'lg', class: 'ml-3', color: 'current' %}
-                        {%- endcapture -%}
-                        {%- render 'link',
-                            class: 'opacity-80 hover:opacity-100 transition-opacity',
-                            href: block.settings.link,
-                            content: link_content,
-                            variant: 'underline',
-                            color: 'current'
-                        -%}
-                    {%- endif -%}
-                </article>
-            {%- endfor -%}
+                        <h4 class="mb-3 opacity-80">
+                            {{ article.tags | first }}
+                        </h4>
+                        <h3 class="mb-3">
+                            {{ article.title }}
+                        </h3>
+                        {%- if article.url != blank -%}
+                            {%- capture link_content -%}
+                                <span class="body-base">{{ section.settings.link_text }}</span>
+                                {% render 'icons', icon: 'icon-arrow2', size: 'lg', class: 'ml-3', color: 'current' %}
+                            {%- endcapture -%}
+                            {%- render 'link',
+                                class: 'opacity-80 hover:opacity-100 transition-opacity',
+                                href: article.url,
+                                content: link_content,
+                                variant: 'underline',
+                                color: 'current'
+                            -%}
+                        {%- endif -%}
+                    </article>
+                {%- endfor -%}
+            {%- else -%}
+                {%- for block in section.blocks -%}
+                    <article
+                        class="group"
+                        {{ block.shopify_attributes }}
+                    >
+                        <div class="relative mb-4 aspect-4/3 overflow-hidden">
+                            {%- render 'image',
+                                class: 'transition-transform duration-300 group-hover:scale-105',
+                                image: block.settings.image,
+                                alt: block.settings.image.alt,
+                                width: block.settings.image.width
+                            -%}
+                        </div>
+
+                        <h4 class="mb-3 opacity-80">
+                            {{ block.settings.subtitle }}
+                        </h4>
+                        <h3 class="mb-3">
+                            {{ block.settings.title }}
+                        </h3>
+                        {%- if block.settings.link != blank -%}
+                            {%- capture link_content -%}
+                                <span class="body-base">{{ block.settings.link_text }}</span>
+                                {% render 'icons', icon: 'icon-arrow2', size: 'lg', class: 'ml-3', color: 'current' %}
+                            {%- endcapture -%}
+                            {%- render 'link',
+                                class: 'opacity-80 hover:opacity-100 transition-opacity',
+                                href: block.settings.link,
+                                content: link_content,
+                                variant: 'underline',
+                                color: 'current'
+                            -%}
+                        {%- endif -%}
+                    </article>
+                {%- endfor -%}
+            {%- endif -%}
         </div>
     </div>
 </div>
@@ -78,6 +115,28 @@
             "id": "color_scheme",
             "label": "Color Scheme",
             "default": "color-scheme-1"
+        },
+        {
+            "type": "blog",
+            "id": "blog",
+            "label": "Blog"
+        },
+        {
+            "type": "range",
+            "id": "articles_limit",
+            "min": 1,
+            "max": 12,
+            "step": 1,
+            "default": 3,
+            "label": "Articles to show",
+            "visible_if": "{{ section.settings.blog }}"
+        },
+        {
+            "type": "text",
+            "id": "link_text",
+            "label": "Link text",
+            "default": "Read More",
+            "visible_if": "{{ section.settings.blog }}"
         },
         {
             "type": "inline_richtext",

@@ -82,6 +82,198 @@
         }
     }
 
+    const COLLECTION_FILTERS_FORM_ID = 'CollectionFiltersForm';
+
+    function buildRelativeUrlFromParams(pathname, params) {
+        const qs = params.toString();
+        return qs ? `${pathname}?${qs}` : pathname;
+    }
+
+    function buildAbsoluteUrlFromParams(pathname, params) {
+        return buildRelativeUrlFromParams(pathname, params);
+    }
+
+    function getCollectionFilterControls(formId = COLLECTION_FILTERS_FORM_ID) {
+        const form = document.getElementById(formId);
+        if (!form) return [];
+
+        const controls = [
+            ...Array.from(form.elements || []),
+            ...Array.from(document.querySelectorAll(`[form="${formId}"]`)),
+        ];
+
+        return controls.filter((field, index) => controls.indexOf(field) === index);
+    }
+
+    function syncCollectionPriceComponentState(fieldName, nextValue, field) {
+        if (!fieldName.endsWith('.gte') && !fieldName.endsWith('.lte')) return;
+
+        const componentRoot = field.closest('[x-data*="collectionFilterField"]');
+        const componentData = componentRoot ? window.Alpine?.$data?.(componentRoot) : null;
+
+        if (!componentData) return;
+
+        if (fieldName.endsWith('.gte')) {
+            componentData.setMinFromInput?.(nextValue);
+            return;
+        }
+
+        componentData.setMaxFromInput?.(nextValue);
+    }
+
+    function syncCollectionControlsFromUrl(url, formId = COLLECTION_FILTERS_FORM_ID) {
+        const targetUrl = new URL(url, window.location.origin);
+        const searchParams = targetUrl.searchParams;
+        const controls = Array.from(document.querySelectorAll(`[form="${formId}"]`));
+
+        controls.forEach((field) => {
+            if (!field?.name) return;
+
+            const values = searchParams.getAll(field.name);
+
+            if (field.type === 'checkbox' || field.type === 'radio') {
+                field.checked = values.includes(field.value);
+                return;
+            }
+
+            if (field.tagName === 'SELECT' && field.multiple) {
+                Array.from(field.options || []).forEach((option) => {
+                    option.selected = values.includes(option.value);
+                });
+                return;
+            }
+
+            const nextValue = values.length > 0 ? values[values.length - 1] : '';
+            field.value = nextValue;
+            syncCollectionPriceComponentState(field.name, nextValue, field);
+        });
+    }
+
+    function normalizeCollectionSingleValueField(field) {
+        const fieldName = field?.name || '';
+        const rawValue = typeof field?.value === 'string' ? field.value.trim() : field?.value;
+
+        if (fieldName === 'sort_by') {
+            return rawValue || null;
+        }
+
+        if (fieldName.endsWith('.gte')) {
+            const nextValue = Number(rawValue);
+            if (!rawValue || !Number.isFinite(nextValue) || nextValue <= 0) {
+                return null;
+            }
+            return String(nextValue);
+        }
+
+        if (fieldName.endsWith('.lte')) {
+            const nextValue = Number(rawValue);
+            const maxValue = Number(field.getAttribute('max') || field.max);
+
+            if (!rawValue || !Number.isFinite(nextValue)) {
+                return null;
+            }
+
+            if (Number.isFinite(maxValue) && nextValue >= maxValue) {
+                return null;
+            }
+
+            return String(nextValue);
+        }
+
+        return rawValue ?? null;
+    }
+
+    function readCollectionFormParams(formId = COLLECTION_FILTERS_FORM_ID) {
+        const form = document.getElementById(formId);
+        if (!form) {
+            return new URLSearchParams(window.location.search);
+        }
+
+        const params = new URLSearchParams();
+        const controls = getCollectionFilterControls(formId);
+        const isSingleValueField = (fieldName) =>
+            fieldName === 'sort_by' || fieldName.endsWith('.gte') || fieldName.endsWith('.lte');
+
+        controls.forEach((field) => {
+            if (
+                !field ||
+                !field.name ||
+                field.disabled ||
+                field.type === 'submit' ||
+                field.type === 'button' ||
+                field.type === 'reset' ||
+                field.type === 'file'
+            ) {
+                return;
+            }
+
+            if ((field.type === 'checkbox' || field.type === 'radio') && !field.checked) {
+                return;
+            }
+
+            if (field.tagName === 'SELECT' && field.multiple) {
+                Array.from(field.selectedOptions || []).forEach((option) => {
+                    params.append(field.name, option.value);
+                });
+                return;
+            }
+
+            if (isSingleValueField(field.name)) {
+                const normalizedValue = normalizeCollectionSingleValueField(field);
+                if (normalizedValue === null) return;
+                params.set(field.name, normalizedValue);
+                return;
+            }
+
+            params.append(field.name, field.value);
+        });
+
+        return params;
+    }
+
+    function resolveCollectionTabUrl(targetHref, currentParams) {
+        if (!targetHref) return '';
+
+        const targetUrl = new URL(targetHref, window.location.origin);
+        const nextParams = new URLSearchParams();
+        const sortBy = currentParams.get('sort_by');
+
+        if (sortBy) {
+            nextParams.set('sort_by', sortBy);
+        }
+
+        return buildAbsoluteUrlFromParams(targetUrl.pathname, nextParams);
+    }
+
+    function resolveCollectionFilterActionUrl(targetHref, currentParams) {
+        if (!targetHref) return window.location.pathname;
+
+        const targetUrl = new URL(targetHref, window.location.origin);
+        const nextParams = new URLSearchParams(targetUrl.search);
+        const sortBy = currentParams.get('sort_by');
+
+        if (sortBy && !nextParams.has('sort_by')) {
+            nextParams.set('sort_by', sortBy);
+        }
+
+        nextParams.delete('page');
+
+        return buildAbsoluteUrlFromParams(targetUrl.pathname, nextParams);
+    }
+
+    function requestCollectionSectionHtml(Http, url, sectionId, signal) {
+        const sep = url.includes('?') ? '&' : '?';
+        const fetchUrl = `${url}${sep}section_id=${encodeURIComponent(sectionId)}`;
+
+        return Http.request(fetchUrl, {
+            method: 'GET',
+            headers: {
+                Accept: 'text/html',
+            },
+            signal,
+        }).then((response) => response.text());
+    }
+
     class AlpineComponents {
         static DROPDOWN = 'dropdown';
         static MOBILEMENUDRAWER = 'mobileMenuDrawer';
@@ -93,11 +285,13 @@
         static SECTIONPAGINATION = 'sectionPagination';
         static COLLECTIONFILTERS = 'collectionFilters';
         static COLLECTIONFILTERFIELD = 'collectionFilterField';
+        static PROGRESSIVELIST = 'progressiveList';
         static PRODUCTGALLERY = 'productGallery';
         static PRODUCTPRICE = 'ProductPrice';
         static VARIANTPICKER = 'VariantPicker';
         static QUANTITYSELECTOR = 'QuantitySelector';
         static BUYBUTTONS = 'BuyButtons';
+        static PICKUPAVAILABILITY = 'PickupAvailability';
         static PREDICTIVESEARCH = 'predictiveSearch';
         static RELATEDPRODUCTS = 'relatedProducts';
         static NEWSLETTEROVERLAY = 'newsletterOverlay';
@@ -883,22 +1077,67 @@
             return {
                 ...AlpineComponents.sectionPagination(sectionId, selectors),
 
+                _executeFetch(url, updateHistory) {
+                    const Http = window.ShopifyHttp;
+                    const SectionRefresher = window.ShopifySectionRefresher;
+                    if (!Http || !SectionRefresher || !this.sectionId) return;
+
+                    if (this.abortController) this.abortController.abort();
+                    this.abortController = new AbortController();
+                    const activeController = this.abortController;
+
+                    requestCollectionSectionHtml(Http, url, this.sectionId, activeController.signal)
+                        .then((html) => {
+                            if (typeof html !== 'string' || !html.trim()) return;
+
+                            SectionRefresher.render(html, this.buildDomMap());
+
+                            if (updateHistory) {
+                                window.history.pushState({ path: url }, '', url);
+                            }
+
+                            this.syncControlsFromUrl(url);
+
+                            if (typeof window.ScrollTrigger !== 'undefined') {
+                                requestAnimationFrame(() => window.ScrollTrigger.refresh());
+                            }
+                        })
+                        .catch((err) => {
+                            if (err?.isAbort || err?.name === 'AbortError') return;
+                            if (updateHistory) window.location.href = url;
+                        })
+                        .finally(() => {
+                            if (this.abortController === activeController) {
+                                this.isLoading = false;
+                                this.abortController = null;
+                            }
+                        });
+                },
+
                 _buildUrl(params) {
-                    const qs = params.toString();
-                    return qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
+                    return buildRelativeUrlFromParams(window.location.pathname, params);
+                },
+
+                syncControlsFromUrl(url) {
+                    syncCollectionControlsFromUrl(url);
                 },
 
                 _getFormParams() {
-                    const form = document.getElementById('CollectionFiltersForm');
-                    return form
-                        ? new URLSearchParams(new FormData(form))
-                        : new URLSearchParams(window.location.search);
+                    return readCollectionFormParams();
                 },
 
                 onChange() {
                     const params = this._getFormParams();
                     params.delete('page');
                     this.loadUrl(this._buildUrl(params));
+                },
+
+                buildCollectionTabUrl(targetHref) {
+                    return resolveCollectionTabUrl(targetHref, this._getFormParams());
+                },
+
+                buildFilterActionUrl(targetHref) {
+                    return resolveCollectionFilterActionUrl(targetHref, this._getFormParams());
                 },
 
                 onPaginate(e) {
@@ -954,13 +1193,72 @@
                 },
 
                 setMinFromInput(value) {
+                    if (value === '' || value === null || typeof value === 'undefined') {
+                        this.min = 0;
+                        this.clampMin();
+                        return;
+                    }
+
                     this.min = Number(value) || 0;
                     this.clampMin();
                 },
 
                 setMaxFromInput(value) {
+                    if (value === '' || value === null || typeof value === 'undefined') {
+                        this.max = this.ceil;
+                        this.clampMax();
+                        return;
+                    }
+
                     this.max = Number(value) || 0;
                     this.clampMax();
+                },
+            };
+        }
+
+        static progressiveList() {
+            return {
+                initialVisibleCount: 6,
+                stepCount: 6,
+                visibleCount: 6,
+
+                init() {
+                    const nextVisibleCount = Number(this.$el.dataset.visibleCount);
+                    const nextStepCount = Number(this.$el.dataset.stepCount);
+
+                    this.initialVisibleCount =
+                        Number.isFinite(nextVisibleCount) && nextVisibleCount > 0
+                            ? nextVisibleCount
+                            : 6;
+                    this.stepCount =
+                        Number.isFinite(nextStepCount) && nextStepCount > 0
+                            ? nextStepCount
+                            : this.initialVisibleCount;
+                    this.visibleCount = this.initialVisibleCount;
+                },
+
+                isVisible(index) {
+                    return Number(index) < this.visibleCount;
+                },
+
+                canShowMore(totalCount) {
+                    return this.visibleCount < Number(totalCount || 0);
+                },
+
+                canShowLess() {
+                    return this.visibleCount > this.initialVisibleCount;
+                },
+
+                showMore(totalCount) {
+                    const normalizedTotal = Math.max(0, Number(totalCount) || 0);
+                    this.visibleCount = Math.min(
+                        normalizedTotal,
+                        this.visibleCount + this.stepCount,
+                    );
+                },
+
+                showLess() {
+                    this.visibleCount = this.initialVisibleCount;
                 },
             };
         }
@@ -1317,13 +1615,28 @@
          * @param {boolean}     [opts.available=true]
          * @param {number|null} [opts.variantId=null]
          */
-        static BuyButtons({ sectionId, productFormId, available = true, variantId = null } = {}) {
+        static BuyButtons({
+            sectionId,
+            productFormId,
+            available = true,
+            variantId = null,
+            openCartOnAdd = false,
+            openDialogId = '',
+            successMessage = 'Added to cart!',
+            requestSections = '',
+            showBuyNow = false,
+        } = {}) {
             return {
                 ...AlpineComponentsFactory.useDisposable(),
                 sectionId,
                 productFormId,
                 available,
                 variantId,
+                openCartOnAdd,
+                openDialogId,
+                successMessage,
+                requestSections,
+                showBuyNow,
                 isLoading: false,
                 _eventScope: null,
 
@@ -1334,6 +1647,43 @@
                 },
 
                 init() {
+                    const dataset = this.$el?.dataset || {};
+                    this.sectionId = this.sectionId || dataset.sectionId || '';
+                    this.productFormId = this.productFormId || dataset.productFormId || '';
+
+                    if (dataset.available !== undefined && dataset.available !== '') {
+                        this.available = dataset.available === 'true';
+                    }
+
+                    if (dataset.variantId !== undefined && dataset.variantId !== '') {
+                        this.variantId = Number(dataset.variantId) || null;
+                    }
+
+                    if (dataset.openCartOnAdd !== undefined && dataset.openCartOnAdd !== '') {
+                        this.openCartOnAdd = dataset.openCartOnAdd === 'true';
+                    }
+
+                    if (dataset.openDialogId !== undefined) {
+                        this.openDialogId = dataset.openDialogId || '';
+                    }
+
+                    if (dataset.successMessage !== undefined) {
+                        this.successMessage = dataset.successMessage || '';
+                    }
+
+                    if (dataset.showBuyNow !== undefined && dataset.showBuyNow !== '') {
+                        this.showBuyNow = dataset.showBuyNow === 'true';
+                    }
+
+                    if (dataset.requestSections !== undefined) {
+                        this.requestSections = dataset.requestSections
+                            ? dataset.requestSections
+                                  .split(',')
+                                  .map((value) => value.trim())
+                                  .filter(Boolean)
+                            : [];
+                    }
+
                     const Events = window.__Theme__.Events;
                     const events = Events.events;
                     this._eventScope = Events.createScope();
@@ -1359,6 +1709,19 @@
                     return qtyInput ? parseInt(qtyInput.value) || 1 : 1;
                 },
 
+                _getSections() {
+                    return Array.isArray(this.requestSections)
+                        ? this.requestSections
+                        : typeof this.requestSections === 'string' && this.requestSections.trim()
+                          ? this.requestSections
+                                .split(',')
+                                .map((value) => value.trim())
+                                .filter(Boolean)
+                          : this.sectionId
+                            ? [this.sectionId]
+                            : [];
+                },
+
                 addToCart() {
                     if (!this.available || !this.variantId || this.isLoading) return;
 
@@ -1369,12 +1732,20 @@
                         return;
                     }
 
-                    cart.add(
-                        [{ id: this.variantId, quantity: this._getQuantity() }],
-                        [this.sectionId],
-                    )
+                    const sections = this._getSections();
+
+                    cart.add([{ id: this.variantId, quantity: this._getQuantity() }], sections)
                         .then(() => {
-                            window.Alpine?.store('toast')?.show?.('Added to cart!', 'success');
+                            if (this.openCartOnAdd && this.openDialogId) {
+                                window.Alpine?.store('dialog')?.open?.(this.openDialogId);
+                            }
+
+                            if (this.successMessage) {
+                                window.Alpine?.store('toast')?.show?.(
+                                    this.successMessage,
+                                    'success',
+                                );
+                            }
                         })
                         .catch((err) => {
                             const msg = err?.message || 'Could not add to cart. Please try again.';
@@ -1385,9 +1756,190 @@
                         });
                 },
 
+                buyNow() {
+                    if (!this.available || !this.variantId || this.isLoading) return;
+
+                    this.isLoading = true;
+                    const cart = window.Alpine?.store('cart');
+                    if (!cart) {
+                        this.isLoading = false;
+                        return;
+                    }
+
+                    cart.add([{ id: this.variantId, quantity: this._getQuantity() }], [])
+                        .then(() => {
+                            window.location.assign('/checkout');
+                        })
+                        .catch((err) => {
+                            const msg = err?.message || 'Could not continue to checkout.';
+                            window.Alpine?.store('toast')?.show?.(msg, 'error');
+                        })
+                        .finally(() => {
+                            this.isLoading = false;
+                        });
+                },
+
                 destroy() {
                     this._eventScope?.dispose?.();
                     this._eventScope = null;
+                    this.dispose();
+                },
+            };
+        }
+
+        /**
+         * Product pickup availability — fetches server-rendered pickup availability
+         * markup for the selected variant and refreshes when PRODUCT_VARIANT_CHANGED fires.
+         *
+         * @param {Object}      opts
+         * @param {string}      opts.sectionId
+         * @param {number|null} [opts.variantId=null]
+         * @param {string}      [opts.rootUrl='/']
+         * @param {string}      [opts.loadingText='Checking store pickup availability...']
+         * @param {string}      [opts.errorText='Unable to load pickup availability right now.']
+         * @param {string}      [opts.retryText='Try again']
+         */
+        static PickupAvailability({
+            sectionId,
+            variantId = null,
+            rootUrl = '/',
+            loadingText = 'Checking store pickup availability...',
+            errorText = 'Unable to load pickup availability right now.',
+            retryText = 'Try again',
+        } = {}) {
+            return {
+                ...AlpineComponentsFactory.useDisposable(),
+                sectionId,
+                variantId,
+                rootUrl,
+                loadingText,
+                errorText,
+                retryText,
+                isLoading: false,
+                hasContent: false,
+                showError: false,
+                _abortController: null,
+                _eventScope: null,
+
+                init() {
+                    const dataset = this.$el?.dataset || {};
+                    this.sectionId = this.sectionId || dataset.sectionId || '';
+                    this.rootUrl = dataset.rootUrl || this.rootUrl || '/';
+                    this.variantId = Number(dataset.variantId || this.variantId || 0) || null;
+                    this.loadingText = dataset.loadingText || this.loadingText;
+                    this.errorText = dataset.errorText || this.errorText;
+                    this.retryText = dataset.retryText || this.retryText;
+
+                    const Events = window.__Theme__.Events;
+                    const events = Events.events;
+                    this._eventScope = Events.createScope();
+
+                    const onVariantChange = (e) => {
+                        if (e.detail?.sectionId !== this.sectionId) return;
+                        this.variantId = e.detail?.variant?.id || null;
+                        this.load();
+                    };
+
+                    this._eventScope.on(events.PRODUCT_VARIANT_CHANGED, onVariantChange);
+
+                    this.load();
+                },
+
+                get requestUrl() {
+                    if (!this.variantId) return '';
+                    const normalizedRoot = String(this.rootUrl || '/').replace(/\/?$/, '/');
+                    return `${normalizedRoot}variants/${this.variantId}/?section_id=pickup-availability`;
+                },
+
+                retry() {
+                    if (this.isLoading) return;
+                    this.load();
+                },
+
+                get contentTarget() {
+                    return this.$el?.querySelector('[data-pickup-availability-content]') || null;
+                },
+
+                buildDomMap() {
+                    if (!this.sectionId) return {};
+                    return {
+                        'pickup-availability': {
+                            targetSelector: `[data-pickup-availability-root="${CSS.escape(this.sectionId)}"]`,
+                            innerSelectors: ['[data-pickup-availability-content]'],
+                        },
+                    };
+                },
+
+                clearContent() {
+                    this.hasContent = false;
+                    this.showError = false;
+                    this.contentTarget?.replaceChildren();
+                },
+
+                load() {
+                    if (!this.requestUrl) {
+                        this.clearContent();
+                        return;
+                    }
+
+                    if (this._abortController) this._abortController.abort();
+                    this._abortController = new AbortController();
+                    const ctrl = this._abortController;
+
+                    this.isLoading = true;
+                    this.showError = false;
+
+                    const Http = window.ShopifyHttp;
+                    const SectionRefresher = window.ShopifySectionRefresher;
+                    if (!Http?.request || !SectionRefresher) {
+                        this.isLoading = false;
+                        this.showError = true;
+                        return;
+                    }
+
+                    Http.request(this.requestUrl, {
+                        method: 'GET',
+                        headers: { Accept: 'text/html' },
+                        signal: ctrl.signal,
+                    })
+                        .then((res) => res.text())
+                        .then((html) => {
+                            const doc = new DOMParser().parseFromString(html, 'text/html');
+                            const rendered = doc.querySelector(
+                                '[data-pickup-availability-content]',
+                            );
+                            const isEmpty = rendered?.dataset?.empty === 'true';
+
+                            if (!rendered || isEmpty) {
+                                this.clearContent();
+                                return;
+                            }
+
+                            SectionRefresher.render(
+                                { 'pickup-availability': html },
+                                this.buildDomMap(),
+                            );
+                            this.hasContent = true;
+                            this.showError = false;
+                        })
+                        .catch((err) => {
+                            if (err?.isAbort || err?.name === 'AbortError') return;
+                            console.error('Pickup availability load failed:', err);
+                            this.showError = true;
+                        })
+                        .finally(() => {
+                            if (this._abortController === ctrl) {
+                                this._abortController = null;
+                            }
+                            this.isLoading = false;
+                        });
+                },
+
+                destroy() {
+                    this._eventScope?.dispose?.();
+                    this._eventScope = null;
+                    if (this._abortController) this._abortController.abort();
+                    this._abortController = null;
                     this.dispose();
                 },
             };
@@ -1419,6 +1971,7 @@
                 activeTab: 'products',
                 activeSuggestionId: null,
                 hasEmptyState: false,
+                hasSearched: false,
                 _debouncedFetch: null,
                 _abortController: null,
                 _initialSearchPerformed: false,
@@ -1517,6 +2070,7 @@
                     this.isOpen = true;
                     this.isLoading = true;
                     this.hasEmptyState = false;
+                    this.hasSearched = true;
 
                     if (this._debouncedFetch) {
                         this._lastScheduledTerm = term;
@@ -1533,6 +2087,7 @@
                     this.articles = [];
                     this.pages = [];
                     this.hasEmptyState = false;
+                    this.hasSearched = false;
                 },
 
                 _fetch(term) {
@@ -1966,8 +2521,13 @@
         static productCard({
             imageCount = 1,
             hoverMode = 'actions',
+            hasVariantPanel = true,
             enableImageNavigation = true,
             enableImagePagination,
+            quickViewDialogId = '',
+            cartDialogId = '',
+            primaryVariantId = 0,
+            primaryVariantAvailable = false,
         } = {}) {
             if (enableImagePagination !== undefined && enableImageNavigation === true) {
                 enableImageNavigation = enableImagePagination;
@@ -1979,6 +2539,12 @@
                 imageHover: false,
                 actionsHover: false,
                 hoverMode,
+                hasVariantPanel: Boolean(hasVariantPanel),
+                quickViewDialogId,
+                cartDialogId,
+                primaryVariantId: Number(primaryVariantId) || 0,
+                primaryVariantAvailable: Boolean(primaryVariantAvailable),
+                isAddingToCart: false,
                 isTouchDevice: false,
                 _hoverLeaveTimer: null,
 
@@ -1987,7 +2553,7 @@
                 },
 
                 get canShowVariantPanel() {
-                    return this.hoverMode === 'variants';
+                    return this.hoverMode === 'variants' && this.hasVariantPanel;
                 },
 
                 get showHoverActions() {
@@ -1995,7 +2561,39 @@
                     return this.imageHover || this.actionsHover;
                 },
 
+                get showVariantPanel() {
+                    if (!this.canShowVariantPanel) return false;
+                    return this.imageHover;
+                },
+
                 init() {
+                    const dataset = this.$el?.dataset || {};
+                    this.imageCount = Math.max(
+                        1,
+                        Number(dataset.imageCount || this.imageCount) || 1,
+                    );
+                    this.hoverMode = dataset.hoverMode || this.hoverMode || 'actions';
+                    if (dataset.hasVariantPanel !== undefined && dataset.hasVariantPanel !== '') {
+                        this.hasVariantPanel = dataset.hasVariantPanel === 'true';
+                    }
+                    if (
+                        dataset.enableImageNavigation !== undefined &&
+                        dataset.enableImageNavigation !== ''
+                    ) {
+                        this.enableImageNavigation = dataset.enableImageNavigation !== 'false';
+                    }
+                    this.quickViewDialogId =
+                        dataset.quickViewDialogId || this.quickViewDialogId || '';
+                    this.cartDialogId = dataset.cartDialogId || this.cartDialogId || '';
+                    if (dataset.primaryVariantId !== undefined && dataset.primaryVariantId !== '') {
+                        this.primaryVariantId = Number(dataset.primaryVariantId) || 0;
+                    }
+                    if (
+                        dataset.primaryVariantAvailable !== undefined &&
+                        dataset.primaryVariantAvailable !== ''
+                    ) {
+                        this.primaryVariantAvailable = dataset.primaryVariantAvailable === 'true';
+                    }
                     this.isTouchDevice = this._detectTouch();
                 },
 
@@ -2026,6 +2624,46 @@
                 setActionsHover(value) {
                     if (!this.canShowHoverActions) return;
                     this.actionsHover = Boolean(value);
+                },
+
+                openQuickView() {
+                    if (!this.quickViewDialogId) return;
+                    this.$store?.dialog?.open?.(this.quickViewDialogId);
+                },
+
+                addPrimaryVariantToCart() {
+                    if (
+                        !this.primaryVariantAvailable ||
+                        !this.primaryVariantId ||
+                        this.isAddingToCart
+                    ) {
+                        return;
+                    }
+
+                    const cart = this.$store?.cart;
+                    if (!cart?.add) return;
+
+                    this.isAddingToCart = true;
+
+                    const request = cart.add([{ id: this.primaryVariantId, quantity: 1 }], []);
+
+                    if (this.cartDialogId) {
+                        this.$store?.dialog?.open?.(this.cartDialogId);
+                    }
+
+                    request
+                        .then(() => {
+                            if (!this.cartDialogId) {
+                                this.$store?.toast?.show?.('Added to cart!', 'success');
+                            }
+                        })
+                        .catch((err) => {
+                            const msg = err?.message || 'Could not add to cart. Please try again.';
+                            this.$store?.toast?.show?.(msg, 'error');
+                        })
+                        .finally(() => {
+                            this.isAddingToCart = false;
+                        });
                 },
 
                 destroy() {
@@ -2482,7 +3120,10 @@
         static cartOverlay({ sections = [] } = {}) {
             return {
                 sections: Array.isArray(sections) ? sections : [],
+                dialogId: '',
                 pending: {},
+                _syncPromise: null,
+                _lastSyncedAt: 0,
 
                 get cart() {
                     return (
@@ -2491,6 +3132,7 @@
                             item_count: 0,
                             total_price: 0,
                             loading: false,
+                            hasFetched: false,
                         }
                     );
                 },
@@ -2505,6 +3147,68 @@
 
                 get canCheckout() {
                     return !this.isEmpty && !this.cart.loading;
+                },
+
+                get hasFetched() {
+                    return Boolean(this.cart.hasFetched);
+                },
+
+                get hasVisibleItems() {
+                    return this.items.length > 0;
+                },
+
+                get showInitialLoading() {
+                    return Boolean(this.cart.loading && !this.hasVisibleItems);
+                },
+
+                get showEmpty() {
+                    return Boolean(!this.cart.loading && this.hasFetched && this.isEmpty);
+                },
+
+                get showItems() {
+                    return this.hasVisibleItems;
+                },
+
+                init() {
+                    this.dialogId = this.$el?.dataset?.dialogId || '';
+
+                    this.$watch('isOpen', (isOpen) => {
+                        if (isOpen) {
+                            this.syncCart({ force: true }).catch(() => {});
+                        }
+                    });
+                },
+
+                get isOpen() {
+                    return Boolean(this.dialogId && this.$store?.dialog?.active === this.dialogId);
+                },
+
+                syncCart({ force = false } = {}) {
+                    if (typeof this.cart.fetchCart !== 'function') return Promise.resolve();
+                    if (this.cart.loading) return this._syncPromise || Promise.resolve();
+
+                    const now = Date.now();
+                    if (!force && now - this._lastSyncedAt < 1000) {
+                        return this._syncPromise || Promise.resolve();
+                    }
+
+                    if (this._syncPromise) return this._syncPromise;
+
+                    this._syncPromise = this.cart
+                        .fetchCart()
+                        .then((data) => {
+                            this._lastSyncedAt = Date.now();
+                            return data;
+                        })
+                        .catch((err) => {
+                            // Keep the drawer usable if a cart read fails; add/change handlers surface errors.
+                            return Promise.reject(err);
+                        })
+                        .finally(() => {
+                            this._syncPromise = null;
+                        });
+
+                    return this._syncPromise;
                 },
 
                 formatMoney(cents) {

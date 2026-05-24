@@ -210,6 +210,22 @@
             console.warn(`[SectionRefresher] ${message}`, ...args);
         }
 
+        static withAlpineRefresh(target, updater) {
+            if (!target || typeof updater !== 'function') return;
+
+            const alpine = window.Alpine;
+
+            if (typeof alpine?.destroyTree === 'function') {
+                alpine.destroyTree(target);
+            }
+
+            const nextTarget = updater() || target;
+
+            if (typeof alpine?.initTree === 'function' && nextTarget?.isConnected) {
+                alpine.initTree(nextTarget);
+            }
+        }
+
         static render(data, domMap = {}) {
             if (!data) return;
             if (!domMap || typeof domMap !== 'object') domMap = {};
@@ -260,11 +276,17 @@
                         const newChild = virtualSourceEl.querySelector(sel);
                         const oldChild = targetEl.querySelector(sel);
                         if (newChild && oldChild) {
-                            oldChild.replaceWith(newChild.cloneNode(true));
+                            this.withAlpineRefresh(oldChild, () => {
+                                const nextChild = newChild.cloneNode(true);
+                                oldChild.replaceWith(nextChild);
+                                return nextChild;
+                            });
                         }
                     }
                 } else {
-                    targetEl.innerHTML = virtualSourceEl.innerHTML;
+                    this.withAlpineRefresh(targetEl, () => {
+                        targetEl.innerHTML = virtualSourceEl.innerHTML;
+                    });
                 }
 
                 window.__Theme__?.Components?.initAll?.(targetEl);

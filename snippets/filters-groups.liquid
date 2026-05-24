@@ -1,0 +1,55 @@
+{% doc %}
+    Shared filter groups renderer for collection/search filter layouts.
+
+    @param {object} filter_source - Optional. Pass collection/search object.
+    @param {string} [layout] - Optional active-filter layout variant. Default: 'drawer'.
+    @param {string} [wrapper_class] - Optional root wrapper class override.
+    @param {string} [divider_class] - Optional divider class token.
+    @param {string} [muted_text_class] - Optional helper text classes.
+    @param {string} [filter_label_class] - Optional filter label typography classes.
+    @param {string} [count_text_class] - Optional count text classes.
+    @param {number} [show_more_limit] - Optional visible item count before progressive expansion. Default: 6.
+    @param {number} [show_more_step] - Optional items added per click. Default: show_more_limit.
+{% enddoc %}
+
+{%- assign filter_host = filter_source | default: collection | default: search -%}
+{%- assign active_layout = layout | default: 'drawer' -%}
+{%- assign wrapper_class = wrapper_class | default: '' -%}
+{%- assign show_more_limit = show_more_limit | default: 6 -%}
+{%- assign show_more_step = show_more_step | default: show_more_limit -%}
+{%- assign divider_class = divider_class | default: 'border-theme-border-soft' -%}
+{%- assign muted_text_class = muted_text_class | default: 'body-sm opacity-60' -%}
+{%- assign filter_label_class = filter_label_class | default: 'body-md leading-snug' -%}
+{%- assign count_text_class = count_text_class | default: 'body-sm opacity-60' -%}
+
+<div class="{{ wrapper_class }} flex flex-col gap-4">
+    {% render 'active-filters', filter_source: filter_host, layout: active_layout %}
+
+    {%- for filter in filter_host.filters -%}
+        {%- capture filter_content -%}
+            {%- render 'filters-field',
+                filter: filter,
+                mode: 'drawer',
+                ui_variant: 'panel',
+                show_more_limit: show_more_limit,
+                show_more_step: show_more_step,
+                divider_class: divider_class,
+                muted_text_class: muted_text_class,
+                filter_label_class: filter_label_class,
+                count_text_class: count_text_class
+            -%}
+        {%- endcapture -%}
+
+        {% render 'accordion',
+            item_title: filter.label,
+            item_content: filter_content,
+            initial_active: 0,
+            wrapper_class: 'flex flex-col gap-0',
+            item_class: 'py-0',
+            title_active_class: 'text-theme-text opacity-100 font-semibold',
+            title_inactive_class: 'text-theme-text opacity-100 font-semibold',
+            icon_color_class: 'text-theme-text',
+            content_class: 'pb-4 text-theme-text'
+        %}
+    {%- endfor -%}
+</div>

@@ -12,20 +12,21 @@
 {% endcomment %}
 
 {%- assign context = context | default: 'featured' -%}
+{%- assign section_id = section_id | default: section.id -%}
 
 {%- unless product.has_only_default_variant -%}
-    {%- assign product_form_id = product_form_id | default: 'product-form-' | append: section.id -%}
+    {%- assign product_form_id = product_form_id | default: 'product-form-' | append: section_id -%}
 
-    <script id="ProductVariants-{{ section.id }}" type="application/json">
+    <script id="ProductVariants-{{ section_id }}" type="application/json">
         {{ product.variants | json }}
     </script>
 
     <div
-        id="VariantPicker-{{ section.id }}"
-        class="flex flex-col gap-3 pc:gap-4"
+        id="VariantPicker-{{ section_id }}"
+        class="flex flex-col gap-4 pc:gap-5"
         x-data="
             VariantPicker({
-              sectionId: '{{ section.id }}',
+              sectionId: '{{ section_id }}',
               productId: {{ product.id }},
               productFormId: '{{ product_form_id }}'
             })
@@ -48,10 +49,10 @@
 
             {%- if picker_type == 'dropdown' -%}
                 {%- comment -%} ═══ Dropdown mode ═══ {%- endcomment -%}
-                <div class="flex flex-col gap-2">
+                <div class="flex flex-col">
                     <label
-                        class="{% if context == 'product' %}body-sm{% else %}body-md{% endif %} text-theme-text/80"
-                        for="OptionDropdown-{{ section.id }}-{{ forloop.index0 }}"
+                        class="body-md text-theme-text/80"
+                        for="OptionDropdown-{{ section_id }}-{{ forloop.index0 }}"
                     >
                         {{ option.name }}:
                         <span
@@ -62,10 +63,10 @@
                         </span>
                     </label>
 
-                    <div class="relative">
+                    <div class="relative mt-5 p-0.5">
                         <select
-                            id="OptionDropdown-{{ section.id }}-{{ forloop.index0 }}"
-                            class="{% if context == 'product' %}body-sm{% else %}body-md{% endif %} w-full cursor-pointer appearance-none rounded-sm border border-theme-border px-4 py-3 text-theme-text focus:border-theme-border-strong focus:outline-none"
+                            id="OptionDropdown-{{ section_id }}-{{ forloop.index0 }}"
+                            class="w-full cursor-pointer appearance-none rounded-sm border border-theme-border px-4 py-3 body-md text-theme-text focus:border-theme-border-strong focus:outline-none"
                             name="options[{{ option_name_escaped }}]"
                             form="{{ product_form_id }}"
                             x-model="selectedOptions['{{ option_name_escaped }}']"
@@ -102,11 +103,11 @@
             {%- else -%}
                 {%- comment -%} ═══ Button mode (pills + swatches) ═══ {%- endcomment -%}
                 <fieldset
-                    class="flex flex-col gap-2"
+                    class="flex flex-col"
                     role="radiogroup"
                     aria-label="{{ option.name }}"
                 >
-                    <legend class="{% if context == 'product' %}body-sm{% else %}body-md{% endif %} text-theme-text/80">
+                    <legend class="body-md text-theme-text/80">
                         {{ option.name }}:
                         <span
                             x-text="selectedOptions['{{ option_name_escaped }}']"
@@ -116,7 +117,7 @@
                         </span>
                     </legend>
 
-                    <div class="flex flex-wrap gap-2">
+                    <div class="mt-5 flex flex-wrap gap-5 p-0.5">
                         {%- for value in option.values -%}
                             {%- liquid
                                 assign swatch_bg = null
@@ -141,7 +142,7 @@
                                 endif
                             -%}
 
-                            {%- capture input_id -%}VariantOption-{{ section.id }}-{{ option.position }}-{{ forloop.index0 }}{%- endcapture -%}
+                            {%- capture input_id -%}VariantOption-{{ section_id }}-{{ option.position }}-{{ forloop.index0 }}{%- endcapture -%}
 
                             {%- if render_swatch -%}
                                 {%- comment -%} ——— Swatch ——— {%- endcomment -%}
@@ -198,7 +199,7 @@
                                         data-option-value-id="{{ value.id }}"
                                     >
                                     <span
-                                        class="{% if context == 'product' %}body-sm px-3.5 py-1.75{% else %}body-md px-4 py-2{% endif %} block rounded-sm border transition-colors"
+                                        class="block rounded-sm border px-4 py-2 body-md transition-colors"
                                         :class="
                                             [
                                               selectedOptions['{{ option_name_escaped }}'] === '{{ escaped_value }}'

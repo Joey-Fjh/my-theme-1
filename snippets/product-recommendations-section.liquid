@@ -1,0 +1,134 @@
+{%- liquid
+    assign heading = heading | default: 'Product recommendations'
+    assign description = description
+    assign limit = limit | default: 4
+    assign intent = intent | default: 'related'
+    assign empty_text = empty_text | default: 'No products available right now.'
+    assign loading_text = loading_text | default: 'Loading products...'
+    assign timeout_text = timeout_text | default: 'Request timed out. You can retry loading products.'
+    assign error_text = error_text | default: 'Failed to load products.'
+    assign retry_text = retry_text | default: 'Retry'
+    assign recommendation_url = routes.product_recommendations_url
+-%}
+
+{%- if product -%}
+    {%- capture rec_url -%}
+        {{- recommendation_url -}}?product_id={{ product.id }}&section_id={{ section.id }}&limit={{ limit }}&intent={{ intent }}
+    {%- endcapture -%}
+
+    <div
+        class="layout container-page py-12 pc:py-16"
+        data-related-products-url="{{ rec_url | strip_newlines | escape }}"
+        data-related-products-section-id="{{ section.id }}"
+        x-data="relatedProducts()"
+    >
+        <div data-related-products-content>
+            {%- if recommendations.performed -%}
+                {%- if recommendations.products_count > 0 -%}
+                    <div class="flex flex-col items-start justify-between gap-4 pc:flex-row pc:gap-8">
+                        <h1>{{ heading }}</h1>
+                        {%- if description != blank -%}
+                            <div class="rte rte--compact max-w-md body-md leading-relaxed text-theme-text/70">
+                                {{ description }}
+                            </div>
+                        {%- endif -%}
+                    </div>
+
+                    <div class="mt-8 grid grid-cols-2 gap-6 pc:grid-cols-4">
+                        {%- for product in recommendations.products -%}
+                            {% render 'product-card',
+                                product: product,
+                                scope_id: section.id,
+                                color_scheme: section.settings.color_scheme
+                            %}
+                        {%- endfor -%}
+                    </div>
+                {%- else -%}
+                    <div class="flex flex-col items-start justify-between gap-4 pc:flex-row pc:gap-8">
+                        <h1>{{ heading }}</h1>
+                        {%- if description != blank -%}
+                            <div class="rte rte--compact max-w-md body-md leading-relaxed text-theme-text/70">
+                                {{ description }}
+                            </div>
+                        {%- endif -%}
+                    </div>
+                    <p class="mt-8 body-md text-theme-text/70" role="status" aria-live="polite">
+                        {{ empty_text }}
+                    </p>
+                {%- endif -%}
+            {%- else -%}
+                <div class="flex flex-col items-start justify-between gap-4 pc:flex-row pc:gap-8">
+                    <h1>{{ heading }}</h1>
+                    {%- if description != blank -%}
+                        <div class="rte rte--compact max-w-md body-md leading-relaxed text-theme-text/70">
+                            {{ description }}
+                        </div>
+                    {%- endif -%}
+                </div>
+
+                <div
+                    class="mt-8 grid grid-cols-2 gap-6 pc:grid-cols-4"
+                    x-show="uiState == 'idle' || uiState == 'loading'"
+                    x-cloak
+                >
+                    {%- for i in (1..limit) -%}
+                        <div class="border border-theme-border-soft bg-theme-bg p-4">
+                            <div class="aspect-square animate-pulse bg-theme-border-soft"></div>
+                            <div
+                                class="mt-4 h-4 w-3/4 animate-pulse bg-theme-border-soft"
+                            ></div>
+                            <div
+                                class="mt-2 h-4 w-1/2 animate-pulse bg-theme-border-soft"
+                            ></div>
+                        </div>
+                    {%- endfor -%}
+                </div>
+
+                <p
+                    class="mt-6 body-md text-theme-text/70"
+                    role="status"
+                    aria-live="polite"
+                    x-show="uiState == 'loading'"
+                    x-cloak
+                >
+                    {{ loading_text }}
+                    <span x-text="loadingSeconds"></span>s
+                </p>
+
+                <div
+                    class="mt-6 flex flex-wrap items-center gap-3"
+                    x-show="uiState == 'timeout'"
+                    x-cloak
+                >
+                    <p class="body-md text-theme-text/70" role="status" aria-live="polite">
+                        {{ timeout_text }}
+                    </p>
+                    <button
+                        type="button"
+                        class="border border-theme-border-soft px-3 py-2 body-md transition-opacity hover:opacity-70"
+                        @click="retry()"
+                    >
+                        {{ retry_text }}
+                    </button>
+                </div>
+
+                <div
+                    class="mt-6 flex flex-wrap items-center gap-3"
+                    x-show="uiState == 'error'"
+                    x-cloak
+                >
+                    <p class="body-md text-theme-text/70" role="status" aria-live="polite">
+                        {{ error_text }}
+                    </p>
+                    <button
+                        type="button"
+                        class="border border-theme-border-soft px-3 py-2 body-md transition-opacity hover:opacity-70"
+                        @click="retry()"
+                    >
+                        {{ retry_text }}
+                    </button>
+                </div>
+            {%- endif -%}
+        </div>
+    </div>
+{%- endif -%}

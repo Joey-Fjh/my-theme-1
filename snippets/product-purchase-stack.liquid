@@ -1,0 +1,107 @@
+{% doc %}
+    Fixed product purchase stack for modal or other non-block-driven contexts.
+
+    This snippet intentionally renders a stable, ordered stack rather than
+    relying on section.blocks, so it can be reused by quick-view-like surfaces
+    without inheriting featured-product / PDP editor contracts.
+
+    @param {product} product - Product object to render.
+    @param {string} section_id - Unique runtime scope for Alpine sync.
+    @param {string} product_form_id - Shared form id for variant and quantity controls.
+    @param {string} [dialog_id] - Optional dialog title id target.
+    @param {string} [details_href] - Optional details URL. Defaults to product.url.
+    @param {boolean} [show_brand] - Optional. Defaults to true.
+    @param {boolean} [show_description] - Optional. Defaults to true.
+    @param {number} [description_truncate] - Optional truncate length. Defaults to 120.
+{% enddoc %}
+
+{%- liquid
+    assign details_href = details_href | default: product.url
+    assign show_brand_enabled = true
+    assign show_description_enabled = true
+    assign description_truncate = description_truncate | default: 120
+    assign current_variant = product.selected_or_first_available_variant
+    assign brand = product.type
+
+    if show_brand == false or show_brand == 'false'
+        assign show_brand_enabled = false
+    endif
+
+    if show_description == false or show_description == 'false'
+        assign show_description_enabled = false
+    endif
+
+    if brand == blank
+        assign brand = product.vendor
+    endif
+-%}
+
+{%- if show_brand_enabled -%}
+    <div class="product-quick-view__brand">
+        {{ brand }}
+    </div>
+{%- endif -%}
+
+<h2
+    {% if dialog_id %}
+        id="dialog-title-{{ dialog_id }}"
+    {% endif %}
+    class="product-quick-view__title"
+>
+    {{ product.title }}
+</h2>
+
+<div
+    class="product-quick-view__price product-info-blocks__price"
+    data-section-id="{{ section_id }}"
+    data-price="{{ current_variant.price | default: 0 }}"
+    data-compare-price="{{ current_variant.compare_at_price | default: 0 }}"
+    data-currency="{{ shop.currency }}"
+    x-data="ProductPrice()"
+>
+    <s
+        class="product-quick-view__price-compare product-info-blocks__price-compare"
+        x-show="hasComparePrice"
+        x-text="formattedComparePrice"
+    >
+        {%- if current_variant.compare_at_price > current_variant.price -%}
+            {{ current_variant.compare_at_price | money }}
+        {%- endif -%}
+    </s>
+    <span
+        class="product-quick-view__price-main product-info-blocks__price-main h4"
+        x-text="formattedPrice"
+    >
+        {{ current_variant.price | money }}
+    </span>
+</div>
+
+{%- if show_description_enabled and product.description != blank -%}
+    <div class="product-quick-view__description body-md text-theme-text/75">
+        {{ product.description | strip_html | truncate: description_truncate }}
+    </div>
+{%- endif -%}
+
+<div class="product-quick-view__picker-shell">
+    {%- render 'product-variant-picker',
+        product: product,
+        product_form_id: product_form_id,
+        context: 'product',
+        section_id: section_id
+    -%}
+</div>
+
+<div class="product-quick-view__purchase">
+    {%- render 'quick-view-buy-actions',
+        product: product,
+        product_form_id: product_form_id,
+        section_id: section_id
+    -%}
+</div>
+
+<div class="product-quick-view__footer">
+    <a href="{{ details_href }}" class="product-quick-view__details-link">
+        <span>View full details</span>
+        {%- render 'icons', icon: 'icon-arrow2', size: 'sm', color: 'current' -%}
+    </a>
+</div>

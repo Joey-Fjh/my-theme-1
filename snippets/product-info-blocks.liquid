@@ -6,24 +6,71 @@
     @param {string} [context] - Rendering context, e.g. 'main' (PDP) or 'featured' (home)
     @param {string} [container_class] - Optional extra classes for the root container (merged with defaults)
     @param {string} [product_form_id] - Shared form ID for variant picker, quantity, and buy buttons
+    @param {string} [render_column] - Product block column to render: 'form' or 'gallery'
 {% enddoc %}
 
 {%- assign product = product | default: section.settings.product -%}
 {%- assign context = context | default: 'main' -%}
 {%- assign container_class = container_class | default: '' -%}
 {%- assign product_form_id = product_form_id | default: 'product-form-' | append: section.id -%}
+{%- assign render_column = render_column | default: 'form' -%}
 {%- assign context_modifier = 'product-info-blocks--' | append: context -%}
+{%- assign column_modifier = 'product-info-blocks--' | append: render_column -%}
+{%- assign purchase_anchor_type = '' -%}
+{%- if render_column == 'form' -%}
+    {%- for candidate_block in section.blocks -%}
+        {%- if candidate_block.type == 'quantity_selector' -%}
+            {%- assign quantity_block = candidate_block -%}
+            {%- if purchase_anchor_type == blank -%}
+                {%- assign purchase_anchor_type = 'quantity_selector' -%}
+            {%- endif -%}
+        {%- elsif candidate_block.type == 'buy_buttons' -%}
+            {%- assign buy_buttons_block = candidate_block -%}
+            {%- if purchase_anchor_type == blank -%}
+                {%- assign purchase_anchor_type = 'buy_buttons' -%}
+            {%- endif -%}
+        {%- endif -%}
+    {%- endfor -%}
+{%- endif -%}
 
 <div
-    class="product-info-blocks {{ context_modifier }} {{ container_class }}"
-    id="ProductInfo-{{ section.id }}"
+    class="product-info-blocks {{ context_modifier }} {{ column_modifier }} {{ container_class }}"
+    id="ProductInfo-{{ section.id }}-{{ render_column }}"
 >
     {%- for block in section.blocks -%}
+        {%- liquid
+            assign block_render_column = 'form'
+            if context == 'product' and block.type == 'description' and block.settings.position_desktop == 'gallery'
+                assign block_render_column = 'gallery'
+            elsif context == 'product' and block.type == 'collapsible_tab' and block.settings.position_desktop == 'gallery'
+                assign block_render_column = 'gallery'
+            elsif context == 'product' and block.type == 'share' and block.settings.position_desktop == 'gallery'
+                assign block_render_column = 'gallery'
+            elsif context == 'product' and block.type == 'callout' and block.settings.position_desktop == 'gallery'
+                assign block_render_column = 'gallery'
+            elsif context == 'product' and block.type == 'spacer' and block.settings.position_desktop == 'gallery'
+                assign block_render_column = 'gallery'
+            endif
+        -%}
+        {%- if block_render_column != render_column -%}
+            {%- continue -%}
+        {%- endif -%}
+
         {%- case block.type -%}
             {%- when '@app' -%}
                 <div {{ block.shopify_attributes }}>
                     {%- render block -%}
                 </div>
+
+            {%- when 'vendor' -%}
+                {%- if product != blank and product.vendor != blank -%}
+                    <div
+                        class="product-info-blocks__vendor"
+                        {{ block.shopify_attributes }}
+                    >
+                        {{ product.vendor }}
+                    </div>
+                {%- endif -%}
 
             {%- when 'title' -%}
                 <div {{ block.shopify_attributes }}>
@@ -101,6 +148,230 @@
                     {%- endif -%}
                 </div>
 
+            {%- when 'custom_liquid' -%}
+                <div
+                    class="product-info-blocks__custom-liquid"
+                    {{ block.shopify_attributes }}
+                >
+                    {{ block.settings.custom_liquid }}
+                </div>
+
+            {%- when 'share' -%}
+                {%- liquid
+                    assign share_alignment = block.settings.alignment | default: 'center'
+                    assign share_alignment_class = 'justify-center'
+                    if share_alignment == 'left'
+                        assign share_alignment_class = 'justify-start'
+                    elsif share_alignment == 'right'
+                        assign share_alignment_class = 'justify-end'
+                    endif
+
+                    assign share_url = product.url | default: request.path | prepend: request.origin
+                    assign encoded_share_url = share_url | url_encode
+                    assign encoded_share_title = product.title | default: shop.name | url_encode
+                    assign facebook_share_url = 'https://www.facebook.com/sharer/sharer.php?u=' | append: encoded_share_url
+                    assign twitter_share_url = 'https://twitter.com/intent/tweet?url=' | append: encoded_share_url | append: '&text=' | append: encoded_share_title
+                -%}
+                <div
+                    class="product-info-blocks__share {{ share_alignment_class }}"
+                    {{ block.shopify_attributes }}
+                >
+                    <a
+                        href="{{ facebook_share_url }}"
+                        class="product-info-blocks__share-link"
+                        target="_blank"
+                        rel="noopener"
+                        aria-label="Share on Facebook"
+                    >
+                        {%- render 'icons',
+                            icon: 'icon-facebook',
+                            size: 'sm',
+                            class: '!h-full !w-full',
+                            color: 'current'
+                        -%}
+                    </a>
+                    <a
+                        href="{{ twitter_share_url }}"
+                        class="product-info-blocks__share-link"
+                        target="_blank"
+                        rel="noopener"
+                        aria-label="Share on X"
+                    >
+                        {%- render 'icons',
+                            icon: 'icon-twitter',
+                            size: 'sm',
+                            class: '!h-full !w-full',
+                            color: 'current'
+                        -%}
+                    </a>
+                </div>
+
+            {%- when 'callout' -%}
+                {%- liquid
+                    assign callout_icon_size = block.settings.icon_size | default: 24 | plus: 0
+                    assign callout_heading_class = 'body-md text-current'
+                    if block.settings.bold
+                        assign callout_heading_class = callout_heading_class | append: ' font-semibold'
+                    endif
+                    assign callout_border_class = ''
+                    if block.settings.show_border
+                        assign callout_border_class = 'product-info-blocks__callout--bordered'
+                    endif
+                -%}
+                <div
+                    class="product-info-blocks__callout {{ callout_border_class }}"
+                    style="--product-callout-bg: {{ block.settings.background_color }}; --product-callout-text: {{ block.settings.text_color }};"
+                    {{ block.shopify_attributes }}
+                >
+                    {%- render 'product-block-icon',
+                        icon: block.settings.icon,
+                        custom_svg: block.settings.svg_icon_code,
+                        size_px: callout_icon_size,
+                        color: block.settings.text_color,
+                        class: 'product-info-blocks__callout-icon'
+                    -%}
+                    <div class="product-info-blocks__callout-content">
+                        {%- if block.settings.heading != blank -%}
+                            <div class="{{ callout_heading_class }}">
+                                {{ block.settings.heading }}
+                            </div>
+                        {%- endif -%}
+                        {%- if block.settings.text != blank -%}
+                            <div class="product-info-blocks__callout-text rte body-md">
+                                {{ block.settings.text }}
+                            </div>
+                        {%- endif -%}
+                    </div>
+                </div>
+
+            {%- when 'spacer' -%}
+                {%- liquid
+                    assign top_spacing = block.settings.top_spacing | default: 'small'
+                    assign bottom_spacing = block.settings.bottom_spacing | default: 'small'
+                    assign top_spacing_value = '1rem'
+                    assign bottom_spacing_value = '1rem'
+
+                    case top_spacing
+                        when 'none'
+                            assign top_spacing_value = '0'
+                        when 'medium'
+                            assign top_spacing_value = '1.5rem'
+                        when 'large'
+                            assign top_spacing_value = '2.5rem'
+                    endcase
+
+                    case bottom_spacing
+                        when 'none'
+                            assign bottom_spacing_value = '0'
+                        when 'medium'
+                            assign bottom_spacing_value = '1.5rem'
+                        when 'large'
+                            assign bottom_spacing_value = '2.5rem'
+                    endcase
+                -%}
+                <div
+                    class="product-info-blocks__spacer"
+                    style="--product-spacer-top: {{ top_spacing_value }}; --product-spacer-bottom: {{ bottom_spacing_value }};"
+                    {{ block.shopify_attributes }}
+                >
+                    {%- if block.settings.show_dividing_line -%}
+                        <div class="product-info-blocks__spacer-line"></div>
+                    {%- endif -%}
+                </div>
+
+            {%- when 'collapsible_tab' -%}
+                {%- liquid
+                    assign tab_page = block.settings.dynamic_content
+                    assign tab_heading = block.settings.heading | default: 'Collapsible tab'
+                    if block.settings.use_page_title and tab_page != blank
+                        assign tab_heading = tab_page.title
+                    endif
+
+                    assign tab_content = block.settings.text
+                    if tab_page != blank
+                        assign tab_content = tab_page.content
+                    endif
+
+                    assign icon_size = block.settings.icon_size | default: 20 | plus: 0
+                    assign image_width = block.settings.image_width | default: 1000 | plus: 0
+                    assign has_tab_body = false
+                    if tab_content != blank or block.settings.image != blank
+                        assign has_tab_body = true
+                    endif
+                    assign alignment = block.settings.alignment | default: 'left'
+                    assign alignment_class = 'items-start text-left'
+                    if alignment == 'center'
+                        assign alignment_class = 'items-center text-center'
+                    elsif alignment == 'right'
+                        assign alignment_class = 'items-end text-right'
+                    endif
+                -%}
+
+                <details
+                    class="product-info-blocks__collapsible-tab group"
+                    {% if block.settings.open_by_default %}
+                        open
+                    {% endif %}
+                    {{ block.shopify_attributes }}
+                >
+                    <summary class="product-info-blocks__collapsible-summary">
+                        <span class="product-info-blocks__collapsible-heading">
+                            {%- render 'product-block-icon',
+                                icon: block.settings.icon,
+                                custom_svg: block.settings.svg_icon_code,
+                                size_px: icon_size,
+                                color: block.settings.icon_color,
+                                class: 'text-theme-text/70'
+                            -%}
+                            <span class="min-w-0 body-md font-medium text-theme-text">
+                                {{ tab_heading }}
+                            </span>
+                        </span>
+
+                        <span class="product-info-blocks__collapsible-toggle">
+                            {%- render 'icons',
+                                icon: 'icon-plus',
+                                size: 'sm',
+                                class: '!h-full !w-full',
+                                color: 'current'
+                            -%}
+                        </span>
+                    </summary>
+
+                    {%- if has_tab_body -%}
+                        <div class="product-info-blocks__collapsible-content {{ alignment_class }}">
+                            {%- if tab_content != blank -%}
+                                <div class="product-info-blocks__collapsible-rte rte body-md">
+                                    {{ tab_content }}
+                                </div>
+                            {%- endif -%}
+
+                            {%- if block.settings.image != blank -%}
+                                <div
+                                    class="product-info-blocks__collapsible-image"
+                                    style="--product-collapsible-image-width: {{ image_width }}px;"
+                                >
+                                    {%- if block.settings.link != blank -%}
+                                        <a href="{{ block.settings.link }}" class="block">
+                                    {%- endif -%}
+                                    {{
+                                        block.settings.image
+                                        | image_url: width: image_width
+                                        | image_tag:
+                                            loading: 'lazy',
+                                            widths: '200, 320, 480, 640, 800, 1000',
+                                            sizes: '(min-width: 48rem) min(100vw, var(--product-collapsible-image-width)), 100vw',
+                                            class: 'block h-auto w-full rounded-sm'
+                                    }}
+                                    {%- if block.settings.link != blank -%}
+                                        </a>
+                                    {%- endif -%}
+                                </div>
+                            {%- endif -%}
+                        </div>
+                    {%- endif -%}
+                </details>
+
             {%- when 'variant_picker' -%}
                 {%- render 'product-variant-picker',
                     product: product,
@@ -110,47 +381,114 @@
                 -%}
 
             {%- when 'quantity_selector' -%}
-                <div {{ block.shopify_attributes }}>
+                {%- if purchase_anchor_type == 'quantity_selector' -%}
                     {%- liquid
-                        assign quantity_wrapper_class = 'flex items-center border border-theme-border-soft rounded-sm w-max'
+                        assign quantity_wrapper_class = 'flex h-full items-center border border-theme-border-soft rounded-sm w-max'
                         assign quantity_button_class = 'flex h-10 w-10 cursor-pointer items-center justify-center text-current transition-opacity hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-30'
                         assign quantity_input_class = 'w-[4ch] appearance-none border-b border-current bg-transparent p-0 text-center h6 font-medium text-current [-moz-appearance:textfield] focus:ring-0 focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'
 
                         if context == 'product'
-                            assign quantity_wrapper_class = 'inline-flex items-center gap-3 w-max text-theme-text'
+                            assign quantity_wrapper_class = 'inline-flex h-full items-center gap-3 w-max text-theme-text'
                             assign quantity_button_class = 'flex h-8 w-8 cursor-pointer items-center justify-center text-current transition-opacity hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-30'
                             assign quantity_input_class = 'w-[3ch] appearance-none border-b border-current bg-transparent p-0 text-center body-md text-current [-moz-appearance:textfield] focus:ring-0 focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'
                         endif
                     -%}
-                    {%- render 'quantity-selector',
-                        value: 1,
-                        min: 1,
-                        product_form_id: product_form_id,
-                        section_id: section.id,
-                        wrapper_class: quantity_wrapper_class,
-                        button_class: quantity_button_class,
-                        input_class: quantity_input_class
-                    -%}
-                </div>
+
+                    {%- if buy_buttons_block != blank -%}
+                        <div class="product-info-blocks__purchase">
+                            {%- render 'buy-buttons',
+                                product: product,
+                                block: buy_buttons_block,
+                                product_form_id: product_form_id,
+                                section_id: section.id,
+                                context: context,
+                                layout: 'purchase_group',
+                                quantity_block: quantity_block,
+                                quantity_wrapper_class: quantity_wrapper_class,
+                                quantity_button_class: quantity_button_class,
+                                quantity_input_class: quantity_input_class
+                            -%}
+                        </div>
+                    {%- else -%}
+                        <div class="product-info-blocks__purchase">
+                            <div class="buy-buttons__quantity" {{ block.shopify_attributes }}>
+                                {%- render 'quantity-selector',
+                                    value: 1,
+                                    min: 1,
+                                    product_form_id: product_form_id,
+                                    section_id: section.id,
+                                    wrapper_class: quantity_wrapper_class,
+                                    button_class: quantity_button_class,
+                                    input_class: quantity_input_class
+                                -%}
+                            </div>
+                        </div>
+                    {%- endif -%}
+                {%- endif -%}
 
             {%- when 'buy_buttons' -%}
-                <div class="buy-buttons-block product-info-blocks__buy-buttons">
-                    {%- render 'buy-buttons',
-                        product: product,
-                        block: block,
-                        product_form_id: product_form_id,
-                        section_id: section.id,
-                        context: context
-                    -%}
-                </div>
+                {%- if purchase_anchor_type == 'buy_buttons' -%}
+                    {%- liquid
+                        assign quantity_wrapper_class = 'flex h-full items-center border border-theme-border-soft rounded-sm w-max'
+                        assign quantity_button_class = 'flex h-10 w-10 cursor-pointer items-center justify-center text-current transition-opacity hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-30'
+                        assign quantity_input_class = 'w-[4ch] appearance-none border-b border-current bg-transparent p-0 text-center h6 font-medium text-current [-moz-appearance:textfield] focus:ring-0 focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'
 
-            {%- when 'inventory_status' -%}
-                <div
-                    class="inventory-status-placeholder product-info-blocks__inventory"
-                    {{ block.shopify_attributes }}
-                >
-                    Inventory Status: In Stock
-                </div>
+                        if context == 'product'
+                            assign quantity_wrapper_class = 'inline-flex h-full items-center gap-3 w-max text-theme-text'
+                            assign quantity_button_class = 'flex h-8 w-8 cursor-pointer items-center justify-center text-current transition-opacity hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-30'
+                            assign quantity_input_class = 'w-[3ch] appearance-none border-b border-current bg-transparent p-0 text-center body-md text-current [-moz-appearance:textfield] focus:ring-0 focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'
+                        endif
+                    -%}
+                    <div class="product-info-blocks__purchase">
+                        {%- render 'buy-buttons',
+                            product: product,
+                            block: block,
+                            product_form_id: product_form_id,
+                            section_id: section.id,
+                            context: context,
+                            layout: 'purchase_group',
+                            quantity_block: quantity_block,
+                            quantity_wrapper_class: quantity_wrapper_class,
+                            quantity_button_class: quantity_button_class,
+                            quantity_input_class: quantity_input_class
+                        -%}
+                    </div>
+                {%- endif -%}
+
+            {%- when 'inventory_notice' -%}
+                {%- liquid
+                    assign current_variant = product.selected_or_first_available_variant
+                    assign low_stock_threshold = block.settings.low_stock_threshold | default: 5 | plus: 0
+                    assign show_inventory_notice = false
+                    assign inventory_quantity = current_variant.inventory_quantity | default: 0 | plus: 0
+                    assign alignment = block.settings.alignment | default: 'left'
+                    assign alignment_class = 'justify-start text-left'
+
+                    if alignment == 'center'
+                        assign alignment_class = 'justify-center text-center'
+                    elsif alignment == 'right'
+                        assign alignment_class = 'justify-end text-right'
+                    endif
+
+                    if current_variant.inventory_management != blank and current_variant.inventory_policy == 'deny' and inventory_quantity > 0 and inventory_quantity <= low_stock_threshold
+                        assign show_inventory_notice = true
+                    endif
+                -%}
+                {%- if show_inventory_notice -%}
+                    <div
+                        class="product-info-blocks__inventory-notice {{ alignment_class }}"
+                        {{ block.shopify_attributes }}
+                    >
+                        <span class="product-info-blocks__inventory-dot" aria-hidden="true"></span>
+                        <span>
+                            {%- if block.settings.show_stock_number -%}
+                                Only {{ inventory_quantity }} in stock
+                            {%- else -%}
+                                Low stock
+                            {%- endif -%}
+                        </span>
+                    </div>
+                {%- endif -%}
 
             {%- else -%}
                 <div {{ block.shopify_attributes }}>

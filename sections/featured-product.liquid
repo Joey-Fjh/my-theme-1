@@ -1,3 +1,6 @@
+{% assign desktop_media_width = section.settings.desktop_media_width | default: 60 | plus: 0 %}
+{% assign desktop_info_width = 100 | minus: desktop_media_width %}
+
 <div
     data-section-id="{{ section.id }}"
     class="
@@ -12,28 +15,42 @@
     data-component-type="featured-product"
     data-component-id="{{ section.id }}"
 >
-    <div class="layout container-page">
+    <div class="layout container-page overflow-visible!">
         <div
-            class="grid w-full min-w-0 grid-cols-1 items-start gap-8 pc:grid-cols-2 pc:gap-10 fw:gap-12"
+            class="grid w-full min-w-0 grid-cols-1 items-start gap-8 pc:grid-cols-[minmax(0,var(--product-media-fr))_minmax(0,var(--product-info-fr))] pc:items-stretch pc:gap-10 fw:gap-12"
+            style="
+                --product-media-fr: {{ desktop_media_width }}fr;
+                --product-info-fr: {{ desktop_info_width }}fr;
+            "
         >
-            <div class="min-w-0 overflow-hidden" data-product-media-panel>
-                {% assign thumb_position = section.settings.thumb_position | default: 'left' %}
-                {%- render 'product-gallery',
-                    images: section.settings.product.images,
-                    layout: 'thumbnails',
-                    thumb_position: thumb_position,
-                    thumbnail_visible_count: section.settings.thumbnail_visible_count,
-                    aspect_ratio: '576/622'
-                -%}
+            <div
+                class="flex min-w-0 flex-col gap-8"
+                data-product-media-column
+            >
+                <div
+                    class="min-w-0 overflow-hidden"
+                    data-product-media-panel
+                    data-product-media-sticky-target
+                >
+                    {% assign thumb_position = section.settings.thumb_position | default: 'left' %}
+                    {%- render 'product-gallery',
+                        images: section.settings.product.images,
+                        layout: 'thumbnails',
+                        thumb_position: thumb_position,
+                        thumbnail_visible_count: section.settings.thumbnail_visible_count,
+                        aspect_ratio: '3/4'
+                    -%}
+                </div>
             </div>
 
             <div class="min-w-0" data-product-info-panel>
-                <div class="self-start">
+                <div class="self-start" data-product-info-sticky-target>
                     {%- render 'product-info-blocks',
                         product: section.settings.product,
                         section: section,
                         context: 'featured',
-                        container_class: 'p-6 pc:p-10'
+                        render_column: 'form',
+                        container_class: 'px-6 py-4 pc:px-10 pc:py-6'
                     -%}
                 </div>
             </div>
@@ -44,104 +61,14 @@
 {%- javascript -%}
     (function () {
         const Components = window.__Theme__?.Components;
-        if (!Components) return;
-
-        function constrainDescription(el) {
-            const mediaPanel = el.querySelector('[data-product-media-panel]');
-            const infoBlocks = el.querySelector('[data-product-info-panel] .product-info-blocks');
-            const descriptionBlock = infoBlocks?.querySelector(
-                '.product-info-blocks__description-block',
-            );
-            const description = descriptionBlock?.querySelector(
-                '.product-info-blocks__description',
-            );
-            if (!mediaPanel || !infoBlocks || !descriptionBlock || !description) return {};
-
-            const desktopQuery = window.matchMedia('(min-width: 48rem)');
-            let frame = 0;
-
-            const reset = () => {
-                infoBlocks.style.removeProperty('max-height');
-                descriptionBlock.style.removeProperty('max-height');
-                description.style.removeProperty('max-height');
-            };
-
-            const sync = () => {
-                if (frame) cancelAnimationFrame(frame);
-                frame = requestAnimationFrame(() => {
-                    frame = 0;
-
-                    if (!desktopQuery.matches) {
-                        reset();
-                        return;
-                    }
-
-                    const mediaHeight = mediaPanel.getBoundingClientRect().height;
-                    if (mediaHeight <= 0) {
-                        reset();
-                        return;
-                    }
-
-                    const rootStyles = window.getComputedStyle(document.documentElement);
-                    const headerHeight =
-                        parseFloat(rootStyles.getPropertyValue('--header-height')) || 0;
-                    const announcementHeight =
-                        parseFloat(rootStyles.getPropertyValue('--announcement-bar-height')) || 0;
-                    const viewportHeight = window.visualViewport?.height || window.innerHeight;
-                    const maxReferenceHeight = Math.max(
-                        360,
-                        viewportHeight - headerHeight - announcementHeight,
-                    );
-                    const referenceHeight = Math.min(mediaHeight, maxReferenceHeight);
-
-                    const styles = window.getComputedStyle(infoBlocks);
-                    const gap = parseFloat(styles.rowGap || styles.gap) || 0;
-                    const paddingY =
-                        (parseFloat(styles.paddingTop) || 0) +
-                        (parseFloat(styles.paddingBottom) || 0);
-                    const children = Array.from(infoBlocks.children).filter(
-                        (child) => child instanceof HTMLElement,
-                    );
-                    const otherBlocksHeight = children.reduce((total, child) => {
-                        if (child === descriptionBlock) return total;
-                        return total + child.getBoundingClientRect().height;
-                    }, 0);
-                    const gapsHeight = gap * Math.max(children.length - 1, 0);
-                    const available = Math.max(
-                        0,
-                        referenceHeight - paddingY - gapsHeight - otherBlocksHeight,
-                    );
-
-                    descriptionBlock.style.maxHeight = `${Math.floor(available)}px`;
-                    description.style.maxHeight = `${Math.floor(available)}px`;
-                });
-            };
-
-            const resizeObserver = new ResizeObserver(sync);
-            resizeObserver.observe(mediaPanel);
-            Array.from(infoBlocks.children).forEach((child) => resizeObserver.observe(child));
-
-            window.addEventListener('resize', sync);
-            desktopQuery.addEventListener('change', sync);
-            sync();
-
-            return {
-                description,
-                descriptionBlock,
-                desktopQuery,
-                frame,
-                infoBlocks,
-                reset,
-                resizeObserver,
-                sync,
-            };
-        }
+        const Utils = window.__Theme__?.Utils;
+        if (!Components || !Utils?.setupProductLayout) return;
 
         Components.register(
             'featured-product',
             {
                 init(el) {
-                    return constrainDescription(el);
+                    return Utils.setupProductLayout(el);
                 },
 
                 destroy(el, state) {
@@ -188,16 +115,27 @@
             "default": "left"
         },
         {
+            "type": "range",
+            "id": "desktop_media_width",
+            "min": 40,
+            "max": 60,
+            "step": 1,
+            "unit": "%",
+            "label": "Desktop media width",
+            "default": 60
+        },
+        {
             "type": "select",
             "id": "thumbnail_visible_count",
-            "label": "Visible thumbnails",
+            "label": "Bottom visible thumbnails",
             "options": [
                 { "value": "3", "label": "3" },
                 { "value": "4", "label": "4" },
                 { "value": "5", "label": "5" },
                 { "value": "6", "label": "6" }
             ],
-            "default": "4"
+            "default": "4",
+            "info": "Applies when thumbnail position is bottom."
         },
         {
             "type": "header",
@@ -226,8 +164,16 @@
     ],
     "blocks": [
         {
+            "type": "@app"
+        },
+        {
             "type": "title",
             "name": "Title",
+            "limit": 1
+        },
+        {
+            "type": "vendor",
+            "name": "Vendor",
             "limit": 1
         },
         {
@@ -286,6 +232,17 @@
                     "default": true
                 }
             ]
+        },
+        {
+            "type": "custom_liquid",
+            "name": "Custom liquid",
+            "settings": [
+                {
+                    "type": "liquid",
+                    "id": "custom_liquid",
+                    "label": "Custom liquid"
+                }
+            ]
         }
     ],
     "presets": [
@@ -293,6 +250,7 @@
             "name": "Featured Product",
             "settings": {},
             "blocks": [
+                { "type": "vendor" },
                 { "type": "title" },
                 { "type": "price" },
                 { "type": "description" },

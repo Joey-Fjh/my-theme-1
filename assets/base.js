@@ -498,11 +498,13 @@
                             Comps.COLLECTIONFILTERFIELD,
                             Comps.collectionFilterField,
                         );
+                        Factory.register?.(Comps.PROGRESSIVELIST, Comps.progressiveList);
                         Factory.register?.(Comps.PRODUCTGALLERY, Comps.productGallery);
                         Factory.register?.(Comps.PRODUCTPRICE, Comps.ProductPrice);
                         Factory.register?.(Comps.VARIANTPICKER, Comps.VariantPicker);
                         Factory.register?.(Comps.QUANTITYSELECTOR, Comps.QuantitySelector);
                         Factory.register?.(Comps.BUYBUTTONS, Comps.BuyButtons);
+                        Factory.register?.(Comps.PICKUPAVAILABILITY, Comps.PickupAvailability);
                         Factory.register?.(Comps.PREDICTIVESEARCH, Comps.predictiveSearch);
                         Factory.register?.(Comps.RELATEDPRODUCTS, Comps.relatedProducts);
                         Factory.register?.(Comps.NEWSLETTEROVERLAY, Comps.newsletterOverlay);

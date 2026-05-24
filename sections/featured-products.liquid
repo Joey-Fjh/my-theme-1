@@ -110,7 +110,9 @@
                                                 product: product,
                                                 pc_items: section.settings.pc_items,
                                                 mobile_items: section.settings.mobile_items,
-                                                class: 'h-full'
+                                                class: 'h-full',
+                                                scope_id: section.id,
+                                                color_scheme: section.settings.color_scheme
                                             -%}
                                         {%- if use_slider -%}
                                             </div>
@@ -161,11 +163,16 @@
             tab_content: tab_content
         %}
 
+        {%- liquid
+            assign featured_products_image_sizes = '(min-width: 48rem) min(100vw, ' | append: settings.page_width | append: 'px), 100vw'
+            assign featured_products_image_widths = '480,768,1024,1280,1536,1920,2560'
+        -%}
         {%- render 'image',
             image: section.settings.image,
             alt: section.settings.image.alt,
             width: section.settings.image.width,
-            sizes: '(min-width: 48rem) 28rem, 18rem',
+            sizes: featured_products_image_sizes,
+            widths: featured_products_image_widths,
             loading: 'lazy',
             placeholder_aspect_ratio: '16/5'
         -%}

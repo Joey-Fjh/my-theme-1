@@ -14,24 +14,26 @@
 >
     <div
         class="layout container-page mx-auto pb-8"
-        style="--comparison-table-min-width: {{ section.settings.products.size | times: 192 | plus: 160 }}px;"
+        style="
+            --comparison-table-width-mobile: {{ section.settings.products.size | times: 140 | plus: 116 }}px;
+            --comparison-table-width-pc: {{ section.settings.products.size | times: 280 | plus: 156 }}px;
+        "
     >
         {% if section.settings.heading != blank %}
-            <h2 class="mb-8 text-center text-theme-text pc:mb-10">
+            <h2 class="mb-10 text-center h1 font-bold text-theme-text pc:mb-16">
                 {{ section.settings.heading }}
             </h2>
         {% endif %}
         {% if section.settings.products != blank and section.blocks.size > 0 %}
             <div
-                class="comparison-table-scroll overflow-x-auto rounded border border-theme-border-soft"
+                class="comparison-table-scroll overflow-x-auto"
                 aria-label="Scroll to compare more products"
                 data-comparison-scroll
             >
                 <table
-                    class="comparison-table w-full border-collapse text-left"
+                    class="comparison-table table-fixed border-collapse text-left"
                     role="grid"
                     aria-label="Product comparison"
-                    style="min-width: var(--comparison-table-min-width);"
                 >
                     <tbody>
                         {% for block in section.blocks %}
@@ -41,10 +43,11 @@
                                     scope="row"
                                     class="
                                         comparison-table__sticky-col
+                                        comparison-table__row-header
                                         sticky left-0 z-10
-                                        w-auto border border-theme-border-soft bg-theme-bg
-                                        px-4 py-4 align-middle body-md leading-snug font-medium whitespace-nowrap text-theme-text/70 shadow-[2px_0_6px_-2px_rgba(0,0,0,0.06)]
-                                        pc:px-5 pc:py-5
+                                        border border-theme-border-soft bg-theme-bg
+                                        px-4 py-5 align-middle body-md leading-snug font-medium whitespace-normal text-theme-text/70 shadow-[2px_0_6px_-2px_rgba(0,0,0,0.06)]
+                                        pc:px-6 pc:py-7
                                     "
                                 >
                                     {% case block.type %}
@@ -73,7 +76,8 @@
                                     {% endif %}
                                     <td
                                         class="
-                                            min-w-48 border border-theme-border-soft p-3 align-middle pc:min-w-52 pc:p-4
+                                            comparison-table__product-cell
+                                            border border-theme-border-soft p-3 align-middle pc:p-6
                                             {% if is_highlight %}bg-(--comparison-column-bg-color){% else %}bg-transparent{% endif %}
                                         "
                                     >
@@ -83,19 +87,21 @@
                                                     href="{{ item.url }}"
                                                     class="comparison-table-product-link flex w-full cursor-pointer flex-col items-center text-inherit no-underline"
                                                 >
-                                                    <div class="mb-4 aspect-3/4 w-full overflow-hidden rounded bg-theme-bg">
-                                                        {%-
-                                                            render 'image',
-                                                            image: item.featured_image,
-                                                            width: 500,
-                                                            aspect_ratio: '3/4',
-                                                            wrapper: 'div',
-                                                            class: 'w-full h-full',
-                                                            img_class: 'image_img w-full h-full object-cover object-center',
-                                                            alt: item.featured_image.alt | default: item.title
-                                                        -%}
+                                                    <div class="mb-4 flex h-44 w-full items-center justify-center pc:mb-6 pc:h-[260px]">
+                                                        <div class="h-full w-full max-w-[76%] pc:max-w-[74%]">
+                                                            {%-
+                                                                render 'image',
+                                                                image: item.featured_image,
+                                                                width: 360,
+                                                                aspect_ratio: '3/4',
+                                                                wrapper: 'div',
+                                                                class: 'w-full h-full',
+                                                                img_class: 'image_img w-full h-full object-contain object-center',
+                                                                alt: item.featured_image.alt | default: item.title
+                                                            -%}
+                                                        </div>
                                                     </div>
-                                                    <span class="text-center h5 font-bold text-theme-text">
+                                                    <span class="block w-full text-center body-md font-semibold text-theme-text">
                                                         {{- item.title -}}
                                                     </span>
                                                 </a>
@@ -115,14 +121,14 @@
                                                 </div>
 
                                             {% when 'rating' %}
-                                                <div class="inline-flex items-baseline gap-2">
+                                                <div class="comparison-table__rating inline-flex items-center gap-1 whitespace-nowrap">
                                                     {%- render 'starts',
                                                         rating: 4.5,
                                                         max: 5,
                                                         size: 'lg',
-                                                        wrapper_class: 'mb-0 inline-flex items-baseline'
+                                                        wrapper_class: 'mb-0 inline-flex items-center flex-none comparison-table__rating-stars'
                                                     -%}
-                                                    <span class="body-md leading-none text-theme-text/70"
+                                                    <span class="comparison-table__rating-value shrink-0 body-md text-theme-text/70"
                                                         >4.5</span
                                                     >
                                                 </div>
@@ -290,6 +296,74 @@
 
 {% stylesheet %}
     .product-comparison-table-section {
+        .comparison-table {
+            width: var(--comparison-table-width-mobile);
+            min-width: var(--comparison-table-width-mobile);
+        }
+        .comparison-table__row-header {
+            width: 116px;
+            min-width: 116px;
+            max-width: 116px;
+        }
+        .comparison-table__product-cell {
+            width: 140px;
+            min-width: 140px;
+            max-width: 140px;
+            overflow-wrap: anywhere;
+        }
+        .comparison-table-product-link {
+            min-width: 0;
+        }
+        .comparison-table tbody tr:first-child .comparison-table__row-header,
+        .comparison-table tbody tr:first-child .comparison-table__product-cell {
+            height: 250px;
+        }
+        .comparison-table__rating {
+            max-width: 100%;
+            line-height: 1;
+        }
+        .comparison-table__rating-stars {
+            gap: 0.2rem;
+            margin-bottom: 0;
+            line-height: 1;
+        }
+        .comparison-table__rating .stars__icon {
+            width: 1.35rem;
+            height: 1.35rem;
+        }
+        .comparison-table__rating-value {
+            line-height: 1;
+        }
+        @media (width >= 48rem) {
+            .comparison-table {
+                width: var(--comparison-table-width-pc);
+                min-width: var(--comparison-table-width-pc);
+            }
+            .comparison-table__row-header {
+                width: 156px;
+                min-width: 156px;
+                max-width: 156px;
+            }
+            .comparison-table__product-cell {
+                width: 280px;
+                min-width: 280px;
+                max-width: 280px;
+            }
+            .comparison-table tbody tr:first-child .comparison-table__row-header,
+            .comparison-table tbody tr:first-child .comparison-table__product-cell {
+                height: 360px;
+            }
+            .comparison-table__rating {
+                gap: 0.8rem;
+            }
+            .comparison-table__rating-stars {
+                gap: 0.35rem;
+            }
+            .comparison-table__rating .stars__icon {
+                width: 1.75rem;
+                height: 1.75rem;
+            }
+        }
         .comparison-table-scroll {
             scrollbar-width: thin;
             scrollbar-color: transparent transparent;
