@@ -43,7 +43,7 @@ AlpineComponentsFactory.register('canonicalToggle', function () {
                 if (event.key === 'Escape') this.open = false;
             };
 
-            this.addListener(window, 'keydown', onKeydown);
+            this.on(window, 'keydown', onKeydown);
         },
 
         toggle() {
@@ -51,7 +51,7 @@ AlpineComponentsFactory.register('canonicalToggle', function () {
         },
 
         dispose() {
-            this.disposeAll();
+            this.dispose();
         },
     };
 });

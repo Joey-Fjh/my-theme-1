@@ -14,8 +14,6 @@ For sub-skill details, see files in `skills/`.
 Use sibling documents only as supporting references:
 
 - `skills/code-review/pre-merge.md` -> review checklist
-- `skills/code-review/THEME_STORE_AUDIT_SUMMARY.md` -> current Theme Store audit snapshot
-- `skills/contracts/runtime-modules.md` -> runtime module contracts and extension boundaries
 - `skills/examples/` -> canonical implementation examples for agents
 
 If any supporting document conflicts with this file, `AGENTS.md` wins.
@@ -66,7 +64,7 @@ For new JavaScript and cleanup work, first check the canonical examples in `skil
 
 ### Runtime Integration Boundaries
 
-Use these boundaries when deciding whether a cleanup is required. `skills/contracts/runtime-modules.md` gives supporting module-level contracts, but `AGENTS.md` remains the source of truth if there is any conflict.
+Use these boundaries when deciding whether a cleanup is required. `AGENTS.md` remains the source of truth for runtime integration boundaries.
 
 #### Events
 
@@ -510,9 +508,179 @@ destroy(el, state) {
 
 ---
 
+## Motion Architecture
+
+Motion is a repository-wide architecture concern, not a CSS-only concern. Tailwind/CSS, Alpine, and GSAP are execution layers under one motion system. Agents MUST classify animation work before adding or refactoring motion code.
+
+### Motion Goals
+
+1. Preserve one semantic entry point for motion decisions.
+2. Keep animation reusable without forcing every animation into one technology.
+3. Make future global motion settings possible without scanning scattered duration/ease/transform values.
+4. Prevent Alpine, Tailwind/CSS, and GSAP from competing for the same element properties.
+
+### Motion Classification
+
+Before changing animation, classify it as one of:
+
+| Layer                   | Purpose                                            | Owner / Location                                                               |
+| ----------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------ |
+| **Capability**          | Low-level motion ability                           | `tailwind/tailwind.animates.css`                                               |
+| **State motion recipe** | Named open/close, show/hide, active/loading motion | Motion transition presets, exposed through `snippets/motion-transition.liquid` |
+| **Choreography recipe** | Named scroll, stagger, reveal, timeline motion     | `window.__Theme__.Motion` / GSAP presets                                       |
+| **Usage**               | When a specific component or section should move   | Liquid templates, Alpine components, or `Components.register()` lifecycle code |
+
+#### Capability Layer
+
+Capabilities are low-level CSS primitives. They answer "what can CSS do?" rather than "how should this UI pattern move?"
+
+Allowed in `tailwind/tailwind.animates.css`:
+
+- motion CSS variables and foundation tokens
+- `@keyframes`
+- animation utility classes
+- hover/focus micro-motion utilities
+- pause/running helpers
+- loader, spinner, and decorative loop utilities
+
+Capability utilities SHOULD use the `motion-*` naming namespace for new code.
+
+Existing non-`motion-*` utilities MAY remain as legacy aliases during migration, but new code SHOULD NOT introduce more non-`motion-*` animation utilities.
+
+#### State Motion Recipe Layer
+
+State motion recipes describe reusable UI state transitions. They answer "how should this UI pattern move when state changes?"
+
+Examples:
+
+- `fade`
+- `dropdown`
+- `modal`
+- `drawer-left`
+- `drawer-right`
+- `toast`
+- `accordion`
+- `loading`
+
+State motion recipes are consumed by Alpine/CSS state changes such as:
+
+- open / close
+- active / inactive
+- expanded / collapsed
+- loading / idle
+- visible / hidden
+
+Repeated Alpine `x-transition:*` attribute groups SHOULD be replaced with a named motion recipe. New reusable Alpine/CSS state motion MUST NOT duplicate raw duration/ease/opacity/transform groups in Liquid when an existing recipe covers the behavior.
+
+Preferred template usage:
+
+```liquid
+<div
+    x-show='open'
+    {% render 'motion-transition', preset: 'dropdown' %}
+></div>
+```
+
+`snippets/motion-transition.liquid` owns the mapping from preset name to Alpine `x-transition:*` attributes. `tailwind/tailwind.animates.css` owns the CSS classes used by those phase attributes.
+
+#### Choreography Recipe Layer
+
+Choreography recipes describe visual direction and page-level motion. They answer "how should this content be staged over time or scroll?"
+
+Use GSAP for:
+
+- scroll-triggered section reveal
+- staggered cards or list items
+- image reveal choreography
+- parallax
+- timeline sequences
+- hero or campaign-style motion
+- brand-level site motion
+
+Reusable GSAP motion SHOULD live under `window.__Theme__.Motion` once the motion runtime exists. Until then, local GSAP in a section is allowed when the animation is one-off.
+
+GSAP recipes MUST be initialized through `Components.register()` and cleaned up in `destroy()`. The component lifecycle owns when GSAP starts and stops; the motion recipe owns animation values.
+
+### Execution Layer Boundaries
+
+Use this decision tree:
+
+1. **Hover/focus, loader, decorative loop, pause/running state** -> CSS capability utility in `tailwind/tailwind.animates.css`.
+2. **Open/close, show/hide, active/inactive, loading visibility** -> Alpine/CSS state motion recipe.
+3. **Scroll, reveal, stagger, parallax, timeline, hero/brand motion** -> GSAP choreography recipe.
+4. **One-off complex section animation** -> local GSAP inside that section's `{%- javascript -%}` block, still using `Components.register()` and cleanup.
+5. **Repeated section animation or global motion language** -> shared GSAP recipe under `window.__Theme__.Motion`.
+
+### Token and Preset Rules
+
+Do not over-tokenize motion. Tokens are for shared foundation values, not every component detail.
+
+Foundation motion tokens MAY include:
+
+- duration: `fast`, `base`, `slow`
+- easing: `standard`, `enter`, `exit`, `linear`
+- distance: `sm`, `md`
+- scale: `subtle`, `pop`
+- stagger: `sm`, `md`
+
+A value SHOULD become a token only when it is reused across multiple recipes, consumed by both CSS and JS, or expected to be affected by global motion settings.
+
+Component-specific values SHOULD stay inside the named recipe until a real reuse pattern exists. Do not create tokens like `--motion-dropdown-y` or `--motion-toast-scale` unless they are intentionally part of the stable motion contract.
+
+### User Configuration Boundary
+
+Merchant-facing motion settings SHOULD control policy, not low-level implementation details.
+
+Allowed future global settings:
+
+- `motion_enabled`
+- `motion_speed`
+- `motion_intensity`
+- `micro_motion_enabled`
+- `scroll_motion_enabled`
+
+Do not expose low-level implementation values such as GSAP easing names, ScrollTrigger start/end positions, individual element offsets, per-element timeline delays, or raw stagger amounts.
+
+### Conflict Rules
+
+The same element MUST NOT be controlled by both Alpine transitions and GSAP for the same CSS properties.
+
+Avoid mixed ownership over:
+
+- `opacity`
+- `transform`
+- `height`
+- `display`
+- `visibility`
+
+If Alpine controls visibility or state, GSAP MAY animate descendants only when property ownership is clear. If GSAP controls reveal or scroll behavior, Alpine SHOULD NOT also apply `x-transition` to the same element.
+
+CSS animation utilities MUST NOT be used as the implementation mechanism for GSAP scroll reveals, stagger choreography, parallax, or timeline animation. GSAP recipes directly own their timing, transforms, opacity, stagger, and ScrollTrigger configuration.
+
+### Migration Rules
+
+Motion cleanup MUST be staged:
+
+1. Audit current motion usage before refactoring.
+2. Group findings as CSS capabilities, Alpine/state recipes, GSAP/choreography, and mixed-ownership risks.
+3. Create or reuse named state motion recipes before replacing repeated Alpine transition groups.
+4. Rename CSS animation utilities toward `motion-*` with legacy aliases when needed.
+5. Introduce shared GSAP recipes only after at least three real usages or when the animation is clearly part of the global motion language.
+6. Add merchant-facing global motion settings only after the relevant recipes and tokens exist.
+
+During cleanup, preserve visual behavior unless the task explicitly asks to redesign motion.
+
+### Reduced Motion
+
+Motion work SHOULD respect `prefers-reduced-motion` and any future global motion-disable policy.
+
+Do not make content access depend on animation completion. Reduced motion may shorten or disable transitions, but must not hide required content.
+
+---
+
 ## CSS Rules
 
-For new CSS and cleanup work, first check `skills/examples/canonical-css-layering.md` for the preferred layer choice patterns. The rules below remain authoritative.
+For new CSS and cleanup work, first check `skills/examples/canonical-css-layering.md` for the preferred layer choice patterns. The rules below remain authoritative. For animation and transition decisions, classify the work through `Motion Architecture` before applying CSS layer rules.
 
 ### Golden Rules
 
@@ -855,10 +1023,82 @@ See `skills/code-review/i18n-checklist.md` for:
 
 ## Accessibility
 
-1. All interactive elements (`<button>`, `<a>`, `<input>`) MUST have descriptive text. Icon-only controls need `aria-label` or `<span class="sr-only">`.
-2. Dynamic feedback (toasts, cart updates) MUST use `role="status"` and `aria-live="polite"`.
-3. Form inputs MUST be associated with labels.
-4. Modals, drawers, and popups should trap focus when open.
+Accessibility is a hard Theme Store requirement. Do not treat it as optional polish. Agents MUST make interactive behavior keyboard-operable, named, and understandable without adding unnecessary ARIA to static content.
+
+### Accessibility Principles
+
+1. Native interactive elements first.
+2. Keyboard access for every interactive feature.
+3. Visible focus for keyboard users.
+4. Accurate accessible names and state.
+5. Minimal ARIA: add ARIA only when it communicates name, state, role, or relationship that native HTML does not already provide.
+6. No content access should depend on animation, hover, pointer dragging, or mouse-only interaction.
+
+### Native Elements
+
+- Use `<button type="button">` for actions.
+- Use `<a href="...">` for navigation.
+- Use native form controls (`input`, `select`, `textarea`, `button`, `label`) when possible.
+- Do not use `div` or `span` as clickable controls. If legacy code has `@click` or `onclick` on a non-interactive element, convert it to `button` or `a` unless the element is truly not user-operable.
+- Do not add `role="button"` to a real `<button>`.
+- Do not add `tabindex="0"` to static layout or text just to make it focusable.
+
+### Keyboard Access
+
+All user-operable features MUST be usable with keyboard alone:
+
+- Buttons and links must be reachable with `Tab`.
+- Buttons must activate with Enter/Space through native behavior.
+- Dropdowns, drawers, modals, popups, lightboxes, search overlays, filter panels, tabs, accordions, carousels, image galleries, and comparison sliders must have keyboard paths.
+- Escape SHOULD close transient UI such as modals, drawers, popups, dropdowns, search overlays, and lightboxes.
+- Pointer-drag interactions need a keyboard alternative, such as buttons, a range input, or arrow-key support.
+
+### Focus Management
+
+- Keyboard focus MUST be visible via `:focus-visible` or an equivalent tokenized focus style.
+- Opening a modal, drawer, lightbox, or search overlay SHOULD move focus into the opened UI, usually to the close button, heading, or first actionable control.
+- Closing a modal, drawer, lightbox, or search overlay SHOULD return focus to the trigger that opened it when possible.
+- Hidden content MUST NOT contain reachable focusable elements. `x-show` is acceptable for hiding closed panels; avoid hiding focusable content only with opacity or off-screen transforms.
+- Do not use `aria-hidden="true"` on a container that contains focusable elements.
+
+### Accessible Names
+
+- All interactive elements MUST have an accessible name.
+- Icon-only controls MUST use a translated `aria-label` or an `.sr-only` text node.
+- If visible text already names a button or link, do not duplicate it with an unnecessary `aria-label`.
+- ARIA copy must use `| t`; schema-facing labels must use `t:`.
+
+### State And Relationships
+
+Add ARIA state only where it communicates real state or relationships:
+
+- Disclosure, accordion, dropdown trigger: `aria-expanded` and `aria-controls`.
+- Current page/link: `aria-current="page"` when applicable.
+- Tabs: `role="tablist"`, `role="tab"`, `role="tabpanel"`, `aria-selected`, and roving `tabindex` when using custom tabs.
+- Dialog/modal/lightbox: `role="dialog"`, `aria-modal="true"`, and `aria-labelledby` or `aria-label`.
+- Busy or loading regions: `aria-busy` when useful.
+- Dynamic feedback: `role="status"` and `aria-live="polite"` for non-critical updates; use assertive announcements sparingly.
+
+### Images, Icons, And Media
+
+- All rendered `<img>` elements MUST have an `alt` attribute.
+- Product and content images SHOULD use real alt text from Shopify image data when available.
+- Decorative images use `alt=""`.
+- Icons rendered through the icon snippet are decorative by default; the parent control supplies the accessible name.
+- Media controls MUST use native buttons/range inputs where possible.
+- Auto-playing or animated media must be pausable and must respect reduced motion where applicable.
+
+### Anti-Patterns
+
+| Bad                                                | Correct                                                            |
+| -------------------------------------------------- | ------------------------------------------------------------------ |
+| `<div @click="open = true">Open</div>`             | `<button type="button" @click="open = true">Open</button>`         |
+| Icon-only button without text or `aria-label`      | Button with translated `aria-label` or `.sr-only` text             |
+| Static text with `tabindex="0"`                    | Static text remains unfocusable                                    |
+| `aria-hidden="true"` around focusable controls     | Hide closed UI with `x-show`, `hidden`, or remove focusable access |
+| Custom drag-only control                           | Add buttons, range input, or keyboard arrow handling               |
+| `aria-label` duplicating visible button text       | Let visible text provide the accessible name                       |
+| Raw icon SVG used as a control without parent name | Render icon snippet inside a named button or link                  |
 
 ---
 
@@ -1014,7 +1254,8 @@ Before considering a task complete, verify all applicable items below.
 4. Cross-component communication uses `ThemeEvents`, while local component events remain lifecycle-scoped.
 5. Application HTTP requests use `window.ShopifyHttp`; raw `fetch()` appears only in allowed infrastructure/vendor files.
 6. Shopify section HTML refresh uses `window.ShopifySectionRefresher.render()`; local text/state/class updates use Alpine bindings or `updateText()`.
-7. Before extending any shared abstraction (base class, public utility, component used by 2+ sections), the three-question gate in `Abstraction Boundary Discipline` has been applied. Adding a new core-behavior-switching parameter to a public method is treated as a red flag, not as a routine change.
+7. Animation and transition changes have been classified through `Motion Architecture` as capability, state motion recipe, choreography recipe, or usage.
+8. Before extending any shared abstraction (base class, public utility, component used by 2+ sections), the three-question gate in `Abstraction Boundary Discipline` has been applied. Adding a new core-behavior-switching parameter to a public method is treated as a red flag, not as a routine change.
    If the abstraction was still extended, the changed invariants and the existing consumers checked against them have been explicitly listed.
 
 ### Product Page
@@ -1028,13 +1269,17 @@ Before considering a task complete, verify all applicable items below.
 1. Tailwind-first styling is preserved; no ad-hoc `<style>` blocks are introduced.
 2. New reusable CSS is placed in the correct Tailwind layer source file.
 3. Empty `{% stylesheet %}` blocks are removed during cleanup.
-4. If Tailwind source changed, run `npm run build:tw`.
-5. If SVG source changed, run `npm run build:svg`.
+4. Motion changes follow `Motion Architecture`; repeated Alpine transition groups use named recipes when available.
+5. If Tailwind source changed, run `npm run build:tw`.
+6. If SVG source changed, run `npm run build:svg`.
 
 ### Validation
 
 1. Update locales when new user-facing strings are introduced.
 2. Update README/docs when architecture, vendor, or build expectations change.
-3. Run `npm test` after meaningful theme changes.
-4. Keep the diff scoped to the task; avoid unrelated churn.
-5. For cleanup tasks, report the rule family cleaned and any remaining staged follow-up.
+3. Run `npm run lint` after meaningful theme changes.
+4. Run `npm test` after meaningful theme changes.
+5. Run `npm run build:tw` when Tailwind source changed, then verify `assets/tailwind.output.css` is the only expected generated CSS output.
+6. Run `npm run build:svg` when files in `icons/` changed, then verify generated `assets/icon-*.svg` output before using the icon snippet.
+7. Keep the diff scoped to the task; avoid unrelated churn.
+8. For cleanup tasks, report the rule family cleaned and any remaining staged follow-up.

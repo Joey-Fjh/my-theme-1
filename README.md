@@ -34,8 +34,7 @@ npm test           # shopify theme check
 
 ## Documentation
 
-| Document                                                                                           | Purpose                                                 |
-| -------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
-| [AGENTS.md](AGENTS.md)                                                                             | Canonical repository rules and architecture constraints |
-| [skills/code-review/pre-merge.md](skills/code-review/pre-merge.md)                                 | Review checklist aligned to `AGENTS.md`                 |
-| [skills/code-review/THEME_STORE_AUDIT_SUMMARY.md](skills/code-review/THEME_STORE_AUDIT_SUMMARY.md) | Current Theme Store implementation status               |
+| Document                                                           | Purpose                                                 |
+| ------------------------------------------------------------------ | ------------------------------------------------------- |
+| [AGENTS.md](AGENTS.md)                                             | Canonical repository rules and architecture constraints |
+| [skills/code-review/pre-merge.md](skills/code-review/pre-merge.md) | Review checklist aligned to `AGENTS.md`                 |
