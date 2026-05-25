@@ -779,11 +779,13 @@ icons/*.svg (temporary or persistent build inputs)  ->  npm run build:svg
 
 ### Mandatory Rules
 
-1. Theme-authored user-visible text MUST use `| t` filter
-2. Translation keys defined in `locales/en.default.json`
-3. Other languages translated via Theme Editor (Edit languages)
-4. Schema defaults MUST be translated
-5. Aria labels MUST be translated
+1. All user-visible text (page content, buttons, placeholders, error messages, ARIA copy, Theme Editor setting names, etc.) MUST use `| t` or `t:` — no hardcoded strings.
+2. Translation keys MUST follow `category.group.description` three-layer structure, use snake_case, and live in `locales/en.default.json` (storefront content) or `locales/en.default.schema.json` (editor schema copy).
+3. All user-visible fields in `{% schema %}` (`name`, `label`, `info`, `options[].label`, `presets[].name`, and `default` values displayed on the storefront) MUST use `t:` — no direct English.
+4. Global settings in `config/settings_schema.json` MUST also use `t:` references to translation keys in `en.default.schema.json`.
+5. All ARIA-related copy (e.g., `aria-label`, assistive text) MUST use a `| t` key.
+6. Dynamic content MUST use t filter parameter interpolation — no string concatenation to build complete sentences.
+7. English copy uses sentence case for consistent style.
 
 Merchant-provided content such as `section.settings.*`, `block.settings.*`, resource titles, product content, article content, page content, and metafields MAY render directly. The schema names, labels, info text, and defaults that introduce those settings still need translation keys.
 
@@ -822,6 +824,23 @@ Reference Shopify official classification:
 {%- comment -%} WRONG: Hardcoded text {%- endcomment -%}
 <h1>Cart</h1>
 <button aria-label='Close'>x</button>
+```
+
+Schema settings:
+
+```json
+// CORRECT: Use t: prefix
+{
+    "name": "t:general.typography",
+    "label": "t:labels.page_width",
+    "info": "t:labels.page_width_info"
+}
+
+// WRONG: Hardcoded English
+{
+    "name": "Typography",
+    "label": "Page width"
+}
 ```
 
 ### Detailed Reference
