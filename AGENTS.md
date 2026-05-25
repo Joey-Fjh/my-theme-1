@@ -348,19 +348,15 @@ throttledFn.dispose(); // cleanup
 // Debounce
 const debouncedFn = Utils.debounce(callback, 500);
 debouncedFn.dispose(); // cleanup
-
-// Product layout (sticky sidebar)
-const layout = Utils.setupProductLayout(el);
 ```
 
 #### Available Utils
 
-| Function                 | Purpose                    | Usage                            |
-| ------------------------ | -------------------------- | -------------------------------- |
-| `rafThrottle(fn)`        | RAF-based throttle         | Scroll handlers, resize handlers |
-| `throttle(fn, delay)`    | Time-based throttle        | Event handlers                   |
-| `debounce(fn, wait)`     | Debounce                   | Search input, resize handlers    |
-| `setupProductLayout(el)` | Product page sticky layout | Product page components          |
+| Function              | Purpose             | Usage                            |
+| --------------------- | ------------------- | -------------------------------- |
+| `rafThrottle(fn)`     | RAF-based throttle  | Scroll handlers, resize handlers |
+| `throttle(fn, delay)` | Time-based throttle | Event handlers                   |
+| `debounce(fn, wait)`  | Debounce            | Search input, resize handlers    |
 
 #### Utils Usage Rules
 
@@ -375,7 +371,7 @@ const layout = Utils.setupProductLayout(el);
 | File                   | Type        | Purpose                                         |
 | ---------------------- | ----------- | ----------------------------------------------- |
 | `vendor-*.min.js`      | Third-party | **DO NOT EDIT**                                 |
-| `utils.js`             | Custom      | Utility functions (throttle, debounce, layout)  |
+| `utils.js`             | Custom      | Utility functions (throttle, debounce)          |
 | `events.js`            | Custom      | Event bus system (`ThemeEvents`)                |
 | `alpine.components.js` | Custom      | Alpine component definitions                    |
 | `performance.js`       | Custom      | Debug CWV monitoring                            |
@@ -388,7 +384,7 @@ const layout = Utils.setupProductLayout(el);
 **1. `utils.js` — Utility Functions**
 
 - **Namespace**: `window.__Theme__.Utils`
-- **Functions**: `rafThrottle(fn)`, `throttle(fn, delay)`, `debounce(fn, wait)`, `setupProductLayout(el)`
+- **Functions**: `rafThrottle(fn)`, `throttle(fn, delay)`, `debounce(fn, wait)`
 - **Usage**: See "Utils Pattern" section above
 
 **2. `events.js` — Event Bus System**
@@ -524,7 +520,7 @@ For new CSS and cleanup work, first check `skills/examples/canonical-css-layerin
 2. Use `{% stylesheet %}` only for styles Tailwind cannot express.
 3. Reusable patterns go in the appropriate CSS layer file, not inline.
 4. NEVER use Tailwind text sizes (`text-lg`, `text-4xl`) for headings -- use `hxxxl`--`h6`.
-5. NEVER use responsive prefixes for heading font sizes -- scaling is handled by CSS variables.
+5. NEVER use responsive prefixes to override a heading tier's built-in font size (e.g., `h1 pc:text-[3.5rem]`). Each heading tier has built-in responsive scaling. You MAY use responsive prefixes to switch between heading tiers when the design calls for a different heading rank on different viewports (e.g., `h2 pc:h1`).
 
 ### CSS Cleanup Decision Tree
 

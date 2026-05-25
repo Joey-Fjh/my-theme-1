@@ -300,6 +300,7 @@
         static PRODUCTCARD = 'productCard';
         static IMAGELIGHTBOX = 'imageLightbox';
         static IMAGEMAGNIFIER = 'imageMagnifier';
+        static PRODUCTLAYOUT = 'productLayout';
 
         static dropdown() {
             const ThemeEvents = window.__Theme__.Events;
@@ -2925,6 +2926,177 @@
 
                 destroy() {
                     if (this._frame) cancelAnimationFrame(this._frame);
+                    this.dispose();
+                },
+            };
+        }
+
+        static productLayout() {
+            return {
+                ...AlpineComponentsFactory.useDisposable(),
+                stickySide: 'none',
+                _resizeObserver: null,
+                _frame: 0,
+                _desktopQuery: null,
+                _mediaTarget: null,
+                _infoTarget: null,
+                _infoBlocks: null,
+                _descriptionBlock: null,
+                _description: null,
+
+                init() {
+                    const el = this.$el;
+                    this._mediaTarget = el.querySelector('[data-product-media-sticky-target]');
+                    this._infoTarget = el.querySelector('[data-product-info-sticky-target]');
+                    this._infoBlocks = el.querySelector(
+                        '[data-product-info-panel] .product-info-blocks',
+                    );
+                    this._descriptionBlock = this._infoBlocks?.querySelector(
+                        '.product-info-blocks__description-block',
+                    );
+                    this._description = this._descriptionBlock?.querySelector(
+                        '.product-info-blocks__description',
+                    );
+
+                    if (!this._mediaTarget || !this._infoTarget) return;
+
+                    this._desktopQuery = window.matchMedia('(min-width: 48rem)');
+
+                    this._resizeObserver = new ResizeObserver(() => this._sync());
+                    this._resizeObserver.observe(this._mediaTarget);
+                    this._resizeObserver.observe(this._infoTarget);
+                    if (this._infoBlocks) {
+                        Array.from(this._infoBlocks.children).forEach((child) =>
+                            this._resizeObserver.observe(child),
+                        );
+                    }
+
+                    this.on(window, 'resize', () => this._sync());
+                    this.on(this._desktopQuery, 'change', () => this._sync());
+                    this._sync();
+                },
+
+                _getViewportHeight() {
+                    return window.visualViewport?.height || window.innerHeight;
+                },
+
+                _clearSticky(target) {
+                    if (!target) return;
+                    target.style.removeProperty('position');
+                    target.style.removeProperty('top');
+                    target.style.removeProperty('transition');
+                    target.style.removeProperty('align-self');
+                },
+
+                _applySticky(target) {
+                    if (!target) return;
+                    target.style.position = 'sticky';
+                    target.style.top = 'var(--product-sticky-top, 0px)';
+                    target.style.transition = 'top 120ms ease-out';
+                    target.style.alignSelf = 'start';
+                },
+
+                _setStickyOffset() {
+                    this.$el.style.setProperty('--product-sticky-top', '0px');
+                },
+
+                _resetDescription() {
+                    this._infoBlocks?.style.removeProperty('max-height');
+                    this._descriptionBlock?.style.removeProperty('max-height');
+                    this._description?.style.removeProperty('max-height');
+                },
+
+                _resetSticky() {
+                    this._clearSticky(this._mediaTarget);
+                    this._clearSticky(this._infoTarget);
+                    this.stickySide = 'none';
+                },
+
+                _reset() {
+                    this._resetSticky();
+                    this._resetDescription();
+                },
+
+                _sync() {
+                    if (this._frame) cancelAnimationFrame(this._frame);
+                    this._frame = requestAnimationFrame(() => {
+                        this._frame = 0;
+                        this._setStickyOffset();
+
+                        if (!this._desktopQuery.matches) {
+                            this._reset();
+                            return;
+                        }
+
+                        const el = this.$el;
+                        const mediaPanel = el.querySelector('[data-product-media-panel]');
+                        const mediaHeight = this._mediaTarget.getBoundingClientRect().height;
+                        const infoHeight = this._infoTarget.getBoundingClientRect().height;
+                        if (mediaHeight <= 0) {
+                            this._reset();
+                            return;
+                        }
+
+                        const availableViewport = Math.max(0, this._getViewportHeight());
+                        const heightTolerance = 24;
+                        const nextStickySide =
+                            mediaHeight + heightTolerance < infoHeight ? 'media' : 'info';
+                        const stickyTarget =
+                            nextStickySide === 'media' ? this._mediaTarget : this._infoTarget;
+                        const stickyHeight = nextStickySide === 'media' ? mediaHeight : infoHeight;
+
+                        this._clearSticky(this._mediaTarget);
+                        this._clearSticky(this._infoTarget);
+
+                        if (stickyHeight <= availableViewport) {
+                            this._applySticky(stickyTarget);
+                            this.stickySide = nextStickySide;
+                        } else {
+                            this.stickySide = 'none';
+                        }
+
+                        if (
+                            mediaPanel &&
+                            this._infoBlocks &&
+                            this._descriptionBlock &&
+                            this._description
+                        ) {
+                            const maxReferenceHeight = Math.max(360, availableViewport);
+                            const referenceHeight = Math.min(
+                                mediaPanel.getBoundingClientRect().height,
+                                maxReferenceHeight,
+                            );
+
+                            const styles = window.getComputedStyle(this._infoBlocks);
+                            const gap = parseFloat(styles.rowGap || styles.gap) || 0;
+                            const paddingY =
+                                (parseFloat(styles.paddingTop) || 0) +
+                                (parseFloat(styles.paddingBottom) || 0);
+                            const children = Array.from(this._infoBlocks.children).filter(
+                                (child) => child instanceof HTMLElement,
+                            );
+                            const otherBlocksHeight = children.reduce((total, child) => {
+                                if (child === this._descriptionBlock) return total;
+                                return total + child.getBoundingClientRect().height;
+                            }, 0);
+                            const gapsHeight = gap * Math.max(children.length - 1, 0);
+                            const available = Math.max(
+                                0,
+                                referenceHeight - paddingY - gapsHeight - otherBlocksHeight,
+                            );
+
+                            this._descriptionBlock.style.maxHeight = `${Math.floor(available)}px`;
+                            this._description.style.maxHeight = `${Math.floor(available)}px`;
+                        } else {
+                            this._resetDescription();
+                        }
+                    });
+                },
+
+                destroy() {
+                    if (this._frame) cancelAnimationFrame(this._frame);
+                    if (this._resizeObserver) this._resizeObserver.disconnect();
+                    this._reset();
                     this.dispose();
                 },
             };

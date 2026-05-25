@@ -27,6 +27,7 @@
     data-component-kind="section"
     data-component-type="product"
     data-component-id="{{ section.id }}"
+    x-data="productLayout"
 >
     <div class="layout container-page overflow-visible!">
         <div
@@ -87,32 +88,6 @@
         </div>
     </div>
 </div>
-
-{%- javascript -%}
-    (function () {
-        const Components = window.__Theme__?.Components;
-        const Utils = window.__Theme__?.Utils;
-        if (!Components || !Utils?.setupProductLayout) return;
-
-        Components.register(
-            'product',
-            {
-                init(el) {
-                    return Utils.setupProductLayout(el);
-                },
-
-                destroy(el, state) {
-                    if (state?.frame) cancelAnimationFrame(state.frame);
-                    state?.resizeObserver?.disconnect?.();
-                    window.removeEventListener('resize', state?.sync);
-                    state?.desktopQuery?.removeEventListener?.('change', state?.sync);
-                    state?.reset?.();
-                },
-            },
-            { lazy: true },
-        );
-    })();
-{%- endjavascript -%}
 
 {% schema %}
 {

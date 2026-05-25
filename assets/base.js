@@ -513,6 +513,7 @@
                         Factory.register?.(Comps.PRODUCTCARD, Comps.productCard);
                         Factory.register?.(Comps.IMAGELIGHTBOX, Comps.imageLightbox);
                         Factory.register?.(Comps.IMAGEMAGNIFIER, Comps.imageMagnifier);
+                        Factory.register?.(Comps.PRODUCTLAYOUT, Comps.productLayout);
                     }
                 },
                 { once: true },
