@@ -33,7 +33,7 @@
 -%}
 {%- assign drawer_panel_classes = drawer_panel_class | default: '' -%}
 {%- assign dialog_show_close_button = show_close_button | default: false -%}
-{%- assign dialog_close_label = close_label | default: 'Close dialog' -%}
+{%- assign dialog_close_label = close_label | default: 'accessibility.close_dialog' | t -%}
 
 {%- liquid
     assign modal_panel_classes = 'ui-dialog-modal-panel ui-dialog-modal-width-default ui-dialog-modal-height-default ' | append: modal_panel_classes | strip
@@ -73,6 +73,8 @@
     x-cloak
     class="fixed inset-0 z-100 {{ root_classes }}"
     @keydown.escape.window="$store.dialog.close()"
+    data-dialog-root
+    data-dialog-id="{{ id | escape }}"
 >
     {%- if dialog_show_overlay -%}
         <div
@@ -103,6 +105,8 @@
             role="dialog"
             aria-modal="true"
             aria-labelledby="dialog-title-{{ id | escape }}"
+            data-dialog-panel
+            tabindex="-1"
             @click.stop
         >
             <div
@@ -129,6 +133,8 @@
             role="dialog"
             aria-modal="true"
             aria-labelledby="dialog-title-{{ id | escape }}"
+            data-dialog-panel
+            tabindex="-1"
         >
             <div
                 class="{{ modal_panel_classes }}{% if color_scheme != blank %} {{ color_scope_class }}{% endif %}"

@@ -193,7 +193,8 @@
                     const ds = this.$el?.dataset;
                     if (!ds) return;
                     if (ds.tabInitialStrategy) this._initialStrategy = ds.tabInitialStrategy;
-                    if (ds.tabScrollMode) this.scrollMode = ds.tabScrollMode === 'always' ? 'always' : 'mobile';
+                    if (ds.tabScrollMode)
+                        this.scrollMode = ds.tabScrollMode === 'always' ? 'always' : 'mobile';
                 },
 
                 init() {
@@ -214,7 +215,8 @@
                             this.on(window, 'resize', this.onResize.bind(this));
                         }
 
-                        const nextIndex = this._initialStrategy === 'first' ? 0 : Math.floor(count / 2);
+                        const nextIndex =
+                            this._initialStrategy === 'first' ? 0 : Math.floor(count / 2);
                         this.setActive(nextIndex, { centerOnMobile: true, behavior: 'auto' });
                     });
                 },

@@ -73,6 +73,7 @@
 
 <template x-teleport="body">
     <div
+        x-ref="lightboxDialog"
         x-show="lightboxOpen"
         x-cloak
         x-transition:enter="transition ease-out duration-300"
@@ -86,6 +87,7 @@
         role="dialog"
         aria-modal="true"
         aria-label="{{ 'accessibility.image_zoom' | t }}"
+        tabindex="-1"
     >
         <div
             class="pointer-events-none absolute inset-0"
@@ -95,6 +97,7 @@
 
         <button
             type="button"
+            x-ref="closeButton"
             @click="closeLightbox()"
             class="absolute top-4 right-4 z-10140 flex h-10 w-10 rotate-45 cursor-pointer items-center justify-center text-white/80 transition-colors hover:text-white"
             aria-label="{{ 'accessibility.close_zoom' | t }}"
@@ -109,14 +112,12 @@
                 class="absolute left-4 z-10140 flex h-10 w-10 cursor-pointer items-center justify-center text-white/80 transition-colors hover:text-white"
                 aria-label="{{ 'accessibility.previous_image' | t }}"
             >
-                <svg
-                    class="h-6 w-6 rotate-90"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                    aria-hidden="true"
-                >
-                    <path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z"/>
-                </svg>
+                {% render 'icons',
+                    icon: 'icon-arrow',
+                    size: 'lg',
+                    class: 'rotate-90',
+                    color: 'current'
+                %}
             </button>
             <button
                 type="button"
@@ -124,14 +125,12 @@
                 class="absolute right-4 z-10140 flex h-10 w-10 cursor-pointer items-center justify-center text-white/80 transition-colors hover:text-white"
                 aria-label="{{ 'accessibility.next_image' | t }}"
             >
-                <svg
-                    class="h-6 w-6 -rotate-90"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                    aria-hidden="true"
-                >
-                    <path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z"/>
-                </svg>
+                {% render 'icons',
+                    icon: 'icon-arrow',
+                    size: 'lg',
+                    class: '-rotate-90',
+                    color: 'current'
+                %}
             </button>
         {%- endif -%}
 

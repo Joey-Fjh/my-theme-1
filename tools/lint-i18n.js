@@ -16,7 +16,7 @@ const LIQUID_GLOBS = ['layout/**/*.liquid', 'sections/**/*.liquid', 'snippets/**
 const SCHEMA_GLOBS = ['sections/**/*.liquid', 'blocks/**/*.liquid', 'config/settings_schema.json'];
 const LOCALE_GLOBS = ['locales/**/*.json'];
 
-const USER_VISIBLE_ATTRIBUTES = ['aria-label', 'alt', 'placeholder', 'title', 'label'];
+const USER_VISIBLE_ATTRIBUTES = ['aria-label', 'alt', 'placeholder', 'title'];
 
 const ENGLISH_TEXT_RE = /\b[A-Za-z][A-Za-z0-9'.,:;!?&()[\]\/+\-\s]{2,}\b/;
 const TRANSLATION_FILTER_RE = /['"]([a-z0-9_.-]+)['"]\s*\|\s*t\b/g;
@@ -332,6 +332,58 @@ function walkSchemaNode(node, onProperty, parentProperties) {
     }
 }
 
+/**
+ * Returns line ranges [startLine, endLine] (1-indexed, inclusive) for Liquid
+ * blocks whose content is not storefront-visible: comment, schema, javascript,
+ * and stylesheet blocks.  Both `{% tag %}` and `{%- tag -%}` forms are matched.
+ */
+function getNonVisibleBlockRanges(text) {
+    const ranges = [];
+    const blockRe =
+        /\{%-?\s*(comment|schema|javascript|stylesheet)\s*-?%\}([\s\S]*?)\{%-?\s*end\1\s*-?%\}/g;
+
+    for (const match of text.matchAll(blockRe)) {
+        const contentStart = match.index + match[0].indexOf(match[2]);
+        const contentEnd = contentStart + match[2].length;
+        ranges.push([toPos(text, contentStart), toPos(text, contentEnd)]);
+    }
+
+    return ranges;
+}
+
+function isInsideNonVisibleBlock(line, ranges) {
+    for (const [start, end] of ranges) {
+        if (line >= start && line <= end) return true;
+    }
+    return false;
+}
+
+/**
+ * Returns offset ranges [start, end) for Liquid tags only:
+ * {% ... %} and {%- ... -%}.
+ * Liquid output {{ ... }} / {{- ... -}} is intentionally excluded so that
+ * hardcoded fallback text inside default filters is still flagged.
+ */
+function getLiquidTagRanges(text) {
+    const ranges = [];
+    const re = /\{%-[\s\S]*?-%\}|\{%[\s\S]*?%\}/g;
+
+    for (const match of text.matchAll(re)) {
+        const start = match.index;
+        const end = start + match[0].length;
+        ranges.push([start, end]);
+    }
+
+    return ranges;
+}
+
+function isInsideLiquidRange(offset, ranges) {
+    for (const [start, end] of ranges) {
+        if (offset >= start && offset < end) return true;
+    }
+    return false;
+}
+
 async function checkHardcodedLiquidText() {
     const files = await fg(LIQUID_GLOBS, { cwd: ROOT, dot: false, onlyFiles: true });
     const tagTextRe = />\s*([^<>][^<>]*[A-Za-z][^<>]*)\s*</g;
@@ -342,17 +394,20 @@ async function checkHardcodedLiquidText() {
 
     for (const file of files.map(formatPath)) {
         const text = await readText(file);
+        const nonVisibleRanges = getNonVisibleBlockRanges(text);
+        const liquidTagRanges = getLiquidTagRanges(text);
 
         for (const match of text.matchAll(tagTextRe)) {
             const literal = match[1].trim();
             if (!ENGLISH_TEXT_RE.test(literal) || isAllowedLiteral(literal)) continue;
             if (literal.includes('{%') || literal.includes('%}')) continue;
 
-            report(
-                file,
-                toPos(text, (match.index ?? 0) + match[0].indexOf(match[1])),
-                `Hardcoded visible text "${literal}" should use the | t filter.`,
-            );
+            if (isInsideLiquidRange(match.index ?? 0, liquidTagRanges)) continue;
+
+            const line = toPos(text, (match.index ?? 0) + match[0].indexOf(match[1]));
+            if (isInsideNonVisibleBlock(line, nonVisibleRanges)) continue;
+
+            report(file, line, `Hardcoded visible text "${literal}" should use the | t filter.`);
         }
 
         for (const match of text.matchAll(attrRe)) {
@@ -360,11 +415,10 @@ async function checkHardcodedLiquidText() {
             const literal = match[3].trim();
             if (!ENGLISH_TEXT_RE.test(literal) || isAllowedLiteral(literal)) continue;
 
-            report(
-                file,
-                toPos(text, match.index ?? 0),
-                `Hardcoded ${attr}="${literal}" should use the | t filter.`,
-            );
+            const line = toPos(text, match.index ?? 0);
+            if (isInsideNonVisibleBlock(line, nonVisibleRanges)) continue;
+
+            report(file, line, `Hardcoded ${attr}="${literal}" should use the | t filter.`);
         }
     }
 }

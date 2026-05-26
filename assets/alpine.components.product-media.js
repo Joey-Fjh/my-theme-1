@@ -48,6 +48,38 @@
                     this.setActive((this.activeIndex - 1 + this.imageCount) % this.imageCount);
                 },
 
+                _handleThumbnailKeydown(event) {
+                    const tablist = event.currentTarget;
+                    let nextIndex = null;
+
+                    switch (event.key) {
+                        case 'ArrowRight':
+                        case 'ArrowDown':
+                            nextIndex = (this.activeIndex + 1) % this.imageCount;
+                            break;
+                        case 'ArrowLeft':
+                        case 'ArrowUp':
+                            nextIndex = (this.activeIndex - 1 + this.imageCount) % this.imageCount;
+                            break;
+                        case 'Home':
+                            nextIndex = 0;
+                            break;
+                        case 'End':
+                            nextIndex = this.imageCount - 1;
+                            break;
+                    }
+
+                    if (nextIndex === null) return;
+
+                    event.preventDefault();
+                    this.setActive(nextIndex);
+
+                    const nextThumb = tablist.querySelector(
+                        `[data-gallery-thumbnail="${nextIndex}"]`,
+                    );
+                    if (nextThumb) nextThumb.focus();
+                },
+
                 _initSwiper() {
                     if (typeof Swiper === 'undefined') return;
 
@@ -85,6 +117,8 @@
                 lightboxOpen: false,
                 lightboxIndex: Math.max(0, Number(initialIndex) || 0),
                 _previousBodyOverflow: null,
+                _returnFocusTo: null,
+                _trapHandler: null,
 
                 init() {
                     const ds = this.$el?.dataset;
@@ -100,14 +134,34 @@
                 },
 
                 openLightbox(index = this.lightboxIndex) {
+                    this._returnFocusTo = document.activeElement;
                     this.lightboxIndex = this._normalizeIndex(index);
                     this.lightboxOpen = true;
                     this._lockBodyScroll();
+
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                            this._moveFocusIntoLightbox();
+                            this._attachTrap();
+                        });
+                    });
                 },
 
                 closeLightbox() {
+                    const returnTo = this._returnFocusTo;
+                    this._detachTrap();
                     this.lightboxOpen = false;
                     this._unlockBodyScroll();
+                    this._returnFocusTo = null;
+
+                    if (
+                        returnTo &&
+                        returnTo.isConnected &&
+                        typeof returnTo.focus === 'function' &&
+                        this._isElementVisible(returnTo)
+                    ) {
+                        returnTo.focus();
+                    }
                 },
 
                 nextLightbox() {
@@ -136,7 +190,101 @@
                     this._previousBodyOverflow = null;
                 },
 
+                _FOCUSABLE_SELECTOR: [
+                    'a[href]',
+                    'button:not([disabled])',
+                    'input:not([disabled]):not([type="hidden"])',
+                    'select:not([disabled])',
+                    'textarea:not([disabled])',
+                    '[tabindex]:not([tabindex="-1"])',
+                ].join(', '),
+
+                _isElementVisible(el) {
+                    if (!el.offsetParent && el !== document.body) {
+                        let ancestor = el.parentElement;
+                        while (ancestor && ancestor !== document.body) {
+                            if (getComputedStyle(ancestor).display === 'none') return false;
+                            ancestor = ancestor.parentElement;
+                        }
+                    }
+                    return getComputedStyle(el).visibility !== 'hidden';
+                },
+
+                _isFocusable(el) {
+                    if (el.hasAttribute('disabled')) return false;
+                    if (el.hasAttribute('inert')) return false;
+                    if (el.getAttribute('tabindex') === '-1') return false;
+                    if (!this._isElementVisible(el)) return false;
+                    return true;
+                },
+
+                _getFocusableElements(container) {
+                    return Array.from(container.querySelectorAll(this._FOCUSABLE_SELECTOR)).filter(
+                        (el) => this._isFocusable(el),
+                    );
+                },
+
+                _moveFocusIntoLightbox() {
+                    const dialog = this.$refs.lightboxDialog;
+                    if (!dialog) return;
+
+                    const focusable = this._getFocusableElements(dialog);
+                    if (focusable.length > 0) {
+                        focusable[0].focus();
+                    } else {
+                        dialog.focus();
+                    }
+                },
+
+                _trapFocus(e) {
+                    if (e.key !== 'Tab') return;
+
+                    const dialog = this.$refs.lightboxDialog;
+                    if (!dialog) return;
+
+                    const focusable = this._getFocusableElements(dialog);
+                    if (focusable.length === 0) {
+                        e.preventDefault();
+                        dialog.focus();
+                        return;
+                    }
+
+                    const first = focusable[0];
+                    const last = focusable[focusable.length - 1];
+
+                    if (e.shiftKey) {
+                        if (document.activeElement === first || document.activeElement === dialog) {
+                            e.preventDefault();
+                            last.focus();
+                        }
+                    } else {
+                        if (document.activeElement === last) {
+                            e.preventDefault();
+                            first.focus();
+                        }
+                    }
+
+                    if (!dialog.contains(document.activeElement)) {
+                        e.preventDefault();
+                        (e.shiftKey ? last : first).focus();
+                    }
+                },
+
+                _attachTrap() {
+                    this._detachTrap();
+                    this._trapHandler = this._trapFocus.bind(this);
+                    document.addEventListener('keydown', this._trapHandler, true);
+                },
+
+                _detachTrap() {
+                    if (this._trapHandler) {
+                        document.removeEventListener('keydown', this._trapHandler, true);
+                        this._trapHandler = null;
+                    }
+                },
+
                 destroy() {
+                    this._detachTrap();
                     if (this.lightboxOpen) this.closeLightbox();
                     this.dispose();
                 },
@@ -396,6 +544,32 @@
 
                 endDrag() {
                     this.isDragging = false;
+                },
+
+                handleKeydown(e) {
+                    const step = 5;
+                    let handled = true;
+
+                    switch (e.key) {
+                        case 'ArrowLeft':
+                        case 'ArrowDown':
+                            this.position = Math.max(0, this.position - step);
+                            break;
+                        case 'ArrowRight':
+                        case 'ArrowUp':
+                            this.position = Math.min(100, this.position + step);
+                            break;
+                        case 'Home':
+                            this.position = 0;
+                            break;
+                        case 'End':
+                            this.position = 100;
+                            break;
+                        default:
+                            handled = false;
+                    }
+
+                    if (handled) e.preventDefault();
                 },
 
                 updatePosition(e) {

@@ -20,6 +20,7 @@
                         <summary
                             class="dropdown-trigger flex items-center gap-1"
                             id="HeaderSuperMenu-{{ link.handle }}"
+                            :aria-expanded="$el.parentElement.open"
                             @click.stop.prevent="toggle($el.parentElement)"
                         >
                             {% capture link_content %}
@@ -137,12 +138,15 @@
                                                         <button
                                                             type="button"
                                                             role="tab"
+                                                            id="super-tab-{{ section.id }}-{{ i }}"
+                                                            aria-controls="super-panel-{{ section.id }}-{{ i }}"
                                                             x-data="{ index: null }"
                                                             x-init="index = registerTab($el)"
                                                             @click="setActive(index)"
+                                                            :aria-selected="isActive(index)"
                                                             class="border-b-2 pb-2 text-current transition-colors"
-                                                            :class="isActive(index) 
-                                                                ? 'border-current opacity-100' 
+                                                            :class="isActive(index)
+                                                                ? 'border-current opacity-100'
                                                                 : 'border-transparent opacity-60 hover:opacity-100'
                                                             "
                                                         >
@@ -160,6 +164,8 @@
                                                     {%- if collection_item != blank -%}
                                                         <div
                                                             role="tabpanel"
+                                                            id="super-panel-{{ section.id }}-{{ i }}"
+                                                            aria-labelledby="super-tab-{{ section.id }}-{{ i }}"
                                                             x-data="{ index: null }"
                                                             x-init="index = registerPanel($el)"
                                                             x-show="isActive(index)"

@@ -36,16 +36,26 @@
             {%- endif -%}
 
             {%- if announcement_bar -%}
-                <div class="overflow-hidden break-all" style="grid-area: announcements">
+                <div
+                    class="flex items-center gap-2 overflow-hidden break-all"
+                    style="grid-area: announcements"
+                >
                     {%- if section.blocks.size > 0 -%}
-                        <div class="swiper h-full w-full">
+                        <div
+                            class="swiper h-full w-full min-w-0"
+                            role="region"
+                            aria-label="{{ 'accessibility.announcements' | t }}"
+                            aria-roledescription="{{ 'accessibility.carousel' | t }}"
+                        >
                             <div class="swiper-wrapper">
                                 {%- for block in section.blocks -%}
                                     <div
                                         class="swiper-slide flex flex-wrap gap-6 body-md text-theme-text"
                                         {{ block.shopify_attributes }}
                                     >
-                                        <span class="opacity-60">{{ block.settings.announcement_text }}</span>
+                                        <span class="opacity-60">
+                                            {{- block.settings.announcement_text -}}
+                                        </span>
 
                                         {%- if section.settings.link != blank -%}
                                             {%- capture link_content -%}
@@ -64,6 +74,15 @@
                                 {%- endfor -%}
                             </div>
                         </div>
+                    {%- endif -%}
+                    {%- if section.settings.auto_play and section.blocks.size > 1 -%}
+                        <button
+                            type="button"
+                            class="announcement-bar__pause-toggle flex h-8 w-8 shrink-0 items-center justify-center text-theme-text opacity-60 hover:opacity-100 focus-visible:opacity-100"
+                            aria-label="{{ 'accessibility.pause_announcements' | t }}"
+                            aria-pressed="false"
+                            data-play-label="{{ 'accessibility.play_announcements' | t }}"
+                        ></button>
                     {%- endif -%}
                 </div>
             {%- endif -%}
@@ -120,13 +139,48 @@
                         navigation: false,
                     });
 
-                    return { swiper };
+                    let removePauseHandler = null;
+                    const btn = el.querySelector('.announcement-bar__pause-toggle');
+                    if (btn && swiper.autoplay) {
+                        const pauseLabel = btn.getAttribute('aria-label');
+                        const playLabel = btn.getAttribute('data-play-label');
+
+                        function updateButton() {
+                            const isRunning = swiper.autoplay.running;
+                            btn.classList.toggle(
+                                'announcement-bar__pause-toggle--paused',
+                                !isRunning,
+                            );
+                            btn.setAttribute('aria-label', isRunning ? pauseLabel : playLabel);
+                            btn.setAttribute('aria-pressed', String(!isRunning));
+                        }
+
+                        function handleToggle() {
+                            if (swiper.autoplay.running) {
+                                swiper.autoplay.stop();
+                            } else {
+                                swiper.autoplay.start();
+                            }
+                            updateButton();
+                        }
+
+                        btn.addEventListener('click', handleToggle);
+                        removePauseHandler = function () {
+                            btn.removeEventListener('click', handleToggle);
+                        };
+                    }
+
+                    return { swiper, removePauseHandler };
                 },
 
                 destroy(el, state) {
-                    if (!state || !state.swiper) return;
+                    if (!state) return;
 
-                    if (typeof state.swiper.destroy === 'function') {
+                    if (typeof state.removePauseHandler === 'function') {
+                        state.removePauseHandler();
+                    }
+
+                    if (state.swiper && typeof state.swiper.destroy === 'function') {
                         state.swiper.destroy(true, true);
                     }
                 },
@@ -156,6 +210,16 @@
             align-items: center;
             justify-content: center;
         }
+
+        .announcement-bar__pause-toggle::before {
+            content: '\23F8';
+            font-size: 0.75rem;
+            line-height: 1;
+        }
+
+        .announcement-bar__pause-toggle--paused::before {
+            content: '\25B6';
+        }
     }
 {% endstylesheet %}
 
@@ -167,9 +231,7 @@
     "limit": 1,
     "max_blocks": 6,
     "enabled_on": {
-        "groups": [
-            "header"
-        ]
+        "groups": ["header"]
     },
     "settings": [
         {
@@ -201,7 +263,7 @@
         {
             "type": "inline_richtext",
             "id": "text",
-            "default": "See More",
+            "default": "t:sections.announcement-bar.defaults.text",
             "label": "t:sections.announcement-bar.settings.text"
         },
         {
@@ -247,7 +309,7 @@
                 {
                     "type": "inline_richtext",
                     "id": "announcement_text",
-                    "default": "Welcome to our store!",
+                    "default": "t:sections.announcement-bar.defaults.announcement_text",
                     "label": "t:sections.announcement-bar.block_settings.text"
                 }
             ]
@@ -270,4 +332,4 @@
         }
     ]
 }
-    {% endschema %}
+{% endschema %}

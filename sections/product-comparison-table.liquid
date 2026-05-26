@@ -27,6 +27,8 @@
         {% if section.settings.products != blank and section.blocks.size > 0 %}
             <div
                 class="comparison-table-scroll overflow-x-auto"
+                tabindex="0"
+                role="group"
                 aria-label="{{ 'accessibility.scroll_to_compare' | t }}"
                 data-comparison-scroll
             >
@@ -161,13 +163,16 @@
 
                                             {% when 'availability' %}
                                                 {% if item.available %}
-                                                    <span class="body-md text-(--comparison-success-color)"
-                                                        >{{ 'products.comparison.in_stock' | t }}</span
-                                                    >
+                                                    <span class="body-md text-(--comparison-success-color)">
+                                                        {{- 'products.comparison.in_stock' | t -}}
+                                                    </span>
                                                 {% else %}
-                                                    <span class="body-md text-(--comparison-danger-color)"
-                                                        >{{ 'products.comparison.out_of_stock' | t }}</span
-                                                    >
+                                                    <span class="body-md text-(--comparison-danger-color)">
+                                                        {{-
+                                                            'products.comparison.out_of_stock'
+                                                            | t
+                                                        -}}
+                                                    </span>
                                                 {% endif %}
 
                                             {% else %}
@@ -229,16 +234,20 @@
                     var isPointerDown = false;
                     var didDrag = false;
 
-                    scope.on('mousemove', function (e) {
-                        if (!isPointerDown) return;
-                        var dx = dragStartX - e.clientX;
-                        scrollEl.scrollLeft = dragStartScrollLeft + dx;
-                        if (Math.abs(e.clientX - dragStartX) >= dragThresholdPx) {
-                            didDrag = true;
-                            scrollEl.classList.add('is-dragging');
-                            showScrollbar();
-                        }
-                    }, { passive: true });
+                    scope.on(
+                        'mousemove',
+                        function (e) {
+                            if (!isPointerDown) return;
+                            var dx = dragStartX - e.clientX;
+                            scrollEl.scrollLeft = dragStartScrollLeft + dx;
+                            if (Math.abs(e.clientX - dragStartX) >= dragThresholdPx) {
+                                didDrag = true;
+                                scrollEl.classList.add('is-dragging');
+                                showScrollbar();
+                            }
+                        },
+                        { passive: true },
+                    );
 
                     scope.on('mouseup', function () {
                         isPointerDown = false;
@@ -405,6 +414,10 @@
         .comparison-table-scroll.is-scrolling::-webkit-scrollbar-thumb:hover {
             background: rgba(0, 0, 0, 0.35);
         }
+        .comparison-table-scroll:focus-visible {
+            outline: 2px solid var(--color-theme-text);
+            outline-offset: -2px;
+        }
     }
 {% endstylesheet %}
 
@@ -414,10 +427,7 @@
     "tag": "section",
     "class": "section",
     "disabled_on": {
-        "groups": [
-            "header",
-            "footer"
-        ]
+        "groups": ["header", "footer"]
     },
     "settings": [
         {
@@ -430,7 +440,7 @@
             "type": "inline_richtext",
             "id": "heading",
             "label": "t:sections.product-comparison-table.settings.section_heading",
-            "default": "Similar Comparison Products"
+            "default": "t:sections.product-comparison-table.defaults.heading"
         },
         {
             "type": "color",
@@ -515,7 +525,7 @@
                     "type": "inline_richtext",
                     "id": "row_title",
                     "label": "t:sections.product-comparison-table.block_settings.row_title",
-                    "default": "Ingredients"
+                    "default": "t:sections.product-comparison-table.blocks_defaults.row_title"
                 },
                 {
                     "type": "text",
@@ -559,4 +569,4 @@
         }
     ]
 }
-    {% endschema %}
+{% endschema %}

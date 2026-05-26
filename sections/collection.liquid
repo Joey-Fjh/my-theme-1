@@ -24,9 +24,12 @@
                         {{ section.settings.header | default: 'Products' }}
                     </h1>
                     <div class="rte rte--compact max-w-xl body-md leading-relaxed opacity-80">
+                        {%- assign collection_description_fallback = 'collections.description_html'
+                            | t
+                        -%}
                         {{
                             section.settings.description
-                            | default: '<p>Tailored experiences powered by AI intelligence. Discover insights that adapt to your needs.</p>'
+                            | default: collection_description_fallback
                         }}
                     </div>
                 </div>
@@ -95,15 +98,17 @@
                                 class: 'h-10 w-10',
                                 color: 'currentColor'
                             %}
-                            <span>Filter</span>
+                            <span>{{ 'collections.filter' | t }}</span>
                         </button>
                     {%- endif -%}
 
                     {%- if enable_sorting -%}
-                        {%- render 'sort-by-dropdown',
+                        {%-
+                            render 'sort-by-dropdown',
                             results: collection,
                             form_id: 'CollectionFiltersForm',
-                            class: 'h2 shrink-0'
+                            class: 'h2 shrink-0',
+                            id_prefix: section.id | append: '-mobile'
                         -%}
                     {%- endif -%}
                 </div>
@@ -127,10 +132,12 @@
                             {%- endif -%}
 
                             {%- if enable_sorting -%}
-                                {%- render 'sort-by-dropdown',
+                                {%-
+                                    render 'sort-by-dropdown',
                                     results: collection,
                                     form_id: 'CollectionFiltersForm',
-                                    class: 'h2 shrink-0 self-start'
+                                    class: 'h2 shrink-0 self-start',
+                                    id_prefix: section.id | append: '-desktop-h'
                                 -%}
                             {%- endif -%}
                         </div>
@@ -153,7 +160,8 @@
                         <div class="sticky top-20 border-r border-theme-border-soft pr-6">
                             {%- render 'filter-vertical',
                                 filter_source: collection,
-                                show_more_limit: section.settings.filter_visible_values_limit
+                                show_more_limit: section.settings.filter_visible_values_limit,
+                                scope_id: section.id
                             -%}
                         </div>
                     </aside>
@@ -196,7 +204,7 @@
                                     class="flex shrink-0 cursor-pointer items-center gap-2.5 body-sm"
                                 >
                                     {% render 'icons', icon: 'icon-filter', class: 'h-10 w-10', color: 'currentColor' %}
-                                    <span>Filter</span>
+                                    <span>{{ 'collections.filter' | t }}</span>
                                 </button>
                             </div>
                         {%- else -%}
@@ -212,7 +220,8 @@
                                     {%- render 'sort-by-dropdown',
                                         results: collection,
                                         form_id: 'CollectionFiltersForm',
-                                        class: 'h2 shrink-0'
+                                        class: 'h2 shrink-0',
+                                        id_prefix: section.id | append: '-desktop-v'
                                     -%}
                                 </div>
                             {%- else -%}
@@ -239,7 +248,7 @@
                             :class="isActive(index) ? 'opacity-100 border-b-2 border-current' : 'opacity-50 hover:opacity-100 border-b-2 border-transparent'"
                             class="flex cursor-pointer flex-nowrap items-center gap-1 body-sm whitespace-nowrap transition-all duration-300 focus:outline-none"
                         >
-                            All
+                            {{ 'collections.all' | t }}
                             <sup class="leading-none">({{ all_products_collection.all_products_count | default: 0 }})</sup>
                         </a>
 
@@ -296,7 +305,7 @@
                                         </div>
                                     {% else %}
                                         <div class="col-span-full py-20 text-center body-lg opacity-60">
-                                            No products found.
+                                            {{ 'collections.no_products' | t }}
                                         </div>
                                     {% endfor %}
                                 </div>
@@ -341,12 +350,14 @@
         {%- capture drawer_content -%}
             {%- render 'filters-drawer',
                 filter_source: collection,
-                show_more_limit: section.settings.filter_visible_values_limit
+                show_more_limit: section.settings.filter_visible_values_limit,
+                scope_id: section.id
             -%}
         {%- endcapture -%}
 
         <div data-collection-drawer-shell>
-            {%- render 'ui-dialog',
+            {%-
+                render 'ui-dialog',
                 id: 'collection-filters',
                 type: 'drawer',
                 position: 'left',
@@ -354,7 +365,7 @@
                 root_class: 'z-10140',
                 drawer_wrapper_class: 'max-pc:w-4/5 max-pc:max-w-none max-pc:top-3 max-pc:bottom-3 max-pc:left-1/2 max-pc:right-auto max-pc:-translate-x-1/2',
                 show_close_button: false,
-                close_label: 'Close filters drawer',
+                close_label: 'accessibility.close_filters_drawer' | t,
                 content: drawer_content
             -%}
         </div>
@@ -508,9 +519,7 @@
     "tag": "section",
     "class": "section",
     "enabled_on": {
-        "templates": [
-            "collection"
-        ]
+        "templates": ["collection"]
     },
     "settings": [
         {
@@ -522,20 +531,20 @@
         {
             "type": "inline_richtext",
             "id": "header",
-            "default": "Products",
+            "default": "t:sections.collection.defaults.header",
             "label": "t:sections.collection.settings.header"
         },
         {
             "type": "richtext",
             "id": "description",
-            "default": "<p>Tailored experiences powered by AI intelligence. Discover insights that adapt to your needs.</p>",
+            "default": "t:sections.collection.defaults.description",
             "label": "t:sections.collection.settings.description"
         },
         {
             "type": "text",
             "id": "rotate_badge_text",
             "label": "t:sections.collection.settings.rotate_badge_text",
-            "default": "PRODUCT GUARANTEE NATURAL"
+            "default": "t:sections.collection.defaults.rotate_badge_text"
         },
         {
             "type": "text",
@@ -657,4 +666,4 @@
         }
     ]
 }
-    {% endschema %}
+{% endschema %}

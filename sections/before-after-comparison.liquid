@@ -107,13 +107,19 @@
                     :style="`left: ${position}%`"
                 >
                     {% comment %} Handle {% endcomment %}
-                    <div
+                    <button
+                        type="button"
                         class="
                             absolute top-1/2 left-1/2 flex h-24 w-24 -translate-x-1/2 -translate-y-1/2 cursor-grab items-center justify-center gap-0 rounded-full bg-theme-bg shadow-surface
-                            transition-transform duration-200 hover:scale-110 focus:ring-2 focus:ring-focus focus:outline-none active:cursor-grabbing
+                            transition-transform duration-200 hover:scale-110 focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none active:cursor-grabbing
                         "
                         @mousedown.stop="startDrag($event)"
                         @touchstart.stop.passive="startDrag($event)"
+                        @keydown="handleKeydown($event)"
+                        role="slider"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                        :aria-valuenow="Math.round(position)"
                         aria-label="{{ 'accessibility.drag_to_compare' | t }}"
                     >
                         <svg
@@ -138,7 +144,7 @@
                         >
                             <path d="M9 18L15 12L9 6"/>
                         </svg>
-                    </div>
+                    </button>
                 </div>
 
                 {% comment %} Before Label {% endcomment %}
@@ -161,10 +167,7 @@
     "tag": "section",
     "class": "section",
     "disabled_on": {
-        "groups": [
-            "header",
-            "footer"
-        ]
+        "groups": ["header", "footer"]
     },
     "settings": [
         {
@@ -177,13 +180,13 @@
             "type": "inline_richtext",
             "id": "sub_heading",
             "label": "t:sections.before-after-comparison.settings.sub_heading",
-            "default": "Lorem Ipsum"
+            "default": "t:sections.before-after-comparison.defaults.sub_heading"
         },
         {
             "type": "inline_richtext",
             "id": "heading",
             "label": "t:sections.before-after-comparison.settings.heading",
-            "default": "Up To 50% Off Everything"
+            "default": "t:sections.before-after-comparison.defaults.heading"
         },
         {
             "type": "select",
@@ -263,4 +266,4 @@
         }
     ]
 }
-    {% endschema %}
+{% endschema %}

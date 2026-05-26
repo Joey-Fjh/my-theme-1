@@ -27,10 +27,8 @@
                         {{ section.settings.header | default: 'Blog' }}
                     </h1>
                     <div class="rte rte--compact max-w-xl body-sm leading-relaxed opacity-80">
-                        {{
-                            section.settings.description
-                            | default: '<p>Tailored experiences powered by AI intelligence. Discover insights that adapt to your needs.</p>'
-                        }}
+                        {%- assign blog_description_fallback = 'blog.description_html' | t -%}
+                        {{ section.settings.description | default: blog_description_fallback }}
                     </div>
                 </div>
 
@@ -92,7 +90,7 @@
             :class="isActive(index) ? 'opacity-100 border-b-2 border-current' : 'opacity-20 hover:opacity-60'"
             class="flex cursor-pointer flex-wrap items-center gap-x-4 gap-y-2 body-sm transition-opacity focus:outline-none"
           >
-            All <sup class="sup-badge">({{ blog.articles_count | default: 0 }})</sup>
+            {{ 'collections.all' | t }} <sup class="sup-badge">({{ blog.articles_count | default: 0 }})</sup>
           </a>
           {%- for tag in blog.all_tags -%}
             <a
@@ -297,9 +295,7 @@
     "tag": "section",
     "class": "section",
     "enabled_on": {
-        "templates": [
-            "blog"
-        ]
+        "templates": ["blog"]
     },
     "settings": [
         {
@@ -317,20 +313,20 @@
         {
             "type": "inline_richtext",
             "id": "header",
-            "default": "Blog",
+            "default": "t:sections.blog.defaults.header",
             "label": "t:sections.blog.settings.header"
         },
         {
             "type": "richtext",
             "id": "description",
-            "default": "<p>Tailored experiences powered by AI intelligence. Discover insights that adapt to your needs.</p>",
+            "default": "t:sections.blog.defaults.description",
             "label": "t:sections.blog.settings.description"
         },
         {
             "type": "text",
             "id": "rotate_badge_text",
             "label": "t:sections.blog.settings.rotate_badge_text",
-            "default": "PRODUCT GUARANTEE NATURAL"
+            "default": "t:sections.blog.defaults.rotate_badge_text"
         },
         {
             "type": "text",
@@ -351,7 +347,7 @@
             "type": "text",
             "id": "link_text",
             "label": "t:sections.blog.settings.link_text",
-            "default": "Read More"
+            "default": "t:sections.blog.defaults.link_text"
         },
         {
             "type": "header",
@@ -384,4 +380,4 @@
         }
     ]
 }
-    {% endschema %}
+{% endschema %}

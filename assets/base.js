@@ -474,7 +474,9 @@
                             try {
                                 const raw = document.body.dataset.initialCart;
                                 if (raw) initialCartData = JSON.parse(raw);
-                            } catch (_) { /* ignore parse errors */ }
+                            } catch (_) {
+                                /* ignore parse errors */
+                            }
                             Stores.cart.init(initialCartData);
                             window.Alpine.store('cart', Stores.cart);
                         }

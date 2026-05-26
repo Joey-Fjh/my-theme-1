@@ -58,6 +58,8 @@
         "
         role="tablist"
         aria-label="{{ 'accessibility.product_thumbnails' | t }}"
+        data-orientation="{% if is_left %}vertical{% else %}horizontal{% endif %}"
+        @keydown="_handleThumbnailKeydown($event)"
     >
         {%- if is_left -%}
             {%- for image in images -%}
@@ -67,6 +69,8 @@
                 <button
                     type="button"
                     role="tab"
+                    data-gallery-thumbnail="{{ forloop.index0 }}"
+                    :tabindex="activeIndex === {{ forloop.index0 }} ? 0 : -1"
                     :aria-selected="activeIndex === {{ forloop.index0 }}"
                     @click="setActive({{ forloop.index0 }})"
                     class="block aspect-[3/4] w-20 shrink-0 cursor-pointer overflow-hidden rounded-sm border-2 transition-all duration-200 pc:w-full"
@@ -96,6 +100,8 @@
                 <button
                     type="button"
                     role="tab"
+                    data-gallery-thumbnail="{{ forloop.index0 }}"
+                    :tabindex="activeIndex === {{ forloop.index0 }} ? 0 : -1"
                     :aria-selected="activeIndex === {{ forloop.index0 }}"
                     @click="setActive({{ forloop.index0 }})"
                     class="block aspect-[3/4] w-20 shrink-0 cursor-pointer overflow-hidden rounded-sm border-2 transition-all duration-200 pc:w-[calc((100%-((var(--thumbnail-visible-count)-1)*0.5rem))/var(--thumbnail-visible-count))]"
@@ -133,44 +139,58 @@
         {%- for image in images -%}
             {%- assign media_image = image.preview_image | default: image -%}
 
-            <div
-                class="absolute inset-0 h-full w-full transition-opacity duration-300 ease-out"
-                :class="
-                    activeIndex === {{ forloop.index0 }}
-                    ? 'opacity-100 z-10'
-                    : 'opacity-0 z-0 pointer-events-none'
-                "
-                {% if zoom %}
+            {%- if zoom -%}
+                <button
+                    type="button"
+                    aria-label="{{ 'accessibility.open_image_zoom' | t }}"
+                    class="absolute inset-0 h-full w-full cursor-zoom-in transition-opacity duration-300 ease-out"
+                    :class="
+                        activeIndex === {{ forloop.index0 }}
+                        ? 'opacity-100 z-10'
+                        : 'opacity-0 z-0 pointer-events-none'
+                    "
                     @click="openLightbox({{ forloop.index0 }})"
-                    class="cursor-zoom-in"
-                {% endif %}
-            >
-                {%- if magnifier -%}
-                    {%- render 'image-magnifier',
-                        image: media_image,
-                        width: 1200,
-                        img_class: 'w-full h-full object-cover',
-                        alt: media_image.alt,
-                        sizes: '(min-width: 48rem) 50vw, 100vw',
-                        widths: '400,600,800,1200',
-                        loading: 'lazy',
-                        zoom_scale: magnifier_zoom_scale,
-                        preview_width: magnifier_preview_width,
-                        preview_height: magnifier_preview_height,
-                        preview_max_width: magnifier_preview_max_width
-                    -%}
-                {%- else -%}
-                    {%- render 'image',
-                        image: media_image,
-                        width: 1200,
-                        img_class: 'w-full h-full object-cover',
-                        alt: media_image.alt,
-                        sizes: '(min-width: 48rem) 50vw, 100vw',
-                        widths: '400,600,800,1200',
-                        loading: 'lazy'
-                    -%}
-                {%- endif -%}
-            </div>
+                >
+            {%- else -%}
+                <div
+                    class="absolute inset-0 h-full w-full transition-opacity duration-300 ease-out"
+                    :class="
+                        activeIndex === {{ forloop.index0 }}
+                        ? 'opacity-100 z-10'
+                        : 'opacity-0 z-0 pointer-events-none'
+                    "
+                >
+            {%- endif -%}
+            {%- if magnifier -%}
+                {%- render 'image-magnifier',
+                    image: media_image,
+                    width: 1200,
+                    img_class: 'w-full h-full object-cover',
+                    alt: media_image.alt,
+                    sizes: '(min-width: 48rem) 50vw, 100vw',
+                    widths: '400,600,800,1200',
+                    loading: 'lazy',
+                    zoom_scale: magnifier_zoom_scale,
+                    preview_width: magnifier_preview_width,
+                    preview_height: magnifier_preview_height,
+                    preview_max_width: magnifier_preview_max_width
+                -%}
+            {%- else -%}
+                {%- render 'image',
+                    image: media_image,
+                    width: 1200,
+                    img_class: 'w-full h-full object-cover',
+                    alt: media_image.alt,
+                    sizes: '(min-width: 48rem) 50vw, 100vw',
+                    widths: '400,600,800,1200',
+                    loading: 'lazy'
+                -%}
+            {%- endif -%}
+            {%- if zoom -%}
+                </button>
+            {%- else -%}
+                </div>
+            {%- endif -%}
         {%- endfor -%}
     </div>
 </div>

@@ -5,6 +5,7 @@
     @param {object} results  - Object with sort_options and sort_by (e.g. collection, search, blog).
     @param {string} form_id  - Optional. External form ID; triggers form change on select. Without it, dispatches 'sort-change' event.
     @param {string} class    - Optional. CSS classes for the outermost wrapper (positioning, sizing, etc.).
+    @param {string} id_prefix - Optional. Unique prefix for listbox/button IDs (e.g. section.id + position). Ensures aria-controls uniqueness.
 {% endcomment %}
 
 {%- assign sort_options = results.sort_options -%}
@@ -54,6 +55,7 @@
             type="button"
             class="{{ trigger_class }}"
             aria-haspopup="listbox"
+            aria-controls="sort-listbox-{{ id_prefix | default: form_id | default: 'default' }}"
             aria-label="{{ 'accessibility.sort_by' | t }}"
             @click.stop.prevent="toggle($el.parentElement)"
         >
@@ -66,6 +68,7 @@
         </button>
 
         <div
+            id="sort-listbox-{{ id_prefix | default: form_id | default: 'default' }}"
             role="listbox"
             aria-label="{{ 'accessibility.sort_options' | t }}"
             class="{{ panel_class }}"

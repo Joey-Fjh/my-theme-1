@@ -42,15 +42,21 @@
                     const ds = this.$el?.dataset;
                     if (!ds) return;
                     if (ds.newsletterDialogId) this.dialogId = JSON.parse(ds.newsletterDialogId);
-                    if (ds.newsletterDisplayMode) this.displayMode = JSON.parse(ds.newsletterDisplayMode);
-                    if (ds.newsletterShowInHome) this.showInHome = JSON.parse(ds.newsletterShowInHome);
-                    if (ds.newsletterShowForVisitor) this.showForVisitor = JSON.parse(ds.newsletterShowForVisitor);
-                    if (ds.newsletterIsHomeTemplate) this.isHomeTemplate = JSON.parse(ds.newsletterIsHomeTemplate);
+                    if (ds.newsletterDisplayMode)
+                        this.displayMode = JSON.parse(ds.newsletterDisplayMode);
+                    if (ds.newsletterShowInHome)
+                        this.showInHome = JSON.parse(ds.newsletterShowInHome);
+                    if (ds.newsletterShowForVisitor)
+                        this.showForVisitor = JSON.parse(ds.newsletterShowForVisitor);
+                    if (ds.newsletterIsHomeTemplate)
+                        this.isHomeTemplate = JSON.parse(ds.newsletterIsHomeTemplate);
                     if (ds.newsletterIsVisitor) this.isVisitor = JSON.parse(ds.newsletterIsVisitor);
                     if (ds.newsletterDelay) this.delay = JSON.parse(ds.newsletterDelay);
                     if (ds.newsletterExpired) this.expired = JSON.parse(ds.newsletterExpired);
-                    if (ds.newsletterSuccessMessage) this.successMessage = JSON.parse(ds.newsletterSuccessMessage);
-                    if (ds.newsletterErrorMessage) this.errorMessage = JSON.parse(ds.newsletterErrorMessage);
+                    if (ds.newsletterSuccessMessage)
+                        this.successMessage = JSON.parse(ds.newsletterSuccessMessage);
+                    if (ds.newsletterErrorMessage)
+                        this.errorMessage = JSON.parse(ds.newsletterErrorMessage);
                 },
 
                 init() {

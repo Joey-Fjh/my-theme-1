@@ -14,7 +14,12 @@
     data-auto-slide="{{ section.settings.is_auto_slide }}"
     data-slide-delay="{{ section.settings.slide_delay }}"
 >
-    <div class="swiper h-full w-full">
+    <div
+        class="swiper h-full w-full"
+        role="region"
+        aria-label="{{ 'accessibility.hero_slides' | t }}"
+        aria-roledescription="{{ 'accessibility.carousel' | t }}"
+    >
         <div class="swiper-wrapper">
             {%- for block in section.blocks -%}
                 <div class="swiper-slide" {{ block.shopify_attributes }}>
@@ -86,6 +91,38 @@
                 </div>
             {%- endfor -%}
         </div>
+        {%- if section.blocks.size > 1 -%}
+            <div class="slides-show__controls absolute right-6 bottom-6 z-10 flex items-center gap-3 pc:right-10 pc:bottom-10">
+                <button
+                    type="button"
+                    class="slides-show__nav-prev flex h-10 w-10 items-center justify-center rounded-full bg-theme-bg/60 text-theme-text backdrop-blur-sm hover:bg-theme-bg/80 focus-visible:outline-2 focus-visible:outline-offset-2"
+                    aria-label="{{ 'accessibility.previous_slide' | t }}"
+                >
+                    {%- render 'icons',
+                        icon: 'icon-arrow2',
+                        size: 'sm',
+                        color: 'current',
+                        class: 'scale-x-[-1]'
+                    -%}
+                </button>
+                <button
+                    type="button"
+                    class="slides-show__nav-next flex h-10 w-10 items-center justify-center rounded-full bg-theme-bg/60 text-theme-text backdrop-blur-sm hover:bg-theme-bg/80 focus-visible:outline-2 focus-visible:outline-offset-2"
+                    aria-label="{{ 'accessibility.next_slide' | t }}"
+                >
+                    {%- render 'icons', icon: 'icon-arrow2', size: 'sm', color: 'current' -%}
+                </button>
+                {%- if section.settings.is_auto_slide -%}
+                    <button
+                        type="button"
+                        class="slides-show__pause-toggle flex h-10 w-10 items-center justify-center rounded-full bg-theme-bg/60 text-theme-text backdrop-blur-sm hover:bg-theme-bg/80 focus-visible:outline-2 focus-visible:outline-offset-2"
+                        aria-label="{{ 'accessibility.pause_slideshow' | t }}"
+                        aria-pressed="false"
+                        data-play-label="{{ 'accessibility.play_slideshow' | t }}"
+                    ></button>
+                {%- endif -%}
+            </div>
+        {%- endif -%}
     </div>
 </div>
 
@@ -123,13 +160,70 @@
                         navigation: false,
                     });
 
-                    return { swiper };
+                    const cleanups = [];
+
+                    const prevBtn = el.querySelector('.slides-show__nav-prev');
+                    const nextBtn = el.querySelector('.slides-show__nav-next');
+
+                    if (prevBtn) {
+                        function onPrev() {
+                            swiper.slidePrev();
+                        }
+                        prevBtn.addEventListener('click', onPrev);
+                        cleanups.push(function () {
+                            prevBtn.removeEventListener('click', onPrev);
+                        });
+                    }
+
+                    if (nextBtn) {
+                        function onNext() {
+                            swiper.slideNext();
+                        }
+                        nextBtn.addEventListener('click', onNext);
+                        cleanups.push(function () {
+                            nextBtn.removeEventListener('click', onNext);
+                        });
+                    }
+
+                    const pauseBtn = el.querySelector('.slides-show__pause-toggle');
+                    if (pauseBtn && swiper.autoplay) {
+                        const pauseLabel = pauseBtn.getAttribute('aria-label');
+                        const playLabel = pauseBtn.getAttribute('data-play-label');
+
+                        function updatePauseButton() {
+                            const isRunning = swiper.autoplay.running;
+                            pauseBtn.setAttribute('aria-label', isRunning ? pauseLabel : playLabel);
+                            pauseBtn.setAttribute('aria-pressed', String(!isRunning));
+                        }
+
+                        function onTogglePause() {
+                            if (swiper.autoplay.running) {
+                                swiper.autoplay.stop();
+                            } else {
+                                swiper.autoplay.start();
+                            }
+                            updatePauseButton();
+                        }
+
+                        pauseBtn.addEventListener('click', onTogglePause);
+                        cleanups.push(function () {
+                            pauseBtn.removeEventListener('click', onTogglePause);
+                        });
+                    }
+
+                    return { swiper, cleanups };
                 },
 
                 destroy(el, state) {
-                    if (!state || !state.swiper) return;
+                    if (!state) return;
 
-                    if (typeof state.swiper.destroy === 'function') {
+                    if (Array.isArray(state.cleanups)) {
+                        state.cleanups.forEach(function (fn) {
+                            fn();
+                        });
+                    }
+
+                    if (state.swiper && typeof state.swiper.destroy === 'function') {
                         state.swiper.destroy(true, true);
                     }
                 },
@@ -139,16 +233,25 @@
     })();
 {% endjavascript %}
 
+{% stylesheet %}
+    .slides-show__pause-toggle::before {
+        content: '\23F8';
+        font-size: 0.75rem;
+        line-height: 1;
+    }
+
+    .slides-show__pause-toggle[aria-pressed='true']::before {
+        content: '\25B6';
+    }
+{% endstylesheet %}
+
 {% schema %}
 {
     "name": "t:sections.slides-show.name",
     "tag": "section",
     "class": "section",
     "disabled_on": {
-        "groups": [
-            "header",
-            "footer"
-        ]
+        "groups": ["header", "footer"]
     },
     "settings": [
         {
@@ -276,7 +379,7 @@
                     "type": "richtext",
                     "id": "headline",
                     "label": "t:sections.slides-show.block_settings.headline",
-                    "default": "<p>Precision Vision,Timeless Style.</p>"
+                    "default": "t:sections.slides-show.blocks.defaults.headline_html"
                 },
                 {
                     "type": "header",
@@ -340,13 +443,13 @@
                     "type": "richtext",
                     "id": "description",
                     "label": "t:sections.slides-show.block_settings.description",
-                    "default": "<p>Personalized with AI insight. Personalized with AI insight. Personalized with AI insight.</p>"
+                    "default": "t:sections.slides-show.blocks.defaults.description_html"
                 },
                 {
                     "type": "inline_richtext",
                     "id": "cta_text",
                     "label": "t:sections.slides-show.block_settings.call_to_action_text",
-                    "default": "See Our New Product"
+                    "default": "t:sections.slides-show.blocks.defaults.cta_text"
                 },
                 {
                     "type": "url",
@@ -410,7 +513,7 @@
                     "type": "inline_richtext",
                     "id": "meta_text",
                     "label": "t:sections.slides-show.block_settings.meta_text",
-                    "default": "Personalize insight."
+                    "default": "t:sections.slides-show.blocks.defaults.meta_text"
                 },
                 {
                     "type": "text",
@@ -427,4 +530,4 @@
         }
     ]
 }
-    {% endschema %}
+{% endschema %}

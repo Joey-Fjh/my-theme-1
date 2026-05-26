@@ -24,43 +24,59 @@
 <div class="grid w-full min-w-0 grid-cols-2 gap-2">
     {%- for image in images -%}
         {%- assign media_image = image.preview_image | default: image -%}
-        <div
-            class="
-                min-w-0 overflow-hidden rounded-sm
-                {% if forloop.first and images_mod_2 == 1 %}
-                  col-span-2
-                {% endif %}
-            "
-            style="aspect-ratio: {{ gallery_aspect }}; {% if zoom %}cursor: zoom-in;{% endif %}"
-            {% if zoom %}
+        {%- if zoom -%}
+            <button
+                type="button"
+                aria-label="{{ 'accessibility.open_image_zoom' | t }}"
+                class="
+                    min-w-0 cursor-zoom-in overflow-hidden rounded-sm
+                    {% if forloop.first and images_mod_2 == 1 %}
+                      col-span-2
+                    {% endif %}
+                "
+                style="aspect-ratio: {{ gallery_aspect }};"
                 @click="openLightbox({{ forloop.index0 }})"
-            {% endif %}
-        >
-            {%- if magnifier -%}
-                {%- render 'image-magnifier',
-                    image: media_image,
-                    width: 800,
-                    img_class: 'w-full h-full object-cover',
-                    alt: media_image.alt,
-                    sizes: '(min-width: 48rem) 25vw, 50vw',
-                    widths: '300,400,600,800',
-                    loading: 'lazy',
-                    zoom_scale: magnifier_zoom_scale,
-                    preview_width: magnifier_preview_width,
-                    preview_height: magnifier_preview_height,
-                    preview_max_width: magnifier_preview_max_width
-                -%}
-            {%- else -%}
-                {%- render 'image',
-                    image: media_image,
-                    width: 800,
-                    img_class: 'w-full h-full object-cover',
-                    alt: media_image.alt,
-                    sizes: '(min-width: 48rem) 25vw, 50vw',
-                    widths: '300,400,600,800',
-                    loading: 'lazy'
-                -%}
-            {%- endif -%}
-        </div>
+            >
+        {%- else -%}
+            <div
+                class="
+                    min-w-0 overflow-hidden rounded-sm
+                    {% if forloop.first and images_mod_2 == 1 %}
+                      col-span-2
+                    {% endif %}
+                "
+                style="aspect-ratio: {{ gallery_aspect }};"
+            >
+        {%- endif -%}
+        {%- if magnifier -%}
+            {%- render 'image-magnifier',
+                image: media_image,
+                width: 800,
+                img_class: 'w-full h-full object-cover',
+                alt: media_image.alt,
+                sizes: '(min-width: 48rem) 25vw, 50vw',
+                widths: '300,400,600,800',
+                loading: 'lazy',
+                zoom_scale: magnifier_zoom_scale,
+                preview_width: magnifier_preview_width,
+                preview_height: magnifier_preview_height,
+                preview_max_width: magnifier_preview_max_width
+            -%}
+        {%- else -%}
+            {%- render 'image',
+                image: media_image,
+                width: 800,
+                img_class: 'w-full h-full object-cover',
+                alt: media_image.alt,
+                sizes: '(min-width: 48rem) 25vw, 50vw',
+                widths: '300,400,600,800',
+                loading: 'lazy'
+            -%}
+        {%- endif -%}
+        {%- if zoom -%}
+            </button>
+        {%- else -%}
+            </div>
+        {%- endif -%}
     {%- endfor -%}
 </div>
