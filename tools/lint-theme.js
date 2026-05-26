@@ -153,7 +153,7 @@ async function checkSchemaIds() {
 
 async function checkLiquidArchitecture() {
     const assignRe = /{%-?\s*(assign|capture)\s+([a-zA-Z_][\w]*)\b/g;
-    const inlineScriptRe = /<script\b(?![^>]*\bsrc=)[\s\S]*?<\/script>/gi;
+    const inlineScriptRe = /<script\b(?![^>]*\bsrc=)(?![^>]*\btype="application\/(?:ld\+json|json)")[\s\S]*?<\/script>/gi;
     const styleTagRe = /<style\b[\s\S]*?<\/style>/gi;
     const rawCartFetchRe = /\bfetch\s*\(\s*['"]\/cart(?:\.js|\/(?:add|change|clear|update)\.js)/g;
     const domListenerRe = /\b(?:document|window)\.addEventListener\s*\(/g;

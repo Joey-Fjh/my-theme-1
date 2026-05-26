@@ -86,6 +86,15 @@
                 lightboxIndex: Math.max(0, Number(initialIndex) || 0),
                 _previousBodyOverflow: null,
 
+                init() {
+                    const ds = this.$el?.dataset;
+                    if (!ds) return;
+                    if (ds.lightboxImageCount) {
+                        const parsed = Number(ds.lightboxImageCount);
+                        if (Number.isFinite(parsed) && parsed > 0) this.imageCount = parsed;
+                    }
+                },
+
                 get lightboxLabel() {
                     return `${this.lightboxIndex + 1} / ${this.imageCount}`;
                 },

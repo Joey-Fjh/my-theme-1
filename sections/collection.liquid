@@ -8,7 +8,9 @@
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
     "
-    x-data="collectionFilters('{{ section.id }}', ['[data-collection-dynamic-content]','[data-collection-drawer-shell]'])"
+    data-pagination-section-id="{{ section.id }}"
+    data-pagination-selectors='["[data-collection-dynamic-content]","[data-collection-drawer-shell]"]'
+    x-data="collectionFilters()"
     data-component-kind="section"
     data-component-type="collection"
     data-component-id="{{ section.id }}"
@@ -32,8 +34,8 @@
                 <div class="scale-50 opacity-0" data-gsap-badge>
                     {%- render 'rotating-badge',
                         classes: 'relative justify-self-center',
-                        badge_class: 'text-[#000000]',
-                        center_class: 'text-[#1B2608]',
+                        badge_class: 'text-theme-text',
+                        center_class: 'text-theme-text',
                         unique_id: section.id,
                         size: 100,
                         badge_text: section.settings.rotate_badge_text,
@@ -86,7 +88,7 @@
                         <button
                             type="button"
                             @click="$store.dialog.open('collection-filters')"
-                            class="flex shrink-0 cursor-pointer items-center gap-3 h2"
+                            class="flex shrink-0 cursor-pointer items-center gap-3 body-sm"
                         >
                             {% render 'icons',
                                 icon: 'icon-filter',
@@ -191,7 +193,7 @@
                                 <button
                                     type="button"
                                     @click="$store.dialog.open('collection-filters')"
-                                    class="flex shrink-0 cursor-pointer items-center gap-2.5 h2"
+                                    class="flex shrink-0 cursor-pointer items-center gap-2.5 body-sm"
                                 >
                                     {% render 'icons', icon: 'icon-filter', class: 'h-10 w-10', color: 'currentColor' %}
                                     <span>Filter</span>
@@ -235,7 +237,7 @@
                             :tabindex="isActive(index) ? 0 : -1"
                             :aria-selected="isActive(index)"
                             :class="isActive(index) ? 'opacity-100 border-b-2 border-current' : 'opacity-50 hover:opacity-100 border-b-2 border-transparent'"
-                            class="flex cursor-pointer flex-nowrap items-center gap-1 h2 whitespace-nowrap transition-all duration-300 focus:outline-none"
+                            class="flex cursor-pointer flex-nowrap items-center gap-1 body-sm whitespace-nowrap transition-all duration-300 focus:outline-none"
                         >
                             All
                             <sup class="leading-none">({{ all_products_collection.all_products_count | default: 0 }})</sup>
@@ -257,7 +259,7 @@
                                 :tabindex="isActive(index) ? 0 : -1"
                                 :aria-selected="isActive(index)"
                                 :class="isActive(index) ? 'opacity-100 border-b-2 border-current' : 'opacity-50 hover:opacity-100 border-b-2 border-transparent'"
-                                class="flex cursor-pointer flex-nowrap items-center gap-1 h2 whitespace-nowrap transition-all duration-300 focus:outline-none"
+                                class="flex cursor-pointer flex-nowrap items-center gap-1 body-sm whitespace-nowrap transition-all duration-300 focus:outline-none"
                             >
                                 {{ tab_collection.title }}
                                 <sup class="leading-none">({{ tab_collection.all_products_count | default: 0 }})</sup>
@@ -293,7 +295,7 @@
                                             %}
                                         </div>
                                     {% else %}
-                                        <div class="col-span-full py-20 text-center h3 opacity-60">
+                                        <div class="col-span-full py-20 text-center body-lg opacity-60">
                                             No products found.
                                         </div>
                                     {% endfor %}
@@ -506,37 +508,39 @@
     "tag": "section",
     "class": "section",
     "enabled_on": {
-        "templates": ["collection"]
+        "templates": [
+            "collection"
+        ]
     },
     "settings": [
         {
             "type": "color_scheme",
             "id": "color_scheme",
-            "label": "Color Scheme",
+            "label": "t:sections.collection.settings.color_scheme",
             "default": "color-scheme-1"
         },
         {
             "type": "inline_richtext",
             "id": "header",
             "default": "Products",
-            "label": "Header"
+            "label": "t:sections.collection.settings.header"
         },
         {
             "type": "richtext",
             "id": "description",
             "default": "<p>Tailored experiences powered by AI intelligence. Discover insights that adapt to your needs.</p>",
-            "label": "Description"
+            "label": "t:sections.collection.settings.description"
         },
         {
             "type": "text",
             "id": "rotate_badge_text",
-            "label": "Rotate Badge Text",
+            "label": "t:sections.collection.settings.rotate_badge_text",
             "default": "PRODUCT GUARANTEE NATURAL"
         },
         {
             "type": "text",
             "id": "rotate_badge_percent",
-            "label": "Rotate Badge Percent",
+            "label": "t:sections.collection.settings.rotate_badge_percent",
             "default": "100%"
         },
         {
@@ -546,32 +550,32 @@
             "max": 24,
             "step": 3,
             "default": 12,
-            "label": "Products per page"
+            "label": "t:sections.collection.settings.products_per_page"
         },
         {
             "type": "checkbox",
             "id": "enable_filtering",
             "default": true,
-            "label": "Enable filtering",
-            "info": "Customize filters with the [Search & Discovery app](https://help.shopify.com/manual/online-store/search-and-discovery/filters)"
+            "label": "t:sections.collection.settings.enable_filtering",
+            "info": "t:sections.collection.info.customize_filters_with_the_search_discov"
         },
         {
             "type": "select",
             "id": "filter_type",
-            "label": "Desktop filter layout",
+            "label": "t:sections.collection.settings.desktop_filter_layout",
             "default": "horizontal",
             "options": [
                 {
                     "value": "horizontal",
-                    "label": "Horizontal"
+                    "label": "t:sections.collection.options.horizontal"
                 },
                 {
                     "value": "vertical",
-                    "label": "Vertical"
+                    "label": "t:sections.collection.options.vertical"
                 },
                 {
                     "value": "drawer",
-                    "label": "Drawer"
+                    "label": "t:sections.collection.options.drawer"
                 }
             ]
         },
@@ -582,49 +586,49 @@
             "max": 12,
             "step": 1,
             "default": 6,
-            "label": "Visible filter values before show more"
+            "label": "t:sections.collection.settings.visible_filter_values_before_show_more"
         },
         {
             "type": "checkbox",
             "id": "enable_sorting",
             "default": true,
-            "label": "Enable sorting"
+            "label": "t:sections.collection.settings.enable_sorting"
         },
         {
             "type": "select",
             "id": "desktop_card_columns",
-            "label": "Desktop product card columns",
+            "label": "t:sections.collection.settings.desktop_product_card_columns",
             "default": "4",
             "options": [
                 {
                     "value": "3",
-                    "label": "3 columns"
+                    "label": "t:sections.collection.options.3_columns"
                 },
                 {
                     "value": "4",
-                    "label": "4 columns"
+                    "label": "t:sections.collection.options.4_columns"
                 }
             ]
         },
         {
             "type": "select",
             "id": "mobile_card_columns",
-            "label": "Mobile product card columns",
+            "label": "t:sections.collection.settings.mobile_product_card_columns",
             "default": "2",
             "options": [
                 {
                     "value": "1",
-                    "label": "1 column"
+                    "label": "t:sections.collection.options.1_column"
                 },
                 {
                     "value": "2",
-                    "label": "2 columns"
+                    "label": "t:sections.collection.options.2_columns"
                 }
             ]
         },
         {
             "type": "header",
-            "content": "Padding"
+            "content": "t:sections.collection.content.padding"
         },
         {
             "type": "range",
@@ -633,7 +637,7 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Top",
+            "label": "t:sections.collection.settings.padding_top",
             "default": 0
         },
         {
@@ -643,7 +647,7 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Bottom",
+            "label": "t:sections.collection.settings.padding_bottom",
             "default": 0
         }
     ],
@@ -653,4 +657,4 @@
         }
     ]
 }
-{% endschema %}
+    {% endschema %}

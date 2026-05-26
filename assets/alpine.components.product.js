@@ -65,12 +65,12 @@
             };
         },
 
-        VariantPicker({ sectionId, productId, productFormId } = {}) {
+        VariantPicker() {
             return {
                 ...AlpineComponentsFactory.useDisposable(),
-                sectionId,
-                productId,
-                productFormId,
+                sectionId: '',
+                productId: null,
+                productFormId: '',
                 variants: [],
                 selectedOptions: {},
                 currentVariant: null,
@@ -78,18 +78,22 @@
                 _eventScope: null,
 
                 init() {
-                    const Events = window.__Theme__.Events;
-                    const events = Events.events;
-                    this._eventScope = Events.createScope();
+                    const dataset = this.$el?.dataset || {};
+                    this.sectionId = dataset.sectionId || this.sectionId || '';
+                    this.productId = Number(dataset.productId || this.productId || 0) || null;
+                    this.productFormId = dataset.productFormId || this.productFormId || '';
 
-                    const jsonEl = document.getElementById(`ProductVariants-${this.sectionId}`);
-                    if (jsonEl) {
+                    if (dataset.variants) {
                         try {
-                            this.variants = JSON.parse(jsonEl.textContent);
+                            this.variants = JSON.parse(dataset.variants);
                         } catch (_) {
                             /* noop */
                         }
                     }
+
+                    const Events = window.__Theme__.Events;
+                    const events = Events.events;
+                    this._eventScope = Events.createScope();
 
                     this._buildOptionNames();
                     this._setInitialSelection();
@@ -215,6 +219,7 @@
                 max,
                 step,
                 _eventScope: null,
+                _sectionId: sectionId,
 
                 get canDecrement() {
                     return this.qty > this.min;
@@ -223,7 +228,19 @@
                     return this.max === null || this.qty < this.max;
                 },
 
+                _hydrateFromDataset() {
+                    const ds = this.$el?.dataset;
+                    if (!ds) return;
+                    if (ds.qtyValue) this.qty = Number(ds.qtyValue) || 1;
+                    if (ds.qtyMin) this.min = Number(ds.qtyMin) || 1;
+                    if (ds.qtyMax && ds.qtyMax !== 'null') this.max = Number(ds.qtyMax);
+                    if (ds.qtyStep) this.step = Number(ds.qtyStep) || 1;
+                    if (ds.qtySectionId) this._sectionId = ds.qtySectionId;
+                },
+
                 init() {
+                    this._hydrateFromDataset();
+                    const sectionId = this._sectionId;
                     if (!sectionId) return;
                     const Events = window.__Theme__.Events;
                     const events = Events.events;

@@ -7,7 +7,7 @@
     "
 >
     <div class="layout container-page color-{{ section.settings.color_scheme }}">
-        {%- assign collection = section.settings.collection -%}
+        {%- assign selected_collection = section.settings.collection -%}
 
         <div class="flex flex-col gap-16">
             <div class="flex flex-col gap-3 pc:flex-row pc:items-center pc:justify-between">
@@ -16,17 +16,17 @@
                         {%- if section.settings.heading != blank -%}
                             {{ section.settings.heading }}
                         {%- else -%}
-                            {{ collection.title }}
+                            {{ selected_collection.title }}
                         {%- endif -%}
 
-                        {%- if collection != nil and collection.products_count > 0 -%}
-                            <sup class="sup-badge">({{ collection.products_count }})</sup>
+                        {%- if selected_collection != nil and selected_collection.products_count > 0 -%}
+                            <sup class="sup-badge">({{ selected_collection.products_count }})</sup>
                         {%- endif -%}
                     </h1>
                 {%- endcapture -%}
 
                 {%- render 'link',
-                    href: collection.url,
+                    href: selected_collection.url,
                     content: link_content,
                     variant: 'underline',
                     color: 'current'
@@ -39,7 +39,7 @@
                 {%- assign max_items = section.settings.max_items -%}
 
                 {% # theme-check-disable-next-line LiquidHTMLSyntaxError %}
-                {%- for product in collection.products limit: max_items -%}
+                {%- for product in selected_collection.products limit: max_items -%}
                     <a
                         class="flex flex-col gap-3 py-8 body-md pc:flex-row pc:items-center pc:justify-between pc:p-8"
                         href="{{ product.url }}"
@@ -110,17 +110,20 @@
 
 {% schema %}
 {
-    "name": "Scroll Categories",
+    "name": "t:sections.scroll-categories.name",
     "tag": "section",
     "class": "section",
     "disabled_on": {
-        "groups": ["header", "footer"]
+        "groups": [
+            "header",
+            "footer"
+        ]
     },
     "settings": [
         {
             "type": "color_scheme",
             "id": "color_scheme",
-            "label": "Color Scheme",
+            "label": "t:sections.scroll-categories.settings.color_scheme",
             "default": "color-scheme-1"
         },
         {
@@ -130,33 +133,33 @@
             "max": 8,
             "step": 1,
             "default": 4,
-            "label": "Maximum items"
+            "label": "t:sections.scroll-categories.settings.maximum_items"
         },
         {
             "type": "inline_richtext",
             "id": "heading",
-            "label": "Heading"
+            "label": "t:sections.scroll-categories.settings.heading"
         },
         {
             "type": "richtext",
             "id": "description",
-            "label": "Description",
+            "label": "t:sections.scroll-categories.settings.description",
             "default": "<p>Add a description to your category.</p>"
         },
         {
             "type": "collection",
             "id": "collection",
-            "label": "Select Collection"
+            "label": "t:sections.scroll-categories.settings.select_collection"
         },
         {
             "type": "richtext",
             "id": "caption",
-            "label": "Caption",
+            "label": "t:sections.scroll-categories.settings.caption",
             "default": "<p>Add a caption to your category.</p>"
         },
         {
             "type": "header",
-            "content": "Padding"
+            "content": "t:sections.scroll-categories.content.padding"
         },
         {
             "type": "range",
@@ -165,7 +168,7 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Top",
+            "label": "t:sections.scroll-categories.settings.padding_top",
             "default": 0
         },
         {
@@ -175,15 +178,15 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Bottom",
+            "label": "t:sections.scroll-categories.settings.padding_bottom",
             "default": 0
         }
     ],
     "presets": [
         {
-            "name": "Scroll Categories",
+            "name": "t:sections.scroll-categories.presets.scroll_categories",
             "settings": {}
         }
     ]
 }
-{% endschema %}
+    {% endschema %}

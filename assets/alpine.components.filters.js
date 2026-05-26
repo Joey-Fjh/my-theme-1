@@ -202,7 +202,7 @@
     }
 
     ComponentGroups.filters = {
-        collectionFilters(sectionId, selectors = null) {
+        collectionFilters(sectionId = null, selectors = null) {
             return {
                 ...AlpineComponents.sectionPagination(sectionId, selectors),
 
@@ -288,7 +288,16 @@
                 max: Number(max) || 0,
                 ceil: Math.max(0, Number(ceil) || 0),
 
+                _hydrateFromDataset() {
+                    const ds = this.$el?.dataset;
+                    if (!ds) return;
+                    if (ds.filterMin) this.min = Number(ds.filterMin) || 0;
+                    if (ds.filterMax) this.max = Number(ds.filterMax) || 0;
+                    if (ds.filterCeil) this.ceil = Math.max(0, Number(ds.filterCeil) || 0);
+                },
+
                 init() {
+                    this._hydrateFromDataset();
                     if (this.ceil <= 0) {
                         this.min = 0;
                         this.max = 0;

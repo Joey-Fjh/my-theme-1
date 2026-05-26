@@ -45,7 +45,7 @@
                             type="email"
                             name="customer[email]"
                             x-model="email"
-                            placeholder="{{ section.settings.placeholder | default: 'Enter your email address' }}"
+                            placeholder="{{ section.settings.placeholder | default: 'newsletter.email_placeholder' | t }}"
                             required
                             class="field flex-1"
                         >
@@ -54,7 +54,7 @@
                             class="btn w-full btn-primary pc:w-auto"
                             :disabled="loading"
                         >
-                            <span x-show="!loading" class="pc:hidden">Subscribe</span>
+                            <span x-show="!loading" class="pc:hidden">{{ 'newsletter.subscribe' | t }}</span>
                             <svg
                                 x-show="!loading"
                                 class="h-5 w-5"
@@ -64,16 +64,9 @@
                             >
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
                             </svg>
-                            <svg
-                                x-show="loading"
-                                x-cloak
-                                class="h-5 w-5 animate-spin"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                            >
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                            </svg>
+                            <span x-show="loading" x-cloak>
+                                {%- render 'loading', size: 'small', spinner_color: 'border-current' -%}
+                            </span>
                         </button>
                     </div>
                 {% endform %}
@@ -84,45 +77,48 @@
 
 {% schema %}
 {
-    "name": "NewSletter Banner",
+    "name": "t:sections.newsletter-banner.name",
     "tag": "section",
     "class": "section",
     "disabled_on": {
-        "groups": ["header", "footer"]
+        "groups": [
+            "header",
+            "footer"
+        ]
     },
     "settings": [
         {
             "type": "color_scheme",
             "id": "color_scheme",
-            "label": "Color Scheme",
+            "label": "t:sections.newsletter-banner.settings.color_scheme",
             "default": "color-scheme-1"
         },
         {
             "type": "image_picker",
             "id": "background_image",
-            "label": "Background Image"
+            "label": "t:sections.newsletter-banner.settings.background_image"
         },
         {
             "type": "inline_richtext",
             "id": "subtitle",
-            "label": "Subtitle",
+            "label": "t:sections.newsletter-banner.settings.subtitle",
             "default": "Limited Time Offer"
         },
         {
             "type": "inline_richtext",
             "id": "heading",
-            "label": "Heading",
+            "label": "t:sections.newsletter-banner.settings.heading",
             "default": "Up To 50% Off Everything"
         },
         {
             "type": "text",
             "id": "placeholder",
-            "label": "Input Placeholder",
+            "label": "t:sections.newsletter-banner.settings.input_placeholder",
             "default": "Enter your email address"
         },
         {
             "type": "header",
-            "content": "Padding"
+            "content": "t:sections.newsletter-banner.content.padding"
         },
         {
             "type": "range",
@@ -131,7 +127,7 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Top",
+            "label": "t:sections.newsletter-banner.settings.padding_top",
             "default": 0
         },
         {
@@ -141,15 +137,15 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Bottom",
+            "label": "t:sections.newsletter-banner.settings.padding_bottom",
             "default": 0
         }
     ],
     "presets": [
         {
-            "name": "NewSletter Banner",
+            "name": "t:sections.newsletter-banner.presets.newsletter_banner",
             "settings": {}
         }
     ]
 }
-{% endschema %}
+    {% endschema %}

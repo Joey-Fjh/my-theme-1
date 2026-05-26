@@ -43,7 +43,8 @@
 
 {%- if should_render_trigger -%}
     <div
-        x-data="imageLightbox({ imageCount: {{ lightbox_count }} })"
+        data-lightbox-image-count="{{ lightbox_count }}"
+        x-data="imageLightbox()"
         class="image-lightbox {{ class }}"
         @keydown.escape.window="lightboxOpen && closeLightbox()"
         @keydown.right.window="lightboxOpen && nextLightbox()"
@@ -53,7 +54,7 @@
             type="button"
             class="{{ trigger_class }}"
             @click="openLightbox({{ image_index }})"
-            aria-label="Open image zoom"
+            aria-label="{{ 'accessibility.open_image_zoom' | t }}"
         >
             {%- render 'image',
                 image: image,
@@ -84,7 +85,7 @@
         @click.self="closeLightbox()"
         role="dialog"
         aria-modal="true"
-        aria-label="Image zoom"
+        aria-label="{{ 'accessibility.image_zoom' | t }}"
     >
         <div
             class="pointer-events-none absolute inset-0"
@@ -96,7 +97,7 @@
             type="button"
             @click="closeLightbox()"
             class="absolute top-4 right-4 z-10140 flex h-10 w-10 rotate-45 cursor-pointer items-center justify-center text-white/80 transition-colors hover:text-white"
-            aria-label="Close zoom"
+            aria-label="{{ 'accessibility.close_zoom' | t }}"
         >
             {% render 'icons', icon: 'icon-plus', size: 'lg', color: 'current' %}
         </button>
@@ -106,7 +107,7 @@
                 type="button"
                 @click.stop="prevLightbox()"
                 class="absolute left-4 z-10140 flex h-10 w-10 cursor-pointer items-center justify-center text-white/80 transition-colors hover:text-white"
-                aria-label="Previous image"
+                aria-label="{{ 'accessibility.previous_image' | t }}"
             >
                 <svg
                     class="h-6 w-6 rotate-90"
@@ -121,7 +122,7 @@
                 type="button"
                 @click.stop="nextLightbox()"
                 class="absolute right-4 z-10140 flex h-10 w-10 cursor-pointer items-center justify-center text-white/80 transition-colors hover:text-white"
-                aria-label="Next image"
+                aria-label="{{ 'accessibility.next_image' | t }}"
             >
                 <svg
                     class="h-6 w-6 -rotate-90"

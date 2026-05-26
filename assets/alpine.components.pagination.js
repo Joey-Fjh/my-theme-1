@@ -10,7 +10,7 @@
     if (!AlpineComponentsFactory) return;
 
     ComponentGroups.pagination = {
-        sectionPagination(sectionId, selectors = null) {
+        sectionPagination(sectionId = null, selectors = null) {
             return {
                 ...(window.__Theme__?.AlpineComponentsFactory?.useDisposable?.() || {}),
                 isLoading: false,
@@ -28,7 +28,22 @@
                 /** @type {Function|null} debounced wrapper, created in init */
                 _debouncedFetch: null,
 
+                _hydrateFromDataset() {
+                    const ds = this.$el?.dataset;
+                    if (!ds) return;
+                    if (!this.sectionId && ds.paginationSectionId) {
+                        this.sectionId = ds.paginationSectionId;
+                    }
+                    if (this.selectors.length === 0 && ds.paginationSelectors) {
+                        try {
+                            const parsed = JSON.parse(ds.paginationSelectors);
+                            if (Array.isArray(parsed)) this.selectors = parsed;
+                        } catch (_) {}
+                    }
+                },
+
                 init() {
+                    this._hydrateFromDataset();
                     if (!this.sectionId) return;
 
                     if (!window.history.state || !window.history.state.path) {

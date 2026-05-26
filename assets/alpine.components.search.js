@@ -60,6 +60,13 @@
                         this.query = dataset.predictiveSearchQuery;
                     }
 
+                    if (dataset.searchLimit) {
+                        const parsed = Number(dataset.searchLimit);
+                        if (Number.isFinite(parsed) && parsed > 0) {
+                            this.resultLimit = parsed;
+                        }
+                    }
+
                     this._initialSearchPerformed = dataset.predictiveSearchPerformed === 'true';
                 },
 

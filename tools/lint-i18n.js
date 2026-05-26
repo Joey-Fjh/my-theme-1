@@ -58,6 +58,35 @@ function isAllowedLiteral(value) {
     return ALLOWED_TEXT_RE.some((re) => re.test(text));
 }
 
+// --- schema default helpers ---------------------------------------------------
+
+const SCHEMA_ROUTE_RE = /^\//;
+const SCHEMA_ENUM_RE =
+    /^(left|right|center|top|bottom|justify|inherit|auto|none|enable|disable|enabled|disabled|true|false|yes|no|show|hide|visible|hidden|always|never|inline|block|grid|flex|cover|contain|small|medium|large|day|week|month|year|related|newest|price-asc|price-desc|best-selling|manual|alphabetical|title-ascending|title-descending|created-ascending|created-descending|date|standard|compact|minimal|default|classic|modern|bold|subtle)$/;
+const SCHEMA_HANDLE_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const SCHEMA_ICON_ID_RE = /^icon-[a-z0-9-]+$/;
+const SCHEMA_COLOR_SCHEME_RE = /^(?:color-)?scheme-\d+$/;
+const SCHEMA_PLACE_RE = /^place-(?:top|bottom)-(?:left|right|center)$/;
+const SCHEMA_NUMERIC_RE = /^[\d.]+(?:px|%|rem|em|vh|vw)?$/;
+
+/**
+ * Returns true when a schema "default" value is a machine/config token
+ * that is not merchant-facing storefront copy.
+ */
+function isNonVisibleSchemaDefault(value) {
+    const text = String(value).trim();
+
+    if (SCHEMA_ROUTE_RE.test(text)) return true;
+    if (SCHEMA_COLOR_SCHEME_RE.test(text)) return true;
+    if (SCHEMA_ICON_ID_RE.test(text)) return true;
+    if (SCHEMA_PLACE_RE.test(text)) return true;
+    if (SCHEMA_ENUM_RE.test(text)) return true;
+    if (SCHEMA_NUMERIC_RE.test(text)) return true;
+    if (SCHEMA_HANDLE_RE.test(text)) return true;
+
+    return false;
+}
+
 function flattenLocaleKeys(node, prefix = '', keys = new Set()) {
     if (!node || node.type !== 'object') return keys;
 
@@ -226,7 +255,7 @@ async function checkHardcodedSchemaText() {
             const tree = parseTree(block.json);
             if (!tree) continue;
 
-            walkSchemaNode(tree, (property, valueNode) => {
+            walkSchemaNode(tree, (property, valueNode, parentProps) => {
                 if (!translatableFields.has(property)) return;
 
                 const value = getNodeValue(valueNode);
@@ -239,6 +268,31 @@ async function checkHardcodedSchemaText() {
                 )
                     return;
 
+                // Schema "default" values that are machine/config tokens
+                // (color schemes, icon IDs, alignment, enum handles, routes)
+                // are not merchant-facing copy and should not be flagged.
+                if (property === 'default' && isNonVisibleSchemaDefault(value)) return;
+
+                // Font family defaults (e.g. "Neue Montreal") are machine values,
+                // not merchant-facing text. Detect via sibling "id" containing "font".
+                if (property === 'default' && parentProps) {
+                    const idNode = parentProps.get('id');
+                    const idValue = idNode ? getNodeValue(idNode) : '';
+                    if (typeof idValue === 'string' && idValue.includes('font')) return;
+                }
+
+                // Metafield key defaults (e.g. "custom.ingredients") are machine paths.
+                // Detect via sibling "id" being "metafield_key" or "metafield_namespace".
+                if (property === 'default' && parentProps) {
+                    const idNode = parentProps.get('id');
+                    const idValue = idNode ? getNodeValue(idNode) : '';
+                    if (
+                        typeof idValue === 'string' &&
+                        (idValue === 'metafield_key' || idValue === 'metafield_namespace')
+                    )
+                        return;
+                }
+
                 report(
                     file,
                     toPos(fullText, block.offset + valueNode.offset),
@@ -249,19 +303,23 @@ async function checkHardcodedSchemaText() {
     }
 }
 
-function walkSchemaNode(node, onProperty) {
+function walkSchemaNode(node, onProperty, parentProperties) {
     if (!node) return;
 
     if (node.type === 'object') {
+        const props = new Map();
         for (const propertyNode of node.children ?? []) {
             const keyNode = propertyNode.children?.[0];
             const valueNode = propertyNode.children?.[1];
-            const property = getNodeValue(keyNode);
-
-            if (typeof property === 'string' && valueNode) {
-                onProperty(property, valueNode);
-                walkSchemaNode(valueNode, onProperty);
+            const key = getNodeValue(keyNode);
+            if (typeof key === 'string' && valueNode) {
+                props.set(key, valueNode);
             }
+        }
+
+        for (const [property, valueNode] of props) {
+            onProperty(property, valueNode, props);
+            walkSchemaNode(valueNode, onProperty, props);
         }
 
         return;
@@ -269,16 +327,16 @@ function walkSchemaNode(node, onProperty) {
 
     if (node.type === 'array') {
         for (const child of node.children ?? []) {
-            walkSchemaNode(child, onProperty);
+            walkSchemaNode(child, onProperty, parentProperties);
         }
     }
 }
 
 async function checkHardcodedLiquidText() {
     const files = await fg(LIQUID_GLOBS, { cwd: ROOT, dot: false, onlyFiles: true });
-    const tagTextRe = />\s*([^<>{%][^<>{]*[A-Za-z][^<>{]*)\s*</g;
+    const tagTextRe = />\s*([^<>][^<>]*[A-Za-z][^<>]*)\s*</g;
     const attrRe = new RegExp(
-        `\\b(${USER_VISIBLE_ATTRIBUTES.join('|')})=(["'])([^"'{}%]*[A-Za-z][^"'{}%]*)\\2`,
+        `(?<!:)\\b(${USER_VISIBLE_ATTRIBUTES.join('|')})=(["'])([^"'{}%]*[A-Za-z][^"'{}%]*)\\2`,
         'g',
     );
 
@@ -288,6 +346,7 @@ async function checkHardcodedLiquidText() {
         for (const match of text.matchAll(tagTextRe)) {
             const literal = match[1].trim();
             if (!ENGLISH_TEXT_RE.test(literal) || isAllowedLiteral(literal)) continue;
+            if (literal.includes('{%') || literal.includes('%}')) continue;
 
             report(
                 file,

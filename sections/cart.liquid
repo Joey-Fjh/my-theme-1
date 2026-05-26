@@ -15,7 +15,7 @@
         <div class="grid grid-cols-1 gap-10 pc:grid-cols-[minmax(0,1fr)_auto]">
             {%- comment -%} Left: Cart list (Liquid-rendered for SRA) {%- endcomment -%}
             <div class="flex flex-col gap-10 text-theme-text pc:gap-30">
-                <h1 class="hxxxl font-bold">Cart</h1>
+                <h1 class="hxxxl font-bold">{{ 'cart.title' | t }}</h1>
 
                 <ul class="flex flex-col">
                     {%- for item in cart.items -%}
@@ -32,7 +32,7 @@
                                         img_class: 'object-contain p-3'
                                     %}
                                 {%- else -%}
-                                    <span class="body-md text-theme-text/60">No image</span>
+                                    <span class="body-md text-theme-text/60">{{ 'cart.no_image' | t }}</span>
                                 {%- endif -%}
                             </div>
 
@@ -42,7 +42,7 @@
                                 </p>
                                 <a
                                     href="{{ item.url }}"
-                                    class="mt-1 block body-md leading-tight font-medium hover:underline pc:mt-5 pc:h2"
+                                    class="mt-1 block body-md leading-tight font-medium hover:underline pc:mt-5 pc:body-lg"
                                 >
                                     {{ item.product.title }}
                                 </a>
@@ -55,7 +55,7 @@
                                 <a
                                     href="{{ item.url_to_remove }}"
                                     class="inline-flex h-6 w-6 items-center justify-center text-current opacity-75 transition-opacity hover:opacity-100 pc:h-10 pc:w-10"
-                                    aria-label="Remove {{ item.product.title }}"
+                                    aria-label="{{ 'accessibility.remove_item' | t: item: item.product.title }}"
                                     @click.prevent="$store.cart.change('{{ item.key }}', 0, ['{{ section.id }}'])"
                                 >
                                     {% render 'icons',
@@ -95,7 +95,7 @@
 
                 <div class="text-center">
                     {%- render 'link',
-                        text: 'Shop More',
+                        text: 'cart.shop_more' | t,
                         href: routes.root_url,
                         variant: 'underline',
                         color: 'current',
@@ -107,14 +107,14 @@
             {%- comment -%} Right: Order Summary card {%- endcomment -%}
             <aside class="self-start">
                 <div class="w-full surface p-5 pc:p-6">
-                    <h2 class="font-semibold text-current">Order Summary</h2>
+                    <h2 class="font-semibold text-current">{{ 'cart.order_summary' | t }}</h2>
 
                     {%- comment -%} Accordion: Order Special Instruction + Estimate Shipping {%- endcomment -%}
                     {%- capture note_html -%}
                         <textarea
                             name="note"
                             class="min-h-20 field resize-y bg-theme-bg/60 body-sm"
-                            placeholder="Add a note to your order..."
+                            placeholder="{{ 'cart.note_placeholder' | t }}"
                             @change="$store.cart.update({ note: $event.target.value })"
                         >
                             {{ cart.note }}
@@ -128,7 +128,7 @@
                                     type="text"
                                     name="attributes[Country]"
                                     class="field bg-theme-bg/60 body-md"
-                                    placeholder="Country"
+                                    placeholder="{{ 'cart.country_placeholder' | t }}"
                                     value="{{ cart.attributes.Country | default: 'China' }}"
                                     @change="$store.cart.update({ attributes: { Country: $event.target.value } })"
                                 >
@@ -136,7 +136,7 @@
                                     type="text"
                                     name="attributes[Province]"
                                     class="field bg-theme-bg/60 body-md"
-                                    placeholder="Province"
+                                    placeholder="{{ 'cart.province_placeholder' | t }}"
                                     value="{{ cart.attributes.Province | default: 'Anhui' }}"
                                     @change="$store.cart.update({ attributes: { Province: $event.target.value } })"
                                 >
@@ -145,13 +145,13 @@
                                 type="text"
                                 name="attributes[Pincode]"
                                 class="field bg-theme-bg/60 body-md"
-                                placeholder="Pincode"
+                                placeholder="{{ 'cart.pincode_placeholder' | t }}"
                             >
                             <button
                                 type="button"
                                 class="btn w-full btn-secondary"
                             >
-                                Get Estimate
+                                {{ 'cart.get_estimate' | t }}
                             </button>
                         </div>
                     {%- endcapture -%}
@@ -164,7 +164,7 @@
                     {% render 'accordion',
                         wrapper_class: 'mt-6 flex flex-col gap-6',
                         initial_active: 1,
-                        titles: 'Order Special Instruction|Estimate Shipping',
+                        titles: 'cart.order_special_instruction' | t | append: '|' | append: 'cart.estimate_shipping' | t,
                         contents: accordion_contents,
                         icon_type: 'plus',
                         icon_size: 'w-10 h-10',
@@ -178,13 +178,13 @@
 
                     <div class="mt-10 border-t border-theme-border-soft pt-10">
                         <div class="flex items-baseline justify-between gap-4">
-                            <span class="font-semibold text-current">Estimate Total</span>
+                            <span class="font-semibold text-current">{{ 'cart.estimate_total' | t }}</span>
                             <span class="text-current">
                                 {{- cart.total_price | money -}}
                             </span>
                         </div>
                         <p class="mt-10 body-md text-current/65">
-                            Taxes, discounts and shipping calculated at checkout.
+                            {{ 'cart.taxes_note' | t }}
                         </p>
                     </div>
 
@@ -194,7 +194,7 @@
                             name="checkout"
                             class="btn w-full btn-primary py-4 font-medium pc:py-6"
                         >
-                            Checkout
+                            {{ 'cart.checkout' | t }}
                             <sup class="sup-badge">( {{ cart.item_count | default: 0 }} )</sup>
                         </button>
                     </form>
@@ -234,12 +234,12 @@
         {
             "type": "color_scheme",
             "id": "color_scheme",
-            "label": "Color scheme",
+            "label": "t:sections.cart.settings.color_scheme",
             "default": "scheme-1"
         },
         {
             "type": "header",
-            "content": "Padding"
+            "content": "t:sections.cart.content.padding"
         },
         {
             "type": "range",
@@ -248,7 +248,7 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Top",
+            "label": "t:sections.cart.settings.padding_top",
             "default": 0
         },
         {
@@ -258,7 +258,7 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Bottom",
+            "label": "t:sections.cart.settings.padding_bottom",
             "default": 0
         }
     ],
@@ -268,4 +268,4 @@
         }
     ]
 }
-{% endschema %}
+    {% endschema %}

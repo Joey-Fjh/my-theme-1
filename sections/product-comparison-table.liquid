@@ -27,13 +27,13 @@
         {% if section.settings.products != blank and section.blocks.size > 0 %}
             <div
                 class="comparison-table-scroll overflow-x-auto"
-                aria-label="Scroll to compare more products"
+                aria-label="{{ 'accessibility.scroll_to_compare' | t }}"
                 data-comparison-scroll
             >
                 <table
                     class="comparison-table table-fixed border-collapse text-left"
                     role="grid"
-                    aria-label="Product comparison"
+                    aria-label="{{ 'accessibility.product_comparison' | t }}"
                 >
                     <tbody>
                         {% for block in section.blocks %}
@@ -52,15 +52,15 @@
                                 >
                                     {% case block.type %}
                                         {% when 'header' %}
-                                            Product
+                                            {{ 'products.comparison.product' | t }}
                                         {% when 'price' %}
-                                            Price
+                                            {{ 'products.comparison.price' | t }}
                                         {% when 'rating' %}
-                                            Rating
+                                            {{ 'products.comparison.rating' | t }}
                                         {% when 'metafield_text' %}
                                             {{ block.settings.row_title | default: '—' }}
                                         {% when 'availability' %}
-                                            Availability
+                                            {{ 'products.comparison.availability' | t }}
                                         {% else %}
                                             —
                                     {% endcase %}
@@ -162,11 +162,11 @@
                                             {% when 'availability' %}
                                                 {% if item.available %}
                                                     <span class="body-md text-(--comparison-success-color)"
-                                                        >In stock</span
+                                                        >{{ 'products.comparison.in_stock' | t }}</span
                                                     >
                                                 {% else %}
                                                     <span class="body-md text-(--comparison-danger-color)"
-                                                        >Out of Stock</span
+                                                        >{{ 'products.comparison.out_of_stock' | t }}</span
                                                     >
                                                 {% endif %}
 
@@ -182,8 +182,8 @@
             </div>
         {% else %}
             <div class="py-12 text-center text-gray-500">
-                <p class="h5">Select products in the section settings to compare.</p>
-                <p class="mt-2 h6">Add blocks (Price, Rating, etc.) to define comparison rows.</p>
+                <h5 class="h5">{{ 'products.comparison.no_products' | t }}</h5>
+                <p class="mt-2 body-sm">{{ 'products.comparison.no_blocks' | t }}</p>
             </div>
         {% endif %}
     </div>
@@ -201,9 +201,13 @@
                     const scrollEl = el.querySelector('[data-comparison-scroll]');
                     if (!scrollEl) return {};
 
-                    const timeoutRef = { id: null };
-                    const showDelayMs = 1000;
-                    const dragThresholdPx = 5;
+                    var Events = window.__Theme__?.Events;
+                    if (!Events?.createScope) return {};
+
+                    var scope = Events.createScope({ target: window });
+                    var timeoutRef = { id: null };
+                    var showDelayMs = 1000;
+                    var dragThresholdPx = 5;
 
                     function showScrollbar() {
                         scrollEl.classList.add('is-scrolling');
@@ -224,22 +228,8 @@
                     var dragStartScrollLeft = 0;
                     var isPointerDown = false;
                     var didDrag = false;
-                    var boundMove = null;
-                    var boundUp = null;
 
-                    function onPointerDown(e) {
-                        if (e.button !== 0) return;
-                        isPointerDown = true;
-                        didDrag = false;
-                        dragStartX = e.clientX;
-                        dragStartScrollLeft = scrollEl.scrollLeft;
-                        boundMove = onPointerMove;
-                        boundUp = onPointerUp;
-                        window.addEventListener('mousemove', boundMove, { passive: true });
-                        window.addEventListener('mouseup', boundUp);
-                    }
-
-                    function onPointerMove(e) {
+                    scope.on('mousemove', function (e) {
                         if (!isPointerDown) return;
                         var dx = dragStartX - e.clientX;
                         scrollEl.scrollLeft = dragStartScrollLeft + dx;
@@ -248,18 +238,22 @@
                             scrollEl.classList.add('is-dragging');
                             showScrollbar();
                         }
-                    }
+                    }, { passive: true });
 
-                    function onPointerUp() {
+                    scope.on('mouseup', function () {
                         isPointerDown = false;
                         scrollEl.classList.remove('is-dragging');
-                        if (boundMove) window.removeEventListener('mousemove', boundMove);
-                        if (boundUp) window.removeEventListener('mouseup', boundUp);
-                        boundMove = null;
-                        boundUp = null;
                         setTimeout(function () {
                             didDrag = false;
                         }, 0);
+                    });
+
+                    function onPointerDown(e) {
+                        if (e.button !== 0) return;
+                        isPointerDown = true;
+                        didDrag = false;
+                        dragStartX = e.clientX;
+                        dragStartScrollLeft = scrollEl.scrollLeft;
                     }
 
                     scrollEl.addEventListener('mousedown', onPointerDown);
@@ -274,6 +268,7 @@
                     scrollEl.addEventListener('click', onLinkClick, true);
 
                     return {
+                        scope: scope,
                         scrollEl: scrollEl,
                         onScroll: onScroll,
                         timeoutRef: timeoutRef,
@@ -287,6 +282,7 @@
                     if (state.timeoutRef?.id) clearTimeout(state.timeoutRef.id);
                     state.scrollEl.removeEventListener('mousedown', state.onPointerDown);
                     state.scrollEl.removeEventListener('click', state.onLinkClick, true);
+                    state?.scope?.dispose();
                 },
             },
             { lazy: true },
@@ -414,47 +410,50 @@
 
 {% schema %}
 {
-    "name": "Comparison Table",
+    "name": "t:sections.product-comparison-table.name",
     "tag": "section",
     "class": "section",
     "disabled_on": {
-        "groups": ["header", "footer"]
+        "groups": [
+            "header",
+            "footer"
+        ]
     },
     "settings": [
         {
             "type": "color_scheme",
             "id": "color_scheme",
-            "label": "Color scheme",
+            "label": "t:sections.product-comparison-table.settings.color_scheme",
             "default": "scheme-1"
         },
         {
             "type": "inline_richtext",
             "id": "heading",
-            "label": "Section heading",
+            "label": "t:sections.product-comparison-table.settings.section_heading",
             "default": "Similar Comparison Products"
         },
         {
             "type": "color",
             "id": "comparison_column_bg_color",
-            "label": "Highlight column background",
+            "label": "t:sections.product-comparison-table.settings.highlight_column_background",
             "default": "#F4F1E8"
         },
         {
             "type": "color",
             "id": "comparison_success_color",
-            "label": "Availability in stock color",
+            "label": "t:sections.product-comparison-table.settings.availability_in_stock_color",
             "default": "#228E58"
         },
         {
             "type": "color",
             "id": "comparison_danger_color",
-            "label": "Availability out of stock color",
+            "label": "t:sections.product-comparison-table.settings.availability_out_of_stock_color",
             "default": "#E04A4A"
         },
         {
             "type": "product_list",
             "id": "products",
-            "label": "Select Products",
+            "label": "t:sections.product-comparison-table.settings.select_products",
             "limit": 8
         },
         {
@@ -464,12 +463,12 @@
             "max": 8,
             "step": 1,
             "default": 1,
-            "label": "Highlight Column Index",
-            "info": "1 = first product column; 0 = no highlight"
+            "label": "t:sections.product-comparison-table.settings.highlight_column_index",
+            "info": "t:sections.product-comparison-table.info.1_first_product_column_0_no_highlight"
         },
         {
             "type": "header",
-            "content": "Padding"
+            "content": "t:sections.product-comparison-table.content.padding"
         },
         {
             "type": "range",
@@ -478,7 +477,7 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Top",
+            "label": "t:sections.product-comparison-table.settings.padding_top",
             "default": 0
         },
         {
@@ -488,58 +487,64 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Bottom",
+            "label": "t:sections.product-comparison-table.settings.padding_bottom",
             "default": 0
         }
     ],
     "blocks": [
         {
             "type": "header",
-            "name": "Product Info",
+            "name": "t:sections.product-comparison-table.blocks.product_info",
             "limit": 1
         },
         {
             "type": "price",
-            "name": "Price",
+            "name": "t:sections.product-comparison-table.blocks.price",
             "limit": 1
         },
         {
             "type": "rating",
-            "name": "Rating",
+            "name": "t:sections.product-comparison-table.blocks.rating",
             "limit": 1
         },
         {
             "type": "metafield_text",
-            "name": "Ingredients / Metafield",
+            "name": "t:sections.product-comparison-table.blocks.ingredients_metafield",
             "settings": [
                 {
                     "type": "inline_richtext",
                     "id": "row_title",
-                    "label": "Row title",
+                    "label": "t:sections.product-comparison-table.block_settings.row_title",
                     "default": "Ingredients"
                 },
                 {
                     "type": "text",
                     "id": "metafield_key",
-                    "label": "Metafield key (namespace.key)",
+                    "label": "t:sections.product-comparison-table.block_settings.metafield_key_namespace_key",
                     "default": "custom.ingredients",
-                    "info": "e.g. custom.ingredients"
+                    "info": "t:sections.product-comparison-table.block_info.e_g_custom_ingredients"
                 }
             ]
         },
         {
             "type": "availability",
-            "name": "Availability",
+            "name": "t:sections.product-comparison-table.blocks.availability",
             "limit": 1
         }
     ],
     "presets": [
         {
-            "name": "Comparison Table",
+            "name": "t:sections.product-comparison-table.presets.comparison_table",
             "blocks": [
-                { "type": "header" },
-                { "type": "price" },
-                { "type": "rating" },
+                {
+                    "type": "header"
+                },
+                {
+                    "type": "price"
+                },
+                {
+                    "type": "rating"
+                },
                 {
                     "type": "metafield_text",
                     "settings": {
@@ -547,9 +552,11 @@
                         "metafield_key": "custom.ingredients"
                     }
                 },
-                { "type": "availability" }
+                {
+                    "type": "availability"
+                }
             ]
         }
     ]
 }
-{% endschema %}
+    {% endschema %}

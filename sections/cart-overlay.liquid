@@ -8,18 +8,19 @@
         <div
             data-dialog-id="{{ popup_id }}"
             class="flex h-full flex-col text-theme-text"
-            x-data="cartOverlay({ sections: ['{{ section.id }}'] })"
+            data-cart-sections='["{{ section.id }}"]'
+            x-data="cartOverlay()"
             @keydown.escape.window="$store.dialog.close()"
             :class="{ 'opacity-70': $store.cart.loading && showItems }"
         >
             <div class="p-6">
                 <div class="flex items-center justify-between gap-4">
-                    <h2 id="dialog-title-{{ popup_id }}" class="h3 font-semibold">Cart</h2>
+                    <h2 id="dialog-title-{{ popup_id }}" class="h3 font-semibold">{{ 'cart.title' | t }}</h2>
                     <button
                         type="button"
                         class="inline-flex h-11 w-11 cursor-pointer items-center justify-center text-theme-text/75 transition hover:text-theme-text"
                         @click="$store.dialog.close()"
-                        aria-label="Close cart drawer"
+                        aria-label="{{ 'accessibility.close_cart_drawer' | t }}"
                     >
                         {% render 'icons', icon: 'icon-close', size: 'xl', color: 'current' %}
                     </button>
@@ -33,11 +34,11 @@
                     role="status"
                     aria-live="polite"
                 >
-                    <p class="body-md">Loading cart...</p>
+                    <p class="body-md">{{ 'cart.loading' | t }}</p>
                 </div>
 
                 <div x-show="showEmpty" class="flex h-full items-center justify-center text-center">
-                    <p class="body-md">Your cart is empty.</p>
+                    <p class="body-md">{{ 'cart.empty' | t }}</p>
                 </div>
 
                 <ul x-show="showItems" class="flex flex-col divide-y divide-theme-border-soft">
@@ -83,7 +84,7 @@
                                         class="inline-flex h-10 w-10 cursor-pointer items-center justify-center disabled:opacity-35"
                                         @click="decrement(item)"
                                         :disabled="Number(item.quantity || 0) <= 1"
-                                        aria-label="Decrease quantity"
+                                        aria-label="{{ 'accessibility.decrease_quantity' | t }}"
                                     >
                                         {% render 'icons', icon: 'icon-minus', size: 'xl', color: 'current' %}
                                     </button>
@@ -95,7 +96,7 @@
                                         class="inline-flex h-10 w-10 cursor-pointer items-center justify-center disabled:opacity-35"
                                         @click="increment(item)"
                                         :disabled="maxQty(item) !== null && Number(item.quantity || 0) >= maxQty(item)"
-                                        aria-label="Increase quantity"
+                                        aria-label="{{ 'accessibility.increase_quantity' | t }}"
                                     >
                                         {% render 'icons', icon: 'icon-plus', size: 'xl', color: 'current' %}
                                     </button>
@@ -106,9 +107,9 @@
                 </ul>
 
                 <div x-show="showItems" class="pt-4 text-center">
-                    {%- render 'link', 
-                        text: 'Add More Product', 
-                        href: routes.all_products_collection_url, 
+                    {%- render 'link',
+                        text: 'cart.add_more_product' | t,
+                        href: routes.all_products_collection_url,
                         variant: 'underline',
                         class: 'body-md'
                     -%}
@@ -117,7 +118,7 @@
 
             <div class="mt-auto border-t border-theme-border-soft bg-theme-bg px-5 py-4 pc:px-6">
                 <div class="mb-3 flex items-center justify-between">
-                    <p class="body-md font-semibold tracking-[0.12em] uppercase">Total</p>
+                    <p class="body-md font-semibold tracking-[0.12em] uppercase">{{ 'cart.total' | t }}</p>
                     <p class="body-md" x-text="formatMoney($store.cart.total_price)"></p>
                 </div>
 
@@ -128,7 +129,7 @@
                         @click="clearCart()"
                         :disabled="isEmpty || $store.cart.loading"
                     >
-                        Clear all<sup class="sup-badge" x-text="'(' + $store.cart.item_count + ')'"></sup>
+                        {{ 'cart.clear_all' | t }}<sup class="sup-badge" x-text="'(' + $store.cart.item_count + ')'"></sup>
                     </button>
                     <button
                         type="button"
@@ -136,7 +137,7 @@
                         @click="goCheckout()"
                         :disabled="!canCheckout"
                     >
-                        Checkout<sup class="sup-badge" x-text="'(' + $store.cart.item_count + ')'"></sup>
+                        {{ 'cart.checkout' | t }}<sup class="sup-badge" x-text="'(' + $store.cart.item_count + ')'"></sup>
                     </button>
                 </div>
             </div>
@@ -161,25 +162,27 @@
 
 {% schema %}
 {
-    "name": "Cart Overlay",
+    "name": "t:sections.cart-overlay.name",
     "tag": "section",
     "class": "section",
     "enabled_on": {
-        "groups": ["custom.overlay"]
+        "groups": [
+            "custom.overlay"
+        ]
     },
     "limit": 1,
     "settings": [
         {
             "type": "color_scheme",
             "id": "color_scheme",
-            "label": "Color scheme",
+            "label": "t:sections.cart-overlay.settings.color_scheme",
             "default": "scheme-1"
         }
     ],
     "presets": [
         {
-            "name": "Cart Overlay"
+            "name": "t:sections.cart-overlay.presets.cart_overlay"
         }
     ]
 }
-{% endschema %}
+    {% endschema %}

@@ -5,7 +5,9 @@
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
     "
-    x-data="sectionPagination('{{ section.id }}', ['[role=&quot;tabpanel&quot;]','.sup-badge'])"
+    data-pagination-section-id="{{ section.id }}"
+    data-pagination-selectors='["[role=&quot;tabpanel&quot;]",".sup-badge"]'
+    x-data="sectionPagination()"
     data-component-kind="section"
     data-component-type="blog"
     data-component-id="{{ section.id }}"
@@ -24,7 +26,7 @@
                     <h1 class="mb-10 hxxxl leading-none font-bold">
                         {{ section.settings.header | default: 'Blog' }}
                     </h1>
-                    <div class="rte rte--compact max-w-xl h5 leading-relaxed opacity-80">
+                    <div class="rte rte--compact max-w-xl body-sm leading-relaxed opacity-80">
                         {{
                             section.settings.description
                             | default: '<p>Tailored experiences powered by AI intelligence. Discover insights that adapt to your needs.</p>'
@@ -88,7 +90,7 @@
             :tabindex="isActive(index) ? 0 : -1"
             :aria-selected="isActive(index)"
             :class="isActive(index) ? 'opacity-100 border-b-2 border-current' : 'opacity-20 hover:opacity-60'"
-            class="flex cursor-pointer flex-wrap items-center gap-x-4 gap-y-2 h2 transition-opacity focus:outline-none"
+            class="flex cursor-pointer flex-wrap items-center gap-x-4 gap-y-2 body-sm transition-opacity focus:outline-none"
           >
             All <sup class="sup-badge">({{ blog.articles_count | default: 0 }})</sup>
           </a>
@@ -105,7 +107,7 @@
               :tabindex="isActive(index) ? 0 : -1"
               :aria-selected="isActive(index)"
               :class="isActive(index) ? 'opacity-100 border-b-2 border-current' : 'opacity-20 hover:opacity-60'"
-              class="flex cursor-pointer flex-wrap items-center gap-x-4 gap-y-2 h2 transition-opacity focus:outline-none"
+              class="flex cursor-pointer flex-wrap items-center gap-x-4 gap-y-2 body-sm transition-opacity focus:outline-none"
             >
               {{ tag }}
             </a>
@@ -295,43 +297,45 @@
     "tag": "section",
     "class": "section",
     "enabled_on": {
-        "templates": ["blog"]
+        "templates": [
+            "blog"
+        ]
     },
     "settings": [
         {
             "type": "color_scheme",
             "id": "header_color_scheme",
-            "label": "Header Color Scheme",
+            "label": "t:sections.blog.settings.header_color_scheme",
             "default": "color-scheme-1"
         },
         {
             "type": "color_scheme",
             "id": "color_scheme",
-            "label": "Tab Control Color Scheme",
+            "label": "t:sections.blog.settings.tab_control_color_scheme",
             "default": "color-scheme-1"
         },
         {
             "type": "inline_richtext",
             "id": "header",
             "default": "Blog",
-            "label": "Header"
+            "label": "t:sections.blog.settings.header"
         },
         {
             "type": "richtext",
             "id": "description",
             "default": "<p>Tailored experiences powered by AI intelligence. Discover insights that adapt to your needs.</p>",
-            "label": "Description"
+            "label": "t:sections.blog.settings.description"
         },
         {
             "type": "text",
             "id": "rotate_badge_text",
-            "label": "Rotate Badge Text",
+            "label": "t:sections.blog.settings.rotate_badge_text",
             "default": "PRODUCT GUARANTEE NATURAL"
         },
         {
             "type": "text",
             "id": "rotate_badge_percent",
-            "label": "Rotate Badge Percent",
+            "label": "t:sections.blog.settings.rotate_badge_percent",
             "default": "100%"
         },
         {
@@ -341,17 +345,17 @@
             "max": 24,
             "step": 3,
             "default": 12,
-            "label": "Articles per page"
+            "label": "t:sections.blog.settings.articles_per_page"
         },
         {
             "type": "text",
             "id": "link_text",
-            "label": "Link Text",
+            "label": "t:sections.blog.settings.link_text",
             "default": "Read More"
         },
         {
             "type": "header",
-            "content": "Padding"
+            "content": "t:sections.blog.content.padding"
         },
         {
             "type": "range",
@@ -360,7 +364,7 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Top",
+            "label": "t:sections.blog.settings.padding_top",
             "default": 0
         },
         {
@@ -370,7 +374,7 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Bottom",
+            "label": "t:sections.blog.settings.padding_bottom",
             "default": 0
         }
     ],
@@ -380,4 +384,4 @@
         }
     ]
 }
-{% endschema %}
+    {% endschema %}

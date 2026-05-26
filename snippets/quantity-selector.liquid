@@ -23,27 +23,22 @@
 {% endcomment %}
 
 <div
-    x-data="
-        QuantitySelector({
-          value: {{ value | default: 1 }},
-          min: {{ min | default: 1 }},
-          max: {{ max | default: 'null' }},
-          step: {{ step | default: 1 }}{% if section_id %},
-          sectionId: '{{ section_id }}'{% endif %}
-        })
-    "
+    data-qty-value="{{ value | default: 1 }}"
+    data-qty-min="{{ min | default: 1 }}"
+    data-qty-max="{{ max | default: 'null' }}"
+    data-qty-step="{{ step | default: 1 }}"{% if section_id %}
+    data-qty-section-id="{{ section_id }}"{% endif %}
+    x-data="QuantitySelector()"
     class="{{ wrapper_class | default: 'flex items-center border border-theme-border-soft rounded-sm w-max' }}"
 >
     <button
         type="button"
         class="{{ button_class | default: 'flex h-10 w-10 cursor-pointer items-center justify-center text-current transition-opacity hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-30' }}"
-        aria-label="Decrease quantity"
+        aria-label="{{ 'accessibility.decrease_quantity' | t }}"
         @click="decrement()"
         :disabled="!canDecrement"
     >
-        <svg class="h-10 w-10" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M19 13H5v-2h14z"/>
-        </svg>
+        {%- render 'icons', icon: 'icon-minus', size: 'xl', color: 'current' -%}
     </button>
 
     <input
@@ -61,18 +56,16 @@
             form="{{ product_form_id }}"
         {% endif %}
         @change="onInput()"
-        aria-label="{{ label | default: 'Quantity' }}"
+        aria-label="{{ label | default: 'accessibility.quantity' | t }}"
     >
 
     <button
         type="button"
         class="{{ button_class | default: 'flex h-10 w-10 cursor-pointer items-center justify-center text-current transition-opacity hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-30' }}"
-        aria-label="Increase quantity"
+        aria-label="{{ 'accessibility.increase_quantity' | t }}"
         @click="increment()"
         :disabled="!canIncrement"
     >
-        <svg class="h-10 w-10" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z"/>
-        </svg>
+        {%- render 'icons', icon: 'icon-plus', size: 'xl', color: 'current' -%}
     </button>
 </div>

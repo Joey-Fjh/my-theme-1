@@ -17,20 +17,14 @@
 {%- unless product.has_only_default_variant -%}
     {%- assign product_form_id = product_form_id | default: 'product-form-' | append: section_id -%}
 
-    <script id="ProductVariants-{{ section_id }}" type="application/json">
-        {{ product.variants | json }}
-    </script>
-
     <div
         id="VariantPicker-{{ section_id }}"
         class="flex flex-col gap-4 pc:gap-5"
-        x-data="
-            VariantPicker({
-              sectionId: '{{ section_id }}',
-              productId: {{ product.id }},
-              productFormId: '{{ product_form_id }}'
-            })
-        "
+        data-section-id="{{ section_id }}"
+        data-product-id="{{ product.id }}"
+        data-product-form-id="{{ product_form_id }}"
+        data-variants="{{ product.variants | json | escape }}"
+        x-data="VariantPicker()"
         {{ block.shopify_attributes }}
     >
         {%- for option in product.options_with_values -%}
@@ -84,7 +78,7 @@
                                     {%- if value.available -%}
                                         {{- value -}}
                                     {%- else -%}
-                                        {{- value }} — Sold out
+                                        {{- value }} — {{ 'products.product.sold_out' | t }}
                                     {%- endif -%}
                                 </option>
                             {%- endfor -%}
@@ -180,7 +174,7 @@
                                     {%- endunless -%}
                                     <span class="sr-only">
                                         {{ escaped_value }}
-                                        {%- unless value.available %} - Sold out{%- endunless -%}
+                                        {%- unless value.available %} - {{ 'products.product.sold_out' | t }}{%- endunless -%}
                                     </span>
                                 </label>
 
@@ -212,7 +206,7 @@
                                         {{ value }}
                                     </span>
                                     {%- unless value.available -%}
-                                        <span class="sr-only">Sold out</span>
+                                        <span class="sr-only">{{ 'products.product.sold_out' | t }}</span>
                                     {%- endunless -%}
                                 </label>
                             {%- endif -%}

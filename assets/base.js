@@ -470,7 +470,11 @@
                         if (Stores.dialog) window.Alpine.store('dialog', Stores.dialog);
 
                         if (Stores.cart) {
-                            const initialCartData = window.__Theme__?.initialState?.cart || {};
+                            let initialCartData = {};
+                            try {
+                                const raw = document.body.dataset.initialCart;
+                                if (raw) initialCartData = JSON.parse(raw);
+                            } catch (_) { /* ignore parse errors */ }
                             Stores.cart.init(initialCartData);
                             window.Alpine.store('cart', Stores.cart);
                         }

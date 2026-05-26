@@ -7,19 +7,20 @@
     {%- capture drawer_content -%}
         <div
             class="flex h-full flex-col text-theme-text"
-            x-data="predictiveSearch({ limit: {{ section.settings.search_result_limit | json }} })"
+            data-search-limit="{{ section.settings.search_result_limit | json }}"
+            x-data="predictiveSearch()"
             data-predictive-search-url="{{ routes.search_url }}"
             @keydown.escape.window="$store.dialog.close()"
         >
             <div class="p-6">
                 <div class="mb-5 flex items-center justify-between gap-4">
-                    <h2 id="dialog-title-{{ popup_id }}">Search</h2>
+                    <h2 id="dialog-title-{{ popup_id }}">{{ 'search.title' | t }}</h2>
                     
                     <button
                         type="button"
                         class="inline-flex h-8 w-8 cursor-pointer items-center justify-center text-theme-text/75 transition hover:text-theme-text"
                         @click="$store.dialog.close()"
-                        aria-label="Close search drawer"
+                        aria-label="{{ 'accessibility.close_search_drawer' | t }}"
                     >
                         {% render 'icons', icon: 'icon-close', size: 'lg', color: 'current' %}
                     </button>
@@ -34,7 +35,7 @@
                             name="q"
                             class="w-full min-w-0 border-none bg-transparent outline-none placeholder:text-theme-text/45"
                             autocomplete="off"
-                            placeholder="Search"
+                            placeholder="{{ 'search.placeholder' | t }}"
                             x-model="query"
                             @input="onInput($event.target.value)"
                             @compositionend="onInput($event.target.value)"
@@ -66,7 +67,7 @@
 
             <div class="flex min-h-0 flex-1 flex-col px-5 py-4 pc:px-6">
                 <div x-show="!isLoading && hasEmptyState && query" class="py-6 text-center">
-                    <p class="body-md">No results found for "<span x-text="query"></span>"</p>
+                    <p class="body-md">{{ 'search.no_results_for' | t }} "<span x-text="query"></span>"</p>
                 </div>
 
                 <div x-show="!isLoading && hasSearched && !hasEmptyState" class="flex min-h-0 flex-1 flex-col">
@@ -80,7 +81,7 @@
                             class="border-b pb-2 tracking-[0.16em] uppercase transition-colors"
                             :class="isActive(index) ? 'text-theme-text border-theme-border-strong' : 'text-theme-text/45 border-transparent hover:text-theme-text'"
                         >
-                            Products
+                            {{ 'search.products' | t }}
                         </button>
 
                         <button
@@ -92,7 +93,7 @@
                             class="border-b pb-2 tracking-[0.16em] uppercase transition-colors"
                             :class="isActive(index) ? 'text-theme-text border-theme-border-strong' : 'text-theme-text/45 border-transparent hover:text-theme-text'"
                         >
-                            Articles
+                            {{ 'search.articles' | t }}
                         </button>
 
                         <button
@@ -104,7 +105,7 @@
                             class="border-b pb-2 tracking-[0.16em] uppercase transition-colors"
                             :class="isActive(index) ? 'text-theme-text border-theme-border-strong' : 'text-theme-text/45 border-transparent hover:text-theme-text'"
                         >
-                            Pages
+                            {{ 'search.pages' | t }}
                         </button>
                     {% endcapture %}
 
@@ -123,7 +124,7 @@
                                     -%}
                                 </template>
                             </div>
-                            <p x-show="!products.length" class="py-4 body-md text-theme-text/45">No products found.</p>
+                            <p x-show="!products.length" class="py-4 body-md text-theme-text/45">{{ 'search.no_products' | t }}</p>
                         </div>
 
                         <div
@@ -140,7 +141,7 @@
                                     </li>
                                 </template>
                             </ul>
-                            <p x-show="!articles.length" class="py-4 body-md text-theme-text/45">No articles found.</p>
+                            <p x-show="!articles.length" class="py-4 body-md text-theme-text/45">{{ 'search.no_articles' | t }}</p>
                         </div>
 
                         <div
@@ -157,7 +158,7 @@
                                     </li>
                                 </template>
                             </ul>
-                            <p x-show="!pages.length" class="py-4 body-md text-theme-text/45">No pages found.</p>
+                            <p x-show="!pages.length" class="py-4 body-md text-theme-text/45">{{ 'search.no_pages' | t }}</p>
                         </div>
                     {% endcapture %}
 
@@ -190,7 +191,7 @@
 
 {% schema %}
 {
-    "name": "Search Overlay",
+    "name": "t:sections.search-overlay.name",
     "tag": "section",
     "class": "section",
     "limit": 1,
@@ -198,7 +199,7 @@
         {
             "type": "color_scheme",
             "id": "color_scheme",
-            "label": "Color scheme",
+            "label": "t:sections.search-overlay.settings.color_scheme",
             "default": "scheme-1"
         },
         {
@@ -208,13 +209,13 @@
             "max": 20,
             "step": 1,
             "default": 8,
-            "label": "Predictive search result limit"
+            "label": "t:sections.search-overlay.settings.predictive_search_result_limit"
         }
     ],
     "presets": [
         {
-            "name": "Search Overlay"
+            "name": "t:sections.search-overlay.presets.search_overlay"
         }
     ]
 }
-{% endschema %}
+    {% endschema %}

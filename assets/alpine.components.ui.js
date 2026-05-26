@@ -187,8 +187,17 @@
                 _startX: 0,
                 _startScrollLeft: 0,
                 _suppressClickUntil: 0,
+                _initialStrategy: initialStrategy,
+
+                _hydrateFromDataset() {
+                    const ds = this.$el?.dataset;
+                    if (!ds) return;
+                    if (ds.tabInitialStrategy) this._initialStrategy = ds.tabInitialStrategy;
+                    if (ds.tabScrollMode) this.scrollMode = ds.tabScrollMode === 'always' ? 'always' : 'mobile';
+                },
 
                 init() {
+                    this._hydrateFromDataset();
                     this.$nextTick(() => {
                         const count = this.tabs.length;
                         if (count === 0) return;
@@ -205,7 +214,7 @@
                             this.on(window, 'resize', this.onResize.bind(this));
                         }
 
-                        const nextIndex = initialStrategy === 'first' ? 0 : Math.floor(count / 2);
+                        const nextIndex = this._initialStrategy === 'first' ? 0 : Math.floor(count / 2);
                         this.setActive(nextIndex, { centerOnMobile: true, behavior: 'auto' });
                     });
                 },
@@ -368,10 +377,10 @@
             };
         },
 
-        countdownTimer(endDate) {
+        countdownTimer(endDate = null) {
             return {
                 ...AlpineComponentsFactory.useDisposable(),
-                endDate,
+                endDate: endDate || null,
                 interval: null,
                 days: 0,
                 hours: 0,
@@ -383,6 +392,10 @@
                 },
 
                 init() {
+                    if (!this.endDate) {
+                        this.endDate = this.$el?.dataset?.countdownEndDate || null;
+                    }
+                    if (!this.endDate) return;
                     this.calculateTime();
                     this.interval = setInterval(() => {
                         this.calculateTime();
