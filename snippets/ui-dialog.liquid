@@ -80,12 +80,7 @@
         <div
             class="fixed inset-x-0 bottom-0 z-100 {{ dialog_top_class }} {{ overlay_bg }}"
             @click="$store.dialog.close()"
-            x-transition:enter="transition ease-out duration-200"
-            x-transition:enter-start="opacity-0"
-            x-transition:enter-end="opacity-100"
-            x-transition:leave="transition ease-in duration-150"
-            x-transition:leave-start="opacity-100"
-            x-transition:leave-end="opacity-0"
+            {% render 'motion-transition', preset: 'fade' %}
         ></div>
     {%- endif -%}
 
@@ -111,12 +106,11 @@
         >
             <div
                 class="{{ drawer_panel_base_classes }} {{ drawer_panel_classes }}"
-                x-transition:enter="transition ease-out duration-300"
-                x-transition:enter-start="{% if dialog_position == 'left' %}-translate-x-full{% else %}translate-x-full{% endif %}"
-                x-transition:enter-end="translate-x-0"
-                x-transition:leave="transition ease-in duration-200"
-                x-transition:leave-start="translate-x-0"
-                x-transition:leave-end="{% if dialog_position == 'left' %}-translate-x-full{% else %}translate-x-full{% endif %}"
+                {% if dialog_position == 'left' %}
+                    {% render 'motion-transition', preset: 'drawer-left' %}
+                {% else %}
+                    {% render 'motion-transition', preset: 'drawer-right' %}
+                {% endif %}
             >
                 {{ dialog_close_button_markup }}
                 {{ content }}
@@ -139,12 +133,7 @@
             <div
                 class="{{ modal_panel_classes }}{% if color_scheme != blank %} {{ color_scope_class }}{% endif %}"
                 @click.stop
-                x-transition:enter="transition ease-out duration-200"
-                x-transition:enter-start="opacity-0 scale-95"
-                x-transition:enter-end="opacity-100 scale-100"
-                x-transition:leave="transition ease-in duration-150"
-                x-transition:leave-start="opacity-100 scale-100"
-                x-transition:leave-end="opacity-0 scale-95"
+                {% render 'motion-transition', preset: 'modal' %}
             >
                 {{ dialog_close_button_markup }}
                 {{ content }}
