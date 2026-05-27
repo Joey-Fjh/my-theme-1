@@ -26,10 +26,13 @@
                         400,600,800
                     {% endcapture %}
 
+                    {%- assign image_alt_fallback = 'sections.main-page-contact.defaults.image_alt'
+                        | t
+                    -%}
                     {%
                         render 'image',
                         image: section.settings.image,
-                        alt: section.settings.image.image_alt | default: 'Contact us' | escape,
+                        alt: section.settings.image.image_alt | default: image_alt_fallback | escape,
                         width: section.settings.image.width,
                         sizes: sizes,
                         widths: widths,
@@ -68,8 +71,11 @@
                     style="background-color: {{ section.settings.form_background_color }};"
                     data-gsap-form
                 >
+                    {%- assign heading_fallback = 'sections.main-page-contact.defaults.heading'
+                        | t
+                    -%}
                     <h1 class="text-center h2 text-primary">
-                        {{ section.settings.heading | default: 'Reach Us For Radiance' }}
+                        {{ section.settings.heading | default: heading_fallback }}
                     </h1>
                     <div class="rte rte--compact mt-3 text-center body-md text-primary/70">
                         {%- assign contact_description_fallback = 'contact.description_html' | t -%}
@@ -77,11 +83,14 @@
                     </div>
 
                     {%- form 'contact', class: 'mt-6 flex flex-col gap-5 pc:mt-8 pc:gap-6' -%}
+                        {%- assign success_message_fallback = 'sections.main-page-contact.defaults.success_message'
+                            | t
+                        -%}
                         {%- if form.posted_successfully? -%}
                             <div class="rounded bg-green-50 p-4 text-center body-md text-green-800">
                                 {{
                                     section.settings.success_message
-                                    | default: 'Thank you for your message. We will get back to you soon.'
+                                    | default: success_message_fallback
                                 }}
                             </div>
                         {%- endif -%}
@@ -179,12 +188,15 @@
                             ></textarea>
                         </div>
 
+                        {%- assign button_text_fallback = 'sections.main-page-contact.defaults.button_text'
+                            | t
+                        -%}
                         {%- comment -%} Submit {%- endcomment -%}
                         <button
                             type="submit"
                             class="btn h-12 w-full border-primary-border bg-primary body-md text-primary-text shadow-none hover:brightness-110 pc:h-14"
                         >
-                            {{ section.settings.button_text | default: 'Send' }}
+                            {{ section.settings.button_text | default: button_text_fallback }}
                         </button>
                     {%- endform -%}
                 </div>
@@ -258,9 +270,6 @@
         );
     })();
 {%- endjavascript -%}
-
-{%- stylesheet -%}
-{%- endstylesheet -%}
 
 {% schema %}
 {

@@ -199,40 +199,16 @@
 {%- javascript -%}
     (function () {
         const Components = window.__Theme__?.Components;
+        const Motion = window.__Theme__?.Motion;
         if (!Components) return;
 
         Components.register(
             'blog',
             {
                 init(el) {
-                    if (typeof gsap === 'undefined') return;
-                    if (typeof ScrollTrigger === 'undefined') return;
+                    if (!Motion) return;
 
-                    gsap.registerPlugin(ScrollTrigger);
-
-                    const heroEl = el.querySelector('[data-gsap-hero]');
-                    const badgeEl = el.querySelector('[data-gsap-badge]');
-
-                    const ctx = gsap.context(() => {
-                        if (heroEl) {
-                            gsap.to(heroEl, {
-                                opacity: 1,
-                                x: 0,
-                                duration: 0.8,
-                                ease: 'power2.out',
-                            });
-                        }
-
-                        if (badgeEl) {
-                            gsap.to(badgeEl, {
-                                opacity: 1,
-                                scale: 1,
-                                duration: 0.6,
-                                delay: 0.3,
-                                ease: 'back.out(1.7)',
-                            });
-                        }
-                    }, el);
+                    const { ctx } = Motion.heroReveal(el);
 
                     return { ctx };
                 },
@@ -250,29 +226,14 @@
             'article-grid',
             {
                 init(el) {
-                    if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
-                    gsap.registerPlugin(ScrollTrigger);
+                    if (!Motion) return;
 
-                    const cards = el.querySelectorAll('[data-gsap-card]');
-
-                    const ctx = gsap.context(() => {
-                        if (cards.length) {
-                            gsap.set(cards, { opacity: 0, y: 30 });
-
-                            gsap.to(cards, {
-                                opacity: 1,
-                                y: 0,
-                                duration: 0.5,
-                                stagger: { amount: 0.6, from: 'start' },
-                                ease: 'power2.out',
-                                scrollTrigger: {
-                                    trigger: el,
-                                    start: 'top 85%',
-                                    once: true,
-                                },
-                            });
-                        }
-                    }, el);
+                    const { ctx } = Motion.scrollReveal(el, {
+                        selector: '[data-gsap-card]',
+                        duration: 0.5,
+                        stagger: { amount: 0.6, from: 'start' },
+                        scrollTriggerStart: 'top 85%',
+                    });
 
                     return { ctx };
                 },
@@ -285,9 +246,6 @@
         );
     })();
 {%- endjavascript -%}
-
-{%- stylesheet -%}
-{%- endstylesheet -%}
 
 {% schema %}
 {

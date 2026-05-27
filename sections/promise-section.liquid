@@ -27,10 +27,13 @@
                 class="order-2 min-h-80 -translate-x-10 overflow-hidden rounded-sm opacity-0 pc:order-1 pc:col-start-1 pc:row-span-2 pc:row-start-1 pc:h-full pc:min-h-0"
                 data-gsap-image
             >
+                {%- assign image_alt_fallback = 'sections.promise-section.defaults.image_alt'
+                    | t
+                -%}
                 {%-
                     render 'image',
                     image: section.settings.image,
-                    alt: section.settings.image.alt | default: 'Promise Section Image' | escape,
+                    alt: section.settings.image.alt | default: image_alt_fallback | escape,
                     class: 'h-full',
                     aspect_ratio: '1/1',
                     width: section.settings.image.width
@@ -63,7 +66,8 @@
 {%- javascript -%}
     (function () {
         const Components = window.__Theme__?.Components;
-        if (!Components || typeof gsap === 'undefined') return;
+        if (!Components || typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined')
+            return;
 
         gsap.registerPlugin(ScrollTrigger);
 
@@ -117,9 +121,6 @@
         );
     })();
 {%- endjavascript -%}
-
-{%- stylesheet -%}
-{%- endstylesheet -%}
 
 {% schema %}
 {

@@ -520,6 +520,9 @@
                         Factory.register?.(Comps.IMAGELIGHTBOX, Comps.imageLightbox);
                         Factory.register?.(Comps.IMAGEMAGNIFIER, Comps.imageMagnifier);
                         Factory.register?.(Comps.PRODUCTLAYOUT, Comps.productLayout);
+                        Factory.register?.(Comps.ACCORDION, Comps.accordion);
+                        Factory.register?.(Comps.SORTBYDROPDOWN, Comps.sortByDropdown);
+                        Factory.register?.(Comps.FLIPDIGIT, Comps.flipDigit);
                     }
                 },
                 { once: true },

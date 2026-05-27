@@ -96,19 +96,25 @@
                                         <button
                                             type="button"
                                             class="inline-flex cursor-pointer items-center gap-2 body-md text-theme-text/90"
-                                            @click="openTop({{ forloop.index0 }})"
-                                            :aria-expanded="activeTopIndex === {{ forloop.index0 }}"
+                                            data-index="{{ forloop.index0 }}"
+                                            @click="openTop(Number($el.dataset.index))"
+                                            :aria-expanded="activeTopIndex === Number($el.dataset.index)"
                                         >
                                             <span>{{ link.title | escape }}</span>
                                             <span
                                                 class="inline-flex transition-transform duration-200"
-                                                :class="activeTopIndex === {{ forloop.index0 }} ? 'rotate-180' : ''"
+                                                data-index="{{ forloop.index0 }}"
+                                                :class="activeTopIndex === Number($el.dataset.index) ? 'rotate-180' : ''"
                                             >
                                                 {% render 'icons', icon: 'icon-arrow', size:'lg', color: 'current' %}
                                             </span>
                                         </button>
 
-                                        <div x-show="activeTopIndex === {{ forloop.index0 }}" class="pt-4">
+                                        <div
+                                            x-show="activeTopIndex === Number($el.dataset.index)"
+                                            data-index="{{ forloop.index0 }}"
+                                            class="pt-4"
+                                        >
                                             <ul class="space-y-4" role="list">
                                                 {%- for child in link.links -%}
                                                     <li class="text-theme-text/55">

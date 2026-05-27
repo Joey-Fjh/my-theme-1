@@ -488,5 +488,134 @@
                 },
             };
         },
+
+        sortByDropdown() {
+            return {
+                sortBy: '',
+                optionActiveClass: '',
+                optionInactiveClass: '',
+                formId: '',
+
+                init() {
+                    const ds = this.$el?.dataset;
+                    if (!ds) return;
+
+                    this.sortBy = ds.currentSort || '';
+                    this.formId = ds.formId || '';
+                    this.optionActiveClass = ds.optionActiveClass || '';
+                    this.optionInactiveClass = ds.optionInactiveClass || '';
+                },
+
+                isSelected(value) {
+                    return this.sortBy === value;
+                },
+
+                select(value) {
+                    this.sortBy = value;
+
+                    if (this.formId) {
+                        this.$nextTick(() => {
+                            document
+                                .getElementById(this.formId)
+                                ?.dispatchEvent(new Event('change', { bubbles: true }));
+                        });
+                    } else {
+                        this.$dispatch('sort-change', this.sortBy);
+                    }
+                },
+            };
+        },
+
+        accordion() {
+            return {
+                active: null,
+                iconRotate: 'rotate-180',
+                titleActiveClass: 'text-current',
+                titleInactiveClass: 'text-current opacity-70',
+
+                init() {
+                    const ds = this.$el?.dataset;
+                    if (!ds) return;
+
+                    this.iconRotate = ds.iconRotate || this.iconRotate;
+                    this.titleActiveClass = ds.titleActiveClass || this.titleActiveClass;
+                    this.titleInactiveClass = ds.titleInactiveClass || this.titleInactiveClass;
+
+                    if (ds.initialActive === 'null') {
+                        this.active = null;
+                    } else {
+                        this.active = Number(ds.initialActive);
+                    }
+                },
+
+                normalizeIndex(index) {
+                    return Number(index);
+                },
+
+                toggle(index) {
+                    const i = this.normalizeIndex(index);
+                    this.active = this.active === i ? null : i;
+                },
+
+                isActive(index) {
+                    return this.active === this.normalizeIndex(index);
+                },
+
+                titleClass(index) {
+                    return this.isActive(index) ? this.titleActiveClass : this.titleInactiveClass;
+                },
+            };
+        },
+
+        flipDigit() {
+            return {
+                ...AlpineComponentsFactory.useDisposable(),
+                prev: '',
+                current: '',
+                oldDigit: '',
+                flipping: false,
+                _timeout: null,
+
+                init() {
+                    const digit = this.$el?.dataset?.digit || '';
+                    this.prev = digit;
+                    this.current = digit;
+                    this.oldDigit = digit;
+                },
+
+                updateDigit(digit) {
+                    const next = String(digit ?? '');
+
+                    if (this.oldDigit === '' && this.current === '' && this.prev === '') {
+                        this.prev = next;
+                        this.current = next;
+                        this.oldDigit = next;
+                        return;
+                    }
+
+                    if (next === this.oldDigit) return;
+
+                    this.current = next;
+                    this.oldDigit = next;
+                    this.flipping = true;
+
+                    if (this._timeout) clearTimeout(this._timeout);
+
+                    this._timeout = setTimeout(() => {
+                        this.prev = this.current;
+                        this.flipping = false;
+                        this._timeout = null;
+                    }, 600);
+                },
+
+                destroy() {
+                    if (this._timeout) {
+                        clearTimeout(this._timeout);
+                        this._timeout = null;
+                    }
+                    this.dispose();
+                },
+            };
+        },
     };
 })();

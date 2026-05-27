@@ -115,6 +115,7 @@ All theme runtime objects live under `window.__Theme__`:
 | `__Theme__.Components`              | `base.js`              | Section/block lifecycle engine  |
 | `__Theme__.ThemePerformance`        | `performance.js`       | Debug-only CWV monitoring       |
 | `__Theme__.AlpineComponentsFactory` | `alpine.components.js` | Alpine component registry       |
+| `__Theme__.Motion`                  | `motion.js`            | GSAP choreography recipes       |
 
 Additional globals:
 
@@ -132,13 +133,14 @@ Additional globals:
 3.  vendor-swiper.min.js
 4.  utils.js
 5.  events.js
-6.  alpine.components.js
-7.  performance.js
-8.  https.js
-9.  base.js
-10. alpine.store.js
-11. vendor-alpine-intersect.min.js
-12. vendor-alpine.min.js          <- MUST be last
+6.  motion.js
+7.  alpine.components.js
+8.  performance.js
+9.  https.js
+10. base.js
+11. alpine.store.js
+12. vendor-alpine-intersect.min.js
+13. vendor-alpine.min.js          <- MUST be last
 ```
 
 ### ThemeEvents API
@@ -371,6 +373,7 @@ debouncedFn.dispose(); // cleanup
 | `vendor-*.min.js`      | Third-party | **DO NOT EDIT**                                 |
 | `utils.js`             | Custom      | Utility functions (throttle, debounce)          |
 | `events.js`            | Custom      | Event bus system (`ThemeEvents`)                |
+| `motion.js`            | Custom      | GSAP choreography recipes (`Motion`)            |
 | `alpine.components.js` | Custom      | Alpine component definitions                    |
 | `performance.js`       | Custom      | Debug CWV monitoring                            |
 | `https.js`             | Custom      | HTTP client (`ShopifyHttp`) + Section refresher |
@@ -391,26 +394,35 @@ debouncedFn.dispose(); // cleanup
 - **API**: `emit(type, detail, options)`, `on(type, handler, options)`, `once(type, handler, options)`, `createScope(options)`
 - **Usage**: See "ThemeEvents API" section above
 
-**3. `https.js` — HTTP Client + Section Refresher**
+**3. `motion.js` — GSAP Choreography Recipes**
+
+- **Namespace**: `window.__Theme__.Motion`
+- **API**: `Motion.scrollReveal(el, options)` — scroll-triggered staggered reveal; `Motion.heroReveal(el, options)` — hero + badge entrance
+- **scrollReveal Options**: `selector`, `axis`, `from`, `to`, `duration`, `stagger`, `ease`, `scrollTriggerStart`, `once`
+- **heroReveal Options**: `heroSelector`, `badgeSelector`, `heroDuration`, `heroEase`, `badgeDuration`, `badgeDelay`, `badgeEase`
+- **Returns**: `{ ctx, timeline }` — `timeline` holds a GSAP Tween or Timeline; caller MUST call `ctx.revert()` in `destroy()`
+- **Guards**: `Motion` is `null` if `gsap` or `ScrollTrigger` is unavailable; guard with `if (!Motion) return`
+
+**4. `https.js` — HTTP Client + Section Refresher**
 
 - **Namespace**: `window.ShopifyHttp`, `window.ShopifySectionRefresher`
 - **ShopifyHttp API**: `getJSON(url, options)`, `postJSON(url, body, options)`, `request(url, options)`
 - **SectionRefresher API**: `render(data, domMap)`, `updateText(updates)`
 - **Usage**: See "ShopifyHttp API" and "SectionRefresher API" sections above
 
-**4. `alpine.components.js` — Alpine Component Definitions**
+**5. `alpine.components.js` — Alpine Component Definitions**
 
 - **Namespace**: `window.__Theme__.AlpineComponentsFactory`
 - **Registration**: `AlpineComponentsFactory.register('name', function () { return { init() {}, dispose() {} }; })`
 - **Usage**: See "Alpine Component Pattern" section above
 
-**5. `base.js` — Component Engine + Alpine Init**
+**6. `base.js` — Component Engine + Alpine Init**
 
 - **Namespace**: `window.__Theme__.Components`, `window.__Theme__.Base`
 - **Components API**: `register(type, handlers, options)`, `initAll(container)`, `destroyAll(container)`
 - **Usage**: See "Component Engine Pattern" section above
 
-**6. `alpine.store.js` — Alpine Global Stores**
+**7. `alpine.store.js` — Alpine Global Stores**
 
 - **Namespace**: `window.__Theme__.AlpineStores`
 - **Stores**: `$store.toast`, `$store.dialog`, `$store.cart`
@@ -600,6 +612,13 @@ Use GSAP for:
 Reusable GSAP motion SHOULD live under `window.__Theme__.Motion` once the motion runtime exists. Until then, local GSAP in a section is allowed when the animation is one-off.
 
 GSAP recipes MUST be initialized through `Components.register()` and cleaned up in `destroy()`. The component lifecycle owns when GSAP starts and stops; the motion recipe owns animation values.
+
+#### Available Choreography Recipes
+
+| Recipe         | Namespace                          | Description                       | Status |
+| -------------- | ---------------------------------- | --------------------------------- | ------ |
+| `scrollReveal` | `Motion.scrollReveal(el, options)` | Scroll-triggered staggered reveal | Active |
+| `heroReveal`   | `Motion.heroReveal(el, options)`   | Hero + badge entrance animation   | Active |
 
 ### Execution Layer Boundaries
 

@@ -24,10 +24,11 @@
             400,768,1280,1536,2560
         {%- endcapture -%}
 
+        {%- assign image_alt_fallback = 'sections.main-page-about.defaults.image_alt' | t -%}
         {%-
             render 'image',
             image: section.settings.image,
-            alt: section.settings.image_alt | default: 'About Us' | escape,
+            alt: section.settings.image_alt | default: image_alt_fallback | escape,
             width: section.settings.image.width,
             sizes: sizes,
             widths: widths,
@@ -63,7 +64,10 @@
 {%- javascript -%}
     (function () {
         const Components = window.__Theme__?.Components;
-        if (!Components || typeof gsap === 'undefined') return;
+        if (!Components || typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined')
+            return;
+
+        gsap.registerPlugin(ScrollTrigger);
 
         Components.register(
             'main-page-about',
@@ -119,9 +123,6 @@
         );
     })();
 {%- endjavascript -%}
-
-{%- stylesheet -%}
-{%- endstylesheet -%}
 
 {% schema %}
 {

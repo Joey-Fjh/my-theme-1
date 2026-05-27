@@ -112,5 +112,8 @@
         IMAGELIGHTBOX: 'imageLightbox',
         IMAGEMAGNIFIER: 'imageMagnifier',
         PRODUCTLAYOUT: 'productLayout',
+        ACCORDION: 'accordion',
+        SORTBYDROPDOWN: 'sortByDropdown',
+        FLIPDIGIT: 'flipDigit',
     });
 })();

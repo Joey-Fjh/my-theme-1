@@ -104,29 +104,21 @@
 {%- javascript -%}
     (function () {
         const Components = window.__Theme__?.Components;
-        if (!Components || typeof gsap === 'undefined') return;
-
-        gsap.registerPlugin(ScrollTrigger);
+        const Motion = window.__Theme__?.Motion;
+        if (!Components) return;
 
         Components.register(
             'collections',
             {
                 init(el) {
-                    const ctx = gsap.context(() => {
-                        const cards = el.querySelectorAll('[data-gsap-card]');
+                    if (!Motion) return;
 
-                        gsap.to(cards, {
-                            opacity: 1,
-                            y: 0,
-                            duration: 0.5,
-                            stagger: 0.1,
-                            scrollTrigger: {
-                                trigger: el,
-                                start: 'top 85%',
-                                once: true,
-                            },
-                        });
-                    }, el);
+                    const { ctx } = Motion.scrollReveal(el, {
+                        selector: '[data-gsap-card]',
+                        duration: 0.5,
+                        stagger: 0.1,
+                        scrollTriggerStart: 'top 85%',
+                    });
 
                     return { ctx };
                 },

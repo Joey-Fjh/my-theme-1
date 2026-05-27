@@ -10,7 +10,6 @@
 
 {%- assign sort_options = results.sort_options -%}
 {%- assign current_sort = results.sort_by | default: results.default_sort_by -%}
-{%- capture q -%}"{%- endcapture -%}
 {%- assign wrapper_class = class | default: '' -%}
 {%- assign trigger_class = trigger_class
     | default: 'flex cursor-pointer items-center gap-3 text-theme-text focus:outline-none'
@@ -37,7 +36,11 @@
     {% endif %}
 >
     <div
-        x-data="{ sortBy: {{ current_sort | json | replace: q, '&quot;' }} }"
+        x-data="sortByDropdown"
+        data-current-sort="{{ current_sort | escape }}"
+        data-form-id="{{ form_id | default: '' | escape }}"
+        data-option-active-class="{{ option_active_class | escape }}"
+        data-option-inactive-class="{{ option_inactive_class | escape }}"
         class="relative"
         data-dropdown
         data-deep="0"
@@ -80,21 +83,15 @@
                 <div
                     class="px-4 py-2"
                     role="option"
-                    :aria-selected="sortBy === {{ option.value | json | replace: q, '&quot;' }}"
+                    data-option-value="{{ option.value | escape }}"
+                    :aria-selected="isSelected($el.dataset.optionValue)"
                 >
                     <button
                         type="button"
                         class="{{ option_class }}"
-                        :class="sortBy === {{ option.value | json | replace: q, '&quot;' }} ? '{{ option_active_class }}' : '{{ option_inactive_class }}'"
-                        @click="
-                            sortBy = {{ option.value | json | replace: q, '&quot;' }};
-                            close(0);
-                            {% if form_id %}
-                                $nextTick(() => document.getElementById({{ form_id | json | replace: q, '&quot;' }})?.dispatchEvent(new Event('change', { bubbles: true })));
-                            {% else %}
-                                $dispatch('sort-change', sortBy);
-                            {% endif %}
-                        "
+                        data-option-value="{{ option.value | escape }}"
+                        :class="isSelected($el.dataset.optionValue) ? optionActiveClass : optionInactiveClass"
+                        @click="select($el.dataset.optionValue); close(0)"
                     >
                         {{ option.name | escape }}
                     </button>

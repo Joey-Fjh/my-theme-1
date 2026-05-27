@@ -132,8 +132,9 @@
                             <button
                                 type="button"
                                 class="product-card-shell__pagination-dot"
-                                :class="{ 'is-active': activeImageIndex === {{ forloop.index0 }} }"
-                                @click.prevent="setActiveImage({{ forloop.index0 }})"
+                                data-index="{{ forloop.index0 }}"
+                                :class="{ 'is-active': activeImageIndex === Number($el.dataset.index) }"
+                                @click.prevent="setActiveImage(Number($el.dataset.index))"
                                 aria-label="{{ 'accessibility.show_image' | t: index: forloop.index }}"
                             ></button>
                         {%- endfor -%}
@@ -194,7 +195,8 @@
             {%- for image in product.images -%}
                 <div
                     class="product-card__carousel-slide"
-                    x-show="activeImageIndex === {{ forloop.index0 }}"
+                    data-index="{{ forloop.index0 }}"
+                    x-show="activeImageIndex === Number($el.dataset.index)"
                     {% render 'motion-transition', preset: 'image-fade' %}
                 >
                     {%-
