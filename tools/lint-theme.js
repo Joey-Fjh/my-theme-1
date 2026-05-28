@@ -466,6 +466,28 @@ function checkDomPatterns(file, text, baseLineOffset = 0) {
     checkJsLikePatterns(file, text, DOM_REPLACEMENT_PATTERNS, baseLineOffset);
 }
 
+const ALPINE_COMPONENT_GROUP_FILE_RE = /^assets\/alpine\.components\.[^.]+\.js$/;
+const BARE_ALPINE_COMPONENTS_RE = /(?:^|[^\w$.])AlpineComponents\s*\./g;
+
+async function checkAlpineComponentGroupReferences() {
+    for (const file of await getFiles(ASSET_JS_GLOBS)) {
+        if (!ALPINE_COMPONENT_GROUP_FILE_RE.test(file)) continue;
+
+        const text = await readText(file);
+        const { cleaned, toOriginal } = stripCommentsMapped(text);
+
+        for (const match of cleaned.matchAll(BARE_ALPINE_COMPONENTS_RE)) {
+            const prefixLength = match[0].indexOf('AlpineComponents');
+            const offset = toOriginal((match.index ?? 0) + prefixLength);
+            report(
+                file,
+                lineAt(text, offset),
+                'Use ComponentGroups.<group>.<component>() inside Alpine component group files, not bare AlpineComponents.',
+            );
+        }
+    }
+}
+
 // --- HTTP / Cart guard ---
 
 const HTTP_CART_PATTERNS = [
@@ -534,6 +556,7 @@ async function main() {
     await Promise.all([
         checkSchemaIds(),
         checkLiquidArchitecture(),
+        checkAlpineComponentGroupReferences(),
         checkDomReplacement(),
         checkHttpCartGuard(),
     ]);

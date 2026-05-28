@@ -204,7 +204,7 @@
     ComponentGroups.filters = {
         collectionFilters(sectionId = null, selectors = null) {
             return {
-                ...AlpineComponents.sectionPagination(sectionId, selectors),
+                ...ComponentGroups.pagination.sectionPagination(sectionId, selectors),
 
                 _executeFetch(url, updateHistory) {
                     const Http = window.ShopifyHttp;

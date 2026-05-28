@@ -20,7 +20,7 @@
                 enableImageNavigation: enableImageNavigation !== false,
                 activeImageIndex: 0,
 
-                init() {
+                _hydrateFromDataset() {
                     const dataset = this.$el?.dataset || {};
                     if (dataset.imageCount !== undefined && dataset.imageCount !== '') {
                         this.imageCount = Math.max(1, Number(dataset.imageCount) || 1);
@@ -34,6 +34,20 @@
                         this.enableImageNavigation = dataset.enableImageNavigation !== 'false';
                     } else if (Array.isArray(this.product?.images)) {
                         this.enableImageNavigation = this.product.images.length > 1;
+                    }
+                },
+
+                init() {
+                    this._hydrateFromDataset();
+                },
+
+                _syncNavigationState() {
+                    this._hydrateFromDataset();
+                    const slideCount = this.$el?.querySelectorAll?.(
+                        '.product-card__carousel-slide[data-index]',
+                    ).length;
+                    if (slideCount > 1) {
+                        this.imageCount = Math.max(this.imageCount, slideCount);
                     }
                 },
 
@@ -71,16 +85,19 @@
                 },
 
                 setActiveImage(index) {
+                    this._syncNavigationState();
                     if (!this.canNavigateImages) return;
                     this.activeImageIndex = this._normalizeIndex(index);
                 },
 
                 nextImage() {
+                    this._syncNavigationState();
                     if (!this.canNavigateImages) return;
                     this.setActiveImage(this.activeImageIndex + 1);
                 },
 
                 prevImage() {
+                    this._syncNavigationState();
                     if (!this.canNavigateImages) return;
                     this.setActiveImage(this.activeImageIndex - 1);
                 },
@@ -109,7 +126,7 @@
 
             return {
                 ...AlpineComponentsFactory.useDisposable(),
-                ...AlpineComponents.cardGallery({ imageCount, enableImageNavigation }),
+                ...ComponentGroups.productCards.cardGallery({ imageCount, enableImageNavigation }),
                 imageHover: false,
                 actionsHover: false,
                 hoverMode,
@@ -121,6 +138,18 @@
                 isAddingToCart: false,
                 isTouchDevice: false,
                 _hoverLeaveTimer: null,
+
+                get hasMultipleImages() {
+                    return this.imageCount > 1;
+                },
+
+                get canNavigateImages() {
+                    return this.enableImageNavigation && this.hasMultipleImages;
+                },
+
+                get canPaginateImages() {
+                    return this.canNavigateImages;
+                },
 
                 get canShowHoverActions() {
                     return this.hoverMode === 'actions';
@@ -140,21 +169,20 @@
                     return this.imageHover;
                 },
 
+                get imageNavigationLabel() {
+                    return `${this.activeImageIndex + 1}/${this.imageCount}`;
+                },
+
+                get paginationLabel() {
+                    return this.imageNavigationLabel;
+                },
+
                 init() {
+                    this._hydrateFromDataset();
                     const dataset = this.$el?.dataset || {};
-                    this.imageCount = Math.max(
-                        1,
-                        Number(dataset.imageCount || this.imageCount) || 1,
-                    );
                     this.hoverMode = dataset.hoverMode || this.hoverMode || 'actions';
                     if (dataset.hasVariantPanel !== undefined && dataset.hasVariantPanel !== '') {
                         this.hasVariantPanel = dataset.hasVariantPanel === 'true';
-                    }
-                    if (
-                        dataset.enableImageNavigation !== undefined &&
-                        dataset.enableImageNavigation !== ''
-                    ) {
-                        this.enableImageNavigation = dataset.enableImageNavigation !== 'false';
                     }
                     this.quickViewDialogId =
                         dataset.quickViewDialogId || this.quickViewDialogId || '';
