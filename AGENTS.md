@@ -57,7 +57,7 @@ For new JavaScript and cleanup work, first check the canonical examples in `skil
 
 1. NEVER write inline `<script>` tags or bare DOM listeners.
 2. Section/block JS behavior that needs lifecycle management MUST go through `Components.register()` inside a `{%- javascript -%}` block.
-3. Reusable Alpine component behavior MUST be registered via `AlpineComponentsFactory.register()` in `alpine.components.js`.
+3. Reusable Alpine component behavior MUST be registered via `AlpineComponentsFactory.register()` in the appropriate `alpine.components.*.js` file (grouped by domain; base factory in `alpine.components.js`).
 4. Cross-component and cross-section communication MUST use `ThemeEvents`; local DOM events inside one component MAY use native or Alpine event bindings.
 5. Application-level HTTP requests MUST use `window.ShopifyHttp`; raw `fetch()` is allowed only in the HTTP infrastructure layer and vendor files.
 6. Shopify section HTML replacement after AJAX MUST use `window.ShopifySectionRefresher.render()`; local text, class, aria, loading, and open/closed state changes SHOULD use Alpine bindings.
@@ -128,20 +128,41 @@ Additional globals:
 ### Script Load Order
 
 ```text
-1.  vendor-gsap.min.js
-2.  vendor-gsap-scrolltrigger.min.js
-3.  vendor-swiper.min.js
-4.  utils.js
-5.  events.js
-6.  motion.js
-7.  alpine.components.js
-8.  performance.js
-9.  https.js
-10. base.js
-11. alpine.store.js
-12. vendor-alpine-intersect.min.js
-13. vendor-alpine.min.js          <- MUST be last
+ 1.  vendor-gsap.min.js
+ 2.  vendor-gsap-scrolltrigger.min.js
+ 3.  vendor-swiper.min.js
+ 4.  utils.js
+ 5.  events.js
+ 6.  motion.js
+ 7.  alpine.components.js
+ 8.  alpine.components.ui.js
+ 9.  alpine.components.header.js
+10.  alpine.components.pagination.js
+11.  alpine.components.filters.js
+12.  alpine.components.product.js
+13.  alpine.components.product-media.js
+14.  alpine.components.product-cards.js
+15.  alpine.components.search.js
+16.  alpine.components.overlays.js
+17.  alpine.components.registry.js      <- merges groups into window.__Theme__.AlpineComponents
+18.  performance.js
+19.  https.js
+20.  base.js
+21.  alpine.store.js
+22.  alpine.store.toast.js
+23.  alpine.store.dialog.js
+24.  alpine.store.cart.js
+25.  alpine.store.registry.js           <- merges/registers stores
+26.  vendor-alpine-intersect.min.js
+27.  vendor-alpine.min.js               <- MUST be last
 ```
+
+**Constraints**:
+
+- `vendor-alpine.min.js` MUST be last.
+- Registry files (`*.registry.js`) load after their respective groups.
+- `base.js` loads after `https.js` and component definitions.
+- Store files load before `vendor-alpine.min.js`.
 
 ### ThemeEvents API
 
@@ -213,7 +234,7 @@ window.ShopifySectionRefresher.updateText([{ selector: '.cart-count', text: '3' 
 
 ### Data Attribute Convention (MANDATORY)
 
-When passing Liquid values to Alpine or JS components, ALWAYS use `data-*` attributes. NEVER embed complex Liquid output directly in `x-data` expressions.
+When passing Liquid values to registered Alpine components or JS components, ALWAYS use `data-*` attributes. NEVER embed complex Liquid output directly in `x-data` expressions.
 
 ```html
 <!-- CORRECT -->
@@ -290,7 +311,7 @@ Required DOM attributes on the component root:
 
 ### Alpine Component Pattern
 
-Reusable Alpine behaviors are defined in `alpine.components.js`:
+Reusable Alpine behaviors are defined in `alpine.components.js` (base factory) and grouped files (`alpine.components.*.js`). `alpine.components.registry.js` merges all groups into `window.__Theme__.AlpineComponents`.
 
 ```javascript
 AlpineComponentsFactory.register('myComponent', function () {
@@ -310,7 +331,7 @@ AlpineComponentsFactory.register('myComponent', function () {
 
 ### Alpine Store Pattern
 
-Global stores are defined in `alpine.store.js` and registered in `base.js`:
+Global stores are defined in `alpine.store.js` (base) and grouped files (`alpine.store.*.js`). `alpine.store.registry.js` merges and registers all stores into Alpine. Stores are initialized in `base.js`.
 
 ```javascript
 // Access stores in Alpine components
@@ -368,17 +389,21 @@ debouncedFn.dispose(); // cleanup
 
 #### File Classification
 
-| File                   | Type        | Purpose                                         |
-| ---------------------- | ----------- | ----------------------------------------------- |
-| `vendor-*.min.js`      | Third-party | **DO NOT EDIT**                                 |
-| `utils.js`             | Custom      | Utility functions (throttle, debounce)          |
-| `events.js`            | Custom      | Event bus system (`ThemeEvents`)                |
-| `motion.js`            | Custom      | GSAP choreography recipes (`Motion`)            |
-| `alpine.components.js` | Custom      | Alpine component definitions                    |
-| `performance.js`       | Custom      | Debug CWV monitoring                            |
-| `https.js`             | Custom      | HTTP client (`ShopifyHttp`) + Section refresher |
-| `base.js`              | Custom      | Component engine + Alpine init                  |
-| `alpine.store.js`      | Custom      | Alpine global stores                            |
+| File                            | Type        | Purpose                                                                                                                              |
+| ------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `vendor-*.min.js`               | Third-party | **DO NOT EDIT**                                                                                                                      |
+| `utils.js`                      | Custom      | Utility functions (throttle, debounce)                                                                                               |
+| `events.js`                     | Custom      | Event bus system (`ThemeEvents`)                                                                                                     |
+| `motion.js`                     | Custom      | GSAP choreography recipes (`Motion`)                                                                                                 |
+| `alpine.components.js`          | Custom      | Base Alpine component factory (`AlpineComponentsFactory`)                                                                            |
+| `alpine.components.*.js`        | Custom      | Grouped Alpine component definition files (ui, header, pagination, filters, product, product-media, product-cards, search, overlays) |
+| `alpine.components.registry.js` | Custom      | Merges component groups into `window.__Theme__.AlpineComponents`                                                                     |
+| `performance.js`                | Custom      | Debug CWV monitoring                                                                                                                 |
+| `https.js`                      | Custom      | HTTP client (`ShopifyHttp`) + Section refresher                                                                                      |
+| `base.js`                       | Custom      | Component engine + Alpine init                                                                                                       |
+| `alpine.store.js`               | Custom      | Base Alpine store definitions                                                                                                        |
+| `alpine.store.*.js`             | Custom      | Grouped Alpine store definition files (toast, dialog, cart)                                                                          |
+| `alpine.store.registry.js`      | Custom      | Merges/registers stores into Alpine                                                                                                  |
 
 #### Custom JS Files Specification
 
@@ -432,14 +457,34 @@ debouncedFn.dispose(); // cleanup
 
 **Alpine Component Encapsulation**:
 
-- NEVER generate inline Alpine functions in Liquid templates
-- ALL Alpine components MUST be registered in `alpine.components.js`
-- Configuration MUST be passed via `data-*` attributes
-- Use double quotes for HTML attributes, single quotes for Liquid tags
+Simple local Alpine state MAY remain inline in templates when ALL of the following hold:
+
+- Used only for current-template local UI state (e.g. `x-data="{ open: false }"`, `x-data="{ hover: false }"`, `x-data="{ inView: false }"`, `x-data="{ index: null }"`)
+- No Liquid output embedded in the expression
+- No JSON or long object configuration
+- No multi-layer quoting or escape-heavy expressions
+- No side-effectful methods (HTTP, observers, timers, cross-component communication)
+- Not reused across multiple templates
+
+The following MUST be migrated to a registered Alpine component in `alpine.components.*.js`:
+
+- Long object parameters (e.g. `productCard({ ...many params... })`)
+- Complex expression parameters (e.g. `cardGallery({ imageCount: Array.isArray(...) ... })`)
+- Liquid output embedded in `x-data`
+- JSON embedded in `x-data`
+- Multi-layer quoting or escape-risky parameters
+- Reusable Alpine behavior
+- Side effects / lifecycle cleanup / HTTP / cart / ThemeEvents / observers / timers
+
+**Configuration rules**:
+
+- Registered Alpine components with Liquid-driven configuration MUST use `data-*` attributes.
+- Short, stable parameters with no Liquid (e.g. `dragScroll({ axis: 'x' })`) MAY remain inline if not reused enough to justify extraction.
+- Use double quotes for HTML attributes, single quotes for Liquid tags.
 
 **Component Reuse**:
 
-- ALWAYS check `alpine.components.js` for existing components before creating new ones
+- ALWAYS check `alpine.components.*.js` files for existing components before creating new ones
 - If a similar component exists, reuse it or extend it
 - NEVER create duplicate functionality
 
@@ -1137,8 +1182,12 @@ assets/
     events.js                  ThemeEvents event bus
     https.js                   ShopifyHttp + SectionRefresher
     performance.js             Debug CWV monitoring
-    alpine.components.js       Alpine component definitions
-    alpine.store.js            Alpine global stores
+    alpine.components.js       Alpine component base factory
+    alpine.components.*.js     Grouped Alpine component definitions
+    alpine.components.registry.js  Merges component groups
+    alpine.store.js            Alpine store base definitions
+    alpine.store.*.js          Grouped Alpine store definitions
+    alpine.store.registry.js   Merges/registers stores
     utils.js                   Shared utilities
     vendor-*.min.js            Third-party libraries (DO NOT EDIT)
     vendor-*.min.css           Third-party styles (DO NOT EDIT)
@@ -1269,7 +1318,7 @@ Before considering a task complete, verify all applicable items below.
 
 1. Liquid-driven runtime values are passed through `data-*`, not embedded directly in `x-data`.
 2. Section/block behavior is wired through `Components.register()` when lifecycle management is needed.
-3. Reusable Alpine behavior is registered in `alpine.components.js`.
+3. Reusable Alpine behavior is registered in `alpine.components.*.js` (grouped by domain).
 4. Cross-component communication uses `ThemeEvents`, while local component events remain lifecycle-scoped.
 5. Application HTTP requests use `window.ShopifyHttp`; raw `fetch()` appears only in allowed infrastructure/vendor files.
 6. Shopify section HTML refresh uses `window.ShopifySectionRefresher.render()`; local text/state/class updates use Alpine bindings or `updateText()`.

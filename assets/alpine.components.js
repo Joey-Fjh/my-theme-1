@@ -115,5 +115,6 @@
         ACCORDION: 'accordion',
         SORTBYDROPDOWN: 'sortByDropdown',
         FLIPDIGIT: 'flipDigit',
+        FOOTER_SECTION: 'footerSection',
     });
 })();

@@ -20,6 +20,23 @@
                 enableImageNavigation: enableImageNavigation !== false,
                 activeImageIndex: 0,
 
+                init() {
+                    const dataset = this.$el?.dataset || {};
+                    if (dataset.imageCount !== undefined && dataset.imageCount !== '') {
+                        this.imageCount = Math.max(1, Number(dataset.imageCount) || 1);
+                    } else if (Array.isArray(this.product?.images) && this.product.images.length) {
+                        this.imageCount = this.product.images.length;
+                    }
+                    if (
+                        dataset.enableImageNavigation !== undefined &&
+                        dataset.enableImageNavigation !== ''
+                    ) {
+                        this.enableImageNavigation = dataset.enableImageNavigation !== 'false';
+                    } else if (Array.isArray(this.product?.images)) {
+                        this.enableImageNavigation = this.product.images.length > 1;
+                    }
+                },
+
                 get hasMultipleImages() {
                     return this.imageCount > 1;
                 },

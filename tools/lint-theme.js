@@ -5,11 +5,15 @@ const path = require('node:path');
 const process = require('node:process');
 const fg = require('fast-glob');
 const { parseTree, getNodeValue } = require('jsonc-parser');
+const { parseLiquidAst, walk } = require('./lib/liquid-ast');
 
 const ROOT = process.cwd();
 
 const LIQUID_GLOBS = ['layout/**/*.liquid', 'sections/**/*.liquid', 'snippets/**/*.liquid'];
 const SCHEMA_GLOBS = ['sections/**/*.liquid', 'blocks/**/*.liquid', 'config/settings_schema.json'];
+const ASSET_JS_GLOBS = ['assets/**/*.js'];
+
+const DOM_REPLACEMENT_ALLOWLIST = new Set(['assets/https.js']);
 
 const GLOBAL_OBJECTS = new Set([
     'all_products',
@@ -151,12 +155,130 @@ async function checkSchemaIds() {
     }
 }
 
+const XDATA_COMPLEX_PATTERNS = [
+    /Array\.isArray/,
+    /\$el\.dataset/,
+    /\bfunction\s*\(/,
+    /\?\s*[^:]+:/, // ternary
+    /\[[^\]]*\]/, // array literal
+    /\{[^}]*\{/, // nested object
+    /\b\w+\s*\([^)]*\)\s*\{/, // method shorthand
+];
+
+const XDATA_MAX_PROPS = 3;
+const XDATA_MAX_LENGTH = 120;
+
+function isSimplePrimitiveObject(rawValue) {
+    if (rawValue === '{}') return true;
+
+    // Match { key: val, key: val, ... } with only primitive values
+    const match = rawValue.match(/^\{([\s\S]*)\}$/);
+    if (!match) return false;
+
+    const inner = match[1].trim();
+    if (!inner) return true;
+
+    // Split by top-level commas (not inside strings)
+    const parts = inner.split(',');
+    for (const part of parts) {
+        const trimmed = part.trim();
+        if (!trimmed) return false;
+        // Each part must be: identifier : primitive
+        if (
+            !/^\w+\s*:\s*(?:true|false|null|undefined|\d+(?:\.\d+)?|'[^']*'|"[^"]*"|`[^`]*`)$/.test(
+                trimmed,
+            )
+        ) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function isSimpleObjectCall(rawValue) {
+    // Match: functionName({ key: val, ... }) with brace counting for nested braces
+    const openParen = rawValue.indexOf('(');
+    if (openParen < 1) return false;
+    if (!/^[a-zA-Z_]\w*$/.test(rawValue.slice(0, openParen))) return false;
+    if (!rawValue.endsWith(')')) return false;
+
+    const inner = rawValue.slice(openParen + 1, -1).trim();
+    if (!inner.startsWith('{')) return false;
+
+    // Brace counting to find matching close brace
+    let depth = 0;
+    let closeBrace = -1;
+    for (let i = 0; i < inner.length; i++) {
+        if (inner[i] === '{') depth++;
+        if (inner[i] === '}') {
+            depth--;
+            if (depth === 0) {
+                closeBrace = i;
+                break;
+            }
+        }
+    }
+    if (closeBrace !== inner.length - 1) return false;
+
+    const objContent = inner.slice(1, closeBrace).trim();
+    const propCount = objContent ? objContent.split(',').filter((p) => p.trim()).length : 0;
+
+    return propCount <= XDATA_MAX_PROPS && rawValue.length <= XDATA_MAX_LENGTH;
+}
+
+function checkXDataComplexity(file, text, attr, rawValue) {
+    // Reject Liquid output {{ ... }}
+    const hasLiquidOutput = attr.value?.some((v) => v.type === 'LiquidVariableOutput');
+    if (hasLiquidOutput) {
+        report(
+            file,
+            lineAt(text, attr.position.start),
+            'Complex x-data should move configuration to data-* attributes or component init().',
+        );
+        return;
+    }
+
+    // Reject Liquid tags {% ... %}
+    const hasLiquidTag = attr.value?.some((v) => v.type === 'LiquidTag');
+    if (hasLiquidTag) {
+        report(
+            file,
+            lineAt(text, attr.position.start),
+            'Complex x-data should move configuration to data-* attributes or component init().',
+        );
+        return;
+    }
+
+    // Allow simple local state: x-data="{}" or x-data="{ key: primitive, ... }"
+    if (isSimplePrimitiveObject(rawValue)) return;
+
+    // Allow bare component name (no parens or empty parens)
+    if (/^[a-zA-Z_]\w*(?:\(\s*\))?$/.test(rawValue)) return;
+
+    // Allow short, stable call with simple object arg (brace-counted)
+    // e.g. dragScroll({ axis: 'x' })
+    if (isSimpleObjectCall(rawValue) && !XDATA_COMPLEX_PATTERNS.some((re) => re.test(rawValue))) {
+        return;
+    }
+
+    // Everything else — check for complexity
+    const propCount = (rawValue.match(/,/g) || []).length + 1;
+    const isComplex =
+        propCount > XDATA_MAX_PROPS ||
+        rawValue.length > XDATA_MAX_LENGTH ||
+        XDATA_COMPLEX_PATTERNS.some((re) => re.test(rawValue));
+
+    if (isComplex) {
+        report(
+            file,
+            lineAt(text, attr.position.start),
+            'Complex x-data should move configuration to data-* attributes or component init().',
+        );
+    }
+}
+
 async function checkLiquidArchitecture() {
     const assignRe = /{%-?\s*(assign|capture)\s+([a-zA-Z_][\w]*)\b/g;
-    const inlineScriptRe =
-        /<script\b(?![^>]*\bsrc=)(?![^>]*\btype="application\/(?:ld\+json|json)")[\s\S]*?<\/script>/gi;
-    const styleTagRe = /<style\b[\s\S]*?<\/style>/gi;
-    const rawCartFetchRe = /\bfetch\s*\(\s*['"]\/cart(?:\.js|\/(?:add|change|clear|update)\.js)/g;
     const domListenerRe = /\b(?:document|window)\.addEventListener\s*\(/g;
     const hardcodedColorUtilityRe = /\b(?:text|bg|border)-\[(?:#[0-9a-fA-F]{3,8}|[a-zA-Z]+)\]/g;
     const headingTextSizeRe =
@@ -179,28 +301,60 @@ async function checkLiquidArchitecture() {
             }
         }
 
-        for (const match of text.matchAll(inlineScriptRe)) {
-            report(
-                file,
-                lineAt(text, match.index ?? 0),
-                'Use {% javascript %} with Components.register(), not inline <script>.',
-            );
-        }
+        // --- AST-based checks ---
+        const { ast, error: parseError } = parseLiquidAst(text);
 
-        for (const match of text.matchAll(styleTagRe)) {
-            report(
-                file,
-                lineAt(text, match.index ?? 0),
-                'Do not use <style> tags in Liquid templates.',
-            );
-        }
+        if (parseError) {
+            report(file, 1, `Liquid parse error: ${parseError.message}`);
+        } else {
+            walk(ast, (node) => {
+                // Inline <script> check
+                if (node.type === 'HtmlRawNode' && node.name === 'script') {
+                    const attrs = node.attributes || [];
+                    const hasSrc = attrs.some((a) => a.name?.some((n) => n.value === 'src'));
+                    const typeAttr = attrs.find((a) => a.name?.some((n) => n.value === 'type'));
+                    const typeVal = typeAttr?.value
+                        ?.map((v) => v.value || '')
+                        .join('')
+                        .trim();
+                    const isJsonType =
+                        typeVal === 'application/ld+json' || typeVal === 'application/json';
 
-        for (const match of text.matchAll(rawCartFetchRe)) {
-            report(
-                file,
-                lineAt(text, match.index ?? 0),
-                'Cart requests must go through $store.cart.',
-            );
+                    if (!hasSrc && !isJsonType) {
+                        report(
+                            file,
+                            lineAt(text, node.position.start),
+                            'Use {% javascript %} with Components.register(), not inline <script>.',
+                        );
+                    }
+                }
+
+                // <style> check
+                if (node.type === 'HtmlRawNode' && node.name === 'style') {
+                    report(
+                        file,
+                        lineAt(text, node.position.start),
+                        'Do not use <style> tags in Liquid templates.',
+                    );
+                }
+
+                // x-data complexity check
+                if (node.attributes) {
+                    for (const attr of node.attributes) {
+                        if (!Array.isArray(attr.name)) continue;
+                        const attrName = attr.name?.map((n) => n.value || '').join('');
+                        if (attrName !== 'x-data') continue;
+
+                        const rawValue = attr.value
+                            ?.map((v) => v.value || '')
+                            .join('')
+                            .trim();
+                        if (!rawValue) continue;
+
+                        checkXDataComplexity(file, text, attr, rawValue);
+                    }
+                }
+            });
         }
 
         for (const match of text.matchAll(domListenerRe)) {
@@ -248,8 +402,105 @@ async function checkLiquidArchitecture() {
     }
 }
 
+// --- DOM replacement guard ---
+
+const DOM_REPLACEMENT_PATTERNS = [
+    {
+        re: /\.innerHTML\s*=/g,
+        message: 'Shopify section HTML replacement must use ShopifySectionRefresher.render().',
+    },
+    {
+        re: /\.outerHTML\s*=/g,
+        message: 'Shopify section HTML replacement must use ShopifySectionRefresher.render().',
+    },
+    {
+        re: /\.replaceWith\s*\(/g,
+        message: 'Shopify section HTML replacement must use ShopifySectionRefresher.render().',
+    },
+];
+
+const LIQUID_SCRIPT_RE = /{%-?\s*javascript\s*-?%}([\s\S]*?){%-?\s*endjavascript\s*-?%}/g;
+
+function stripComments(source) {
+    return source.replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
+}
+
+function checkJsLikePatterns(file, text, patterns) {
+    const cleaned = stripComments(text);
+
+    for (const { re, message } of patterns) {
+        for (const match of cleaned.matchAll(re)) {
+            report(file, lineAt(text, match.index ?? 0), message);
+        }
+    }
+}
+
+function checkDomPatterns(file, text) {
+    checkJsLikePatterns(file, text, DOM_REPLACEMENT_PATTERNS);
+}
+
+// --- HTTP / Cart guard ---
+
+const HTTP_CART_PATTERNS = [
+    {
+        re: /\bfetch\s*\(/g,
+        message:
+            'Application HTTP requests must use window.ShopifyHttp; raw fetch() is only allowed in assets/https.js or vendor files.',
+    },
+    {
+        re: /\/cart(?:\.js|\/(?:add|change|clear|update)\.js)/g,
+        message:
+            'Cart requests must go through $store.cart; direct cart endpoints are only allowed in the cart store implementation.',
+    },
+];
+
+const HTTP_CART_ALLOWLIST = new Set(['assets/https.js', 'assets/alpine.store.cart.js']);
+
+async function checkHttpCartGuard() {
+    for (const file of await getFiles(LIQUID_GLOBS)) {
+        const text = await readText(file);
+
+        for (const match of text.matchAll(LIQUID_SCRIPT_RE)) {
+            checkJsLikePatterns(file, match[1], HTTP_CART_PATTERNS);
+        }
+    }
+
+    for (const file of await getFiles(ASSET_JS_GLOBS)) {
+        if (HTTP_CART_ALLOWLIST.has(file)) continue;
+        if (/\/vendor-/.test(file) || /\.min\.js$/.test(file)) continue;
+
+        const text = await readText(file);
+        checkJsLikePatterns(file, text, HTTP_CART_PATTERNS);
+    }
+}
+
+async function checkDomReplacement() {
+    // Liquid files: extract JS blocks only
+    for (const file of await getFiles(LIQUID_GLOBS)) {
+        const text = await readText(file);
+
+        for (const match of text.matchAll(LIQUID_SCRIPT_RE)) {
+            checkDomPatterns(file, match[1]);
+        }
+    }
+
+    // Asset JS files: skip allowlist and vendor/generated
+    for (const file of await getFiles(ASSET_JS_GLOBS)) {
+        if (DOM_REPLACEMENT_ALLOWLIST.has(file)) continue;
+        if (/\/vendor-/.test(file) || /\.min\.js$/.test(file)) continue;
+
+        const text = await readText(file);
+        checkDomPatterns(file, text);
+    }
+}
+
 async function main() {
-    await Promise.all([checkSchemaIds(), checkLiquidArchitecture()]);
+    await Promise.all([
+        checkSchemaIds(),
+        checkLiquidArchitecture(),
+        checkDomReplacement(),
+        checkHttpCartGuard(),
+    ]);
 
     if (failures.length === 0) {
         console.log('theme architecture lint passed.');

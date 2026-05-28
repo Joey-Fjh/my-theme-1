@@ -10,6 +10,16 @@
     if (!AlpineComponentsFactory) return;
 
     ComponentGroups.ui = {
+        footerSection() {
+            return {
+                visible: false,
+
+                scrollToTop() {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                },
+            };
+        },
+
         dropdown() {
             const ThemeEvents = window.__Theme__.Events;
             const headerMenuActiveEvent = ThemeEvents?.events?.HEADER_MENU_ACTIVE_CHANGED;

@@ -523,6 +523,7 @@
                         Factory.register?.(Comps.ACCORDION, Comps.accordion);
                         Factory.register?.(Comps.SORTBYDROPDOWN, Comps.sortByDropdown);
                         Factory.register?.(Comps.FLIPDIGIT, Comps.flipDigit);
+                        Factory.register?.(Comps.FOOTER_SECTION, Comps.footerSection);
                     }
                 },
                 { once: true },
