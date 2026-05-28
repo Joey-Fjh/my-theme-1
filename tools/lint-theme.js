@@ -165,11 +165,12 @@ const XDATA_COMPLEX_PATTERNS = [
     /\b\w+\s*\([^)]*\)\s*\{/, // method shorthand
 ];
 
-const XDATA_MAX_PROPS = 3;
+const XDATA_MAX_PROPS = 1;
 const XDATA_MAX_LENGTH = 120;
 
 function isSimplePrimitiveObject(rawValue) {
     if (rawValue === '{}') return true;
+    if (rawValue.length > XDATA_MAX_LENGTH) return false;
 
     // Match { key: val, key: val, ... } with only primitive values
     const match = rawValue.match(/^\{([\s\S]*)\}$/);
@@ -421,22 +422,48 @@ const DOM_REPLACEMENT_PATTERNS = [
 
 const LIQUID_SCRIPT_RE = /{%-?\s*javascript\s*-?%}([\s\S]*?){%-?\s*endjavascript\s*-?%}/g;
 
-function stripComments(source) {
-    return source.replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
+function stripCommentsMapped(source) {
+    const commentRe = /\/\/[^\n]*|\/\*[\s\S]*?\*\//g;
+    const deletedRanges = [];
+    for (const m of source.matchAll(commentRe)) {
+        deletedRanges.push([m.index, m.index + m[0].length]);
+    }
+
+    const cleaned = source.replace(commentRe, '');
+
+    if (deletedRanges.length === 0) return { cleaned, toOriginal: (i) => i };
+
+    const map = new Int32Array(source.length);
+    let ci = 0;
+    let gapIdx = 0;
+    for (let oi = 0; oi < source.length; oi++) {
+        if (gapIdx < deletedRanges.length && oi === deletedRanges[gapIdx][0]) {
+            oi = deletedRanges[gapIdx][1] - 1;
+            gapIdx++;
+        } else {
+            map[ci++] = oi;
+        }
+    }
+
+    return {
+        cleaned,
+        toOriginal: (i) => (i < ci ? map[i] : map[ci - 1]),
+    };
 }
 
-function checkJsLikePatterns(file, text, patterns) {
-    const cleaned = stripComments(text);
+function checkJsLikePatterns(file, text, patterns, baseLineOffset = 0) {
+    const { cleaned, toOriginal } = stripCommentsMapped(text);
 
     for (const { re, message } of patterns) {
         for (const match of cleaned.matchAll(re)) {
-            report(file, lineAt(text, match.index ?? 0), message);
+            const ci = match.index ?? 0;
+            report(file, baseLineOffset + lineAt(text, toOriginal(ci)), message);
         }
     }
 }
 
-function checkDomPatterns(file, text) {
-    checkJsLikePatterns(file, text, DOM_REPLACEMENT_PATTERNS);
+function checkDomPatterns(file, text, baseLineOffset = 0) {
+    checkJsLikePatterns(file, text, DOM_REPLACEMENT_PATTERNS, baseLineOffset);
 }
 
 // --- HTTP / Cart guard ---
@@ -454,23 +481,31 @@ const HTTP_CART_PATTERNS = [
     },
 ];
 
-const HTTP_CART_ALLOWLIST = new Set(['assets/https.js', 'assets/alpine.store.cart.js']);
+const HTTP_FETCH_ALLOWLIST = new Set(['assets/https.js']);
+const CART_ENDPOINT_ALLOWLIST = new Set(['assets/https.js', 'assets/alpine.store.cart.js']);
 
 async function checkHttpCartGuard() {
     for (const file of await getFiles(LIQUID_GLOBS)) {
         const text = await readText(file);
 
         for (const match of text.matchAll(LIQUID_SCRIPT_RE)) {
-            checkJsLikePatterns(file, match[1], HTTP_CART_PATTERNS);
+            const baseLineOffset = lineAt(text, match.index ?? 0) - 1;
+            checkJsLikePatterns(file, match[1], HTTP_CART_PATTERNS, baseLineOffset);
         }
     }
 
     for (const file of await getFiles(ASSET_JS_GLOBS)) {
-        if (HTTP_CART_ALLOWLIST.has(file)) continue;
         if (/\/vendor-/.test(file) || /\.min\.js$/.test(file)) continue;
 
         const text = await readText(file);
-        checkJsLikePatterns(file, text, HTTP_CART_PATTERNS);
+
+        if (!HTTP_FETCH_ALLOWLIST.has(file)) {
+            checkJsLikePatterns(file, text, [HTTP_CART_PATTERNS[0]]);
+        }
+
+        if (!CART_ENDPOINT_ALLOWLIST.has(file)) {
+            checkJsLikePatterns(file, text, [HTTP_CART_PATTERNS[1]]);
+        }
     }
 }
 
@@ -480,7 +515,8 @@ async function checkDomReplacement() {
         const text = await readText(file);
 
         for (const match of text.matchAll(LIQUID_SCRIPT_RE)) {
-            checkDomPatterns(file, match[1]);
+            const baseLineOffset = lineAt(text, match.index ?? 0) - 1;
+            checkDomPatterns(file, match[1], baseLineOffset);
         }
     }
 

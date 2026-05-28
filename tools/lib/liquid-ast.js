@@ -1,4 +1,9 @@
-const { toLiquidHtmlAST, walk, LiquidHTMLCSTParsingError } = require('@shopify/liquid-html-parser');
+const {
+    toLiquidHtmlAST,
+    walk,
+    LiquidHTMLCSTParsingError,
+    LiquidHTMLASTParsingError,
+} = require('@shopify/liquid-html-parser');
 
 /**
  * Parse a Liquid HTML source string into an AST.
@@ -9,7 +14,7 @@ function parseLiquidAst(source) {
         const ast = toLiquidHtmlAST(source);
         return { ast };
     } catch (err) {
-        if (err instanceof LiquidHTMLCSTParsingError) {
+        if (err instanceof LiquidHTMLCSTParsingError || err instanceof LiquidHTMLASTParsingError) {
             return { error: { message: err.message } };
         }
         throw err;
