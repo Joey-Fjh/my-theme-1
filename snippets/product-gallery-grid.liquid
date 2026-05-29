@@ -48,6 +48,12 @@
                 style="aspect-ratio: {{ gallery_aspect }};"
             >
         {%- endif -%}
+        {%- assign gallery_loading = 'lazy' -%}
+        {%- assign gallery_fetchpriority = 'auto' -%}
+        {%- if forloop.first -%}
+            {%- assign gallery_loading = 'eager' -%}
+            {%- assign gallery_fetchpriority = 'high' -%}
+        {%- endif -%}
         {%- if magnifier -%}
             {%- render 'image-magnifier',
                 image: media_image,
@@ -56,7 +62,8 @@
                 alt: media_image.alt,
                 sizes: '(min-width: 48rem) 25vw, 50vw',
                 widths: '300,400,600,800',
-                loading: 'lazy',
+                loading: gallery_loading,
+                fetchpriority: gallery_fetchpriority,
                 zoom_scale: magnifier_zoom_scale,
                 preview_width: magnifier_preview_width,
                 preview_height: magnifier_preview_height,
@@ -70,7 +77,8 @@
                 alt: media_image.alt,
                 sizes: '(min-width: 48rem) 25vw, 50vw',
                 widths: '300,400,600,800',
-                loading: 'lazy'
+                loading: gallery_loading,
+                fetchpriority: gallery_fetchpriority
             -%}
         {%- endif -%}
         {%- if zoom -%}

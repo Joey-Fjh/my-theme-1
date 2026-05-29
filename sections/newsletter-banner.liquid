@@ -12,10 +12,11 @@
     <div class="layout container-page">
         <div class="relative aspect-square overflow-hidden pc:aspect-1392/480">
             {% comment %} Background Image {% endcomment %}
-            {%- render 'image',
+            {%-
+                render 'image',
                 class: '!absolute inset-0',
                 image: section.settings.background_image,
-                alt: section.settings.background_image.alt,
+                alt: section.settings.background_image.alt | default: section.settings.heading | escape,
                 width: section.settings.background_image.width
             -%}
 
@@ -33,9 +34,9 @@
                 <p class="body-md opacity-80 pc:body-lg">
                     {{ section.settings.subtitle }}
                 </p>
-                <h1 class="h2 pc:h1">
+                <h2 class="h2 pc:h1">
                     {{ section.settings.heading }}
-                </h1>
+                </h2>
                 {% form 'customer', class: 'mt-4 w-full max-w-xl pc:mt-0' %}
                     <input type="hidden" name="customer[accepts_marketing]" value="true">
                     <input type="hidden" name="customer[tags]" value="newsletter">
@@ -45,13 +46,14 @@
                             type="email"
                             name="customer[email]"
                             x-model="email"
-                            placeholder="{{ section.settings.placeholder | default: 'newsletter.email_placeholder' | t }}"
+                            placeholder="{{ 'newsletter.email_placeholder' | t }}"
                             required
-                            class="field flex-1"
+                            class="field flex-1 placeholder:text-theme-text/80"
                         >
                         <button
                             type="submit"
                             class="btn w-full btn-primary pc:w-auto"
+                            aria-label="{{ 'newsletter.subscribe' | t }}"
                             :disabled="loading"
                         >
                             <span x-show="!loading" class="pc:hidden">

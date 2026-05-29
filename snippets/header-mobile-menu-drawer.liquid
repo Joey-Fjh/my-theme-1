@@ -73,7 +73,7 @@
 
             <div class="min-h-0 flex-1 overflow-y-auto p-6">
                 <template x-if="!thirdLevelLinks.length">
-                    <div>
+                    <nav aria-label="{{ 'accessibility.mobile_menu' | t }}">
                         <ul x-ref="topMenu" class="space-y-4" role="list">
                             {%- for link in menu_obj.links -%}
                                 <li data-has-children="{% if link.links != blank %}true{% else %}false{% endif %}">
@@ -97,6 +97,7 @@
                                             type="button"
                                             class="inline-flex cursor-pointer items-center gap-2 body-md text-theme-text/90"
                                             data-index="{{ forloop.index0 }}"
+                                            aria-controls="mobile-sub-{{ forloop.index0 }}"
                                             @click="openTop(Number($el.dataset.index))"
                                             :aria-expanded="activeTopIndex === Number($el.dataset.index)"
                                         >
@@ -111,6 +112,7 @@
                                         </button>
 
                                         <div
+                                            id="mobile-sub-{{ forloop.index0 }}"
                                             x-show="activeTopIndex === Number($el.dataset.index)"
                                             data-index="{{ forloop.index0 }}"
                                             class="pt-4"
@@ -164,7 +166,7 @@
                                 </li>
                             {%- endfor -%}
                         </ul>
-                    </div>
+                    </nav>
                 </template>
 
                 <template x-if="thirdLevelLinks.length">

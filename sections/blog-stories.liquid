@@ -12,9 +12,9 @@
     <div class="layout container-page">
         {% comment %} Header {% endcomment %}
         <div class="mb-12 flex flex-col justify-between gap-8 pc:flex-row pc:items-start">
-            <h1 class="pc:w-1/2">
+            <h2 class="pc:w-1/2">
                 {{ section.settings.heading }}
-            </h1>
+            </h2>
             <div class="flex items-start gap-4 pc:w-1/3">
                 <div class="body-base opacity-80">
                     {{ section.settings.description }}
@@ -31,29 +31,34 @@
                 -%}
                     <article class="group">
                         <div class="relative mb-4 aspect-4/3 overflow-hidden">
-                            {%- render 'image',
+                            {%-
+                                render 'image',
                                 class: 'transition-transform duration-300 group-hover:scale-105',
                                 image: article.image,
-                                alt: article.title,
+                                alt: article.title | escape,
                                 width: article.image.width
                             -%}
                         </div>
 
-                        <h4 class="mb-3 opacity-80">
+                        <p class="mb-3 opacity-80">
                             {{ article.tags | first }}
-                        </h4>
+                        </p>
                         <h3 class="mb-3">
                             {{ article.title }}
                         </h3>
                         {%- if article.url != blank -%}
+                            {%- assign read_more_text = 'accessibility.read_more_about'
+                                | t: title: article.title
+                            -%}
                             {%- capture link_content -%}
-                                <span class="body-base">{{ section.settings.link_text }}</span>
+                                <span class="body-base">{{ read_more_text }}</span>
                                 {% render 'icons', icon: 'icon-arrow2', size: 'lg', class: 'ml-3', color: 'current' %}
                             {%- endcapture -%}
                             {%- render 'link',
                                 class: 'opacity-80 hover:opacity-100 transition-opacity',
                                 href: article.url,
                                 content: link_content,
+                                aria_label: read_more_text,
                                 variant: 'underline',
                                 color: 'current'
                             -%}
@@ -67,29 +72,34 @@
                         {{ block.shopify_attributes }}
                     >
                         <div class="relative mb-4 aspect-4/3 overflow-hidden">
-                            {%- render 'image',
+                            {%-
+                                render 'image',
                                 class: 'transition-transform duration-300 group-hover:scale-105',
                                 image: block.settings.image,
-                                alt: block.settings.image.alt,
+                                alt: block.settings.image.alt | default: block.settings.title | escape,
                                 width: block.settings.image.width
                             -%}
                         </div>
 
-                        <h4 class="mb-3 opacity-80">
+                        <p class="mb-3 opacity-80">
                             {{ block.settings.subtitle }}
-                        </h4>
+                        </p>
                         <h3 class="mb-3">
                             {{ block.settings.title }}
                         </h3>
                         {%- if block.settings.link != blank -%}
+                            {%- assign read_more_text = 'accessibility.read_more_about'
+                                | t: title: block.settings.title
+                            -%}
                             {%- capture link_content -%}
-                                <span class="body-base">{{ block.settings.article_link_text }}</span>
+                                <span class="body-base">{{ read_more_text }}</span>
                                 {% render 'icons', icon: 'icon-arrow2', size: 'lg', class: 'ml-3', color: 'current' %}
                             {%- endcapture -%}
                             {%- render 'link',
                                 class: 'opacity-80 hover:opacity-100 transition-opacity',
                                 href: block.settings.link,
                                 content: link_content,
+                                aria_label: read_more_text,
                                 variant: 'underline',
                                 color: 'current'
                             -%}

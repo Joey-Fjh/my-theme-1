@@ -24,16 +24,18 @@
             {%- for block in section.blocks -%}
                 <div class="swiper-slide" {{ block.shopify_attributes }}>
                     {%- capture sizes -%}
-                        (min-width: 80rem) 100vw, (min-width: 48rem) 1280px, 768px
+                        (min-width: 80rem) 100vw, (min-width: 48rem) 1280px, 100vw
                     {%- endcapture -%}
 
                     {%- capture widths -%}
-                        400,768,1280,1536,2560
+                        400,480,768,1280,1536,2560
                     {%- endcapture -%}
 
                     {%- assign image_loading = 'lazy' -%}
+                    {%- assign image_fetchpriority = 'auto' -%}
                     {%- if forloop.first -%}
                         {%- assign image_loading = 'eager' -%}
+                        {%- assign image_fetchpriority = 'high' -%}
                     {%- endif -%}
 
                     {%-
@@ -43,7 +45,8 @@
                         width: block.settings.slide_image.width,
                         sizes: sizes,
                         widths: widths,
-                        loading: image_loading
+                        loading: image_loading,
+                        fetchpriority: image_fetchpriority
                     -%}
 
                     <div class="layout layout-safe-top container-page absolute inset-0">
@@ -75,9 +78,9 @@
                             <div
                                 class="{{ block.settings.heading_position }} flex items-center pc:h-full pc:w-full"
                             >
-                                <h1 class="hxl leading-tight font-bold tracking-tight">
+                                <h2 class="hxl leading-tight font-bold tracking-tight">
                                     {{ block.settings.headline }}
-                                </h1>
+                                </h2>
                             </div>
 
                             <div
