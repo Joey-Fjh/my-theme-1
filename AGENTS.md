@@ -14,7 +14,9 @@ For sub-skill details, see files in `skills/`.
 Use sibling documents only as supporting references:
 
 - `skills/code-review/pre-merge.md` -> review checklist
+- `skills/code-review/i18n-checklist.md` -> i18n review reference
 - `skills/examples/` -> canonical implementation examples for agents
+- `WORKFLOW.md` -> phase flow, handoff protocol, and agent work loop
 
 If any supporting document conflicts with this file, `AGENTS.md` wins.
 
@@ -30,6 +32,79 @@ This document uses rule strength deliberately:
 - **Infrastructure exception**: low-level implementation files may use lower-level browser APIs to provide the project abstraction. Application code should still use the abstraction.
 
 When cleaning legacy code, do not treat a rule as absolute unless this document says it is absolute for that file type and use case.
+
+---
+
+## Product And Agent Operating Principles
+
+This repository is maintained as a multi-industry sellable Shopify theme candidate, not as a one-off store implementation.
+
+When goals conflict, agents MUST prefer launch stability, Shopify Theme Store readiness, accessibility, SEO, maintainability, merchant configurability, and mobile reliability over visual novelty or Lighthouse micro-optimizations.
+
+Theme code may expose configurable settings, validation, defaults, and rendering behavior. It MUST NOT silently decide merchant-owned configuration or content.
+
+Agents MUST NOT modify merchant-owned configuration or content unless the user explicitly authorizes that scope:
+
+- `config/settings_data.json`
+- `templates/*.json`
+- color scheme values
+- product, collection, page, article, blog, and metafield content
+- uploaded media assets
+- merchant copy and navigation/content composition
+
+If an issue could be code, configuration, content, uploaded asset, Shopify platform, or measurement noise, agents MUST classify it before proposing a fix.
+
+### Shopify Launch Standard
+
+Agents MUST treat Shopify Theme Store readiness as a core constraint.
+
+Treat the following as launch blockers unless the user explicitly scopes them out:
+
+1. Theme Check errors.
+2. Repository lint or test failures.
+3. Accessibility regressions in user-facing controls, navigation, forms, dialogs, drawers, filters, search, cart, product media, or checkout-adjacent flows.
+4. SEO regressions caused by theme code.
+5. Broken mobile layouts or mobile-only interaction failures.
+6. Manual edits to generated or vendor files.
+7. Changes to merchant-owned configuration or content without explicit approval.
+
+Warnings may be recorded only when they are pre-existing, false positives, or explicitly classified as non-blocking with a follow-up.
+
+### Storefront Experience Standard
+
+This theme targets a balanced, multi-industry Shopify experience: polished default sections, coherent page storytelling, reliable conversion flows, and meaningful merchant configuration.
+
+Visual richness and motion are allowed, but they must enhance the experience. They MUST NOT hide critical content, delay LCP candidates, break keyboard access, create CLS, or require JavaScript for essential content visibility.
+
+Default section presets and defaults should be storefront-ready. A section should not rely on extensive merchant reconfiguration before it looks usable.
+
+### Uncertainty And Question Policy
+
+Agents MUST resolve discoverable facts through repository inspection before asking the user.
+
+Agents MUST ask or prompt for confirmation when the unknown is a product preference, design tradeoff, configuration ownership question, launch risk boundary, or architecture direction. High-risk uncertainty MUST NOT be handled by silently guessing and editing code.
+
+Question outcomes must be reflected in the plan, prompt, or task summary so they survive cross-session handoff.
+
+### Agent Change Authority
+
+Agents MUST prefer editing existing canonical files over creating new files.
+
+New documentation files, scripts, lint tools, CI wrappers, analysis tools, or runtime abstractions are not allowed by default.
+
+A new documentation file is allowed only when the content cannot fit cleanly in `AGENTS.md`, `WORKFLOW.md`, an existing `skills/code-review/*` reference, or an existing `skills/examples/*` pattern.
+
+New tooling is allowed only when the rule is already stable in `AGENTS.md`, manual review is unreliable or repeatedly missed, and the tool reduces net cognitive load.
+
+New shared runtime abstractions are allowed only when there are at least two real current consumers, the invariants are shared, and the owner module is clear. Prefer three real consumers before generalizing.
+
+### Workflow Entry Point
+
+Agents MUST read `WORKFLOW.md` before multi-step work, cleanup, Lighthouse optimization, architecture changes, or cross-session continuation.
+
+`AGENTS.md` defines rules. `WORKFLOW.md` defines phase flow, the React work loop, handoff protocol, and external skill usage. If they conflict, `AGENTS.md` wins.
+
+For ambiguous or multi-step work, agents SHOULD interpret user input through the Purpose / Frame / Action / Feedback collaboration frame in `WORKFLOW.md`. If the user did not provide enough information for a safe plan or prompt, the agent SHOULD ask for the missing high-risk pieces using that frame instead of guessing.
 
 ---
 
@@ -51,7 +126,22 @@ No bundler is used. All scripts load via `defer` in `layout/theme.liquid`.
 
 ## JavaScript Rules
 
-For new JavaScript and cleanup work, first check the canonical examples in `skills/examples/`. They show the preferred minimal shape for this theme; the rules below remain authoritative.
+For new JavaScript and cleanup work, check only the canonical examples that match the behavior being implemented. They show the preferred minimal shape for this theme; the rules below remain authoritative.
+
+Example lookup rules:
+
+- Section lifecycle -> `skills/examples/canonical-section.md`
+- Alpine component -> `skills/examples/canonical-alpine-component.md`
+- ThemeEvents -> `skills/examples/canonical-events.md`
+- HTTP/section refresh -> `skills/examples/canonical-http-section-refresh.md`
+- Cart flow -> `skills/examples/canonical-cart-flow.md`
+- Swiper -> `skills/examples/canonical-swiper-section.md`
+- GSAP choreography -> `skills/examples/canonical-gsap-section.md`
+- Alpine/CSS state motion -> `skills/examples/canonical-motion-transition.md`
+- CSS layering -> `skills/examples/canonical-css-layering.md`
+- Accessibility semantics -> `skills/examples/canonical-accessibility.md`
+
+Examples are supporting patterns, not rule sources. If an example conflicts with `AGENTS.md`, `AGENTS.md` wins.
 
 ### Golden Rules
 
@@ -569,6 +659,8 @@ destroy(el, state) {
 
 Motion is a repository-wide architecture concern, not a CSS-only concern. Tailwind/CSS, Alpine, and GSAP are execution layers under one motion system. Agents MUST classify animation work before adding or refactoring motion code.
 
+GSAP is the main execution layer for theme storytelling choreography: scroll choreography, stagger, parallax, campaign motion, brand motion, and complex timelines.
+
 ### Motion Goals
 
 1. Preserve one semantic entry point for motion decisions.
@@ -675,6 +767,30 @@ Use this decision tree:
 4. **One-off complex section animation** -> local GSAP inside that section's `{%- javascript -%}` block, still using `Components.register()` and cleanup.
 5. **Repeated section animation or global motion language** -> shared GSAP recipe under `window.__Theme__.Motion`.
 
+### Above-The-Fold Visibility
+
+Above-the-fold critical content MUST render visible in its final layout without JavaScript.
+
+This includes:
+
+- page H1 and primary copy
+- LCP image candidates
+- product card images above the fold
+- primary navigation
+- product purchase controls
+- search, filter, and sort entry points
+- cart and checkout-adjacent actions
+
+Agents MUST NOT make critical above-the-fold content depend on GSAP, Alpine state, Swiper initialization, delayed transitions, `opacity-0`, `hidden`, `x-show="false"`, off-screen transforms, or animation callbacks before it becomes visible.
+
+Motion may enhance critical content only when the static no-JS state is already usable and visible.
+
+### Page-Type Motion Policy
+
+Conversion pages such as product, collection, search, cart, and checkout-adjacent flows SHOULD use restrained motion: state transitions, interaction feedback, media controls, and below-the-fold reveal only.
+
+Home, brand, editorial, campaign, and storytelling pages MAY use richer GSAP choreography when no critical first-viewport content is hidden before JavaScript, no LCP candidate waits for animation, reduced motion is respected, keyboard and screen-reader access remain intact, and the animation is registered and cleaned up through `Components.register()`.
+
 ### Token and Preset Rules
 
 Do not over-tokenize motion. Tokens are for shared foundation values, not every component detail.
@@ -740,6 +856,16 @@ Motion work SHOULD respect `prefers-reduced-motion` and any future global motion
 
 Do not make content access depend on animation completion. Reduced motion may shorten or disable transitions, but must not hide required content.
 
+### External GSAP Skills
+
+Official or external GSAP skills MAY be used as technical references for GSAP API behavior and recommended choreography patterns.
+
+External skills do not override this repository's rules. GSAP work MUST still map back to `Components.register()`, `window.__Theme__.Motion`, scoped selectors, no-JS visibility, cleanup, reduced motion, and Lighthouse issue classification.
+
+If an external GSAP skill recommends changing script order, vendor loading, global motion runtime behavior, or section lazy-loading strategy, treat that as a Rule Alignment or Architecture Audit task before implementation.
+
+When an external skill informs an implementation, the agent report MUST state which recommendations were adopted, which were rejected, and why.
+
 ---
 
 ## CSS Rules
@@ -796,6 +922,10 @@ When adding new CSS:
 - Layout/placement helper -> `tailwind.utilities.css`
 - Animation/transition -> `tailwind.animates.css`
 
+Before adding reusable CSS, agents MUST classify the owner layer. Do not add reusable component styles to section `{% stylesheet %}` blocks.
+
+Section `{% stylesheet %}` blocks are allowed only for section-specific CSS that Tailwind cannot express cleanly. They MUST NOT contain reusable component styles, typography systems, color systems, or motion recipes.
+
 ### Breakpoints
 
 | Token | Value   | Prefix                                       |
@@ -810,6 +940,21 @@ Shopify Settings -> snippets/css-variables.liquid -> CSS custom properties
     -> tailwind/tailwind.input.css (@theme inline) -> Tailwind tokens
     -> utility classes in templates
 ```
+
+### Token Governance
+
+Design tokens are stable public contracts. Agents MUST NOT add, rename, or remove tokens unless the task is explicitly a design-system task.
+
+A new token is allowed only when:
+
+1. It represents a reusable design decision, not a one-off component value.
+2. It has at least three expected consumers, is exposed to merchant configuration, or is required for global theme consistency.
+3. Its owner layer is clear: color, typography, spacing, radius, shadow, motion, or layout.
+4. Existing tokens cannot express the design without making the code misleading.
+
+Do not create component-specific global tokens for a single section or snippet.
+
+Prefer semantic color tokens over raw colors, typography tiers over ad-hoc font sizes, shared radius/shadow utilities over repeated arbitrary values, and local component classes over premature global tokens.
 
 ### Build Commands
 
@@ -853,8 +998,9 @@ Output file: `assets/tailwind.output.css` -- NEVER edit manually.
 #### CSS Inheritance Rules
 
 - `base.css` defines native heading styles for `h1`-`h6`.
-- Body text inherits from the `body` element.
+- Body text inherits from the `body` element, and the global `body` default MUST be aligned to the `body-md` visual tier.
 - Only explicitly add typography utility classes when the visual tier intentionally differs from the native element default.
+- `body-base` and `heading-base` are foundation utilities for Tailwind source only. They MUST NOT be used in Liquid templates.
 
 #### Semantic Rules
 
@@ -862,6 +1008,7 @@ Output file: `assets/tailwind.output.css` -- NEVER edit manually.
 2. Do NOT add redundant matching heading classes such as `<h2 class="h2">`; the native element already carries that default style.
 3. Heading utility classes (`hxxxl`-`h6`) MAY be used on heading elements only when visual hierarchy intentionally differs from semantic hierarchy.
 4. Non-heading elements (`span`, `div`, `p`, etc.) CANNOT use heading classes.
+5. After the body default is aligned to `body-md`, ordinary body copy SHOULD NOT repeat `body-md`. Use `body-sm`, `body-lg`, `body-xl`, and related tiers only when intentionally different from default.
 
 #### Examples
 
@@ -1085,6 +1232,32 @@ See `skills/code-review/i18n-checklist.md` for:
 
 ---
 
+## Lighthouse Issue Classification
+
+Before changing code for a Lighthouse finding, agents MUST classify the issue as one of:
+
+1. Theme code issue.
+2. Merchant configuration issue.
+3. Merchant content or copy issue.
+4. Uploaded asset or media issue.
+5. Shopify platform, app, or vendor issue.
+6. Measurement noise or run-to-run variance.
+
+Agents MUST NOT code-fix configuration, content, asset, platform, or measurement-noise issues unless the user explicitly authorizes that scope.
+
+For every Lighthouse code change, report:
+
+- audit id
+- affected element or request
+- why it is code-owned
+- exact file changed
+- expected metric impact
+- re-test instruction
+
+Color scheme contrast, merchant copy, collection/product content, uploaded media compression, Shopify platform scripts, app scripts, and vendor payloads are not theme-code issues by default.
+
+---
+
 ## Accessibility
 
 Accessibility is a hard Theme Store requirement. Do not treat it as optional polish. Agents MUST make interactive behavior keyboard-operable, named, and understandable without adding unnecessary ARIA to static content.
@@ -1170,9 +1343,9 @@ Add ARIA state only where it communicates real state or relationships:
 
 ```text
 AGENTS.md                      Repository-wide agent rules (this file)
-skills/                        Supporting agent docs (review checklists, audit status)
-    code-review/               Review checklists and audit snapshots
-    contracts/                 Runtime module contracts and boundaries
+WORKFLOW.md                    Phase flow, handoff protocol, and agent work loop
+skills/                        Supporting agent docs (review references and examples)
+    code-review/               Review references and focused checklists
     examples/                  Canonical implementation examples
 
 icons/                         Temporary or persistent SVG build inputs for `npm run build:svg`
@@ -1307,6 +1480,54 @@ If a violation is widespread, create a staged cleanup plan or audit report inste
 5. Prefer minimal diffs -- do not reformat unrelated code.
 6. Separate structural refactors from behavior changes.
 7. When renaming assets, update ALL references: `layout/theme.liquid`, CSS imports, `README.md`, `AGENTS.md`.
+
+### Ignore File Boundaries
+
+Agents MUST classify files before adding ignore rules.
+
+- `.shopifyignore` controls what Shopify CLI uploads or syncs. Agent governance files, development tooling, source-only build inputs, and local editor metadata belong here when they should not be part of the live theme.
+- `.gitignore` controls what is kept out of version control. Use it for local machine files, dependency folders, CLI state, release archives, temporary reports, and generated artifacts that should not be tracked.
+- `.prettierignore` controls formatting scope only. Use it for generated files, vendor/minified files, or directories where formatting would damage examples or generated output.
+
+Tracked governance files such as `AGENTS.md` and `WORKFLOW.md` MUST remain in Git, MUST be excluded from Shopify upload, and SHOULD remain Prettier-formatted unless there is a specific formatting risk.
+
+Do not add broad ignore patterns that hide source files, theme runtime files, schemas, locales, sections, snippets, templates, or config from review.
+
+---
+
+## Rule Coverage
+
+Some rules are enforced by tooling; others remain review-only. `AGENTS.md` is still authoritative in both cases.
+
+| Rule family                               | Current coverage                    | Gate                            |
+| ----------------------------------------- | ----------------------------------- | ------------------------------- |
+| Inline `<script>` in Liquid               | `tools/lint-theme.js`               | Blocker                         |
+| Inline `<style>` in Liquid                | `tools/lint-theme.js`               | Blocker                         |
+| Complex `x-data` values                   | `tools/lint-theme.js` partial check | Blocker for new code            |
+| Raw `fetch()` in application code         | `tools/lint-theme.js`               | Blocker                         |
+| Direct cart endpoints outside cart store  | `tools/lint-theme.js`               | Blocker                         |
+| Manual section HTML replacement           | `tools/lint-theme.js`               | Blocker                         |
+| Alpine component group references         | `tools/lint-theme.js`               | Blocker                         |
+| Heading text-size utilities               | `tools/lint-theme.js`               | Blocker                         |
+| Heading class on non-heading elements     | `tools/lint-theme.js`               | Blocker                         |
+| i18n key usage                            | `tools/lint-i18n.js` plus review    | Blocker for user-facing strings |
+| CSS syntax and common style issues        | stylelint                           | Blocker when lint fails         |
+| Redundant matching heading classes        | Review only                         | Warning                         |
+| Redundant default body typography classes | Review only                         | Legacy warning                  |
+| CSS layer placement                       | Review only plus stylelint          | Warning                         |
+| Motion recipe usage                       | Review only                         | Warning                         |
+| Accessibility semantics                   | Review only                         | Launch blocker when user-facing |
+| SEO metadata and structured content       | Review only plus Lighthouse         | Launch blocker when code-owned  |
+| Generated files not hand-edited           | Review only                         | Warning                         |
+
+Warnings should be staged after launch unless they affect Lighthouse, accessibility, SEO, runtime stability, or production behavior.
+
+Known follow-ups:
+
+1. Align the `body` default and `body-md` semantics before removing redundant default body classes.
+2. Add a typography lint for redundant default body classes only after that alignment is complete.
+3. Add a lint for redundant matching heading classes such as `<h2 class="h2">` only if review misses it repeatedly.
+4. Add focused accessibility automation only after the checklist stabilizes and manual review proves unreliable.
 
 ---
 
