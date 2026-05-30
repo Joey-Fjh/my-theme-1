@@ -13,6 +13,8 @@
     @param {string} [hover_mode] - Optional. 'actions' | 'none' | 'variants'. Defaults to 'actions'.
     @param {string} [scope_id] - Optional stable scope used for nested dialog/form ids.
     @param {string} [color_scheme] - Optional color scheme passed to quick view modal content.
+    @param {string} [primary_image_loading] - Optional loading attribute for the primary image only ('lazy' or 'eager'). Defaults to 'lazy'. Carousel/secondary images remain lazy.
+    @param {string} [primary_image_fetchpriority] - Optional fetchpriority attribute for the primary image only ('high', 'low', or 'auto'). Defaults to blank. Carousel/secondary images do not get fetchpriority.
 
     @example
     {% render 'product-card', product: product, class: 'my-product-card' %}
@@ -37,6 +39,8 @@
     assign hover_mode = hover_mode | default: 'actions'
     assign scope_id = scope_id | default: 'card'
     assign color_scheme = color_scheme | default: ''
+    assign primary_image_loading = primary_image_loading | default: 'lazy'
+    assign primary_image_fetchpriority = primary_image_fetchpriority | default: ''
     assign show_hover_actions_enabled = true
     assign show_image_navigation_enabled = true
     assign show_hover_actions_explicit = false
@@ -182,6 +186,13 @@
 
         <a href="{{ product.url }}" class="product-card__image-link product-card-shell__media-link">
             {%- for image in product.images -%}
+                {%- if forloop.first -%}
+                    {%- assign img_loading = primary_image_loading -%}
+                    {%- assign img_fetchpriority = primary_image_fetchpriority -%}
+                {%- else -%}
+                    {%- assign img_loading = 'lazy' -%}
+                    {%- assign img_fetchpriority = '' -%}
+                {%- endif -%}
                 <div
                     class="product-card__carousel-slide"
                     data-index="{{ forloop.index0 }}"
@@ -197,7 +208,9 @@
                         widths: widths,
                         aspect_ratio: aspect_ratio,
                         class: 'product-card-shell__media-frame',
-                        img_class: 'product-card-shell__image'
+                        img_class: 'product-card-shell__image',
+                        loading: img_loading,
+                        fetchpriority: img_fetchpriority
                     -%}
                 </div>
             {%- else -%}
@@ -211,7 +224,9 @@
                         widths: widths,
                         aspect_ratio: aspect_ratio,
                         class: 'product-card-shell__media-frame',
-                        img_class: 'product-card-shell__image'
+                        img_class: 'product-card-shell__image',
+                        loading: primary_image_loading,
+                        fetchpriority: primary_image_fetchpriority
                     -%}
                 </div>
             {%- endfor -%}

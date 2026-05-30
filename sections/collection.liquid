@@ -19,7 +19,7 @@
         {%- comment -%} Hero {%- endcomment -%}
         <div class="relative py-20 pc:py-40">
             <div class="flex items-start justify-between">
-                <div class="-translate-x-7.5 opacity-0" data-gsap-hero>
+                <div data-gsap-hero>
                     <h1 class="mb-10 hxxxl leading-none font-bold">
                         {{ section.settings.header | default: 'Products' }}
                     </h1>
@@ -34,7 +34,7 @@
                     </div>
                 </div>
 
-                <div class="scale-50 opacity-0" data-gsap-badge>
+                <div data-gsap-badge>
                     {%- render 'rotating-badge',
                         classes: 'relative justify-self-center',
                         badge_class: 'text-theme-text',
@@ -286,23 +286,45 @@
                         >
                             {% render 'loading', overlay: true, size: 'large' %}
 
+                            {%- liquid
+                                assign first_row_count = section.settings.mobile_card_columns | default: '2' | plus: 0
+                            -%}
                             {% paginate collection.products by section.settings.products_per_page %}
-                                <div 
+                                <div
                                     class="grid {{ mobile_grid_class }} {{ desktop_grid_class }} gap-x-4 gap-y-8 pb-10"
                                     data-component-kind="section"
                                     data-component-type="product-grid"
                                     data-component-id="{{ section.id }}-grid"
                                 >
                                     {% for product in collection.products %}
-                                        <div class="group translate-y-7.5 opacity-0" data-gsap-card>
-                                            {% render 
-                                                'product-card', 
-                                                product: product,
-                                                hover_mode: 'variants',
-                                                scope_id: section.id,
-                                                color_scheme: section.settings.color_scheme
-                                            %}
-                                        </div>
+                                        {%- if forloop.index <= first_row_count -%}
+                                            {%- if forloop.index == 1 -%}
+                                                {%- assign row_fetchpriority = 'high' -%}
+                                            {%- else -%}
+                                                {%- assign row_fetchpriority = '' -%}
+                                            {%- endif -%}
+                                            <div class="group">
+                                                {%-
+                                                    render 'product-card',
+                                                    product: product,
+                                                    hover_mode: 'variants',
+                                                    scope_id: section.id,
+                                                    color_scheme: section.settings.color_scheme,
+                                                    primary_image_loading: 'eager',
+                                                    primary_image_fetchpriority: row_fetchpriority
+                                                -%}
+                                            </div>
+                                        {%- else -%}
+                                            <div class="group translate-y-7.5 opacity-0" data-gsap-card>
+                                                {% render
+                                                    'product-card',
+                                                    product: product,
+                                                    hover_mode: 'variants',
+                                                    scope_id: section.id,
+                                                    color_scheme: section.settings.color_scheme
+                                                %}
+                                            </div>
+                                        {%- endif -%}
                                     {% else %}
                                         <div class="col-span-full py-20 text-center body-lg opacity-60">
                                             {{ 'collections.no_products' | t }}
@@ -382,11 +404,7 @@
             'collection',
             {
                 init(el) {
-                    if (!Motion) return;
-
-                    const { ctx } = Motion.heroReveal(el);
-
-                    return { ctx };
+                    return {};
                 },
 
                 destroy(el, state) {

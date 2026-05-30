@@ -28,7 +28,7 @@
                     {%- endcapture -%}
 
                     {%- capture widths -%}
-                        400,480,768,1280,1536,2560
+                        400,480,768,1280,1536,2400,2560
                     {%- endcapture -%}
 
                     {%- assign image_loading = 'lazy' -%}
@@ -139,12 +139,15 @@
             {
                 init(el) {
                     const slides = el.querySelectorAll('.swiper-slide');
+                    const swiperContainer = el.querySelector('.swiper');
+                    const cleanups = [];
+
+                    if (!swiperContainer || typeof Swiper === 'undefined' || slides.length <= 1) {
+                        return { swiper: null, cleanups };
+                    }
+
                     const autoSlide = el.getAttribute('data-auto-slide') === 'true';
                     const slideDelay = parseInt(el.getAttribute('data-slide-delay'), 10) || 5;
-
-                    const swiperContainer = el.querySelector('.swiper');
-
-                    if (!swiperContainer || typeof Swiper === 'undefined') return;
 
                     const swiper = new Swiper(swiperContainer, {
                         loop: slides.length > 1,
@@ -162,8 +165,6 @@
                         pagination: false,
                         navigation: false,
                     });
-
-                    const cleanups = [];
 
                     const prevBtn = el.querySelector('.slides-show__nav-prev');
                     const nextBtn = el.querySelector('.slides-show__nav-next');
