@@ -33,6 +33,25 @@ This document uses rule strength deliberately:
 
 When cleaning legacy code, do not treat a rule as absolute unless this document says it is absolute for that file type and use case.
 
+### Progressive Rule Enforcement
+
+A documented rule does not mean every legacy violation must be fixed immediately. Agents MUST classify findings before proposing fixes:
+
+| Classification    | Rule strength                | Action                                |
+| ----------------- | ---------------------------- | ------------------------------------- |
+| Launch blocker    | MUST + user-facing / runtime | Fix now                               |
+| Architecture debt | MUST + non-user-facing       | Fix now if touched; otherwise stage   |
+| Review warning    | SHOULD                       | Report as warning or post-launch debt |
+| Style preference  | MAY or convention only       | Report at most; do not block          |
+| Known follow-up   | Pending alignment            | Record as post-launch debt with owner |
+
+Priority rules:
+
+1. **MUST rules with launch-blocking scope** (accessibility, SEO, runtime stability, Theme Check) MUST be fixed during the current pass.
+2. **SHOULD rules, review-only findings, and known follow-ups** MAY be recorded as warnings or post-launch debt. They do not become launch blockers unless they affect Lighthouse, accessibility, SEO, or production behavior.
+3. **Touched code and new code** SHOULD comply with current rules. Legacy code that is not being modified for the current task MAY be left as-is with a documented finding.
+4. Do not promote a style preference or convention to a launch blocker unless this document explicitly marks it as MUST for that scope.
+
 ---
 
 ## Product And Agent Operating Principles
@@ -102,9 +121,9 @@ New shared runtime abstractions are allowed only when there are at least two rea
 
 Agents MUST read `WORKFLOW.md` before multi-step work, cleanup, Lighthouse optimization, architecture changes, or cross-session continuation.
 
-`AGENTS.md` defines rules. `WORKFLOW.md` defines phase flow, the React work loop, handoff protocol, and external skill usage. If they conflict, `AGENTS.md` wins.
+`AGENTS.md` defines rules. `WORKFLOW.md` defines the shared agent work context: the ReAct work loop, phase flow, user task frame, handoff protocol, and external skill usage. If they conflict, `AGENTS.md` wins.
 
-For ambiguous or multi-step work, agents SHOULD interpret user input through the Purpose / Frame / Action / Feedback collaboration frame in `WORKFLOW.md`. If the user did not provide enough information for a safe plan or prompt, the agent SHOULD ask for the missing high-risk pieces using that frame instead of guessing.
+For ambiguous or multi-step work, agents SHOULD interpret user input through the Purpose / Context / Decomposition / Feedback task frame in `WORKFLOW.md`. If the user did not provide enough information for a safe plan or prompt, the agent SHOULD ask for the missing high-risk pieces using that frame instead of guessing.
 
 ---
 
@@ -856,15 +875,96 @@ Motion work SHOULD respect `prefers-reduced-motion` and any future global motion
 
 Do not make content access depend on animation completion. Reduced motion may shorten or disable transitions, but must not hide required content.
 
+### Motion Duplication Prevention
+
+Agents MUST NOT copy-paste large blocks of GSAP, Alpine `x-transition`, or CSS animation/keyframe definitions across sections or components. Before adding motion code, check whether an existing recipe, preset, or capability utility already covers the behavior.
+
+Duplication is a signal, not the whole rule. The real rule is whether motion has a stable owner, a clear lifecycle, and a future global policy entry point.
+
+#### Duplication Detection Rules
+
+This table lists repeated patterns to check **before adding another copy**. It is a pre-flight checklist, not an automatic abstraction trigger. Finding a match means "stop and evaluate" — it does not mean "abstract immediately."
+
+| Repeated pattern to check before adding another copy                        | Destination                                | Namespace                    |
+| --------------------------------------------------------------------------- | ------------------------------------------ | ---------------------------- |
+| Alpine `x-transition:*` attribute group already defined elsewhere           | `snippets/motion-transition.liquid` preset | `motion-transition` snippet  |
+| CSS `@keyframes`, `animation-*`, or phase class already defined elsewhere   | `tailwind/tailwind.animates.css`           | `motion-*` utility namespace |
+| GSAP reveal, stagger, timeline, or parallax logic already defined elsewhere | `window.__Theme__.Motion` recipe           | `Motion.*` method            |
+
+One-off section choreography MAY remain local in that section's `{%- javascript -%}` block, but it MUST still be lifecycle-scoped through `Components.register()` with proper `destroy()` cleanup.
+
+#### Shared Recipe Trigger Conditions
+
+Creating a new shared recipe, preset, or utility requires architectural justification. A motion pattern SHOULD become a shared recipe when **any** of the following apply:
+
+1. **Three or more current consumers** — the pattern is already repeated across at least three real sections or components.
+2. **Global motion language** — the pattern defines a brand-level or site-wide motion behavior (e.g. hero entrance, scroll reveal standard, campaign motion signature).
+3. **Settings or policy interference** — scattered raw values would prevent or complicate future global motion settings (`motion_enabled`, `motion_speed`, `motion_intensity`, `micro_motion_enabled`, `scroll_motion_enabled`) or `prefers-reduced-motion` enforcement.
+4. **Ownership, lifecycle, or stability risk** — scattered implementations create unclear ownership, unpredictable cleanup, cross-section regression risk, or launch stability concerns (see "Motion Encapsulation as Architecture Stability" below).
+
+Two consumers is coincidence; three is a pattern. But even two consumers may justify extraction when condition 2, 3, or 4 applies.
+
+#### Motion Encapsulation as Architecture Stability
+
+Motion encapsulation is an architecture stability rule, not a style preference. It exists to guarantee that motion behavior can be governed, audited, and evolved without cascading side effects.
+
+When evaluating whether a motion pattern is properly encapsulated, audit against these concrete criteria:
+
+| Criterion                | What to verify                                                                                                                                                    |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Change control**       | Can duration, easing, distance, stagger, and reduced-motion behavior be adjusted in one stable location?                                                          |
+| **Policy control**       | Can future global settings (`motion_enabled`, `motion_speed`, `motion_intensity`, `micro_motion_enabled`, `scroll_motion_enabled`) uniformly control this motion? |
+| **Ownership clarity**    | Is it clear who owns `opacity`, `transform`, `visibility`, `height`, and `display` — CSS, Alpine, or GSAP? Are there conflicts?                                   |
+| **Lifecycle safety**     | Can listeners, timelines, ScrollTrigger instances, timers, and state transitions be predictably cleaned up in `destroy()`?                                        |
+| **Regression isolation** | Does modifying motion in one section risk breaking other sections, or require synchronized changes in multiple places?                                            |
+| **Launch stability**     | Does the motion affect `visibility`, accessibility, LCP, CLS, keyboard access, or mobile behavior?                                                                |
+
+If any criterion fails, the motion pattern needs better encapsulation — even if it is not duplicated.
+
+#### Progressive Enforcement
+
+- Touched and new motion code SHOULD comply with duplication detection and encapsulation rules immediately.
+- Legacy repeated animations that are not being modified for the current task MAY be classified as warning or post-launch debt.
+- Duplication or encapsulation issues escalate from warning to **now/blocker** when they affect visibility, accessibility, Lighthouse scores, runtime stability, mobile layout, or production behavior.
+- Do not require immediate refactoring of all historical motion code in one pass.
+
 ### External GSAP Skills
 
 Official or external GSAP skills MAY be used as technical references for GSAP API behavior and recommended choreography patterns.
 
-External skills do not override this repository's rules. GSAP work MUST still map back to `Components.register()`, `window.__Theme__.Motion`, scoped selectors, no-JS visibility, cleanup, reduced motion, and Lighthouse issue classification.
+The canonical external reference is [`greensock/gsap-skills`](https://github.com/greensock/gsap-skills) — the GreenSock official AI skills repository. It covers GSAP API, timeline construction, ScrollTrigger configuration, plugin usage, and performance techniques. It is a **technical reference only**, not a project rule source.
 
-If an external GSAP skill recommends changing script order, vendor loading, global motion runtime behavior, or section lazy-loading strategy, treat that as a Rule Alignment or Architecture Audit task before implementation.
+#### External Reference Boundary
 
-When an external skill informs an implementation, the agent report MUST state which recommendations were adopted, which were rejected, and why.
+External skills do not override this repository's rules. Every external GSAP recommendation MUST be mapped back to the project's runtime abstractions before implementation:
+
+| Project abstraction                   | What it governs                                          |
+| ------------------------------------- | -------------------------------------------------------- |
+| `Components.register()`               | Lifecycle ownership — when GSAP starts and stops         |
+| `window.__Theme__.Motion`             | Shared recipe registry — reusable choreography           |
+| Scoped selectors (`el.querySelector`) | DOM isolation — no global `document.querySelector`       |
+| `destroy()` / `ctx.revert()`          | Cleanup — no leaked timelines or ScrollTrigger instances |
+| `prefers-reduced-motion`              | Accessibility — shortened or disabled motion             |
+| No-JS / Motion unavailable visibility | Critical content must render without GSAP                |
+| Lighthouse / Theme Store readiness    | Motion must not block LCP, create CLS, or hide content   |
+
+#### When to Escalate
+
+If an external GSAP skill recommends any of the following, treat that as a Rule Alignment or Architecture Audit task before implementation:
+
+- Changing script load order or vendor file selection
+- Conditional vendor loading or dynamic import
+- Changes to the global motion runtime (`window.__Theme__.Motion`)
+- Section lazy-loading strategy changes
+- New GSAP plugins that require additional vendor files
+
+#### Agent Report Requirement
+
+When an external skill informs an implementation, the agent report MUST state:
+
+1. Which external recommendations were adopted.
+2. Which were rejected.
+3. Why each decision was made, mapped to the project abstractions above.
 
 ---
 
@@ -995,20 +1095,34 @@ Output file: `assets/tailwind.output.css` -- NEVER edit manually.
 | `body-sm`    | Auxiliary text                                      |
 | `body-xs`    | Footnote, copyright                                 |
 
+#### Typography Source of Truth
+
+- Typography utility definitions come from `tailwind/tailwind.typography.css`.
+- Liquid templates MUST use project typography tiers (`hxxxl`-`h0`, `h1`-`h6`, `body-xl`-`body-xs`) instead of arbitrary Tailwind text-size utilities.
+- `heading-base` and `body-base` are foundation utilities for CSS source only. They MUST NOT be used in Liquid templates.
+
 #### CSS Inheritance Rules
 
-- `base.css` defines native heading styles for `h1`-`h6`.
-- Body text inherits from the `body` element, and the global `body` default MUST be aligned to the `body-md` visual tier.
-- Only explicitly add typography utility classes when the visual tier intentionally differs from the native element default.
-- `body-base` and `heading-base` are foundation utilities for Tailwind source only. They MUST NOT be used in Liquid templates.
+- `base.css` owns native element defaults.
+- `tailwind/tailwind.typography.css` owns reusable typography tiers.
+- Body text SHOULD inherit from `body` by default.
+- Native `h1`-`h6` elements SHOULD carry their standard visual tier without repeating matching classes.
+- Only add a typography utility when the intended tier differs from the inherited body default or native heading default.
+
+#### Body Typography Rules
+
+1. `body-md` is the intended default body tier.
+2. Broad removal of repeated `body-md` is allowed only after `body` and `body-md` are aligned in CSS.
+3. Use `body-sm`, `body-lg`, `body-xl`, and `body-xs` only when intentionally different from default.
+4. Redundant `body-md` is review-only debt unless it affects accessibility, layout, Lighthouse, or production behavior.
 
 #### Semantic Rules
 
 1. Use semantic heading tags (`h1`-`h6`) for headings.
-2. Do NOT add redundant matching heading classes such as `<h2 class="h2">`; the native element already carries that default style.
-3. Heading utility classes (`hxxxl`-`h6`) MAY be used on heading elements only when visual hierarchy intentionally differs from semantic hierarchy.
-4. Non-heading elements (`span`, `div`, `p`, etc.) CANNOT use heading classes.
-5. After the body default is aligned to `body-md`, ordinary body copy SHOULD NOT repeat `body-md`. Use `body-sm`, `body-lg`, `body-xl`, and related tiers only when intentionally different from default.
+2. Standard heading utilities (`h1`-`h6`) SHOULD NOT be used to make one semantic heading look like another, such as `<h2 class="h1">`.
+3. Special display tiers (`hxxxl`-`h0`) MAY be used as classes on heading elements when the design needs display scale.
+4. Non-heading elements MUST NOT use heading or display heading utilities unless an approved component style requires it.
+5. Agents MUST NOT infer typography intent. If a fix changes content hierarchy, font family, brand/display treatment, or wrapper behavior, stop and ask or wait for an approved execution list.
 
 #### Examples
 
@@ -1021,12 +1135,21 @@ Output file: `assets/tailwind.output.css` -- NEVER edit manually.
     <span class="body-sm">Small text</span>
 </body>
 
-<!-- CORRECT: semantic h2 with intentionally larger visual tier -->
+<!-- CORRECT: clean semantic heading, no redundant class -->
+<h2>Featured collection</h2>
+
+<!-- WRONG: redundant matching heading class -->
+<h2 class="h2">Featured collection</h2>
+
+<!-- WRONG: semantic/visual mismatch - needs user/design decision, not a default pattern -->
 <h2 class="h1">Featured collection</h2>
 
-<!-- WRONG -->
+<!-- ALLOWED: special display tier on a semantic heading -->
+<h1 class="hxxxl">Campaign title</h1>
+<h2 class="h0">Section campaign title</h2>
+
+<!-- WRONG: non-heading element using heading class -->
 <span class="h4">Not a heading element</span>
-<h2 class="h2">Redundant matching heading class</h2>
 ```
 
 ### Color Specification
@@ -1513,6 +1636,7 @@ Some rules are enforced by tooling; others remain review-only. `AGENTS.md` is st
 | i18n key usage                            | `tools/lint-i18n.js` plus review    | Blocker for user-facing strings |
 | CSS syntax and common style issues        | stylelint                           | Blocker when lint fails         |
 | Redundant matching heading classes        | Review only                         | Warning                         |
+| Mismatched heading classes                | Review only                         | Warning; needs user decision    |
 | Redundant default body typography classes | Review only                         | Legacy warning                  |
 | CSS layer placement                       | Review only plus stylelint          | Warning                         |
 | Motion recipe usage                       | Review only                         | Warning                         |
@@ -1527,7 +1651,8 @@ Known follow-ups:
 1. Align the `body` default and `body-md` semantics before removing redundant default body classes.
 2. Add a typography lint for redundant default body classes only after that alignment is complete.
 3. Add a lint for redundant matching heading classes such as `<h2 class="h2">` only if review misses it repeatedly.
-4. Add focused accessibility automation only after the checklist stabilizes and manual review proves unreliable.
+4. Add a lint for mismatched heading classes such as `<h2 class="h1">` only if review misses it repeatedly. Mismatches are semantic/visual decisions, not auto-fixable.
+5. Add focused accessibility automation only after the checklist stabilizes and manual review proves unreliable.
 
 ---
 

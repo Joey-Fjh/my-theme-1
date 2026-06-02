@@ -55,7 +55,7 @@
 
         static refreshElements() {
             this.announcementBar = document.querySelector('.announcement-bar');
-            this.header = document.querySelector('.header');
+            this.header = document.querySelector('.site-header > header');
         }
 
         static updateLayout() {
