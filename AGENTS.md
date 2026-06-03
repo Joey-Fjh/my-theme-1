@@ -3,7 +3,7 @@
 This document defines the architecture constraints for this Shopify theme.
 Any AI agent modifying code in this repository MUST follow these rules.
 
-For sub-skill details, see files in `skills/`.
+For project skill routing, see `.agents/skills/`. For longer agent-readable references, see `docs/`.
 
 ---
 
@@ -13,12 +13,31 @@ For sub-skill details, see files in `skills/`.
 
 Use sibling documents only as supporting references:
 
-- `skills/code-review/pre-merge.md` -> review checklist
-- `skills/code-review/i18n-checklist.md` -> i18n review reference
-- `skills/examples/` -> canonical implementation examples for agents
+- `docs/references/code-review/pre-merge.md` -> review checklist
+- `docs/references/code-review/i18n-checklist.md` -> i18n review reference
+- `docs/references/patterns/` -> canonical implementation examples for agents
+- `docs/agent/` -> current plan, decision log, and next-session context
 - `WORKFLOW.md` -> phase flow, handoff protocol, and agent work loop
 
 If any supporting document conflicts with this file, `AGENTS.md` wins.
+
+---
+
+## Docs And Skill Resource Boundary
+
+Use these boundaries when adding or moving agent-facing material:
+
+- `AGENTS.md` is the repository rule source.
+- `.agents/skills/` is the discoverable Agent Skills entry point.
+- `docs/` is the agent-readable RAG and knowledge layer.
+- `docs/references/` stores cross-skill references, canonical implementation examples, and long checklists.
+- Skill-local `references/` stores only material strongly owned by one skill.
+- Skill-local `scripts/` stores deterministic executable resources owned by one skill.
+- Skill-local `assets/` stores templates, static resources, or output materials owned by one skill.
+- Do not create empty `references/`, `scripts/`, or `assets/` directories just to mirror the full Agent Skills standard structure.
+- Use `llms.txt` only for public website or documentation indexing, not as a repository rule source, skill source, or internal agent-governance entry point.
+
+`SKILL.md` files should describe triggers, workflow, and routing. Put long details in `docs/references/` when they are shared across skills, and in skill-local `references/` only when they belong to that skill alone.
 
 ---
 
@@ -111,7 +130,7 @@ Agents MUST prefer editing existing canonical files over creating new files.
 
 New documentation files, scripts, lint tools, CI wrappers, analysis tools, or runtime abstractions are not allowed by default.
 
-A new documentation file is allowed only when the content cannot fit cleanly in `AGENTS.md`, `WORKFLOW.md`, an existing `skills/code-review/*` reference, or an existing `skills/examples/*` pattern.
+A new documentation file is allowed only when the content cannot fit cleanly in `AGENTS.md`, `WORKFLOW.md`, an existing skill `references/` file, or `docs/agent/` for current plans, decision logs, and next-session context.
 
 New tooling is allowed only when the rule is already stable in `AGENTS.md`, manual review is unreliable or repeatedly missed, and the tool reduces net cognitive load.
 
@@ -149,16 +168,16 @@ For new JavaScript and cleanup work, check only the canonical examples that matc
 
 Example lookup rules:
 
-- Section lifecycle -> `skills/examples/canonical-section.md`
-- Alpine component -> `skills/examples/canonical-alpine-component.md`
-- ThemeEvents -> `skills/examples/canonical-events.md`
-- HTTP/section refresh -> `skills/examples/canonical-http-section-refresh.md`
-- Cart flow -> `skills/examples/canonical-cart-flow.md`
-- Swiper -> `skills/examples/canonical-swiper-section.md`
-- GSAP choreography -> `skills/examples/canonical-gsap-section.md`
-- Alpine/CSS state motion -> `skills/examples/canonical-motion-transition.md`
-- CSS layering -> `skills/examples/canonical-css-layering.md`
-- Accessibility semantics -> `skills/examples/canonical-accessibility.md`
+- Section lifecycle -> `docs/references/patterns/canonical-section.md`
+- Alpine component -> `docs/references/patterns/canonical-alpine-component.md`
+- ThemeEvents -> `docs/references/patterns/canonical-events.md`
+- HTTP/section refresh -> `docs/references/patterns/canonical-http-section-refresh.md`
+- Cart flow -> `docs/references/patterns/canonical-cart-flow.md`
+- Swiper -> `docs/references/patterns/canonical-swiper-section.md`
+- GSAP choreography -> `docs/references/patterns/canonical-gsap-section.md`
+- Alpine/CSS state motion -> `docs/references/patterns/canonical-motion-transition.md`
+- CSS layering -> `docs/references/patterns/canonical-css-layering.md`
+- Accessibility semantics -> `docs/references/patterns/canonical-accessibility.md`
 
 Examples are supporting patterns, not rule sources. If an example conflicts with `AGENTS.md`, `AGENTS.md` wins.
 
@@ -516,47 +535,47 @@ debouncedFn.dispose(); // cleanup
 
 #### Custom JS Files Specification
 
-**1. `utils.js` — Utility Functions**
+**1. `utils.js` -- Utility Functions**
 
 - **Namespace**: `window.__Theme__.Utils`
 - **Functions**: `rafThrottle(fn)`, `throttle(fn, delay)`, `debounce(fn, wait)`
 - **Usage**: See "Utils Pattern" section above
 
-**2. `events.js` — Event Bus System**
+**2. `events.js` -- Event Bus System**
 
 - **Namespace**: `window.__Theme__.Events`
 - **API**: `emit(type, detail, options)`, `on(type, handler, options)`, `once(type, handler, options)`, `createScope(options)`
 - **Usage**: See "ThemeEvents API" section above
 
-**3. `motion.js` — GSAP Choreography Recipes**
+**3. `motion.js` -- GSAP Choreography Recipes**
 
 - **Namespace**: `window.__Theme__.Motion`
-- **API**: `Motion.scrollReveal(el, options)` — scroll-triggered staggered reveal; `Motion.heroReveal(el, options)` — hero + badge entrance
+- **API**: `Motion.scrollReveal(el, options)` -- scroll-triggered staggered reveal; `Motion.heroReveal(el, options)` -- hero + badge entrance
 - **scrollReveal Options**: `selector`, `axis`, `from`, `to`, `duration`, `stagger`, `ease`, `scrollTriggerStart`, `once`
 - **heroReveal Options**: `heroSelector`, `badgeSelector`, `heroDuration`, `heroEase`, `badgeDuration`, `badgeDelay`, `badgeEase`
-- **Returns**: `{ ctx, timeline }` — `timeline` holds a GSAP Tween or Timeline; caller MUST call `ctx.revert()` in `destroy()`
+- **Returns**: `{ ctx, timeline }` -- `timeline` holds a GSAP Tween or Timeline; caller MUST call `ctx.revert()` in `destroy()`
 - **Guards**: `Motion` is `null` if `gsap` or `ScrollTrigger` is unavailable; guard with `if (!Motion) return`
 
-**4. `https.js` — HTTP Client + Section Refresher**
+**4. `https.js` -- HTTP Client + Section Refresher**
 
 - **Namespace**: `window.ShopifyHttp`, `window.ShopifySectionRefresher`
 - **ShopifyHttp API**: `getJSON(url, options)`, `postJSON(url, body, options)`, `request(url, options)`
 - **SectionRefresher API**: `render(data, domMap)`, `updateText(updates)`
 - **Usage**: See "ShopifyHttp API" and "SectionRefresher API" sections above
 
-**5. `alpine.components.js` — Alpine Component Definitions**
+**5. `alpine.components.js` -- Alpine Component Definitions**
 
 - **Namespace**: `window.__Theme__.AlpineComponentsFactory`
 - **Registration**: `AlpineComponentsFactory.register('name', function () { return { init() {}, dispose() {} }; })`
 - **Usage**: See "Alpine Component Pattern" section above
 
-**6. `base.js` — Component Engine + Alpine Init**
+**6. `base.js` -- Component Engine + Alpine Init**
 
 - **Namespace**: `window.__Theme__.Components`, `window.__Theme__.Base`
 - **Components API**: `register(type, handlers, options)`, `initAll(container)`, `destroyAll(container)`
 - **Usage**: See "Component Engine Pattern" section above
 
-**7. `alpine.store.js` — Alpine Global Stores**
+**7. `alpine.store.js` -- Alpine Global Stores**
 
 - **Namespace**: `window.__Theme__.AlpineStores`
 - **Stores**: `$store.toast`, `$store.dialog`, `$store.cart`
@@ -883,7 +902,7 @@ Duplication is a signal, not the whole rule. The real rule is whether motion has
 
 #### Duplication Detection Rules
 
-This table lists repeated patterns to check **before adding another copy**. It is a pre-flight checklist, not an automatic abstraction trigger. Finding a match means "stop and evaluate" — it does not mean "abstract immediately."
+This table lists repeated patterns to check **before adding another copy**. It is a pre-flight checklist, not an automatic abstraction trigger. Finding a match means "stop and evaluate" -- it does not mean "abstract immediately."
 
 | Repeated pattern to check before adding another copy                        | Destination                                | Namespace                    |
 | --------------------------------------------------------------------------- | ------------------------------------------ | ---------------------------- |
@@ -897,10 +916,10 @@ One-off section choreography MAY remain local in that section's `{%- javascript 
 
 Creating a new shared recipe, preset, or utility requires architectural justification. A motion pattern SHOULD become a shared recipe when **any** of the following apply:
 
-1. **Three or more current consumers** — the pattern is already repeated across at least three real sections or components.
-2. **Global motion language** — the pattern defines a brand-level or site-wide motion behavior (e.g. hero entrance, scroll reveal standard, campaign motion signature).
-3. **Settings or policy interference** — scattered raw values would prevent or complicate future global motion settings (`motion_enabled`, `motion_speed`, `motion_intensity`, `micro_motion_enabled`, `scroll_motion_enabled`) or `prefers-reduced-motion` enforcement.
-4. **Ownership, lifecycle, or stability risk** — scattered implementations create unclear ownership, unpredictable cleanup, cross-section regression risk, or launch stability concerns (see "Motion Encapsulation as Architecture Stability" below).
+1. **Three or more current consumers** -- the pattern is already repeated across at least three real sections or components.
+2. **Global motion language** -- the pattern defines a brand-level or site-wide motion behavior (e.g. hero entrance, scroll reveal standard, campaign motion signature).
+3. **Settings or policy interference** -- scattered raw values would prevent or complicate future global motion settings (`motion_enabled`, `motion_speed`, `motion_intensity`, `micro_motion_enabled`, `scroll_motion_enabled`) or `prefers-reduced-motion` enforcement.
+4. **Ownership, lifecycle, or stability risk** -- scattered implementations create unclear ownership, unpredictable cleanup, cross-section regression risk, or launch stability concerns (see "Motion Encapsulation as Architecture Stability" below).
 
 Two consumers is coincidence; three is a pattern. But even two consumers may justify extraction when condition 2, 3, or 4 applies.
 
@@ -914,12 +933,12 @@ When evaluating whether a motion pattern is properly encapsulated, audit against
 | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Change control**       | Can duration, easing, distance, stagger, and reduced-motion behavior be adjusted in one stable location?                                                          |
 | **Policy control**       | Can future global settings (`motion_enabled`, `motion_speed`, `motion_intensity`, `micro_motion_enabled`, `scroll_motion_enabled`) uniformly control this motion? |
-| **Ownership clarity**    | Is it clear who owns `opacity`, `transform`, `visibility`, `height`, and `display` — CSS, Alpine, or GSAP? Are there conflicts?                                   |
+| **Ownership clarity**    | Is it clear who owns `opacity`, `transform`, `visibility`, `height`, and `display` -- CSS, Alpine, or GSAP? Are there conflicts?                                  |
 | **Lifecycle safety**     | Can listeners, timelines, ScrollTrigger instances, timers, and state transitions be predictably cleaned up in `destroy()`?                                        |
 | **Regression isolation** | Does modifying motion in one section risk breaking other sections, or require synchronized changes in multiple places?                                            |
 | **Launch stability**     | Does the motion affect `visibility`, accessibility, LCP, CLS, keyboard access, or mobile behavior?                                                                |
 
-If any criterion fails, the motion pattern needs better encapsulation — even if it is not duplicated.
+If any criterion fails, the motion pattern needs better encapsulation -- even if it is not duplicated.
 
 #### Progressive Enforcement
 
@@ -932,21 +951,21 @@ If any criterion fails, the motion pattern needs better encapsulation — even i
 
 Official or external GSAP skills MAY be used as technical references for GSAP API behavior and recommended choreography patterns.
 
-The canonical external reference is [`greensock/gsap-skills`](https://github.com/greensock/gsap-skills) — the GreenSock official AI skills repository. It covers GSAP API, timeline construction, ScrollTrigger configuration, plugin usage, and performance techniques. It is a **technical reference only**, not a project rule source.
+The canonical external reference is [`greensock/gsap-skills`](https://github.com/greensock/gsap-skills) -- the GreenSock official AI skills repository. It covers GSAP API, timeline construction, ScrollTrigger configuration, plugin usage, and performance techniques. It is a **technical reference only**, not a project rule source.
 
 #### External Reference Boundary
 
 External skills do not override this repository's rules. Every external GSAP recommendation MUST be mapped back to the project's runtime abstractions before implementation:
 
-| Project abstraction                   | What it governs                                          |
-| ------------------------------------- | -------------------------------------------------------- |
-| `Components.register()`               | Lifecycle ownership — when GSAP starts and stops         |
-| `window.__Theme__.Motion`             | Shared recipe registry — reusable choreography           |
-| Scoped selectors (`el.querySelector`) | DOM isolation — no global `document.querySelector`       |
-| `destroy()` / `ctx.revert()`          | Cleanup — no leaked timelines or ScrollTrigger instances |
-| `prefers-reduced-motion`              | Accessibility — shortened or disabled motion             |
-| No-JS / Motion unavailable visibility | Critical content must render without GSAP                |
-| Lighthouse / Theme Store readiness    | Motion must not block LCP, create CLS, or hide content   |
+| Project abstraction                   | What it governs                                           |
+| ------------------------------------- | --------------------------------------------------------- |
+| `Components.register()`               | Lifecycle ownership -- when GSAP starts and stops         |
+| `window.__Theme__.Motion`             | Shared recipe registry -- reusable choreography           |
+| Scoped selectors (`el.querySelector`) | DOM isolation -- no global `document.querySelector`       |
+| `destroy()` / `ctx.revert()`          | Cleanup -- no leaked timelines or ScrollTrigger instances |
+| `prefers-reduced-motion`              | Accessibility -- shortened or disabled motion             |
+| No-JS / Motion unavailable visibility | Critical content must render without GSAP                 |
+| Lighthouse / Theme Store readiness    | Motion must not block LCP, create CLS, or hide content    |
 
 #### When to Escalate
 
@@ -970,7 +989,7 @@ When an external skill informs an implementation, the agent report MUST state:
 
 ## CSS Rules
 
-For new CSS and cleanup work, first check `skills/examples/canonical-css-layering.md` for the preferred layer choice patterns. The rules below remain authoritative. For animation and transition decisions, classify the work through `Motion Architecture` before applying CSS layer rules.
+For new CSS and cleanup work, first check `docs/references/patterns/canonical-css-layering.md` for the preferred layer choice patterns. The rules below remain authoritative. For animation and transition decisions, classify the work through `Motion Architecture` before applying CSS layer rules.
 
 ### Golden Rules
 
@@ -1281,12 +1300,12 @@ icons/*.svg (temporary or persistent build inputs)  ->  npm run build:svg
 
 ### Mandatory Rules
 
-1. All user-visible text (page content, buttons, placeholders, error messages, ARIA copy, Theme Editor setting names, etc.) MUST use `| t` or `t:` — no hardcoded strings.
+1. All user-visible text (page content, buttons, placeholders, error messages, ARIA copy, Theme Editor setting names, etc.) MUST use `| t` or `t:` -- no hardcoded strings.
 2. Translation keys MUST follow `category.group.description` three-layer structure, use snake_case, and live in `locales/en.default.json` (storefront content) or `locales/en.default.schema.json` (editor schema copy).
-3. All user-visible fields in `{% schema %}` (`name`, `label`, `info`, `options[].label`, `presets[].name`, and `default` values displayed on the storefront) MUST use `t:` — no direct English.
+3. All user-visible fields in `{% schema %}` (`name`, `label`, `info`, `options[].label`, `presets[].name`, and `default` values displayed on the storefront) MUST use `t:` -- no direct English.
 4. Global settings in `config/settings_schema.json` MUST also use `t:` references to translation keys in `en.default.schema.json`.
 5. All ARIA-related copy (e.g., `aria-label`, assistive text) MUST use a `| t` key.
-6. Dynamic content MUST use t filter parameter interpolation — no string concatenation to build complete sentences.
+6. Dynamic content MUST use t filter parameter interpolation -- no string concatenation to build complete sentences.
 7. English copy uses sentence case for consistent style.
 
 Merchant-provided content such as `section.settings.*`, `block.settings.*`, resource titles, product content, article content, page content, and metafields MAY render directly. The schema names, labels, info text, and defaults that introduce those settings still need translation keys.
@@ -1347,7 +1366,7 @@ Schema settings:
 
 ### Detailed Reference
 
-See `skills/code-review/i18n-checklist.md` for:
+See `docs/references/code-review/i18n-checklist.md` for:
 
 - Translation key naming conventions
 - Complete translation key list
@@ -1467,9 +1486,10 @@ Add ARIA state only where it communicates real state or relationships:
 ```text
 AGENTS.md                      Repository-wide agent rules (this file)
 WORKFLOW.md                    Phase flow, handoff protocol, and agent work loop
-skills/                        Supporting agent docs (review references and examples)
-    code-review/               Review references and focused checklists
-    examples/                  Canonical implementation examples
+docs/                         Agent-readable RAG/reference layer
+    agent/                    Current plan, decision log, and next-session context
+    references/               Long references, checklists, and canonical patterns
+.agents/skills/                Standard project Agent Skills entry point
 
 icons/                         Temporary or persistent SVG build inputs for `npm run build:svg`
 
@@ -1622,27 +1642,27 @@ Do not add broad ignore patterns that hide source files, theme runtime files, sc
 
 Some rules are enforced by tooling; others remain review-only. `AGENTS.md` is still authoritative in both cases.
 
-| Rule family                               | Current coverage                    | Gate                            |
-| ----------------------------------------- | ----------------------------------- | ------------------------------- |
-| Inline `<script>` in Liquid               | `tools/lint-theme.js`               | Blocker                         |
-| Inline `<style>` in Liquid                | `tools/lint-theme.js`               | Blocker                         |
-| Complex `x-data` values                   | `tools/lint-theme.js` partial check | Blocker for new code            |
-| Raw `fetch()` in application code         | `tools/lint-theme.js`               | Blocker                         |
-| Direct cart endpoints outside cart store  | `tools/lint-theme.js`               | Blocker                         |
-| Manual section HTML replacement           | `tools/lint-theme.js`               | Blocker                         |
-| Alpine component group references         | `tools/lint-theme.js`               | Blocker                         |
-| Heading text-size utilities               | `tools/lint-theme.js`               | Blocker                         |
-| Heading class on non-heading elements     | `tools/lint-theme.js`               | Blocker                         |
-| i18n key usage                            | `tools/lint-i18n.js` plus review    | Blocker for user-facing strings |
-| CSS syntax and common style issues        | stylelint                           | Blocker when lint fails         |
-| Redundant matching heading classes        | Review only                         | Warning                         |
-| Mismatched heading classes                | Review only                         | Warning; needs user decision    |
-| Redundant default body typography classes | Review only                         | Legacy warning                  |
-| CSS layer placement                       | Review only plus stylelint          | Warning                         |
-| Motion recipe usage                       | Review only                         | Warning                         |
-| Accessibility semantics                   | Review only                         | Launch blocker when user-facing |
-| SEO metadata and structured content       | Review only plus Lighthouse         | Launch blocker when code-owned  |
-| Generated files not hand-edited           | Review only                         | Warning                         |
+| Rule family                               | Current coverage                   | Gate                            |
+| ----------------------------------------- | ---------------------------------- | ------------------------------- |
+| Inline `<script>` in Liquid               | `npm run lint:theme`               | Blocker                         |
+| Inline `<style>` in Liquid                | `npm run lint:theme`               | Blocker                         |
+| Complex `x-data` values                   | `npm run lint:theme` partial check | Blocker for new code            |
+| Raw `fetch()` in application code         | `npm run lint:theme`               | Blocker                         |
+| Direct cart endpoints outside cart store  | `npm run lint:theme`               | Blocker                         |
+| Manual section HTML replacement           | `npm run lint:theme`               | Blocker                         |
+| Alpine component group references         | `npm run lint:theme`               | Blocker                         |
+| Heading text-size utilities               | `npm run lint:theme`               | Blocker                         |
+| Heading class on non-heading elements     | `npm run lint:theme`               | Blocker                         |
+| i18n key usage                            | `npm run lint:i18n` plus review    | Blocker for user-facing strings |
+| CSS syntax and common style issues        | stylelint                          | Blocker when lint fails         |
+| Redundant matching heading classes        | Review only                        | Warning                         |
+| Mismatched heading classes                | Review only                        | Warning; needs user decision    |
+| Redundant default body typography classes | Review only                        | Legacy warning                  |
+| CSS layer placement                       | Review only plus stylelint         | Warning                         |
+| Motion recipe usage                       | Review only                        | Warning                         |
+| Accessibility semantics                   | Review only                        | Launch blocker when user-facing |
+| SEO metadata and structured content       | Review only plus Lighthouse        | Launch blocker when code-owned  |
+| Generated files not hand-edited           | Review only                        | Warning                         |
 
 Warnings should be staged after launch unless they affect Lighthouse, accessibility, SEO, runtime stability, or production behavior.
 

@@ -27,6 +27,7 @@ npm run dev        # shopify theme dev + tailwind watch
 npm run build:tw   # production CSS build
 npm run watch:tw   # CSS watch mode
 npm run build:svg  # optimize SVG icons (icons/ -> assets/)
+npm run lint       # CSS, i18n, theme architecture, and format checks
 npm test           # shopify theme check
 ```
 
@@ -34,7 +35,11 @@ npm test           # shopify theme check
 
 ## Documentation
 
-| Document                                                           | Purpose                                                 |
-| ------------------------------------------------------------------ | ------------------------------------------------------- |
-| [AGENTS.md](AGENTS.md)                                             | Canonical repository rules and architecture constraints |
-| [skills/code-review/pre-merge.md](skills/code-review/pre-merge.md) | Review checklist aligned to `AGENTS.md`                 |
+| Document                                                                               | Purpose                                                 |
+| -------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| [AGENTS.md](AGENTS.md)                                                                 | Canonical repository rules and architecture constraints |
+| [WORKFLOW.md](WORKFLOW.md)                                                             | Shared agent workflow and handoff protocol              |
+| [docs/README.md](docs/README.md)                                                       | Agent-readable docs and references index                |
+| [docs/agent/README.md](docs/agent/README.md)                                           | Current agent context index                             |
+| [.agents/skills/code-review/SKILL.md](.agents/skills/code-review/SKILL.md)             | Shared code review skill                                |
+| [.agents/skills/run-shopify-theme/SKILL.md](.agents/skills/run-shopify-theme/SKILL.md) | Validation command dispatcher                           |

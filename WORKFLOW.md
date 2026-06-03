@@ -1,4 +1,4 @@
-# Agent Workflow
+﻿# Agent Workflow
 
 `AGENTS.md` defines repository rules. This file defines the shared agent work context: how different agents, tools, and environments should analyze user intent, gather context, act, verify, and hand off work in this repository.
 
@@ -25,7 +25,7 @@ The external report can still use this practical shape:
 Observe -> Classify -> Plan -> Act/Prompt -> Verify -> Report
 ```
 
-- **Observe**: Read the task, `AGENTS.md`, this workflow, relevant files, current diff, and only the examples or external skills that match the task.
+- **Observe**: Read the task, `AGENTS.md`, this workflow, relevant files, current diff, and only the matching skill references or external skills that match the task.
 - **Classify**: Identify ownership, risk, phase, and whether the issue is code, configuration, content, asset, Shopify platform/vendor, or measurement noise.
 - **Plan**: State the current phase, allowed actions, forbidden actions, and expected output when the work is ambiguous or multi-step.
 - **Act/Prompt**: Implement only when the phase allows it. If acting as reviewer or prompt-writer, provide the next precise prompt instead of editing.
@@ -171,7 +171,9 @@ Do not force this frame on trivial one-step tasks.
 
 Use external or official skills only when the task explicitly involves that technology.
 
-For GSAP work, the primary external reference is [`greensock/gsap-skills`](https://github.com/greensock/gsap-skills) — the GreenSock official AI skills repository covering GSAP API, timelines, ScrollTrigger, plugins, and performance. It is a technical reference only; it does not define project rules.
+Local canonical implementation examples live under `docs/references/patterns/`. They are skill references, not rule sources. Load only the reference that matches the behavior being implemented.
+
+For GSAP work, the primary external reference is [`greensock/gsap-skills`](https://github.com/greensock/gsap-skills) -- the GreenSock official AI skills repository covering GSAP API, timelines, ScrollTrigger, plugins, and performance. It is a technical reference only; it does not define project rules.
 
 Map any external recommendation back to:
 
@@ -193,20 +195,20 @@ Reports must state which external recommendations were adopted, which were rejec
 
 ## Phase 0: Context Intake
 
-**Input**: User request, current diff, `AGENTS.md`, this file, and task-specific examples.
+**Input**: User request, current diff, `AGENTS.md`, this file, and task-specific skill references.
 
 **Allowed**:
 
 - Read relevant files.
 - Inspect current git diff and scripts.
-- Read matching canonical examples.
+- Read matching canonical examples from `docs/references/patterns/`.
 - Read external skills only when the task clearly names or requires that technology.
 
 **Forbidden**:
 
 - Broad unrelated repo rewrites.
 - Creating new docs or tools before the phase requires them.
-- Treating examples or external skills as rule sources.
+- Treating skill references or external skills as rule sources.
 
 **Output**:
 
@@ -286,16 +288,16 @@ Reports must state which external recommendations were adopted, which were rejec
 
 **Progressive Disclosure**:
 
-Technical debt audits MUST use progressive disclosure — report the most critical items first, defer the rest:
+Technical debt audits MUST use progressive disclosure -- report the most critical items first, defer the rest:
 
 1. **Blockers first**: Report MUST-level launch blockers (accessibility, SEO, Theme Check, runtime stability) before anything else.
 2. **Warnings second**: Report SHOULD-level findings, review warnings, and known follow-ups as a separate group. Label them as warnings or post-launch debt, not as blockers.
 3. **Small rule-family batches**: Each audit pass SHOULD recommend fixes for one rule family at a time. Do not dump an unclassified list of every possible improvement.
 4. **Every finding needs a disposition**: Each recommendation MUST state one of:
-    - **now** — launch blocker, fix in this pass
-    - **later** — post-launch debt, staged with an owner or follow-up note
-    - **ignore** — false positive, platform issue, or not code-owned
-    - **needs user decision** — preference, design tradeoff, or configuration ownership question
+    - **now** -- launch blocker, fix in this pass
+    - **later** -- post-launch debt, staged with an owner or follow-up note
+    - **ignore** -- false positive, platform issue, or not code-owned
+    - **needs user decision** -- preference, design tradeoff, or configuration ownership question
 
 **Output**:
 
@@ -375,3 +377,4 @@ Every handoff should include:
 - Next recommended prompt.
 
 Do not rely on chat memory alone for rules that should govern future work.
+When a handoff needs to persist beyond the chat, record it in `docs/agent/next-session.md`.
