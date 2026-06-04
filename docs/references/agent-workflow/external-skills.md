@@ -25,6 +25,12 @@ External skills never override:
 
 Default level is **Reference only**.
 
+For this project, the practical default is to keep external skills at **Reference only** unless there is a specific, reviewed adoption decision. The project already has its own agent framework, routing, Shopify theme architecture, validation commands, and launch-readiness boundaries. Installing an external skill can make it auto-trigger, add competing workflow guidance to context, and create version drift that is harder to audit than a project-owned reference.
+
+Remote reading and local installation are different risk levels. Reading an external skill is temporary research. Installing it into a user-level or project-level skill directory can affect future conversations without being visible in the current prompt.
+
+Project-level installation is especially risky in this repository because `.claude/skills` is a symlink adapter to `../.agents/skills`. A Claude local skill install can therefore write into the project skill source and bypass the adaptation process. Do not install third-party skills into `.claude/skills` or `.agents/skills` unless they have been rewritten as project-owned skills and approved through this document.
+
 ## Candidate Registry
 
 | Source | Default level | Intended value | Project adaptation boundary |
@@ -50,7 +56,8 @@ Before installing or approving an external skill:
 2. Record source, version or commit, intended use, and limitations.
 3. Decide whether it is a tool adapter install or a project-approved adaptation.
 4. Keep tool-specific installs outside `.agents/skills/` unless the skill is adapted as a project skill.
-5. Add routing only after the boundary is documented.
+5. Prefer adapting useful ideas into project docs or `.agents/skills/` instead of importing the external skill wholesale.
+6. Add routing only after the boundary is documented.
 
 ## GSAP-Specific Boundary
 
