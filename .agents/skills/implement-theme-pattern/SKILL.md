@@ -10,7 +10,7 @@ Use this skill when code work needs a canonical implementation shape. `AGENTS.md
 ## Workflow
 
 1. Read `AGENTS.md` for the relevant rule family.
-2. Read `WORKFLOW.md` for multi-step, cleanup, architecture, or handoff work.
+2. Follow `AGENTS.md` behavior rules for question policy, task frame, and cross-session context.
 3. Classify the requested behavior before choosing a pattern.
 4. Load only the docs reference that matches the behavior being implemented.
 5. Keep edits scoped to the touched feature and preserve merchant-owned configuration.

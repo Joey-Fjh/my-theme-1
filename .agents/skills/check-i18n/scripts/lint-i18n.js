@@ -4,7 +4,7 @@ const fs = require('node:fs/promises');
 const path = require('node:path');
 const process = require('node:process');
 const fg = require('fast-glob');
-const { toLiquidHtmlAST } = require('@shopify/liquid-html-parser');
+const { toLiquidHtmlAST, walk } = require('@shopify/liquid-html-parser');
 const { parseTree, visit, getNodeValue } = require('jsonc-parser');
 
 const ROOT = process.cwd();
@@ -16,10 +16,7 @@ const LIQUID_GLOBS = ['layout/**/*.liquid', 'sections/**/*.liquid', 'snippets/**
 const SCHEMA_GLOBS = ['sections/**/*.liquid', 'blocks/**/*.liquid', 'config/settings_schema.json'];
 const LOCALE_GLOBS = ['locales/**/*.json'];
 
-const USER_VISIBLE_ATTRIBUTES = ['aria-label', 'alt', 'placeholder', 'title'];
-
 const ENGLISH_TEXT_RE = /\b[A-Za-z][A-Za-z0-9'.,:;!?&()[\]\/+\-\s]{2,}\b/;
-const TRANSLATION_FILTER_RE = /['"]([a-z0-9_.-]+)['"]\s*\|\s*t\b/g;
 const SCHEMA_KEY_RE = /"t:([a-z0-9_.-]+)"/g;
 
 const ALLOWED_TEXT_RE = [
@@ -56,6 +53,18 @@ function isAllowedLiteral(value) {
     }
 
     return ALLOWED_TEXT_RE.some((re) => re.test(text));
+}
+
+// --- Liquid AST helpers -------------------------------------------------------
+
+const USER_VISIBLE_ATTRS = new Set(['aria-label', 'alt', 'placeholder', 'title']);
+
+function parseLiquidAst(source) {
+    try {
+        return { ast: toLiquidHtmlAST(source) };
+    } catch (error) {
+        return { error: { message: error.message, line: error.loc?.start?.line ?? 1 } };
+    }
 }
 
 // --- schema default helpers ---------------------------------------------------
@@ -176,27 +185,40 @@ async function checkLiquidTranslationKeys(storefrontKeys) {
 
     for (const file of files.map(formatPath)) {
         const text = await readText(file);
-        validateLiquidSyntax(file, text);
+        const { ast, error: parseError } = parseLiquidAst(text);
 
-        for (const match of text.matchAll(TRANSLATION_FILTER_RE)) {
-            const key = match[1];
+        if (parseError) {
+            report(file, parseError.line, `Liquid parser failed: ${parseError.message}`);
+            continue;
+        }
+
+        walk(ast, (node) => {
+            if (node.type !== 'LiquidVariableOutput') return;
+
+            const markup = node.markup;
+            if (!markup || typeof markup !== 'object') return;
+
+            // Check for | t filter
+            const hasTFilter =
+                Array.isArray(markup.filters) &&
+                markup.filters.some((f) => f.name === 't');
+            if (!hasTFilter) return;
+
+            // Extract the string key from the expression
+            const expr = markup.expression;
+            if (!expr || expr.type !== 'String') return;
+
+            const key = expr.value;
+            if (!key) return;
 
             if (!storefrontKeys.has(key)) {
                 report(
                     file,
-                    toPos(text, match.index ?? 0),
+                    toPos(text, node.position.start),
                     `Missing storefront locale key "${key}".`,
                 );
             }
-        }
-    }
-}
-
-function validateLiquidSyntax(file, text) {
-    try {
-        toLiquidHtmlAST(text);
-    } catch (error) {
-        report(file, error?.loc?.start?.line ?? 1, `Liquid parser failed: ${error.message}`);
+        });
     }
 }
 
@@ -332,94 +354,96 @@ function walkSchemaNode(node, onProperty, parentProperties) {
     }
 }
 
-/**
- * Returns line ranges [startLine, endLine] (1-indexed, inclusive) for Liquid
- * blocks whose content is not storefront-visible: comment, schema, javascript,
- * and stylesheet blocks.  Both `{% tag %}` and `{%- tag -%}` forms are matched.
- */
-function getNonVisibleBlockRanges(text) {
-    const ranges = [];
-    const blockRe =
-        /\{%-?\s*(comment|schema|javascript|stylesheet)\s*-?%\}([\s\S]*?)\{%-?\s*end\1\s*-?%\}/g;
-
-    for (const match of text.matchAll(blockRe)) {
-        const contentStart = match.index + match[0].indexOf(match[2]);
-        const contentEnd = contentStart + match[2].length;
-        ranges.push([toPos(text, contentStart), toPos(text, contentEnd)]);
-    }
-
-    return ranges;
-}
-
-function isInsideNonVisibleBlock(line, ranges) {
-    for (const [start, end] of ranges) {
-        if (line >= start && line <= end) return true;
-    }
-    return false;
-}
-
-/**
- * Returns offset ranges [start, end) for Liquid tags only:
- * {% ... %} and {%- ... -%}.
- * Liquid output {{ ... }} / {{- ... -}} is intentionally excluded so that
- * hardcoded fallback text inside default filters is still flagged.
- */
-function getLiquidTagRanges(text) {
-    const ranges = [];
-    const re = /\{%-[\s\S]*?-%\}|\{%[\s\S]*?%\}/g;
-
-    for (const match of text.matchAll(re)) {
-        const start = match.index;
-        const end = start + match[0].length;
-        ranges.push([start, end]);
-    }
-
-    return ranges;
-}
-
-function isInsideLiquidRange(offset, ranges) {
-    for (const [start, end] of ranges) {
-        if (offset >= start && offset < end) return true;
-    }
-    return false;
-}
-
 async function checkHardcodedLiquidText() {
     const files = await fg(LIQUID_GLOBS, { cwd: ROOT, dot: false, onlyFiles: true });
-    const tagTextRe = />\s*([^<>][^<>]*[A-Za-z][^<>]*)\s*</g;
-    const attrRe = new RegExp(
-        `(?<!:)\\b(${USER_VISIBLE_ATTRIBUTES.join('|')})=(["'])([^"'{}%]*[A-Za-z][^"'{}%]*)\\2`,
-        'g',
-    );
 
     for (const file of files.map(formatPath)) {
         const text = await readText(file);
-        const nonVisibleRanges = getNonVisibleBlockRanges(text);
-        const liquidTagRanges = getLiquidTagRanges(text);
+        const { ast, error: parseError } = parseLiquidAst(text);
 
-        for (const match of text.matchAll(tagTextRe)) {
-            const literal = match[1].trim();
-            if (!ENGLISH_TEXT_RE.test(literal) || isAllowedLiteral(literal)) continue;
-            if (literal.includes('{%') || literal.includes('%}')) continue;
-
-            if (isInsideLiquidRange(match.index ?? 0, liquidTagRanges)) continue;
-
-            const line = toPos(text, (match.index ?? 0) + match[0].indexOf(match[1]));
-            if (isInsideNonVisibleBlock(line, nonVisibleRanges)) continue;
-
-            report(file, line, `Hardcoded visible text "${literal}" should use the | t filter.`);
+        if (parseError) {
+            // Parse error already reported by checkLiquidTranslationKeys
+            continue;
         }
 
-        for (const match of text.matchAll(attrRe)) {
-            const attr = match[1];
-            const literal = match[3].trim();
-            if (!ENGLISH_TEXT_RE.test(literal) || isAllowedLiteral(literal)) continue;
+        // Collect attribute position ranges so we can skip TextNodes that
+        // fall inside attribute values (including through Liquid branches).
+        const attrRanges = [];
+        const attrChecks = [];
 
-            const line = toPos(text, match.index ?? 0);
-            if (isInsideNonVisibleBlock(line, nonVisibleRanges)) continue;
+        walk(ast, (node) => {
+            const isAttr =
+                node.type === 'AttrSingleQuoted' ||
+                node.type === 'AttrDoubleQuoted' ||
+                node.type === 'AttrUnquoted' ||
+                node.type === 'AttrEmpty';
+            if (!isAttr) return;
 
-            report(file, line, `Hardcoded ${attr}="${literal}" should use the | t filter.`);
+            attrRanges.push([node.position.start, node.position.end]);
+
+            // Check user-visible attribute values at the attribute level
+            const attrName = (node.name || []).map((n) => n.value || '').join('');
+            if (!USER_VISIBLE_ATTRS.has(attrName)) return;
+
+            for (const valueNode of node.value || []) {
+                if (valueNode.type !== 'TextNode') continue;
+                const literal = valueNode.value.trim();
+                if (!literal) continue;
+                if (!ENGLISH_TEXT_RE.test(literal)) continue;
+                if (isAllowedLiteral(literal)) continue;
+
+                attrChecks.push({
+                    line: toPos(text, valueNode.position.start),
+                    message: `Hardcoded ${attrName}="${literal}" should use the | t filter.`,
+                });
+            }
+        });
+
+        // Report attribute-level findings
+        for (const { line, message } of attrChecks) {
+            report(file, line, message);
         }
+
+        // Helper: check if offset falls inside any attribute range
+        function isInsideAttribute(offset) {
+            for (const [start, end] of attrRanges) {
+                if (offset >= start && offset < end) return true;
+            }
+            return false;
+        }
+
+        // Second walk: check visible TextNodes
+        walk(ast, (node, parent) => {
+            if (node.type !== 'TextNode') return;
+            if (!parent) return;
+
+            // Skip text inside attribute values (including Liquid branches)
+            if (isInsideAttribute(node.position.start)) return;
+
+            // Only HtmlElement and HtmlSelfClosingElement children are
+            // rendered as visible storefront text.  All other parents
+            // (RawMarkup, LiquidBranch, LiquidTag, LiquidDoc, etc.)
+            // represent non-visible contexts.
+            if (parent.type !== 'HtmlElement' && parent.type !== 'HtmlSelfClosingElement') {
+                return;
+            }
+
+            // Skip tag names: HtmlElement.name[0] / HtmlSelfClosingElement.name[0]
+            if (Array.isArray(parent.name) && parent.name[0] === node) {
+                return;
+            }
+
+            const literal = node.value.trim();
+            if (!literal) return;
+            if (!ENGLISH_TEXT_RE.test(literal)) return;
+            if (isAllowedLiteral(literal)) return;
+
+            report(
+                file,
+                toPos(text, node.position.start),
+                `Hardcoded visible text "${literal}" should use the | t filter.`,
+            );
+        });
     }
 }
 

@@ -10,7 +10,7 @@ Use this skill for review-only work. Do not refactor while reviewing unless the 
 ## Workflow
 
 1. Read `AGENTS.md` first. It is the authority for repository rules.
-2. Read `WORKFLOW.md` when the review is broad, cross-session, or phase-sensitive.
+2. Follow `AGENTS.md` behavior rules for question policy, task frame, and cross-session context.
 3. Inspect the current diff and the files changed by the task.
 4. Classify findings by `AGENTS.md` rule strength and launch impact.
 5. Report findings before summaries, ordered by severity.
