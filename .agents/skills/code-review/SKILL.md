@@ -1,6 +1,6 @@
 ---
 name: code-review
-description: Review Shopify theme changes for pre-merge safety, launch readiness, Theme Check risk, architecture rules, i18n, accessibility, SEO, runtime stability, and merchant-owned configuration boundaries. Use when asked to review code, inspect a diff, perform a pre-merge pass, classify blockers versus warnings, or evaluate Shopify Theme Store readiness.
+description: Review Shopify theme changes for launch readiness, Theme Check risk, architecture, i18n, accessibility, SEO, and merchant-owned boundaries. Use when asked to review code, inspect a diff, or classify blockers.
 ---
 
 # Code Review

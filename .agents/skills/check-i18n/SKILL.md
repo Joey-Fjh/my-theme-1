@@ -1,6 +1,9 @@
 ---
 name: check-i18n
-description: Validate Shopify theme internationalization, locale keys, translated Liquid strings, schema translation keys, duplicate locale JSON keys, and hardcoded user-facing copy. Use when Codex changes text, locales, schema labels, accessibility labels, or needs npm run lint:i18n.
+description: Validate Shopify theme internationalization and locale keys. Use when user-facing text, locales, or schema labels change.
+when_to_use: >
+  Locale JSON files, translated Liquid strings, schema translation keys, duplicate keys,
+  hardcoded copy, ARIA labels, alt text, placeholders, or npm run lint:i18n.
 ---
 
 # Check I18n

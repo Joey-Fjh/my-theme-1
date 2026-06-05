@@ -1,6 +1,10 @@
 ---
 name: implement-theme-pattern
-description: Implement or modify Shopify theme Liquid, section lifecycle JavaScript, Alpine components, ThemeEvents, ShopifyHttp or SectionRefresher usage, cart flows, Swiper sections, GSAP choreography, Alpine/CSS motion transitions, CSS layering, and accessibility patterns. Use when building or cleaning theme code that should follow canonical implementation examples.
+description: Implement or modify Shopify theme code following canonical patterns. Use when building or cleaning theme code.
+when_to_use: >
+  Liquid sections, section lifecycle JS, Alpine components, ThemeEvents, ShopifyHttp,
+  SectionRefresher, cart flows, Swiper, GSAP choreography, motion transitions,
+  CSS layering, accessibility patterns. Also for architecture cleanup of existing theme code.
 ---
 
 # Implement Theme Pattern

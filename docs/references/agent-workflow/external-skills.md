@@ -40,6 +40,21 @@ Project-level installation is especially risky in this repository because `.clau
 | `garrytan/gstack` | Reference only | Slash-command workflows, specialist roles, review/QA/release flow | May inspire future tool adapters; do not require gstack or list its commands in `AGENTS.md` |
 | `mattpocock/skills` | Reference only | Small composable skills, setup skill, shared language/docs | May inspire project setup/routing skills; adapt to Shopify theme boundaries first |
 
+## Workflow Skill Strategy
+
+External workflow skills such as `obra/superpowers`, `garrytan/gstack`, and `mattpocock/skills` remain **Reference only** by default.
+
+Agents SHOULD NOT proactively read, install, or adapt these skills during ordinary theme work. They MAY consult them only when a concrete workflow gap appears, such as agent routing drift, cross-session handoff weakness, review or release process design, command workflow planning, or project skill authoring.
+
+When a workflow skill is consulted, agents must report:
+
+- what workflow gap triggered the consultation
+- what idea was useful
+- what was rejected
+- whether the idea should be adapted into project-owned docs
+
+Do not import external workflow systems wholesale.
+
 ## Use Procedure
 
 Before using an external skill for project work:

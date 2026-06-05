@@ -1,6 +1,9 @@
 ---
 name: check-theme-architecture
-description: Validate Shopify theme architecture rules with the custom Liquid and JavaScript lint. Use when Codex changes Liquid, section schema, Alpine x-data, Components.register usage, ThemeEvents, ShopifyHttp, cart flows, DOM refresh behavior, heading classes, or needs npm run lint:theme.
+description: Validate Shopify theme architecture rules with the custom lint. Use when Liquid, JS, Alpine, or cart code changes.
+when_to_use: >
+  Liquid sections, section schema, Alpine x-data, Components.register, ThemeEvents,
+  ShopifyHttp, cart flows, DOM refresh, heading classes, or npm run lint:theme.
 ---
 
 # Check Theme Architecture

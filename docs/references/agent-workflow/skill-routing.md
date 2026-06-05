@@ -68,3 +68,29 @@ Hooks and MCP are adapters and enforcement layers:
 - New long reference: add it under `docs/references/` and route it from `AGENTS.md` only when agents need to discover it.
 
 Do not install tools, add hooks, or approve skills without updating routing or registry docs.
+
+## Skill and Docs Authoring
+
+Skills are executable routing entries, not knowledge bases. Keep SKILL.md content limited to trigger conditions, workflow steps, docs to read, guardrails, and validation choice.
+
+Description rules:
+
+- Keep descriptions short, keyword-fronted, and agent-neutral.
+- Do not use tool-specific names (Codex, Claude, Cursor, Copilot) in descriptions; use "agent" or omit the subject.
+- Descriptions must be independently usable as triggers; do not depend on `when_to_use` as the only entry.
+- Optional `when_to_use` frontmatter may clarify trigger scenarios but must not carry project rules, long checklists, or code examples. Not all agent clients read `when_to_use`; treat it as a progressive-disclosure enhancement only.
+
+Content placement:
+
+- Long-lived project knowledge belongs in `docs/`.
+- Agent collaboration and governance rules belong in `docs/references/agent-workflow/`.
+- Canonical implementation examples belong in `docs/references/patterns/`.
+- Cross-session state belongs in `docs/agent/context.md` and must stay short.
+- Long checklists, code examples, background explanation, and durable references belong in docs, not in skills.
+
+Creation rules:
+
+- New skills or docs must be routed from `AGENTS.md` or `agent-router` only when discoverability is needed.
+- Prefer adding a concise governance rule over restructuring files.
+- Tool-specific optimizations such as `paths` frontmatter or `.claude/rules/` require explicit approval and documentation before use.
+- Third-party skills and online best practices default to Reference only per `external-skills.md`; only adapted project-owned wording becomes project rule.

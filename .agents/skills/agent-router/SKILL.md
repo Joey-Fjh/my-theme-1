@@ -1,6 +1,6 @@
 ---
 name: agent-router
-description: Route non-trivial Shopify theme agent work before implementation. Use when a task needs classification, skill selection, docs routing, validation planning, third-party skill evaluation, governance/doc cleanup, review versus implementation boundaries, or when the user asks broadly to implement, review, validate, refactor, investigate, plan, clean up, or continue cross-session work.
+description: Route non-trivial Shopify theme agent work. Use when a task needs classification, skill or docs selection, validation planning, third-party skill evaluation, governance, or cross-session continuation.
 ---
 
 # Agent Router

@@ -1,6 +1,6 @@
 ---
 name: build-svg-icons
-description: Optimize and regenerate Shopify theme SVG icon assets with SVGO. Use when Codex changes files in icons/, needs to update generated assets/icon-*.svg, inspect SVG optimization rules, or decide whether npm run build:svg is required.
+description: Optimize and regenerate Shopify theme SVG icon assets. Use when files in icons/ change or npm run build:svg is needed.
 ---
 
 # Build SVG Icons

@@ -1,6 +1,6 @@
 ---
 name: run-shopify-theme
-description: Run or choose validation commands for this Shopify theme, including lint, Theme Check, tests, Tailwind builds, SVG builds, local Shopify development, and verification after code changes. Use when asked to test, verify, run the theme, start local dev, check lint, or decide which project command proves a change.
+description: Choose and run validation commands for this Shopify theme. Use when asked to test, verify, lint, run the theme, or decide which command proves a change.
 ---
 
 # Run Shopify Theme

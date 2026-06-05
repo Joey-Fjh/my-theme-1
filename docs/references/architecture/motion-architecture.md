@@ -98,6 +98,177 @@ Available choreography recipes:
 | `scrollReveal` | `Motion.scrollReveal(el, options)` | Scroll-triggered staggered reveal | Active |
 | `heroReveal`   | `Motion.heroReveal(el, options)`   | Hero + badge entrance animation   | Active |
 
+### ScrollTrigger Project Rules
+
+**Allowed Configuration:**
+
+| Option | Project Rule | Example |
+|--------|--------------|---------|
+| `trigger` | MUST use component root or `el` | `trigger: el` or `trigger: el.querySelector('[data-gsap-trigger]')` |
+| `start` | SHOULD use `'top 80%'` for reveal | `start: 'top 80%'` |
+| `scrub` | Use `1` for smooth lag, `true` for direct | `scrub: 1` |
+| `toggleActions` | Use `'play none none reverse'` for reversible | `'play none none reverse'` |
+| `once` | Use `true` for one-time reveal | `once: true` |
+| `markers` | MUST remove before production | `markers: false` |
+
+**Important:** Use `scrub` OR `toggleActions`, never both on the same trigger.
+
+**Allowed Patterns (one-time reveal):**
+
+```javascript
+Components.register(
+    'section-reveal',
+    {
+        init(el) {
+            if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') {
+                return {};
+            }
+
+            gsap.registerPlugin(ScrollTrigger);
+
+            const ctx = gsap.context(() => {
+                const items = el.querySelectorAll('[data-gsap-item]');
+                if (!items.length) return;
+
+                gsap.set(items, { opacity: 0, y: 24 });
+                gsap.to(items, {
+                    opacity: 1,
+                    y: 0,
+                    duration: 0.5,
+                    stagger: 0.12,
+                    ease: 'power2.out',
+                    scrollTrigger: {
+                        trigger: el,
+                        start: 'top 80%',
+                        once: true,
+                    },
+                });
+            }, el);
+
+            return { ctx };
+        },
+
+        destroy(_el, state) {
+            state?.ctx?.revert();
+        },
+    },
+    { lazy: true },
+);
+```
+
+**Allowed Patterns (scrub scroll-linked):**
+
+```javascript
+Components.register(
+    'parallax-section',
+    {
+        init(el) {
+            if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') {
+                return {};
+            }
+
+            gsap.registerPlugin(ScrollTrigger);
+
+            const content = el.querySelector('[data-gsap-content]');
+            if (!content) return {};
+
+            const ctx = gsap.context(() => {
+                gsap.from(content, {
+                    y: 100,
+                    scrollTrigger: {
+                        trigger: el,
+                        start: 'top bottom',
+                        end: 'bottom top',
+                        scrub: 1,
+                    },
+                });
+            }, el);
+
+            return { ctx };
+        },
+
+        destroy(_el, state) {
+            state?.ctx?.revert();
+        },
+    },
+    { lazy: true },
+);
+```
+
+**Prohibited:**
+
+- PROHIBITED: Global selectors `.section`, `.hero`, `.card`, `.title`
+- PROHIBITED: `trigger: '.section'` -- MUST use component root or scoped selector
+- PROHIBITED: Both `scrub` and `toggleActions` on same trigger
+- PROHIBITED: `markers: true` in production
+
+### ScrollTrigger Refresh and Cleanup
+
+**When to Refresh:**
+
+```javascript
+// After dynamic content changes (images, fonts, dynamic sections)
+ScrollTrigger.refresh();
+
+// Debounced refresh (avoid excessive calls)
+let refreshTimeout;
+function debouncedRefresh() {
+    clearTimeout(refreshTimeout);
+    refreshTimeout = setTimeout(() => {
+        ScrollTrigger.refresh();
+    }, 200);
+}
+```
+
+**Cleanup Pattern (gsap.context):**
+
+```javascript
+Components.register(
+    'animated-section',
+    {
+        init(el) {
+            if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') {
+                return {};
+            }
+
+            gsap.registerPlugin(ScrollTrigger);
+
+            const ctx = gsap.context(() => {
+                const items = el.querySelectorAll('[data-gsap-item]');
+                if (!items.length) return;
+
+                gsap.set(items, { opacity: 0, y: 24 });
+                gsap.to(items, {
+                    opacity: 1,
+                    y: 0,
+                    duration: 0.5,
+                    stagger: 0.12,
+                    ease: 'power2.out',
+                    scrollTrigger: {
+                        trigger: el,
+                        start: 'top 80%',
+                        once: true,
+                    },
+                });
+            }, el);
+
+            return { ctx };
+        },
+
+        destroy(_el, state) {
+            state?.ctx?.revert();
+        },
+    },
+    { lazy: true },
+);
+```
+
+**Prohibited:**
+
+- PROHIBITED: `ScrollTrigger.getAll().forEach(t => t.kill())` -- kills other sections' triggers
+- PROHIBITED: Global cleanup that affects sibling components
+- PROHIBITED: Missing cleanup in `destroy()`
+
 ## Execution Layer Boundaries
 
 Use this decision tree:
@@ -203,6 +374,212 @@ If any criterion fails, the motion pattern needs better encapsulation even if it
 - Legacy repeated animations that are not being modified for the current task MAY be classified as warning or post-launch debt.
 - Duplication or encapsulation issues escalate from warning to now/blocker when they affect visibility, accessibility, Lighthouse scores, runtime stability, mobile layout, or production behavior.
 - Do not require immediate refactoring of all historical motion code in one pass.
+
+## Performance Rules
+
+### Transform-First Rule
+
+**Allowed (compositor-friendly):**
+
+```javascript
+// Transform aliases
+gsap.to(el, { x: 100, y: 50, scale: 1.2, rotation: 45 });
+
+// autoAlpha (opacity + visibility)
+gsap.to(el, { autoAlpha: 0 }); // Sets visibility: hidden when opacity: 0
+```
+
+**autoAlpha boundary:** Do NOT use `autoAlpha` on critical first-viewport content that must be visible before JavaScript loads. Critical content MUST render visible without JS or animation completion. Use `autoAlpha` only for below-the-fold or non-critical elements.
+
+**Prohibited (triggers layout):**
+
+```javascript
+// Layout properties - causes jank
+gsap.to(el, { width: '200px', height: '100px', top: '50px', left: '100px' });
+gsap.to(el, { margin: '20px', padding: '10px' });
+```
+
+**Rule:** Use `x`, `y`, `scale`, `rotation`, `autoAlpha` for movement. Use `width`/`height` only when explicitly needed for layout changes.
+
+### Stagger Rule
+
+**Required:** Use `stagger` parameter, not manual `delay` calculations.
+
+```javascript
+// CORRECT: Use stagger
+gsap.from(items, { y: 50, opacity: 0, stagger: 0.1 });
+
+// PROHIBITED: Manual delays
+items.forEach((item, i) => {
+    gsap.from(item, { y: 50, opacity: 0, delay: i * 0.1 });
+});
+```
+
+### Cleanup Rule
+
+**Required:** All GSAP animations MUST be cleaned up in `destroy()` using `gsap.context(..., el)` + `ctx.revert()`. See canonical pattern above for complete example.
+
+**Prohibited:**
+
+- PROHIBITED: `ScrollTrigger.getAll().forEach(t => t.kill())` -- kills other sections
+- PROHIBITED: `gsap.killTweensOf('*')` -- kills everything
+- PROHIBITED: Missing cleanup in `destroy()`
+
+## Responsive and Reduced Motion Rules
+
+### Responsive Animation with gsap.matchMedia()
+
+**Required:** Use `gsap.matchMedia()` for responsive animations. All animations and ScrollTriggers created in that run are reverted automatically when media query stops matching.
+
+```javascript
+Components.register(
+    'responsive-section',
+    {
+        init(el) {
+            if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') {
+                return {};
+            }
+
+            gsap.registerPlugin(ScrollTrigger);
+
+            const mm = gsap.matchMedia();
+
+            mm.add('(min-width: 768px)', () => {
+                const items = el.querySelectorAll('[data-gsap-item]');
+                if (!items.length) return;
+
+                gsap.from(items, {
+                    y: 50,
+                    opacity: 0,
+                    stagger: 0.1,
+                    scrollTrigger: { trigger: el, start: 'top 80%', once: true },
+                });
+            });
+
+            mm.add('(max-width: 767px)', () => {
+                const mobileItems = el.querySelectorAll('[data-gsap-mobile]');
+                if (!mobileItems.length) return;
+
+                gsap.from(mobileItems, { y: 30, opacity: 0 });
+            });
+
+            return { mm };
+        },
+
+        destroy(_el, state) {
+            state?.mm?.revert();
+        },
+    },
+    { lazy: true },
+);
+```
+
+### Reduced Motion Rule
+
+**Required:** Respect `prefers-reduced-motion`. Use `gsap.matchMedia()` to disable animations. Set final visible state for reduced motion users.
+
+```javascript
+Components.register(
+    'animated-section',
+    {
+        init(el) {
+            if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') {
+                return {};
+            }
+
+            gsap.registerPlugin(ScrollTrigger);
+
+            const mm = gsap.matchMedia();
+
+            mm.add('(prefers-reduced-motion: reduce)', () => {
+                const items = el.querySelectorAll('[data-gsap-item]');
+                gsap.set(items, { opacity: 1, y: 0 });
+            });
+
+            mm.add('(prefers-reduced-motion: no-preference)', () => {
+                const items = el.querySelectorAll('[data-gsap-item]');
+                if (!items.length) return;
+
+                gsap.from(items, {
+                    y: 50,
+                    opacity: 0,
+                    stagger: 0.1,
+                    scrollTrigger: { trigger: el, start: 'top 80%', once: true },
+                });
+            });
+
+            return { mm };
+        },
+
+        destroy(_el, state) {
+            state?.mm?.revert();
+        },
+    },
+    { lazy: true },
+);
+```
+
+**Prohibited:**
+
+- PROHIBITED: `gsap.globalTimeline.timeScale(100)` -- global side effect
+- PROHIBITED: Skipping cleanup for reduced motion branch
+
+## Common Pitfalls
+
+### Pitfall 1: immediateRender with from()
+
+When stacking multiple `from()` tweens on same property/target:
+
+```javascript
+// BAD: Second tween's immediateRender conflicts
+gsap.from(el, { x: -100, duration: 1 });
+gsap.from(el, { x: 100, duration: 1, delay: 1 });
+
+// GOOD: Set immediateRender: false on later tweens
+gsap.from(el, { x: -100, duration: 1 });
+gsap.from(el, { x: 100, duration: 1, delay: 1, immediateRender: false });
+```
+
+### Pitfall 2: ScrollTrigger with Dynamic Content
+
+**Problem:** ScrollTrigger calculates positions before images/fonts load, causing incorrect pin/trigger positions.
+
+**Rule:** When section contains dynamic content (images, fonts, AJAX-loaded content), refresh ScrollTrigger after content loads. Use one of:
+
+1. **MutationObserver in component lifecycle** -- observe `el` for child/subtree changes, call `ScrollTrigger.refresh()` on mutation, disconnect in `destroy()`.
+2. **Image load events** -- listen for `load` on images inside `el`, call `ScrollTrigger.refresh()` after all images load.
+3. **Debounced refresh** -- if many dynamic changes, debounce `ScrollTrigger.refresh()` to avoid excessive calls.
+
+All approaches MUST clean up listeners/observers in `destroy()` to prevent leaks.
+
+**Prohibited:**
+
+- PROHIBITED: Creating ScrollTrigger before dynamic content loads without refresh plan
+- PROHIBITED: `window.addEventListener('load', ...)` without cleanup in component lifecycle
+
+### Pitfall 3: Timeline Position Mistakes
+
+```javascript
+// BAD: Overlapping tweens without position parameter
+const tl = gsap.timeline();
+tl.from(el.querySelector('[data-gsap-title]'), { y: 50, opacity: 0, duration: 0.5 });
+tl.from(el.querySelector('[data-gsap-subtitle]'), { y: 30, opacity: 0, duration: 0.5 });
+
+// GOOD: Use position parameter for precise control
+const tl = gsap.timeline();
+tl.from(el.querySelector('[data-gsap-title]'), { y: 50, opacity: 0, duration: 0.5 })
+    .from(el.querySelector('[data-gsap-subtitle]'), { y: 30, opacity: 0, duration: 0.5 }, '-=0.3')
+    .from(el.querySelector('[data-gsap-cta]'), { y: 20, opacity: 0, duration: 0.5 }, '+=0.2');
+```
+
+**Position Parameter Reference:**
+
+| Value | Meaning |
+|-------|---------|
+| `0.5` | Absolute time (0.5s from start) |
+| `'-=0.3'` | Relative to previous end (0.3s before) |
+| `'+=0.2'` | Relative to previous end (0.2s after) |
+| `'myLabel'` | Named label |
 
 ## External GSAP Skills
 
