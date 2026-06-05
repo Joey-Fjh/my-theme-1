@@ -62,17 +62,30 @@
                                     {{ block.settings.description }}
                                 </div>
 
-                                {%- capture link_content -%}
-                                    <span>{{ block.settings.cta_text }}</span>
-                                    {% render 'icons', icon: 'icon-arrow2', size: 'lg', class: 'ml-3',color: 'current' %}
-                                {%- endcapture -%}
-
-                                {%- render 'link',
-                                    href: block.settings.cta_link,
-                                    content: link_content,
-                                    variant: 'underline',
-                                    color: 'current'
+                                {%- if block.settings.cta_text != blank
+                                    and block.settings.cta_link != blank
                                 -%}
+                                    {%- capture link_content -%}
+                                        <span>{{ block.settings.cta_text }}</span>
+                                        {% render 'icons', icon: 'icon-arrow2', size: 'lg', class: 'ml-3', color: 'current' %}
+                                    {%- endcapture -%}
+
+                                    {%- if block.settings.cta_style == 'button' -%}
+                                        {%- render 'link',
+                                            href: block.settings.cta_link,
+                                            variant: 'plain',
+                                            class: 'btn btn-primary w-fit max-w-full inline-flex items-center justify-center',
+                                            content: link_content
+                                        -%}
+                                    {%- else -%}
+                                        {%- render 'link',
+                                            href: block.settings.cta_link,
+                                            variant: 'underline',
+                                            color: 'current',
+                                            content: link_content
+                                        -%}
+                                    {%- endif -%}
+                                {%- endif -%}
                             </div>
 
                             <div
@@ -460,6 +473,22 @@
                     "id": "cta_link",
                     "label": "t:sections.slides-show.block_settings.link_url",
                     "default": "/collections"
+                },
+                {
+                    "type": "select",
+                    "id": "cta_style",
+                    "label": "t:sections.slides-show.block_settings.call_to_action_style",
+                    "options": [
+                        {
+                            "value": "link",
+                            "label": "t:sections.slides-show.options.link"
+                        },
+                        {
+                            "value": "button",
+                            "label": "t:sections.slides-show.options.button"
+                        }
+                    ],
+                    "default": "link"
                 },
                 {
                     "type": "header",
