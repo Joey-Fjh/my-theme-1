@@ -105,6 +105,7 @@
         PICKUPAVAILABILITY: 'PickupAvailability',
         PREDICTIVESEARCH: 'predictiveSearch',
         RELATEDPRODUCTS: 'relatedProducts',
+        NEWSLETTERBANNER: 'newsletterBanner',
         NEWSLETTEROVERLAY: 'newsletterOverlay',
         CARTOVERLAY: 'cartOverlay',
         CARDGALLERY: 'cardGallery',

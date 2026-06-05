@@ -10,6 +10,67 @@
     if (!AlpineComponentsFactory) return;
 
     ComponentGroups.overlays = {
+        newsletterBanner({
+            successMessage = 'Thanks for subscribing.',
+            errorMessage = 'Subscription failed. Please try again.',
+        } = {}) {
+            return {
+                isLoading: false,
+                successMessage,
+                errorMessage,
+
+                _hydrateFromDataset() {
+                    const ds = this.$el?.dataset;
+                    if (!ds) return;
+                    if (ds.newsletterSuccessMessage) {
+                        this.successMessage = JSON.parse(ds.newsletterSuccessMessage);
+                    }
+                    if (ds.newsletterErrorMessage) {
+                        this.errorMessage = JSON.parse(ds.newsletterErrorMessage);
+                    }
+                },
+
+                init() {
+                    this._hydrateFromDataset();
+                },
+
+                async submit(event) {
+                    if (this.isLoading) return;
+
+                    const form = event?.target;
+                    if (!(form instanceof HTMLFormElement)) return;
+
+                    const emailInput = form.querySelector('input[type="email"]');
+                    if (!emailInput || !emailInput.value) {
+                        window.Alpine?.store('toast')?.show?.(this.errorMessage, 'error');
+                        return;
+                    }
+
+                    this.isLoading = true;
+
+                    try {
+                        const formData = new FormData(form);
+                        const Http = window.ShopifyHttp;
+                        if (!Http?.request) throw new Error('Http client unavailable');
+
+                        await Http.request(form.action, {
+                            method: 'POST',
+                            body: formData,
+                            headers: { Accept: 'text/html' },
+                            credentials: 'same-origin',
+                        });
+
+                        window.Alpine?.store('toast')?.show?.(this.successMessage, 'success');
+                        form.reset();
+                    } catch (_) {
+                        window.Alpine?.store('toast')?.show?.(this.errorMessage, 'error');
+                    } finally {
+                        this.isLoading = false;
+                    }
+                },
+            };
+        },
+
         newsletterOverlay({
             dialogId = '',
             displayMode = 'enable',

@@ -43,22 +43,26 @@
                         <p class="mb-3 opacity-80">
                             {{ article.tags | first }}
                         </p>
-                        <h3 class="mb-3">
+                        <h3 class="mb-3 line-clamp-1 min-w-0" title="{{ article.title | escape }}">
                             {{ article.title }}
                         </h3>
                         {%- if article.url != blank -%}
-                            {%- assign read_more_text = 'accessibility.read_more_about'
-                                | t: title: article.title
+                            {%- liquid
+                                assign link_label = section.settings.link_text | strip
+                                if link_label == blank
+                                    assign link_label = 'sections.blog-stories.defaults.link_text' | t
+                                endif
+                                assign read_more_aria = 'accessibility.read_more_about' | t: title: article.title
                             -%}
                             {%- capture link_content -%}
-                                <span class="body-base">{{ read_more_text }}</span>
+                                <span class="body-base">{{ link_label }}</span>
                                 {% render 'icons', icon: 'icon-arrow2', size: 'lg', class: 'ml-3', color: 'current' %}
                             {%- endcapture -%}
                             {%- render 'link',
                                 class: 'opacity-80 hover:opacity-100 transition-opacity',
                                 href: article.url,
                                 content: link_content,
-                                aria_label: read_more_text,
+                                aria_label: read_more_aria,
                                 variant: 'underline',
                                 color: 'current'
                             -%}
@@ -84,22 +88,34 @@
                         <p class="mb-3 opacity-80">
                             {{ block.settings.subtitle }}
                         </p>
-                        <h3 class="mb-3">
+                        <h3
+                            class="mb-3 line-clamp-1 min-w-0"
+                            title="{{ block.settings.title | strip_html | strip | escape }}"
+                        >
                             {{ block.settings.title }}
                         </h3>
                         {%- if block.settings.link != blank -%}
-                            {%- assign read_more_text = 'accessibility.read_more_about'
-                                | t: title: block.settings.title
+                            {%- liquid
+                                assign link_label = block.settings.article_link_text | strip
+                                if link_label == blank
+                                    assign link_label = 'sections.blog-stories.defaults.link_text' | t
+                                endif
+                                assign block_title_plain = block.settings.title | strip_html | strip
+                                if block_title_plain != blank
+                                    assign read_more_aria = 'accessibility.read_more_about' | t: title: block_title_plain
+                                else
+                                    assign read_more_aria = link_label
+                                endif
                             -%}
                             {%- capture link_content -%}
-                                <span class="body-base">{{ read_more_text }}</span>
+                                <span class="body-base">{{ link_label }}</span>
                                 {% render 'icons', icon: 'icon-arrow2', size: 'lg', class: 'ml-3', color: 'current' %}
                             {%- endcapture -%}
                             {%- render 'link',
                                 class: 'opacity-80 hover:opacity-100 transition-opacity',
                                 href: block.settings.link,
                                 content: link_content,
-                                aria_label: read_more_text,
+                                aria_label: read_more_aria,
                                 variant: 'underline',
                                 color: 'current'
                             -%}

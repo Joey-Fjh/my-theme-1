@@ -48,6 +48,8 @@
                 assign block_render_column = 'gallery'
             elsif context == 'product' and block.type == 'callout' and block.settings.callout_position_desktop == 'gallery'
                 assign block_render_column = 'gallery'
+            elsif context == 'product' and block.type == 'icon_with_text_group' and block.settings.icon_with_text_position_desktop == 'gallery'
+                assign block_render_column = 'gallery'
             elsif context == 'product' and block.type == 'spacer' and block.settings.spacer_position_desktop == 'gallery'
                 assign block_render_column = 'gallery'
             endif
@@ -244,6 +246,55 @@
                         {%- endif -%}
                     </div>
                 </div>
+
+            {%- when 'icon_with_text_group' -%}
+                {%- if block.settings.item_1_title != blank
+                    or block.settings.item_2_title != blank
+                    or block.settings.item_3_title != blank
+                -%}
+                    {%- liquid
+                        assign icon_with_text_direction = block.settings.direction | default: 'vertical'
+                        assign icon_with_text_gap = block.settings.icon_text_gap | default: 8 | plus: 0
+                    -%}
+                    <div
+                        class="product-info-blocks__icon-with-text-group"
+                        {{ block.shopify_attributes }}
+                    >
+                        {%- render 'icon-with-text-item',
+                            title: block.settings.item_1_title,
+                            icon: block.settings.item_1_icon,
+                            link: block.settings.item_1_link,
+                            icon_size: 24,
+                            direction: icon_with_text_direction,
+                            gap: icon_with_text_gap,
+                            alignment: 'center',
+                            class: 'product-info-blocks__icon-with-text-item',
+                            title_class: 'body-sm font-medium'
+                        -%}
+                        {%- render 'icon-with-text-item',
+                            title: block.settings.item_2_title,
+                            icon: block.settings.item_2_icon,
+                            link: block.settings.item_2_link,
+                            icon_size: 24,
+                            direction: icon_with_text_direction,
+                            gap: icon_with_text_gap,
+                            alignment: 'center',
+                            class: 'product-info-blocks__icon-with-text-item',
+                            title_class: 'body-sm font-medium'
+                        -%}
+                        {%- render 'icon-with-text-item',
+                            title: block.settings.item_3_title,
+                            icon: block.settings.item_3_icon,
+                            link: block.settings.item_3_link,
+                            icon_size: 24,
+                            direction: icon_with_text_direction,
+                            gap: icon_with_text_gap,
+                            alignment: 'center',
+                            class: 'product-info-blocks__icon-with-text-item',
+                            title_class: 'body-sm font-medium'
+                        -%}
+                    </div>
+                {%- endif -%}
 
             {%- when 'spacer' -%}
                 {%- liquid

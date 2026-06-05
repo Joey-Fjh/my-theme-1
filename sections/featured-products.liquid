@@ -161,20 +161,14 @@
             tab_content: tab_content
         %}
 
-        {%- liquid
-            assign featured_products_image_sizes = '(min-width: 48rem) min(100vw, ' | append: settings.page_width | append: 'px), 100vw'
-            assign featured_products_image_widths = '480,768,1024,1280,1536,1920,2560'
-        -%}
-        {%-
-            render 'image',
-            image: section.settings.image,
-            alt: section.settings.image.alt | default: '',
-            width: section.settings.image.width,
-            sizes: featured_products_image_sizes,
-            widths: featured_products_image_widths,
-            loading: 'lazy',
-            placeholder_aspect_ratio: '16/5'
-        -%}
+        {%- if section.settings.brand_name != blank -%}
+            {% render 'watermark',
+                container_class: 'relative w-full overflow-hidden pointer-events-none select-none',
+                svg_class: 'mx-auto',
+                text_class: 'font-bold',
+                text: section.settings.brand_name
+            %}
+        {%- endif -%}
     </div>
 </div>
 
@@ -383,9 +377,14 @@
             "default": "wrap"
         },
         {
-            "type": "image_picker",
-            "id": "image",
-            "label": "t:sections.featured-products.settings.image"
+            "type": "header",
+            "content": "t:sections.featured-products.content.brand"
+        },
+        {
+            "type": "inline_richtext",
+            "id": "brand_name",
+            "label": "t:sections.featured-products.settings.brand_name",
+            "default": "t:sections.featured-products.defaults.brand_name"
         },
         {
             "type": "header",

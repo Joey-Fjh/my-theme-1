@@ -1,0 +1,391 @@
+{%- liquid
+    assign desktop_columns = section.settings.desktop_columns | default: '3' | plus: 0
+    assign mobile_columns = section.settings.mobile_columns | default: '1' | plus: 0
+    assign icon_size = section.settings.icon_size | default: 56 | plus: 0
+    assign icon_size_mobile = section.settings.icon_size_mobile | default: icon_size | plus: 0
+    assign icon_text_gap = section.settings.icon_text_gap | default: 16 | plus: 0
+    assign item_gap = section.settings.item_gap | default: 32 | plus: 0
+    assign direction = section.settings.direction | default: 'vertical'
+    assign enable_carousel = section.settings.enable_carousel
+-%}
+
+<div
+    data-section-id="{{ section.id }}"
+    class="icon-with-text-section full-width color-{{ section.settings.color_scheme }} bg-theme-bg text-theme-text"
+    style="
+        --section-padding-top: {{ section.settings.padding_top | default: 0 }}px;
+        --section-padding-bottom: {{ section.settings.padding_bottom | default: 0 }}px;
+        --icon-with-text-columns: {{ desktop_columns }};
+        --icon-with-text-columns-mobile: {{ mobile_columns }};
+        --icon-with-text-item-gap: {{ item_gap }}px;
+    "
+    data-component-kind="section"
+    data-component-type="icon-with-text"
+    data-component-id="{{ section.id }}"
+    data-enable-carousel="{{ enable_carousel }}"
+    data-desktop-columns="{{ desktop_columns }}"
+    data-mobile-columns="{{ mobile_columns }}"
+    data-item-gap="{{ item_gap }}"
+>
+    <div class="layout container-page">
+        {%- if enable_carousel -%}
+            <div class="icon-with-text-section__carousel-header">
+                <div
+                    class="icon-with-text-section__pagination"
+                    data-icon-with-text-pagination
+                ></div>
+            </div>
+            <div class="icon-with-text-section__carousel swiper" data-icon-with-text-swiper>
+                <div class="swiper-wrapper">
+                    {%- for block in section.blocks -%}
+                        {%- if block.settings.title != blank -%}
+                            <div class="swiper-slide" {{ block.shopify_attributes }}>
+                                {%- render 'icon-with-text-item',
+                                    title: block.settings.title,
+                                    icon: block.settings.icon,
+                                    image_icon: block.settings.image_icon,
+                                    link: block.settings.link,
+                                    icon_size: icon_size,
+                                    icon_size_mobile: icon_size_mobile,
+                                    direction: direction,
+                                    gap: icon_text_gap,
+                                    alignment: 'center',
+                                    class: 'icon-with-text-section__item',
+                                    title_class: 'body-xl font-medium'
+                                -%}
+                            </div>
+                        {%- endif -%}
+                    {%- endfor -%}
+                </div>
+            </div>
+        {%- else -%}
+            <div class="icon-with-text-section__grid">
+                {%- for block in section.blocks -%}
+                    {%- if block.settings.title != blank -%}
+                        <div {{ block.shopify_attributes }}>
+                            {%- render 'icon-with-text-item',
+                                title: block.settings.title,
+                                icon: block.settings.icon,
+                                image_icon: block.settings.image_icon,
+                                link: block.settings.link,
+                                icon_size: icon_size,
+                                icon_size_mobile: icon_size_mobile,
+                                direction: direction,
+                                gap: icon_text_gap,
+                                alignment: 'center',
+                                class: 'icon-with-text-section__item',
+                                title_class: 'body-xl font-medium'
+                            -%}
+                        </div>
+                    {%- endif -%}
+                {%- endfor -%}
+            </div>
+        {%- endif -%}
+    </div>
+</div>
+
+{%- javascript -%}
+    (function () {
+        const Components = window.__Theme__?.Components;
+        if (!Components) return;
+
+        Components.register(
+            'icon-with-text',
+            {
+                init(el) {
+                    if (el.getAttribute('data-enable-carousel') !== 'true') return {};
+
+                    const swiperEl = el.querySelector('[data-icon-with-text-swiper]');
+                    if (!swiperEl || typeof Swiper === 'undefined') return {};
+
+                    const desktopColumns =
+                        parseInt(el.getAttribute('data-desktop-columns'), 10) || 3;
+                    const mobileColumns = parseInt(el.getAttribute('data-mobile-columns'), 10) || 1;
+                    const itemGap = parseInt(el.getAttribute('data-item-gap'), 10) || 32;
+                    const paginationEl = el.querySelector('[data-icon-with-text-pagination]');
+
+                    const swiper = new Swiper(swiperEl, {
+                        initialSlide: 0,
+                        slidesPerView: mobileColumns,
+                        slidesPerGroup: mobileColumns,
+                        spaceBetween: itemGap,
+                        autoHeight: true,
+                        observer: true,
+                        observeParents: true,
+                        resizeObserver: true,
+                        watchOverflow: true,
+                        pagination: paginationEl
+                            ? {
+                                  el: paginationEl,
+                                  clickable: true,
+                              }
+                            : false,
+                        breakpoints: {
+                            768: {
+                                slidesPerView: desktopColumns,
+                                slidesPerGroup: desktopColumns,
+                                spaceBetween: itemGap,
+                            },
+                        },
+                    });
+
+                    return { swiper };
+                },
+
+                destroy(_el, state) {
+                    state?.swiper?.destroy?.(true, true);
+                },
+            },
+            { lazy: true },
+        );
+    })();
+{%- endjavascript -%}
+
+{% schema %}
+{
+    "name": "t:sections.icon-with-text.name",
+    "tag": "section",
+    "class": "section",
+    "disabled_on": {
+        "groups": ["header", "footer"]
+    },
+    "settings": [
+        {
+            "type": "color_scheme",
+            "id": "color_scheme",
+            "label": "t:sections.icon-with-text.settings.color_scheme",
+            "default": "scheme-1"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.icon-with-text.content.carousel"
+        },
+        {
+            "type": "checkbox",
+            "id": "enable_carousel",
+            "label": "t:sections.icon-with-text.settings.enable_carousel",
+            "default": false
+        },
+        {
+            "type": "header",
+            "content": "t:sections.icon-with-text.content.layout"
+        },
+        {
+            "type": "select",
+            "id": "desktop_columns",
+            "label": "t:sections.icon-with-text.settings.desktop_columns",
+            "options": [
+                {
+                    "value": "2",
+                    "label": "t:sections.icon-with-text.options.2_columns"
+                },
+                {
+                    "value": "3",
+                    "label": "t:sections.icon-with-text.options.3_columns"
+                },
+                {
+                    "value": "4",
+                    "label": "t:sections.icon-with-text.options.4_columns"
+                }
+            ],
+            "default": "3"
+        },
+        {
+            "type": "select",
+            "id": "mobile_columns",
+            "label": "t:sections.icon-with-text.settings.mobile_columns",
+            "options": [
+                {
+                    "value": "1",
+                    "label": "t:sections.icon-with-text.options.1_column"
+                },
+                {
+                    "value": "2",
+                    "label": "t:sections.icon-with-text.options.2_columns"
+                }
+            ],
+            "default": "1"
+        },
+        {
+            "type": "range",
+            "id": "item_gap",
+            "min": 8,
+            "max": 80,
+            "step": 4,
+            "unit": "px",
+            "label": "t:sections.icon-with-text.settings.item_gap",
+            "default": 32
+        },
+        {
+            "type": "header",
+            "content": "t:sections.icon-with-text.content.icon_and_text"
+        },
+        {
+            "type": "select",
+            "id": "direction",
+            "label": "t:sections.icon-with-text.settings.direction",
+            "options": [
+                {
+                    "value": "vertical",
+                    "label": "t:sections.icon-with-text.options.vertical"
+                },
+                {
+                    "value": "horizontal",
+                    "label": "t:sections.icon-with-text.options.horizontal"
+                }
+            ],
+            "default": "vertical"
+        },
+        {
+            "type": "range",
+            "id": "icon_size",
+            "min": 20,
+            "max": 96,
+            "step": 2,
+            "unit": "px",
+            "label": "t:sections.icon-with-text.settings.icon_size",
+            "default": 56
+        },
+        {
+            "type": "range",
+            "id": "icon_size_mobile",
+            "min": 20,
+            "max": 96,
+            "step": 2,
+            "unit": "px",
+            "label": "t:sections.icon-with-text.settings.icon_size_mobile",
+            "default": 48
+        },
+        {
+            "type": "range",
+            "id": "icon_text_gap",
+            "min": 4,
+            "max": 48,
+            "step": 2,
+            "unit": "px",
+            "label": "t:sections.icon-with-text.settings.icon_text_gap",
+            "default": 16
+        },
+        {
+            "type": "header",
+            "content": "t:sections.icon-with-text.content.padding"
+        },
+        {
+            "type": "range",
+            "id": "padding_top",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "t:sections.icon-with-text.settings.padding_top",
+            "default": 80
+        },
+        {
+            "type": "range",
+            "id": "padding_bottom",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "t:sections.icon-with-text.settings.padding_bottom",
+            "default": 80
+        }
+    ],
+    "blocks": [
+        {
+            "type": "item",
+            "name": "t:sections.icon-with-text.blocks.item",
+            "settings": [
+                {
+                    "type": "inline_richtext",
+                    "id": "title",
+                    "label": "t:sections.icon-with-text.block_settings.title",
+                    "default": "t:sections.icon-with-text.blocks_defaults.title"
+                },
+                {
+                    "type": "select",
+                    "id": "icon",
+                    "label": "t:sections.icon-with-text.block_settings.icon",
+                    "options": [
+                        {
+                            "value": "none",
+                            "label": "t:sections.icon-with-text.options.none"
+                        },
+                        {
+                            "value": "icon-cart",
+                            "label": "t:sections.icon-with-text.options.cart"
+                        },
+                        {
+                            "value": "icon-check",
+                            "label": "t:sections.icon-with-text.options.check"
+                        },
+                        {
+                            "value": "icon-check-circle",
+                            "label": "t:sections.icon-with-text.options.check_circle"
+                        },
+                        {
+                            "value": "icon-info-circle",
+                            "label": "t:sections.icon-with-text.options.info_circle"
+                        },
+                        {
+                            "value": "icon-star",
+                            "label": "t:sections.icon-with-text.options.star"
+                        },
+                        {
+                            "value": "icon-arrow2",
+                            "label": "t:sections.icon-with-text.options.arrow_2"
+                        },
+                        {
+                            "value": "icon-eyeglasses",
+                            "label": "t:sections.icon-with-text.options.eyeglasses"
+                        },
+                        {
+                            "value": "icon-search",
+                            "label": "t:sections.icon-with-text.options.search"
+                        }
+                    ],
+                    "default": "icon-check"
+                },
+                {
+                    "type": "image_picker",
+                    "id": "image_icon",
+                    "label": "t:sections.icon-with-text.block_settings.image_icon"
+                },
+                {
+                    "type": "url",
+                    "id": "link",
+                    "label": "t:sections.icon-with-text.block_settings.link"
+                }
+            ]
+        }
+    ],
+    "presets": [
+        {
+            "name": "t:sections.icon-with-text.presets.icon_with_text",
+            "blocks": [
+                {
+                    "type": "item",
+                    "settings": {
+                        "title": "t:sections.icon-with-text.blocks_defaults.sustainable_materials",
+                        "icon": "icon-star"
+                    }
+                },
+                {
+                    "type": "item",
+                    "settings": {
+                        "title": "t:sections.icon-with-text.blocks_defaults.supporting_local_charity",
+                        "icon": "icon-check-circle"
+                    }
+                },
+                {
+                    "type": "item",
+                    "settings": {
+                        "title": "t:sections.icon-with-text.blocks_defaults.return_policy",
+                        "icon": "icon-info-circle"
+                    }
+                }
+            ]
+        }
+    ]
+}
+{% endschema %}

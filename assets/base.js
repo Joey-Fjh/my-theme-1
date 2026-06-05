@@ -513,6 +513,7 @@
                         Factory.register?.(Comps.PICKUPAVAILABILITY, Comps.PickupAvailability);
                         Factory.register?.(Comps.PREDICTIVESEARCH, Comps.predictiveSearch);
                         Factory.register?.(Comps.RELATEDPRODUCTS, Comps.relatedProducts);
+                        Factory.register?.(Comps.NEWSLETTERBANNER, Comps.newsletterBanner);
                         Factory.register?.(Comps.NEWSLETTEROVERLAY, Comps.newsletterOverlay);
                         Factory.register?.(Comps.CARTOVERLAY, Comps.cartOverlay);
                         Factory.register?.(Comps.CARDGALLERY, Comps.cardGallery);

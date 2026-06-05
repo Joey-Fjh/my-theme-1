@@ -21,13 +21,21 @@
             -%}
 
             {% comment %} Frosted glass center overlay {% endcomment %}
-            <div
-                class="absolute inset-0 backdrop-blur-md"
-                style="
-                    mask-image: radial-gradient(ellipse 60% 80% at center, black 0%, transparent 100%);
-                    -webkit-mask-image: radial-gradient(ellipse 60% 80% at center, black 0%, transparent 100%);
-                "
-            ></div>
+            {%- assign blur_enabled = section.settings.enable_blur_overlay
+                | default: true, allow_false: true
+            -%}
+            {%- assign blur_r = section.settings.blur_radius | default: 12 -%}
+            {%- if blur_enabled and blur_r > 0 -%}
+                <div
+                    class="absolute inset-0"
+                    style="
+                        backdrop-filter: blur({{ blur_r }}px);
+                        -webkit-backdrop-filter: blur({{ blur_r }}px);
+                        mask-image: radial-gradient(ellipse {{ section.settings.blur_mask_width | default: 60 }}% {{ section.settings.blur_mask_height | default: 80 }}% at {{ section.settings.blur_position_x | default: 50 }}% {{ section.settings.blur_position_y | default: 50 }}%, black 0%, transparent 100%);
+                        -webkit-mask-image: radial-gradient(ellipse {{ section.settings.blur_mask_width | default: 60 }}% {{ section.settings.blur_mask_height | default: 80 }}% at {{ section.settings.blur_position_x | default: 50 }}% {{ section.settings.blur_position_y | default: 50 }}%, black 0%, transparent 100%);
+                    "
+                ></div>
+            {%- endif -%}
 
             {% comment %} Content {% endcomment %}
             <div class="relative z-10 flex h-full flex-col items-center justify-center gap-4 px-4 text-center text-theme-text opacity-100 pc:gap-6">
@@ -37,44 +45,52 @@
                 <h2 class="h2 pc:h1">
                     {{ section.settings.heading }}
                 </h2>
-                {% form 'customer', class: 'mt-4 w-full max-w-xl pc:mt-0' %}
-                    <input type="hidden" name="customer[accepts_marketing]" value="true">
-                    <input type="hidden" name="customer[tags]" value="newsletter">
+                <div
+                    class="mt-4 w-full max-w-xl pc:mt-0"
+                    x-data="newsletterBanner()"
+                    data-newsletter-success-message="{{ 'newsletter.success_message' | t | json }}"
+                    data-newsletter-error-message="{{ 'newsletter.error_message' | t | json }}"
+                    @submit.prevent="submit($event)"
+                >
+                    {%- assign email_placeholder_fallback = 'newsletter.email_placeholder' | t -%}
+                    {%- form 'customer' -%}
+                        <input type="hidden" name="customer[accepts_marketing]" value="true">
+                        <input type="hidden" name="customer[tags]" value="newsletter">
 
-                    <div class="flex w-full flex-col gap-3 pc:flex-row">
-                        <input
-                            type="email"
-                            name="customer[email]"
-                            x-model="email"
-                            placeholder="{{ 'newsletter.email_placeholder' | t }}"
-                            required
-                            class="field flex-1 placeholder:text-theme-text/80"
-                        >
-                        <button
-                            type="submit"
-                            class="btn w-full btn-primary pc:w-auto"
-                            aria-label="{{ 'newsletter.subscribe' | t }}"
-                            :disabled="loading"
-                        >
-                            <span x-show="!loading" class="pc:hidden">
-                                {{- 'newsletter.subscribe' | t -}}
-                            </span>
-                            <span x-show="!loading">
-                                {%- render 'icons',
-                                    icon: 'icon-arrow2',
-                                    size: 'md',
-                                    color: 'current'
-                                -%}
-                            </span>
-                            <span x-show="loading" x-cloak>
-                                {%- render 'loading',
-                                    size: 'small',
-                                    spinner_color: 'border-current'
-                                -%}
-                            </span>
-                        </button>
-                    </div>
-                {% endform %}
+                        <div class="flex w-full flex-col gap-3 pc:grid pc:grid-cols-[minmax(0,1fr)_auto]">
+                            <input
+                                type="email"
+                                name="customer[email]"
+                                placeholder="{{ section.settings.placeholder | default: email_placeholder_fallback | escape }}"
+                                required
+                                class="min-h-0 field flex-1 placeholder:text-theme-text/80"
+                            >
+                            <button
+                                type="submit"
+                                class="btn h-12 w-full shrink-0 btn-primary pc:aspect-square pc:h-full pc:w-auto pc:px-0"
+                                aria-label="{{ 'newsletter.subscribe' | t }}"
+                                :disabled="isLoading"
+                            >
+                                <span x-show="!isLoading" class="pc:hidden">
+                                    {{- 'newsletter.subscribe' | t -}}
+                                </span>
+                                <span x-show="!isLoading">
+                                    {%- render 'icons',
+                                        icon: 'icon-arrow2',
+                                        size: 'md',
+                                        color: 'current'
+                                    -%}
+                                </span>
+                                <span x-show="isLoading" x-cloak>
+                                    {% render 'loading',
+                                        size: 'small',
+                                        spinner_color: 'border-current'
+                                    %}
+                                </span>
+                            </button>
+                        </div>
+                    {%- endform -%}
+                </div>
             </div>
         </div>
     </div>
@@ -117,6 +133,66 @@
             "id": "placeholder",
             "label": "t:sections.newsletter-banner.settings.input_placeholder",
             "default": "t:sections.newsletter-banner.defaults.input_placeholder"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.newsletter-banner.content.blur_overlay"
+        },
+        {
+            "type": "checkbox",
+            "id": "enable_blur_overlay",
+            "label": "t:sections.newsletter-banner.settings.enable_blur_overlay",
+            "default": true
+        },
+        {
+            "type": "range",
+            "id": "blur_radius",
+            "min": 0,
+            "max": 40,
+            "step": 1,
+            "unit": "px",
+            "label": "t:sections.newsletter-banner.settings.blur_radius",
+            "default": 12
+        },
+        {
+            "type": "range",
+            "id": "blur_mask_width",
+            "min": 10,
+            "max": 100,
+            "step": 5,
+            "unit": "%",
+            "label": "t:sections.newsletter-banner.settings.blur_mask_width",
+            "default": 60
+        },
+        {
+            "type": "range",
+            "id": "blur_mask_height",
+            "min": 10,
+            "max": 100,
+            "step": 5,
+            "unit": "%",
+            "label": "t:sections.newsletter-banner.settings.blur_mask_height",
+            "default": 80
+        },
+        {
+            "type": "range",
+            "id": "blur_position_x",
+            "min": 0,
+            "max": 100,
+            "step": 5,
+            "unit": "%",
+            "label": "t:sections.newsletter-banner.settings.blur_position_x",
+            "default": 50
+        },
+        {
+            "type": "range",
+            "id": "blur_position_y",
+            "min": 0,
+            "max": 100,
+            "step": 5,
+            "unit": "%",
+            "label": "t:sections.newsletter-banner.settings.blur_position_y",
+            "default": 50
         },
         {
             "type": "header",
