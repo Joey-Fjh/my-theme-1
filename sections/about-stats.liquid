@@ -7,7 +7,7 @@
     "
 >
     <div class="layout container-page bg-theme-bg text-theme-text">
-        <div class="flex flex-col gap-20 pc:flex-row pc:gap-80">
+        <div class="flex flex-col gap-12 pc:grid pc:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] pc:items-stretch pc:gap-20 fw:gap-28">
             {% comment %} Image {% endcomment %}
             {%- liquid
                 assign primary_image = section.settings.image
@@ -18,77 +18,77 @@
                     assign has_both_images = true
                 endif
             -%}
-            <div class="relative shrink-0">
+            <div class="relative w-full shrink-0">
                 {%- if has_both_images -%}
-                    <div class="flex w-full gap-4 pc:hidden">
-                        <div class="h-56 w-1/2 overflow-hidden">
+                    <div class="w-full pc:hidden">
+                        <div class="aspect-square overflow-hidden">
                             {%- render 'image',
                                 image: primary_image,
                                 alt: primary_image.alt,
-                                width: primary_image.width
-                            -%}
-                        </div>
-                        <div class="h-56 w-1/2 overflow-hidden">
-                            {%- render 'image',
-                                image: secondary_image,
-                                alt: secondary_image.alt,
-                                width: secondary_image.width
+                                width: primary_image.width,
+                                sizes: '100vw'
                             -%}
                         </div>
                     </div>
 
                     <div
-                        class="relative hidden h-100 w-64 pc:block"
+                        class="relative hidden aspect-square w-full pc:block"
                         x-data="{ activeImage: 'primary' }"
                     >
                         <button
                             type="button"
-                            class="absolute left-0 h-64 w-64 overflow-hidden transition-all duration-500 ease-out"
-                            :class="activeImage === 'primary' ? 'top-0 z-20 opacity-100' : 'top-36 z-10 opacity-95'"
+                            class="absolute top-0 left-0 aspect-square w-[62.5%] origin-center cursor-pointer overflow-hidden transition-[transform,opacity,filter] duration-[520ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform focus-visible:ring-2 focus-visible:ring-theme-text motion-reduce:transition-none"
+                            :class="activeImage === 'primary' ? 'z-20 opacity-100 brightness-100 [transform:translate3d(0,0,0)_scale(1)]' : 'z-10 opacity-70 brightness-90 [transform:translate3d(1rem,1rem,0)_scale(0.94)]'"
                             @click="activeImage = 'primary'"
+                            :aria-pressed="String(activeImage === 'primary')"
                             aria-label="{{ 'accessibility.show_first_image' | t }}"
                         >
                             {%- render 'image',
                                 image: primary_image,
                                 alt: primary_image.alt,
-                                width: primary_image.width
+                                width: primary_image.width,
+                                sizes: '(min-width: 1280px) 17vw, 16vw'
                             -%}
                         </button>
 
                         <button
                             type="button"
-                            class="absolute left-0 h-64 w-64 overflow-hidden transition-all duration-500 ease-out"
-                            :class="activeImage === 'secondary' ? 'top-0 z-20 opacity-100' : 'top-36 z-10 opacity-95'"
+                            class="absolute right-0 bottom-0 aspect-square w-[62.5%] origin-center cursor-pointer overflow-hidden transition-[transform,opacity,filter] duration-[520ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform focus-visible:ring-2 focus-visible:ring-theme-text motion-reduce:transition-none"
+                            :class="activeImage === 'secondary' ? 'z-20 opacity-100 brightness-100 [transform:translate3d(0,0,0)_scale(1)]' : 'z-10 opacity-70 brightness-90 [transform:translate3d(-1rem,-1rem,0)_scale(0.94)]'"
                             @click="activeImage = 'secondary'"
+                            :aria-pressed="String(activeImage === 'secondary')"
                             aria-label="{{ 'accessibility.show_second_image' | t }}"
                         >
                             {%- render 'image',
                                 image: secondary_image,
                                 alt: secondary_image.alt,
-                                width: secondary_image.width
+                                width: secondary_image.width,
+                                sizes: '(min-width: 1280px) 17vw, 16vw'
                             -%}
                         </button>
                     </div>
                 {%- else -%}
-                    <div class="h-56 w-56 overflow-hidden pc:hidden">
+                    <div class="aspect-square w-full overflow-hidden pc:hidden">
                         {%- render 'image',
                             image: display_image,
                             alt: display_image.alt,
-                            width: display_image.width
+                            width: display_image.width,
+                            sizes: '100vw'
                         -%}
                     </div>
-                    <div class="hidden h-64 w-64 overflow-hidden pc:block">
+                    <div class="hidden aspect-square w-full overflow-hidden pc:block">
                         {%- render 'image',
                             image: display_image,
                             alt: display_image.alt,
-                            width: display_image.width
+                            width: display_image.width,
+                            sizes: '(min-width: 1280px) 32vw, 40vw'
                         -%}
                     </div>
                 {%- endif -%}
             </div>
 
             {% comment %} Content {% endcomment %}
-            <div class="flex flex-1 flex-col gap-12 pc:gap-20">
+            <div class="flex flex-1 flex-col gap-12 pc:h-full pc:justify-between pc:gap-16">
                 <p class="body-md opacity-80">
                     {{ section.settings.year }}
                 </p>
@@ -124,6 +124,17 @@
                     {%- endfor -%}
                 </div>
             </div>
+
+            {%- if has_both_images -%}
+                <div class="aspect-square w-full overflow-hidden pc:hidden">
+                    {%- render 'image',
+                        image: secondary_image,
+                        alt: secondary_image.alt,
+                        width: secondary_image.width,
+                        sizes: '100vw'
+                    -%}
+                </div>
+            {%- endif -%}
         </div>
     </div>
 </div>

@@ -33,27 +33,29 @@ Project-level installation is especially risky in this repository because `.clau
 
 ## Candidate Registry
 
-| Source | Default level | Intended value | Project adaptation boundary |
-| --- | --- | --- | --- |
-| `greensock/gsap-skills` | Reference only | GSAP API, timelines, ScrollTrigger, performance guidance | Must map to `Components.register()`, `window.__Theme__.Motion`, scoped selectors, cleanup, no-JS visibility, and launch readiness |
-| `obra/superpowers` | Reference only | Workflow chain, relevant-skill checking, planning discipline | May inspire router/workflow docs; do not import its mandatory TDD or subagent process wholesale |
-| `garrytan/gstack` | Reference only | Slash-command workflows, specialist roles, review/QA/release flow | May inspire future tool adapters; do not require gstack or list its commands in `AGENTS.md` |
-| `mattpocock/skills` | Reference only | Small composable skills, setup skill, shared language/docs | May inspire project setup/routing skills; adapt to Shopify theme boundaries first |
+| Source | Adoption level | Intended value | Project adaptation boundary | Routing |
+| --- | --- | --- | --- | --- |
+| `greensock/gsap-skills` | **Adapted workflow** | GSAP API, timelines, ScrollTrigger, performance guidance | Core patterns adapted into `docs/references/architecture/motion-architecture.md`. Consult original for advanced GSAP API questions not covered there. | Motion, animation, GSAP tasks → `motion-architecture.md` first; consult original only for API gaps |
+| `garrytan/gstack` | Reference only | Iterative requirement gathering (Confusion Protocol), design consultation, systematic debugging | Consult for requirement clarification through forcing questions before implementation. Also useful for design system thinking and root-cause debugging. Do not import slash-command surface or multi-role structure. | Ambiguous or broad user requests → requirement gathering patterns (Confusion Protocol); Design review → design consultation; Debugging → investigation methodology |
+| `obra/superpowers` | Reference only | TDD for architecture judgment, planning discipline, bite-sized task breakdown | Consult for RED-GREEN-REFACTOR verification mindset when making architecture decisions. Also useful for complex multi-section planning. Do not import rigid workflow chain wholesale. | Architecture decisions → TDD verification patterns; Complex implementation → planning methodology |
+| `anthropics/skills` (`frontend-design`) | Reference only | Distinctive frontend design, anti-AI-slop aesthetics, typography, color systems, motion, spatial composition | Consult for design direction and aesthetic quality when building UI components or pages. Project already has GSAP motion architecture and Tailwind utility system; adapt design guidance to project's existing token and typography tiers. Do not import wholesale. | UI/CSS design → design direction and aesthetics; Anti-AI-slop → distinctive visual choices |
 
 ## Workflow Skill Strategy
 
-External workflow skills such as `obra/superpowers`, `garrytan/gstack`, and `mattpocock/skills` remain **Reference only** by default.
+External workflow skills such as `obra/superpowers`, `garrytan/gstack`, and `anthropics/skills` (`frontend-design`) remain **Reference only** by default but are **routable** — the routing table in `skill-routing.md` identifies which task classes should consult them.
 
-Agents SHOULD NOT proactively read, install, or adapt these skills during ordinary theme work. They MAY consult them only when a concrete workflow gap appears, such as agent routing drift, cross-session handoff weakness, review or release process design, command workflow planning, or project skill authoring.
+When the routing table or `agent-router` directs consultation, the agent SHOULD read the relevant external skill for that task. This is not "install and auto-trigger"; it is "read and apply selectively."
 
-When a workflow skill is consulted, agents must report:
+Agents SHOULD NOT install external skills into `.agents/skills/` or `.claude/skills/`. Reading from the original source (GitHub, web) is temporary research and does not require installation.
 
-- what workflow gap triggered the consultation
-- what idea was useful
-- what was rejected
-- whether the idea should be adapted into project-owned docs
+When an external skill is consulted for a routed task, agents must report:
 
-Do not import external workflow systems wholesale.
+- what task triggered the consultation
+- what idea or pattern was useful
+- what was rejected (and why)
+- whether the idea should be adapted into project-owned docs permanently
+
+Do not import external workflow systems wholesale. Extract only the patterns relevant to the current task.
 
 ## Use Procedure
 

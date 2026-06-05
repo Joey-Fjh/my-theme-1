@@ -2,6 +2,22 @@
 {% assign thumb_position = section.settings.thumbnail_position | default: 'left' %}
 {% assign desktop_media_width = section.settings.desktop_media_width | default: 60 | plus: 0 %}
 {% assign desktop_info_width = 100 | minus: desktop_media_width %}
+{% assign media_aspect_ratio = section.settings.media_aspect_ratio | default: 'portrait_3_4' %}
+{% assign gallery_aspect_ratio = '3/4' %}
+{% case media_aspect_ratio %}
+    {% when 'square_1_1' %}
+        {% assign gallery_aspect_ratio = '1/1' %}
+{% endcase %}
+{% assign desktop_media_height = section.settings.desktop_media_height | default: 'balanced' %}
+{% assign desktop_media_max_height = blank %}
+{% case desktop_media_height %}
+    {% when 'compact' %}
+        {% assign desktop_media_max_height = '80svh' %}
+    {% when 'balanced' %}
+        {% assign desktop_media_max_height = '90svh' %}
+    {% when 'full_screen' %}
+        {% assign desktop_media_max_height = '100svh' %}
+{% endcase %}
 {% assign has_gallery_blocks = false %}
 {% for block in section.blocks %}
     {% if block.type == 'description' and block.settings.position_desktop == 'gallery' %}
@@ -63,7 +79,8 @@
                         magnifier_preview_height: section.settings.magnifier_preview_size,
                         zoom_overlay_color: section.settings.zoom_overlay_color,
                         zoom_overlay_opacity: section.settings.zoom_overlay_opacity,
-                        aspect_ratio: '3/4'
+                        aspect_ratio: gallery_aspect_ratio,
+                        max_height: desktop_media_max_height
                     -%}
                 </div>
 
@@ -160,6 +177,47 @@
             "unit": "%",
             "label": "t:sections.product.settings.desktop_media_width",
             "default": 60
+        },
+        {
+            "type": "select",
+            "id": "media_aspect_ratio",
+            "label": "t:sections.product.settings.media_aspect_ratio",
+            "options": [
+                {
+                    "value": "portrait_3_4",
+                    "label": "t:sections.product.options.portrait_3_4"
+                },
+                {
+                    "value": "square_1_1",
+                    "label": "t:sections.product.options.square_1_1"
+                }
+            ],
+            "default": "portrait_3_4"
+        },
+        {
+            "type": "select",
+            "id": "desktop_media_height",
+            "label": "t:sections.product.settings.desktop_media_height",
+            "options": [
+                {
+                    "value": "original",
+                    "label": "t:sections.product.options.original"
+                },
+                {
+                    "value": "compact",
+                    "label": "t:sections.product.options.compact"
+                },
+                {
+                    "value": "balanced",
+                    "label": "t:sections.product.options.balanced"
+                },
+                {
+                    "value": "full_screen",
+                    "label": "t:sections.product.options.full_screen"
+                }
+            ],
+            "default": "balanced",
+            "info": "t:sections.product.info.controls_desktop_gallery_height"
         },
         {
             "type": "select",

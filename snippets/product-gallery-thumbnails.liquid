@@ -12,6 +12,7 @@
     @param {number}  magnifier_preview_height - Optional fixed magnifier preview height in pixels
     @param {number}  magnifier_preview_max_width - Maximum magnifier preview width in pixels
     @param {string}  aspect_ratio    - Optional CSS aspect-ratio (fallback when first image has no ratio)
+    @param {string}  max_height      - Optional desktop max height for the main gallery media box
 {% endcomment %}
 
 {%- assign is_left = true -%}
@@ -33,11 +34,10 @@
 {%- elsif gallery_aspect == blank -%}
     {%- assign gallery_aspect = images.first.aspect_ratio | default: '3/4' -%}
 {%- endif -%}
-
 <div
     class="
         {% if is_left %}
-          flex flex-col pc:grid pc:grid-cols-[minmax(auto,10%)_auto] gap-4 pc:gap-2 min-w-0 w-full h-full
+          flex flex-col pc:grid pc:grid-cols-[minmax(auto,10%)_minmax(0,1fr)] gap-4 pc:gap-2 min-w-0 w-full h-full
         {% else %}
           flex flex-col gap-3 min-w-0 w-full
         {% endif %}
@@ -73,7 +73,8 @@
                     :tabindex="activeIndex === {{ forloop.index0 }} ? 0 : -1"
                     :aria-selected="activeIndex === {{ forloop.index0 }}"
                     @click="setActive({{ forloop.index0 }})"
-                    class="block aspect-[3/4] w-20 shrink-0 cursor-pointer overflow-hidden rounded-sm border-2 transition-all duration-200 pc:w-full"
+                    class="block w-20 shrink-0 cursor-pointer overflow-hidden rounded-sm border-2 transition-all duration-200 pc:w-full"
+                    style="aspect-ratio: {{ gallery_aspect }};"
                     :class="
                         activeIndex === {{ forloop.index0 }}
                         ? 'border-focus'
@@ -88,7 +89,7 @@
                         sizes: thumb_sizes,
                         widths: thumb_widths,
                         loading: 'lazy',
-                        aspect_ratio: '3/4'
+                        aspect_ratio: gallery_aspect
                     -%}
                 </button>
             {%- endfor -%}
@@ -104,7 +105,8 @@
                     :tabindex="activeIndex === {{ forloop.index0 }} ? 0 : -1"
                     :aria-selected="activeIndex === {{ forloop.index0 }}"
                     @click="setActive({{ forloop.index0 }})"
-                    class="block aspect-[3/4] w-20 shrink-0 cursor-pointer overflow-hidden rounded-sm border-2 transition-all duration-200 pc:w-[calc((100%-((var(--thumbnail-visible-count)-1)*0.5rem))/var(--thumbnail-visible-count))]"
+                    class="block w-20 shrink-0 cursor-pointer overflow-hidden rounded-sm border-2 transition-all duration-200 pc:w-[calc((100%-((var(--thumbnail-visible-count)-1)*0.5rem))/var(--thumbnail-visible-count))]"
+                    style="aspect-ratio: {{ gallery_aspect }};"
                     :class="
                         activeIndex === {{ forloop.index0 }}
                         ? 'border-focus'
@@ -119,7 +121,7 @@
                         sizes: thumb_sizes,
                         widths: thumb_widths,
                         loading: 'lazy',
-                        aspect_ratio: '3/4'
+                        aspect_ratio: gallery_aspect
                     -%}
                 </button>
             {%- endfor -%}
@@ -129,11 +131,20 @@
     <div
         class="
             relative min-w-0 flex-1 overflow-hidden rounded-sm bg-theme-bg
+            pc:w-full
+            {% if max_height != blank %}
+              pc:max-h-(--product-gallery-max-height)
+            {% endif %}
             {% unless is_left %}
               pc:min-h-0 pc:flex-[4_1_0%]
             {% endunless %}
         "
-        style="aspect-ratio: {{ gallery_aspect }};"
+        style="
+            aspect-ratio: {{ gallery_aspect }};
+            {% if max_height != blank %}
+                --product-gallery-max-height: {{ max_height }};
+            {% endif %}
+        "
         role="tabpanel"
     >
         {%- for image in images -%}

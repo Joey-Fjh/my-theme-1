@@ -25,7 +25,12 @@ Read `docs/references/agent-workflow/collaboration-standard.md` for the definiti
 | Task class | Route | Read before acting | Validation |
 | --- | --- | --- | --- |
 | Implement theme behavior | `implement-theme-pattern` | Matching architecture or pattern reference | `run-shopify-theme` chooses checks |
-| Review diff or launch readiness | `code-review` | `code-review/pre-merge.md` or `launch-gate.md` | Review may run targeted checks |
+| Ambiguous or broad user request | `implement-theme-pattern` | Matching architecture reference. Consult `garrytan/gstack` Confusion Protocol for requirement clarification through forcing questions before implementation. | `run-shopify-theme` chooses checks |
+| Architecture decisions with verification | `implement-theme-pattern` | Matching architecture reference. Consult `obra/superpowers` TDD patterns for RED-GREEN-REFACTOR verification of architecture choices. | `run-shopify-theme` chooses checks |
+| Complex or broad implementation | `implement-theme-pattern` | Matching architecture or pattern reference. Consult `obra/superpowers` for bite-sized task breakdown and planning discipline. | `run-shopify-theme` chooses checks |
+| UI/CSS design or accessibility | `implement-theme-pattern` | Matching architecture reference. Consult `anthropics/skills` `frontend-design` for design direction, anti-AI-slop aesthetics, typography, color systems, and spatial composition. | `run-shopify-theme` chooses checks |
+| Review diff or launch readiness | `code-review` | `code-review/pre-merge.md` or `launch-gate.md`. Consult `garrytan/gstack` review patterns for structured review checklists. | Review may run targeted checks |
+| Debugging or root-cause investigation | `implement-theme-pattern` | Matching architecture reference. Consult `garrytan/gstack` investigation methodology for systematic debugging. | Targeted validation of the fix |
 | Validate current state | `run-shopify-theme` | Command docs in `AGENTS.md` and relevant skill | Smallest proving command |
 | i18n or user-facing copy | `check-i18n` | `code-review/i18n-checklist.md` | `npm run lint:i18n` |
 | Liquid/JS architecture | `check-theme-architecture` | Matching architecture/pattern reference | `npm run lint:theme` |

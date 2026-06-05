@@ -10,6 +10,7 @@
     @param {number}  magnifier_preview_height - Optional fixed magnifier preview height in pixels
     @param {number}  magnifier_preview_max_width - Maximum magnifier preview width in pixels
     @param {string}  aspect_ratio - Optional CSS aspect-ratio (fallback when first image has no ratio)
+    @param {string}  max_height   - Optional desktop max height for the carousel media box
 {% endcomment %}
 
 {%- assign first_img = images.first -%}
@@ -21,12 +22,22 @@
 {%- endif -%}
 
 <div
-    class="swiper w-full min-w-0 overflow-hidden rounded-sm"
+    class="
+        swiper w-full min-w-0 overflow-hidden rounded-sm
+        {% if max_height != blank %}
+          pc:max-h-(--product-gallery-max-height)
+        {% endif %}
+    "
     data-gallery-swiper
     role="group"
     aria-label="{{ 'accessibility.product_gallery_carousel' | t }}"
     aria-roledescription="{{ 'accessibility.carousel' | t }}"
-    style="aspect-ratio: {{ gallery_aspect }};"
+    style="
+        aspect-ratio: {{ gallery_aspect }};
+        {% if max_height != blank %}
+            --product-gallery-max-height: {{ max_height }};
+        {% endif %}
+    "
 >
     <div class="swiper-wrapper">
         {%- for image in images -%}

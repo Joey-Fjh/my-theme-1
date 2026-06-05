@@ -14,64 +14,22 @@
             x-data="mobileMenuDrawer"
             @keydown.escape.window="$store.dialog.close()"
         >
-            <h2 id="dialog-title-{{ popup_id }}" class="sr-only">
-                {{ 'accessibility.menu' | t }}
-            </h2>
+            <div class="flex items-center justify-between border-b border-theme-border-soft px-6 py-5">
+                <h2 id="dialog-title-{{ popup_id }}" class="body-md tracking-wide uppercase">
+                    {{ 'accessibility.menu' | t }}
+                </h2>
 
-            <div class="p-6">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-9">
-                        {%- capture search_content -%}
-                            {% render 'icons', icon: 'icon-search', size: 'xl', color: 'current' %}
-                        {%- endcapture -%}
-
-                        {%- render 'link',
-                            href: routes.search_url,
-                            aria_label: '{{ "accessibility.search" | t }}',
-                            content: search_content,
-                            variant: 'plain',
-                            color: 'current',
-                            attributes: '@click="$store.dialog.close()"'
-                        -%}
-
-                        {%- capture cart_content -%}
-                            {% render 'icons', icon: 'icon-cart', size: 'xl', color: 'current' %}
-                        {%- endcapture -%}
-
-                        {%- render 'link',
-                            href: routes.cart_url,
-                            aria_label: '{{ "accessibility.cart" | t }}',
-                            content: cart_content,
-                            variant: 'plain',
-                            color: 'current',
-                            attributes: '@click="$store.dialog.close()"'
-                        -%}
-
-                        {%- capture account_content -%}
-                            {% render 'icons', icon: 'icon-account', size: 'xl', color: 'current' %}
-                        {%- endcapture -%}
-
-                        {%- render 'link',
-                            href: account_href,
-                            aria_label: '{{ "accessibility.account" | t }}',
-                            content: account_content,
-                            variant: 'plain',
-                            color: 'current',
-                            attributes: '@click="$store.dialog.close()"'
-                        -%}
-                    </div>
-
-                    <button
-                        type="button"
-                        @click="$store.dialog.close()"
-                        aria-label="{{ 'accessibility.close_mobile_menu' | t }}"
-                    >
-                        {% render 'icons', icon: 'icon-close', size: 'xl', color: 'current' %}
-                    </button>
-                </div>
+                <button
+                    type="button"
+                    class="inline-flex cursor-pointer items-center justify-center"
+                    @click="$store.dialog.close()"
+                    aria-label="{{ 'accessibility.close_mobile_menu' | t }}"
+                >
+                    {% render 'icons', icon: 'icon-close', size: 'xl', color: 'current' %}
+                </button>
             </div>
 
-            <div class="min-h-0 flex-1 overflow-y-auto p-6">
+            <div class="min-h-0 flex-1 overflow-y-auto px-6 py-6">
                 <template x-if="!thirdLevelLinks.length">
                     <nav aria-label="{{ 'accessibility.mobile_menu' | t }}">
                         <ul x-ref="topMenu" class="space-y-4" role="list">
@@ -197,18 +155,58 @@
                     </div>
                 </template>
             </div>
+
+            <div class="flex items-center gap-9 border-t border-theme-border-soft px-6 py-5">
+                {%- capture search_content -%}
+                    {% render 'icons', icon: 'icon-search', size: 'xl', color: 'current' %}
+                {%- endcapture -%}
+
+                {%- render 'link',
+                    href: routes.search_url,
+                    aria_label: '{{ "accessibility.search" | t }}',
+                    content: search_content,
+                    variant: 'plain',
+                    color: 'current',
+                    attributes: '@click="$store.dialog.close()"'
+                -%}
+
+                {%- capture cart_content -%}
+                    {% render 'icons', icon: 'icon-cart', size: 'xl', color: 'current' %}
+                {%- endcapture -%}
+
+                {%- render 'link',
+                    href: routes.cart_url,
+                    aria_label: '{{ "accessibility.cart" | t }}',
+                    content: cart_content,
+                    variant: 'plain',
+                    color: 'current',
+                    attributes: '@click="$store.dialog.close()"'
+                -%}
+
+                {%- capture account_content -%}
+                    {% render 'icons', icon: 'icon-account', size: 'xl', color: 'current' %}
+                {%- endcapture -%}
+
+                {%- render 'link',
+                    href: account_href,
+                    aria_label: '{{ "accessibility.account" | t }}',
+                    content: account_content,
+                    variant: 'plain',
+                    color: 'current',
+                    attributes: '@click="$store.dialog.close()"'
+                -%}
+            </div>
         </div>
     {%- endcapture -%}
 
     {%- render 'ui-dialog',
         id: popup_id,
-        type: 'drawer',
-        position: 'left',
+        type: 'modal',
+        modal_placement: 'center',
         top_class: 'top-[var(--announcement-bar-height)]',
         root_class: 'z-[10010]',
         color_scheme: color_scheme,
-        drawer_wrapper_class: '!max-w-none',
-        drawer_panel_class: 'overflow-hidden',
+        modal_panel_class: 'h-[70dvh] overflow-hidden',
         content: drawer_content
     -%}
 {%- endif -%}

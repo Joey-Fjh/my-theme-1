@@ -583,6 +583,8 @@ tl.from(el.querySelector('[data-gsap-title]'), { y: 50, opacity: 0, duration: 0.
 
 ## External GSAP Skills
 
-Official or external GSAP skills MAY be used as technical references for GSAP API behavior and recommended choreography patterns.
+`greensock/gsap-skills` has been adapted to **Adapted workflow** level. Core GSAP patterns are already documented in this file.
 
-Read `docs/references/agent-workflow/external-skills.md` before using `greensock/gsap-skills` or any other external GSAP skill. External GSAP recommendations must map back to this theme's lifecycle, motion runtime, cleanup, no-JS visibility, reduced-motion, and launch-readiness rules.
+Consult the original `greensock/gsap-skills` source only when this file does not cover a specific GSAP API behavior or advanced pattern. Any external GSAP recommendation must still map back to this theme's lifecycle (`Components.register()`), motion runtime (`window.__Theme__.Motion`), cleanup (`ctx.revert()`), no-JS visibility, reduced-motion, and launch-readiness rules.
+
+See `docs/references/agent-workflow/external-skills.md` for adoption governance.

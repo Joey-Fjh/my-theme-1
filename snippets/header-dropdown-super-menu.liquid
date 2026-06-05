@@ -9,6 +9,10 @@
     @click.outside="closeAndDeactivate()"
     @keydown.escape.window="closeAndDeactivate()"
 >
+    {%- assign super_menu_series_layout = section.settings.super_menu_series_layout
+        | default: 'left-right'
+    -%}
+
     <ul class="flex items-center gap-6" role="list">
         {%- for link in section.settings.menu.links -%}
             <li class="relative">
@@ -59,10 +63,10 @@
                             -%}
 
                             <div
-                                class="header-super-menu-panel relative overflow-hidden"
+                                class="header-super-menu-panel relative"
                                 style="--super-menu-primary-width: {{ section.settings.super_menu_primary_width }}%; --super-menu-secondary-width: {{ 100 | minus: section.settings.super_menu_primary_width }}%; --super-menu-column-count: {{ super_menu_column_count }};"
                             >
-                                <div class="header-super-menu-layout{% if section.settings.enable_super_menu_series %} header-super-menu-layout--with-series{% else %} header-super-menu-layout--full{% endif %}">
+                                <div class="header-super-menu-layout{% if section.settings.enable_super_menu_series %} header-super-menu-layout--with-series header-super-menu-layout--series-{{ super_menu_series_layout }}{% else %} header-super-menu-layout--full{% endif %}">
                                     <div class="header-super-menu-main">
                                         <div class="header-super-menu-columns">
                                             {%- for childlink in link.links -%}

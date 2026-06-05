@@ -30,7 +30,12 @@ Use this skill as the project task dispatcher. It does not replace implementatio
 ## Common Routes
 
 - Implementation or cleanup: use `implement-theme-pattern`, then validate with `run-shopify-theme`.
-- Review, diff inspection, launch readiness, or blocker classification: use `code-review`.
+- Ambiguous or broad user request (unclear scope, needs clarification): use `implement-theme-pattern`; consult `garrytan/gstack` Confusion Protocol for requirement gathering through forcing questions.
+- Architecture decisions needing verification: use `implement-theme-pattern`; consult `obra/superpowers` TDD patterns for RED-GREEN-REFACTOR verification.
+- Complex or broad implementation (multi-section, cross-component): use `implement-theme-pattern`; consult `obra/superpowers` for bite-sized task breakdown.
+- UI/CSS design, accessibility, or responsive patterns: use `implement-theme-pattern`; consult `anthropics/skills` `frontend-design` for design direction, anti-AI-slop aesthetics, typography, color, and spatial composition.
+- Review, diff inspection, launch readiness, or blocker classification: use `code-review`; consult `garrytan/gstack` review patterns for structured checklists.
+- Debugging or root-cause investigation: use `implement-theme-pattern`; consult `garrytan/gstack` investigation methodology.
 - Validation, lint, Theme Check, Tailwind or SVG command choice: use `run-shopify-theme`.
 - i18n, locale keys, user-facing copy, schema text, ARIA labels: use `check-i18n`.
 - Liquid/JS architecture, cart, HTTP, SectionRefresher, Alpine, headings: use `check-theme-architecture`.
