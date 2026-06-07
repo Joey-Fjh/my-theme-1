@@ -1,10 +1,11 @@
 {%- assign popup_id = 'cart-overlay-drawer' -%}
 
-<div
-    data-section-id="{{ section.id }}"
-    class="cart-overlay-section"
->
-    {%- capture drawer_content -%}
+{%- unless settings.cart_type == 'page' -%}
+    <div
+        data-section-id="{{ section.id }}"
+        class="cart-overlay-section"
+    >
+        {%- capture drawer_content -%}
         <div
             data-dialog-id="{{ popup_id }}"
             class="flex h-full flex-col text-theme-text"
@@ -59,7 +60,9 @@
                             </a>
 
                             <div class="flex min-w-0 flex-col py-1">
-                                <p class="body-md tracking-[0.08em] uppercase opacity-70" x-text="item.vendor || ''"></p>
+                                {%- if settings.show_vendor -%}
+                                    <p class="body-md tracking-[0.08em] uppercase opacity-70" x-text="item.vendor || ''"></p>
+                                {%- endif -%}
                                 <a
                                     :href="item.url"
                                     class="mt-1 line-clamp-2 body-md leading-tight hover:underline"
@@ -145,21 +148,23 @@
         </div>
     {%- endcapture -%}
 
-    {%- render 'ui-dialog',
-        id: popup_id,
-        type: 'drawer',
-        position: 'right',
-        top_class: 'top-[var(--announcement-bar-height)] pc:top-0',
-        color_scheme: section.settings.color_scheme,
-        root_class: 'z-[10010]',
-        drawer_wrapper_class: '
-            !left-1/2 !right-auto !-translate-x-1/2 !top-[calc(var(--announcement-bar-height)+3rem)] !bottom-12 !w-[calc(100%-2rem)] !max-w-none 
+        {%-
+            render 'ui-dialog',
+            id: popup_id,
+            type: 'drawer',
+            position: 'right',
+            top_class: 'top-[var(--announcement-bar-height)] pc:top-0',
+            color_scheme: settings.cart_color_scheme | default: section.settings.color_scheme,
+            root_class: 'z-[10010]',
+            drawer_wrapper_class: '
+            !left-1/2 !right-auto !-translate-x-1/2 !top-[calc(var(--announcement-bar-height)+3rem)] !bottom-12 !w-[calc(100%-2rem)] !max-w-none
             pc:!left-auto pc:!right-0 pc:!-translate-x-0 pc:!top-[var(--announcement-bar-height)] pc:!bottom-0 pc:!w-full pc:!max-w-[40rem] fw:!max-w-[33vw]
-        ',
-        drawer_panel_class: 'overflow-hidden',
-        content: drawer_content
-    -%}
-</div>
+            ',
+            drawer_panel_class: 'overflow-hidden',
+            content: drawer_content
+        -%}
+    </div>
+{%- endunless -%}
 
 {% schema %}
 {

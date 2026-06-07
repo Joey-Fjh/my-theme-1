@@ -116,7 +116,10 @@
             enableImageNavigation = true,
             enableImagePagination,
             quickViewDialogId = '',
+            cartAction = 'drawer',
             cartDialogId = '',
+            cartUrl = '/cart',
+            cartSuccessMessage = 'Added to cart.',
             primaryVariantId = 0,
             primaryVariantAvailable = false,
         } = {}) {
@@ -132,7 +135,10 @@
                 hoverMode,
                 hasVariantPanel: Boolean(hasVariantPanel),
                 quickViewDialogId,
+                cartAction,
                 cartDialogId,
+                cartUrl,
+                cartSuccessMessage,
                 primaryVariantId: Number(primaryVariantId) || 0,
                 primaryVariantAvailable: Boolean(primaryVariantAvailable),
                 isAddingToCart: false,
@@ -186,7 +192,11 @@
                     }
                     this.quickViewDialogId =
                         dataset.quickViewDialogId || this.quickViewDialogId || '';
+                    this.cartAction = dataset.cartAction || this.cartAction || 'drawer';
                     this.cartDialogId = dataset.cartDialogId || this.cartDialogId || '';
+                    this.cartUrl = dataset.cartUrl || this.cartUrl || '/cart';
+                    this.cartSuccessMessage =
+                        dataset.cartSuccessMessage || this.cartSuccessMessage || '';
                     if (dataset.primaryVariantId !== undefined && dataset.primaryVariantId !== '') {
                         this.primaryVariantId = Number(dataset.primaryVariantId) || 0;
                     }
@@ -249,14 +259,19 @@
 
                     const request = cart.add([{ id: this.primaryVariantId, quantity: 1 }], []);
 
-                    if (this.cartDialogId) {
+                    if (this.cartAction === 'drawer' && this.cartDialogId) {
                         this.$store?.dialog?.open?.(this.cartDialogId);
                     }
 
                     request
                         .then(() => {
-                            if (!this.cartDialogId) {
-                                this.$store?.toast?.show?.('Added to cart!', 'success');
+                            if (this.cartAction === 'page') {
+                                window.location.assign(this.cartUrl);
+                                return;
+                            }
+
+                            if (!this.cartDialogId && this.cartSuccessMessage) {
+                                this.$store?.toast?.show?.(this.cartSuccessMessage, 'success');
                             }
                         })
                         .catch((err) => {

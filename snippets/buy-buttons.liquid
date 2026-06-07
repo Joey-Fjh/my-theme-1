@@ -19,9 +19,23 @@
 {%- assign product_form_id = product_form_id | default: 'product-form-' | append: section.id -%}
 {%- assign section_id = section_id | default: section.id -%}
 {%- assign context = context | default: 'featured' -%}
-{%- assign open_cart_on_add = open_cart_on_add | default: false -%}
-{%- assign open_dialog_id = open_dialog_id | default: '' -%}
-{%- assign success_message = success_message | default: 'Added to cart!' -%}
+{%- if open_cart_on_add == null -%}
+    {%- assign open_cart_on_add = true -%}
+{%- endif -%}
+{%- if open_dialog_id == null -%}
+    {%- if settings.cart_type == 'drawer' -%}
+        {%- assign open_dialog_id = 'cart-overlay-drawer' -%}
+    {%- else -%}
+        {%- assign open_dialog_id = '' -%}
+    {%- endif -%}
+{%- endif -%}
+{%- if success_message == null -%}
+    {%- assign success_message = 'products.product.added_to_cart' | t -%}
+{%- endif -%}
+{%- assign redirect_to_cart = false -%}
+{%- if settings.cart_type == 'page' -%}
+    {%- assign redirect_to_cart = true -%}
+{%- endif -%}
 {%- assign show_buy_now = show_buy_now | default: false -%}
 {%- assign layout = layout | default: 'stack' -%}
 {%- assign show_quantity_control = false -%}
@@ -58,6 +72,8 @@
         data-open-cart-on-add="{{ open_cart_on_add | json | escape }}"
         data-open-dialog-id="{{ open_dialog_id | escape }}"
         data-success-message="{{ success_message | escape }}"
+        data-redirect-to-cart="{{ redirect_to_cart }}"
+        data-cart-url="{{ routes.cart_url }}"
         data-show-buy-now="{{ show_buy_now | json | escape }}"
         data-request-sections="{% if request_sections == false or request_sections == 'false' %}{% else %}{{ request_sections | join: ',' | escape }}{% endif %}"
         x-data="BuyButtons()"

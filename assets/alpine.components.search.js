@@ -36,6 +36,7 @@
                 _lastScheduledTerm: null,
                 /** @type {string|null} Last term we successfully resolved and rendered results for. */
                 _lastResolvedTerm: null,
+                predictiveEnabled: true,
 
                 init() {
                     this._applyDatasetConfig();
@@ -68,6 +69,10 @@
                     }
 
                     this._initialSearchPerformed = dataset.predictiveSearchPerformed === 'true';
+
+                    if (dataset.predictiveEnabled === 'false') {
+                        this.predictiveEnabled = false;
+                    }
                 },
 
                 _hydrateInitialQuery() {
@@ -81,7 +86,10 @@
                 },
 
                 openPanel() {
-                    if (!this.query) return;
+                    if (!this.predictiveEnabled || !this.query) {
+                        this.closePanel();
+                        return;
+                    }
                     this.isOpen = true;
 
                     const term = this.query.trim();
@@ -110,6 +118,14 @@
                     const term = value.trim();
 
                     if (!term) {
+                        this._resetResults();
+                        this.isOpen = false;
+                        this.isLoading = false;
+                        this._lastScheduledTerm = null;
+                        return;
+                    }
+
+                    if (!this.predictiveEnabled) {
                         this._resetResults();
                         this.isOpen = false;
                         this.isLoading = false;
@@ -226,6 +242,14 @@
                                     if (!url) return;
                                     imageCandidates.push({
                                         url,
+                                        width:
+                                            typeof image === 'object'
+                                                ? Number(image?.width) || 0
+                                                : 0,
+                                        height:
+                                            typeof image === 'object'
+                                                ? Number(image?.height) || 0
+                                                : 0,
                                         alt:
                                             (typeof image === 'object' && image?.alt) ||
                                             p.title ||
@@ -247,6 +271,11 @@
                                     seenImageUrls.add(image.url);
                                     return true;
                                 });
+                                const primaryImage = images[0];
+                                const imageAspectRatio =
+                                    primaryImage?.width && primaryImage?.height
+                                        ? `${primaryImage.width} / ${primaryImage.height}`
+                                        : '1 / 1';
 
                                 return {
                                     id: p.id,
@@ -258,6 +287,7 @@
                                             ? p.image
                                             : p.image?.url || p.featured_image?.url || '',
                                     images,
+                                    imageAspectRatio,
                                     url: p.url,
                                 };
                             });

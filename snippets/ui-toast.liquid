@@ -7,12 +7,13 @@
             {%- render 'motion-transition', preset: 'toast' -%}
             role="status"
             aria-live="polite"
-            class="pointer-events-auto flex max-w-95 min-w-65 items-start gap-3 rounded-lg px-4 py-3 shadow-lg ring-1 ring-black/5 backdrop-blur-sm"
+            class="pointer-events-auto flex max-w-95 min-w-65 items-start gap-3 rounded-toast px-4 py-3 shadow-toast ring-1 ring-black/5 backdrop-blur-sm"
             :class="
                 {
-                  'bg-red-50 text-red-900':     msg.type === 'error',
-                  'bg-emerald-50 text-emerald-900': msg.type === 'success',
-                  'bg-zinc-800 text-white':     msg.type === 'info' || (msg.type !== 'error' && msg.type !== 'success')
+                  'bg-error text-error-text':     msg.type === 'error',
+                  'bg-success text-success-text': msg.type === 'success',
+                  'bg-warning text-warning-text': msg.type === 'warning',
+                  'bg-info text-info-text':       msg.type === 'info' || !['error', 'success', 'warning'].includes(msg.type)
                 }
             "
         >
@@ -20,9 +21,10 @@
                 class="mt-0.5 h-5 w-5 shrink-0"
                 :class="
                     {
-                      'text-red-500':     msg.type === 'error',
-                      'text-emerald-500': msg.type === 'success',
-                      'text-zinc-400':    msg.type === 'info' || (msg.type !== 'error' && msg.type !== 'success')
+                      'text-error-text':     msg.type === 'error',
+                      'text-success-text':   msg.type === 'success',
+                      'text-warning-text':   msg.type === 'warning',
+                      'text-info-text':      msg.type === 'info' || !['error', 'success', 'warning'].includes(msg.type)
                     }
                 "
             >
@@ -32,7 +34,10 @@
                 <template x-if="msg.type === 'success'">
                     {%- render 'icons', icon: 'icon-check-circle', size: 'sm', color: 'current' -%}
                 </template>
-                <template x-if="msg.type !== 'error' && msg.type !== 'success'">
+                <template x-if="msg.type === 'warning'">
+                    {%- render 'icons', icon: 'icon-info-circle', size: 'sm', color: 'current' -%}
+                </template>
+                <template x-if="!['error', 'success', 'warning'].includes(msg.type)">
                     {%- render 'icons', icon: 'icon-info-circle', size: 'sm', color: 'current' -%}
                 </template>
             </span>

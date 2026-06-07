@@ -35,10 +35,32 @@
     endif
 
     assign card_mode = card_mode | default: 'full'
-    assign aspect_ratio = image_ratio | default: '1/1'
+
+    assign global_ratio = settings.card_image_ratio | default: 'adapt'
+    if image_ratio
+        assign aspect_ratio = image_ratio
+    elsif global_ratio == 'adapt'
+        assign aspect_ratio = product.featured_image.aspect_ratio | default: 1
+    elsif global_ratio == 'square'
+        assign aspect_ratio = '1/1'
+    elsif global_ratio == 'portrait'
+        assign aspect_ratio = '3/4'
+    elsif global_ratio == 'landscape'
+        assign aspect_ratio = '4/3'
+    else
+        assign aspect_ratio = '1/1'
+    endif
+
     assign hover_mode = hover_mode | default: 'actions'
     assign scope_id = scope_id | default: 'card'
-    assign color_scheme = color_scheme | default: ''
+
+    if color_scheme != blank
+        assign resolved_color_scheme = color_scheme
+    elsif settings.card_color_scheme != blank
+        assign resolved_color_scheme = settings.card_color_scheme
+    else
+        assign resolved_color_scheme = ''
+    endif
     assign primary_image_loading = primary_image_loading | default: 'lazy'
     assign primary_image_fetchpriority = primary_image_fetchpriority | default: ''
     assign show_hover_actions_enabled = true
@@ -97,14 +119,18 @@
 -%}
 
 <div
-    class="product-card product-card-shell {{ class }}"
+    class="product-card product-card-shell{% if resolved_color_scheme != blank %} color-{{ resolved_color_scheme }}{% endif %} {{ class }}"
     data-card-mode="{{ card_mode | escape }}"
+    data-animation-hover="{{ settings.animations_hover_elements | default: 'default' }}"
     data-image-count="{{ image_count }}"
     data-hover-mode="{{ hover_mode | escape }}"
     data-has-variant-panel="{{ has_variant_panel }}"
     data-enable-image-navigation="{{ show_image_navigation_enabled }}"
     data-quick-view-dialog-id="{{ quick_view_dialog_id | escape }}"
-    data-cart-dialog-id="cart-overlay-drawer"
+    data-cart-action="{{ settings.cart_type | default: 'drawer' }}"
+    data-cart-dialog-id="{% if settings.cart_type != 'page' %}cart-overlay-drawer{% endif %}"
+    data-cart-url="{{ routes.cart_url }}"
+    data-cart-success-message="{{ 'products.product.added_to_cart' | t | escape }}"
     data-primary-variant-id="{{ selected_variant.id }}"
     data-primary-variant-available="{{ selected_variant.available }}"
     x-data="productCard"
@@ -173,6 +199,7 @@
 
     <div
         class="product-card__image product-card-shell__media"
+        style="--card-media-aspect-ratio: {{ aspect_ratio }};"
         @mouseenter="setImageHover(true)"
         @mouseleave="setImageHover(false)"
     >
@@ -231,6 +258,15 @@
                 </div>
             {%- endfor -%}
         </a>
+
+        {%- if product.available == false -%}
+            {%- render 'ui-badge',
+                type: 'sold-out',
+                color_scheme: settings.sold_out_badge_color_scheme
+            -%}
+        {%- elsif product.compare_at_price > product.price -%}
+            {%- render 'ui-badge', type: 'sale', color_scheme: settings.sale_badge_color_scheme -%}
+        {%- endif -%}
 
         {%- if hover_mode == 'variants' -%}
             <button
@@ -336,7 +372,7 @@
         product: product,
         dialog_id: quick_view_dialog_id,
         section_id: quick_view_dialog_id,
-        color_scheme: color_scheme
+        color_scheme: resolved_color_scheme
     -%}
 {%- endcapture -%}
 
@@ -345,7 +381,7 @@
         render 'ui-dialog',
         id: quick_view_dialog_id,
         type: 'modal',
-        color_scheme: color_scheme,
+        color_scheme: resolved_color_scheme,
         root_class: 'z-[10020]',
         modal_wrapper_class: 'items-center justify-center px-3 py-4 pc:px-[8vw] pc:py-[5vh]',
         modal_panel_class: 'h-full w-full !max-h-full !max-w-full overflow-hidden rounded-sm shadow-xl',

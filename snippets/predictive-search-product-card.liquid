@@ -16,16 +16,29 @@
 {%- assign predictive_card_class = class | default: '' -%}
 {%- assign predictive_frame_class = frame_class | default: '' -%}
 
+{%- assign global_ratio = settings.card_image_ratio | default: 'adapt' -%}
+{%- if global_ratio == 'portrait' -%}
+    {%- assign predictive_aspect = '3/4' -%}
+{%- elsif global_ratio == 'landscape' -%}
+    {%- assign predictive_aspect = '4/3' -%}
+{%- elsif global_ratio == 'square' -%}
+    {%- assign predictive_aspect = '1/1' -%}
+{%- else -%}
+    {%- assign predictive_aspect = '' -%}
+{%- endif -%}
+
 <div
     class="product-card-shell {{ predictive_card_class }}"
     x-data="cardGallery"
 >
     <div class="product-card-shell__meta">
-        <span
-            class="product-card-shell__brand"
-            data-fallback-vendor-label="{{ 'products.product.fallback_vendor' | t | escape }}"
-            x-text="product.vendor || $el.dataset.fallbackVendorLabel"
-        ></span>
+        {%- if settings.search_show_vendor -%}
+            <span
+                class="product-card-shell__brand"
+                data-fallback-vendor-label="{{ 'products.product.fallback_vendor' | t | escape }}"
+                x-text="product.vendor || $el.dataset.fallbackVendorLabel"
+            ></span>
+        {%- endif -%}
 
         <div
             class="product-card-shell__pagination"
@@ -84,7 +97,14 @@
     </div>
 
     <a :href="product.url" class="product-card-shell__media-link">
-        <div class="product-card-shell__media">
+        <div
+            class="product-card-shell__media"
+            {% if predictive_aspect != blank %}
+                style="--card-media-aspect-ratio: {{ predictive_aspect }};"
+            {% else %}
+                :style="{ '--card-media-aspect-ratio': product.imageAspectRatio || '1 / 1' }"
+            {% endif %}
+        >
             <template x-if="product.images && product.images.length">
                 <template
                     x-for="(image, imageIndex) in product.images"
@@ -128,6 +148,8 @@
             :href="product.url"
             x-text="product.title"
         ></a>
-        <p class="product-card-shell__price" x-text="product.priceFormatted"></p>
+        {%- if settings.search_show_price -%}
+            <p class="product-card-shell__price" x-text="product.priceFormatted"></p>
+        {%- endif -%}
     </div>
 </div>
