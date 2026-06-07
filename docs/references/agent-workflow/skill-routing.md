@@ -25,18 +25,18 @@ Read `docs/references/agent-workflow/collaboration-standard.md` for the definiti
 | Task class | Route | Read before acting | Validation |
 | --- | --- | --- | --- |
 | Implement theme behavior | `implement-theme-pattern` | Matching architecture or pattern reference | `run-shopify-theme` chooses checks |
-| Ambiguous or broad user request | `implement-theme-pattern` | Matching architecture reference. Consult `garrytan/gstack` Confusion Protocol for requirement clarification through forcing questions before implementation. | `run-shopify-theme` chooses checks |
-| Architecture decisions with verification | `implement-theme-pattern` | Matching architecture reference. Consult `obra/superpowers` TDD patterns for RED-GREEN-REFACTOR verification of architecture choices. | `run-shopify-theme` chooses checks |
-| Complex or broad implementation | `implement-theme-pattern` | Matching architecture or pattern reference. Consult `obra/superpowers` for bite-sized task breakdown and planning discipline. | `run-shopify-theme` chooses checks |
-| UI/CSS design or accessibility | `implement-theme-pattern` | Matching architecture reference. Consult `anthropics/skills` `frontend-design` for design direction, anti-AI-slop aesthetics, typography, color systems, and spatial composition. | `run-shopify-theme` chooses checks |
-| Review diff or launch readiness | `code-review` | `code-review/pre-merge.md` or `launch-gate.md`. Consult `garrytan/gstack` review patterns for structured review checklists. | Review may run targeted checks |
-| Debugging or root-cause investigation | `implement-theme-pattern` | Matching architecture reference. Consult `garrytan/gstack` investigation methodology for systematic debugging. | Targeted validation of the fix |
+| Ambiguous or broad user request | `confusion-protocol` | Matching architecture reference | `run-shopify-theme` chooses checks |
+| Architecture decisions with verification | `verify-architecture` | Matching architecture reference | `run-shopify-theme` chooses checks |
+| Complex or broad implementation | `implement-theme-pattern` | Matching architecture or pattern reference | `run-shopify-theme` chooses checks |
+| UI/CSS design or accessibility | `frontend-design` | Matching architecture reference | `run-shopify-theme` chooses checks |
+| Review diff or launch readiness | `code-review` | `code-review/pre-merge.md` or `launch-gate.md` | Review may run targeted checks |
+| Debugging or root-cause investigation | `implement-theme-pattern` | Matching architecture reference | Targeted validation of the fix |
 | Validate current state | `run-shopify-theme` | Command docs in `AGENTS.md` and relevant skill | Smallest proving command |
 | i18n or user-facing copy | `check-i18n` | `code-review/i18n-checklist.md` | `npm run lint:i18n` |
 | Liquid/JS architecture | `check-theme-architecture` | Matching architecture/pattern reference | `npm run lint:theme` |
 | SVG icon pipeline | `build-svg-icons` | Icon rules in style-system reference | `npm run build:svg` when icons changed |
 | Collaboration, routing, governance | `agent-router` | `AGENTS.md` and this file | `git diff --check` for docs-only work |
-| Third-party skill evaluation | `agent-router` | `agent-workflow/external-skills.md` | No install unless explicitly approved |
+| Third-party skill evaluation | `agent-router` | `agent-workflow/external-skills.md` (adoption record) | No install unless reviewed and approved |
 
 ## Decision Rules
 
@@ -68,7 +68,7 @@ Hooks and MCP are adapters and enforcement layers:
 ## Routing Update Requirements
 
 - New project skill: update this routing table and, if it becomes common, `.agents/skills/agent-router/SKILL.md`.
-- Third-party skill: update `docs/references/agent-workflow/external-skills.md` before installation or project routing.
+- Third-party skill: review external source, record adoption in `docs/references/agent-workflow/external-skills.md`, then install adapted skill in `.agents/skills/`.
 - Hook or MCP: document trigger, purpose, enforcement strength, and boundaries here before changing tool-specific config.
 - New long reference: add it under `docs/references/` and route it from `AGENTS.md` only when agents need to discover it.
 
@@ -98,4 +98,4 @@ Creation rules:
 - New skills or docs must be routed from `AGENTS.md` or `agent-router` only when discoverability is needed.
 - Prefer adding a concise governance rule over restructuring files.
 - Tool-specific optimizations such as `paths` frontmatter or `.claude/rules/` require explicit approval and documentation before use.
-- Third-party skills and online best practices default to Reference only per `external-skills.md`; only adapted project-owned wording becomes project rule.
+- Third-party skills must be reviewed and adapted before installation. See `external-skills.md` for adoption history.

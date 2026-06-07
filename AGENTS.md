@@ -117,7 +117,7 @@ Read only the matching reference for the current task:
 - Launch readiness, Lighthouse classification, accessibility details, rule coverage, cleanup safety, repo safety, pre-merge self-check: `docs/references/code-review/launch-gate.md`
 - General pre-merge review checklist: `docs/references/code-review/pre-merge.md`
 - Daily collaboration standard, non-trivial task definition, user overrides, and complex task framing: `docs/references/agent-workflow/collaboration-standard.md`
-- Skill/docs routing and third-party skill governance: `docs/references/agent-workflow/skill-routing.md` and `docs/references/agent-workflow/external-skills.md`
+- Skill/docs routing: `docs/references/agent-workflow/skill-routing.md`. Third-party adoption history: `docs/references/agent-workflow/external-skills.md`
 
 Use `agent-router` for broad, ambiguous, multi-step, cleanup, Lighthouse, architecture, rule-setting, third-party skill, governance, or cross-session work.
 
@@ -131,7 +131,7 @@ Project skills live in `.agents/skills/`.
 - User skill names are optional overrides. If the user states intent without naming a skill, `agent-router` chooses the route.
 - Use the routed project skill for implementation, review, validation, i18n, architecture, or icon work.
 - If automatic skill triggering is unavailable, follow `docs/references/agent-workflow/skill-routing.md` and manually open only the routed skill.
-- Third-party or official skills may inform work only through `docs/references/agent-workflow/external-skills.md`; they are not project rule sources unless adapted and approved.
+- Some project skills are adapted from external sources. See `docs/references/agent-workflow/external-skills.md` for adoption history. External skills must be reviewed and adapted before installation; they are not project rule sources until installed in `.agents/skills/`.
 
 Do not create, install, or approve skills during ordinary theme work. Discuss skill changes only when the user explicitly asks or when `agent-router` classifies the task as skills/governance work.
 

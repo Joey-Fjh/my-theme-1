@@ -13,7 +13,7 @@ Use this skill as the project task dispatcher. It does not replace implementatio
 2. Classify the task by intent, ownership, risk, and allowed action.
 3. Read `docs/references/agent-workflow/collaboration-standard.md` when deciding whether the task is non-trivial or when the user provides an override such as review-only, prompt-only, or scope limits.
 4. Read `docs/references/agent-workflow/skill-routing.md` for the routing matrix when the task is non-trivial, ambiguous, broad, cross-session, governance-related, or touches multiple rule families.
-5. Read `docs/references/agent-workflow/external-skills.md` before using or recommending third-party skills.
+5. Read `docs/references/agent-workflow/external-skills.md` for adoption history before recommending new third-party skills.
 6. Route to the smallest relevant project skill or docs reference.
 7. State the intended route before acting when the task is broad, risky, or likely to trigger multiple skills.
 
@@ -30,12 +30,12 @@ Use this skill as the project task dispatcher. It does not replace implementatio
 ## Common Routes
 
 - Implementation or cleanup: use `implement-theme-pattern`, then validate with `run-shopify-theme`.
-- Ambiguous or broad user request (unclear scope, needs clarification): use `implement-theme-pattern`; consult `garrytan/gstack` Confusion Protocol for requirement gathering through forcing questions.
-- Architecture decisions needing verification: use `implement-theme-pattern`; consult `obra/superpowers` TDD patterns for RED-GREEN-REFACTOR verification.
-- Complex or broad implementation (multi-section, cross-component): use `implement-theme-pattern`; consult `obra/superpowers` for bite-sized task breakdown.
-- UI/CSS design, accessibility, or responsive patterns: use `implement-theme-pattern`; consult `anthropics/skills` `frontend-design` for design direction, anti-AI-slop aesthetics, typography, color, and spatial composition.
-- Review, diff inspection, launch readiness, or blocker classification: use `code-review`; consult `garrytan/gstack` review patterns for structured checklists.
-- Debugging or root-cause investigation: use `implement-theme-pattern`; consult `garrytan/gstack` investigation methodology.
+- Ambiguous or broad user request (unclear scope, needs clarification): use `confusion-protocol`.
+- Architecture decisions needing verification: use `verify-architecture`.
+- Complex or broad implementation (multi-section, cross-component): use `implement-theme-pattern`.
+- UI/CSS design, accessibility, or responsive patterns: use `frontend-design`.
+- Review, diff inspection, launch readiness, or blocker classification: use `code-review`.
+- Debugging or root-cause investigation: use `implement-theme-pattern`.
 - Validation, lint, Theme Check, Tailwind or SVG command choice: use `run-shopify-theme`.
 - i18n, locale keys, user-facing copy, schema text, ARIA labels: use `check-i18n`.
 - Liquid/JS architecture, cart, HTTP, SectionRefresher, Alpine, headings: use `check-theme-architecture`.
