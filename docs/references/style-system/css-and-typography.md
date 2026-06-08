@@ -45,6 +45,13 @@ Shopify Settings -> snippets/css-variables.liquid -> CSS custom properties
     -> utility classes in templates
 ```
 
+### Layer Rules
+
+1. `snippets/css-variables.liquid` is a strict 1:1 bridge from global settings. Output raw CSS custom properties only — no derivation, no alpha composition, no hardcoded values. Every variable must trace to a `settings.*` value.
+2. `tailwind/tailwind.input.css` is the single Token entry point. All derivation (alpha variants, composition, hardcoded fallbacks) happens here. Variables that have no global setting source (e.g., overlay opacity) are defined in this file, not in `css-variables.liquid`.
+3. In `tailwind.*.css` utility/component files, color properties SHOULD use `@apply` with Tailwind token utilities (e.g., `@apply bg-badge text-badge-text`). Structural properties (border-width, outline, shadow) that lack token utilities use `var()` directly.
+4. Liquid business files (sections, snippets) SHOULD use semantic class names (`badge`, `btn`, `surface`, `divider`) rather than raw Tailwind token names (`border-theme-border-20`). Compose tokens into semantic utilities in the appropriate `tailwind.*.css` layer file.
+
 ## Build Commands
 
 ```bash

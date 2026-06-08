@@ -8,7 +8,6 @@
     @param {string} [id] - Optional id attribute
     @param {string} [aria_label] - Optional aria-label for accessibility
     @param {string} [target] - Optional target (for example, '_blank')
-    @param {string} [color] - Optional color mode. Use 'current' or 'currentColor' to inherit from parent text color.
     @param {string} [attributes] - Extra HTML attributes to be output directly on the <a> element
     @param {string} [content] - Optional full inner HTML for the link. If provided, `text` and `icon` are ignored and `content` is rendered as-is.
 
@@ -19,16 +18,10 @@
     assign link_href = href
     assign link_base_class = 'links'
     assign link_variant_class = ''
-    assign link_color = color | default: 'theme'
-    assign link_color_class = ''
 
     if variant == 'plain'
         assign link_base_class = ''
         assign link_variant_class = ''
-        assign link_color_class = ''
-        if link_color == 'current' or link_color == 'currentColor'
-            assign link_color_class = 'text-current'
-        endif
     elsif variant == 'underline'
         assign link_variant_class = 'links-underline'
     elsif variant == 'default'
@@ -38,14 +31,6 @@
     else
         assign link_variant_class = 'links-default'
     endif
-
-    if variant != 'plain'
-        if link_color == 'current' or link_color == 'currentColor'
-            assign link_color_class = 'text-current'
-        elsif link_color == 'theme'
-            assign link_color_class = 'text-theme-link'
-        endif
-    endif
 %}
 
 <a
@@ -53,7 +38,6 @@
     class="
         {{ link_base_class }}
         {{ link_variant_class }}
-        {{ link_color_class }}
         {{ class }}
     "
     {% if id %}

@@ -72,6 +72,7 @@ Classify ambiguous issues before fixing them. If an issue could be code, configu
 
 Agent behavior rules:
 
+- Use Context7 MCP for Tailwind CSS documentation queries. Use Shopify Dev MCP for Shopify API, Liquid, and theme architecture queries. Do not guess framework behavior when MCP is available.
 - Users do not need to manually specify skills. For non-trivial tasks, use `agent-router` first to choose skills, docs, and validation.
 - For complex, risky, cross-session, or broad cleanup work, classify purpose, ownership, risk, and allowed action before editing.
 - If the user asks for review, orientation, or a prompt, do not refactor or implement unless they explicitly ask for implementation.
