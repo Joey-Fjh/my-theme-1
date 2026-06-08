@@ -74,15 +74,6 @@
             --color-badge-background: {{ scheme.settings.badge_background_color.red }}, {{ scheme.settings.badge_background_color.green }}, {{ scheme.settings.badge_background_color.blue }};
             --color-badge-foreground: {{ scheme.settings.badge_label_color.red }}, {{ scheme.settings.badge_label_color.green }}, {{ scheme.settings.badge_label_color.blue }};
             --color-badge-border: {{ scheme.settings.badge_border_color.red }}, {{ scheme.settings.badge_border_color.green }}, {{ scheme.settings.badge_border_color.blue }};
-
-            --color-feedback-success: {{ scheme.settings.success_background_color.red }}, {{ scheme.settings.success_background_color.green }}, {{ scheme.settings.success_background_color.blue }};
-            --color-feedback-success-text: {{ scheme.settings.success_foreground_color.red }}, {{ scheme.settings.success_foreground_color.green }}, {{ scheme.settings.success_foreground_color.blue }};
-            --color-feedback-warning: {{ scheme.settings.warning_background_color.red }}, {{ scheme.settings.warning_background_color.green }}, {{ scheme.settings.warning_background_color.blue }};
-            --color-feedback-warning-text: {{ scheme.settings.warning_foreground_color.red }}, {{ scheme.settings.warning_foreground_color.green }}, {{ scheme.settings.warning_foreground_color.blue }};
-            --color-feedback-error: {{ scheme.settings.error_background_color.red }}, {{ scheme.settings.error_background_color.green }}, {{ scheme.settings.error_background_color.blue }};
-            --color-feedback-error-text: {{ scheme.settings.error_foreground_color.red }}, {{ scheme.settings.error_foreground_color.green }}, {{ scheme.settings.error_foreground_color.blue }};
-            --color-feedback-info: {{ scheme.settings.info_background_color.red }}, {{ scheme.settings.info_background_color.green }}, {{ scheme.settings.info_background_color.blue }};
-            --color-feedback-info-text: {{ scheme.settings.info_foreground_color.red }}, {{ scheme.settings.info_foreground_color.green }}, {{ scheme.settings.info_foreground_color.blue }};
         }
     {% endfor %}
 
@@ -107,25 +98,28 @@
         {% if settings.use_custom_body_font and settings.custom_body_font_url != blank %}
             --font-body-family: {{ settings.custom_body_font_family | json }}, {{ settings.type_body_font.fallback_families }};
             --font-body-style: normal;
-            --font-body-weight: 400;
         {%- else -%}
             --font-body-family: {{ settings.type_body_font.family }}, {{ settings.type_body_font.fallback_families }};
             --font-body-style: {{ settings.type_body_font.style }};
-            --font-body-weight: {{ settings.type_body_font.weight }};
         {% endif %}
+        --font-body-weight: {{ settings.body_weight }};
+        --font-body-line-height: {{ settings.body_line_height }};
+        --font-body-letter-spacing: {{ settings.body_letter_spacing }};
+        --font-body-text-transform: {{ settings.body_text_transform }};
+        --font-body-scale: {{ settings.body_scale | divided_by: 100.0 }};
 
         {% if settings.use_custom_heading_font and settings.custom_heading_font_url != blank %}
             --font-heading-family: {{ settings.custom_heading_font_family | json }}, {{ settings.type_header_font.fallback_families }};
             --font-heading-style: normal;
-            --font-heading-weight: 400;
         {% else %}
             --font-heading-family: {{ settings.type_header_font.family }}, {{ settings.type_header_font.fallback_families }};
             --font-heading-style: {{ settings.type_header_font.style }};
-            --font-heading-weight: {{ settings.type_header_font.weight }};
         {% endif %}
-
-        --font-body-scale: {{ settings.body_scale | divided_by: 100.0 }};
-        --font-heading-scale: {{ settings.heading_scale | times: 1.0 | divided_by: settings.body_scale }};
+        --font-heading-weight: {{ settings.heading_weight }};
+        --font-heading-line-height: {{ settings.heading_line_height }};
+        --font-heading-letter-spacing: {{ settings.heading_letter_spacing }};
+        --font-heading-text-transform: {{ settings.heading_text_transform }};
+        --font-heading-scale: {{ settings.heading_scale | divided_by: 100.0 }};
 
         {% comment %} input Variables {% endcomment %}
         --input-radius: {{ settings.input_radius }}px;
@@ -135,6 +129,9 @@
         --input-shadow-vertical-offset: {{ settings.input_shadow_vertical_offset }}px;
         --input-shadow-blur-radius: {{ settings.input_shadow_blur }}px;
 
+        --input-margin-offset: {% if settings.input_shadow_vertical_offset != 0 and settings.input_shadow_opacity > 0 %}{{ settings.input_shadow_vertical_offset | abs }}{% else %}0{% endif %}px;
+        --inputs-radius-outset: {% if settings.input_radius > 0 %}{{ settings.input_radius | plus: settings.input_border_thickness }}{% else %}0{% endif %}px;
+
         {% comment %} Button Variables {% endcomment %}
         --button-radius: {{ settings.button_radius }}px;
         --button-border-width: {{ settings.button_border_thickness }}px;
@@ -143,39 +140,13 @@
         --button-shadow-vertical-offset: {{ settings.button_shadow_vertical_offset }}px;
         --button-shadow-blur-radius: {{ settings.button_shadow_blur }}px;
 
-        {%  comment  %} Panels {% endcomment %}
+        {%  comment  %} Surfaces {% endcomment %}
         --surface-radius: {{ settings.surface_radius }}px;
         --surface-border-width: {{ settings.surface_border_thickness }}px;
         --surface-shadow-opacity: {{ settings.surface_shadow_opacity | divided_by: 100.0 }};
         --surface-shadow-horizontal-offset: {{ settings.surface_shadow_horizontal_offset }}px;
         --surface-shadow-vertical-offset: {{ settings.surface_shadow_vertical_offset }}px;
         --surface-shadow-blur-radius: {{ settings.surface_shadow_blur }}px;
-
-        {% comment %} Dialog {% endcomment %}
-        --dialog-radius: {{ settings.dialog_radius }}px;
-        --dialog-border-width: {{ settings.dialog_border_thickness }}px;
-        --dialog-shadow-opacity: {{ settings.dialog_shadow_opacity | divided_by: 100.0 }};
-        --dialog-shadow-horizontal-offset: {{ settings.dialog_shadow_horizontal_offset }}px;
-        --dialog-shadow-vertical-offset: {{ settings.dialog_shadow_vertical_offset }}px;
-        --dialog-shadow-blur-radius: {{ settings.dialog_shadow_blur }}px;
-
-        {% comment %} Product Cards {% endcomment %}
-        --card-radius: {{ settings.card_radius }}px;
-        --card-border-width: {{ settings.card_border_thickness }}px;
-        --card-shadow-opacity: {{ settings.card_shadow_opacity | divided_by: 100.0 }};
-        --card-shadow-horizontal-offset: {{ settings.card_shadow_horizontal_offset }}px;
-        --card-shadow-vertical-offset: {{ settings.card_shadow_vertical_offset }}px;
-        --card-shadow-blur-radius: {{ settings.card_shadow_blur }}px;
-
-        {% comment %} Toast {% endcomment %}
-        --toast-radius: {{ settings.toast_radius }}px;
-        --toast-shadow-opacity: {{ settings.toast_shadow_opacity | divided_by: 100.0 }};
-        --toast-shadow-horizontal-offset: {{ settings.toast_shadow_horizontal_offset }}px;
-        --toast-shadow-vertical-offset: {{ settings.toast_shadow_vertical_offset }}px;
-        --toast-shadow-blur-radius: {{ settings.toast_shadow_blur }}px;
-
-        {% comment %} Badges {% endcomment %}
-        --badge-radius: {{ settings.badge_corner_radius }}px;
 
         {% comment %} Shared Opacity & Focus {% endcomment %}
         --border-opacity: 0.12;

@@ -10,15 +10,7 @@
 
     gsap.registerPlugin(ScrollTrigger);
 
-    /** @returns {boolean} */
-    function isRevealEnabled() {
-        var body = document.body;
-        return body ? body.dataset.revealOnScroll !== 'false' : true;
-    }
-
-    var Motion = {
-        isRevealEnabled: isRevealEnabled,
-
+    const Motion = {
         /**
          * Scroll-triggered reveal animation for a set of elements.
          *
@@ -37,72 +29,49 @@
          * @returns {{ ctx: gsap.context, timeline: gsap.core.Tween | gsap.core.Timeline }}
          *   Caller MUST call ctx.revert() in destroy().
          */
-        scrollReveal: function scrollReveal(el, options) {
-            options = options || {};
+        scrollReveal(el, options = {}) {
+            const selector = options.selector || '[data-gsap-card]';
+            const axis = options.axis || 'y';
+            const from = options.from ?? 30;
+            const to = options.to ?? 0;
+            const duration = options.duration ?? 0.8;
+            const stagger = options.stagger ?? 0;
+            const ease = options.ease || 'power2.out';
+            const scrollTriggerStart = options.scrollTriggerStart || 'top 80%';
+            const once = options.once !== undefined ? options.once : true;
 
-            var targets = el.querySelectorAll(options.selector || '[data-gsap-card]');
-            var ctx = gsap.context(function () {}, el);
-
+            const targets = el.querySelectorAll(selector);
             if (!targets.length) {
-                return { ctx: ctx, timeline: gsap.timeline() };
+                const ctx = gsap.context(() => {}, el);
+                return { ctx, timeline: gsap.timeline() };
             }
 
-            if (!isRevealEnabled()) {
-                gsap.set(targets, { opacity: 1, x: 0, y: 0 });
-                return { ctx: ctx, timeline: gsap.timeline() };
-            }
-
-            var axis = options.axis || 'y';
-            var from = options.from != null ? options.from : 30;
-            var to = options.to != null ? options.to : 0;
-            var duration = options.duration != null ? options.duration : 0.8;
-            var stagger = options.stagger != null ? options.stagger : 0;
-            var ease = options.ease || 'power2.out';
-            var scrollTriggerStart = options.scrollTriggerStart || 'top 80%';
-            var once = options.once !== undefined ? options.once : true;
-
-            var fromVars = { opacity: 0 };
-            var toVars = { opacity: 1 };
+            const fromVars = { opacity: 0 };
+            const toVars = { opacity: 1 };
             fromVars[axis] = from;
             toVars[axis] = to;
 
             var tl;
 
-            ctx = gsap.context(function () {
-                var mm = gsap.matchMedia();
+            const ctx = gsap.context(() => {
+                gsap.set(targets, fromVars);
 
-                mm.add('(prefers-reduced-motion: no-preference)', function () {
-                    gsap.set(targets, fromVars);
-
-                    tl = gsap.to(
-                        targets,
-                        Object.assign({}, toVars, {
-                            duration: duration,
-                            stagger: stagger,
-                            ease: ease,
-                            scrollTrigger: {
-                                trigger: el,
-                                start: scrollTriggerStart,
-                                once: once,
-                            },
-                        }),
-                    );
-                });
-
-                mm.add('(prefers-reduced-motion: reduce)', function () {
-                    gsap.set(targets, { opacity: 1 });
-                    gsap.set(
-                        targets,
-                        (function () {
-                            var o = { opacity: 1 };
-                            o[axis] = to;
-                            return o;
-                        })(),
-                    );
-                });
+                tl = gsap.to(
+                    targets,
+                    Object.assign({}, toVars, {
+                        duration: duration,
+                        stagger: stagger,
+                        ease: ease,
+                        scrollTrigger: {
+                            trigger: el,
+                            start: scrollTriggerStart,
+                            once: once,
+                        },
+                    }),
+                );
             }, el);
 
-            return { ctx: ctx, timeline: tl };
+            return { ctx, timeline: tl };
         },
 
         /**
@@ -121,75 +90,47 @@
          * @returns {{ ctx: gsap.context, timeline: gsap.core.Timeline }}
          *   Caller MUST call ctx.revert() in destroy().
          */
-        heroReveal: function heroReveal(el, options) {
-            options = options || {};
+        heroReveal(el, options = {}) {
+            const heroSelector = options.heroSelector || '[data-gsap-hero]';
+            const badgeSelector = options.badgeSelector || '[data-gsap-badge]';
+            const heroDuration = options.heroDuration ?? 0.8;
+            const heroEase = options.heroEase || 'power2.out';
+            const badgeDuration = options.badgeDuration ?? 0.6;
+            const badgeDelay = options.badgeDelay ?? 0.3;
+            const badgeEase = options.badgeEase || 'back.out(1.7)';
 
-            var heroSelector = options.heroSelector || '[data-gsap-hero]';
-            var badgeSelector = options.badgeSelector || '[data-gsap-badge]';
-            var heroDuration = options.heroDuration != null ? options.heroDuration : 0.8;
-            var heroEase = options.heroEase || 'power2.out';
-            var badgeDuration = options.badgeDuration != null ? options.badgeDuration : 0.6;
-            var badgeDelay = options.badgeDelay != null ? options.badgeDelay : 0.3;
-            var badgeEase = options.badgeEase || 'back.out(1.7)';
-
-            var heroEl = el.querySelector(heroSelector);
-            var badgeEl = el.querySelector(badgeSelector);
-            var ctx = gsap.context(function () {}, el);
+            const heroEl = el.querySelector(heroSelector);
+            const badgeEl = el.querySelector(badgeSelector);
 
             var tl;
 
-            if (!isRevealEnabled()) {
-                ctx = gsap.context(function () {
-                    if (heroEl) {
-                        gsap.set(heroEl, { opacity: 1, x: 0 });
-                    }
-                    if (badgeEl) {
-                        gsap.set(badgeEl, { opacity: 1, scale: 1 });
-                    }
-                }, el);
-                return { ctx: ctx, timeline: gsap.timeline() };
-            }
+            const ctx = gsap.context(() => {
+                tl = gsap.timeline();
 
-            ctx = gsap.context(function () {
-                var mm = gsap.matchMedia();
+                if (heroEl) {
+                    tl.to(heroEl, {
+                        opacity: 1,
+                        x: 0,
+                        duration: heroDuration,
+                        ease: heroEase,
+                    });
+                }
 
-                mm.add('(prefers-reduced-motion: no-preference)', function () {
-                    tl = gsap.timeline();
-
-                    if (heroEl) {
-                        tl.to(heroEl, {
+                if (badgeEl) {
+                    tl.to(
+                        badgeEl,
+                        {
                             opacity: 1,
-                            x: 0,
-                            duration: heroDuration,
-                            ease: heroEase,
-                        });
-                    }
-
-                    if (badgeEl) {
-                        tl.to(
-                            badgeEl,
-                            {
-                                opacity: 1,
-                                scale: 1,
-                                duration: badgeDuration,
-                                ease: badgeEase,
-                            },
-                            badgeDelay,
-                        );
-                    }
-                });
-
-                mm.add('(prefers-reduced-motion: reduce)', function () {
-                    if (heroEl) {
-                        gsap.set(heroEl, { opacity: 1, x: 0 });
-                    }
-                    if (badgeEl) {
-                        gsap.set(badgeEl, { opacity: 1, scale: 1 });
-                    }
-                });
+                            scale: 1,
+                            duration: badgeDuration,
+                            ease: badgeEase,
+                        },
+                        badgeDelay,
+                    );
+                }
             }, el);
 
-            return { ctx: ctx, timeline: tl };
+            return { ctx, timeline: tl };
         },
     };
 

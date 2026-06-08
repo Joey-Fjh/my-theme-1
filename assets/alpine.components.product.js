@@ -336,8 +336,6 @@
             openCartOnAdd = false,
             openDialogId = '',
             successMessage = 'Added to cart!',
-            redirectToCart = false,
-            cartUrl = '/cart',
             requestSections = '',
             showBuyNow = false,
         } = {}) {
@@ -350,8 +348,6 @@
                 openCartOnAdd,
                 openDialogId,
                 successMessage,
-                redirectToCart,
-                cartUrl,
                 requestSections,
                 showBuyNow,
                 isLoading: false,
@@ -386,14 +382,6 @@
 
                     if (dataset.successMessage !== undefined) {
                         this.successMessage = dataset.successMessage || '';
-                    }
-
-                    if (dataset.redirectToCart !== undefined && dataset.redirectToCart !== '') {
-                        this.redirectToCart = dataset.redirectToCart === 'true';
-                    }
-
-                    if (dataset.cartUrl !== undefined) {
-                        this.cartUrl = dataset.cartUrl || '/cart';
                     }
 
                     if (dataset.showBuyNow !== undefined && dataset.showBuyNow !== '') {
@@ -461,11 +449,6 @@
 
                     cart.add([{ id: this.variantId, quantity: this._getQuantity() }], sections)
                         .then(() => {
-                            if (this.redirectToCart) {
-                                window.location.assign(this.cartUrl);
-                                return;
-                            }
-
                             if (this.openCartOnAdd && this.openDialogId) {
                                 window.Alpine?.store('dialog')?.open?.(this.openDialogId);
                             }

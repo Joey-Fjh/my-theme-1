@@ -305,15 +305,6 @@ Component-specific values SHOULD stay inside the named recipe until a real reuse
 
 Merchant-facing motion settings SHOULD control policy, not low-level implementation details.
 
-Current global settings:
-
-| Setting | Controls | Does not control |
-| --- | --- | --- |
-| `animations_reveal_on_scroll` | Narrative and entrance choreography marked with `data-gsap-*`, including shared `Motion.scrollReveal` and `Motion.heroReveal` recipes | Drawer, dialog, toast, accordion, loading, image-switching, and other functional state feedback |
-| `animations_hover_elements` | Product-card hover presentation (`default`, `vertical-lift`, `3d-lift`) | Focus states, button feedback, or touch interactions |
-
-When narrative reveal is disabled, marked content MUST render immediately visible without waiting for GSAP. `prefers-reduced-motion` always overrides merchant-selected narrative and hover motion.
-
 Allowed future global settings:
 
 - `motion_enabled`

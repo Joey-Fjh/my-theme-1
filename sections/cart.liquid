@@ -1,6 +1,6 @@
 <div
     data-section-id="{{ section.id }}"
-    class="cart-section full-width color-{{ settings.cart_color_scheme | default: section.settings.color_scheme }}"
+    class="cart-section full-width color-{{ section.settings.color_scheme }}"
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
@@ -39,11 +39,9 @@
                             </div>
 
                             <div class="flex min-w-0 flex-col py-1">
-                                {%- if settings.show_vendor -%}
-                                    <p class="body-xs tracking-[0.08em] text-theme-text/70 uppercase">
-                                        {{ item.vendor | default: ' ' }}
-                                    </p>
-                                {%- endif -%}
+                                <p class="body-xs tracking-[0.08em] text-theme-text/70 uppercase">
+                                    {{ item.vendor | default: ' ' }}
+                                </p>
                                 <a
                                     href="{{ item.url }}"
                                     class="mt-1 block body-md leading-tight font-medium hover:underline pc:mt-5 pc:body-lg"
@@ -115,18 +113,16 @@
                     <h2 class="font-semibold text-current">{{ 'cart.order_summary' | t }}</h2>
 
                     {%- comment -%} Accordion: Order Special Instruction + Estimate Shipping {%- endcomment -%}
-                    {%- if settings.show_cart_note -%}
-                        {%- capture note_html -%}
-                            <textarea
-                                name="note"
-                                class="min-h-20 field resize-y bg-theme-bg/60 body-sm"
-                                placeholder="{{ 'cart.note_placeholder' | t }}"
-                                @change="$store.cart.update({ note: $event.target.value })"
-                            >
-                                {{ cart.note }}
-                            </textarea>
-                        {%- endcapture -%}
-                    {%- endif -%}
+                    {%- capture note_html -%}
+                        <textarea
+                            name="note"
+                            class="min-h-20 field resize-y bg-theme-bg/60 body-sm"
+                            placeholder="{{ 'cart.note_placeholder' | t }}"
+                            @change="$store.cart.update({ note: $event.target.value })"
+                        >
+                            {{ cart.note }}
+                        </textarea>
+                    {%- endcapture -%}
 
                     {%- capture shipping_html -%}
                         <div class="space-y-6">
@@ -163,27 +159,17 @@
                         </div>
                     {%- endcapture -%}
 
-                    {%- if settings.show_cart_note and note_html != blank -%}
-                        {%- assign accordion_contents = note_html
-                            | append: '|'
-                            | append: shipping_html
-                        -%}
-                        {%- assign accordion_titles = 'cart.order_special_instruction'
-                            | t
-                            | append: '|'
-                            | append: 'cart.estimate_shipping'
-                            | t
-                        -%}
-                    {%- else -%}
-                        {%- assign accordion_contents = shipping_html -%}
-                        {%- assign accordion_titles = 'cart.estimate_shipping' | t -%}
-                    {%- endif -%}
+                    {%- assign accordion_contents = note_html
+                        | append: '|'
+                        | append: shipping_html
+                    -%}
 
-                    {% render 'accordion',
+                    {%
+                        render 'accordion',
                         wrapper_class: 'mt-6 flex flex-col gap-6',
                         initial_active: 1,
                         id_prefix: section.id,
-                        titles: accordion_titles,
+                        titles: 'cart.order_special_instruction' | t | append: '|' | append: 'cart.estimate_shipping' | t,
                         contents: accordion_contents,
                         icon_type: 'plus',
                         icon_size: 'w-10 h-10',

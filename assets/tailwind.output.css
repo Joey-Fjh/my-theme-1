@@ -7,8 +7,19 @@
       "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
       "Courier New", monospace;
+    --color-red-50: oklch(97.1% 0.013 17.38);
+    --color-red-500: oklch(63.7% 0.237 25.331);
     --color-red-600: oklch(57.7% 0.245 27.325);
+    --color-red-700: oklch(50.5% 0.213 27.518);
+    --color-red-900: oklch(39.6% 0.141 25.723);
+    --color-green-50: oklch(98.2% 0.018 155.826);
+    --color-green-800: oklch(44.8% 0.119 151.328);
+    --color-emerald-50: oklch(97.9% 0.021 166.113);
+    --color-emerald-500: oklch(69.6% 0.17 162.48);
+    --color-emerald-900: oklch(37.8% 0.077 168.94);
     --color-gray-500: oklch(55.1% 0.027 264.364);
+    --color-zinc-400: oklch(70.5% 0.015 286.067);
+    --color-zinc-800: oklch(27.4% 0.006 286.033);
     --color-black: #000;
     --color-white: #fff;
     --spacing: 0.25rem;
@@ -44,7 +55,8 @@
     --default-mono-font-family: var(--font-mono);
     --color-theme-text: rgb(var(--color-foreground));
     --color-theme-icon: rgb(var(--color-icons));
-    --color-theme-border-soft: rgba(var(--color-border), var(--border-opacity));
+    --color-theme-border-soft: rgba(var(--color-border) / var(--border-opacity));
+    --color-focus-soft: rgba(var(--color-focus-ring) / var(--focus-ring-opacity));
     --color-primary: rgb(var(--color-primary-button));
     --color-primary-text: rgb(var(--color-primary-button-text));
     --shadow-button: var(--button-shadow-horizontal-offset) var(--button-shadow-vertical-offset)
@@ -299,7 +311,7 @@
     outline-style: none;
     position: relative;
     &:focus-visible {
-      outline: var(--focus-ring-width) solid rgba(var(--color-focus-ring), var(--focus-ring-opacity));
+      outline: var(--focus-ring-width) solid var(--color-focus-soft);
       outline-offset: var(--focus-ring-offset);
     }
   }
@@ -339,9 +351,6 @@
   .top-1\/2 {
     top: calc(1/2 * 100%);
   }
-  .top-2 {
-    top: calc(var(--spacing) * 2);
-  }
   .top-3 {
     top: calc(var(--spacing) * 3);
   }
@@ -372,9 +381,6 @@
   .right-0 {
     right: calc(var(--spacing) * 0);
   }
-  .right-2 {
-    right: calc(var(--spacing) * 2);
-  }
   .right-3 {
     right: calc(var(--spacing) * 3);
   }
@@ -399,9 +405,6 @@
   .bottom-0 {
     bottom: calc(var(--spacing) * 0);
   }
-  .bottom-2 {
-    bottom: calc(var(--spacing) * 2);
-  }
   .bottom-4 {
     bottom: calc(var(--spacing) * 4);
   }
@@ -425,9 +428,6 @@
   }
   .left-1\/2 {
     left: calc(1/2 * 100%);
-  }
-  .left-2 {
-    left: calc(var(--spacing) * 2);
   }
   .left-4 {
     left: calc(var(--spacing) * 4);
@@ -628,32 +628,6 @@
   .ml-auto {
     margin-left: auto;
   }
-  .badge-cart {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-family: var(--font-body-family);
-    border-radius: var(--badge-radius);
-    border-width: 1px;
-    border-style: solid;
-    border-color: var(--color-badge-border);
-    background-color: var(--color-badge-bg);
-    color: var(--color-badge-text);
-    font-weight: 600;
-    line-height: 1;
-    white-space: nowrap;
-    min-width: 1.125rem;
-    min-height: 1.125rem;
-    padding-inline: 0.3em;
-    padding-block: 0;
-    font-size: 0.65rem;
-    @media (width >= 48rem) {
-      min-width: 1.25rem;
-      min-height: 1.25rem;
-      padding-inline: 0.35em;
-      font-size: 0.7rem;
-    }
-  }
   .btn {
     display: inline-flex;
     cursor: pointer;
@@ -689,34 +663,8 @@
     font-style: var(--font-body-style);
     font-weight: var(--font-body-weight);
     &:focus-visible {
-      outline: var(--focus-ring-width) solid rgba(var(--color-focus-ring), var(--focus-ring-opacity));
+      outline: var(--focus-ring-width) solid var(--color-focus-soft);
       outline-offset: var(--focus-ring-offset);
-    }
-  }
-  .badge-label {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-family: var(--font-body-family);
-    border-radius: var(--badge-radius);
-    border-width: 1px;
-    border-style: solid;
-    border-color: var(--color-badge-border);
-    background-color: var(--color-badge-bg);
-    color: var(--color-badge-text);
-    font-weight: 600;
-    line-height: 1;
-    white-space: nowrap;
-    padding-inline: 0.625em;
-    padding-block: 0.15em;
-    font-size: 0.7rem;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    @media (width >= 48rem) {
-      padding-inline: 0.75em;
-      padding-block: 0.2em;
-      font-size: 0.75rem;
-      letter-spacing: 0.08em;
     }
   }
   .badge {
@@ -724,7 +672,7 @@
     align-items: center;
     justify-content: center;
     font-family: var(--font-body-family);
-    border-radius: var(--badge-radius);
+    border-radius: 999px;
     border-width: 1px;
     border-style: solid;
     border-color: var(--color-badge-border);
@@ -926,7 +874,7 @@
     border-radius: var(--input-radius) !important;
     border-style: var(--tw-border-style) !important;
     border-width: 1px !important;
-    border-color: rgba(var(--color-border), var(--border-opacity)) !important;
+    border-color: rgba(var(--color-border) / var(--border-opacity)) !important;
     background-color: rgb(var(--color-background)) !important;
     padding-inline: calc(var(--spacing) * 3) !important;
     padding-block: calc(var(--spacing) * 2.5) !important;
@@ -951,7 +899,7 @@
     border-width: var(--input-border-width) !important;
     border-style: solid !important;
     &:focus-visible {
-      outline: var(--focus-ring-width) solid rgba(var(--color-focus-ring), var(--focus-ring-opacity)) !important;
+      outline: var(--focus-ring-width) solid var(--color-focus-soft) !important;
       outline-offset: var(--focus-ring-offset) !important;
       border-color: rgb(var(--color-border-strong)) !important;
     }
@@ -961,7 +909,7 @@
     border-radius: var(--input-radius);
     border-style: var(--tw-border-style);
     border-width: 1px;
-    border-color: rgba(var(--color-border), var(--border-opacity));
+    border-color: rgba(var(--color-border) / var(--border-opacity));
     background-color: rgb(var(--color-background));
     padding-inline: calc(var(--spacing) * 3);
     padding-block: calc(var(--spacing) * 2.5);
@@ -986,7 +934,7 @@
     border-width: var(--input-border-width);
     border-style: solid;
     &:focus-visible {
-      outline: var(--focus-ring-width) solid rgba(var(--color-focus-ring), var(--focus-ring-opacity));
+      outline: var(--focus-ring-width) solid var(--color-focus-soft);
       outline-offset: var(--focus-ring-offset);
       border-color: rgb(var(--color-border-strong));
     }
@@ -1143,6 +1091,9 @@
   }
   .min-w-100 {
     min-width: calc(var(--spacing) * 100);
+  }
+  .min-w-\[1\.25rem\] {
+    min-width: 1.25rem;
   }
   .min-w-\[24rem\] {
     min-width: 24rem;
@@ -1630,7 +1581,7 @@
   }
   .divide-theme-border-soft {
     :where(& > :not(:last-child)) {
-      border-color: rgba(var(--color-border), var(--border-opacity));
+      border-color: rgba(var(--color-border) / var(--border-opacity));
     }
   }
   .self-center {
@@ -1669,7 +1620,7 @@
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
     border-style: var(--tw-border-style);
     border-width: 1px;
-    border-color: rgba(var(--color-border), var(--border-opacity));
+    border-color: rgba(var(--color-border) / var(--border-opacity));
     background-color: rgb(var(--color-background));
     color: rgb(var(--color-foreground));
     background-image: var(--gradient-background);
@@ -1696,9 +1647,6 @@
   }
   .rounded-sm {
     border-radius: var(--radius-sm);
-  }
-  .rounded-toast {
-    border-radius: var(--toast-radius);
   }
   .rounded-t-sm {
     border-top-left-radius: var(--radius-sm);
@@ -1802,7 +1750,7 @@
     border-color: rgb(var(--color-border));
   }
   .border-theme-border-soft {
-    border-color: rgba(var(--color-border), var(--border-opacity));
+    border-color: rgba(var(--color-border) / var(--border-opacity));
   }
   .border-theme-border-strong {
     border-color: rgb(var(--color-border-strong));
@@ -1835,19 +1783,19 @@
     background-color: currentcolor;
   }
   .bg-dialog-overlay {
-    background-color: rgba(var(--dialog-overlay-rgb), var(--dialog-overlay-opacity));
+    background-color: rgba(var(--dialog-overlay-rgb) / var(--dialog-overlay-opacity));
   }
-  .bg-error {
-    background-color: rgb(var(--color-feedback-error));
+  .bg-emerald-50 {
+    background-color: var(--color-emerald-50);
   }
-  .bg-info {
-    background-color: rgb(var(--color-feedback-info));
+  .bg-green-50 {
+    background-color: var(--color-green-50);
   }
   .bg-primary {
     background-color: rgb(var(--color-primary-button));
   }
-  .bg-success {
-    background-color: rgb(var(--color-feedback-success));
+  .bg-red-50 {
+    background-color: var(--color-red-50);
   }
   .bg-theme-bg {
     background-color: rgb(var(--color-background));
@@ -1880,12 +1828,12 @@
     background-color: rgb(var(--color-border));
   }
   .bg-theme-border-soft {
-    background-color: rgba(var(--color-border), var(--border-opacity));
+    background-color: rgba(var(--color-border) / var(--border-opacity));
   }
   .bg-theme-border-soft\/35 {
-    background-color: rgba(var(--color-border), var(--border-opacity));
+    background-color: rgba(var(--color-border) / var(--border-opacity));
     @supports (color: color-mix(in lab, red, red)) {
-      background-color: color-mix(in oklab, rgba(var(--color-border), var(--border-opacity)) 35%, transparent);
+      background-color: color-mix(in oklab, rgba(var(--color-border) / var(--border-opacity)) 35%, transparent);
     }
   }
   .bg-theme-text {
@@ -1903,8 +1851,14 @@
   .bg-transparent\! {
     background-color: transparent !important;
   }
-  .bg-warning {
-    background-color: rgb(var(--color-feedback-warning));
+  .bg-white\/60 {
+    background-color: color-mix(in srgb, #fff 60%, transparent);
+    @supports (color: color-mix(in lab, red, red)) {
+      background-color: color-mix(in oklab, var(--color-white) 60%, transparent);
+    }
+  }
+  .bg-zinc-800 {
+    background-color: var(--color-zinc-800);
   }
   .fill-current {
     fill: currentcolor;
@@ -1954,6 +1908,9 @@
   .p-12 {
     padding: calc(var(--spacing) * 12);
   }
+  .px-1\.5 {
+    padding-inline: calc(var(--spacing) * 1.5);
+  }
   .px-2 {
     padding-inline: calc(var(--spacing) * 2);
   }
@@ -1974,6 +1931,9 @@
   }
   .py-0 {
     padding-block: calc(var(--spacing) * 0);
+  }
+  .py-0\.5 {
+    padding-block: calc(var(--spacing) * 0.5);
   }
   .py-1 {
     padding-block: calc(var(--spacing) * 1);
@@ -2092,12 +2052,78 @@
   .align-super {
     vertical-align: super;
   }
+  .body-lg {
+    font-family: var(--font-body-family);
+    font-style: var(--font-body-style);
+    font-weight: var(--font-body-weight);
+    line-height: var(--font-body-line-height);
+    letter-spacing: var(--font-body-letter-spacing);
+    text-transform: var(--font-body-text-transform);
+    word-break: break-word;
+    font-size: calc(var(--font-body-scale) * 1.6rem);
+    @media (width >= 48rem) {
+      font-size: calc(var(--font-body-scale) * 1.8rem);
+    }
+  }
+  .body-md {
+    font-family: var(--font-body-family);
+    font-style: var(--font-body-style);
+    font-weight: var(--font-body-weight);
+    line-height: var(--font-body-line-height);
+    letter-spacing: var(--font-body-letter-spacing);
+    text-transform: var(--font-body-text-transform);
+    word-break: break-word;
+    font-size: calc(var(--font-body-scale) * 1.4rem);
+    @media (width >= 48rem) {
+      font-size: calc(var(--font-body-scale) * 1.6rem);
+    }
+  }
+  .body-sm {
+    font-family: var(--font-body-family);
+    font-style: var(--font-body-style);
+    font-weight: var(--font-body-weight);
+    line-height: var(--font-body-line-height);
+    letter-spacing: var(--font-body-letter-spacing);
+    text-transform: var(--font-body-text-transform);
+    word-break: break-word;
+    font-size: calc(var(--font-body-scale) * 1.2rem);
+    @media (width >= 48rem) {
+      font-size: calc(var(--font-body-scale) * 1.3rem);
+    }
+  }
+  .body-xl {
+    font-family: var(--font-body-family);
+    font-style: var(--font-body-style);
+    font-weight: var(--font-body-weight);
+    line-height: var(--font-body-line-height);
+    letter-spacing: var(--font-body-letter-spacing);
+    text-transform: var(--font-body-text-transform);
+    word-break: break-word;
+    font-size: calc(var(--font-body-scale) * 1.8rem);
+    @media (width >= 48rem) {
+      font-size: calc(var(--font-body-scale) * 2rem);
+    }
+  }
+  .body-xs {
+    font-family: var(--font-body-family);
+    font-style: var(--font-body-style);
+    font-weight: var(--font-body-weight);
+    line-height: var(--font-body-line-height);
+    letter-spacing: var(--font-body-letter-spacing);
+    text-transform: var(--font-body-text-transform);
+    word-break: break-word;
+    font-size: calc(var(--font-body-scale) * 1rem);
+    @media (width >= 48rem) {
+      font-size: calc(var(--font-body-scale) * 1.1rem);
+    }
+  }
   .h0 {
     font-family: var(--font-heading-family);
     font-style: var(--font-heading-style);
     font-weight: var(--font-heading-weight);
-    letter-spacing: calc(var(--font-heading-scale) * 0.06rem);
-    line-height: calc(1 + 0.3 / max(1, var(--font-heading-scale)));
+    line-height: var(--font-heading-line-height);
+    letter-spacing: var(--font-heading-letter-spacing);
+    text-transform: var(--font-heading-text-transform);
     word-break: break-word;
     font-size: calc(var(--font-heading-scale) * 3.5rem);
     @media (width >= 48rem) {
@@ -2108,8 +2134,9 @@
     font-family: var(--font-heading-family);
     font-style: var(--font-heading-style);
     font-weight: var(--font-heading-weight);
-    letter-spacing: calc(var(--font-heading-scale) * 0.06rem);
-    line-height: calc(1 + 0.3 / max(1, var(--font-heading-scale)));
+    line-height: var(--font-heading-line-height);
+    letter-spacing: var(--font-heading-letter-spacing);
+    text-transform: var(--font-heading-text-transform);
     word-break: break-word;
     font-size: calc(var(--font-heading-scale) * 3rem);
     @media (width >= 48rem) {
@@ -2120,8 +2147,9 @@
     font-family: var(--font-heading-family);
     font-style: var(--font-heading-style);
     font-weight: var(--font-heading-weight);
-    letter-spacing: calc(var(--font-heading-scale) * 0.06rem);
-    line-height: calc(1 + 0.3 / max(1, var(--font-heading-scale)));
+    line-height: var(--font-heading-line-height);
+    letter-spacing: var(--font-heading-letter-spacing);
+    text-transform: var(--font-heading-text-transform);
     word-break: break-word;
     font-size: calc(var(--font-heading-scale) * 2rem);
     @media (width >= 48rem) {
@@ -2132,8 +2160,9 @@
     font-family: var(--font-heading-family);
     font-style: var(--font-heading-style);
     font-weight: var(--font-heading-weight);
-    letter-spacing: calc(var(--font-heading-scale) * 0.06rem);
-    line-height: calc(1 + 0.3 / max(1, var(--font-heading-scale)));
+    line-height: var(--font-heading-line-height);
+    letter-spacing: var(--font-heading-letter-spacing);
+    text-transform: var(--font-heading-text-transform);
     word-break: break-word;
     font-size: calc(var(--font-heading-scale) * 1.7rem);
     @media (width >= 48rem) {
@@ -2144,8 +2173,9 @@
     font-family: var(--font-heading-family);
     font-style: var(--font-heading-style);
     font-weight: var(--font-heading-weight);
-    letter-spacing: calc(var(--font-heading-scale) * 0.06rem);
-    line-height: calc(1 + 0.3 / max(1, var(--font-heading-scale)));
+    line-height: var(--font-heading-line-height);
+    letter-spacing: var(--font-heading-letter-spacing);
+    text-transform: var(--font-heading-text-transform);
     word-break: break-word;
     font-size: calc(var(--font-heading-scale) * 1.5rem);
     @media (width >= 48rem) {
@@ -2156,8 +2186,9 @@
     font-family: var(--font-heading-family);
     font-style: var(--font-heading-style);
     font-weight: var(--font-heading-weight);
-    letter-spacing: calc(var(--font-heading-scale) * 0.06rem);
-    line-height: calc(1 + 0.3 / max(1, var(--font-heading-scale)));
+    line-height: var(--font-heading-line-height);
+    letter-spacing: var(--font-heading-letter-spacing);
+    text-transform: var(--font-heading-text-transform);
     word-break: break-word;
     font-size: calc(var(--font-heading-scale) * 1.2rem);
     @media (width >= 48rem) {
@@ -2168,8 +2199,9 @@
     font-family: var(--font-heading-family);
     font-style: var(--font-heading-style);
     font-weight: var(--font-heading-weight);
-    letter-spacing: calc(var(--font-heading-scale) * 0.06rem);
-    line-height: calc(1 + 0.3 / max(1, var(--font-heading-scale)));
+    line-height: var(--font-heading-line-height);
+    letter-spacing: var(--font-heading-letter-spacing);
+    text-transform: var(--font-heading-text-transform);
     word-break: break-word;
     font-size: calc(var(--font-heading-scale) * 1.1rem);
     @media (width >= 48rem) {
@@ -2180,8 +2212,9 @@
     font-family: var(--font-heading-family);
     font-style: var(--font-heading-style);
     font-weight: var(--font-heading-weight);
-    letter-spacing: calc(var(--font-heading-scale) * 0.06rem);
-    line-height: calc(1 + 0.3 / max(1, var(--font-heading-scale)));
+    line-height: var(--font-heading-line-height);
+    letter-spacing: var(--font-heading-letter-spacing);
+    text-transform: var(--font-heading-text-transform);
     word-break: break-word;
     font-size: calc(var(--font-heading-scale) * 4.5rem);
     @media (width >= 48rem) {
@@ -2192,8 +2225,9 @@
     font-family: var(--font-heading-family);
     font-style: var(--font-heading-style);
     font-weight: var(--font-heading-weight);
-    letter-spacing: calc(var(--font-heading-scale) * 0.06rem);
-    line-height: calc(1 + 0.3 / max(1, var(--font-heading-scale)));
+    line-height: var(--font-heading-line-height);
+    letter-spacing: var(--font-heading-letter-spacing);
+    text-transform: var(--font-heading-text-transform);
     word-break: break-word;
     font-size: calc(var(--font-heading-scale) * 5.5rem);
     @media (width >= 48rem) {
@@ -2204,82 +2238,31 @@
     font-family: var(--font-heading-family);
     font-style: var(--font-heading-style);
     font-weight: var(--font-heading-weight);
-    letter-spacing: calc(var(--font-heading-scale) * 0.06rem);
-    line-height: calc(1 + 0.3 / max(1, var(--font-heading-scale)));
+    line-height: var(--font-heading-line-height);
+    letter-spacing: var(--font-heading-letter-spacing);
+    text-transform: var(--font-heading-text-transform);
     word-break: break-word;
     font-size: calc(var(--font-heading-scale) * 6.5rem);
     @media (width >= 48rem) {
       font-size: calc(var(--font-heading-scale) * 9rem);
     }
   }
-  .body-lg {
+  .body-base {
     font-family: var(--font-body-family);
     font-style: var(--font-body-style);
     font-weight: var(--font-body-weight);
-    line-height: 1.6;
+    line-height: var(--font-body-line-height);
+    letter-spacing: var(--font-body-letter-spacing);
+    text-transform: var(--font-body-text-transform);
     word-break: break-word;
-    font-size: 1.6rem;
-    @media (width >= 48rem) {
-      font-size: 1.8rem;
-    }
-  }
-  .body-md {
-    font-family: var(--font-body-family);
-    font-style: var(--font-body-style);
-    font-weight: var(--font-body-weight);
-    line-height: 1.6;
-    word-break: break-word;
-    font-size: 1.4rem;
-    @media (width >= 48rem) {
-      font-size: 1.6rem;
-    }
-  }
-  .body-sm {
-    font-family: var(--font-body-family);
-    font-style: var(--font-body-style);
-    font-weight: var(--font-body-weight);
-    line-height: 1.6;
-    word-break: break-word;
-    font-size: 1.2rem;
-    @media (width >= 48rem) {
-      font-size: 1.3rem;
-    }
-  }
-  .body-xl {
-    font-family: var(--font-body-family);
-    font-style: var(--font-body-style);
-    font-weight: var(--font-body-weight);
-    line-height: 1.6;
-    word-break: break-word;
-    font-size: 1.8rem;
-    @media (width >= 48rem) {
-      font-size: 2rem;
-    }
-  }
-  .body-xs {
-    font-family: var(--font-body-family);
-    font-style: var(--font-body-style);
-    font-weight: var(--font-body-weight);
-    line-height: 1.6;
-    word-break: break-word;
-    font-size: 1rem;
-    @media (width >= 48rem) {
-      font-size: 1.1rem;
-    }
   }
   .heading-base {
     font-family: var(--font-heading-family);
     font-style: var(--font-heading-style);
     font-weight: var(--font-heading-weight);
-    letter-spacing: calc(var(--font-heading-scale) * 0.06rem);
-    line-height: calc(1 + 0.3 / max(1, var(--font-heading-scale)));
-    word-break: break-word;
-  }
-  .body-base {
-    font-family: var(--font-body-family);
-    font-style: var(--font-body-style);
-    font-weight: var(--font-body-weight);
-    line-height: 1.6;
+    line-height: var(--font-heading-line-height);
+    letter-spacing: var(--font-heading-letter-spacing);
+    text-transform: var(--font-heading-text-transform);
     word-break: break-word;
   }
   .font-heading {
@@ -2291,6 +2274,9 @@
   }
   .text-\[0\.75em\] {
     font-size: 0.75em;
+  }
+  .text-\[0\.625rem\] {
+    font-size: 0.625rem;
   }
   .text-\[calc\(var\(--badge-size-mb\)\*0\.26\)\] {
     font-size: calc(var(--badge-size-mb) * 0.26);
@@ -2416,14 +2402,17 @@
       color: color-mix(in oklab, currentcolor 80%, transparent);
     }
   }
-  .text-error-text {
-    color: rgb(var(--color-feedback-error-text));
+  .text-emerald-500 {
+    color: var(--color-emerald-500);
+  }
+  .text-emerald-900 {
+    color: var(--color-emerald-900);
   }
   .text-gray-500 {
     color: var(--color-gray-500);
   }
-  .text-info-text {
-    color: rgb(var(--color-feedback-info-text));
+  .text-green-800 {
+    color: var(--color-green-800);
   }
   .text-inherit {
     color: inherit;
@@ -2446,8 +2435,14 @@
       color: color-mix(in oklab, rgb(var(--color-primary-button)) 80%, transparent);
     }
   }
-  .text-success-text {
-    color: rgb(var(--color-feedback-success-text));
+  .text-red-500 {
+    color: var(--color-red-500);
+  }
+  .text-red-700 {
+    color: var(--color-red-700);
+  }
+  .text-red-900 {
+    color: var(--color-red-900);
   }
   .text-theme-bg {
     color: rgb(var(--color-background));
@@ -2515,9 +2510,6 @@
       color: color-mix(in oklab, rgb(var(--color-foreground)) 90%, transparent);
     }
   }
-  .text-warning-text {
-    color: rgb(var(--color-feedback-warning-text));
-  }
   .text-white {
     color: var(--color-white);
   }
@@ -2533,8 +2525,14 @@
       color: color-mix(in oklab, var(--color-white) 80%, transparent);
     }
   }
+  .text-zinc-400 {
+    color: var(--color-zinc-400);
+  }
   .capitalize {
     text-transform: capitalize;
+  }
+  .lowercase {
+    text-transform: lowercase;
   }
   .uppercase {
     text-transform: uppercase;
@@ -2660,6 +2658,10 @@
     --tw-shadow: 2px 0 6px -2px var(--tw-shadow-color, rgba(0,0,0,0.06));
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
   }
+  .shadow-lg {
+    --tw-shadow: 0 10px 15px -3px var(--tw-shadow-color, rgb(0 0 0 / 0.1)), 0 4px 6px -4px var(--tw-shadow-color, rgb(0 0 0 / 0.1));
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+  }
   .shadow-none {
     --tw-shadow: 0 0 #0000;
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
@@ -2667,11 +2669,6 @@
   .shadow-surface {
     --tw-shadow: var(--surface-shadow-horizontal-offset) var(--surface-shadow-vertical-offset)
         var(--surface-shadow-blur-radius) rgba(0, 0, 0, var(--surface-shadow-opacity));
-    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
-  }
-  .shadow-toast {
-    --tw-shadow: var(--toast-shadow-horizontal-offset) var(--toast-shadow-vertical-offset)
-        var(--toast-shadow-blur-radius) rgba(0, 0, 0, var(--toast-shadow-opacity));
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
   }
   .shadow-xl {
@@ -3179,6 +3176,11 @@
       }
     }
   }
+  .focus\:border-theme-border-strong {
+    &:focus {
+      border-color: rgb(var(--color-border-strong));
+    }
+  }
   .focus\:text-theme-text\/80 {
     &:focus {
       color: rgb(var(--color-foreground));
@@ -3336,7 +3338,7 @@
   }
   .max-pc\:border-theme-border-soft {
     @media (width < 48rem) {
-      border-color: rgba(var(--color-border), var(--border-opacity));
+      border-color: rgba(var(--color-border) / var(--border-opacity));
     }
   }
   .max-pc\:shadow-\[0_8px_30px_rgba\(0\,0\,0\,0\.08\)\] {
@@ -4023,7 +4025,7 @@
   }
   .pc\:border-theme-border-soft {
     @media (width >= 48rem) {
-      border-color: rgba(var(--color-border), var(--border-opacity));
+      border-color: rgba(var(--color-border) / var(--border-opacity));
     }
   }
   .pc\:object-contain {
@@ -4161,13 +4163,59 @@
       text-align: center;
     }
   }
+  .pc\:body-lg {
+    @media (width >= 48rem) {
+      font-family: var(--font-body-family);
+      font-style: var(--font-body-style);
+      font-weight: var(--font-body-weight);
+      line-height: var(--font-body-line-height);
+      letter-spacing: var(--font-body-letter-spacing);
+      text-transform: var(--font-body-text-transform);
+      word-break: break-word;
+      font-size: calc(var(--font-body-scale) * 1.6rem);
+      @media (width >= 48rem) {
+        font-size: calc(var(--font-body-scale) * 1.8rem);
+      }
+    }
+  }
+  .pc\:body-md {
+    @media (width >= 48rem) {
+      font-family: var(--font-body-family);
+      font-style: var(--font-body-style);
+      font-weight: var(--font-body-weight);
+      line-height: var(--font-body-line-height);
+      letter-spacing: var(--font-body-letter-spacing);
+      text-transform: var(--font-body-text-transform);
+      word-break: break-word;
+      font-size: calc(var(--font-body-scale) * 1.4rem);
+      @media (width >= 48rem) {
+        font-size: calc(var(--font-body-scale) * 1.6rem);
+      }
+    }
+  }
+  .pc\:body-xl {
+    @media (width >= 48rem) {
+      font-family: var(--font-body-family);
+      font-style: var(--font-body-style);
+      font-weight: var(--font-body-weight);
+      line-height: var(--font-body-line-height);
+      letter-spacing: var(--font-body-letter-spacing);
+      text-transform: var(--font-body-text-transform);
+      word-break: break-word;
+      font-size: calc(var(--font-body-scale) * 1.8rem);
+      @media (width >= 48rem) {
+        font-size: calc(var(--font-body-scale) * 2rem);
+      }
+    }
+  }
   .pc\:h1 {
     @media (width >= 48rem) {
       font-family: var(--font-heading-family);
       font-style: var(--font-heading-style);
       font-weight: var(--font-heading-weight);
-      letter-spacing: calc(var(--font-heading-scale) * 0.06rem);
-      line-height: calc(1 + 0.3 / max(1, var(--font-heading-scale)));
+      line-height: var(--font-heading-line-height);
+      letter-spacing: var(--font-heading-letter-spacing);
+      text-transform: var(--font-heading-text-transform);
       word-break: break-word;
       font-size: calc(var(--font-heading-scale) * 3rem);
       @media (width >= 48rem) {
@@ -4180,8 +4228,9 @@
       font-family: var(--font-heading-family);
       font-style: var(--font-heading-style);
       font-weight: var(--font-heading-weight);
-      letter-spacing: calc(var(--font-heading-scale) * 0.06rem);
-      line-height: calc(1 + 0.3 / max(1, var(--font-heading-scale)));
+      line-height: var(--font-heading-line-height);
+      letter-spacing: var(--font-heading-letter-spacing);
+      text-transform: var(--font-heading-text-transform);
       word-break: break-word;
       font-size: calc(var(--font-heading-scale) * 1.7rem);
       @media (width >= 48rem) {
@@ -4194,8 +4243,9 @@
       font-family: var(--font-heading-family);
       font-style: var(--font-heading-style);
       font-weight: var(--font-heading-weight);
-      letter-spacing: calc(var(--font-heading-scale) * 0.06rem);
-      line-height: calc(1 + 0.3 / max(1, var(--font-heading-scale)));
+      line-height: var(--font-heading-line-height);
+      letter-spacing: var(--font-heading-letter-spacing);
+      text-transform: var(--font-heading-text-transform);
       word-break: break-word;
       font-size: calc(var(--font-heading-scale) * 4.5rem);
       @media (width >= 48rem) {
@@ -4208,51 +4258,13 @@
       font-family: var(--font-heading-family);
       font-style: var(--font-heading-style);
       font-weight: var(--font-heading-weight);
-      letter-spacing: calc(var(--font-heading-scale) * 0.06rem);
-      line-height: calc(1 + 0.3 / max(1, var(--font-heading-scale)));
+      line-height: var(--font-heading-line-height);
+      letter-spacing: var(--font-heading-letter-spacing);
+      text-transform: var(--font-heading-text-transform);
       word-break: break-word;
       font-size: calc(var(--font-heading-scale) * 6.5rem);
       @media (width >= 48rem) {
         font-size: calc(var(--font-heading-scale) * 9rem);
-      }
-    }
-  }
-  .pc\:body-lg {
-    @media (width >= 48rem) {
-      font-family: var(--font-body-family);
-      font-style: var(--font-body-style);
-      font-weight: var(--font-body-weight);
-      line-height: 1.6;
-      word-break: break-word;
-      font-size: 1.6rem;
-      @media (width >= 48rem) {
-        font-size: 1.8rem;
-      }
-    }
-  }
-  .pc\:body-md {
-    @media (width >= 48rem) {
-      font-family: var(--font-body-family);
-      font-style: var(--font-body-style);
-      font-weight: var(--font-body-weight);
-      line-height: 1.6;
-      word-break: break-word;
-      font-size: 1.4rem;
-      @media (width >= 48rem) {
-        font-size: 1.6rem;
-      }
-    }
-  }
-  .pc\:body-xl {
-    @media (width >= 48rem) {
-      font-family: var(--font-body-family);
-      font-style: var(--font-body-style);
-      font-weight: var(--font-body-weight);
-      line-height: 1.6;
-      word-break: break-word;
-      font-size: 1.8rem;
-      @media (width >= 48rem) {
-        font-size: 2rem;
       }
     }
   }
@@ -5083,7 +5095,7 @@
     margin-block-end: 0;
   }
   html {
-    font-size: calc(var(--font-body-scale) * 62.5%);
+    font-size: 62.5%;
   }
   body {
     display: grid;
@@ -5091,15 +5103,17 @@
     grid-template-columns: 100%;
     min-height: 100dvh;
     margin: 0;
-    font-size: 1.5rem;
-    line-height: calc(1 + 0.8 / var(--font-body-scale));
+    font-size: calc(var(--font-body-scale) * 1.5rem);
     font-family: var(--font-body-family);
     font-style: var(--font-body-style);
     font-weight: var(--font-body-weight);
+    line-height: var(--font-body-line-height);
+    letter-spacing: var(--font-body-letter-spacing);
+    text-transform: var(--font-body-text-transform);
   }
   @media (width >= 48rem) {
     body {
-      font-size: 1.6rem;
+      font-size: calc(var(--font-body-scale) * 1.6rem);
     }
   }
   input, textarea, select {
@@ -5115,8 +5129,9 @@
     font-family: var(--font-heading-family);
     font-style: var(--font-heading-style);
     font-weight: var(--font-heading-weight);
-    letter-spacing: calc(var(--font-heading-scale) * 0.06rem);
-    line-height: calc(1 + 0.3 / max(1, var(--font-heading-scale)));
+    line-height: var(--font-heading-line-height);
+    letter-spacing: var(--font-heading-letter-spacing);
+    text-transform: var(--font-heading-text-transform);
     word-break: break-word;
   }
   h1 {
@@ -5234,7 +5249,7 @@ button.shopify-payment-button__button--unbranded {
   font-style: var(--font-body-style);
   font-weight: var(--font-body-weight);
   &:focus-visible {
-    outline: var(--focus-ring-width) solid rgba(var(--color-focus-ring), var(--focus-ring-opacity));
+    outline: var(--focus-ring-width) solid var(--color-focus-soft);
     outline-offset: var(--focus-ring-offset);
   }
   width: 100%;
@@ -5265,11 +5280,13 @@ shopify-accelerated-checkout {
     display: inline-block;
     font-style: var(--font-body-style);
     font-weight: var(--font-body-weight);
-    line-height: 1.6;
+    line-height: var(--font-body-line-height);
+    letter-spacing: var(--font-body-letter-spacing);
+    text-transform: var(--font-body-text-transform);
     word-break: break-word;
-    font-size: 1.4rem;
+    font-size: calc(var(--font-body-scale) * 1.4rem);
     @media (width >= 48rem) {
-      font-size: 1.6rem;
+      font-size: calc(var(--font-body-scale) * 1.6rem);
     }
     font-family: var(--font-body-family);
     .localization-toggle {
@@ -5291,7 +5308,7 @@ shopify-accelerated-checkout {
       box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
       border-style: var(--tw-border-style);
       border-width: 1px;
-      border-color: rgba(var(--color-border), var(--border-opacity));
+      border-color: rgba(var(--color-border) / var(--border-opacity));
       background-color: rgb(var(--color-background));
       color: rgb(var(--color-foreground));
       background-image: var(--gradient-background);
@@ -5436,18 +5453,18 @@ shopify-accelerated-checkout {
     position: relative;
     width: 100%;
     overflow: auto;
-    border-radius: var(--dialog-radius);
+    border-radius: var(--surface-radius);
+    --tw-shadow: var(--surface-shadow-horizontal-offset) var(--surface-shadow-vertical-offset)
+        var(--surface-shadow-blur-radius) rgba(0, 0, 0, var(--surface-shadow-opacity));
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
     border-style: var(--tw-border-style);
     border-width: 1px;
-    border-color: rgba(var(--color-border), var(--border-opacity));
+    border-color: rgba(var(--color-border) / var(--border-opacity));
     background-color: rgb(var(--color-background));
     color: rgb(var(--color-foreground));
     background-image: var(--gradient-background);
-    border-width: var(--dialog-border-width);
+    border-width: var(--surface-border-width);
     border-style: solid;
-    --tw-shadow: var(--dialog-shadow-horizontal-offset) var(--dialog-shadow-vertical-offset)
-        var(--dialog-shadow-blur-radius) rgba(0, 0, 0, var(--dialog-shadow-opacity));
-    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
   }
   .ui-dialog-drawer-panel {
     position: relative;
@@ -5456,14 +5473,14 @@ shopify-accelerated-checkout {
     overflow: auto;
     border-style: var(--tw-border-style);
     border-width: 1px;
-    border-color: rgba(var(--color-border), var(--border-opacity));
+    border-color: rgba(var(--color-border) / var(--border-opacity));
     background-color: rgb(var(--color-background));
     color: rgb(var(--color-foreground));
     background-image: var(--gradient-background);
-    border-width: var(--dialog-border-width);
+    border-width: var(--surface-border-width);
     border-style: solid;
-    --tw-shadow: var(--dialog-shadow-horizontal-offset) var(--dialog-shadow-vertical-offset)
-        var(--dialog-shadow-blur-radius) rgba(0, 0, 0, var(--dialog-shadow-opacity));
+    --tw-shadow: var(--surface-shadow-horizontal-offset) var(--surface-shadow-vertical-offset)
+        var(--surface-shadow-blur-radius) rgba(0, 0, 0, var(--surface-shadow-opacity));
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
   }
   .ui-dialog-modal-width-default {
@@ -5490,15 +5507,7 @@ shopify-accelerated-checkout {
     display: flex;
     flex-direction: column;
     gap: calc(var(--spacing) * 3);
-    border-radius: var(--card-radius);
-    border-style: var(--tw-border-style);
-    border-width: 1px;
-    border-color: rgba(var(--color-border), var(--border-opacity));
     padding: calc(var(--spacing) * 3);
-    --tw-shadow: var(--card-shadow-horizontal-offset) var(--card-shadow-vertical-offset)
-        var(--card-shadow-blur-radius) rgba(0, 0, 0, var(--card-shadow-opacity));
-    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
-    border-width: var(--card-border-width);
     .product-card-shell__meta, .product-card-shell__info {
       display: flex;
       align-items: center;
@@ -5506,21 +5515,25 @@ shopify-accelerated-checkout {
       font-family: var(--font-body-family);
       font-style: var(--font-body-style);
       font-weight: var(--font-body-weight);
-      line-height: 1.6;
+      line-height: var(--font-body-line-height);
+      letter-spacing: var(--font-body-letter-spacing);
+      text-transform: var(--font-body-text-transform);
       word-break: break-word;
-      font-size: 1.2rem;
+      font-size: calc(var(--font-body-scale) * 1.2rem);
       @media (width >= 48rem) {
-        font-size: 1.3rem;
+        font-size: calc(var(--font-body-scale) * 1.3rem);
       }
       @media (width >= 48rem) {
         font-family: var(--font-body-family);
         font-style: var(--font-body-style);
         font-weight: var(--font-body-weight);
-        line-height: 1.6;
+        line-height: var(--font-body-line-height);
+        letter-spacing: var(--font-body-letter-spacing);
+        text-transform: var(--font-body-text-transform);
         word-break: break-word;
-        font-size: 1.4rem;
+        font-size: calc(var(--font-body-scale) * 1.4rem);
         @media (width >= 48rem) {
-          font-size: 1.6rem;
+          font-size: calc(var(--font-body-scale) * 1.6rem);
         }
       }
     }
@@ -5621,9 +5634,9 @@ shopify-accelerated-checkout {
     }
     .product-card-shell__media {
       position: relative;
+      aspect-ratio: 1 / 1;
       flex: 1;
       overflow: hidden;
-      aspect-ratio: var(--card-media-aspect-ratio, 1 / 1);
     }
     .product-card-shell__media-link {
       position: relative;
@@ -5670,15 +5683,6 @@ shopify-accelerated-checkout {
   }
   .product-card-shell--interactive:hover .product-card-shell__image {
     transform: scale(1.05);
-  }
-  .product-card-shell[data-animation-hover='vertical-lift']:hover {
-    transform: translateY(-4px);
-    transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
-  }
-  .product-card-shell[data-animation-hover='3d-lift']:hover {
-    transform: translateY(-4px) perspective(600px) rotateX(2deg);
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
-    transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease;
   }
   .product-card {
     position: relative;
@@ -5762,7 +5766,7 @@ shopify-accelerated-checkout {
         font-style: var(--font-body-style);
         font-weight: var(--font-body-weight);
         &:focus-visible {
-          outline: var(--focus-ring-width) solid rgba(var(--color-focus-ring), var(--focus-ring-opacity));
+          outline: var(--focus-ring-width) solid var(--color-focus-soft);
           outline-offset: var(--focus-ring-offset);
         }
       }
@@ -5793,8 +5797,8 @@ shopify-accelerated-checkout {
         }
       }
       .product-card__btn-secondary.is-disabled {
-        border-color: rgba(var(--color-border), var(--border-opacity));
-        background-color: rgba(var(--color-border), var(--border-opacity));
+        border-color: rgba(var(--color-border) / var(--border-opacity));
+        background-color: rgba(var(--color-border) / var(--border-opacity));
         color: rgb(var(--color-foreground));
         @supports (color: color-mix(in lab, red, red)) {
           color: color-mix(in oklab, rgb(var(--color-foreground)) 45%, transparent);
@@ -5912,21 +5916,25 @@ shopify-accelerated-checkout {
       font-family: var(--font-body-family);
       font-style: var(--font-body-style);
       font-weight: var(--font-body-weight);
-      line-height: 1.6;
+      line-height: var(--font-body-line-height);
+      letter-spacing: var(--font-body-letter-spacing);
+      text-transform: var(--font-body-text-transform);
       word-break: break-word;
-      font-size: 1.2rem;
+      font-size: calc(var(--font-body-scale) * 1.2rem);
       @media (width >= 48rem) {
-        font-size: 1.3rem;
+        font-size: calc(var(--font-body-scale) * 1.3rem);
       }
       @media (width >= 48rem) {
         font-family: var(--font-body-family);
         font-style: var(--font-body-style);
         font-weight: var(--font-body-weight);
-        line-height: 1.6;
+        line-height: var(--font-body-line-height);
+        letter-spacing: var(--font-body-letter-spacing);
+        text-transform: var(--font-body-text-transform);
         word-break: break-word;
-        font-size: 1.4rem;
+        font-size: calc(var(--font-body-scale) * 1.4rem);
         @media (width >= 48rem) {
-          font-size: 1.6rem;
+          font-size: calc(var(--font-body-scale) * 1.6rem);
         }
       }
     }
@@ -5974,7 +5982,7 @@ shopify-accelerated-checkout {
       @supports (color: color-mix(in lab, red, red)) {
         border-color: color-mix(in oklab, var(--color-black) 10%, transparent);
       }
-      background-color: rgba(var(--color-border), var(--border-opacity));
+      background-color: rgba(var(--color-border) / var(--border-opacity));
     }
     &[data-hover-mode='variants'] {
       .product-card__info {
@@ -6052,11 +6060,13 @@ shopify-accelerated-checkout {
     font-family: var(--font-body-family);
     font-style: var(--font-body-style);
     font-weight: var(--font-body-weight);
-    line-height: 1.6;
+    line-height: var(--font-body-line-height);
+    letter-spacing: var(--font-body-letter-spacing);
+    text-transform: var(--font-body-text-transform);
     word-break: break-word;
-    font-size: 1.4rem;
+    font-size: calc(var(--font-body-scale) * 1.4rem);
     @media (width >= 48rem) {
-      font-size: 1.6rem;
+      font-size: calc(var(--font-body-scale) * 1.6rem);
     }
     --tw-tracking: 0.2em;
     letter-spacing: 0.2em;
@@ -6070,8 +6080,9 @@ shopify-accelerated-checkout {
     font-family: var(--font-heading-family);
     font-style: var(--font-heading-style);
     font-weight: var(--font-heading-weight);
-    letter-spacing: calc(var(--font-heading-scale) * 0.06rem);
-    line-height: calc(1 + 0.3 / max(1, var(--font-heading-scale)));
+    line-height: var(--font-heading-line-height);
+    letter-spacing: var(--font-heading-letter-spacing);
+    text-transform: var(--font-heading-text-transform);
     word-break: break-word;
     font-size: calc(var(--font-heading-scale) * 2rem);
     @media (width >= 48rem) {
@@ -6088,8 +6099,9 @@ shopify-accelerated-checkout {
     font-family: var(--font-heading-family);
     font-style: var(--font-heading-style);
     font-weight: var(--font-heading-weight);
-    letter-spacing: calc(var(--font-heading-scale) * 0.06rem);
-    line-height: calc(1 + 0.3 / max(1, var(--font-heading-scale)));
+    line-height: var(--font-heading-line-height);
+    letter-spacing: var(--font-heading-letter-spacing);
+    text-transform: var(--font-heading-text-transform);
     word-break: break-word;
     font-size: calc(var(--font-heading-scale) * 1.5rem);
     @media (width >= 48rem) {
@@ -6100,11 +6112,13 @@ shopify-accelerated-checkout {
     font-family: var(--font-body-family);
     font-style: var(--font-body-style);
     font-weight: var(--font-body-weight);
-    line-height: 1.6;
+    line-height: var(--font-body-line-height);
+    letter-spacing: var(--font-body-letter-spacing);
+    text-transform: var(--font-body-text-transform);
     word-break: break-word;
-    font-size: 1.6rem;
+    font-size: calc(var(--font-body-scale) * 1.6rem);
     @media (width >= 48rem) {
-      font-size: 1.8rem;
+      font-size: calc(var(--font-body-scale) * 1.8rem);
     }
     color: rgb(var(--color-foreground));
     @supports (color: color-mix(in lab, red, red)) {
@@ -6132,7 +6146,7 @@ shopify-accelerated-checkout {
     align-items: center;
     border-style: var(--tw-border-style);
     border-width: 1px;
-    border-color: rgba(var(--color-border), var(--border-opacity));
+    border-color: rgba(var(--color-border) / var(--border-opacity));
     padding-inline: calc(var(--spacing) * 2);
     padding-block: calc(var(--spacing) * 1.5);
   }
@@ -6168,11 +6182,13 @@ shopify-accelerated-checkout {
     font-family: var(--font-body-family);
     font-style: var(--font-body-style);
     font-weight: var(--font-body-weight);
-    line-height: 1.6;
+    line-height: var(--font-body-line-height);
+    letter-spacing: var(--font-body-letter-spacing);
+    text-transform: var(--font-body-text-transform);
     word-break: break-word;
-    font-size: 1.4rem;
+    font-size: calc(var(--font-body-scale) * 1.4rem);
     @media (width >= 48rem) {
-      font-size: 1.6rem;
+      font-size: calc(var(--font-body-scale) * 1.6rem);
     }
     color: currentcolor;
     -moz-appearance: textfield;
@@ -6205,11 +6221,13 @@ shopify-accelerated-checkout {
     font-family: var(--font-body-family);
     font-style: var(--font-body-style);
     font-weight: var(--font-body-weight);
-    line-height: 1.6;
+    line-height: var(--font-body-line-height);
+    letter-spacing: var(--font-body-letter-spacing);
+    text-transform: var(--font-body-text-transform);
     word-break: break-word;
-    font-size: 1.4rem;
+    font-size: calc(var(--font-body-scale) * 1.4rem);
     @media (width >= 48rem) {
-      font-size: 1.6rem;
+      font-size: calc(var(--font-body-scale) * 1.6rem);
     }
     color: rgb(var(--color-foreground));
     transition-property: opacity;
@@ -6262,8 +6280,9 @@ shopify-accelerated-checkout {
     font-family: var(--font-heading-family);
     font-style: var(--font-heading-style);
     font-weight: var(--font-heading-weight);
-    letter-spacing: calc(var(--font-heading-scale) * 0.06rem);
-    line-height: calc(1 + 0.3 / max(1, var(--font-heading-scale)));
+    line-height: var(--font-heading-line-height);
+    letter-spacing: var(--font-heading-letter-spacing);
+    text-transform: var(--font-heading-text-transform);
     word-break: break-word;
     font-size: calc(var(--font-heading-scale) * 3.5rem);
     @media (width >= 48rem) {
@@ -6274,8 +6293,9 @@ shopify-accelerated-checkout {
     font-family: var(--font-heading-family);
     font-style: var(--font-heading-style);
     font-weight: var(--font-heading-weight);
-    letter-spacing: calc(var(--font-heading-scale) * 0.06rem);
-    line-height: calc(1 + 0.3 / max(1, var(--font-heading-scale)));
+    line-height: var(--font-heading-line-height);
+    letter-spacing: var(--font-heading-letter-spacing);
+    text-transform: var(--font-heading-text-transform);
     word-break: break-word;
     font-size: calc(var(--font-heading-scale) * 3rem);
     @media (width >= 48rem) {
@@ -6286,8 +6306,9 @@ shopify-accelerated-checkout {
     font-family: var(--font-heading-family);
     font-style: var(--font-heading-style);
     font-weight: var(--font-heading-weight);
-    letter-spacing: calc(var(--font-heading-scale) * 0.06rem);
-    line-height: calc(1 + 0.3 / max(1, var(--font-heading-scale)));
+    line-height: var(--font-heading-line-height);
+    letter-spacing: var(--font-heading-letter-spacing);
+    text-transform: var(--font-heading-text-transform);
     word-break: break-word;
     font-size: calc(var(--font-heading-scale) * 2rem);
     @media (width >= 48rem) {
@@ -6298,8 +6319,9 @@ shopify-accelerated-checkout {
     font-family: var(--font-heading-family);
     font-style: var(--font-heading-style);
     font-weight: var(--font-heading-weight);
-    letter-spacing: calc(var(--font-heading-scale) * 0.06rem);
-    line-height: calc(1 + 0.3 / max(1, var(--font-heading-scale)));
+    line-height: var(--font-heading-line-height);
+    letter-spacing: var(--font-heading-letter-spacing);
+    text-transform: var(--font-heading-text-transform);
     word-break: break-word;
     font-size: calc(var(--font-heading-scale) * 1.7rem);
     @media (width >= 48rem) {
@@ -6310,8 +6332,9 @@ shopify-accelerated-checkout {
     font-family: var(--font-heading-family);
     font-style: var(--font-heading-style);
     font-weight: var(--font-heading-weight);
-    letter-spacing: calc(var(--font-heading-scale) * 0.06rem);
-    line-height: calc(1 + 0.3 / max(1, var(--font-heading-scale)));
+    line-height: var(--font-heading-line-height);
+    letter-spacing: var(--font-heading-letter-spacing);
+    text-transform: var(--font-heading-text-transform);
     word-break: break-word;
     font-size: calc(var(--font-heading-scale) * 1.5rem);
     @media (width >= 48rem) {
@@ -6322,8 +6345,9 @@ shopify-accelerated-checkout {
     font-family: var(--font-heading-family);
     font-style: var(--font-heading-style);
     font-weight: var(--font-heading-weight);
-    letter-spacing: calc(var(--font-heading-scale) * 0.06rem);
-    line-height: calc(1 + 0.3 / max(1, var(--font-heading-scale)));
+    line-height: var(--font-heading-line-height);
+    letter-spacing: var(--font-heading-letter-spacing);
+    text-transform: var(--font-heading-text-transform);
     word-break: break-word;
     font-size: calc(var(--font-heading-scale) * 1.2rem);
     @media (width >= 48rem) {
@@ -6454,11 +6478,13 @@ shopify-accelerated-checkout {
     font-family: var(--font-body-family);
     font-style: var(--font-body-style);
     font-weight: var(--font-body-weight);
-    line-height: 1.6;
+    line-height: var(--font-body-line-height);
+    letter-spacing: var(--font-body-letter-spacing);
+    text-transform: var(--font-body-text-transform);
     word-break: break-word;
-    font-size: 1.2rem;
+    font-size: calc(var(--font-body-scale) * 1.2rem);
     @media (width >= 48rem) {
-      font-size: 1.3rem;
+      font-size: calc(var(--font-body-scale) * 1.3rem);
     }
     color: rgb(var(--color-foreground));
     @supports (color: color-mix(in lab, red, red)) {
@@ -6467,7 +6493,7 @@ shopify-accelerated-checkout {
     text-align: center;
   }
   .rte hr {
-    border-color: rgba(var(--color-border), var(--border-opacity));
+    border-color: rgba(var(--color-border) / var(--border-opacity));
     margin: 2em 0;
   }
   .rte :is(code, pre) {
@@ -6500,7 +6526,7 @@ shopify-accelerated-checkout {
   .rte :is(th, td) {
     border-style: var(--tw-border-style);
     border-width: 1px;
-    border-color: rgba(var(--color-border), var(--border-opacity));
+    border-color: rgba(var(--color-border) / var(--border-opacity));
     padding: 0.75em 1em;
     text-align: left;
   }
@@ -6593,11 +6619,13 @@ shopify-accelerated-checkout {
     font-family: var(--font-body-family);
     font-style: var(--font-body-style);
     font-weight: var(--font-body-weight);
-    line-height: 1.6;
+    line-height: var(--font-body-line-height);
+    letter-spacing: var(--font-body-letter-spacing);
+    text-transform: var(--font-body-text-transform);
     word-break: break-word;
-    font-size: 1.4rem;
+    font-size: calc(var(--font-body-scale) * 1.4rem);
     @media (width >= 48rem) {
-      font-size: 1.6rem;
+      font-size: calc(var(--font-body-scale) * 1.6rem);
     }
     --tw-tracking: 0.04em;
     letter-spacing: 0.04em;
@@ -6610,11 +6638,13 @@ shopify-accelerated-checkout {
     font-family: var(--font-body-family);
     font-style: var(--font-body-style);
     font-weight: var(--font-body-weight);
-    line-height: 1.6;
+    line-height: var(--font-body-line-height);
+    letter-spacing: var(--font-body-letter-spacing);
+    text-transform: var(--font-body-text-transform);
     word-break: break-word;
-    font-size: 1.4rem;
+    font-size: calc(var(--font-body-scale) * 1.4rem);
     @media (width >= 48rem) {
-      font-size: 1.6rem;
+      font-size: calc(var(--font-body-scale) * 1.6rem);
     }
     color: rgb(var(--color-foreground));
   }
@@ -6656,11 +6686,13 @@ shopify-accelerated-checkout {
     font-family: var(--font-body-family);
     font-style: var(--font-body-style);
     font-weight: var(--font-body-weight);
-    line-height: 1.6;
+    line-height: var(--font-body-line-height);
+    letter-spacing: var(--font-body-letter-spacing);
+    text-transform: var(--font-body-text-transform);
     word-break: break-word;
-    font-size: 1.4rem;
+    font-size: calc(var(--font-body-scale) * 1.4rem);
     @media (width >= 48rem) {
-      font-size: 1.6rem;
+      font-size: calc(var(--font-body-scale) * 1.6rem);
     }
     color: rgb(var(--color-foreground));
     @supports (color: color-mix(in lab, red, red)) {
@@ -6851,7 +6883,7 @@ shopify-accelerated-checkout {
   .product-info-blocks__collapsible-tab {
     border-top-style: var(--tw-border-style);
     border-top-width: 1px;
-    border-color: rgba(var(--color-border), var(--border-opacity));
+    border-color: rgba(var(--color-border) / var(--border-opacity));
   }
   .product-info-blocks__collapsible-tab + .product-info-blocks__collapsible-tab {
     margin-top: calc(var(--product-block-row-gap) * -1);
@@ -7032,21 +7064,6 @@ shopify-accelerated-checkout {
     align-self: flex-end;
     justify-self: flex-end;
   }
-}
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-  .product-card-shell[data-animation-hover='vertical-lift']:hover, .product-card-shell[data-animation-hover='3d-lift']:hover {
-    transform: none !important;
-  }
-}
-body[data-reveal-on-scroll='false'] [data-gsap-hero], body[data-reveal-on-scroll='false'] [data-gsap-badge], body[data-reveal-on-scroll='false'] [data-gsap-card], body[data-reveal-on-scroll='false'] [data-gsap-item], body[data-reveal-on-scroll='false'] [data-gsap-image], body[data-reveal-on-scroll='false'] [data-gsap-form], body[data-reveal-on-scroll='false'] [data-gsap-watermark], body[data-reveal-on-scroll='false'] [data-gsap-content], body[data-reveal-on-scroll='false'] [data-gsap-brush], body[data-reveal-on-scroll='false'] [data-gsap-text], body[data-reveal-on-scroll='false'] [data-gsap-sidebar] {
-  opacity: 1 !important;
-  transform: none !important;
 }
 @property --tw-duration {
   syntax: "*";
