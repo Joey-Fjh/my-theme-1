@@ -1,6 +1,6 @@
 <section
     data-section-id="{{ section.id }}"
-    class="product-comparison-table-section full-width color-{{ section.settings.color_scheme }}"
+    class="product-comparison-table-section full-width color-{{ section.settings.color_scheme }} section-color-apply"
     style="
         --section-padding-top: {{ section.settings.padding_top | default: 0 }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom | default: 0 }}px;
@@ -20,9 +20,9 @@
         "
     >
         {% if section.settings.heading != blank %}
-            <h2 class="mb-10 text-center h1 font-bold text-theme-text pc:mb-16">
+            <h1 class="mb-10 text-center pc:mb-16">
                 {{ section.settings.heading }}
-            </h2>
+            </h1>
         {% endif %}
         {% if section.settings.products != blank and section.blocks.size > 0 %}
             <div
@@ -47,8 +47,8 @@
                                         comparison-table__sticky-col
                                         comparison-table__row-header
                                         sticky left-0 z-10
-                                        border border-theme-border-soft bg-theme-bg
-                                        px-4 py-5 align-middle body-md leading-snug font-medium whitespace-normal text-theme-text/70 shadow-[2px_0_6px_-2px_rgba(0,0,0,0.06)]
+                                        border border-theme-border-20 bg-theme-bg
+                                        px-4 py-5 align-middle whitespace-normal shadow-[2px_0_6px_-2px_rgba(0,0,0,0.06)]
                                         pc:px-6 pc:py-7
                                     "
                                 >
@@ -79,7 +79,7 @@
                                     <td
                                         class="
                                             comparison-table__product-cell
-                                            border border-theme-border-soft p-3 align-middle pc:p-6
+                                            border border-theme-border-20 p-3 align-middle pc:p-6
                                             {% if is_highlight %}bg-(--comparison-column-bg-color){% else %}bg-transparent{% endif %}
                                         "
                                     >
@@ -91,32 +91,34 @@
                                                 >
                                                     <div class="mb-4 flex h-44 w-full items-center justify-center pc:mb-6 pc:h-[260px]">
                                                         <div class="h-full w-full max-w-[76%] pc:max-w-[74%]">
-                                                            {%-
-                                                                render 'image',
+                                                            {%- assign image_alt = item.featured_image.alt
+                                                                | default: item.title
+                                                            -%}
+                                                            {%- render 'image',
                                                                 image: item.featured_image,
                                                                 width: 360,
                                                                 aspect_ratio: '3/4',
                                                                 wrapper: 'div',
                                                                 class: 'w-full h-full',
                                                                 img_class: 'image_img w-full h-full object-contain object-center',
-                                                                alt: item.featured_image.alt | default: item.title
+                                                                alt: image_alt
                                                             -%}
                                                         </div>
                                                     </div>
-                                                    <span class="block w-full text-center body-md font-semibold text-theme-text">
+                                                    <span class="block w-full text-center">
                                                         {{- item.title -}}
                                                     </span>
                                                 </a>
 
                                             {% when 'price' %}
                                                 <div class="flex flex-wrap items-baseline gap-2">
-                                                    <span class="font-medium">
+                                                    <span>
                                                         {{- item.price | money -}}
                                                     </span>
                                                     {% if item.compare_at_price != blank
                                                         and item.compare_at_price > item.price
                                                     %}
-                                                        <span class="body-md text-theme-text/70 line-through">
+                                                        <span class="line-through">
                                                             {{- item.compare_at_price | money -}}
                                                         </span>
                                                     {% endif %}
@@ -129,7 +131,7 @@
                                                         max: 5,
                                                         wrapper_class: 'mb-0 inline-flex items-center flex-none comparison-table__rating-stars'
                                                     -%}
-                                                    <span class="comparison-table__rating-value shrink-0 body-md text-theme-text/70"
+                                                    <span class="comparison-table__rating-value shrink-0"
                                                         >4.5</span
                                                     >
                                                 </div>
@@ -143,7 +145,7 @@
                                                     {% assign meta_ns = meta_parts[0] %}
                                                     {% assign meta_key_name = meta_parts[1] %}
                                                     {% assign meta_val = item.metafields[meta_ns][meta_key_name] %}
-                                                    <div class="body-md text-theme-text/70">
+                                                    <div>
                                                         {% if meta_val != blank
                                                             and meta_val.value != blank
                                                         %}
@@ -155,18 +157,16 @@
                                                         {% endif %}
                                                     </div>
                                                 {% else %}
-                                                    <span class="body-md text-theme-text/60"
-                                                        >—</span
-                                                    >
+                                                    <span>—</span>
                                                 {% endif %}
 
                                             {% when 'availability' %}
                                                 {% if item.available %}
-                                                    <span class="body-md text-(--comparison-success-color)">
+                                                    <span class="text-(--comparison-success-color)">
                                                         {{- 'products.comparison.in_stock' | t -}}
                                                     </span>
                                                 {% else %}
-                                                    <span class="body-md text-(--comparison-danger-color)">
+                                                    <span class="text-(--comparison-danger-color)">
                                                         {{-
                                                             'products.comparison.out_of_stock'
                                                             | t
@@ -175,7 +175,7 @@
                                                 {% endif %}
 
                                             {% else %}
-                                                <span class="text-theme-text/60">—</span>
+                                                <span>—</span>
                                         {% endcase %}
                                     </td>
                                 {% endfor %}
@@ -186,8 +186,8 @@
             </div>
         {% else %}
             <div class="py-12 text-center text-gray-500">
-                <h5 class="h5">{{ 'products.comparison.no_products' | t }}</h5>
-                <p class="mt-2 body-sm">{{ 'products.comparison.no_blocks' | t }}</p>
+                <h4>{{ 'products.comparison.no_products' | t }}</h4>
+                <p class="mt-2">{{ 'products.comparison.no_blocks' | t }}</p>
             </div>
         {% endif %}
     </div>
@@ -471,7 +471,7 @@
             "min": 0,
             "max": 8,
             "step": 1,
-            "default": 1,
+            "default": 0,
             "label": "t:sections.product-comparison-table.settings.highlight_column_index",
             "info": "t:sections.product-comparison-table.info.1_first_product_column_0_no_highlight"
         },

@@ -1,6 +1,6 @@
 <div
     data-section-id="{{ section.id }}"
-    class="philosophy-section full-width color-{{ section.settings.color_scheme }}"
+    class="philosophy-section full-width color-{{ section.settings.color_scheme }} section-color-apply"
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
@@ -9,24 +9,24 @@
     data-component-type="philosophy-section"
     data-component-id="{{ section.id }}"
 >
-    <div class="layout container-page bg-theme-bg text-theme-text">
+    <div class="layout container-page">
         {%- comment -%} Header {%- endcomment -%}
         <div class="mx-auto mb-12 text-center pc:mb-20">
-            <p
+            <h3
                 data-gsap-item
-                class="body-sm text-theme-text/70"
+                class="sub-heading"
             >
                 {{ section.settings.subtitle }}
-            </p>
-            <h2
+            </h3>
+            <h1
                 data-gsap-item
-                class="mt-3 h1 leading-tight font-bold text-theme-text"
+                class="mt-3"
             >
                 {{ section.settings.heading }}
-            </h2>
+            </h1>
             <div
                 data-gsap-item
-                class="rte rte--compact mx-auto mt-4 max-w-prose body-md leading-relaxed text-theme-text/80"
+                class="rte rte--compact mx-auto mt-4 max-w-prose"
             >
                 {{ section.settings.description }}
             </div>
@@ -47,11 +47,12 @@
 
                             {%- capture philosophy_card_media -%}
                                 <div class="group aspect-4/3 overflow-hidden rounded-sm">
+                                    {%- assign image_alt = block.settings.image.alt | default: block.settings.title | escape -%}
                                     {%-
                                         render 'image',
                                         wrapper: 'div',
                                         image: block.settings.image,
-                                        alt: block.settings.image.alt | default: block.settings.title | escape,
+                                        alt: image_alt,
                                         width: block.settings.image.width,
                                         img_class: 'image_img transition-transform duration-300 ease-out will-change-transform pc:group-hover:scale-105'
                                     -%}
@@ -70,20 +71,21 @@
                                 {{ philosophy_card_media }}
                             {%- endif -%}
 
-                            <h3 class="mt-5 h4 leading-snug font-bold text-theme-text">
+                            <h3 class="mt-5">
                                 {{ block.settings.title }}
                             </h3>
 
-                            <div class="rte rte--compact mt-2 body-sm leading-relaxed text-theme-text/80">
+                            <div class="rte rte--compact mt-2">
                                 {{ block.settings.text }}
                             </div>
 
                             {%- if card_link != blank and block.settings.link_text != blank -%}
                                 <div class="mt-4">
                                     {%- capture card_cta_content -%}
-                                        <span class="body-sm">{{ block.settings.link_text }}</span>
+                                        <span>{{ block.settings.link_text }}</span>
                                         {% render 'icons', icon: 'icon-arrow2', class: 'ml-3' %}
                                     {%- endcapture -%}
+
                                     {%- render 'link',
                                         href: card_link,
                                         content: card_cta_content,

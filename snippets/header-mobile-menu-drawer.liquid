@@ -10,12 +10,12 @@
 {%- if menu_obj != blank and menu_obj.links != blank -%}
     {%- capture drawer_content -%}
         <div
-            class="flex h-full flex-col bg-theme-bg text-theme-text"
+            class="section-color-apply flex h-full flex-col"
             x-data="mobileMenuDrawer"
             @keydown.escape.window="$store.dialog.close()"
         >
-            <div class="flex items-center justify-between border-b border-theme-border-soft px-6 py-5">
-                <h2 id="dialog-title-{{ popup_id }}" class="body-md tracking-wide uppercase">
+            <div class="flex items-center justify-between border-b border-theme-border-20 px-6 py-5">
+                <h2 id="dialog-title-{{ popup_id }}" class="uppercase">
                     {{ 'accessibility.menu' | t }}
                 </h2>
 
@@ -42,17 +42,18 @@
                                             {%- endif -%}
                                         {%- endcapture -%}
                                         
+                                        {%- assign link_text = link.title | escape -%}
                                         {% render 'link',
-                                            text: link.title | escape,
+                                            text: link_text,
                                             href: link.url,
                                             variant: 'underline',
-                                            class: 'inline-flex items-center body-md text-theme-text/90',
+                                            class: 'inline-flex items-center',
                                             attributes: top_attributes
                                         %}
                                     {%- else -%}
                                         <button
                                             type="button"
-                                            class="inline-flex cursor-pointer items-center gap-2 body-md text-theme-text/90"
+                                            class="inline-flex cursor-pointer items-center gap-2"
                                             data-index="{{ forloop.index0 }}"
                                             aria-controls="mobile-sub-{{ forloop.index0 }}"
                                             @click="openTop(Number($el.dataset.index))"
@@ -60,7 +61,7 @@
                                         >
                                             <span>{{ link.title | escape }}</span>
                                             <span
-                                                class="inline-flex transition-transform duration-200"
+                                                class="inline-flex transition-transform duration-300"
                                                 data-index="{{ forloop.index0 }}"
                                                 :class="activeTopIndex === Number($el.dataset.index) ? 'rotate-180' : ''"
                                             >
@@ -76,7 +77,7 @@
                                         >
                                             <ul class="space-y-4" role="list">
                                                 {%- for child in link.links -%}
-                                                    <li class="text-theme-text/55">
+                                                    <li class="text-theme-text/50">
                                                         {%- if child.links == blank -%}
                                                             {%- capture child_attributes -%}
                                                                 {%- if child.current -%}
@@ -84,11 +85,12 @@
                                                                 {%- endif -%}
                                                             {%- endcapture -%}
 
+                                                            {%- assign link_text = child.title | escape -%}
                                                             {% render 'link',
-                                                                text: child.title | escape,
+                                                                text: link_text,
                                                                 href: child.url,
                                                                 variant: 'underline',
-                                                                class: 'inline-flex items-center body-lg leading-[1.2] font-light text-theme-text/90',
+                                                                class: 'inline-flex items-center body-lg',
                                                                 attributes: child_attributes
                                                             %}
                                                         {%- else -%}
@@ -105,7 +107,7 @@
 
                                                             <button
                                                                 type="button"
-                                                                class="inline-flex cursor-pointer items-end gap-1 body-lg leading-[1.2] font-light text-theme-text/90"
+                                                                class="inline-flex cursor-pointer items-end gap-1 body-lg"
                                                                 data-third-payload="{{ third_payload | strip | escape }}"
                                                                 @click="openThirdLevelFromButton($el)"
                                                             >
@@ -129,22 +131,22 @@
                     <div class="h-full">
                         <button
                             type="button"
-                            class="mb-6 inline-flex cursor-pointer items-center gap-3 text-theme-text"
+                            class="mb-6 inline-flex cursor-pointer items-center gap-3"
                             @click="backToSecondLevel()"
                             aria-label="{{ 'accessibility.back_to_second_level' | t }}"
                         >
                             <span class="inline-flex rotate-90">
                                 {% render 'icons', icon: 'icon-arrow' %}
                             </span>
-                            <span class="body-md" x-text="thirdLevelParentTitle"></span>
+                            <span x-text="thirdLevelParentTitle"></span>
                         </button>
 
-                        <ul class="space-y-4 text-theme-text/80" role="list">
+                        <ul class="space-y-4" role="list">
                             <template x-for="item in thirdLevelLinks" :key="item.url + item.title">
                                 <li>
                                     <a
                                         :href="item.url"
-                                        class="inline-flex items-center body-md leading-tight text-theme-text/90"
+                                        class="inline-flex items-center"
                                         x-text="item.title"
                                     ></a>
                                 </li>
@@ -154,7 +156,7 @@
                 </template>
             </div>
 
-            <div class="flex items-center gap-9 border-t border-theme-border-soft px-6 py-5">
+            <div class="flex items-center gap-9 border-t border-theme-border-20 px-6 py-5">
                 {%- capture search_content -%}
                     {% render 'icons', icon: 'icon-search' %}
                 {%- endcapture -%}

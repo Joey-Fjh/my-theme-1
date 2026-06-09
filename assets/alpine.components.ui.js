@@ -400,7 +400,8 @@
                 seconds: 0,
 
                 getValue(key) {
-                    return this[key]?.toString() || '0';
+                    const val = this[key] ?? 0;
+                    return val.toString().padStart(2, '0');
                 },
 
                 init() {

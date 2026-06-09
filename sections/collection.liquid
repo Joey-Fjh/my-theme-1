@@ -1,9 +1,6 @@
 <div
     data-section-id="{{ section.id }}"
-    class="
-        collection-section full-width
-        color-{{ section.settings.color_scheme }}
-    "
+    class="collection-section full-width color-{{ section.settings.color_scheme }} section-color-apply"
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
@@ -20,10 +17,10 @@
         <div class="relative py-20 pc:py-40">
             <div class="flex items-start justify-between">
                 <div data-gsap-hero>
-                    <h1 class="mb-10 hxxxl leading-none font-bold">
+                    <h1 class="mb-10 hxxxl">
                         {{ section.settings.header | default: 'Products' }}
                     </h1>
-                    <div class="rte rte--compact max-w-xl body-md leading-relaxed opacity-80">
+                    <div class="rte rte--compact max-w-3xl">
                         {%- assign collection_description_fallback = 'collections.description_html'
                             | t
                         -%}
@@ -91,19 +88,20 @@
                         <button
                             type="button"
                             @click="$store.dialog.open('collection-filters')"
-                            class="flex shrink-0 cursor-pointer items-center gap-3 body-sm"
+                            class="flex shrink-0 cursor-pointer items-center gap-3"
                         >
-                            {% render 'icons', icon: 'icon-filter', class: 'h-10 w-10' %}
+                            {% render 'icons', icon: 'icon-filter' %}
                             <span>{{ 'collections.filter' | t }}</span>
                         </button>
                     {%- endif -%}
 
                     {%- if enable_sorting -%}
                         {%- capture sort_id_prefix_mobile -%}{{ section.id }}-mobile{%- endcapture -%}
+
                         {%- render 'sort-by-dropdown',
                             results: collection,
                             form_id: 'CollectionFiltersForm',
-                            class: 'h2 shrink-0',
+                            class: 'shrink-0',
                             id_prefix: sort_id_prefix_mobile
                         -%}
                     {%- endif -%}
@@ -132,7 +130,7 @@
                                 {%- render 'sort-by-dropdown',
                                     results: collection,
                                     form_id: 'CollectionFiltersForm',
-                                    class: 'h2 shrink-0 self-start',
+                                    class: 'shrink-0 self-start',
                                     id_prefix: sort_id_prefix_desktop_h
                                 -%}
                             {%- endif -%}
@@ -153,7 +151,7 @@
             >
                 {%- if enable_filtering and is_vertical_filter -%}
                     <aside class="hidden pc:block">
-                        <div class="sticky top-20 border-r border-theme-border-soft pr-6">
+                        <div class="sticky top-20 border-r border-theme-border-20 pr-6">
                             {%- render 'filter-vertical',
                                 filter_source: collection,
                                 show_more_limit: section.settings.filter_visible_values_limit,
@@ -197,9 +195,9 @@
                                 <button
                                     type="button"
                                     @click="$store.dialog.open('collection-filters')"
-                                    class="flex shrink-0 cursor-pointer items-center gap-2.5 body-sm"
+                                    class="flex shrink-0 cursor-pointer items-center gap-2.5"
                                 >
-                                    {% render 'icons', icon: 'icon-filter', class: 'h-10 w-10' %}
+                                    {% render 'icons', icon: 'icon-filter' %}
                                     <span>{{ 'collections.filter' | t }}</span>
                                 </button>
                             </div>
@@ -217,7 +215,7 @@
                                     {%- render 'sort-by-dropdown',
                                         results: collection,
                                         form_id: 'CollectionFiltersForm',
-                                        class: 'h2 shrink-0',
+                                        class: 'shrink-0',
                                         id_prefix: sort_id_prefix_desktop_v
                                     -%}
                                 </div>
@@ -243,10 +241,10 @@
                             :tabindex="isActive(index) ? 0 : -1"
                             :aria-selected="isActive(index)"
                             :class="isActive(index) ? 'opacity-100 border-b-2 border-current' : 'opacity-50 hover:opacity-100 border-b-2 border-transparent'"
-                            class="flex cursor-pointer flex-nowrap items-center gap-1 body-sm whitespace-nowrap transition-all duration-300 focus:outline-none"
+                            class="flex cursor-pointer flex-nowrap items-center gap-1 whitespace-nowrap transition-all duration-300 focus:outline-none"
                         >
                             {{ 'collections.all' | t }}
-                            <sup class="leading-none">({{ all_products_collection.all_products_count | default: 0 }})</sup>
+                            <sup class="sup-badge">({{ all_products_collection.all_products_count | default: 0 }})</sup>
                         </a>
 
                         {%- for tab_collection in collections -%}
@@ -265,10 +263,10 @@
                                 :tabindex="isActive(index) ? 0 : -1"
                                 :aria-selected="isActive(index)"
                                 :class="isActive(index) ? 'opacity-100 border-b-2 border-current' : 'opacity-50 hover:opacity-100 border-b-2 border-transparent'"
-                                class="flex cursor-pointer flex-nowrap items-center gap-1 body-sm whitespace-nowrap transition-all duration-300 focus:outline-none"
+                                class="flex cursor-pointer flex-nowrap items-center gap-1 whitespace-nowrap transition-all duration-300 focus:outline-none"
                             >
                                 {{ tab_collection.title }}
-                                <sup class="leading-none">({{ tab_collection.all_products_count | default: 0 }})</sup>
+                                <sup class="sup-badge">({{ tab_collection.all_products_count | default: 0 }})</sup>
                             </a>
                         {%- endfor -%}
                     {% endcapture %}
@@ -293,7 +291,7 @@
                                     data-component-type="product-grid"
                                     data-component-id="{{ section.id }}-grid"
                                 >
-                                    {% for product in collection.products %}
+                                    {%- for product in collection.products -%}
                                         {%- if forloop.index <= first_row_count -%}
                                             {%- if forloop.index == 1 -%}
                                                 {%- assign row_fetchpriority = 'high' -%}
@@ -303,30 +301,30 @@
                                             <div class="group">
                                                 {%-
                                                     render 'product-card',
-                                                    product: product,
-                                                    hover_mode: 'variants',
-                                                    scope_id: section.id,
-                                                    color_scheme: section.settings.color_scheme,
-                                                    primary_image_loading: 'eager',
-                                                    primary_image_fetchpriority: row_fetchpriority
+                                                        product: product,
+                                                        hover_mode: 'variants',
+                                                        scope_id: section.id,
+                                                        color_scheme: section.settings.color_scheme,
+                                                        primary_image_loading: 'eager',
+                                                        primary_image_fetchpriority: row_fetchpriority
                                                 -%}
                                             </div>
                                         {%- else -%}
                                             <div class="group translate-y-7.5 opacity-0" data-gsap-card>
-                                                {% render
-                                                    'product-card',
-                                                    product: product,
-                                                    hover_mode: 'variants',
-                                                    scope_id: section.id,
-                                                    color_scheme: section.settings.color_scheme
+                                                {%-
+                                                    render 'product-card',
+                                                        product: product,
+                                                        hover_mode: 'variants',
+                                                        scope_id: section.id,
+                                                        color_scheme: section.settings.color_scheme
                                                 %}
                                             </div>
                                         {%- endif -%}
-                                    {% else %}
-                                        <div class="col-span-full py-20 text-center body-lg opacity-60">
+                                    {%- else -%}
+                                        <div class="col-span-full py-20 text-center body-lg">
                                             {{ 'collections.no_products' | t }}
                                         </div>
-                                    {% endfor %}
+                                    {%- endfor -%}
                                 </div>
 
                                 <div
@@ -342,9 +340,9 @@
                     {%- comment -%} Tab strip chrome: full-width bottom border on desktop when filter_type is not Horizontal (horizontal filters live in their own row); horizontal mode removes pc border from the tab row. {%- endcomment -%}
                     {%- liquid
                         assign header_outer_class_value = 'w-full pc:grid pc:grid-cols-[max-content_minmax(0,1fr)_max-content] pc:items-end pc:gap-12'
-                        assign header_class_value = 'gap-6 pc:gap-12 max-pc:border-b max-pc:border-theme-border-soft'
+                        assign header_class_value = 'gap-6 pc:gap-12 max-pc:border-b max-pc:border-theme-border-20'
                         if is_horizontal_filter == false
-                            assign header_outer_class_value = header_outer_class_value | append: ' pc:border-b pc:border-theme-border-soft'
+                            assign header_outer_class_value = header_outer_class_value | append: ' pc:border-b pc:border-theme-border-20'
                         else
                             assign header_class_value = header_class_value | append: ' pc:border-0'
                         endif
@@ -375,8 +373,8 @@
         {%- endcapture -%}
 
         <div data-collection-drawer-shell>
-            {%-
-                render 'ui-dialog',
+            {%- assign close_label = 'accessibility.close_filters_drawer' | t -%}
+            {%- render 'ui-dialog',
                 id: 'collection-filters',
                 type: 'drawer',
                 position: 'left',
@@ -384,7 +382,7 @@
                 root_class: 'z-10140',
                 drawer_wrapper_class: 'max-pc:w-4/5 max-pc:max-w-none max-pc:top-3 max-pc:bottom-3 max-pc:left-1/2 max-pc:right-auto max-pc:-translate-x-1/2',
                 show_close_button: false,
-                close_label: 'accessibility.close_filters_drawer' | t,
+                close_label: close_label,
                 content: drawer_content
             -%}
         </div>

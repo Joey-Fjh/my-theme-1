@@ -1,9 +1,6 @@
 <div
     data-section-id="{{ section.id }}"
-    class="
-        newsletter-banner-section full-width
-        color-{{ section.settings.color_scheme }}
-    "
+    class="newsletter-banner-section full-width color-{{ section.settings.color_scheme }} section-color-apply"
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
@@ -12,11 +9,14 @@
     <div class="layout container-page">
         <div class="relative aspect-square overflow-hidden pc:aspect-1392/480">
             {% comment %} Background Image {% endcomment %}
-            {%-
-                render 'image',
+            {%- assign image_alt = section.settings.background_image.alt
+                | default: section.settings.heading
+                | escape
+            -%}
+            {%- render 'image',
                 class: '!absolute inset-0',
                 image: section.settings.background_image,
-                alt: section.settings.background_image.alt | default: section.settings.heading | escape,
+                alt: image_alt,
                 width: section.settings.background_image.width
             -%}
 
@@ -31,22 +31,22 @@
                     style="
                         backdrop-filter: blur({{ blur_r }}px);
                         -webkit-backdrop-filter: blur({{ blur_r }}px);
-                        mask-image: radial-gradient(ellipse {{ section.settings.blur_mask_width | default: 60 }}% {{ section.settings.blur_mask_height | default: 80 }}% at {{ section.settings.blur_position_x | default: 50 }}% {{ section.settings.blur_position_y | default: 50 }}%, black 0%, transparent 100%);
-                        -webkit-mask-image: radial-gradient(ellipse {{ section.settings.blur_mask_width | default: 60 }}% {{ section.settings.blur_mask_height | default: 80 }}% at {{ section.settings.blur_position_x | default: 50 }}% {{ section.settings.blur_position_y | default: 50 }}%, black 0%, transparent 100%);
+                        mask-image: radial-gradient(ellipse {{ section.settings.blur_mask_width | default: 50 }}% {{ section.settings.blur_mask_height | default: 80 }}% at {{ section.settings.blur_position_x | default: 50 }}% {{ section.settings.blur_position_y | default: 50 }}%, black 0%, transparent 100%);
+                        -webkit-mask-image: radial-gradient(ellipse {{ section.settings.blur_mask_width | default: 50 }}% {{ section.settings.blur_mask_height | default: 80 }}% at {{ section.settings.blur_position_x | default: 50 }}% {{ section.settings.blur_position_y | default: 50 }}%, black 0%, transparent 100%);
                     "
                 ></div>
             {%- endif -%}
 
             {% comment %} Content {% endcomment %}
-            <div class="relative z-10 flex h-full flex-col items-center justify-center gap-4 px-4 text-center text-theme-text opacity-100 pc:gap-6">
-                <p class="body-md opacity-80 pc:body-lg">
+            <div class="relative z-10 flex h-full flex-col items-center justify-center gap-4 px-4 text-center pc:gap-6">
+                <p class="body-lg">
                     {{ section.settings.subtitle }}
                 </p>
-                <h2 class="h2 pc:h1">
+                <h1>
                     {{ section.settings.heading }}
-                </h2>
+                </h1>
                 <div
-                    class="mt-4 w-full max-w-xl pc:mt-0"
+                    class="mt-4 w-full max-w-3xl pc:mt-0"
                     x-data="newsletterBanner()"
                     data-newsletter-success-message="{{ 'newsletter.success_message' | t | json }}"
                     data-newsletter-error-message="{{ 'newsletter.error_message' | t | json }}"

@@ -1,6 +1,6 @@
 <div
     data-section-id="{{ section.id }}"
-    class="main-page-contact-section full-width color-{{ section.settings.color_scheme }}"
+    class="main-page-contact-section full-width color-{{ section.settings.color_scheme }} section-color-apply"
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
@@ -9,10 +9,10 @@
     data-component-type="main-page-contact"
     data-component-id="{{ section.id }}"
 >
-    <div class="layout container-page bg-theme-bg text-theme-text">
+    <div class="layout container-page">
         {%- comment -%} Main Content: Image + Form {%- endcomment -%}
         <div class="relative z-1 mx-auto w-full max-w-full pc:max-w-5/6">
-            <div class="grid grid-cols-1 gap-0 overflow-hidden bg-theme-bg shadow-surface pc:grid-cols-2">
+            <div class="grid grid-cols-1 gap-0 overflow-hidden shadow-surface pc:grid-cols-2">
                 {%- comment -%} Left: Image {%- endcomment -%}
                 <div
                     class="relative hidden aspect-528/582 -translate-x-7.5 overflow-hidden opacity-0 pc:block pc:aspect-auto"
@@ -29,10 +29,13 @@
                     {%- assign image_alt_fallback = 'sections.main-page-contact.defaults.image_alt'
                         | t
                     -%}
-                    {%
-                        render 'image',
+                    {%- assign image_alt = section.settings.image.image_alt
+                        | default: image_alt_fallback
+                        | escape
+                    -%}
+                    {% render 'image',
                         image: section.settings.image,
-                        alt: section.settings.image.image_alt | default: image_alt_fallback | escape,
+                        alt: image_alt,
                         width: section.settings.image.width,
                         sizes: sizes,
                         widths: widths,
@@ -40,21 +43,22 @@
                     %}
 
                     {%- comment -%} hCaptcha Notice {%- endcomment -%}
-                    <p class="absolute right-4 bottom-4 left-4 body-sm leading-snug text-white/80">
+                    <p class="absolute right-4 bottom-4 left-4">
                         {{ 'contact.hcaptcha_notice' | t -}}
                         <br>
-                        {%
-                            render 'link',
-                            text: 'contact.privacy_policy' | t,
+
+                        {%- assign link_text = 'contact.privacy_policy' | t -%}
+                        {% render 'link',
+                            text: link_text,
                             href: 'https://www.hcaptcha.com/privacy',
                             class: 'underline',
                             target: '_blank',
                             attributes: 'rel="noopener"'
                         %}
                         {{ 'general.and' | t }}
-                        {%
-                            render 'link',
-                            text: 'contact.terms_of_service' | t,
+                        {%- assign link_text = 'contact.terms_of_service' | t -%}
+                        {% render 'link',
+                            text: link_text,
                             href: 'https://www.hcaptcha.com/terms',
                             class: 'underline',
                             target: '_blank',
@@ -72,10 +76,10 @@
                     {%- assign heading_fallback = 'sections.main-page-contact.defaults.heading'
                         | t
                     -%}
-                    <h1 class="text-center h2 text-primary">
+                    <h1 class="text-center text-primary">
                         {{ section.settings.heading | default: heading_fallback }}
                     </h1>
-                    <div class="rte rte--compact mt-3 text-center body-md text-primary/70">
+                    <div class="rte rte--compact mt-3 text-center text-primary/80">
                         {%- assign contact_description_fallback = 'contact.description_html' | t -%}
                         {{ section.settings.description | default: contact_description_fallback }}
                     </div>
@@ -85,7 +89,7 @@
                             | t
                         -%}
                         {%- if form.posted_successfully? -%}
-                            <div class="rounded bg-green-50 p-4 text-center body-md text-green-800">
+                            <div class="rounded p-4 text-center">
                                 {{
                                     section.settings.success_message
                                     | default: success_message_fallback
@@ -94,7 +98,7 @@
                         {%- endif -%}
 
                         {%- if form.errors -%}
-                            <div class="rounded bg-red-50 p-4 body-md text-red-700">
+                            <div class="rounded p-4">
                                 {{ form.errors | default_errors }}
                             </div>
                         {%- endif -%}
@@ -104,7 +108,6 @@
                             <div class="flex flex-col gap-1.5">
                                 <label
                                     for="ContactFirstName"
-                                    class="body-md font-medium text-primary/80"
                                 >
                                     {{- 'contact.first_name' | t -}}
                                 </label>
@@ -114,13 +117,12 @@
                                     name="contact[first_name]"
                                     placeholder="{{ 'contact.first_name_placeholder' | t }}"
                                     autocomplete="given-name"
-                                    class="h-12 field border-theme-border-soft bg-theme-bg body-md text-theme-text shadow-none placeholder:text-theme-text/50 pc:h-14"
+                                    class="h-12 field border-theme-border-20 shadow-none placeholder:text-theme-text/50 pc:h-14"
                                 >
                             </div>
                             <div class="flex flex-col gap-1.5">
                                 <label
                                     for="ContactLastName"
-                                    class="body-md font-medium text-primary/80"
                                 >
                                     {{- 'contact.last_name' | t -}}
                                 </label>
@@ -130,7 +132,7 @@
                                     name="contact[last_name]"
                                     placeholder="{{ 'contact.last_name_placeholder' | t }}"
                                     autocomplete="family-name"
-                                    class="h-12 field border-theme-border-soft bg-theme-bg body-md text-theme-text shadow-none placeholder:text-theme-text/50 pc:h-14"
+                                    class="h-12 field border-theme-border-20 shadow-none placeholder:text-theme-text/50 pc:h-14"
                                 >
                             </div>
                         </div>
@@ -140,7 +142,6 @@
                             <div class="flex flex-col gap-1.5">
                                 <label
                                     for="ContactEmail"
-                                    class="body-md font-medium text-primary/80"
                                 >
                                     {{- 'contact.email' | t -}}
                                 </label>
@@ -151,13 +152,12 @@
                                     placeholder="{{ 'contact.email_placeholder' | t }}"
                                     autocomplete="email"
                                     required
-                                    class="h-12 field border-theme-border-soft bg-theme-bg body-md text-theme-text shadow-none placeholder:text-theme-text/50 pc:h-14"
+                                    class="h-12 field border-theme-border-20 shadow-none placeholder:text-theme-text/50 pc:h-14"
                                 >
                             </div>
                             <div class="hidden flex-col gap-1.5 pc:flex">
                                 <label
                                     for="ContactPhone"
-                                    class="body-md font-medium text-primary/80"
                                 >
                                     {{- 'contact.phone' | t -}}
                                 </label>
@@ -167,14 +167,14 @@
                                     name="contact[phone]"
                                     placeholder="{{ 'contact.phone_placeholder' | t }}"
                                     autocomplete="tel"
-                                    class="h-12 field border-theme-border-soft bg-theme-bg body-md text-theme-text shadow-none placeholder:text-theme-text/50 pc:h-14"
+                                    class="h-12 field border-theme-border-20 shadow-none placeholder:text-theme-text/50 pc:h-14"
                                 >
                             </div>
                         </div>
 
                         {%- comment -%} Message {%- endcomment -%}
                         <div class="flex flex-col gap-1.5">
-                            <label for="ContactMessage" class="body-md font-medium text-primary/80">
+                            <label for="ContactMessage">
                                 {{- 'contact.message' | t -}}
                             </label>
                             <textarea
@@ -182,7 +182,7 @@
                                 name="contact[body]"
                                 placeholder="{{ 'contact.message_placeholder' | t }}"
                                 rows="4"
-                                class="min-h-24 field w-full resize-none border-theme-border-soft bg-theme-bg py-3 body-md text-theme-text shadow-none placeholder:text-theme-text/50 pc:min-h-28"
+                                class="min-h-24 field w-full resize-none border-theme-border-20 py-3 shadow-none placeholder:text-theme-text/50 pc:min-h-28"
                             ></textarea>
                         </div>
 
@@ -192,7 +192,7 @@
                         {%- comment -%} Submit {%- endcomment -%}
                         <button
                             type="submit"
-                            class="btn h-12 w-full border-primary-border bg-primary body-md text-primary-text shadow-none hover:brightness-110 pc:h-14"
+                            class="btn h-12 w-full btn-primary border-primary-border shadow-none hover:brightness-110 pc:h-14"
                         >
                             {{ section.settings.button_text | default: button_text_fallback }}
                         </button>
@@ -204,7 +204,7 @@
         {%- comment -%} Brand Watermark {%- endcomment -%}
         {% render 'watermark',
             container_class: 'absolute left-0 bottom-0 right-0 z-0 overflow-hidden pointer-events-none select-none',
-            text_class: 'tracking-wide font-bold text-theme-text opacity-10',
+            text_class: 'tracking-wide font-bold text-theme-text opacity-20',
             html_attr: 'data-gsap-watermark',
             text: section.settings.watermark_text
         %}

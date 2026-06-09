@@ -6,13 +6,13 @@
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
     "
 >
-    <div class="layout container-page color-{{ section.settings.color_scheme }}">
+    <div class="layout container-page color-{{ section.settings.color_scheme }} section-color-apply">
         {%- assign selected_collection = section.settings.collection -%}
 
         <div class="flex flex-col gap-16">
             <div class="flex flex-col gap-3 pc:flex-row pc:items-center pc:justify-between">
                 {%- capture link_content -%}
-                    <h2 class="font-bold">
+                    <h1>
                         {%- if section.settings.heading != blank -%}
                             {{ section.settings.heading }}
                         {%- else -%}
@@ -22,7 +22,7 @@
                         {%- if selected_collection != nil and selected_collection.products_count > 0 -%}
                             <sup class="sup-badge">({{ selected_collection.products_count }})</sup>
                         {%- endif -%}
-                    </h2>
+                    </h1>
                 {%- endcapture -%}
 
                 {%- render 'link',
@@ -31,7 +31,7 @@
                     variant: 'underline'
                 -%}
 
-                <div class="rte rte--compact opacity-80">{{ section.settings.description }}</div>
+                <div class="rte rte--compact">{{ section.settings.description }}</div>
             </div>
 
             <div>
@@ -40,7 +40,7 @@
                 {% # theme-check-disable-next-line LiquidHTMLSyntaxError %}
                 {%- for product in selected_collection.products limit: max_items -%}
                     <a
-                        class="flex flex-col gap-3 py-8 body-md pc:flex-row pc:items-center pc:justify-between pc:p-8"
+                        class="flex flex-col gap-3 py-8 pc:flex-row pc:items-center pc:justify-between pc:p-8"
                         href="{{ product.url }}"
                         title="{{ product.title | escape }}"
                         x-data="{hover:false}"
@@ -50,12 +50,12 @@
                         @blur="hover = false"
                         :class=" hover ? 'bg-theme-text text-theme-bg':'' "
                     >
-                        <span class="shrink-0 opacity-80">
+                        <span class="shrink-0">
                             {{ product.type | default: 'Momonise' }}
                         </span>
 
                         <div class="relative flex min-w-0 items-center gap-4 pc:pr-44">
-                            <h2 class="truncate h1">{{ product.title }}</h2>
+                            <h1 class="truncate font-normal">{{ product.title }}</h1>
 
                             <div
                                 class="
@@ -72,11 +72,14 @@
                                 :class="hover ? 'opacity-100 scale-100' : ''"
                             >
                                 {%- if product.featured_image != blank -%}
-                                    {%-
-                                        render 'image-magnifier',
+                                    {%- assign alt = product.featured_image.alt
+                                        | default: product.title
+                                        | escape
+                                    -%}
+                                    {%- render 'image-magnifier',
                                         class: 'h-full w-full',
                                         image: product.featured_image,
-                                        alt: product.featured_image.alt | default: product.title | escape,
+                                        alt: alt,
                                         width: 220,
                                         sizes: '220px',
                                         zoom_width: 1200,
@@ -85,11 +88,14 @@
                                         preview_height: 200
                                     -%}
                                 {%- else -%}
-                                    {%-
-                                        render 'image',
+                                    {%- assign image_alt = product.featured_image.alt
+                                        | default: product.title
+                                        | escape
+                                    -%}
+                                    {%- render 'image',
                                         class: 'h-full w-full',
                                         image: product.featured_image,
-                                        alt: product.featured_image.alt | default: product.title | escape,
+                                        alt: image_alt,
                                         width: 220,
                                         sizes: '220px'
                                     -%}
@@ -104,7 +110,7 @@
                 {%- endfor -%}
             </div>
 
-            <div class="rte rte--compact flex flex-col items-center justify-center self-center text-center body-md">
+            <div class="rte rte--compact flex flex-col items-center justify-center self-center text-center">
                 {% render 'icons', icon: 'icon-eyeglasses' %}
 
                 {{ section.settings.caption }}

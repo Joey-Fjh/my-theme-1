@@ -30,10 +30,13 @@
         {%- endcapture -%}
 
         <div class="absolute inset-0">
-            {%-
-                render 'image',
+            {%- assign image_alt = section.settings.bg_img.alt
+                | default: section.settings.heading
+                | escape
+            -%}
+            {%- render 'image',
                 image: section.settings.bg_img,
-                alt: section.settings.bg_img.alt | default: section.settings.heading | escape,
+                alt: image_alt,
                 width: section.settings.bg_img.width,
                 sizes: sizes,
                 widths: widths,
@@ -68,11 +71,11 @@
                                             @mouseenter="hover = true"
                                             @mouseleave="hover = false"
                                         >
-                                            {%-
-                                                render 'image',
+                                            {%- assign image_alt = product.title | escape -%}
+                                            {%- render 'image',
                                                 aspect_ratio: '342/198',
                                                 image: product.featured_image,
-                                                alt: product.title | escape,
+                                                alt: image_alt,
                                                 width: product.featured_image.width
                                             -%}
 
@@ -83,8 +86,8 @@
                                                 "
                                                 :class=" hover ? 'bg-theme-text text-theme-bg' : 'bg-theme-bg text-theme-text' "
                                             >
-                                                <h3 class="truncate h4">{{ product.title }}</h3>
-                                                <div class="body-xs text-nowrap opacity-20 pc:body-md">
+                                                <h3 class="truncate">{{ product.title }}</h3>
+                                                <div class="text-nowrap">
                                                     {% if forloop.index < 10 %}
                                                         {% assign display_index = forloop.index
                                                             | prepend: '0'
@@ -107,17 +110,17 @@
                         ></button>
                     </div>
 
-                    <div class="opacity-80">
+                    <div>
                         {{ section.settings.badge_counter }}
                     </div>
                 </div>
 
                 <div class="grid flex-1 grid-cols-1 grid-rows-3 pc:absolute pc:inset-0 pc:grid-cols-3">
-                    <div class="{{ content_position }} flex w-auto flex-col gap-12 p-6 fw:w-3/5">
+                    <div class="{{ content_position }} flex w-auto flex-col gap-12 p-6">
                         <div>{{ section.settings.eyebrow }}</div>
 
                         <div class="gap-2">
-                            <h3>{{ section.settings.heading }}</h3>
+                            <h1>{{ section.settings.heading }}</h1>
                             <div class="opacity-60">{{ section.settings.description }}</div>
                         </div>
 

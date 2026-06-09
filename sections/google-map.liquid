@@ -1,0 +1,108 @@
+{%- if section.settings.show_map and section.settings.map_embed_code != blank -%}
+    {%- liquid
+        assign map_embed_code = section.settings.map_embed_code
+        unless map_embed_code contains 'title='
+            assign map_title = 'accessibility.google_map' | t | escape
+            capture iframe_opening_tag
+                echo '<iframe title="' | append: map_title | append: '"'
+            endcapture
+            assign map_embed_code = map_embed_code | replace_first: '<iframe', iframe_opening_tag
+        endunless
+    -%}
+
+    <div
+        data-section-id="{{ section.id }}"
+        class="google-map-section full-width"
+        style="
+            --map-height: {{ section.settings.map_height }}px;
+            --section-padding-top: {{ section.settings.padding_top }}px;
+            --section-padding-bottom: {{ section.settings.padding_bottom }}px;
+        "
+    >
+        <div class="layout">
+            <div class="google-map-section__embed">
+                {{ map_embed_code }}
+            </div>
+        </div>
+    </div>
+{%- endif -%}
+
+{%- stylesheet -%}
+    .google-map-section__embed {
+        width: 100%;
+        height: var(--map-height);
+        overflow: hidden;
+    }
+
+    .google-map-section__embed iframe {
+        display: block;
+        width: 100% !important;
+        height: 100% !important;
+        max-width: 100%;
+        border: 0;
+    }
+{%- endstylesheet -%}
+
+{% schema %}
+{
+    "name": "t:sections.google-map.name",
+    "tag": "section",
+    "class": "section",
+    "disabled_on": {
+        "groups": ["header", "footer"]
+    },
+    "settings": [
+        {
+            "type": "checkbox",
+            "id": "show_map",
+            "label": "t:sections.google-map.settings.show_map",
+            "default": true
+        },
+        {
+            "type": "textarea",
+            "id": "map_embed_code",
+            "label": "t:sections.google-map.settings.map_embed_code",
+            "info": "t:sections.google-map.info.map_embed_code"
+        },
+        {
+            "type": "range",
+            "id": "map_height",
+            "min": 200,
+            "max": 1000,
+            "step": 10,
+            "unit": "px",
+            "label": "t:sections.google-map.settings.map_height",
+            "default": 450
+        },
+        {
+            "type": "header",
+            "content": "t:sections.google-map.content.padding"
+        },
+        {
+            "type": "range",
+            "id": "padding_top",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "t:sections.google-map.settings.padding_top",
+            "default": 0
+        },
+        {
+            "type": "range",
+            "id": "padding_bottom",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "t:sections.google-map.settings.padding_bottom",
+            "default": 0
+        }
+    ],
+    "presets": [
+        {
+            "name": "t:sections.google-map.presets.google_map"
+        }
+    ]
+}
+{% endschema %}

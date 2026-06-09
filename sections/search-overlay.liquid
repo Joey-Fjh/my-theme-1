@@ -6,7 +6,7 @@
 >
     {%- capture drawer_content -%}
         <div
-            class="flex h-full flex-col text-theme-text"
+            class="flex h-full flex-col"
             data-search-limit="{{ section.settings.search_result_limit | json }}"
             x-data="predictiveSearch()"
             data-predictive-search-url="{{ routes.search_url }}"
@@ -14,11 +14,11 @@
         >
             <div class="p-6">
                 <div class="mb-5 flex items-center justify-between gap-4">
-                    <h2 id="dialog-title-{{ popup_id }}">{{ 'search.title' | t }}</h2>
+                    <h1 id="dialog-title-{{ popup_id }}">{{ 'search.title' | t }}</h1>
                     
                     <button
                         type="button"
-                        class="inline-flex h-8 w-8 cursor-pointer items-center justify-center text-theme-text/75 transition hover:text-theme-text"
+                        class="inline-flex cursor-pointer items-center justify-center text-theme-text/80 transition hover:text-theme-text"
                         @click="$store.dialog.close()"
                         aria-label="{{ 'accessibility.close_search_drawer' | t }}"
                     >
@@ -27,13 +27,13 @@
                 </div>
 
                 <form @submit.prevent="performSearch()" role="search" class="w-full">
-                    <div class="border-theme-border-strong flex items-center gap-2 border-b pb-2">
-                        {% render 'icons', icon: 'icon-search', class: 'shrink-0 opacity-70' %}
+                    <div class="flex items-center gap-2 border-b border-theme-border pb-2">
+                        {% render 'icons', icon: 'icon-search', class: 'shrink-0 opacity-80' %}
                         <input
                             id="SearchOverlayInput-{{ section.id }}"
                             type="search"
                             name="q"
-                            class="w-full min-w-0 border-none bg-transparent outline-none placeholder:text-theme-text/45"
+                            class="w-full min-w-0 border-none bg-transparent outline-none placeholder:text-theme-text/50"
                             autocomplete="off"
                             placeholder="{{ 'search.placeholder' | t }}"
                             x-model="query"
@@ -55,7 +55,7 @@
                             <li>
                                 <button
                                     type="button"
-                                    class="hover:border-theme-border-strong border-b border-theme-border-soft transition-colors"
+                                    class="border-b border-theme-border-20 transition-colors hover:border-theme-border"
                                     @click="onSuggestionClick(item)"
                                     x-html="highlightSuggestion(item.text)"
                                 ></button>
@@ -67,7 +67,7 @@
 
             <div class="flex min-h-0 flex-1 flex-col px-5 py-4 pc:px-6">
                 <div x-show="!isLoading && hasEmptyState && query" class="py-6 text-center">
-                    <p class="body-md">{{ 'search.no_results_for' | t }} "<span x-text="query"></span>"</p>
+                    <p>{{ 'search.no_results_for' | t }} "<span x-text="query"></span>"</p>
                 </div>
 
                 <div x-show="!isLoading && hasSearched && !hasEmptyState" class="flex min-h-0 flex-1 flex-col">
@@ -82,7 +82,7 @@
                             @click="setActive(index); activeTab = 'products'"
                             :aria-selected="isActive(index)"
                             class="border-b pb-2 tracking-[0.16em] uppercase transition-colors"
-                            :class="isActive(index) ? 'text-theme-text border-theme-border-strong' : 'text-theme-text/45 border-transparent hover:text-theme-text'"
+                            :class="isActive(index) ? 'text-theme-text border-theme-border' : 'text-theme-text/50 border-transparent hover:text-theme-text'"
                         >
                             {{ 'search.products' | t }}
                         </button>
@@ -97,7 +97,7 @@
                             @click="setActive(index); activeTab = 'articles'"
                             :aria-selected="isActive(index)"
                             class="border-b pb-2 tracking-[0.16em] uppercase transition-colors"
-                            :class="isActive(index) ? 'text-theme-text border-theme-border-strong' : 'text-theme-text/45 border-transparent hover:text-theme-text'"
+                            :class="isActive(index) ? 'text-theme-text border-theme-border' : 'text-theme-text/50 border-transparent hover:text-theme-text'"
                         >
                             {{ 'search.articles' | t }}
                         </button>
@@ -112,7 +112,7 @@
                             @click="setActive(index); activeTab = 'pages'"
                             :aria-selected="isActive(index)"
                             class="border-b pb-2 tracking-[0.16em] uppercase transition-colors"
-                            :class="isActive(index) ? 'text-theme-text border-theme-border-strong' : 'text-theme-text/45 border-transparent hover:text-theme-text'"
+                            :class="isActive(index) ? 'text-theme-text border-theme-border' : 'text-theme-text/50 border-transparent hover:text-theme-text'"
                         >
                             {{ 'search.pages' | t }}
                         </button>
@@ -135,7 +135,7 @@
                                     -%}
                                 </template>
                             </div>
-                            <p x-show="!products.length" class="py-4 body-md text-theme-text/45">{{ 'search.no_products' | t }}</p>
+                            <p x-show="!products.length" class="py-4">{{ 'search.no_products' | t }}</p>
                         </div>
 
                         <div
@@ -149,12 +149,12 @@
                         >
                             <ul class="space-y-3">
                                 <template x-for="article in articles" :key="article.id">
-                                    <li class="border-b border-theme-border-soft pb-2">
-                                        <a class="body-md hover:underline" :href="article.url" x-text="article.title"></a>
+                                    <li class="border-b border-theme-border-20 pb-2">
+                                        <a class="hover:underline" :href="article.url" x-text="article.title"></a>
                                     </li>
                                 </template>
                             </ul>
-                            <p x-show="!articles.length" class="py-4 body-md text-theme-text/45">{{ 'search.no_articles' | t }}</p>
+                            <p x-show="!articles.length" class="py-4">{{ 'search.no_articles' | t }}</p>
                         </div>
 
                         <div
@@ -168,12 +168,12 @@
                         >
                             <ul class="space-y-3">
                                 <template x-for="page in pages" :key="page.id">
-                                    <li class="border-b border-theme-border-soft pb-2">
-                                        <a class="body-md hover:underline" :href="page.url" x-text="page.title"></a>
+                                    <li class="border-b border-theme-border-20 pb-2">
+                                        <a class="hover:underline" :href="page.url" x-text="page.title"></a>
                                     </li>
                                 </template>
                             </ul>
-                            <p x-show="!pages.length" class="py-4 body-md text-theme-text/45">{{ 'search.no_pages' | t }}</p>
+                            <p x-show="!pages.length" class="py-4">{{ 'search.no_pages' | t }}</p>
                         </div>
                     {% endcapture %}
 

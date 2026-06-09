@@ -1,9 +1,6 @@
 <div
     data-section-id="{{ section.id }}"
-    class="
-        slides-show-section full-width h-screen
-        color-{{ section.settings.color_scheme }}
-    "
+    class="slides-show-section full-width h-screen color-{{ section.settings.color_scheme }} section-color-apply"
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
@@ -38,10 +35,13 @@
                         {%- assign image_fetchpriority = 'high' -%}
                     {%- endif -%}
 
-                    {%-
-                        render 'image',
+                    {%- assign image_alt = block.settings.slide_image.alt
+                        | default: shop.name
+                        | escape
+                    -%}
+                    {%- render 'image',
                         image: block.settings.slide_image,
-                        alt: block.settings.slide_image.alt | default: shop.name | escape,
+                        alt: image_alt,
                         width: block.settings.slide_image.width,
                         sizes: sizes,
                         widths: widths,
@@ -52,13 +52,13 @@
                     <div class="layout layout-safe-top container-page absolute inset-0">
                         <div class="grid grid-cols-1 grid-rows-3 pc:grid-cols-3">
                             <div
-                                class="text-theme-text/80 {{ block.settings.caption_position }} flex flex-col justify-around pc:h-full pc:w-full"
+                                class="{{ block.settings.caption_position }} flex flex-col justify-around pc:h-full pc:w-full"
                             >
-                                <p class="body-md leading-relaxed font-light">
+                                <p>
                                     {{ block.settings.year }}
                                 </p>
 
-                                <div class="mt-2 body-md leading-tight font-light">
+                                <div class="mt-2">
                                     {{ block.settings.description }}
                                 </div>
 
@@ -90,13 +90,13 @@
                             <div
                                 class="{{ block.settings.heading_position }} flex items-center pc:h-full pc:w-full"
                             >
-                                <h2 class="hxl leading-tight font-bold tracking-tight">
+                                <h1 class="hxl">
                                     {{ block.settings.headline }}
-                                </h2>
+                                </h1>
                             </div>
 
                             <div
-                                class="text-theme-text/80 {{ block.settings.meta_position }} flex flex-col justify-around pc:h-full pc:w-full pc:items-center"
+                                class="{{ block.settings.meta_position }} flex flex-col justify-around pc:h-full pc:w-full pc:items-center"
                             >
                                 <div>{{ block.settings.meta_text }}</div>
                                 <div>{{ block.settings.meta_counter }}</div>
@@ -110,14 +110,14 @@
             <div class="slides-show__controls absolute right-6 bottom-6 z-10 flex items-center gap-3 pc:right-10 pc:bottom-10">
                 <button
                     type="button"
-                    class="slides-show__nav-prev flex h-10 w-10 items-center justify-center rounded-full bg-theme-bg/60 text-theme-text backdrop-blur-sm hover:bg-theme-bg/80 focus-visible:outline-2 focus-visible:outline-offset-2"
+                    class="slides-show__nav-prev flex items-center justify-center rounded-full bg-theme-bg/50 text-theme-text backdrop-blur-sm hover:bg-theme-bg/80 focus-visible:outline-2 focus-visible:outline-offset-2"
                     aria-label="{{ 'accessibility.previous_slide' | t }}"
                 >
                     {%- render 'icons', icon: 'icon-arrow2', class: 'scale-x-[-1]' -%}
                 </button>
                 <button
                     type="button"
-                    class="slides-show__nav-next flex h-10 w-10 items-center justify-center rounded-full bg-theme-bg/60 text-theme-text backdrop-blur-sm hover:bg-theme-bg/80 focus-visible:outline-2 focus-visible:outline-offset-2"
+                    class="slides-show__nav-next flex items-center justify-center rounded-full bg-theme-bg/50 text-theme-text backdrop-blur-sm hover:bg-theme-bg/80 focus-visible:outline-2 focus-visible:outline-offset-2"
                     aria-label="{{ 'accessibility.next_slide' | t }}"
                 >
                     {%- render 'icons', icon: 'icon-arrow2' -%}
@@ -125,7 +125,7 @@
                 {%- if section.settings.is_auto_slide -%}
                     <button
                         type="button"
-                        class="slides-show__pause-toggle flex h-10 w-10 items-center justify-center rounded-full bg-theme-bg/60 text-theme-text backdrop-blur-sm hover:bg-theme-bg/80 focus-visible:outline-2 focus-visible:outline-offset-2"
+                        class="slides-show__pause-toggle flex h-20 w-20 items-center justify-center rounded-full bg-theme-bg/50 text-theme-text backdrop-blur-sm hover:bg-theme-bg/80 focus-visible:outline-2 focus-visible:outline-offset-2"
                         aria-label="{{ 'accessibility.pause_slideshow' | t }}"
                         aria-pressed="false"
                         data-play-label="{{ 'accessibility.play_slideshow' | t }}"

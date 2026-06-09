@@ -1,6 +1,6 @@
 <div
     data-section-id="{{ section.id }}"
-    class="collections-section full-width h-full color-{{ section.settings.color_scheme }}"
+    class="collections-section full-width h-full color-{{ section.settings.color_scheme }} section-color-apply"
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
@@ -9,11 +9,11 @@
     data-component-type="collections"
     data-component-id="{{ section.id }}"
 >
-    <div class="layout container-page bg-theme-bg text-theme-text">
+    <div class="layout container-page">
         <div class="relative mb-8 pt-14 text-center pc:mb-10 pc:pt-25">
             <div class="mx-auto flex flex-col gap-3 pc:gap-6">
-                <h1>{{ 'collections.latest_brand' | t }}</h1>
-                <p class="body-sm opacity-80 pc:body-md">
+                <h1 class="hxl">{{ 'collections.latest_brand' | t }}</h1>
+                <p>
                     {{ 'collections.latest_brand_description' | t }}
                 </p>
             </div>
@@ -65,24 +65,28 @@
                                     {%- assign image_loading = 'eager' -%}
                                 {%- endif -%}
 
-                                {%-
-                                    render 'image',
+                                {%- assign image_alt = collection.image.alt
+                                    | default: shop.name
+                                    | escape
+                                -%}
+                                {%- render 'image',
                                     image: collection.image,
-                                    alt: collection.image.alt | default: shop.name | escape,
+                                    alt: image_alt,
                                     width: collection.image.width,
                                     sizes: sizes,
                                     widths: widths,
                                     loading: image_loading,
                                     class: 'w-full h-full object-cover
-                                    transition-transform duration-[600ms] ease-[cubic-bezier(0.25,0.46,0.45,0.94)] group-hover:scale-105'
+                                        transition-transform duration-[600ms] ease-[cubic-bezier(0.25,0.46,0.45,0.94)] group-hover:scale-105'
                                 -%}
                             </div>
 
                             {%- comment -%} Info {%- endcomment -%}
                             <div class="flex items-center justify-between gap-2 px-2 py-1.5 pc:px-3 pc:py-2">
-                                <span class="line-clamp-1 body-md">
+                                <span class="line-clamp-1">
                                     {{- collection.title -}}
                                 </span>
+
                                 {% render 'icons',
                                     icon: 'icon-arrow2',
                                     class: 'transition-transform duration-300 group-hover:translate-x-1'
