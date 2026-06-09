@@ -1,6 +1,6 @@
 <div
     data-section-id="{{ section.id }}"
-    class="        blog-section full-width relative"
+    class="blog-section full-width section-color-apply relative"
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
@@ -16,17 +16,16 @@
         class="
             layout layout-no-pb container-page
             color-{{ section.settings.header_color_scheme }}
-            bg-theme-bg pb-0 text-theme-text
         "
     >
         {%- comment -%} Hero {%- endcomment -%}
         <div class="relative py-20 pc:py-40">
             <div class="flex items-start justify-between">
                 <div class="-translate-x-7.5 opacity-0" data-gsap-hero>
-                    <h1 class="mb-10 hxxxl leading-none font-bold">
+                    <h1 class="mb-10 hxxxl leading-none">
                         {{ section.settings.header | default: 'Blog' }}
                     </h1>
-                    <div class="rte rte--compact max-w-xl body-sm leading-relaxed opacity-80">
+                    <div class="rte rte--compact max-w-3xl leading-relaxed">
                         {%- assign blog_description_fallback = 'blog.description_html' | t -%}
                         {{ section.settings.description | default: blog_description_fallback }}
                     </div>
@@ -55,7 +54,7 @@
         class="
             layout layout-no-pt container-page
             color-{{ section.settings.color_scheme }}
-            bg-theme-bg pt-6 text-theme-text pc:pt-8
+            pt-6 pc:pt-8
         "
     >
         <div class="relative flex items-center justify-between">
@@ -74,116 +73,120 @@
                 -%}
 
                 {% capture tab_header %}
-          <span class="hidden" x-init="$nextTick(() => { setActive({{ active_tab_index }}) })"></span>
+                    <span class="hidden" x-init="$nextTick(() => { setActive({{ active_tab_index }}) })"></span>
 
-          <a
-            href="{{ blog.url }}"
-            role="tab"
-            x-data="{ index: null }"
-            x-init="index = registerTab($el);"
-            :id="`tab-${index}`"
-            aria-controls="blog-panel"
-            @click.prevent="loadUrl($el.href); setActive(index)"
-            @popstate.window="isUrlMatch($el.href) && setActive(index)"
-            :tabindex="isActive(index) ? 0 : -1"
-            :aria-selected="isActive(index)"
-            :class="isActive(index) ? 'opacity-100 border-b-2 border-current' : 'opacity-20 hover:opacity-60'"
-            class="flex cursor-pointer flex-wrap items-center gap-x-4 gap-y-2 body-sm transition-opacity focus:outline-none"
-          >
-            {{ 'collections.all' | t }} <sup class="sup-badge">({{ blog.articles_count | default: 0 }})</sup>
-          </a>
-          {%- for tag in blog.all_tags -%}
-            <a
-              href="{{ blog.url }}/tagged/{{ tag | handle }}"
-              role="tab"
-              x-data="{ index: null }"
-              x-init="index = registerTab($el);"
-              :id="`tab-${index}`"
-              aria-controls="blog-panel"
-              @click.prevent="loadUrl($el.href); setActive(index)"
-              @popstate.window="isUrlMatch($el.href) && setActive(index)"
-              :tabindex="isActive(index) ? 0 : -1"
-              :aria-selected="isActive(index)"
-              :class="isActive(index) ? 'opacity-100 border-b-2 border-current' : 'opacity-20 hover:opacity-60'"
-              class="flex cursor-pointer flex-wrap items-center gap-x-4 gap-y-2 body-sm transition-opacity focus:outline-none"
-            >
-              {{ tag }}
-            </a>
-          {%- endfor -%}
-        {% endcapture %}
+                    <a
+                        href="{{ blog.url }}"
+                        role="tab"
+                        x-data="{ index: null }"
+                        x-init="index = registerTab($el);"
+                        :id="`tab-${index}`"
+                        aria-controls="blog-panel"
+                        @click.prevent="loadUrl($el.href); setActive(index)"
+                        @popstate.window="isUrlMatch($el.href) && setActive(index)"
+                        :tabindex="isActive(index) ? 0 : -1"
+                        :aria-selected="isActive(index)"
+                        :class="isActive(index) ? 'opacity-100 border-b-2 border-current' : 'opacity-20 hover:opacity-60'"
+                        class="flex cursor-pointer flex-wrap items-center gap-x-4 gap-y-2 transition-opacity focus:outline-none"
+                    >
+                        {{ 'collections.all' | t }} <sup class="sup-badge">({{ blog.articles_count | default: 0 }})</sup>
+                    </a>
+                    
+                    {%- for tag in blog.all_tags -%}
+                        <a
+                            href="{{ blog.url }}/tagged/{{ tag | handle }}"
+                            role="tab"
+                            x-data="{ index: null }"
+                            x-init="index = registerTab($el);"
+                            :id="`tab-${index}`"
+                            aria-controls="blog-panel"
+                            @click.prevent="loadUrl($el.href); setActive(index)"
+                            @popstate.window="isUrlMatch($el.href) && setActive(index)"
+                            :tabindex="isActive(index) ? 0 : -1"
+                            :aria-selected="isActive(index)"
+                            :class="isActive(index) ? 'opacity-100 border-b-2 border-current' : 'opacity-20 hover:opacity-50'"
+                            class="flex cursor-pointer flex-wrap items-center gap-x-4 gap-y-2 body-lg transition-opacity focus:outline-none"
+                        >
+                            {{ tag }}
+                        </a>
+                    {%- endfor -%}
+                {% endcapture %}
 
                 {% capture tab_content %}
-          <div
-            role="tabpanel"
-            id="blog-panel"
-            x-data="{ index: null }"
-            x-init="index = registerPanel($el)"
-            class="relative w-full"
-          >
-            {% render 'loading', overlay: true, size: 'large' %}
+                    <div
+                        role="tabpanel"
+                        id="blog-panel"
+                        x-data="{ index: null }"
+                        x-init="index = registerPanel($el)"
+                        class="relative w-full"
+                    >
+                        {% render 'loading', overlay: true, size: 'large' %}
 
-            {% paginate blog.articles by section.settings.articles_per_page %}
-              <div 
-                class="grid grid-cols-1 gap-8 pb-10 pc:grid-cols-3"
-                data-component-kind="component"
-                data-component-type="article-grid"
-                data-component-id="{{ section.id }}-grid"
-              >
-                {% for article in blog.articles %}
-                  <article class="group translate-y-7.5 opacity-0" data-gsap-card>
-                    <div class="mb-4 block aspect-4/3 overflow-hidden rounded-sm">
-                      {% comment %} Image {% endcomment %}
-                      {%- capture sizes -%}
-                        (max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw
-                      {%- endcapture -%}
-                      
-                      {%- capture widths -%}
-                        400, 700
-                      {%- endcapture -%}
+                        {% paginate blog.articles by section.settings.articles_per_page %}
+                            <div 
+                                class="grid grid-cols-1 gap-8 pb-10 pc:grid-cols-3"
+                                data-component-kind="component"
+                                data-component-type="article-grid"
+                                data-component-id="{{ section.id }}-grid"
+                            >
+                                {% for article in blog.articles %}
+                                    <article class="group translate-y-7.5 opacity-0" data-gsap-card>
+                                        <div class="mb-4 block aspect-4/3 overflow-hidden rounded-sm">
+                                            {% comment %} Image {% endcomment %}
+                                            {%- capture sizes -%}
+                                                (max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw
+                                            {%- endcapture -%}
+                                            
+                                            {%- capture widths -%}
+                                                400, 700
+                                            {%- endcapture -%}
 
-                      {%- render 'image', 
-                        url: article.url,
-                        img_class:'h-full w-full object-cover transition-transform duration-[600ms] ease-[cubic-bezier(0.25,0.46,0.45,0.94)] group-hover:scale-105',
-                        image: article.image,
-                        alt: article.title,
-                        width: article.image.width,
-                        sizes: sizes,
-                        widths: widths
-                      -%}
+                                            {%- render 'image', 
+                                                url: article.url,
+                                                img_class:'h-full w-full object-cover transition-transform duration-[600ms] ease-[cubic-bezier(0.25,0.46,0.45,0.94)] group-hover:scale-105',
+                                                image: article.image,
+                                                alt: article.title,
+                                                width: article.image.width,
+                                                sizes: sizes,
+                                                widths: widths
+                                            -%}
+                                        </div>
+
+                                        <h4 class="sub-heading my-6">
+                                            {{ article.tags | first }}
+                                        </h4>
+
+                                        <h2 class="my-6">
+                                            <a href="{{ article.url }}">{{ article.title }}</a>
+                                        </h2>
+
+                                        {%- if article.url !=blank -%}
+                                            {%- capture link_content -%}
+                                                <span>{{ section.settings.link_text }}</span>
+                                                {% render 'icons', icon: 'icon-arrow2', class: 'ml-3' %}
+                                            {%- endcapture -%}
+
+                                            {%- render 'link', href: article.url, content: link_content, variant: "underline"-%}
+                                        {%- endif -%}
+                                    </article>
+                                {% endfor %}
+                            </div>
+
+                            <div
+                                class="blog-pagination-wrapper"
+                                @click="
+                                    let link = $event.target.closest('nav.pagination a');
+                                    if (link) { 
+                                        $event.preventDefault(); 
+                                        loadUrl(link.href); 
+                                    }
+                                "
+                            >
+                                {% render 'pagination', paginate_obj: paginate %}
+                            </div>
+                        {% endpaginate %}
                     </div>
-
-                    <h4 class="mb-3 opacity-80">
-                      {{ article.tags | first }}
-                    </h4>
-                    <h3 class="mb-3">
-                      <a href="{{ article.url }}">{{ article.title }}</a>
-                    </h3>
-                    {%- if article.url !=blank -%}
-                      {%- capture link_content -%}
-                        <span>{{ section.settings.link_text }}</span>
-                        {% render 'icons', icon: 'icon-arrow2', class: 'ml-3' %}
-                        {%- endcapture -%}
-                      {%- render 'link', class: 'opacity-80', href: article.url, content: link_content, variant: "underline"-%}
-                    {%- endif -%}
-                  </article>
-                {% endfor %}
-              </div>
-
-              <div
-                class="blog-pagination-wrapper"
-                @click="
-                  let link = $event.target.closest('nav.pagination a');
-                  if (link) { 
-                    $event.preventDefault(); 
-                    loadUrl(link.href); 
-                  }
-                "
-              >
-                {% render 'pagination', paginate_obj: paginate %}
-              </div>
-            {% endpaginate %}
-          </div>
-        {% endcapture %}
+                {% endcapture %}
 
                 {%- render 'tab-control',
                     custom_class: 'items-start',

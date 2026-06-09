@@ -13,12 +13,10 @@
 
 <div
     data-section-id="{{ section.id }}"
-    class="announcement-bar-section full-width color-{{ section.settings.color_scheme }}"
+    class="announcement-bar-section full-width color-{{ section.settings.color_scheme }} section-color-apply"
     data-component-kind="section"
     data-component-type="announcement-bar"
     data-component-id="{{ section.id }}"
-    data-auto-play="{{ section.settings.auto_play }}"
-    data-change-play-speed="{{ section.settings.change_play_speed }}"
 >
     <div class="container-page">
         <div
@@ -32,7 +30,7 @@
             "
         >
             {%- if section.settings.show_social -%}
-                {%- render 'social-icons', color: 'current', visibility_class: 'max-pc:hidden' -%}
+                {%- render 'social-icons', visibility_class: 'max-pc:hidden' -%}
             {%- endif -%}
 
             {%- if announcement_bar -%}
@@ -50,10 +48,10 @@
                             <div class="swiper-wrapper">
                                 {%- for block in section.blocks -%}
                                     <div
-                                        class="swiper-slide flex flex-wrap gap-6 body-md text-theme-text"
+                                        class="swiper-slide flex flex-wrap gap-6"
                                         {{ block.shopify_attributes }}
                                     >
-                                        <span class="opacity-60">
+                                        <span>
                                             {{- block.settings.announcement_text -}}
                                         </span>
 
@@ -73,15 +71,6 @@
                                 {%- endfor -%}
                             </div>
                         </div>
-                    {%- endif -%}
-                    {%- if section.settings.auto_play and section.blocks.size > 1 -%}
-                        <button
-                            type="button"
-                            class="announcement-bar__pause-toggle flex h-8 w-8 shrink-0 items-center justify-center text-theme-text opacity-60 hover:opacity-100 focus-visible:opacity-100"
-                            aria-label="{{ 'accessibility.pause_announcements' | t }}"
-                            aria-pressed="false"
-                            data-play-label="{{ 'accessibility.play_announcements' | t }}"
-                        ></button>
                     {%- endif -%}
                 </div>
             {%- endif -%}
@@ -111,10 +100,6 @@
             'announcement-bar',
             {
                 init(el) {
-                    const autoPlay = el.getAttribute('data-auto-play') === 'true';
-                    const changePlaySpeed =
-                        parseInt(el.getAttribute('data-change-play-speed'), 10) || 5;
-
                     const swiperContainer = el.querySelector('.swiper');
                     if (!swiperContainer || typeof Swiper === 'undefined') return null;
 
@@ -122,12 +107,6 @@
 
                     const swiper = new Swiper(swiperContainer, {
                         loop: slides.length > 1,
-                        autoplay: autoPlay
-                            ? {
-                                  delay: changePlaySpeed * 1000,
-                                  disableOnInteraction: false,
-                              }
-                            : false,
                         slidesPerView: 1,
                         allowTouchMove: false,
                         effect: 'fade',
@@ -138,46 +117,11 @@
                         navigation: false,
                     });
 
-                    let removePauseHandler = null;
-                    const btn = el.querySelector('.announcement-bar__pause-toggle');
-                    if (btn && swiper.autoplay) {
-                        const pauseLabel = btn.getAttribute('aria-label');
-                        const playLabel = btn.getAttribute('data-play-label');
-
-                        function updateButton() {
-                            const isRunning = swiper.autoplay.running;
-                            btn.classList.toggle(
-                                'announcement-bar__pause-toggle--paused',
-                                !isRunning,
-                            );
-                            btn.setAttribute('aria-label', isRunning ? pauseLabel : playLabel);
-                            btn.setAttribute('aria-pressed', String(!isRunning));
-                        }
-
-                        function handleToggle() {
-                            if (swiper.autoplay.running) {
-                                swiper.autoplay.stop();
-                            } else {
-                                swiper.autoplay.start();
-                            }
-                            updateButton();
-                        }
-
-                        btn.addEventListener('click', handleToggle);
-                        removePauseHandler = function () {
-                            btn.removeEventListener('click', handleToggle);
-                        };
-                    }
-
-                    return { swiper, removePauseHandler };
+                    return { swiper };
                 },
 
                 destroy(el, state) {
                     if (!state) return;
-
-                    if (typeof state.removePauseHandler === 'function') {
-                        state.removePauseHandler();
-                    }
 
                     if (state.swiper && typeof state.swiper.destroy === 'function') {
                         state.swiper.destroy(true, true);
@@ -209,16 +153,6 @@
             align-items: center;
             justify-content: center;
         }
-
-        .announcement-bar__pause-toggle::before {
-            content: '\23F8';
-            font-size: 0.75rem;
-            line-height: 1;
-        }
-
-        .announcement-bar__pause-toggle--paused::before {
-            content: '\25B6';
-        }
     }
 {% endstylesheet %}
 
@@ -233,26 +167,6 @@
         "groups": ["header"]
     },
     "settings": [
-        {
-            "type": "header",
-            "content": "t:sections.announcement-bar.content.announcement_bar"
-        },
-        {
-            "type": "checkbox",
-            "id": "auto_play",
-            "label": "t:sections.announcement-bar.settings.auto_play_announcements",
-            "default": false
-        },
-        {
-            "type": "range",
-            "id": "change_play_speed",
-            "min": 3,
-            "max": 10,
-            "step": 1,
-            "unit": "s",
-            "label": "t:sections.announcement-bar.settings.change_play_speed",
-            "default": 5
-        },
         {
             "type": "color_scheme",
             "id": "color_scheme",

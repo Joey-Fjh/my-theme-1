@@ -5,6 +5,10 @@ This is a user-maintained working notebook. Agents read it on demand when the us
 - `Next Topics`: actionable items tracked across sessions. Mark done items as done or remove them; add new items as they arise.
 - `Next Session Template`: fill in before ending a session if the user asks for next-session context.
 
+## Active Checklists
+
+- `docs/agent/checklist.md` — Global settings file-by-file review progress
+
 ## Next Topics
 
 - Review root entry points and confirm only agent entry adapters remain at the repository root.

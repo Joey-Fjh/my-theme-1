@@ -1,6 +1,6 @@
 <div
     data-section-id="{{ section.id }}"
-    class="article-section full-width color-{{ section.settings.color_scheme }}"
+    class="article-section full-width color-{{ section.settings.color_scheme }} section-color-apply"
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
@@ -23,10 +23,10 @@
             {%- assign image = section.settings.image -%}
         {%- endif -%}
 
-        {%-
-            render 'image',
+        {%- assign image_alt = image.alt | default: section.settings.image_alt | escape -%}
+        {%- render 'image',
             image: image,
-            alt: image.alt | default: section.settings.image_alt | escape,
+            alt: image_alt,
             width: image.width,
             class: 'h-full w-full',
             img_class: 'h-full w-full object-cover object-center',
@@ -36,16 +36,16 @@
 
         <div class="article-hero__overlay absolute inset-0 z-10">
             <div
-                class="article-hero__content mx-auto flex h-full w-full max-w-lg flex-col items-center justify-center gap-4 px-6 text-center text-theme-text pc:max-w-1/2 pc:gap-5"
+                class="article-hero__content mx-auto flex h-full w-full max-w-lg flex-col items-center justify-center gap-4 px-6 text-center pc:max-w-1/2 pc:gap-5"
             >
                 {%- if section.settings.eyebrow != blank -%}
-                    <h3 class="opacity-80">
+                    <h3 class="sub-heading">
                         {{ section.settings.eyebrow }}
                     </h3>
                 {%- endif -%}
 
                 <h1
-                    class="line-clamp-3 max-w-full min-w-0 font-bold pc:hxl"
+                    class="line-clamp-3 max-w-full min-w-0 pc:hxl"
                     title="{{ article.title | escape }}"
                 >
                     {{ article.title }}
@@ -54,7 +54,7 @@
         </div>
     </div>
 
-    <div class="layout layout-no-pt container-page mt-12 bg-theme-bg text-theme-text">
+    <div class="layout layout-no-pt container-page mt-12">
         <div class="flex flex-col gap-16 pc:flex-row pc:gap-24 fw:gap-32">
             {% comment %} Aside Bar {% endcomment %}
             <aside
@@ -72,11 +72,11 @@
                                 <a
                                     href="{{ a.url }}"
                                     class="
-                                        inline-block max-w-full truncate body-md leading-snug underline-offset-4 transition-colors duration-200 hover:underline
+                                        inline-block max-w-full truncate leading-snug underline-offset-4 transition-colors duration-200 hover:underline
                                         {% if a.id == article.id %}
-                                          text-theme-text underline
+                                          text-theme-text-80 underline
                                         {% else %}
-                                          text-theme-text/60 hover:text-theme-text
+                                          text-theme-text/50 hover:text-theme-text-80
                                         {% endif %}
                                     "
                                 >
@@ -93,17 +93,17 @@
                 class="article-content min-w-0 flex-1 translate-y-7.5 opacity-0"
                 data-gsap-content
             >
-                <div class="flex items-center justify-between border-b border-theme-border-soft pb-3">
-                    <h2 class="h2">{{ article.title }}</h2>
+                <div class="flex items-center justify-between border-b border-theme-border-20 pb-3">
+                    <h2>{{ article.title }}</h2>
                     {%- assign date = article.published_at | time_tag: format: 'date' -%}
-                    <p class="body-sm text-theme-text/70">
+                    <p>
                         {{ 'blog.article_metadata_html' | t: date: date, author: article.author }}
                     </p>
                 </div>
                 <div class="rte py-10">
                     {{ article.content }}
                 </div>
-                <div class="flex flex-col gap-3 border-t border-theme-border-soft pt-3">
+                <div class="flex flex-col gap-3 border-t border-theme-border-20 pt-3">
                     {%- if section.settings.show_social -%}
                         {%- render 'social-icons', type: 'name', class: 'self-end' -%}
                     {%- endif -%}

@@ -14,8 +14,7 @@
 <div
     data-section-id="{{ section.id }}"
     class="
-        before-after-comparison-section full-width
-        color-{{ section.settings.color_scheme }}
+                before-after-comparison-section full-width color-{{ section.settings.color_scheme }} section-color-apply
     "
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
@@ -23,39 +22,45 @@
     "
 >
     <div class="layout container-page">
-        <div class="flex flex-col gap-6 text-center text-theme-text">
-            <h3 class="opacity-80">
+        <div class="flex flex-col gap-6 text-center">
+            <h3 class="sub-heading">
                 {{ section.settings.sub_heading }}
             </h3>
-            <h2 class="font-bold">
+            <h1 class="pc:hxl">
                 {{ section.settings.heading }}
-            </h2>
+            </h1>
         </div>
 
         {% comment %} Mobile Layout (Stacked) {% endcomment %}
         <div class="mt-10 flex flex-col gap-6 pc:hidden">
             <div class="relative overflow-hidden rounded-lg">
-                {%-
-                    render 'image',
+                {%- assign image_alt = section.settings.before_img.alt
+                    | default: section.settings.before_label
+                    | escape
+                -%}
+                {%- render 'image',
                     image: section.settings.before_img,
-                    alt: section.settings.before_img.alt | default: section.settings.before_label | escape,
+                    alt: image_alt,
                     width: section.settings.before_img.width,
                     aspect_ratio: aspect_ratio
                 -%}
-                <div class="absolute bottom-4 left-4 z-10 rounded border-2 border-theme-text px-3 py-2 body-sm tracking-wider text-theme-text backdrop-blur-sm">
+                <div class="absolute bottom-4 left-4 z-10 rounded border-2 border-theme-text px-3 py-2 backdrop-blur-sm">
                     {{ section.settings.before_label }}
                 </div>
             </div>
 
             <div class="relative overflow-hidden rounded-lg">
-                {%-
-                    render 'image',
+                {%- assign image_alt = section.settings.after_img.alt
+                    | default: section.settings.after_label
+                    | escape
+                -%}
+                {%- render 'image',
                     image: section.settings.after_img,
-                    alt: section.settings.after_img.alt | default: section.settings.after_label | escape,
+                    alt: image_alt,
                     width: section.settings.after_img.width,
                     aspect_ratio: aspect_ratio
                 -%}
-                <div class="absolute right-4 bottom-4 z-10 rounded border-2 border-theme-text px-3 py-2 body-sm tracking-wider text-theme-text backdrop-blur-sm">
+                <div class="absolute right-4 bottom-4 z-10 rounded border-2 border-theme-text px-3 py-2 backdrop-blur-sm">
                     {{ section.settings.after_label }}
                 </div>
             </div>
@@ -81,10 +86,13 @@
             >
                 {% comment %} After Image (Background) {% endcomment %}
                 <div class="absolute inset-0 h-full w-full">
-                    {%-
-                        render 'image',
+                    {%- assign image_alt = section.settings.after_img.alt
+                        | default: section.settings.after_label
+                        | escape
+                    -%}
+                    {%- render 'image',
                         image: section.settings.after_img,
-                        alt: section.settings.after_img.alt | default: section.settings.after_label | escape,
+                        alt: image_alt,
                         width: section.settings.after_img.width,
                         extra_attributes: 'draggable="false"'
                     -%}
@@ -95,10 +103,13 @@
                     class="absolute inset-0 h-full w-full"
                     :style="`clip-path: inset(0 ${100 - position}% 0 0)`"
                 >
-                    {%-
-                        render 'image',
+                    {%- assign image_alt = section.settings.before_img.alt
+                        | default: section.settings.before_label
+                        | escape
+                    -%}
+                    {%- render 'image',
                         image: section.settings.before_img,
-                        alt: section.settings.before_img.alt | default: section.settings.before_label | escape,
+                        alt: image_alt,
                         width: section.settings.before_img.width,
                         extra_attributes: 'draggable="false"'
                     -%}
@@ -106,7 +117,7 @@
 
                 {% comment %} Silder Line {% endcomment %}
                 <div
-                    class="absolute top-0 bottom-0 z-10 w-2 -translate-x-1/2 bg-theme-bg/90 transition-[left] duration-75 ease-out"
+                    class="absolute top-0 bottom-0 z-10 w-2 -translate-x-1/2 bg-theme-bg/80 transition-[left] duration-75 ease-out"
                     :class="{'transition-none' : isDragging }"
                     :style="`left: ${position}%`"
                 >
@@ -114,7 +125,7 @@
                     <button
                         type="button"
                         class="
-                            focus-visible:ring-focus absolute top-1/2 left-1/2 flex h-24 w-24 -translate-x-1/2 -translate-y-1/2 cursor-grab items-center justify-center gap-0 rounded-full bg-theme-bg text-theme-text
+                            focus-visible:ring-focus absolute top-1/2 left-1/2 flex h-24 w-24 -translate-x-1/2 -translate-y-1/2 cursor-grab items-center justify-center gap-0 rounded-full bg-theme-bg
                             shadow-surface transition-transform duration-200 hover:scale-110 focus-visible:ring-2 focus-visible:outline-none active:cursor-grabbing
                         "
                         @mousedown.stop="startDrag($event)"
@@ -132,12 +143,12 @@
                 </div>
 
                 {% comment %} Before Label {% endcomment %}
-                <div class="absolute bottom-10 left-10 z-10 rounded border-2 border-theme-text p-4 body-lg tracking-wider text-theme-text backdrop-blur-sm">
+                <div class="absolute bottom-10 left-10 z-10 rounded border-2 border-theme-text p-4 body-lg  backdrop-blur-sm">
                     {{ section.settings.before_label }}
                 </div>
 
                 {% comment %} After Label {% endcomment %}
-                <div class="absolute right-10 bottom-10 z-10 rounded border-2 border-theme-text p-4 body-lg tracking-wider text-theme-text backdrop-blur-sm">
+                <div class="absolute right-10 bottom-10 z-10 rounded border-2 border-theme-text p-4 body-lg backdrop-blur-sm">
                     {{ section.settings.after_label }}
                 </div>
             </div>

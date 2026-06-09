@@ -50,7 +50,8 @@ Shopify Settings -> snippets/css-variables.liquid -> CSS custom properties
 1. `snippets/css-variables.liquid` is a strict 1:1 bridge from global settings. Output raw CSS custom properties only — no derivation, no alpha composition, no hardcoded values. Every variable must trace to a `settings.*` value.
 2. `tailwind/tailwind.input.css` is the single Token entry point. All derivation (alpha variants, composition, hardcoded fallbacks) happens here. Variables that have no global setting source (e.g., overlay opacity) are defined in this file, not in `css-variables.liquid`.
 3. In `tailwind.*.css` utility/component files, color properties SHOULD use `@apply` with Tailwind token utilities (e.g., `@apply bg-badge text-badge-text`). Structural properties (border-width, outline, shadow) that lack token utilities use `var()` directly.
-4. Liquid business files (sections, snippets) SHOULD use semantic class names (`badge`, `btn`, `surface`, `divider`) rather than raw Tailwind token names (`border-theme-border-20`). Compose tokens into semantic utilities in the appropriate `tailwind.*.css` layer file.
+4. Liquid business files (sections, snippets) SHOULD use semantic class names (`badge`, `btn`, `surface`, `divider`) rather than raw Tailwind token names (`border-theme-border-20`). Compose tokens into semantic utilities in the appropriate `tailwind.*.css` layer file. This is a preference, not a requirement — direct token consumption is acceptable for one-off or low-reuse cases where a semantic wrapper adds no value.
+5. Alpha levels are fixed to four intervals: 20, 50, 80, 100 (default/omitted). Arbitrary values such as 75, 40, 35 are prohibited. When consuming color tokens directly (without a semantic wrapper), use the Tailwind opacity modifier syntax (`/20`, `/50`, `/80`). Example: `border-theme-border/20`, not `border-theme-border-20` or `border-theme-border/25`.
 
 ## Build Commands
 

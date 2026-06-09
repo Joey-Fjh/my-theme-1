@@ -7,21 +7,17 @@
     - contents:             {String} Optional. '|'-delimited HTML content strings (used when blocks is not provided).
     - initial_active:       {Number|String} Optional. Index of initially expanded item. Pass string 'null' to close all (Default: 0).
     - icon_type:            {String} Optional. Icon style for all items: 'chevron' | 'plus' (Default: 'chevron').
-    - icon_size:            {String} Optional. Tailwind size classes for the icon (Default: 'w-5 h-5').
     - wrapper_class:        {String} Optional. CSS class for the outermost container.
     - item_class:           {String} Optional. CSS class for each accordion item.
     - title_class:          {String} Optional. Extra CSS class for the title text.
     - title_active_class:   {String} Optional. CSS class for the title when active.
     - title_inactive_class: {String} Optional. CSS class for the title when inactive.
     - content_class:        {String} Optional. CSS class for the content wrapper.
-    - icon_color_class:     {String} Optional. CSS class for icon color.
     - id_prefix:            {String} Optional. Unique prefix for panel/button IDs (e.g. section.id). Ensures aria-controls uniqueness across multiple accordion instances.
 {% endcomment %}
 
 {%- assign init_state = initial_active | default: 0 -%}
 {%- assign icon_style = icon_type | default: 'chevron' -%}
-{%- assign icon_dim = icon_size | default: 'w-5 h-5' -%}
-{%- assign icon_color_class = icon_color_class | default: 'text-current' -%}
 {%- assign title_class = title_class | default: '' -%}
 {%- assign icon_rotate = 'rotate-180' -%}
 {%- if icon_style == 'plus' -%}{%- assign icon_rotate = 'rotate-45' -%}{%- endif -%}
@@ -35,11 +31,11 @@
     data-initial-active="{% if has_single_item %}{% if init_state == 'null' %}null{% else %}0{% endif %}{% else %}{{ init_state }}{% endif %}"
     data-icon-rotate="{{ icon_rotate }}"
     data-title-active-class="{{ title_active_class | default: 'text-current' | escape }}"
-    data-title-inactive-class="{{ title_inactive_class | default: 'text-current opacity-70' | escape }}"
+    data-title-inactive-class="{{ title_inactive_class | default: 'text-current opacity-80' | escape }}"
     class="{{ wrapper_class | default: 'flex flex-col gap-8' }}"
 >
     {%- if has_single_item -%}
-        <div class="{{ item_class | default: 'border-t border-theme-border-soft first:border-t-0' }}">
+        <div class="{{ item_class | default: 'border-t border-theme-border-20 first:border-t-0' }}">
             <button
                 type="button"
                 data-index="0"
@@ -60,7 +56,7 @@
                     {%- if show_clear and clear_url != blank -%}
                         <a
                             href="{{ clear_url }}"
-                            class="inline-flex h-5 w-5 items-center justify-center opacity-65 transition-opacity hover:opacity-100"
+                            class="inline-flex items-center justify-center opacity-80 transition-opacity hover:opacity-100"
                             aria-label="{{ 'accessibility.clear_item' | t: item: clear_label | default: item_title }}"
                             @click.stop
                         >
@@ -71,13 +67,13 @@
 
                 <span
                     data-index="0"
-                    class="ml-4 inline-block shrink-0 {{ icon_dim }} {{ icon_color_class }} transition-transform duration-300"
+                    class="ml-4 inline-block shrink-0  transition-transform duration-300"
                     :class="{ [iconRotate]: isActive($el.dataset.index) }"
                 >
                     {%- if icon_style == 'chevron' -%}
-                        {% render 'icons', icon: 'icon-arrow', class: icon_dim %}
+                        {% render 'icons', icon: 'icon-arrow' %}
                     {%- elsif icon_style == 'plus' -%}
-                        {% render 'icons', icon: 'icon-plus', class: icon_dim %}
+                        {% render 'icons', icon: 'icon-plus' %}
                     {%- endif -%}
                 </span>
             </button>
@@ -89,7 +85,7 @@
                 :class="isActive($el.dataset.index) ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'"
             >
                 <div class="-m-1 overflow-hidden p-1">
-                    <div class="{{ content_class | default: 'body-md pb-5 pr-8 leading-relaxed text-current opacity-75' }}">
+                    <div class="{{ content_class | default: 'pb-5 pr-8' }}">
                         {{ item_content }}
                     </div>
                 </div>
@@ -98,7 +94,7 @@
     {%- elsif blocks -%}
         {%- for block in blocks -%}
             <div
-                class="{{ item_class | default: 'border-t border-theme-border-soft first:border-t-0' }}"
+                class="{{ item_class | default: 'border-t border-theme-border-20 first:border-t-0' }}"
                 {{ block.shopify_attributes }}
             >
                 <button
@@ -119,13 +115,13 @@
 
                     <span
                         data-index="{{ forloop.index0 }}"
-                        class="ml-4 inline-block shrink-0 {{ icon_dim }} {{ icon_color_class }} transition-transform duration-300"
+                        class="ml-4 inline-block shrink-0  transition-transform duration-300"
                         :class="{ [iconRotate]: isActive($el.dataset.index) }"
                     >
                         {%- if icon_style == 'chevron' -%}
-                            {% render 'icons', icon: 'icon-arrow', class: icon_dim %}
+                            {% render 'icons', icon: 'icon-arrow' %}
                         {%- elsif icon_style == 'plus' -%}
-                            {% render 'icons', icon: 'icon-plus', class: icon_dim %}
+                            {% render 'icons', icon: 'icon-plus' %}
                         {%- endif -%}
                     </span>
                 </button>
@@ -137,7 +133,7 @@
                     :class="isActive($el.dataset.index) ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'"
                 >
                     <div class="-m-1 overflow-hidden p-1">
-                        <div class="{{ content_class | default: 'body-md pb-5 pr-8 leading-relaxed text-current opacity-75' }}">
+                        <div class="{{ content_class | default: 'pb-5 pr-8' }}">
                             {{ block.settings.text }}
                         </div>
                     </div>
@@ -149,9 +145,10 @@
         {%- assign content_array = contents | split: '|' -%}
 
         {%- for title in title_array -%}
-            <div class="{{ item_class | default: 'border-t border-theme-border-soft first:border-t-0' }}">
+            <div class="{{ item_class | default: 'border-t border-theme-border-20 first:border-t-0' }}">
                 <button
                     type="button"
+                    s
                     data-index="{{ forloop.index0 }}"
                     @click="toggle($el.dataset.index)"
                     :aria-expanded="isActive($el.dataset.index)"
@@ -168,13 +165,13 @@
 
                     <span
                         data-index="{{ forloop.index0 }}"
-                        class="ml-4 inline-block shrink-0 {{ icon_dim }} {{ icon_color_class }} transition-transform duration-300"
+                        class="ml-4 inline-block shrink-0 transition-transform duration-300"
                         :class="{ [iconRotate]: isActive($el.dataset.index) }"
                     >
                         {%- if icon_style == 'chevron' -%}
-                            {% render 'icons', icon: 'icon-arrow', class: icon_dim %}
+                            {% render 'icons', icon: 'icon-arrow' %}
                         {%- elsif icon_style == 'plus' -%}
-                            {% render 'icons', icon: 'icon-plus', class: icon_dim %}
+                            {% render 'icons', icon: 'icon-plus' %}
                         {%- endif -%}
                     </span>
                 </button>
@@ -186,7 +183,7 @@
                     :class="isActive($el.dataset.index) ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'"
                 >
                     <div class="-m-1 overflow-hidden p-1">
-                        <div class="{{ content_class | default: 'body-md pb-5 pr-8 leading-relaxed text-current opacity-75' }}">
+                        <div class="{{ content_class | default: 'pb-5 pr-8' }}">
                             {{ content_array[forloop.index0] }}
                         </div>
                     </div>

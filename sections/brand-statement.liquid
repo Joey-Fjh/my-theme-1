@@ -1,6 +1,6 @@
 <div
     data-section-id="{{ section.id }}"
-    class="brand-statement-section full-width relative overflow-hidden color-{{ section.settings.color_scheme }}"
+    class="brand-statement-section full-width relative overflow-hidden color-{{ section.settings.color_scheme }} section-color-apply"
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
@@ -18,10 +18,13 @@
             {%- assign brushstroke_alt_fallback = 'sections.brand-statement.defaults.image_alt'
                 | t
             -%}
-            {%-
-                render 'image',
+            {%- assign image_alt = section.settings.brushstroke_image.image_alt
+                | default: brushstroke_alt_fallback
+                | escape
+            -%}
+            {%- render 'image',
                 image: section.settings.brushstroke_image,
-                alt: section.settings.brushstroke_image.image_alt | default: brushstroke_alt_fallback | escape,
+                alt: image_alt,
                 width: section.settings.brushstroke_image.width,
                 class: 'max-w-none w-full',
                 img_class: 'h-full pc:h-auto w-full pc:object-contain object-center'
@@ -33,7 +36,7 @@
         {% comment %} Statement Text {% endcomment %}
         <div class="mx-auto flex min-h-96 items-center justify-center py-8 pc:min-h-120 pc:py-0">
             <div
-                class="translate-y-4 text-center body-lg leading-[1.12] font-bold text-balance text-theme-text opacity-0 pc:max-w-5/6 pc:body-xl"
+                class="translate-y-4 text-center body-lg leading-[1.12] text-balance opacity-0 pc:max-w-5/6 pc:body-xl"
                 data-gsap-text
             >
                 {{ section.settings.statement }}
