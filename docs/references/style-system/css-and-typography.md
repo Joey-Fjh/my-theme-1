@@ -11,7 +11,7 @@ For animation and transition work, classify through `docs/references/architectur
 | `tailwind/tailwind.input.css`      | Entry point: `@theme inline` token bridge, breakpoints, imports           |
 | `assets/base.css`                  | Global reset and structural defaults                                      |
 | `tailwind/tailwind.typography.css` | Heading classes (`hxxxl`--`h6`), body text classes (`body-xl`--`body-xs`) |
-| `tailwind/tailwind.elements.css`   | Atomic UI: `surface`, `btn`, `field`, `links`, `icons`, `badges`          |
+| `tailwind/tailwind.elements.css`   | Atomic UI: `icons`, `links`, `btn`, `field`, `badge`                      |
 | `tailwind/tailwind.components.css` | Composite patterns: `.dropdown`, `.localization-switcher`, `.rte`         |
 | `tailwind/tailwind.snippets.css`   | Snippet-scoped: `.product-info-blocks` and context variants               |
 | `tailwind/tailwind.utilities.css`  | Layout helpers: `container-page`, `place-*`                               |
@@ -45,14 +45,6 @@ Shopify Settings -> snippets/css-variables.liquid -> CSS custom properties
     -> utility classes in templates
 ```
 
-### Layer Rules
-
-1. `snippets/css-variables.liquid` is a strict 1:1 bridge from global settings. Output raw CSS custom properties only — no derivation, no alpha composition, no hardcoded values. Every variable must trace to a `settings.*` value.
-2. `tailwind/tailwind.input.css` is the single Token entry point. All derivation (alpha variants, composition, hardcoded fallbacks) happens here. Variables that have no global setting source (e.g., overlay opacity) are defined in this file, not in `css-variables.liquid`.
-3. In `tailwind.*.css` utility/component files, color properties SHOULD use `@apply` with Tailwind token utilities (e.g., `@apply bg-badge text-badge-text`). Structural properties (border-width, outline, shadow) that lack token utilities use `var()` directly.
-4. Liquid business files (sections, snippets) SHOULD use semantic class names (`badge`, `btn`, `surface`, `divider`) rather than raw Tailwind token names (`border-theme-border-20`). Compose tokens into semantic utilities in the appropriate `tailwind.*.css` layer file. This is a preference, not a requirement — direct token consumption is acceptable for one-off or low-reuse cases where a semantic wrapper adds no value.
-5. Alpha levels are fixed to four intervals: 20, 50, 80, 100 (default/omitted). Arbitrary values such as 75, 40, 35 are prohibited. When consuming color tokens directly (without a semantic wrapper), use the Tailwind opacity modifier syntax (`/20`, `/50`, `/80`). Example: `border-theme-border/20`, not `border-theme-border-20` or `border-theme-border/25`.
-
 ## Build Commands
 
 ```bash
@@ -65,26 +57,11 @@ Output file: `assets/tailwind.output.css` -- NEVER edit manually.
 
 ## Typography
 
-### Element Classification
-
-| Element Type   | Default Styling                 | Usage                               |
-| -------------- | ------------------------------- | ----------------------------------- |
-| `h1` element   | Native `h1` CSS in `base.css`   | Primary heading (page title)        |
-| `h2` element   | Native `h2` CSS in `base.css`   | Secondary heading (section title)   |
-| `h3` element   | Native `h3` CSS in `base.css`   | Tertiary heading (subsection title) |
-| `h4` element   | Native `h4` CSS in `base.css`   | Quaternary heading                  |
-| `h5` element   | Native `h5` CSS in `base.css`   | Quinary heading                     |
-| `h6` element   | Native `h6` CSS in `base.css`   | Senary heading                      |
-| `p` element    | Body text inherited from `body` | Paragraph text                      |
-| `span` element | Body text inherited from `body` | Inline text                         |
-| `li` element   | Body text inherited from `body` | List item text                      |
-| `td` element   | Body text inherited from `body` | Table cell text                     |
-
 ### Font Size Tiers
 
 | Tier         | Usage                                               |
 | ------------ | --------------------------------------------------- |
-| `hxxxl`-`h0` | Special large headings (rarely used)                |
+| `hxxxl`-`h0` | Special large headings              |
 | `h1`-`h6`    | Standard headings (corresponding to h1-h6 elements) |
 | `body-xl`    | Large emphasis text                                 |
 | `body-lg`    | Emphasis text                                       |
@@ -103,7 +80,6 @@ Output file: `assets/tailwind.output.css` -- NEVER edit manually.
 - `base.css` owns native element defaults.
 - `tailwind/tailwind.typography.css` owns reusable typography tiers.
 - Body text SHOULD inherit from `body` by default.
-- Native `h1`-`h6` elements SHOULD carry their standard visual tier without repeating matching classes.
 - Only add a typography utility when the intended tier differs from the inherited body default or native heading default.
 
 ### Body Typography
@@ -111,33 +87,7 @@ Output file: `assets/tailwind.output.css` -- NEVER edit manually.
 1. `body-md` is the intended default body tier.
 2. Broad removal of repeated `body-md` is allowed only after `body` and `body-md` are aligned in CSS.
 3. Use `body-sm`, `body-lg`, `body-xl`, and `body-xs` only when intentionally different from default.
-4. Redundant `body-md` is review-only debt unless it affects accessibility, layout, Lighthouse, or production behavior.
 
-### Semantic Examples
-
-```html
-<body>
-    <h1>Page Title</h1>
-    <h2>Section Title</h2>
-    <p>Paragraph text (inherits body-md)</p>
-    <span class="body-sm">Small text</span>
-</body>
-
-<h2>Featured collection</h2>
-
-<!-- Redundant matching heading class -->
-<h2 class="h2">Featured collection</h2>
-
-<!-- Semantic/visual mismatch: needs user/design decision, not a default pattern -->
-<h2 class="h1">Featured collection</h2>
-
-<!-- Special display tier on a semantic heading -->
-<h1 class="hxxxl">Campaign title</h1>
-<h2 class="h0">Section campaign title</h2>
-
-<!-- Wrong: non-heading element using heading class -->
-<span class="h4">Not a heading element</span>
-```
 
 ## Color
 
@@ -192,12 +142,13 @@ Render icons through the icon snippet:
 
 Snippet parameters:
 
-| Param   | Values                                   | Default   | Purpose                           |
-| ------- | ---------------------------------------- | --------- | --------------------------------- |
-| `icon`  | `'icon-arrow2'`, etc.                    | required  | SVG filename without `.svg`       |
-| `size`  | `xs`, `sm`, `md`, `lg`, `xl`             | `md`      | Maps to Tailwind size classes     |
-| `color` | `'theme'`, `'current'`, `'currentColor'` | `'theme'` | Color source                      |
-| `class` | any Tailwind classes                     | --        | Extra classes on wrapper `<span>` |
+| Param   | Values                       | Default  | Purpose                           |
+| ------- | ---------------------------- | -------- | --------------------------------- |
+| `icon`  | `'icon-arrow2'`, etc.        | required | SVG filename without `.svg`       |
+| `size`  | `xs`, `sm`, `md`, `lg`, `xl` | `md`     | Maps to Tailwind size classes     |
+| `class` | any Tailwind classes         | --       | Extra classes on wrapper `<span>` |
+
+Icon color follows the color scheme's `icons_color` via `--color-theme-icon` CSS variable automatically.
 
 Adding a new icon:
 

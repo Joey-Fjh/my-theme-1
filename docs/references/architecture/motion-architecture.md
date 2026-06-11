@@ -583,8 +583,8 @@ tl.from(el.querySelector('[data-gsap-title]'), { y: 50, opacity: 0, duration: 0.
 
 ## External GSAP Reference
 
-Core GSAP patterns used in this project are documented above. These patterns are informed by `greensock/gsap-skills` (reviewed at commit `aed9cfd`, 2026-04-21).
+Core GSAP patterns used in this project are documented above. These patterns are informed by `greensock/gsap-skills` (reviewed at commit `aed9cfd`, 2026-04-21). The original skill files are not vendored into this repository.
 
-For advanced GSAP API behavior not covered here, consult the original source at `skills/gsap-core/SKILL.md`, `skills/gsap-scrolltrigger/SKILL.md`, or `skills/gsap-timeline/SKILL.md`. Any external recommendation must map back to this theme's lifecycle (`Components.register()`), motion runtime (`window.__Theme__.Motion`), cleanup (`ctx.revert()`), no-JS visibility, reduced-motion, and launch-readiness rules.
+For advanced GSAP API behavior not covered here, consult the upstream `greensock/gsap-skills` repository. Any external recommendation must map back to this theme's lifecycle (`Components.register()`), motion runtime (`window.__Theme__.Motion`), cleanup (`ctx.revert()`), no-JS visibility, reduced-motion, and launch-readiness rules.
 
 See `docs/references/agent-workflow/external-skills.md` for adoption history.

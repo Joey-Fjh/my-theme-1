@@ -1,48 +1,69 @@
 # Agent Context
 
-This is a user-maintained working notebook. Agents read it on demand when the user asks to continue previous work, review outstanding tasks, or prepare next-session context. Updates are manual; agents do not auto-update this file.
+This file records the current cross-session task contract and progress. Keep implementation findings and detailed file-by-file notes outside this file unless they are needed to continue the task safely.
 
-- `Next Topics`: actionable items tracked across sessions. Mark done items as done or remove them; add new items as they arise.
-- `Next Session Template`: fill in before ending a session if the user asks for next-session context.
+## Active Task: Global Settings Integration
 
-## Active Checklists
+### Objective
 
-- `docs/agent/checklist.md` — Global settings file-by-file review progress
+Complete the final pre-launch integration of approved global theme settings.
 
-## Next Topics
+Review and clean up sections, snippets, and shared styles one setting domain at a time so global settings work correctly across the storefront while preserving the existing presentation and behavior.
 
-- Review root entry points and confirm only agent entry adapters remain at the repository root.
-- Review `agent-router` and the routing docs after real usage; then decide whether repeated docs references should become skills.
-- Smoke-test tool adapter symlink resolution and confirm Claude reads `CLAUDE.md` and `.claude/skills`.
-- Confirm CI runs `npm run lint` in GitHub after the branch is pushed.
-- Plan MCP configuration for Shopify Dev MCP, Playwright MCP, Figma MCP, and Chrome DevTools MCP in a separate pass under tool-owned config directories.
-- Decide whether to add optional skill UI metadata later; do not do it unless it clearly helps discovery.
-- Global settings: candidate settings remain reserved in `config/settings_schema.json` and `locales/en.default.schema.json`; do not connect them to storefront runtime until each setting group and its behavior contract are explicitly approved.
-- Global typography: the approved settings panel and base mapping chain are complete: settings -> `snippets/css-variables.liquid` -> `assets/base.css` / `tailwind/tailwind.typography.css` -> storefront inheritance and typography tiers. Heading and body family, weight, line height, letter spacing, text transform, and scale are mapped; scale affects font size only. Typography chain verified — all 18 settings correctly mapped through to `tailwind.typography.css` utilities.
-- Global typography review: continue with human-led, file-by-file review. For each file, decide whether local `font-*`, `leading-*`, `tracking-*`, text-transform, `.h*`, and `.body-*` classes are intentional overrides or redundant declarations. Do not batch-delete or infer intent from repetition alone.
-- Global typography review: do not introduce new feature- or component-specific typography combination classes by default. Keep the existing global defaults and typography tiers; record shared components, uncertain design choices, and skipped files for later decisions.
-- Global typography follow-ups: review `.rte`, language/font fallback behavior, RTL support, and exceptional component typography as separate scoped decisions rather than mixing them into the file-by-file cleanup.
-- Continuation/review stage boundary: when asked to read recent commits and this context to continue the task, this Agent only audits, classifies, and gives implementation guidance. Do not edit theme implementation files unless the user explicitly authorizes implementation.
-- Global typography review findings: native heading elements with matching visual-tier classes are candidates for later cleanup, including `sections/article.liquid` (`h2.h2`), `sections/newsletter-banner.liquid` (`h2.h2.pc:h1`, where only the base `h2` is potentially redundant), and `sections/product-comparison-table.liquid` (`h5.h5`). Treat these as recommendations, not approved edits.
-- Global typography review finding: `body` now matches the `body-md` typography tier. Remove redundant `body-md` only when the element naturally inherits from `body`; preserve it when resetting text nested inside another typography tier. Preserve responsive tier changes and uncertain weight, line-height, tracking, and text-transform overrides until reviewed individually.
-- Global color chain: complete. 26 color settings in `settings_schema.json` map 1:1 to `css-variables.liquid` (26 CSS variables, RGB comma values). `css-variables.liquid` maps to `tailwind.input.css` (25 Tailwind tokens + 6 alpha-level variants). All downstream tailwind files consume via Tailwind tokens. Hardcoded opacity values moved from `css-variables.liquid` to `tailwind.input.css`. `--color-dialog-overlay` remains hardcoded (no global setting yet; wait for dialog/drawer settings group).
-- Documented rules: Layer Rules (1–4) added to `docs/references/style-system/css-and-typography.md`. MCP tool routing rule added to `AGENTS.md` Agent behavior rules.
-- Global color chain follow-up: `border-theme-border-soft` → `border-theme-border-20` and `border-theme-border-strong` → `border-theme-border` migration complete. 19 replacements across 10 Liquid files. `--color-theme-border-soft` and `--color-focus-soft` removed from `tailwind.input.css`. Zero residual references.
-- Global color chain follow-up: `text-theme-icon` was removed from the global Token entry. `snippets/social-icons.liquid` no longer references it — resolved.
-- Global color alpha levels: established numeric system — 100 (default), 80, 40, 20. Applied to `--color-theme-border-*` and `--color-focus-*`. Sub-heading text uses `--color-theme-text-80`. Hardcoded in `tailwind.input.css`, not tied to global settings.
-- Global color chain follow-up: feedback colors (success/warning/error/info) added to `css-variables.liquid` and `tailwind.input.css`. No downstream Tailwind utilities or business file usage yet. Build semantic utilities when needed.
-- Token naming convention: background colors omit `-bg` suffix (e.g., `--color-badge` not `--color-badge-bg`); `foreground` → `text`. Established during color chain work, documented in `css-and-typography.md` Layer Rules.
-- Intentional breaking refactors on this development branch: icon size tiers were globally redefined; `newsletter-overlay` alignment was changed from `text_alignment` to `text`; global `section_padding_top` / `section_padding_bottom` settings were replaced by `section_margin_top` / `section_margin_bottom`. Review storefront/editor behavior before merge/release, but do not restore the previous contracts by default.
-- Validation note: `npm test` and `npm run build:tw` pass. `npm run lint` currently fails only at `prettier --check`; formatting has not been run and is not a blocker for pushing this development branch, but repository lint must pass before merge/release.
+### Collaboration Boundary
 
-## Next Session Template
+- The user owns and performs theme implementation changes.
+- The Agent audits the current phase, identifies issues, explains the reasoning, and provides file-by-file modification and validation guidance.
+- The Agent MUST NOT modify theme implementation files unless the user explicitly authorizes implementation.
+- The Agent MAY inspect repository files and run non-rewriting validation commands when needed.
 
-Fill in before ending a session if the user asks for next-session context. Each field:
+### Core Principles
 
-- Current state: Color chain complete. Compatibility aliases (`border-theme-border-soft`, `border-theme-border-strong`, `--color-focus-soft`) migrated and removed. All 38 sections + 52 snippets reviewed. Structural variables (radius, shadow, border-width, focus-ring-width/offset) next for Tailwind token mapping.
-- Objective: Complete CSS variable chain cleanup across all categories (color done, structural next). Fix hardcoded colors in business files (main-page-contact, pagination, ui-toast, image-lightbox, loading).
-- Files changed: `tailwind/tailwind.input.css`, 10 Liquid files (alias migration), `docs/agent/checklist.md`, `docs/agent/context.md`
-- User decisions: Alpha levels use numeric naming (100/80/40/20). `border-theme-border-soft` → `-20`, `border-theme-border-strong` → `-border`. Hardcoded colors in pagination/ui-toast/image-lightbox deferred.
-- Checks run: `npm run build:tw` passes
-- Known blockers: `--color-dialog-overlay` hardcoded, waiting for dialog/drawer settings. Feedback colors have no downstream utilities yet. Hardcoded colors in main-page-contact, pagination, ui-toast, image-lightbox, loading.
-- Next recommended prompt: Map structural variables (input/button/surface border-width, focus-ring-width/offset) to Tailwind tokens in tailwind.input.css, following the same Layer Rules.
+- Process one global setting domain at a time.
+- Do not mix cleanup from other setting domains into the current phase.
+- Record cross-phase findings for their appropriate later phase instead of fixing them immediately.
+- Preserving existing business logic, interaction behavior, and visual intent is the primary red line.
+- Preserve schema IDs, block types, section types, preset names, and template references.
+- Do not modify merchant-owned configuration or content.
+- Do not force shared abstractions. Reuse or extract only when consumer contracts and invariants match.
+- Complete and verify each phase independently before moving to the next phase.
+
+### Phases
+
+1. Typography
+2. Colors
+3. Inputs
+4. Buttons
+5. Dialogs
+6. Product cards
+7. Toasts
+8. Cart behavior
+9. Search behavior
+10. Motion
+11. Focus
+12. Final launch regression
+
+### Completed Domains
+
+- Layout: `page_width`, `page_margin`, `section_margin_top`, and `section_margin_bottom` are connected and currently working. Do not reopen Layout as a cleanup phase unless a concrete regression is found; verify it only during final launch regression.
+
+### Per-Phase Workflow
+
+1. Confirm the global settings and intended behavior contract for the current domain.
+2. Verify the complete chain from settings to variables or runtime policy, shared primitives, and storefront consumers.
+3. The Agent audits and provides classified, file-by-file recommendations.
+4. The user reviews and implements the approved changes.
+5. Verify the current phase and record deferred or cross-phase findings.
+6. Move to the next phase only after explicit confirmation.
+
+### Current Phase
+
+Typography
+
+### Definition Of Done
+
+- Every approved global setting in the current phase has a clear and effective storefront consumer.
+- Local overrides in sections and snippets have been confirmed as intentional or cleaned up.
+- No unrelated setting-domain refactors are mixed into the phase.
+- Existing storefront logic and presentation have no unintended regressions.
+- Applicable validation and storefront regression checks for the phase have passed.

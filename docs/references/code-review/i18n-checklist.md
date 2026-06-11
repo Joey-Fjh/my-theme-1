@@ -192,59 +192,8 @@ Current keys:
 }
 ```
 
-### Missing Keys (Need to Add)
+### Schema Translation Status
 
-The following settings in `config/settings_schema.json` still use hardcoded text and need keys added to `en.default.schema.json`:
+All settings in `config/settings_schema.json` now use `t:` translation references (196 keys as of 2026-06-10). The translation keys reside in `locales/en.default.schema.json`. No hardcoded English text remains in schema setting `name`, `label`, `info`, or `content` fields.
 
-**Logo:**
-- `name`: "Logo"
-- `label`: "Logo", "Logo width", "Favicon"
-- `info`: "Display 32 * 32 px"
-
-**Typography:**
-- `content`: "About Custom font,please check out document：..."
-- `content`: "Header", "Body"
-- `label`: "Use custom font URL for headings", "Custom heading font family name", "Custom heading font file URL (.woff2 recommended)", "Font", "Scale"
-- `label`: "Use custom font URL for body", "Custom body font family name", "Custom body font file URL (.woff2 recommended)"
-
-**Layout:**
-- `content`: "Page Settings", "Section Settings"
-- `label`: "Padding Top", "Padding Bottom"
-
-**Colors:**
-- `label`: "Background gradient", "Icons color", "Links color", "Border color", "Strong border color", "Focus ring color", "Primary button label color", "Secondary button label color", "Primary button background color", "Primary button border color", "Secondary button background color", "Secondary button border color", "Text color", "Badge background color", "Badge label color", "Badge border color"
-- `info`: "The background gradient will replace the background color at all applicable positions."
-
-**Input:**
-- `name`: "Input"
-- `content`: "Border", "Shadow"
-- `label`: "Input border thickness", "Input radius", "Input shadow opacity", "Input shadow horizontal offset", "Input shadow vertical offset", "Input shadow blur"
-
-**Button:**
-- `name`: "Button"
-- `content`: "Border", "Shadow"
-- `label`: "Button border thickness", "Button radius", "Button shadow opacity", "Button shadow horizontal offset", "Button shadow vertical offset", "Button shadow blur"
-
-**Surface:**
-- `name`: "Surface"
-- `content`: "Border", "Shadow"
-- `label`: "Surface border thickness", "Surface radius", "Surface shadow opacity", "Surface shadow horizontal offset", "Surface shadow vertical offset", "Surface shadow blur"
-
-**Focus:**
-- `name`: "Focus"
-- `label`: "Focus ring width", "Focus ring offset"
-
-**Social Icon:**
-- `name`: "Social Icon"
-
----
-
-## Next Steps
-
-1. Run `grep -r "| t" sections/ snippets/` to find existing user-visible text translations
-2. Run `grep -r "t:" config/settings_schema.json` to find existing schema translations
-3. Add missing user-visible text keys to `en.default.json`
-4. Add missing schema setting keys to `en.default.schema.json`
-5. Replace hardcoded text with `| t` filter
-6. Replace hardcoded schema label/content/info with `t:` prefix references
-7. Verify all translations work correctly
+When adding new settings, always use `t:` references from the start. Run `grep -r "t:" config/settings_schema.json` to see existing patterns.
