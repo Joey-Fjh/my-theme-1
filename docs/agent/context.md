@@ -22,6 +22,11 @@ Review and clean up sections, snippets, and shared styles one setting domain at 
 - Process one global setting domain at a time.
 - Do not mix cleanup from other setting domains into the current phase.
 - Record cross-phase findings for their appropriate later phase instead of fixing them immediately.
+- Phase scope is defined by the current objective, not by file boundaries. A phase MAY inspect or change multiple shared, Tailwind, snippet, and section files when they are necessary to complete that domain.
+- Reuse or extraction MAY be proposed during the current phase when multiple consumers share the same contract and invariants.
+- Do not force reuse through mode flags, branching parameters, or abstractions that combine divergent behavior.
+- If a cross-domain issue does not block the current phase, record it for the appropriate later phase.
+- If a cross-domain issue blocks a correct implementation, explain the dependency and obtain explicit user approval before expanding scope.
 - Preserving existing business logic, interaction behavior, and visual intent is the primary red line.
 - Preserve schema IDs, block types, section types, preset names, and template references.
 - Do not modify merchant-owned configuration or content.
@@ -46,6 +51,11 @@ Review and clean up sections, snippets, and shared styles one setting domain at 
 ### Completed Domains
 
 - Layout: `page_width`, `page_margin`, `section_margin_top`, and `section_margin_bottom` are connected and currently working. Do not reopen Layout as a cleanup phase unless a concrete regression is found; verify it only during final launch regression.
+
+### Known Phase-Owned Chain Findings
+
+- Product cards: structural settings reach `--product-card-*` CSS variables, but the variables are not yet connected to shared product-card styles. Handle this during the Product cards phase.
+- Motion: `motion_speed` reaches `--motion-duration`, and `--motion-ease` is defined, but neither variable is connected to shared motion recipes or runtime policy. Handle this during the Motion phase.
 
 ### Per-Phase Workflow
 
