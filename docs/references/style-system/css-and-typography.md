@@ -10,7 +10,7 @@ For animation and transition work, classify through `docs/references/architectur
 | ---------------------------------- | ------------------------------------------------------------------------- |
 | `tailwind/tailwind.input.css`      | Entry point: `@theme inline` token bridge, breakpoints, imports           |
 | `assets/base.css`                  | Global reset and structural defaults                                      |
-| `tailwind/tailwind.typography.css` | Heading classes (`hxxxl`--`h6`), body text classes (`body-xl`--`body-xs`) |
+| `tailwind/tailwind.typography.css` | Heading classes (`heading-4xl`--`heading-h6`), body text classes (`body-3xl`--`body-xs`) |
 | `tailwind/tailwind.elements.css`   | Atomic UI: `icons`, `links`, `btn`, `field`, `badge`                      |
 | `tailwind/tailwind.components.css` | Composite patterns: `.dropdown`, `.localization-switcher`, `.rte`         |
 | `tailwind/tailwind.snippets.css`   | Snippet-scoped: `.product-info-blocks` and context variants               |
@@ -55,14 +55,19 @@ npm run dev        # shopify theme dev + tailwind watch
 
 Output file: `assets/tailwind.output.css` -- NEVER edit manually.
 
+Special standalone templates that cannot use `{% stylesheet %}`, such as
+`templates/gift_card.liquid`, may own a small hand-written CSS asset under `assets/`.
+
 ## Typography
 
 ### Font Size Tiers
 
 | Tier         | Usage                                               |
 | ------------ | --------------------------------------------------- |
-| `hxxxl`-`h0` | Special large headings              |
-| `h1`-`h6`    | Standard headings (corresponding to h1-h6 elements) |
+| `heading-4xl`-`heading-xl` | Special large headings              |
+| `heading-h1`-`heading-h6` | Standard headings (corresponding to h1-h6 elements) |
+| `body-3xl`   | Extra large emphasis text                           |
+| `body-2xl`   | Extra large emphasis text                           |
 | `body-xl`    | Large emphasis text                                 |
 | `body-lg`    | Emphasis text                                       |
 | `body-md`    | Default body text                                   |
@@ -72,7 +77,7 @@ Output file: `assets/tailwind.output.css` -- NEVER edit manually.
 ### Source Of Truth
 
 - Typography utility definitions come from `tailwind/tailwind.typography.css`.
-- Liquid templates MUST use project typography tiers (`hxxxl`-`h0`, `h1`-`h6`, `body-xl`-`body-xs`) instead of arbitrary Tailwind text-size utilities.
+- Liquid templates MUST use project typography tiers (`heading-4xl`-`heading-xl`, `heading-h1`-`heading-h6`, `body-3xl`-`body-xs`) instead of arbitrary Tailwind text-size utilities.
 - `heading-base` and `body-base` are foundation utilities for CSS source only. They MUST NOT be used in Liquid templates.
 
 ### CSS Inheritance

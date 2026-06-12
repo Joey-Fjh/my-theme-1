@@ -54,6 +54,11 @@ Review and clean up sections, snippets, and shared styles one setting domain at 
 
 ### Known Phase-Owned Chain Findings
 
+- Typography: Blog and Collection tab headers currently use `body-lg` as a temporary
+  per-consumer choice. After auditing the remaining tab-control consumers, decide
+  whether tabs need a dedicated typography tier, a shared `tab-control` default, or
+  continued consumer-owned classes. Do not promote `body-lg` to the shared component
+  before that review.
 - Product cards: structural settings reach `--product-card-*` CSS variables, but the variables are not yet connected to shared product-card styles. Handle this during the Product cards phase.
 - Motion: `motion_speed` reaches `--motion-duration`, and `--motion-ease` is defined, but neither variable is connected to shared motion recipes or runtime policy. Handle this during the Motion phase.
 

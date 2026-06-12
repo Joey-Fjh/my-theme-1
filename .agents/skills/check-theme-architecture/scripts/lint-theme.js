@@ -285,7 +285,9 @@ async function checkLiquidArchitecture() {
     const headingTextSizeRe =
         /<h[1-6]\b[^>]*class=["'][^"']*\b(?:pc:|max-pc:)?text-(?:xs|sm|base|lg|xl|[2-9]xl)\b/gi;
     const nonHeadingHeadingClassRe =
-        /<(?!h[1-6]\b)([a-z][\w:-]*)\b[^>]*class=["'][^"']*\b(?:hxxxl|hxxl|hxl|h0|h[1-6])\b/gi;
+        /<(?!h[1-6]\b)([a-z][\w:-]*)\b[^>]*class=["'][^"']*\b(?:heading-4xl|heading-3xl|heading-2xl|heading-xl|heading-h[1-6])\b/gi;
+    const oldTypographyTokenRe =
+        /\b(?:class|_class)\s*[:=]\s*["'][^"']*(?<![-])(?:hxxxl|hxxl|hxl|h0|h[1-6])\b(?![a-zA-Z0-9-])[^"']*["']/gi;
     const genericCssSelectorRe = /^\s*\.([a-z][\w-]*)\s*[{,.#:[>+~]/gm;
 
     for (const file of await getFiles(LIQUID_GLOBS)) {
@@ -387,6 +389,14 @@ async function checkLiquidArchitecture() {
                 file,
                 lineAt(text, match.index ?? 0),
                 `Do not apply heading class to <${match[1]}>.`,
+            );
+        }
+
+        for (const match of text.matchAll(oldTypographyTokenRe)) {
+            report(
+                file,
+                lineAt(text, match.index ?? 0),
+                `Old typography token "${match[0].match(/\b(?:hxxxl|hxxl|hxl|h0|h[1-6])\b/)?.[0] ?? match[0]}" removed from generated CSS; use heading-* or body-* tiers.`,
             );
         }
 

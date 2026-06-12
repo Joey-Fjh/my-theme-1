@@ -63,10 +63,23 @@
         <div class="flex items-center">
           <div class="w-full px-5 py-6 pc:px-6 pc:py-6 text-{{ section.settings.alignment }}">
             {%- for block in section.blocks -%}
+              {%- comment -%} Backward compat: map legacy heading tier values to new names {%- endcomment -%}
+              {%- case block.settings.body_text_size -%}
+                {%- when 'h5' -%}{%- assign body_size_class = 'body-sm' -%}
+                {%- when 'h4' -%}{%- assign body_size_class = 'body-md' -%}
+                {%- when 'h3' -%}{%- assign body_size_class = 'body-lg' -%}
+                {%- else -%}{%- assign body_size_class = block.settings.body_text_size -%}
+              {%- endcase -%}
+              {%- case block.settings.heading_text_size -%}
+                {%- when 'h3' -%}{%- assign heading_size_class = 'heading-h3' -%}
+                {%- when 'h2' -%}{%- assign heading_size_class = 'heading-h2' -%}
+                {%- when 'h1' -%}{%- assign heading_size_class = 'heading-h1' -%}
+                {%- else -%}{%- assign heading_size_class = block.settings.heading_text_size -%}
+              {%- endcase -%}
               {%- case block.type -%}
                 {%- when 'text' -%}
                   <div
-                    class="mb-2 {{ block.settings.body_text_size }}"
+                    class="mb-2 {{ body_size_class }}"
                     {{ block.shopify_attributes }}
                   >
                     {{ block.settings.text }}
@@ -75,7 +88,7 @@
                 {%- when 'heading' -%}
                   <h2
                     id="dialog-title-{{ popup_id }}"
-                    class="mb-3 {{ block.settings.heading_text_size }}"
+                    class="mb-3 {{ heading_size_class }}"
                     {{ block.shopify_attributes }}
                   >
                     {{ block.settings.heading }}
@@ -299,19 +312,19 @@
                     "label": "t:sections.newsletter-overlay.block_settings.text_size",
                     "options": [
                         {
-                            "value": "h5",
+                            "value": "body-sm",
                             "label": "t:sections.newsletter-overlay.options.small"
                         },
                         {
-                            "value": "h4",
+                            "value": "body-md",
                             "label": "t:sections.newsletter-overlay.options.medium"
                         },
                         {
-                            "value": "h3",
+                            "value": "body-lg",
                             "label": "t:sections.newsletter-overlay.options.large"
                         }
                     ],
-                    "default": "h5"
+                    "default": "body-sm"
                 }
             ]
         },
@@ -331,19 +344,19 @@
                     "label": "t:sections.newsletter-overlay.block_settings.text_size",
                     "options": [
                         {
-                            "value": "h3",
+                            "value": "heading-h3",
                             "label": "t:sections.newsletter-overlay.options.small"
                         },
                         {
-                            "value": "h2",
+                            "value": "heading-h2",
                             "label": "t:sections.newsletter-overlay.options.medium"
                         },
                         {
-                            "value": "h1",
+                            "value": "heading-h1",
                             "label": "t:sections.newsletter-overlay.options.large"
                         }
                     ],
-                    "default": "h2"
+                    "default": "heading-h2"
                 }
             ]
         },
