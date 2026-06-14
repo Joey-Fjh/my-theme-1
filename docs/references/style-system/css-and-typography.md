@@ -14,7 +14,7 @@ For animation and transition work, classify through `docs/references/architectur
 | `tailwind/tailwind.elements.css`   | Atomic UI: `icons`, `links`, `btn`, `field`, `badge`                      |
 | `tailwind/tailwind.components.css` | Composite patterns: `.dropdown`, `.localization-switcher`, `.rte`         |
 | `tailwind/tailwind.snippets.css`   | Snippet-scoped: `.product-info-blocks` and context variants               |
-| `tailwind/tailwind.utilities.css`  | Layout helpers: `container-page`, `place-*`                               |
+| `tailwind/tailwind.utilities.css`  | Narrow helpers: `container-page`, `place-*`, `bg-scheme-surface`          |
 | `tailwind/tailwind.animates.css`   | Motion: keyframes, `icons-animate-*`, `animate-spin-slow`                 |
 
 When adding new CSS:
@@ -23,7 +23,7 @@ When adding new CSS:
 - Atomic design primitive -> `tailwind.elements.css`
 - Composite multi-element pattern -> `tailwind.components.css`
 - Snippet-scoped style -> `tailwind.snippets.css`
-- Layout/placement helper -> `tailwind.utilities.css`
+- Narrow layout, placement, or cross-layer helper -> `tailwind.utilities.css`
 - Animation/transition -> `tailwind.animates.css`
 
 Before adding reusable CSS, classify the owner layer. Do not add reusable component styles to section `{% stylesheet %}` blocks.
@@ -106,9 +106,97 @@ Use Tailwind tokens when available:
 | `bg-primary`          | `--color-primary`      | Primary button background |
 | `text-primary-text`   | `--color-primary-text` | Primary button text       |
 
-When token utilities do not cover a dynamic value, use a CSS variable such as `style="color: rgb(var(--color-foreground));"`.
+When token utilities do not cover a Liquid-driven value, inject a local CSS variable
+and consume it through a utility or component-owned rule. Prefer
+`style="--component-color: {{ setting }};"` plus `text-(--component-color)` over a
+direct inline `color` declaration.
 
 Never hardcode static color values such as `style="color: red;"`.
+
+### Color Ownership And Inheritance
+
+- A `color-<scheme-id>` class establishes the active scheme variables for its
+  descendants.
+- Text and icons SHOULD inherit `color` from the active scheme or component owner by
+  default. Do not add `text-theme-text` to every descendant merely to restate
+  inherited foreground color.
+- Background color does not inherit. A transparent child showing its ancestor's
+  background is usually correct and MUST NOT receive `bg-theme-bg` automatically.
+- Section gradients are explicit main-surface behavior. Add `bg-scheme-surface` only
+  to a section-owned primary surface that should consume `--gradient-background`.
+  Do not apply it to media backgrounds, transparent overlays, cards, dialogs,
+  dropdowns, or chrome merely because they have a color scheme.
+- Add an explicit background only when an element owns an independent visual surface,
+  such as a panel, card, dropdown, drawer, modal, or intentionally layered region.
+- A component rendered outside its original section or moved into an overlay MUST
+  establish or receive the intended color scheme when inherited variables are no
+  longer reliable.
+- Icons rendered through the `icons` snippet follow `currentColor`. Their consumer
+  owns color unless the icon is part of a component with a distinct semantic color
+  contract.
+
+### Semantic Color Ownership
+
+Use the narrowest existing semantic owner:
+
+- General section and content colors: background, foreground, border, and focus
+  tokens from the active color scheme.
+- Inputs: field background, text, border, and placeholder tokens. Review structural
+  input behavior during the Inputs phase.
+- Buttons: primary and secondary background, text, and border tokens. Review button
+  variants and states during the Buttons phase.
+- Badges: badge background, foreground, and border tokens.
+- Feedback messages: success, warning, error, and info background/foreground pairs.
+- Product cards, dialogs, and other shared components MAY own component-level color
+  variables when their contract is distinct from general section colors.
+
+Do not replace a component-specific semantic token with general foreground or
+background merely because the rendered colors currently match.
+
+### Transparency And Hardcoded Colors
+
+- Opacity variants such as `text-theme-text/60` and
+  `border-theme-border-20` are valid when they intentionally derive from a semantic
+  token and remain legible on supported schemes.
+- Do not use opacity to conceal a missing semantic token or scheme boundary.
+- Static HEX, RGB, HSL, named-color utilities, and raw black/white utilities require
+  classification before replacement. Preserve them only when they are an approved
+  visual effect or platform requirement.
+- Image overlays, scrims, gradients, shadows, and decorative artwork MAY use fixed
+  neutral colors when the visual effect depends on them. They require user judgment
+  and contrast verification rather than automatic token replacement.
+- Merchant-configurable component colors SHOULD enter through a local CSS variable
+  injected from the setting. Do not promote a one-component choice into a global
+  token.
+- Independent merchant-configurable surfaces SHOULD own paired background and text
+  settings when both are needed for a stable contrast contract. Consumers that own
+  separate semantic colors, such as fields and buttons, keep their own contracts.
+
+### Color Abstraction Decision
+
+Use this order when deciding whether to inherit, connect, or abstract a color:
+
+1. Keep inheritance when the element belongs to the active scheme and has no
+   independent semantic role.
+2. Use an existing scheme or semantic token when the role already exists.
+3. Add a component-owned class or local variable when multiple elements inside one
+   component share a distinct color contract.
+4. Add a shared semantic token only when multiple independent consumers share the
+   same meaning and invariants.
+5. Keep a one-off approved visual effect local. Repetition of a color value alone is
+   not sufficient reason to create a global token.
+
+### Color Audit Classification
+
+Classify every finding before editing:
+
+1. Correct inheritance or transparent background: no change.
+2. Broken scheme or semantic-token chain: connect the missing owner or consumer.
+3. Unintentional hardcoded or local override: replace with the correct existing
+   token.
+4. Intentional component or visual override: preserve and document the reason.
+5. User-owned design judgment: report without changing.
+6. Cross-phase issue: record for the owning phase without mixing the fix into Colors.
 
 ## Inline Styles
 
@@ -153,7 +241,7 @@ Snippet parameters:
 | `size`  | `xs`, `sm`, `md`, `lg`, `xl` | `md`     | Maps to Tailwind size classes     |
 | `class` | any Tailwind classes         | --       | Extra classes on wrapper `<span>` |
 
-Icon color follows the color scheme's `icons_color` via `--color-theme-icon` CSS variable automatically.
+Icon color follows the active scheme's foreground via `currentColor` inheritance. The `icons` snippet renders SVGs with `fill="currentColor"`, so icons match the text color of their parent element.
 
 Adding a new icon:
 

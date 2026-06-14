@@ -5,9 +5,6 @@
   (config/settings_schema.json):
 
     - settings.pagination_style          : 'default' | 'minimal' | 'outline'
-    - settings.pagination_text_color     : text color for links and numbers
-    - settings.pagination_current_bg     : background color for current page
-    - settings.pagination_current_text   : text color for current page
     - settings.pagination_font_size      : font size in px
     - settings.pagination_border_radius  : border radius in px
 
@@ -23,9 +20,6 @@
 
 {%- liquid
     assign pagination_style = settings.pagination_style | default: 'default'
-    assign pagination_text_color = settings.pagination_text_color | default: '#1a1a1a'
-    assign pagination_current_bg = settings.pagination_current_bg | default: '#2d3a2e'
-    assign pagination_current_text = settings.pagination_current_text | default: '#ffffff'
     assign pagination_font_size = settings.pagination_font_size | default: 13
     assign pagination_border_radius = settings.pagination_border_radius | default: 4
 
@@ -45,23 +39,19 @@
                     class="
                         pagination__prev
                         inline-flex h-10 items-center gap-1 rounded
-                        px-2 transition-colors
+                        px-2 text-theme-text transition-colors
                         {% case pagination_style %}
                             {% when 'minimal' %}
                                 hover:underline
                             {% when 'outline' %}
-                                border hover:bg-theme-text/50
+                                border border-theme-border-20 hover:bg-theme-text/50
                             {% else %}
                                 hover:bg-theme-text/50
                         {% endcase %}
                     "
                     style="
-                        color: {{ pagination_text_color }};
                         font-size: {{ pagination_font_size }}px;
                         border-radius: {{ pagination_border_radius }}px;
-                        {% if pagination_style == 'outline' %}
-                            border-color: rgba(0,0,0,0.12);
-                        {% endif %}
                     "
                 >
                     {%- render 'icons', icon: 'icon-chevron-left' -%}
@@ -72,18 +62,14 @@
                     class="
                         pagination__prev pagination__prev--disabled
                         pointer-events-none inline-flex h-10 items-center gap-1
-                        rounded px-2
+                        rounded px-2 text-theme-text opacity-40
                         {% if pagination_style == 'outline' %}
-                            border
+                            border border-theme-border-20
                         {% endif %}
                     "
                     style="
-                        color: {{ pagination_text_color }};
                         font-size: {{ pagination_font_size }}px;
                         border-radius: {{ pagination_border_radius }}px;
-                        {% if pagination_style == 'outline' %}
-                            border-color: rgba(0,0,0,0.06);
-                        {% endif %}
                     "
                     aria-disabled="true"
                 >
@@ -101,23 +87,19 @@
                                 class="
                                     pagination__page
                                     inline-flex h-10 min-w-10 items-center justify-center rounded
-                                    px-2 transition-colors
+                                    px-2 text-theme-text transition-colors
                                     {% case pagination_style %}
                                         {% when 'minimal' %}
                                             hover:underline
                                         {% when 'outline' %}
-                                            border hover:bg-theme-text/50
+                                            border border-theme-border-20 hover:bg-theme-text/50
                                         {% else %}
                                             hover:bg-theme-text/50
                                     {% endcase %}
                                 "
                                 style="
-                                    color: {{ pagination_text_color }};
                                     font-size: {{ pagination_font_size }}px;
                                     border-radius: {{ pagination_border_radius }}px;
-                                    {% if pagination_style == 'outline' %}
-                                        border-color: rgba(0,0,0,0.12);
-                                    {% endif %}
                                 "
                             >
                                 {{- part.title -}}
@@ -129,22 +111,18 @@
                                         pagination__page pagination__page--current
                                         inline-flex h-10 min-w-10 items-center justify-center rounded
                                         px-2
-                                        {% if pagination_style == 'minimal' %}
-                                            underline
-                                        {% endif %}
+                                        {% case pagination_style %}
+                                            {% when 'default' %}
+                                                bg-theme-text text-theme-bg
+                                            {% when 'outline' %}
+                                                border border-theme-text text-theme-text
+                                            {% else %}
+                                                text-theme-text underline
+                                        {% endcase %}
                                     "
                                     style="
-                                        {% if pagination_style == 'default' %}
-                                            background-color: {{ pagination_current_bg }};
-                                            color: {{ pagination_current_text }};
-                                        {% elsif pagination_style == 'outline' %}
-                                            border: 1px solid {{ pagination_current_bg }};
-                                            color: {{ pagination_current_bg }};
-                                        {% else %}
-                                            color: {{ pagination_text_color }};
-                                        {% endif %}
-                                            font-size: {{ pagination_font_size }}px;
-                                            border-radius: {{ pagination_border_radius }}px;
+                                        font-size: {{ pagination_font_size }}px;
+                                        border-radius: {{ pagination_border_radius }}px;
                                     "
                                     aria-current="page"
                                 >
@@ -152,14 +130,8 @@
                                 </span>
                             {%- else -%}
                                 <span
-                                    class="
-                                        pagination__page pagination__page--ellipsis
-                                        inline-flex h-10 min-w-10 items-center justify-center px-2
-                                    "
-                                    style="
-                                        color: {{ pagination_text_color }};
-                                        font-size: {{ pagination_font_size }}px;
-                                    "
+                                    class="pagination__page pagination__page--ellipsis inline-flex h-10 min-w-10 items-center justify-center px-2 text-theme-text"
+                                    style="font-size: {{ pagination_font_size }}px;"
                                 >
                                     {{- part.title -}}
                                 </span>
@@ -176,23 +148,19 @@
                     class="
                         pagination__next
                         inline-flex h-10 items-center gap-1 rounded
-                        px-2 transition-colors
+                        px-2 text-theme-text transition-colors
                         {% case pagination_style %}
                             {% when 'minimal' %}
                                 hover:underline
                             {% when 'outline' %}
-                                border hover:bg-theme-text/50
+                                border border-theme-border-20 hover:bg-theme-text/50
                             {% else %}
                                 hover:bg-theme-text/50
                         {% endcase %}
                     "
                     style="
-                        color: {{ pagination_text_color }};
                         font-size: {{ pagination_font_size }}px;
                         border-radius: {{ pagination_border_radius }}px;
-                        {% if pagination_style == 'outline' %}
-                            border-color: rgba(0,0,0,0.12);
-                        {% endif %}
                     "
                 >
                     <span>{{ 'pagination.next' | t }}</span>
@@ -203,18 +171,14 @@
                     class="
                         pagination__next pagination__next--disabled
                         pointer-events-none inline-flex h-10 items-center gap-1
-                        rounded px-2 opacity-40
+                        rounded px-2 text-theme-text opacity-40
                         {% if pagination_style == 'outline' %}
-                            border
+                            border border-theme-border-20
                         {% endif %}
                     "
                     style="
-                        color: {{ pagination_text_color }};
                         font-size: {{ pagination_font_size }}px;
                         border-radius: {{ pagination_border_radius }}px;
-                        {% if pagination_style == 'outline' %}
-                            border-color: rgba(0,0,0,0.06);
-                        {% endif %}
                     "
                     aria-disabled="true"
                 >

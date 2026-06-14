@@ -19,7 +19,7 @@ Define any new translation keys in `locales/en.default.json` when copying this p
 
 ```css
 @utility badge-status {
-    @apply inline-flex items-center rounded-full border border-theme-border-soft px-3 py-1 body-sm;
+    @apply inline-flex items-center rounded-full border border-theme-border-20 px-3 py-1 body-sm;
 }
 ```
 

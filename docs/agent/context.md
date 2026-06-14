@@ -30,7 +30,6 @@ Review and clean up sections, snippets, and shared styles one setting domain at 
 - Preserving existing business logic, interaction behavior, and visual intent is the primary red line.
 - Preserve schema IDs, block types, section types, preset names, and template references.
 - Do not modify merchant-owned configuration or content.
-- Do not force shared abstractions. Reuse or extract only when consumer contracts and invariants match.
 - Complete and verify each phase independently before moving to the next phase.
 
 ### Phases
@@ -115,14 +114,19 @@ intent, or interaction quality.
 ### Completed Domains
 
 - Layout: `page_width`, `page_margin`, `section_margin_top`, and `section_margin_bottom` are connected and currently working. Do not reopen Layout as a cleanup phase unless a concrete regression is found; verify it only during final launch regression.
+- Typography: global body and heading settings reach native defaults, project
+  typography tiers, RTE content, shared styles, snippets, and sections. Remaining
+  local typography overrides have been classified as intentional component or
+  display contracts. Recheck representative storefront pages only during final
+  launch regression.
+- Colors: global schemes, semantic tokens, section surfaces, independent component
+  colors, opacity usage, and intentional fixed-color contracts have been audited.
+  Deterministic chain issues and approved architecture decisions are resolved.
+  Recheck the recorded visual states during final launch regression.
 
 ### Known Phase-Owned Chain Findings
 
-- Typography: Blog and Collection tab headers currently use `body-lg` as a temporary
-  per-consumer choice. After auditing the remaining tab-control consumers, decide
-  whether tabs need a dedicated typography tier, a shared `tab-control` default, or
-  continued consumer-owned classes. Do not promote `body-lg` to the shared component
-  before that review.
+- Buttons: review the unavailable-button state in `snippets/buy-buttons.liquid`.
 - Product cards: structural settings reach `--product-card-*` CSS variables, but the variables are not yet connected to shared product-card styles. Handle this during the Product cards phase.
 - Motion: `motion_speed` reaches `--motion-duration`, and `--motion-ease` is defined, but neither variable is connected to shared motion recipes or runtime policy. Handle this during the Motion phase.
 
@@ -137,7 +141,19 @@ intent, or interaction quality.
 
 ### Current Phase
 
-Typography
+Inputs
+
+### Final Regression Checks
+
+- Colors: visually verify password-page 20% borders, solid-color password header and
+  footer chrome, merchant-configured product-comparison colors on dark schemes, toast
+  contrast, dark-scheme loading overlay, and pagination current-page distinction.
+
+### Next Session Entry
+
+1. Begin the Inputs phase by defining its settings-to-consumer contract.
+2. Audit shared input primitives before scanning individual form consumers.
+3. Preserve the remaining Colors visual checks for final launch regression.
 
 ### Definition Of Done
 

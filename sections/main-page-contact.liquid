@@ -1,6 +1,6 @@
 <div
     data-section-id="{{ section.id }}"
-    class="main-page-contact-section full-width color-{{ section.settings.color_scheme }}"
+    class="main-page-contact-section full-width color-{{ section.settings.color_scheme }} bg-scheme-surface"
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
@@ -68,18 +68,20 @@
                     </p>
                 </div>
                 {%- comment -%} Right: Form {%- endcomment -%}
+                {%- assign form_bg = section.settings.form_background_color | default: '#ffffff' -%}
+                {%- assign form_text = section.settings.form_text_color | default: '#1a1a1a' -%}
                 <div
-                    class="flex translate-x-7.5 flex-col justify-center px-6 py-8 opacity-0 pc:px-10 pc:py-10 fw:px-12"
-                    style="background-color: {{ section.settings.form_background_color }};"
+                    class="flex translate-x-7.5 flex-col justify-center bg-(--contact-form-bg) px-6 py-8 text-(--contact-form-text) opacity-0 pc:px-10 pc:py-10 fw:px-12"
+                    style="--contact-form-bg: {{ form_bg }}; --contact-form-text: {{ form_text }};"
                     data-gsap-form
                 >
                     {%- assign heading_fallback = 'sections.main-page-contact.defaults.heading'
                         | t
                     -%}
-                    <h1 class="text-center text-primary">
+                    <h1 class="text-center text-(--contact-form-text)">
                         {{ section.settings.heading | default: heading_fallback }}
                     </h1>
-                    <div class="rte rte--compact mt-3 text-center text-primary/80">
+                    <div class="rte rte--compact mt-3 text-center opacity-80">
                         {%- assign contact_description_fallback = 'contact.description_html' | t -%}
                         {{ section.settings.description | default: contact_description_fallback }}
                     </div>
@@ -98,7 +100,7 @@
                         {%- endif -%}
 
                         {%- if form.errors -%}
-                            <div class="rounded p-4">
+                            <div class="rounded p-4 text-error-text">
                                 {{ form.errors | default_errors }}
                             </div>
                         {%- endif -%}
@@ -269,6 +271,21 @@
     })();
 {%- endjavascript -%}
 
+{% stylesheet %}
+    .main-page-contact-section .rte :is(h1, h2, h3, h4, h5, h6) {
+        color: var(--contact-form-text);
+    }
+    .main-page-contact-section .rte blockquote {
+        color: var(--contact-form-text);
+    }
+    .main-page-contact-section .rte figcaption {
+        color: var(--contact-form-text);
+    }
+    .main-page-contact-section .rte :is(code, pre) {
+        color: var(--contact-form-text);
+    }
+{% endstylesheet %}
+
 {% schema %}
 {
     "name": "t:sections.main-page-contact.name",
@@ -289,6 +306,12 @@
             "id": "form_background_color",
             "label": "t:sections.main-page-contact.settings.form_background_color",
             "default": "#ffffff"
+        },
+        {
+            "type": "color",
+            "id": "form_text_color",
+            "label": "t:sections.main-page-contact.settings.form_text_color",
+            "default": "#1a1a1a"
         },
         {
             "type": "image_picker",
