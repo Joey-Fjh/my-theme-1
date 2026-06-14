@@ -48,6 +48,70 @@ Review and clean up sections, snippets, and shared styles one setting domain at 
 11. Focus
 12. Final launch regression
 
+### Phase Review Matrix
+
+Use this matrix to keep each phase scoped. Review and recommendations MAY span a
+section, its rendered snippets, and the shared primitive that owns the current
+domain. Do not fix findings owned by another phase unless they block the current
+phase and the user approves the scope expansion.
+
+| Phase | Audit | Allowed execution and recommendations | Targeted validation |
+| --- | --- | --- | --- |
+| Typography | Verify font settings reach CSS variables, native element defaults, typography tiers, and storefront text. Review local size, family, weight, line-height, letter-spacing, and text-transform overrides. | Connect broken typography chains; replace invalid tiers; remove only unintentional local overrides. Preserve intentional display typography and component-specific emphasis. | `npm run lint:theme`; visually check hierarchy, wrapping, and responsive sizing. |
+| Colors | Verify color settings and schemes reach CSS variables, section scopes, shared primitives, and consumers. Review hardcoded colors, opacity variants, and unintended inheritance. | Connect missing color tokens; replace incorrect hardcoded or local colors; preserve intentional scheme boundaries. | `npm run lint:theme`; test relevant sections across supported color schemes. |
+| Inputs | Verify global input settings reach fields, selects, textareas, labels, validation, and disabled states. Review shared field ownership and local overrides. | Connect shared input primitives; remove conflicting local input chrome; preserve form-specific layout and behavior. | `npm run lint:theme`; test keyboard entry, validation, disabled states, and mobile layout. |
+| Buttons | Verify button settings reach shared button variants and all button/link consumers. Review local sizing, borders, radius, typography, and state overrides. | Connect or correct shared button variants; remove accidental local overrides; preserve intentionally distinct controls that are not buttons. | `npm run lint:theme`; test hover, focus, disabled, loading, and responsive states. |
+| Dialogs | Verify dialog settings reach shared panels, overlays, drawers, and modal consumers. Review sizing, borders, radius, color, and lifecycle ownership. | Connect shared dialog styling and correct consumer usage without changing domain behavior such as cart or search logic. | `npm run lint:theme`; test open, close, escape, focus return, scroll lock, and mobile viewport behavior. |
+| Product cards | Verify product-card settings and `--product-card-*` variables reach shared card styles and every card mode. Review structural and visual overrides by consumer. | Connect shared card contracts; keep genuinely divergent card modes consumer-owned; do not force reuse through mode flags. | `npm run lint:theme`; test card modes, missing media, long titles, prices, badges, and responsive grids. |
+| Toasts | Verify toast settings reach shared toast styling, placement, states, and all emitters. Review message ownership and accessibility announcements. | Connect shared toast contract; correct state styling and emitter usage without changing unrelated cart/search behavior. | `npm run lint:theme`; test success/error messages, repeated events, dismissal, and screen-reader announcements. |
+| Cart behavior | Verify all storefront cart mutations and cart UI state use `$store.cart`; review drawers, page cart, quantities, errors, and section refresh behavior. | Correct cart-owned behavior and state flow; use `ShopifyHttp`, `ShopifySectionRefresher`, and `ThemeEvents` where required. | `npm run lint:theme`; test add, remove, quantity changes, errors, empty cart, drawer/page synchronization, and mobile. |
+| Search behavior | Verify predictive search, search overlay, results tabs, pagination, empty states, and request/state ownership. | Correct search-owned behavior and shared search contracts; preserve intentional visual overrides until their owning phase approves changes. | `npm run lint:theme`; test queries, empty/error states, keyboard flow, result types, pagination, and mobile. |
+| Motion | Verify motion settings reach CSS/runtime policy, shared recipes, GSAP/Swiper consumers, reduced-motion handling, and no-JS visibility. | Connect shared motion variables and recipes; remove duplicate or conflicting choreography; keep critical content visible without animation completion. | `npm run lint:theme`; test reduced motion, no-JS/failed-init visibility, lifecycle cleanup, and responsive behavior. |
+| Focus | Verify visible focus, focus order, focus trapping/return, keyboard activation, and minimal correct ARIA across interactive UI. | Correct focus and keyboard behavior without redesigning unrelated visuals or changing domain business logic. | `npm run lint:theme`; keyboard-only checks across navigation, forms, dialogs, filters, cart, search, and product media. |
+| Final launch regression | Verify completed domains together for launch blockers, cross-domain regressions, mobile reliability, accessibility, SEO, Theme Check, and merchant-owned boundaries. | Fix only confirmed regressions from approved work; classify unrelated or ownership-ambiguous findings before action. | `npm run lint`; `npm test`; targeted storefront regression across core templates and supported breakpoints. |
+
+### File-By-File Review Rhythm
+
+- The user chooses the next implementation file; review that file before moving on.
+- Review only the current phase inside that file, plus directly rendered snippets or
+  shared primitives needed to verify the chain.
+- Report findings and file-by-file recommendations before implementation.
+- The user implements approved theme changes unless explicit implementation
+  authorization is given.
+- Record cross-phase findings under the owning phase instead of mixing them into the
+  current file review.
+- Move to the next file only after the user confirms the current file.
+
+### Cross-Layer Phase Collaboration
+
+Use this model when a phase concern is distributed across settings, CSS variables,
+shared styles, snippets, sections, and storefront consumers. It complements the
+file-by-file rhythm instead of replacing user review of page hierarchy, brand
+intent, or interaction quality.
+
+1. Define the phase contract before scanning: identify the approved global settings,
+   their expected consumers, and the intentional component-specific exceptions.
+2. Let an implementation Agent scan the complete chain across relevant settings,
+   shared primitives, Tailwind sources, snippets, sections, and consumers. The Agent
+   MAY fix only issues that are mechanically provable within the current phase.
+3. Require every finding to be classified before action as one of:
+   - broken global-setting chain;
+   - unintentional local override or hardcoding;
+   - intentional component or display override;
+   - user-owned design or semantic judgment;
+   - cross-phase finding to defer.
+4. Preserve intentional overrides. Do not broadly remove hardcoded values merely
+   because they match the current phase domain.
+5. Reserve high-judgment review for the user, including main-page hierarchy, brand
+   presentation, exceptional component styling, and representative storefront
+   behavior.
+6. Use a separate reviewing Agent as the phase gate. It MUST inspect the actual diff,
+   challenge the implementation report, scan for omissions, verify ownership and
+   scope, and rerun applicable validation before approving the phase.
+7. Close a phase only after the global chain works, all remaining overrides are
+   classified, user-owned checks are confirmed, cross-phase findings are recorded,
+   and the phase Definition Of Done is satisfied.
+
 ### Completed Domains
 
 - Layout: `page_width`, `page_margin`, `section_margin_top`, and `section_margin_bottom` are connected and currently working. Do not reopen Layout as a cleanup phase unless a concrete regression is found; verify it only during final launch regression.
