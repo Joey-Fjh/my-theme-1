@@ -35,8 +35,42 @@
     endif
 
     assign card_mode = card_mode | default: 'full'
-    assign aspect_ratio = image_ratio | default: '1/1'
     assign hover_mode = hover_mode | default: 'actions'
+
+    comment
+        Image ratio: explicit param wins, then global setting.
+        Named values map to fixed ratios; any other explicit value passes through as-is.
+        Adapt mode (no explicit param + global setting) uses the product's natural image ratio.
+        Missing image in adapt mode falls back to 1/1.
+    endcomment
+    if image_ratio != blank
+        case image_ratio
+            when 'square'
+                assign aspect_ratio = '1/1'
+            when 'portrait'
+                assign aspect_ratio = '3/4'
+            when 'landscape'
+                assign aspect_ratio = '4/3'
+            else
+                assign aspect_ratio = image_ratio
+        endcase
+    else
+        case settings.product_card_image_ratio
+            when 'square'
+                assign aspect_ratio = '1/1'
+            when 'portrait'
+                assign aspect_ratio = '3/4'
+            when 'landscape'
+                assign aspect_ratio = '4/3'
+            else
+                if product.featured_image != blank and product.featured_image.width and product.featured_image.height
+                    assign aspect_ratio = product.featured_image.width | append: '/' | append: product.featured_image.height
+                else
+                    assign aspect_ratio = '1/1'
+                endif
+        endcase
+    endif
+    assign pc_media_ratio = aspect_ratio
     assign scope_id = scope_id | default: 'card'
     assign color_scheme = color_scheme | default: ''
     assign primary_image_loading = primary_image_loading | default: 'lazy'
@@ -164,6 +198,7 @@
 
     <div
         class="product-card__image product-card-shell__media"
+        style="--pc-media-ratio: {{ pc_media_ratio }};"
         @mouseenter="setImageHover(true)"
         @mouseleave="setImageHover(false)"
     >

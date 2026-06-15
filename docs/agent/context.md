@@ -123,11 +123,28 @@ intent, or interaction quality.
   colors, opacity usage, and intentional fixed-color contracts have been audited.
   Deterministic chain issues and approved architecture decisions are resolved.
   Recheck the recorded visual states during final launch regression.
+- Inputs: shared input settings and the `.field` primitive have been integrated
+  across reviewed form consumers. Local input chrome overrides were removed or
+  classified. Recheck representative form states during final launch regression.
+- Buttons: shared button variants and global button settings have been integrated
+  across reviewed consumers, including unavailable purchase states. Recheck hover,
+  focus, disabled, and loading states during final launch regression.
+- Dialogs: the shared `.ui-dialog-panel` chrome contract now owns global dialog
+  border, radius, shadow, and background styling across modal and drawer variants.
+  Recheck representative dialog lifecycle and viewport states during final launch
+  regression.
+- Product cards: the shared `product-card-shell` contract now consumes global
+  border, radius, and shadow settings across standard, lite, variants, and
+  predictive-search card modes. Global image-ratio setting reaches all Liquid
+  `product-card` consumers; predictive-search retains a safe 1/1 fallback
+  (search data lacks image dimensions). Local overrides in header (padding: 0,
+  transparent media-frame) and predictive-search consumers (bg, hover:shadow-sm)
+  have been classified as intentional. Variant panel stock labels use locale keys.
+  Recheck card modes, shadow clipping in horizontal-scroll and Swiper containers,
+  and focus-outline visibility during final launch regression.
 
 ### Known Phase-Owned Chain Findings
 
-- Buttons: review the unavailable-button state in `snippets/buy-buttons.liquid`.
-- Product cards: structural settings reach `--product-card-*` CSS variables, but the variables are not yet connected to shared product-card styles. Handle this during the Product cards phase.
 - Motion: `motion_speed` reaches `--motion-duration`, and `--motion-ease` is defined, but neither variable is connected to shared motion recipes or runtime policy. Handle this during the Motion phase.
 
 ### Per-Phase Workflow
@@ -141,7 +158,7 @@ intent, or interaction quality.
 
 ### Current Phase
 
-Inputs
+Toasts
 
 ### Final Regression Checks
 
@@ -151,9 +168,22 @@ Inputs
 
 ### Next Session Entry
 
-1. Begin the Inputs phase by defining its settings-to-consumer contract.
-2. Audit shared input primitives before scanning individual form consumers.
-3. Preserve the remaining Colors visual checks for final launch regression.
+1. Begin the Toasts phase by closing the global toast settings chain through the
+   shared toast contract.
+2. Audit toast emitters, placement, states, and message ownership before deciding
+   which overrides are intentional.
+3. Preserve completed-domain visual checks for final launch regression.
+
+### Deferred Cross-Phase Items
+
+- Focus: `overflow: hidden` on `.product-card-shell` may clip focus outlines on
+  internally-focusable controls. Resolve during Focus phase.
+- Search / Motion: `hover:shadow-sm` on predictive-search overlay cards is an
+  intentional interactive enhancement. Re-evaluate during Search or Motion phase
+  if global shadow opacity > 0 creates a visual conflict.
+- Final visual regression: product card shadow clipping in header horizontal-scroll
+  (`overflow-x-auto`) and Swiper (`overflow: hidden`) containers is a CSS layout
+  constraint, not a code bug. Verify visually during final launch regression.
 
 ### Definition Of Done
 
