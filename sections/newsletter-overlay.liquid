@@ -20,7 +20,7 @@
 >
     {%- capture dialog_content -%}
     <div
-      class="relative overflow-hidden bg-(--newsletter-bg) text-(--newsletter-text)"
+      class="relative bg-(--newsletter-bg) text-(--newsletter-text)"
       style="
         --newsletter-bg: {{ section.settings.background_color }};
         --newsletter-text: {{ section.settings.foreground_color }};
@@ -49,7 +49,7 @@
         {% render 'icons', icon: 'icon-close' %}
       </button>
 
-      <div class="grid grid-cols-1 pc:grid-cols-[15rem_minmax(0,1fr)]">  
+      <div class="grid grid-cols-1 pc:min-h-[320px] pc:grid-cols-[36%_minmax(0,1fr)]">
         <div class="h-52 pc:h-full">
           {%- render 'image',
             class: 'w-full h-full',
@@ -59,85 +59,83 @@
             width: section.settings.image.width
           -%}
         </div>
-        
-        <div class="flex items-center">
-          <div class="w-full px-5 py-6 pc:px-6 pc:py-6 text-{{ section.settings.alignment }}">
-            {%- for block in section.blocks -%}
-              {%- comment -%} Backward compat: map legacy heading tier values to new names {%- endcomment -%}
-              {%- case block.settings.body_text_size -%}
+
+        <div class="flex w-full flex-col items-stretch justify-around px-5 py-6 pc:px-6 pc:py-10 text-{{ section.settings.alignment }}">
+        {%- for block in section.blocks -%}
+            {%- comment -%} Backward compat: map legacy heading tier values to new names {%- endcomment -%}
+            {%- case block.settings.body_text_size -%}
                 {%- when 'h5' -%}{%- assign body_size_class = 'body-sm' -%}
                 {%- when 'h4' -%}{%- assign body_size_class = 'body-md' -%}
                 {%- when 'h3' -%}{%- assign body_size_class = 'body-lg' -%}
                 {%- else -%}{%- assign body_size_class = block.settings.body_text_size -%}
-              {%- endcase -%}
-              {%- case block.settings.heading_text_size -%}
+            {%- endcase -%}
+            {%- case block.settings.heading_text_size -%}
                 {%- when 'h3' -%}{%- assign heading_size_class = 'heading-h3' -%}
                 {%- when 'h2' -%}{%- assign heading_size_class = 'heading-h2' -%}
                 {%- when 'h1' -%}{%- assign heading_size_class = 'heading-h1' -%}
                 {%- else -%}{%- assign heading_size_class = block.settings.heading_text_size -%}
-              {%- endcase -%}
-              {%- case block.type -%}
+                {%- endcase -%}
+            {%- case block.type -%}
                 {%- when 'text' -%}
-                  <div
-                    class="rte rte--compact mb-2 {{ body_size_class }}"
-                    {{ block.shopify_attributes }}
-                  >
-                    {{ block.settings.text }}
-                  </div>
+                    <div
+                        class="rte rte--compact mb-2 {{ body_size_class }}"
+                        {{ block.shopify_attributes }}
+                    >
+                        {{ block.settings.text }}
+                    </div>
 
                 {%- when 'heading' -%}
-                  <h2
-                    id="dialog-title-{{ popup_id }}"
-                    class="mb-3 {{ heading_size_class }}"
-                    {{ block.shopify_attributes }}
-                  >
-                    {{ block.settings.heading }}
-                  </h2>
+                    <h2
+                        id="dialog-title-{{ popup_id }}"
+                        class="mb-3 {{ heading_size_class }}"
+                        {{ block.shopify_attributes }}
+                    >
+                        {{ block.settings.heading }}
+                    </h2>
 
                 {%- when 'form' -%}
-                  <form
-                    class="newsletter-form"
-                    action="{{ routes.root_url }}contact#newsletter_form_{{ section.id }}"
-                    method="post"
-                    accept-charset="UTF-8"
-                    @submit.prevent="submit($event)"
-                    {{ block.shopify_attributes }}
-                  >
-                    <input type="hidden" name="form_type" value="customer">
-                    <input type="hidden" name="utf8" value="✓">
-                    <input type="hidden" name="contact[tags]" value="newsletter">
+                    <form
+                        class="newsletter-form"
+                        action="{{ routes.root_url }}contact#newsletter_form_{{ section.id }}"
+                        method="post"
+                        accept-charset="UTF-8"
+                        @submit.prevent="submit($event)"
+                        {{ block.shopify_attributes }}
+                    >
+                        <input type="hidden" name="form_type" value="customer">
+                        <input type="hidden" name="utf8" value="✓">
+                        <input type="hidden" name="contact[tags]" value="newsletter">
 
-                    <label for="newsletter-email-{{ section.id }}" class="sr-only">
-                      {{ 'newsletter.email_address' | t }}
-                    </label>
+                        <label for="newsletter-email-{{ section.id }}" class="sr-only">
+                            {{ 'newsletter.email_address' | t }}
+                        </label>
 
-                    <div class="flex items-center border border-current/20">
-                      <input
-                        id="newsletter-email-{{ section.id }}"
-                        type="email"
-                        name="contact[email]"
-                        class="min-w-0 flex-1 bg-transparent px-4 py-3 body-sm outline-none placeholder:opacity-50"
-                        placeholder="{{ section.settings.placeholder }}"
-                        required
-                      >
+                        <div class="flex items-center border border-current/20">
+                            <input
+                                id="newsletter-email-{{ section.id }}"
+                                type="email"
+                                name="contact[email]"
+                                class="min-w-0 flex-1 bg-transparent px-4 py-3 body-sm outline-none placeholder:opacity-50"
+                                placeholder="{{ section.settings.placeholder }}"
+                                required
+                            >
 
-                      <button
-                        type="submit"
-                        class="inline-flex h-12 w-12 cursor-pointer items-center justify-center bg-(--newsletter-button-bg) text-(--newsletter-button-text) transition-opacity disabled:opacity-50"
-                        :disabled="isLoading"
-                        aria-label="{{ 'accessibility.submit_newsletter_form' | t }}"
-                      >
-                        <span x-show="!isLoading">
-                          {%- render 'icons', icon: 'icon-arrow2' -%}
-                        </span>
+                            <button
+                                type="submit"
+                                class="inline-flex h-12 w-12 cursor-pointer items-center justify-center bg-(--newsletter-button-bg) text-(--newsletter-button-text) transition-opacity disabled:opacity-50"
+                                :disabled="isLoading"
+                                aria-label="{{ 'accessibility.submit_newsletter_form' | t }}"
+                            >
+                                <span x-show="!isLoading">
+                                    {%- render 'icons', icon: 'icon-arrow2' -%}
+                                </span>
 
-                        {% render 'loading', size: 'small', spinner_color: 'border-current' %}
-                      </button>
-                    </div>
-                  </form>
-              {%- endcase -%}
-            {%- endfor -%}
-          </div>
+                                {% render 'loading', size: 'small', spinner_color: 'border-current' %}
+                            </button>
+                        </div>
+                    </form>
+            {%- endcase -%}
+        {%- endfor -%}
         </div>
       </div>
     </div>
@@ -149,7 +147,7 @@
         modal_placement: section.settings.modal_placement,
         overlay_class: 'bg-black/60',
         modal_wrapper_class: 'p-4 pc:p-8 fw:p-10',
-        modal_panel_class: 'w-full max-w-[24rem] pc:max-w-[36rem] fw:max-w-[42rem] overflow-hidden rounded-sm shadow-xl',
+        modal_panel_class: 'w-full max-w-full pc:max-w-[600px] fw:max-w-[680px]',
         content: dialog_content
     -%}
 </div>
