@@ -119,22 +119,55 @@ button
 }
 
 button.shopify-payment-button__button--unbranded {
-    @apply btn-primary btn w-full;
+    @apply btn-primary w-full;
 }
 
+/*
+ * Unbranded payment button — specificity override.
+ *
+ * Shopify's stylesheet targets:
+ *   .shopify-payment-button__button--unbranded:hover:not([disabled])
+ * with specificity (0,3,0), which overrides the theme's btn-primary hover
+ * background-color. The selector below exceeds Shopify's specificity so the
+ * theme's primary-button color is preserved on hover.
+ */
+button.shopify-payment-button__button--unbranded:hover:not([disabled]) {
+    background-color: rgb(var(--color-primary-button));
+}
+
+/*
+ * Accelerated checkout — branded payment buttons (Apple Pay, Google Pay, Shop Pay).
+ *
+ * These buttons render inside a closed shadow DOM. Theme CSS cannot reach their
+ * internal markup. The four custom properties below are the only supported
+ * bridge between global button settings and branded accelerated-checkout buttons.
+ *
+ * Variables consumed by Shopify's accelerated-checkout.css:
+ *   --shopify-accelerated-checkout-button-border-radius  → wallet button border-radius
+ *   --shopify-accelerated-checkout-button-box-shadow     → wallet button drop shadow
+ *   --shopify-accelerated-checkout-skeleton-background-color → loading skeleton background
+ *
+ * Not set (accepts Shopify defaults):
+ *   --shopify-accelerated-checkout-button-block-size     → wallet button height (default 44px on PDP, 42px on cart)
+ *     The theme's --button-padding-y produces values (e.g. 24px → 48px total) that fall within Shopify's
+ *     clamp(25px, var(...), 55px) range, so no override is needed. If the merchant sets padding_higher
+ *     such that total height would exceed 55px, Shopify's clamp caps it at 55px.
+ *
+ * Platform limitations — cannot override:
+ *   - padding: button height is controlled by block-size clamp; merchant padding settings have no effect
+ *   - border: Shopify sets border: none internally; no custom-property exposure
+ *   - colors: brand buttons enforce their own brand colors (Apple, Google, Shop)
+ *   - internal DOM: closed shadow-DOM is not styleable from the theme
+ */
 shopify-accelerated-checkout {
-    --shopify-accelerated-checkout-button-block-size: 4.4rem;
+    /* necessary global-setting bridge: radius maps to wallet button corners */
     --shopify-accelerated-checkout-button-border-radius: var(--button-radius);
+    /* necessary global-setting bridge: shadow maps to wallet button drop shadow */
     --shopify-accelerated-checkout-button-box-shadow: var(--button-shadow-horizontal-offset)
         var(--button-shadow-vertical-offset) var(--button-shadow-blur-radius)
-        rgba(0, 0, 0, var(--button-shadow-opacity));
+        rgba(var(--color-foreground), var(--button-shadow-opacity));
+    /* optional loading-state styling: skeleton uses primary color as background */
     --shopify-accelerated-checkout-skeleton-background-color: var(--color-primary);
-}
-
-@media (width >= theme(--breakpoint-pc)) {
-    shopify-accelerated-checkout {
-        --shopify-accelerated-checkout-button-block-size: 4.8rem;
-    }
 }
 
 /* =========================================================
@@ -255,15 +288,4 @@ badge
         font-size: 0.75rem;
         letter-spacing: 0.08em;
     }
-}
-
-/* =========================================================
-Radius / Shadow utilities — direct css-variable consumers
-========================================================= */
-@utility rounded-button {
-    border-radius: var(--button-radius);
-}
-@utility shadow-button {
-    box-shadow: var(--button-shadow-horizontal-offset) var(--button-shadow-vertical-offset)
-        var(--button-shadow-blur-radius) rgba(0, 0, 0, var(--button-shadow-opacity));
 }
