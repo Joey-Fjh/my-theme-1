@@ -14,6 +14,20 @@
         hasFetched: false,
         fetchError: null,
 
+        _errorMessages: {
+            generic: '',
+            rateLimited: '',
+            serverError: '',
+            timeout: '',
+            networkError: '',
+        },
+
+        configure(options) {
+            if (options?.errorMessages) {
+                Object.assign(this._errorMessages, options.errorMessages);
+            }
+        },
+
         _getHttp() {
             return window.ShopifyHttp;
         },
@@ -77,10 +91,10 @@
         add(items, sections = []) {
             const Http = this._getHttp();
 
-            if (!Http?.postJSON) return Promise.reject(new Error('Http client unavailable'));
+            if (!Http?.postJSON) return this._handleError(new Error('Http client unavailable'));
 
             if (!Array.isArray(items) || items.length === 0)
-                return Promise.reject(new Error('items required'));
+                return this._handleError(new Error('items required'));
 
             this.loading = true;
             const body = { items };
@@ -113,7 +127,7 @@
 
         change(lineOrId, quantity, sections = []) {
             const Http = this._getHttp();
-            if (!Http?.postJSON) return Promise.reject(new Error('Http client unavailable'));
+            if (!Http?.postJSON) return this._handleError(new Error('Http client unavailable'));
             this.loading = true;
             const bodyData = { quantity: Number(quantity) };
             if (typeof lineOrId === 'string') {
@@ -143,7 +157,7 @@
                     this.fetchError = null;
                     return parsedState;
                 })
-                .catch(this._handleError)
+                .catch((err) => this._handleError(err))
                 .finally(() => {
                     this.loading = false;
                 });
@@ -156,7 +170,7 @@
          */
         clear(sections = []) {
             const Http = this._getHttp();
-            if (!Http?.postJSON) return Promise.reject(new Error('Http client unavailable'));
+            if (!Http?.postJSON) return this._handleError(new Error('Http client unavailable'));
             this.loading = true;
             const bodyData = {};
             if (Array.isArray(sections) && sections.length > 0) {
@@ -179,7 +193,7 @@
                     this.fetchError = null;
                     return data;
                 })
-                .catch(this._handleError)
+                .catch((err) => this._handleError(err))
                 .finally(() => {
                     this.loading = false;
                 });
@@ -192,12 +206,12 @@
          */
         update(data) {
             const Http = this._getHttp();
-            if (!Http?.postJSON) return Promise.reject(new Error('Http client unavailable'));
+            if (!Http?.postJSON) return this._handleError(new Error('Http client unavailable'));
             this.loading = true;
             return Http.postJSON('/cart/update.js', data, {
                 credentials: 'same-origin',
             })
-                .catch(this._handleError)
+                .catch((err) => this._handleError(err))
                 .finally(() => {
                     this.loading = false;
                 });
@@ -209,20 +223,34 @@
          * @returns {Promise<never>}
          */
         _handleError(err) {
-            let finalMsg = 'Something went wrong. Please try again.';
-            const data = err?.data && typeof err.data === 'object' ? err.data : null;
-            const status = err?.status ?? data?.status;
-
-            if (data?.description || err?.description || err?.message) {
-                finalMsg = data?.description || err.description || err.message;
-            } else if (status) {
-                if (status === 429) finalMsg = 'Too many requests. Please slow down.';
-                if (status >= 500) finalMsg = 'Server error. Please try again later.';
+            if (err?.isAbort || err?.name === 'AbortError') {
+                return Promise.reject(err);
             }
 
-            const toast = window.Alpine?.store('toast');
-            if (toast) {
-                toast.show(finalMsg, 'error');
+            const msgs = this._errorMessages;
+            const data = err?.data && typeof err.data === 'object' ? err.data : null;
+            const status = err?.status ?? data?.status;
+            let finalMsg;
+
+            if (typeof data?.description === 'string' && data.description.trim()) {
+                finalMsg = data.description.trim();
+            } else if (err?.isTimeout) {
+                finalMsg = msgs.timeout;
+            } else if (err?.isNetworkError) {
+                finalMsg = msgs.networkError;
+            } else if (status === 429) {
+                finalMsg = msgs.rateLimited;
+            } else if (status >= 500) {
+                finalMsg = msgs.serverError;
+            } else {
+                finalMsg = msgs.generic;
+            }
+
+            if (finalMsg) {
+                const toast = window.Alpine?.store('toast');
+                if (toast) {
+                    toast.show(finalMsg, 'error');
+                }
             }
             return Promise.reject(err);
         },

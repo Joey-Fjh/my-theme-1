@@ -142,6 +142,19 @@ intent, or interaction quality.
   have been classified as intentional. Variant panel stock labels use locale keys.
   Recheck card modes, shadow clipping in horizontal-scroll and Swiper containers,
   and focus-outline visibility during final launch regression.
+- Toasts: global toast settings (radius, shadow, position, duration, preview)
+  reach the shared `.toast` / `.toast--*` CSS contract and the `toastContainer`
+  Alpine component. Four semantic states (success, warning, error, info) use
+  color-scheme-aware tokens. `$store.cart._handleError` owns all cart mutation
+  error toasts with localized messages; Product Card and BuyButtons do not
+  duplicate. All user-visible toast messages use locale keys or merchant-owned
+  Liquid data. `role`/`aria-live` are dynamic per toast type. Theme Editor preview
+  can remain visible until dismissed without changing storefront emitter duration.
+  The shared Toast contract owns intrinsic content width, bounded wrapping,
+  vertically-centered content, and configurable shadow; a real border replaces
+  Tailwind ring utilities so the global shadow is not overridden. Recheck toast
+  contrast, screen-reader announcements, and dismiss keyboard focus during final
+  launch regression.
 
 ### Known Phase-Owned Chain Findings
 
@@ -158,7 +171,7 @@ intent, or interaction quality.
 
 ### Current Phase
 
-Toasts
+Cart behavior
 
 ### Final Regression Checks
 
@@ -168,23 +181,49 @@ Toasts
 
 ### Next Session Entry
 
-1. Begin the Toasts phase by closing the global toast settings chain through the
-   shared toast contract.
-2. Audit toast emitters, placement, states, and message ownership before deciding
-   which overrides are intentional.
+1. Begin the Cart behavior phase: verify all storefront cart mutations and cart
+   UI state use `$store.cart`.
+2. Review drawers, page cart, quantities, errors, empty cart, section refresh
+   behavior, and mobile layout.
 3. Preserve completed-domain visual checks for final launch regression.
 
 ### Deferred Cross-Phase Items
 
+- Toasts: warning toast uses `icon-info-circle` (no dedicated warning icon). Record only.
+- Toasts: no global dedup or max-stack logic implemented. Documented as intentional;
+  re-evaluate only if user reports stacking issues.
+- Toasts: `fetchCart` read failure remains silent and preserves existing/stale cart
+  state. The Cart Overlay currently has no dedicated fetch-error UI. Re-evaluate
+  whether a visible error state is needed during the Cart behavior phase.
+- Buttons (completed-domain follow-up): `BuyButtons.buttonText` getter and
+  `buy-buttons.liquid` template fallback text contain hardcoded English. Verify
+  and fix during final launch regression.
 - Focus: `overflow: hidden` on `.product-card-shell` may clip focus outlines on
   internally-focusable controls. Resolve during Focus phase.
+- Focus: Toast dismiss button and internal controls need manual keyboard focus check.
+- Motion: Toast entrance/exit transitions are managed by the `motion-transition`
+  snippet preset. Resolve during Motion phase.
 - Search / Motion: `hover:shadow-sm` on predictive-search overlay cards is an
   intentional interactive enhancement. Re-evaluate during Search or Motion phase
   if global shadow opacity > 0 creates a visual conflict.
 - Final visual regression: product card shadow clipping in header horizontal-scroll
   (`overflow-x-auto`) and Swiper (`overflow: hidden`) containers is a CSS layout
   constraint, not a code bug. Verify visually during final launch regression.
-
+- Final architecture regression: audit parameters and component fields changed from
+  hardcoded user-visible defaults to empty-string defaults across all completed
+  phases. For each empty default, verify that every consumer supplies the value
+  through the intended Liquid `data-*` chain. Keep the empty default only when it is
+  a deliberate safe fallback; otherwise remove unused parameters/fields or restore
+  a properly localized required default. Also verify that missing data cannot cause
+  important success, error, validation, or accessibility feedback to fail silently.
+- Architecture: unified z-index/layer hierarchy. Current z-index values are scattered
+  across inline styles, Tailwind arbitrary classes, and component CSS. Establish a
+  dedicated layer system covering Header, Announcement Bar, dropdown, Toast, Dialog,
+  drawer, modal, and lightbox. Toast currently uses `z-10140` as a phased fix to sit
+  above the Announcement Bar (`z-index: 9999`) and Header/drawers (`z-[10010]`).
+  Whether `z-10140` covers the lightbox root layer (`z-10120`) is an incidental
+  outcome of the phased fix, not an intentional override; defer to unified z-index
+  architecture.
 ### Definition Of Done
 
 - Every approved global setting in the current phase has a clear and effective storefront consumer.

@@ -68,6 +68,8 @@
                     }
 
                     this._initialSearchPerformed = dataset.predictiveSearchPerformed === 'true';
+
+                    this._searchFailedMsg = dataset.toastSearchFailed || '';
                 },
 
                 _hydrateInitialQuery() {
@@ -294,9 +296,11 @@
                         .catch((err) => {
                             if (err?.isAbort || err?.name === 'AbortError') return;
                             console.error(err);
-                            const toast = this.$store?.toast || window.Alpine?.store?.('toast');
-                            if (toast?.show) {
-                                toast.show('Search failed. Please try again.', 'error');
+                            if (this._searchFailedMsg) {
+                                const toast = this.$store?.toast || window.Alpine?.store?.('toast');
+                                if (toast?.show) {
+                                    toast.show(this._searchFailedMsg, 'error');
+                                }
                             }
                             this._resetResults();
                             this.hasEmptyState = true;

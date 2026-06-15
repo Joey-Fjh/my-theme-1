@@ -236,6 +236,10 @@
                     if (ds.qtyMax && ds.qtyMax !== 'null') this.max = Number(ds.qtyMax);
                     if (ds.qtyStep) this.step = Number(ds.qtyStep) || 1;
                     if (ds.qtySectionId) this._sectionId = ds.qtySectionId;
+                    if (ds.qtyMsgMax) this._msgMax = ds.qtyMsgMax;
+                    if (ds.qtyMsgMin) this._msgMin = ds.qtyMsgMin;
+                    if (ds.qtyMsgBelowMin) this._msgBelowMin = ds.qtyMsgBelowMin;
+                    if (ds.qtyMsgAboveMax) this._msgAboveMax = ds.qtyMsgAboveMax;
                 },
 
                 init() {
@@ -269,7 +273,7 @@
 
                 increment() {
                     if (!this.canIncrement) {
-                        this._toast(`Maximum quantity is ${this.max}.`);
+                        this._toast(this._msgMax, '%%MAX%%', this.max);
                         return;
                     }
                     this.qty =
@@ -281,7 +285,7 @@
 
                 decrement() {
                     if (!this.canDecrement) {
-                        this._toast(`Minimum quantity is ${this.min}.`);
+                        this._toast(this._msgMin, '%%MIN%%', this.min);
                         return;
                     }
                     this.qty = Math.max(this.min, this.qty - this.step);
@@ -291,13 +295,13 @@
                 onInput() {
                     const raw = parseInt(this.qty);
                     if (isNaN(raw) || raw < this.min) {
-                        this._toast(`Quantity must be at least ${this.min}.`);
+                        this._toast(this._msgBelowMin, '%%MIN%%', this.min);
                         this.qty = this.min;
                         this._notify();
                         return;
                     }
                     if (this.max !== null && raw > this.max) {
-                        this._toast(`You can only add up to ${this.max} of this item.`);
+                        this._toast(this._msgAboveMax, '%%MAX%%', this.max);
                         this.qty = this.max;
                         this._notify();
                         return;
@@ -316,8 +320,9 @@
                     });
                 },
 
-                _toast(msg) {
-                    window.Alpine?.store('toast')?.show?.(msg, 'info');
+                _toast(template, key, value) {
+                    const msg = template ? template.replace(key, String(value)) : '';
+                    if (msg) window.Alpine?.store('toast')?.show?.(msg, 'info');
                 },
 
                 destroy() {
@@ -335,7 +340,7 @@
             variantId = null,
             openCartOnAdd = false,
             openDialogId = '',
-            successMessage = 'Added to cart!',
+            successMessage = '',
             requestSections = '',
             showBuyNow = false,
         } = {}) {
@@ -460,9 +465,8 @@
                                 );
                             }
                         })
-                        .catch((err) => {
-                            const msg = err?.message || 'Could not add to cart. Please try again.';
-                            window.Alpine?.store('toast')?.show?.(msg, 'error');
+                        .catch(() => {
+                            // Error toast handled by $store.cart._handleError
                         })
                         .finally(() => {
                             this.isLoading = false;
@@ -483,9 +487,8 @@
                         .then(() => {
                             window.location.assign('/checkout');
                         })
-                        .catch((err) => {
-                            const msg = err?.message || 'Could not continue to checkout.';
-                            window.Alpine?.store('toast')?.show?.(msg, 'error');
+                        .catch(() => {
+                            // Error toast handled by $store.cart._handleError
                         })
                         .finally(() => {
                             this.isLoading = false;

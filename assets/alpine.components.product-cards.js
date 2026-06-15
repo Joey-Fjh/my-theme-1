@@ -197,6 +197,7 @@
                         this.primaryVariantAvailable = dataset.primaryVariantAvailable === 'true';
                     }
                     this.isTouchDevice = this._detectTouch();
+                    this._toastAdded = dataset.toastAdded || '';
                 },
 
                 _detectTouch() {
@@ -255,13 +256,12 @@
 
                     request
                         .then(() => {
-                            if (!this.cartDialogId) {
-                                this.$store?.toast?.show?.('Added to cart!', 'success');
+                            if (!this.cartDialogId && this._toastAdded) {
+                                this.$store?.toast?.show?.(this._toastAdded, 'success');
                             }
                         })
-                        .catch((err) => {
-                            const msg = err?.message || 'Could not add to cart. Please try again.';
-                            this.$store?.toast?.show?.(msg, 'error');
+                        .catch(() => {
+                            // Error toast handled by $store.cart._handleError
                         })
                         .finally(() => {
                             this.isAddingToCart = false;

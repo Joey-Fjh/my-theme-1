@@ -8,21 +8,35 @@
 
     StoreGroups.toast = {
         messages: [],
+        config: {
+            defaultDuration: 3000,
+        },
+        /**
+         * Configure toast defaults from theme settings.
+         * @param {{ defaultDuration?: number }} options
+         */
+        configure(options) {
+            if (options.defaultDuration != null) {
+                this.config.defaultDuration = options.defaultDuration;
+            }
+        },
         /**
          * Show a toast notification.
          * @param {string} message - Display text
-         * @param {'success'|'error'|'info'} type - Visual style (default: 'info')
-         * @param {number} duration - Auto-dismiss ms, 0 to persist (default: 3000)
+         * @param {'success'|'error'|'warning'|'info'} type - Visual style (default: 'info')
+         * @param {number} [duration] - Auto-dismiss ms, 0 to persist. Falls back to global default when omitted.
          */
-        show(message, type = 'info', duration = 3000) {
+        show(message, type = 'info', duration) {
             const id = Date.now() + Math.random().toString(36).substring(2);
 
             this.messages.push({ id, message, type });
 
-            if (duration > 0) {
+            const resolved = duration === 0 ? 0 : duration || this.config.defaultDuration;
+
+            if (resolved > 0) {
                 setTimeout(() => {
                     this.remove(id);
-                }, duration);
+                }, resolved);
             }
         },
         remove(id) {

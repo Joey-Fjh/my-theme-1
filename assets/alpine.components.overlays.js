@@ -10,10 +10,7 @@
     if (!AlpineComponentsFactory) return;
 
     ComponentGroups.overlays = {
-        newsletterBanner({
-            successMessage = 'Thanks for subscribing.',
-            errorMessage = 'Subscription failed. Please try again.',
-        } = {}) {
+        newsletterBanner({ successMessage = '', errorMessage = '' } = {}) {
             return {
                 isLoading: false,
                 successMessage,
@@ -42,7 +39,8 @@
 
                     const emailInput = form.querySelector('input[type="email"]');
                     if (!emailInput || !emailInput.value) {
-                        window.Alpine?.store('toast')?.show?.(this.errorMessage, 'error');
+                        if (this.errorMessage)
+                            window.Alpine?.store('toast')?.show?.(this.errorMessage, 'error');
                         return;
                     }
 
@@ -60,10 +58,12 @@
                             credentials: 'same-origin',
                         });
 
-                        window.Alpine?.store('toast')?.show?.(this.successMessage, 'success');
+                        if (this.successMessage)
+                            window.Alpine?.store('toast')?.show?.(this.successMessage, 'success');
                         form.reset();
                     } catch (_) {
-                        window.Alpine?.store('toast')?.show?.(this.errorMessage, 'error');
+                        if (this.errorMessage)
+                            window.Alpine?.store('toast')?.show?.(this.errorMessage, 'error');
                     } finally {
                         this.isLoading = false;
                     }
@@ -80,8 +80,8 @@
             isVisitor = true,
             delay = 3,
             expired = 7,
-            successMessage = 'Thanks for subscribing.',
-            errorMessage = 'Subscription failed. Please try again.',
+            successMessage = '',
+            errorMessage = '',
         } = {}) {
             return {
                 ...AlpineComponentsFactory.useDisposable(),
@@ -173,7 +173,8 @@
 
                     const emailInput = form.querySelector('input[type="email"]');
                     if (!emailInput || !emailInput.value) {
-                        window.Alpine?.store('toast')?.show?.(this.errorMessage, 'error');
+                        if (this.errorMessage)
+                            window.Alpine?.store('toast')?.show?.(this.errorMessage, 'error');
                         return;
                     }
 
@@ -191,11 +192,13 @@
                             credentials: 'same-origin',
                         });
 
-                        window.Alpine?.store('toast')?.show?.(this.successMessage, 'success');
+                        if (this.successMessage)
+                            window.Alpine?.store('toast')?.show?.(this.successMessage, 'success');
                         form.reset();
                         this.hide();
                     } catch (_) {
-                        window.Alpine?.store('toast')?.show?.(this.errorMessage, 'error');
+                        if (this.errorMessage)
+                            window.Alpine?.store('toast')?.show?.(this.errorMessage, 'error');
                     } finally {
                         this.isLoading = false;
                     }

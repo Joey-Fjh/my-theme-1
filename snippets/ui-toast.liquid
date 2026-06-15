@@ -1,31 +1,65 @@
+{%- liquid
+    case settings.toast_position
+        when 'top-left'
+            assign toast_position_class = 'top-5 left-5 items-start'
+        when 'top-center'
+            assign toast_position_class = 'top-5 left-1/2 -translate-x-1/2 items-center'
+        when 'top-right'
+            assign toast_position_class = 'top-5 right-5 items-end'
+        when 'bottom-left'
+            assign toast_position_class = 'bottom-5 left-5 items-start'
+        when 'bottom-center'
+            assign toast_position_class = 'bottom-5 left-1/2 -translate-x-1/2 items-center'
+        else
+            assign toast_position_class = 'bottom-5 right-5 items-end'
+    endcase
+
+    assign toast_stacking = 'flex-col-reverse'
+    if settings.toast_position == 'top-left' or settings.toast_position == 'top-center' or settings.toast_position == 'top-right'
+        assign toast_stacking = 'flex-col'
+    endif
+
+    assign toast_duration_ms = settings.toast_duration | times: 1000
+
+    if request.design_mode and settings.toast_preview_type != 'off' and settings.toast_preview_type != blank
+        assign toast_preview = true
+        assign toast_preview_type = settings.toast_preview_type
+        assign toast_preview_persistent = settings.toast_preview_persistent
+    else
+        assign toast_preview = false
+        assign toast_preview_type = ''
+        assign toast_preview_persistent = false
+    endif
+-%}
+
 <div
-    x-data
-    class="pointer-events-none fixed right-5 bottom-5 z-100 flex flex-col-reverse items-end gap-3"
+    x-data="toastContainer"
+    data-toast-duration="{{ toast_duration_ms }}"
+    data-toast-preview="{{ toast_preview }}"
+    data-toast-preview-type="{{ toast_preview_type }}"
+    data-toast-preview-persistent="{{ toast_preview_persistent }}"
+    data-toast-preview-message="{{ 'toast.preview_message' | t | escape }}"
+    data-cart-toast-generic="{{ 'toast.generic_error' | t | escape }}"
+    data-cart-toast-rate-limited="{{ 'toast.rate_limited' | t | escape }}"
+    data-cart-toast-server-error="{{ 'toast.server_error' | t | escape }}"
+    data-cart-toast-timeout="{{ 'toast.timeout' | t | escape }}"
+    data-cart-toast-network-error="{{ 'toast.network_error' | t | escape }}"
+    class="pointer-events-none fixed z-10140 flex gap-3 {{ toast_position_class }} {{ toast_stacking }}"
 >
     <template x-for="msg in $store.toast.messages" :key="msg.id">
         <div
             {%- render 'motion-transition', preset: 'toast' -%}
-            role="status"
-            aria-live="polite"
-            class="pointer-events-auto flex max-w-95 min-w-65 items-start gap-3 rounded-lg px-4 py-3 shadow-lg ring-1 ring-black/5 backdrop-blur-sm"
+            :role="msg.type === 'error' || msg.type === 'warning' ? 'alert' : 'status'"
+            :aria-live="msg.type === 'error' || msg.type === 'warning' ? 'assertive' : 'polite'"
+            class="toast pointer-events-auto max-w-[calc(100vw-2.5rem)] border border-[rgba(var(--color-foreground),0.08)] px-4 py-3 backdrop-blur-sm pc:max-w-95"
             :class="
-                {
-                  'bg-error text-error-text':     msg.type === 'error',
-                  'bg-success text-success-text': msg.type === 'success',
-                  'bg-info text-info-text':       msg.type === 'info' || (msg.type !== 'error' && msg.type !== 'success')
-                }
+                msg.type === 'error'   ? 'toast--error'   :
+                msg.type === 'success' ? 'toast--success' :
+                msg.type === 'warning' ? 'toast--warning' :
+                                         'toast--info'
             "
         >
-            <span
-                class="mt-0.5 h-5 w-5 shrink-0"
-                :class="
-                    {
-                      'text-error-text':   msg.type === 'error',
-                      'text-success-text': msg.type === 'success',
-                      'text-info-text':    msg.type === 'info' || (msg.type !== 'error' && msg.type !== 'success')
-                    }
-                "
-            >
+            <span class="shrink-0">
                 <template x-if="msg.type === 'error'">
                     {%- render 'icons', icon: 'icon-x-circle' -%}
                 </template>
@@ -37,11 +71,11 @@
                 </template>
             </span>
 
-            <p class="flex-1" x-text="msg.message"></p>
+            <span data-toast-message x-text="msg.message"></span>
 
             <button
                 type="button"
-                class="-mt-0.5 -mr-1 shrink-0 cursor-pointer rounded p-0.5 opacity-60 transition-opacity hover:opacity-100"
+                class="-mr-1 shrink-0 cursor-pointer rounded p-0.5 opacity-60 transition-opacity hover:opacity-100"
                 @click="$store.toast.remove(msg.id)"
                 aria-label="{{ 'accessibility.dismiss' | t }}"
             >
