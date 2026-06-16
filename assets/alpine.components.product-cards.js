@@ -119,6 +119,8 @@
             cartDialogId = '',
             primaryVariantId = 0,
             primaryVariantAvailable = false,
+            cartType = 'drawer',
+            cartUrl = '',
         } = {}) {
             if (enableImagePagination !== undefined && enableImageNavigation === true) {
                 enableImageNavigation = enableImagePagination;
@@ -135,6 +137,8 @@
                 cartDialogId,
                 primaryVariantId: Number(primaryVariantId) || 0,
                 primaryVariantAvailable: Boolean(primaryVariantAvailable),
+                cartType,
+                cartUrl,
                 isAddingToCart: false,
                 isTouchDevice: false,
                 _hoverLeaveTimer: null,
@@ -196,6 +200,12 @@
                     ) {
                         this.primaryVariantAvailable = dataset.primaryVariantAvailable === 'true';
                     }
+                    if (dataset.cartType !== undefined && dataset.cartType !== '') {
+                        this.cartType = dataset.cartType;
+                    }
+                    if (dataset.cartUrl !== undefined && dataset.cartUrl !== '') {
+                        this.cartUrl = dataset.cartUrl;
+                    }
                     this.isTouchDevice = this._detectTouch();
                     this._toastAdded = dataset.toastAdded || '';
                 },
@@ -250,22 +260,38 @@
 
                     const request = cart.add([{ id: this.primaryVariantId, quantity: 1 }], []);
 
-                    if (this.cartDialogId) {
-                        this.$store?.dialog?.open?.(this.cartDialogId);
-                    }
+                    if (this.cartType === 'page') {
+                        request
+                            .then(() => {
+                                if (this._toastAdded) {
+                                    this.$store?.toast?.show?.(this._toastAdded, 'success');
+                                }
+                                window.location.assign(this.cartUrl);
+                            })
+                            .catch(() => {
+                                // Error toast handled by $store.cart._handleError
+                            })
+                            .finally(() => {
+                                this.isAddingToCart = false;
+                            });
+                    } else {
+                        if (this.cartDialogId) {
+                            this.$store?.dialog?.open?.(this.cartDialogId);
+                        }
 
-                    request
-                        .then(() => {
-                            if (!this.cartDialogId && this._toastAdded) {
-                                this.$store?.toast?.show?.(this._toastAdded, 'success');
-                            }
-                        })
-                        .catch(() => {
-                            // Error toast handled by $store.cart._handleError
-                        })
-                        .finally(() => {
-                            this.isAddingToCart = false;
-                        });
+                        request
+                            .then(() => {
+                                if (!this.cartDialogId && this._toastAdded) {
+                                    this.$store?.toast?.show?.(this._toastAdded, 'success');
+                                }
+                            })
+                            .catch(() => {
+                                // Error toast handled by $store.cart._handleError
+                            })
+                            .finally(() => {
+                                this.isAddingToCart = false;
+                            });
+                    }
                 },
 
                 destroy() {

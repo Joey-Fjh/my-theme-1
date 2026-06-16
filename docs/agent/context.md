@@ -155,6 +155,34 @@ intent, or interaction quality.
   Tailwind ring utilities so the global shadow is not overridden. Recheck toast
   contrast, screen-reader announcements, and dismiss keyboard focus during final
   launch regression.
+- Cart behavior: `settings.cart_type` (drawer / page) is now wired through
+  `data-cart-type` and `data-cart-url` attributes to header, PDP buy buttons,
+  quick view, and product card quick add. Drawer mode opens the cart overlay
+  on header icon, quick view add, and product card quick add. Page mode
+  navigates to `routes.cart_url` via a real `<a>` link (header) or
+  Liquid-provided `cartUrl` (JS add-to-cart flows); no drawer opens in page
+  mode. All cart mutations continue through `$store.cart`; error toasts remain
+  centralized in `$store.cart._handleError`. Cart overlay `fetchCart` failure
+  now shows a non-empty-guarded error toast instead of silent swallow. PDP
+  drawer-mode add-to-cart remains toast-only by default (`open_cart_on_add`
+  defaults to false); this is preserved existing behavior, not a regression.
+  Recheck drawer and page mode add/remove/quantity/clear/checkout flows,
+  error scenarios, and mobile layout during final launch regression.
+- Search behavior: `settings.predictive_search_enabled` is now wired through
+  `data-predictive-search-enabled` on the search overlay drawer and search page
+  Alpine wrappers. The `predictiveSearch` component reads the setting as
+  `_predictiveEnabled` in `_applyDatasetConfig()`. When enabled (true), full
+  predictive behavior is preserved: debounced fetch via `ShopifyHttp.getJSON()`
+  to `/search/suggest.json`, panel open, suggestions/products/articles/pages
+  tabs, empty state, and error toast. When disabled (false), `onInput()` updates
+  the query but skips all fetch and panel logic; `openPanel()` and
+  `_hydrateInitialQuery()` return early; `performSearch()` is not gated and
+  navigates to `routes.search_url?q=...` as normal. Predictive panel, results
+  tabs, and suggestions are automatically hidden since `isOpen` never becomes
+  true. Search results tabs and pagination are server-rendered and independent
+  of the predictive component; they remain untouched. Recheck predictive and
+  non-predictive search flows, keyboard submit, empty/error states, and mobile
+  drawer layout during final launch regression.
 
 ### Known Phase-Owned Chain Findings
 
@@ -171,7 +199,7 @@ intent, or interaction quality.
 
 ### Current Phase
 
-Cart behavior
+Motion
 
 ### Final Regression Checks
 
@@ -181,26 +209,29 @@ Cart behavior
 
 ### Next Session Entry
 
-1. Begin the Cart behavior phase: verify all storefront cart mutations and cart
-   UI state use `$store.cart`.
-2. Review drawers, page cart, quantities, errors, empty cart, section refresh
-   behavior, and mobile layout.
+Decision: Motion phase was temporarily skipped; Focus phase was executed first
+because its scope is narrower and independently verifiable. Focus is now complete.
+Return to Motion with Focus findings already resolved.
+
+1. Begin the Motion phase: verify transitions, choreography, reduced-motion
+   compliance, and animation ownership across interactive UI.
+2. Resolve Motion deferred items (toast entrance/exit transitions, etc.).
 3. Preserve completed-domain visual checks for final launch regression.
+4. After Motion is committed, proceed to Final launch regression.
 
 ### Deferred Cross-Phase Items
 
 - Toasts: warning toast uses `icon-info-circle` (no dedicated warning icon). Record only.
 - Toasts: no global dedup or max-stack logic implemented. Documented as intentional;
   re-evaluate only if user reports stacking issues.
-- Toasts: `fetchCart` read failure remains silent and preserves existing/stale cart
-  state. The Cart Overlay currently has no dedicated fetch-error UI. Re-evaluate
-  whether a visible error state is needed during the Cart behavior phase.
 - Buttons (completed-domain follow-up): `BuyButtons.buttonText` getter and
   `buy-buttons.liquid` template fallback text contain hardcoded English. Verify
   and fix during final launch regression.
-- Focus: `overflow: hidden` on `.product-card-shell` may clip focus outlines on
-  internally-focusable controls. Resolve during Focus phase.
-- Focus: Toast dismiss button and internal controls need manual keyboard focus check.
+- Focus (resolved): `overflow: hidden` on `.product-card-shell` clips focus outlines
+  on internally-focusable controls. Classified as structural constraint (image rounding
+  requires overflow clipping). Acceptable; verify visually during final launch regression.
+- Focus (resolved): Toast dismiss button now uses shared `focus-ring` utility. Manual
+  keyboard check deferred to final launch regression.
 - Motion: Toast entrance/exit transitions are managed by the `motion-transition`
   snippet preset. Resolve during Motion phase.
 - Search / Motion: `hover:shadow-sm` on predictive-search overlay cards is an

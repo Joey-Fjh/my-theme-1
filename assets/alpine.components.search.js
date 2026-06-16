@@ -29,6 +29,7 @@
                 activeSuggestionId: null,
                 hasEmptyState: false,
                 hasSearched: false,
+                _predictiveEnabled: true,
                 _debouncedFetch: null,
                 _abortController: null,
                 _initialSearchPerformed: false,
@@ -52,6 +53,10 @@
                     const dataset = this.$el?.dataset;
                     if (!dataset) return;
 
+                    if (typeof dataset.predictiveSearchEnabled !== 'undefined') {
+                        this._predictiveEnabled = dataset.predictiveSearchEnabled !== 'false';
+                    }
+
                     if (dataset.predictiveSearchUrl) {
                         this.searchUrl = dataset.predictiveSearchUrl;
                     }
@@ -73,6 +78,11 @@
                 },
 
                 _hydrateInitialQuery() {
+                    if (!this._predictiveEnabled) {
+                        this.isOpen = false;
+                        return;
+                    }
+
                     if (this.query && !this._initialSearchPerformed) {
                         this.openPanel();
                         this.onInput(this.query);
@@ -83,6 +93,7 @@
                 },
 
                 openPanel() {
+                    if (!this._predictiveEnabled) return;
                     if (!this.query) return;
                     this.isOpen = true;
 
@@ -118,6 +129,8 @@
                         this._lastScheduledTerm = null;
                         return;
                     }
+
+                    if (!this._predictiveEnabled) return;
 
                     // If we already have results for this exact term, don't re-request.
                     // This also prevents duplicate calls from IME confirm events (compositionend).

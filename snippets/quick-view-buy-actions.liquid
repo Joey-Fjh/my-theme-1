@@ -9,6 +9,16 @@
     @param {string} section_id - Runtime section scope for Alpine sync.
 {% enddoc %}
 
+{%- if settings.cart_type == 'drawer' -%}
+    {%- assign qv_open_cart = true -%}
+    {%- assign qv_dialog_id = 'cart-overlay-drawer' -%}
+    {%- assign qv_success_msg = '' -%}
+{%- else -%}
+    {%- assign qv_open_cart = false -%}
+    {%- assign qv_dialog_id = '' -%}
+    {%- assign qv_success_msg = 'toast.added_to_cart' | t -%}
+{%- endif -%}
+
 {%- render 'buy-buttons',
     product: product,
     product_form_id: product_form_id,
@@ -21,8 +31,9 @@
     context: 'product',
     show_dynamic_checkout: false,
     show_buy_now: true,
-    open_cart_on_add: true,
-    open_dialog_id: 'cart-overlay-drawer',
-    success_message: '',
-    request_sections: false
+    open_cart_on_add: qv_open_cart,
+    open_dialog_id: qv_dialog_id,
+    success_message: qv_success_msg,
+    request_sections: false,
+    cart_type: settings.cart_type
 -%}

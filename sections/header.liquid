@@ -39,7 +39,7 @@
 
                 <button
                     type="button"
-                    class="cursor-pointer"
+                    class="cursor-pointer focus-ring"
                     @click="$store.dialog.open('{{ mobile_menu_popup_id }}')"
                     aria-label="{{ 'accessibility.mobile_menu' | t }}"
                 >
@@ -50,7 +50,7 @@
             <div class="header-search hidden items-center justify-start" style="grid-area: search">
                 <button
                     type="button"
-                    class="cursor-pointer"
+                    class="cursor-pointer focus-ring"
                     @click="$store.dialog.open('{{ search_overlay_popup_id }}')"
                     aria-label="{{ 'accessibility.search' | t }}"
                 >
@@ -109,27 +109,43 @@
             >
                 <button
                     type="button"
-                    class="header-search__right cursor-pointer"
+                    class="header-search__right cursor-pointer focus-ring"
                     @click="$store.dialog.open('{{ search_overlay_popup_id }}')"
                     aria-label="{{ 'accessibility.search' | t }}"
                 >
                     {% render 'icons', icon: 'icon-search', class: size_class %}
                 </button>
 
-                <button
-                    type="button"
-                    class="relative cursor-pointer"
-                    @click="$store.dialog.open('{{ cart_overlay_popup_id }}')"
-                    aria-label="{{ 'accessibility.cart' | t }}"
-                >
-                    {% render 'icons', icon: 'icon-cart', class: size_class %}
-                    <span
-                        x-cloak
-                        x-show="$store.cart && $store.cart.item_count > 0"
-                        class="absolute -top-1 -right-1 inline-flex min-w-[1.25rem] items-center justify-center rounded-full px-1.5 py-0.5"
-                        x-text="$store.cart.item_count"
-                    ></span>
-                </button>
+                {%- if settings.cart_type == 'drawer' -%}
+                    <button
+                        type="button"
+                        class="relative cursor-pointer focus-ring"
+                        @click="$store.dialog.open('{{ cart_overlay_popup_id }}')"
+                        aria-label="{{ 'accessibility.cart' | t }}"
+                    >
+                        {% render 'icons', icon: 'icon-cart', class: size_class %}
+                        <span
+                            x-cloak
+                            x-show="$store.cart && $store.cart.item_count > 0"
+                            class="absolute -top-1 -right-1 inline-flex min-w-[1.25rem] items-center justify-center rounded-full px-1.5 py-0.5"
+                            x-text="$store.cart.item_count"
+                        ></span>
+                    </button>
+                {%- else -%}
+                    <a
+                        href="{{ routes.cart_url }}"
+                        class="relative cursor-pointer focus-ring"
+                        aria-label="{{ 'accessibility.cart' | t }}"
+                    >
+                        {% render 'icons', icon: 'icon-cart', class: size_class %}
+                        <span
+                            x-cloak
+                            x-show="$store.cart && $store.cart.item_count > 0"
+                            class="absolute -top-1 -right-1 inline-flex min-w-[1.25rem] items-center justify-center rounded-full px-1.5 py-0.5"
+                            x-text="$store.cart.item_count"
+                        ></span>
+                    </a>
+                {%- endif -%}
 
                 {% assign account_href = routes.account_login_url %}
                 {% if customer %}
@@ -144,7 +160,7 @@
                     href: account_href,
                     content: link_content,
                     variant: 'plain',
-                    class: 'cursor-pointer',
+                    class: 'cursor-pointer focus-ring',
                     aria_label: '{{ "accessibility.account" | t }}'
                 %}
             </div>

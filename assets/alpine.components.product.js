@@ -343,6 +343,8 @@
             successMessage = '',
             requestSections = '',
             showBuyNow = false,
+            cartType = 'drawer',
+            cartUrl = '',
         } = {}) {
             return {
                 ...AlpineComponentsFactory.useDisposable(),
@@ -355,6 +357,8 @@
                 successMessage,
                 requestSections,
                 showBuyNow,
+                cartType,
+                cartUrl,
                 isLoading: false,
                 _eventScope: null,
 
@@ -391,6 +395,14 @@
 
                     if (dataset.showBuyNow !== undefined && dataset.showBuyNow !== '') {
                         this.showBuyNow = dataset.showBuyNow === 'true';
+                    }
+
+                    if (dataset.cartType !== undefined && dataset.cartType !== '') {
+                        this.cartType = dataset.cartType;
+                    }
+
+                    if (dataset.cartUrl !== undefined && dataset.cartUrl !== '') {
+                        this.cartUrl = dataset.cartUrl;
                     }
 
                     if (dataset.requestSections !== undefined) {
@@ -454,15 +466,25 @@
 
                     cart.add([{ id: this.variantId, quantity: this._getQuantity() }], sections)
                         .then(() => {
-                            if (this.openCartOnAdd && this.openDialogId) {
-                                window.Alpine?.store('dialog')?.open?.(this.openDialogId);
-                            }
+                            if (this.cartType === 'page') {
+                                if (this.successMessage) {
+                                    window.Alpine?.store('toast')?.show?.(
+                                        this.successMessage,
+                                        'success',
+                                    );
+                                }
+                                window.location.assign(this.cartUrl);
+                            } else {
+                                if (this.openCartOnAdd && this.openDialogId) {
+                                    window.Alpine?.store('dialog')?.open?.(this.openDialogId);
+                                }
 
-                            if (this.successMessage) {
-                                window.Alpine?.store('toast')?.show?.(
-                                    this.successMessage,
-                                    'success',
-                                );
+                                if (this.successMessage) {
+                                    window.Alpine?.store('toast')?.show?.(
+                                        this.successMessage,
+                                        'success',
+                                    );
+                                }
                             }
                         })
                         .catch(() => {

@@ -308,7 +308,11 @@
                             return data;
                         })
                         .catch((err) => {
-                            // Keep the drawer usable if a cart read fails; add/change handlers surface errors.
+                            const toast = window.Alpine?.store('toast');
+                            const message = this.$store?.cart?._errorMessages?.generic || '';
+                            if (toast && message) {
+                                toast.show(message, 'error');
+                            }
                             return Promise.reject(err);
                         })
                         .finally(() => {
