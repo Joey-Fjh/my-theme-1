@@ -15,7 +15,7 @@ For animation and transition work, classify through `docs/references/architectur
 | `tailwind/tailwind.components.css` | Composite patterns: `.dropdown`, `.localization-switcher`, `.rte`         |
 | `tailwind/tailwind.snippets.css`   | Snippet-scoped: `.product-info-blocks` and context variants               |
 | `tailwind/tailwind.utilities.css`  | Narrow helpers: `container-page`, `place-*`, `bg-scheme-surface`          |
-| `tailwind/tailwind.animates.css`   | Motion: keyframes, `icons-animate-*`, `animate-spin-slow`                 |
+| `tailwind/tailwind.animates.css`   | Motion capability layer: tokens, keyframes, transition/animation classes, motion phase classes, element-level utilities, reduced-motion kill rules |
 
 When adding new CSS:
 

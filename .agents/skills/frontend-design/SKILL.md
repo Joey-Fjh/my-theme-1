@@ -36,11 +36,13 @@ Commit to a cohesive aesthetic. Use CSS variables for consistency. Dominant colo
 
 ## Motion
 
-Use animations for effects and micro-interactions. Prioritize CSS-only solutions for simple cases. Use GSAP for complex choreography through `Components.register()`.
+Use animations for effects and micro-interactions. CSS/Alpine-first for simple animation and ordinary reveal. GSAP only for complex narrative choreography (parallax, scrub, timeline, split text, coordinated storytelling) through `Components.register()`.
 
 Focus on high-impact moments: one well-orchestrated page load with staggered reveals creates more delight than scattered micro-interactions.
 
 **Project constraints**:
+- Simple animation and ordinary reveal → CSS/Alpine first
+- GSAP only for complex narrative choreography after classification
 - Critical content must be visible without JavaScript or animation completion
 - Respect `prefers-reduced-motion`
 - GSAP lifecycle through `Components.register()`, cleanup through `ctx.revert()`

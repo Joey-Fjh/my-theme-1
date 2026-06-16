@@ -9,18 +9,40 @@ This reference stores motion architecture details that are too long for `AGENTS.
 3. Make future global motion settings possible without scanning scattered duration/ease/transform values.
 4. Prevent Alpine, Tailwind/CSS, and GSAP from competing for the same element properties.
 
-## Motion Classification
+## Architecture Overview
 
-Before changing animation, classify it as one of:
+Ordinary animation is **CSS/Alpine-first**:
 
-| Layer                   | Purpose                                            | Owner / Location                                                               |
-| ----------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------ |
-| Capability              | Low-level motion ability                           | `tailwind/tailwind.animates.css`                                               |
-| State motion recipe     | Named open/close, show/hide, active/loading motion | Motion transition presets, exposed through `snippets/motion-transition.liquid` |
-| Choreography recipe     | Named scroll, stagger, reveal, timeline motion     | `window.__Theme__.Motion` / GSAP presets                                       |
-| Usage                   | When a specific component or section should move   | Liquid templates, Alpine components, or `Components.register()` lifecycle code |
+- **Alpine** owns when / state / trigger.
+- **tailwind.animates.css** owns how / animation capability.
+- **GSAP** is optional advanced narrative choreography only.
 
-## Capability Layer
+### Ownership Table
+
+| Layer | Owns | Does not own | Examples |
+| --- | --- | --- | --- |
+| CSS capability (`tailwind.animates.css`) | Tokens, keyframes, transition/animation classes, motion phase classes, reduced-motion and motion-disabled kill rules | Section business structure, trigger logic, state management | `motion-fade-*`, `animate-spin-slow`, hover/focus micro-motion, icon animations, spinners, pulses |
+| Alpine components | UI state, trigger behavior, open/close/show/hide/active/loading transitions, ordinary reveal state changes | Animation keyframes, animation values | `x-show`, `x-transition`, shared `IntersectionObserver`, `data-motion-state` |
+| GSAP / ScrollTrigger | Complex narrative choreography: timeline, parallax, scrub, split text, coordinated storytelling | Ordinary content/media reveal, simple fade/rise/zoom, card entrance | Homepage hero timeline, scroll-linked parallax, brand-level site motion |
+
+### Decision Rules
+
+| Motion need | Default path | Do not |
+| --- | --- | --- |
+| Hover/focus, loader, decorative loop, pause/running | CSS capability utility | GSAP |
+| Open/close, show/hide, active/inactive, loading visibility | Alpine state + CSS state classes | GSAP |
+| Ordinary content/media reveal across sections | Alpine component with shared `IntersectionObserver` + CSS rules in `tailwind.animates.css` | GSAP |
+| Complex narrative choreography (parallax, scrub, timeline, split text, coordinated storytelling) | GSAP — only after explicit classification | — |
+
+### Conflict Rule
+
+Alpine/CSS and GSAP **must not** control `opacity` or `transform` on the same element. Choose one ownership path per element.
+
+### GSAP Removal Rule
+
+GSAP vendor/runtime may be removed entirely if no approved narrative choreography remains in the theme.
+
+## CSS Capability Layer
 
 Capabilities are low-level CSS primitives. They answer "what can CSS do?" rather than "how should this UI pattern move?"
 
@@ -29,13 +51,61 @@ Allowed in `tailwind/tailwind.animates.css`:
 - motion CSS variables and foundation tokens
 - `@keyframes`
 - animation utility classes
+- transition/animation phase classes for state motion presets
 - hover/focus micro-motion utilities
+- text/media reveal classes
+- icon animations, spinners, pulses
 - pause/running helpers
 - loader, spinner, and decorative loop utilities
+- reduced-motion and motion-disabled kill rules
 
 Capability utilities SHOULD use the `motion-*` naming namespace for new code.
 
 Existing non-`motion-*` utilities MAY remain as legacy aliases during migration, but new code SHOULD NOT introduce more non-`motion-*` animation utilities.
+
+`tailwind.animates.css` also owns the global setting selectors that map body-level motion settings to CSS behavior, for example `body[data-content-reveal-style]`, `body[data-media-reveal-style]`, `body[data-motion-enabled]`, and `@media (prefers-reduced-motion: reduce)`.
+
+`tailwind.animates.css` does not own section business structure or trigger logic. It may style `[data-motion-reveal]` targets, but it must not require section templates to consume long internal utility class combinations for ordinary reveal.
+
+## Ordinary Reveal Layer
+
+Ordinary section content/media reveal should use declarative data hooks plus a lightweight Alpine component. It should not use GSAP, and it should not use `snippets/motion-transition.liquid`.
+
+Recommended DOM contract:
+
+```liquid
+<section x-data="motionRevealSection()" data-motion-section>
+    <div data-motion-reveal="content">
+        ...
+    </div>
+
+    <div data-motion-reveal="media">
+        ...
+    </div>
+</section>
+```
+
+Recommended runtime contract:
+
+- Each `x-data="motionRevealSection()"` creates an independent Alpine instance.
+- The component implementation should use a module-level shared `IntersectionObserver` singleton, with a registry such as a `WeakMap` from element to instance.
+- Each section instance registers its root with the shared observer during `init()` and unregisters during disposal.
+- Default reveal behavior is once-only: when the section enters the viewport, set `data-motion-state="revealed"` and unobserve the section.
+- If motion is disabled, reduced motion is preferred, or reveal should not wait for viewport entry, set `data-motion-state="revealed"` immediately.
+- The component may assign lightweight per-target variables such as `--motion-index` for stagger, but it should not compute animation types or keyframes.
+
+Recommended CSS contract:
+
+- HTML should render visible by default without JavaScript.
+- Alpine may set `data-motion-state="pending"` only after initialization, so no-JS content remains visible.
+- `tailwind.animates.css` owns selectors such as:
+  - `[data-motion-section][data-motion-state='pending'] [data-motion-reveal]`
+  - `[data-motion-section][data-motion-state='revealed'] [data-motion-reveal]`
+  - `body[data-content-reveal-style='...'] [data-motion-reveal='content']`
+  - `body[data-media-reveal-style='...'] [data-motion-reveal='media']`
+- Global motion setting effects should be expressed in CSS through body data attributes and motion variables, not through per-section GSAP timelines.
+
+`x-intersect` MAY be used for isolated simple cases, but it is not the preferred architecture for ordinary reveal coverage. The preferred architecture is one shared observer behind the Alpine component, rather than many scattered `x-intersect` directives.
 
 ## State Motion Recipe Layer
 
@@ -60,7 +130,7 @@ State motion recipes are consumed by Alpine/CSS state changes such as:
 - loading / idle
 - visible / hidden
 
-Repeated Alpine `x-transition:*` attribute groups SHOULD be replaced with a named motion recipe. New reusable Alpine/CSS state motion MUST NOT duplicate raw duration/ease/opacity/transform groups in Liquid when an existing recipe covers the behavior.
+Repeated Alpine `x-transition:*` attribute groups MAY be replaced with a named motion helper while legacy markup is being cleaned up, but `motion-transition` is not the primary architecture for ordinary reveal.
 
 Preferred template usage:
 
@@ -71,32 +141,39 @@ Preferred template usage:
 ></div>
 ```
 
-`snippets/motion-transition.liquid` owns the mapping from preset name to Alpine `x-transition:*` attributes. `tailwind/tailwind.animates.css` owns the CSS classes used by those phase attributes.
+`snippets/motion-transition.liquid` currently owns the mapping from preset name to Alpine `x-transition:*` attributes. It is a legacy/state-motion helper, not the preferred section reveal API. New ordinary reveal work should use the data-hook + Alpine component model above.
 
-## Choreography Recipe Layer
+The `motion-transition` snippet is for Alpine x-transition state motion only: dropdown, drawer, modal, toast, tab-content, fade, and similar open/close/show/hide patterns. It is not the full section content/media reveal architecture and may be simplified or removed if state motion is moved to direct data-state CSS rules.
 
-Choreography recipes describe visual direction and page-level motion. They answer "how should this content be staged over time or scroll?"
+Ordinary section content/media reveal should use the documented CSS/Alpine reveal pattern, not GSAP by default.
 
-Use GSAP for:
+## Optional GSAP Narrative Layer
 
-- scroll-triggered section reveal
-- staggered cards or list items
-- image reveal choreography
-- parallax
-- timeline sequences
-- hero or campaign-style motion
-- brand-level site motion
+GSAP is reserved for complex homepage/storytelling choreography only. It is not the default implementation for content fade/rise, media fade/zoom, card reveal, or ordinary section entrance.
 
-Reusable GSAP motion SHOULD live under `window.__Theme__.Motion` once the motion runtime exists. Until then, local GSAP in a section is allowed when the animation is one-off.
+### When GSAP is valid
+
+- Parallax
+- Scroll-linked scrub
+- Complex timeline sequences
+- Split text animation
+- Coordinated multi-section storytelling
+- Brand-level site motion language
+
+### When GSAP is invalid (use CSS/Alpine instead)
+
+- Simple fade
+- Simple rise
+- Simple image zoom
+- Ordinary card entrance
+- Ordinary section content reveal
+- Ordinary media reveal
+
+### GSAP Lifecycle Rules
 
 GSAP recipes MUST be initialized through `Components.register()` and cleaned up in `destroy()`. The component lifecycle owns when GSAP starts and stops; the motion recipe owns animation values.
 
-Available choreography recipes:
-
-| Recipe         | Namespace                          | Description                       | Status |
-| -------------- | ---------------------------------- | --------------------------------- | ------ |
-| `scrollReveal` | `Motion.scrollReveal(el, options)` | Scroll-triggered staggered reveal | Active |
-| `heroReveal`   | `Motion.heroReveal(el, options)`   | Hero + badge entrance animation   | Active |
+Reusable GSAP motion SHOULD live under `window.__Theme__.Motion` once the motion runtime exists. Until then, local GSAP in a section is allowed when the animation is one-off and classified as narrative choreography.
 
 ### ScrollTrigger Project Rules
 
@@ -113,7 +190,7 @@ Available choreography recipes:
 
 **Important:** Use `scrub` OR `toggleActions`, never both on the same trigger.
 
-**Allowed Patterns (one-time reveal):**
+**Allowed Patterns (one-time narrative reveal):**
 
 ```javascript
 Components.register(
@@ -274,10 +351,11 @@ Components.register(
 Use this decision tree:
 
 1. Hover/focus, loader, decorative loop, pause/running state -> CSS capability utility in `tailwind/tailwind.animates.css`.
-2. Open/close, show/hide, active/inactive, loading visibility -> Alpine/CSS state motion recipe.
-3. Scroll, reveal, stagger, parallax, timeline, hero/brand motion -> GSAP choreography recipe.
-4. One-off complex section animation -> local GSAP inside that section's `{%- javascript -%}` block, still using `Components.register()` and cleanup.
-5. Repeated section animation or global motion language -> shared GSAP recipe under `window.__Theme__.Motion`.
+2. Open/close, show/hide, active/inactive, loading visibility -> Alpine state + CSS state classes. Existing `motion-transition` usage is legacy/helper code, not the long-term ordinary reveal model.
+3. Ordinary section content/media reveal -> `data-motion-reveal` hooks + Alpine component with shared `IntersectionObserver` + CSS rules in `tailwind.animates.css`. NOT GSAP.
+4. Complex narrative choreography (parallax, scrub, timeline, split text, coordinated storytelling) -> GSAP, only after classification confirms narrative value.
+5. One-off complex section animation -> local GSAP inside that section's `{%- javascript -%}` block, still using `Components.register()` and cleanup.
+6. Repeated section animation or global motion language -> shared GSAP recipe under `window.__Theme__.Motion`.
 
 ## Page-Type Motion Policy
 
@@ -321,10 +399,11 @@ Motion cleanup MUST be staged:
 
 1. Audit current motion usage before refactoring.
 2. Group findings as CSS capabilities, Alpine/state recipes, GSAP/choreography, and mixed-ownership risks.
-3. Create or reuse named state motion recipes before replacing repeated Alpine transition groups.
-4. Rename CSS animation utilities toward `motion-*` with legacy aliases when needed.
-5. Introduce shared GSAP recipes only after at least three real usages or when the animation is clearly part of the global motion language.
-6. Add merchant-facing global motion settings only after the relevant recipes and tokens exist.
+3. Clean up existing `motion-transition` and `motion-*` classes by classifying them as state motion, ordinary reveal capability, element utility, or dead code.
+4. Build ordinary content/media reveal around data hooks, a shared-observer Alpine component, and CSS rules in `tailwind.animates.css`.
+5. Rename CSS animation utilities toward `motion-*` with legacy aliases when needed.
+6. Introduce shared GSAP recipes only after explicit narrative classification.
+7. Add merchant-facing global motion settings only after the relevant CSS/Alpine consumers and tokens exist.
 
 During cleanup, preserve visual behavior unless the task explicitly asks to redesign motion.
 
@@ -334,9 +413,10 @@ This table lists repeated patterns to check before adding another copy. It is a 
 
 | Repeated pattern to check before adding another copy                        | Destination                                | Namespace                    |
 | --------------------------------------------------------------------------- | ------------------------------------------ | ---------------------------- |
-| Alpine `x-transition:*` attribute group already defined elsewhere           | `snippets/motion-transition.liquid` preset | `motion-transition` snippet  |
+| Alpine `x-transition:*` attribute group already defined elsewhere           | Existing state-motion helper or direct data-state CSS | State motion |
+| Ordinary content/media reveal hook already exists                           | Shared Alpine reveal component + `tailwind.animates.css` | `data-motion-reveal` |
 | CSS `@keyframes`, `animation-*`, or phase class already defined elsewhere   | `tailwind/tailwind.animates.css`           | `motion-*` utility namespace |
-| GSAP reveal, stagger, timeline, or parallax logic already defined elsewhere | `window.__Theme__.Motion` recipe           | `Motion.*` method            |
+| GSAP narrative timeline/parallax/scrub already defined elsewhere            | Optional GSAP narrative recipe             | `Motion.*` method            |
 
 One-off section choreography MAY remain local in that section's `{%- javascript -%}` block, but it MUST still be lifecycle-scoped through `Components.register()` with proper `destroy()` cleanup.
 

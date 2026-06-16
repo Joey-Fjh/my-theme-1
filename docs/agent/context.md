@@ -201,6 +201,21 @@ intent, or interaction quality.
 
 Motion
 
+### Motion Architecture Decision
+
+Ordinary animation is CSS/Alpine-first. GSAP is optional narrative choreography only.
+
+- **Alpine** owns when / state / trigger.
+- **tailwind.animates.css** owns how / animation capability.
+- **GSAP** reserved for complex homepage/storytelling choreography (parallax, scrub, timeline, split text, coordinated storytelling).
+- Previous Motion GSAP-first direction was reverted.
+- `motion-transition` snippet is legacy/state-motion helper only. Do not expand it into ordinary section reveal; it may be simplified or removed during Motion cleanup.
+- Ordinary section content/media reveal should use `data-motion-reveal` hooks, an Alpine behavior with a module-level shared `IntersectionObserver`, and CSS rules in `tailwind.animates.css`.
+- Each section-level `x-data` instance may be independent, but reveal observation should be shared through one observer/registry implementation, not one observer per target.
+- `tailwind.animates.css` should own body setting selectors such as `body[data-content-reveal-style]`, `body[data-media-reveal-style]`, `body[data-motion-enabled]`, and reduced-motion rules.
+- Existing scattered transition/hover motion is not accepted as the final architecture, but it is temporarily tolerated to avoid regressing completed domains before the new CSS/Alpine motion chain exists.
+- Motion cleanup order: first build and verify the ordinary content/media reveal chain, then classify and migrate/remove scattered transitions by ownership (element, component state, ordinary reveal, narrative GSAP, dead/legacy).
+
 ### Final Regression Checks
 
 - Colors: visually verify password-page 20% borders, solid-color password header and
@@ -209,15 +224,16 @@ Motion
 
 ### Next Session Entry
 
-Decision: Motion phase was temporarily skipped; Focus phase was executed first
-because its scope is narrower and independently verifiable. Focus is now complete.
-Return to Motion with Focus findings already resolved.
+Continue Motion by designing the CSS/Alpine ordinary reveal primitive before implementation.
 
-1. Begin the Motion phase: verify transitions, choreography, reduced-motion
-   compliance, and animation ownership across interactive UI.
-2. Resolve Motion deferred items (toast entrance/exit transitions, etc.).
-3. Preserve completed-domain visual checks for final launch regression.
-4. After Motion is committed, proceed to Final launch regression.
+1. Design `data-motion-reveal` hooks and the `motionRevealSection` Alpine behavior with a shared `IntersectionObserver`.
+2. Design the `tailwind.animates.css` body setting selectors and reveal animation families for content/media.
+3. Implement and verify the ordinary content/media reveal chain before broad transition cleanup.
+4. After the chain works, classify scattered transitions/hover motion by ownership: shared element, component state, ordinary reveal, narrative GSAP, dead/legacy.
+5. Decide how to clean up or remove `motion-transition` without breaking current dropdown/drawer/modal/toast/tab state animations.
+6. Resolve Motion deferred items (toast entrance/exit transitions, etc.).
+7. Preserve completed-domain visual checks for final launch regression.
+8. After Motion is committed, proceed to Final launch regression.
 
 ### Deferred Cross-Phase Items
 
@@ -232,8 +248,10 @@ Return to Motion with Focus findings already resolved.
   requires overflow clipping). Acceptable; verify visually during final launch regression.
 - Focus (resolved): Toast dismiss button now uses shared `focus-ring` utility. Manual
   keyboard check deferred to final launch regression.
-- Motion: Toast entrance/exit transitions are managed by the `motion-transition`
-  snippet preset. Resolve during Motion phase.
+- Motion: Toast entrance/exit transitions are currently managed by the
+  `motion-transition` snippet preset. Re-evaluate during Motion cleanup because
+  `motion-transition` is now classified as legacy/state-motion helper, not the
+  ordinary reveal architecture.
 - Search / Motion: `hover:shadow-sm` on predictive-search overlay cards is an
   intentional interactive enhancement. Re-evaluate during Search or Motion phase
   if global shadow opacity > 0 creates a visual conflict.
@@ -255,6 +273,7 @@ Return to Motion with Focus findings already resolved.
   Whether `z-10140` covers the lightbox root layer (`z-10120`) is an incidental
   outcome of the phased fix, not an intentional override; defer to unified z-index
   architecture.
+
 ### Definition Of Done
 
 - Every approved global setting in the current phase has a clear and effective storefront consumer.

@@ -15,7 +15,7 @@ Tech stack:
 - Shopify Liquid sections, snippets, JSON templates, and locale files
 - Tailwind CSS v4 with CSS-based config and `@theme inline`
 - Alpine.js v3 for reactive UI state
-- GSAP + ScrollTrigger for choreography
+- GSAP + ScrollTrigger (optional choreography tools for complex narrative motion, not the default for ordinary section reveal)
 - Swiper for carousels
 - Custom runtime: `Components.register()`, `ThemeEvents`, `ShopifyHttp`, `ShopifySectionRefresher`
   See `docs/references/architecture/javascript-runtime.md` for API details and usage patterns.

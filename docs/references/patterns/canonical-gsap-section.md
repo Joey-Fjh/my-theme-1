@@ -1,10 +1,28 @@
 # Canonical GSAP Choreography Section
 
-Use this shape for scroll-triggered section animation after classifying the work through `AGENTS.md` `Motion Architecture`.
+Use this shape for **optional narrative choreography** after classifying the work through `AGENTS.md` `Motion Architecture`.
 
-GSAP is the choreography execution layer for scroll-triggered reveal, stagger, timeline, parallax, and brand-level motion. It still belongs inside `Components.register()` so it can be scoped and destroyed correctly.
+**Do not use GSAP for ordinary content/media reveal when CSS/Alpine is sufficient.** GSAP is reserved for complex homepage/storytelling choreography: timeline, parallax, scrub, split text, coordinated section storytelling, scroll-driven image movement.
 
-If a shared `window.__Theme__.Motion.gsap.*` recipe already exists for the motion behavior, call that recipe from the component lifecycle instead of duplicating raw GSAP values. If no shared recipe exists and the animation is section-specific, local GSAP in the section is allowed.
+If narrative value is unclear, use CSS/Alpine instead. If no approved narrative choreography remains, GSAP may be removed entirely.
+
+## Valid GSAP Use
+
+- Parallax
+- Scroll-linked scrub
+- Complex timeline sequences
+- Split text animation
+- Coordinated multi-section storytelling
+- Brand-level site motion language
+
+## Invalid GSAP Use (use CSS/Alpine instead)
+
+- Simple fade
+- Simple rise
+- Simple image zoom
+- Ordinary card entrance
+- Ordinary section content reveal
+- Ordinary media reveal
 
 ## Liquid
 
@@ -37,7 +55,7 @@ If a shared `window.__Theme__.Motion.gsap.*` recipe already exists for the motio
 
 ### Local One-Off Choreography
 
-Use this version when the animation is specific to one section, or before a shared Motion GSAP recipe exists.
+Use this version when the animation is specific to one section and classified as narrative choreography.
 
 ```liquid
 {%- javascript -%}
@@ -122,7 +140,7 @@ Use this shape once a shared choreography recipe exists under `window.__Theme__.
 
 ## Rules
 
-- Classify GSAP work as a `Choreography recipe` or `Usage` under `AGENTS.md` `Motion Architecture` before editing.
+- Classify GSAP work as narrative choreography under `AGENTS.md` `Motion Architecture` before editing. If the motion is ordinary content/media reveal, use CSS/Alpine instead.
 - Use local GSAP for one-off section choreography.
 - Use `window.__Theme__.Motion.gsap.*` when a matching shared choreography recipe already exists.
 - Do not create a shared GSAP recipe for a single use unless it clearly belongs to the global motion language.

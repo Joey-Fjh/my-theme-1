@@ -2,7 +2,16 @@
 
 Use this shape for reusable Alpine/CSS state motion after classifying the work through `AGENTS.md` `Motion Architecture`.
 
-State motion recipes cover open/close, show/hide, active/inactive, expanded/collapsed, loading/idle, and visible/hidden UI states. They do not cover scroll-triggered reveal, stagger choreography, parallax, or timeline motion; those belong to GSAP choreography recipes.
+State motion recipes cover open/close, show/hide, active/inactive, expanded/collapsed, loading/idle, and visible/hidden UI states. They are the preferred path for dropdown, drawer, modal, toast, tab-content, fade, and similar state transitions.
+
+This pattern does **not** cover:
+- Scroll-triggered reveal, stagger choreography, parallax, or timeline motion — those are optional GSAP narrative choreography.
+- Ordinary section content/media reveal — that should use a future CSS/Alpine reveal primitive, not GSAP by default.
+
+Important clarification:
+
+- Ordinary section content/media reveal should use `data-motion-reveal` hooks, an Alpine reveal component with a shared `IntersectionObserver`, and CSS rules in `tailwind/tailwind.animates.css`.
+- `motion-transition` is a legacy/state-motion helper for Alpine `x-transition` phase attributes. Do not expand it into the ordinary reveal system. It may be simplified or removed if state motion moves to direct data-state CSS rules.
 
 ## Liquid Usage
 
@@ -114,5 +123,6 @@ State motion recipes cover open/close, show/hide, active/inactive, expanded/coll
 - Add or change phase classes in `tailwind/tailwind.animates.css`, not inside component-specific CSS.
 - Do not create component-specific motion tokens unless the value is reused across recipes or intentionally exposed through global motion settings.
 - Alpine owns state; CSS owns state transition phase classes.
-- Do not use this pattern for scroll-triggered reveal, stagger, parallax, timeline, or brand choreography. Use GSAP choreography recipes instead.
+- Do not use this pattern for scroll-triggered reveal, stagger, parallax, timeline, or brand choreography. Those are optional GSAP narrative choreography.
+- Do not use this pattern for ordinary section content/media reveal. Use the `data-motion-reveal` + shared-observer Alpine component pattern instead.
 - Do not apply a state motion recipe and GSAP to the same element for the same properties such as `opacity` or `transform`.

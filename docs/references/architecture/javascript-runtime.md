@@ -12,7 +12,7 @@ All theme runtime objects live under `window.__Theme__`:
 | `__Theme__.Components`              | `base.js`              | Section/block lifecycle engine  |
 | `__Theme__.ThemePerformance`        | `performance.js`       | Debug-only CWV monitoring       |
 | `__Theme__.AlpineComponentsFactory` | `alpine.components.js` | Alpine component registry       |
-| `__Theme__.Motion`                  | `motion.js`            | GSAP choreography recipes       |
+| `__Theme__.Motion`                  | `motion.js`            | Optional GSAP narrative choreography recipes |
 
 Additional globals:
 
@@ -204,6 +204,23 @@ AlpineComponentsFactory.register('myComponent', function () {
 
 `AlpineComponentsFactory.useDisposable()` provides listener and observer cleanup helpers for side-effectful components.
 
+### Ordinary Motion Reveal Pattern
+
+Ordinary content/media reveal should be implemented as an Alpine behavior plus CSS rules, not as GSAP and not as `x-intersect` scattered across every target.
+
+Preferred shape:
+
+- Register a reusable Alpine behavior such as `motionRevealSection` in an appropriate `alpine.components.*.js` group.
+- Each `x-data="motionRevealSection()"` instance is independent, but the implementation should use a module-level shared `IntersectionObserver` singleton.
+- Use a registry such as a `WeakMap` to map observed section roots to their Alpine instances.
+- Observe section roots such as `[data-motion-section]`; do not create one observer per reveal target.
+- Mark reveal targets with `data-motion-reveal="content"` or `data-motion-reveal="media"`.
+- The Alpine component only changes state, such as `data-motion-state="pending"` and `data-motion-state="revealed"`, and may set lightweight variables such as `--motion-index`.
+- `tailwind/tailwind.animates.css` owns body setting selectors, target styles, keyframes, duration/ease variables, reduced-motion, and motion-disabled behavior.
+- Do not reuse `base.js`'s component lazy-init `IntersectionObserver` for visual reveal; component lifecycle and visual reveal are separate concerns.
+
+`x-intersect` is available through the Alpine Intersect plugin and may be used for isolated simple cases. It is not the preferred architecture for broad ordinary reveal coverage because motion policy, cleanup, and performance are easier to control through one shared observer behind the Alpine behavior.
+
 ## Alpine Store Pattern
 
 Global stores are defined in `alpine.store.js` and grouped files (`alpine.store.*.js`). `alpine.store.registry.js` merges and registers all stores into Alpine. Stores are initialized in `base.js`.
@@ -251,7 +268,7 @@ Always call `.dispose()` in component `destroy()` to prevent memory leaks.
 | `vendor-*.min.js`               | Third-party | DO NOT EDIT                                                                                                                          |
 | `utils.js`                      | Custom      | Utility functions                                                                                                                    |
 | `events.js`                     | Custom      | ThemeEvents event bus                                                                                                                |
-| `motion.js`                     | Custom      | GSAP choreography recipes                                                                                                            |
+| `motion.js`                     | Custom      | Optional GSAP narrative choreography recipes; not required for ordinary animation                                                   |
 | `alpine.components.js`          | Custom      | Base Alpine component factory                                                                                                        |
 | `alpine.components.*.js`        | Custom      | Grouped Alpine component definition files                                                                                            |
 | `alpine.components.registry.js` | Custom      | Merges component groups into `window.__Theme__.AlpineComponents`                                                                     |
@@ -264,7 +281,9 @@ Always call `.dispose()` in component `destroy()` to prevent memory leaks.
 
 ## GSAP Pattern
 
-Always guard, use `gsap.context()`, and scope to `el`:
+GSAP is optional narrative infrastructure for complex choreography only. Ordinary Alpine/CSS animation should not depend on `motion.js`. For simple animation and ordinary reveal, use CSS/Alpine first.
+
+When GSAP is needed, always guard, use `gsap.context()`, and scope to `el`:
 
 ```javascript
 init(el) {
