@@ -10,16 +10,6 @@
     if (!AlpineComponentsFactory) return;
 
     ComponentGroups.ui = {
-        footerSection() {
-            return {
-                visible: false,
-
-                scrollToTop() {
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                },
-            };
-        },
-
         dropdown() {
             const ThemeEvents = window.__Theme__.Events;
             const headerMenuActiveEvent = ThemeEvents?.events?.HEADER_MENU_ACTIVE_CHANGED;
@@ -663,5 +653,124 @@
                 },
             };
         },
+
+        motionRevealSection() {
+            const registry = motionRevealSharedRegistry;
+
+            return {
+                ...AlpineComponentsFactory.useDisposable(),
+                _revealed: false,
+
+                _shouldSkipAnimation() {
+                    if (document.body.dataset.motionEnabled === 'false') return true;
+                    if (
+                        typeof window.matchMedia === 'function' &&
+                        window.matchMedia('(prefers-reduced-motion: reduce)').matches
+                    )
+                        return true;
+                    if (!('IntersectionObserver' in window)) return true;
+                    if (window.Shopify?.designMode) return true;
+                    return false;
+                },
+
+                /**
+                 * True when the section root is already inside or near the
+                 * first viewport. Revealing immediately avoids the brief
+                 * "pending → IO callback" hiding gap that would hide
+                 * critical above-the-fold content.
+                 */
+                _isInFirstViewport() {
+                    const rect = this.$el.getBoundingClientRect();
+                    return rect.top < window.innerHeight * 0.85;
+                },
+
+                /**
+                 * Scan [data-motion-reveal] targets inside this section root
+                 * and set --motion-index CSS variable for stagger.
+                 *
+                 * Explicit data-motion-index attribute takes priority.
+                 * Otherwise uses DOM order index.
+                 */
+                _prepareTargets() {
+                    const targets = this.$el.querySelectorAll('[data-motion-reveal]');
+
+                    targets.forEach((target, domIndex) => {
+                        const explicit = Number(target.dataset.motionIndex);
+                        const index =
+                            Number.isFinite(explicit) && explicit >= 0 ? explicit : domIndex;
+                        target.style.setProperty('--motion-index', index);
+                    });
+                },
+
+                init() {
+                    this._prepareTargets();
+
+                    if (this._shouldSkipAnimation() || this._isInFirstViewport()) {
+                        this.$el.setAttribute('data-motion-state', 'revealed');
+                        this._revealed = true;
+                        return;
+                    }
+
+                    this.$el.setAttribute('data-motion-state', 'pending');
+                    registry.observe(this.$el, this._onIntersect.bind(this));
+                },
+
+                _onIntersect(entry) {
+                    if (this._revealed) return;
+                    if (!entry.isIntersecting) return;
+
+                    this._revealed = true;
+                    this.$el.setAttribute('data-motion-state', 'revealed');
+                    registry.unobserve(this.$el);
+                },
+
+                destroy() {
+                    registry.unobserve(this.$el);
+                    this.dispose();
+                },
+            };
+        },
     };
+
+    /**
+     * Module-level shared IntersectionObserver for motion reveal.
+     * All motionRevealSection instances share one observer.
+     */
+    const motionRevealSharedRegistry = (() => {
+        const callbacks = new WeakMap();
+        let observer = null;
+
+        function getObserver() {
+            if (observer) return observer;
+            if (!('IntersectionObserver' in window)) return null;
+
+            observer = new IntersectionObserver(
+                (entries) => {
+                    entries.forEach((entry) => {
+                        const cb = callbacks.get(entry.target);
+                        if (cb) cb(entry);
+                    });
+                },
+                { threshold: 0.15 },
+            );
+            return observer;
+        }
+
+        return {
+            observe(el, cb) {
+                const obs = getObserver();
+                if (!obs) {
+                    cb({ isIntersecting: true });
+                    return;
+                }
+                callbacks.set(el, cb);
+                obs.observe(el);
+            },
+
+            unobserve(el) {
+                if (observer) observer.unobserve(el);
+                callbacks.delete(el);
+            },
+        };
+    })();
 })();

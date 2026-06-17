@@ -8,6 +8,8 @@
     data-component-kind="section"
     data-component-type="main-page-contact"
     data-component-id="{{ section.id }}"
+    x-data="motionRevealSection()"
+    data-motion-section
 >
     <div class="layout container-page">
         {%- comment -%} Main Content: Image + Form {%- endcomment -%}
@@ -15,8 +17,7 @@
             <div class="grid grid-cols-1 gap-0 overflow-hidden pc:grid-cols-2">
                 {%- comment -%} Left: Image {%- endcomment -%}
                 <div
-                    class="relative hidden aspect-528/582 -translate-x-7.5 overflow-hidden opacity-0 pc:block pc:aspect-auto"
-                    data-gsap-image
+                    class="relative hidden aspect-528/582 overflow-hidden pc:block pc:aspect-auto"
                 >
                     {% capture sizes %}
                         (max-width: 768px) 100vw, 50vw    
@@ -71,9 +72,9 @@
                 {%- assign form_bg = section.settings.form_background_color | default: '#ffffff' -%}
                 {%- assign form_text = section.settings.form_text_color | default: '#1a1a1a' -%}
                 <div
-                    class="flex translate-x-7.5 flex-col justify-center bg-(--contact-form-bg) px-6 py-8 text-(--contact-form-text) opacity-0 pc:px-10 pc:py-10 fw:px-12"
+                    class="flex flex-col justify-center bg-(--contact-form-bg) px-6 py-8 text-(--contact-form-text) pc:px-10 pc:py-10 fw:px-12"
                     style="--contact-form-bg: {{ form_bg }}; --contact-form-text: {{ form_text }};"
-                    data-gsap-form
+                    data-motion-reveal="content"
                 >
                     {%- assign heading_fallback = 'sections.main-page-contact.defaults.heading'
                         | t
@@ -207,69 +208,11 @@
         {% render 'watermark',
             container_class: 'absolute left-0 bottom-0 right-0 z-0 overflow-hidden pointer-events-none select-none',
             text_class: 'tracking-wide text-theme-text opacity-20',
-            html_attr: 'data-gsap-watermark',
+            html_attr: 'data-motion-reveal="media"',
             text: section.settings.watermark_text
         %}
     </div>
 </div>
-
-{%- javascript -%}
-    (function () {
-        const Components = window.__Theme__?.Components;
-        if (!Components || typeof gsap === 'undefined') return;
-
-        Components.register(
-            'main-page-contact',
-            {
-                init(el) {
-                    const ctx = gsap.context(() => {
-                        const tl = gsap.timeline({
-                            defaults: { ease: 'power2.out' },
-                        });
-
-                        tl.to(el.querySelector('[data-gsap-image]'), {
-                            opacity: 1,
-                            x: 0,
-                            duration: 0.7,
-                        })
-                            .to(
-                                el.querySelector('[data-gsap-form]'),
-                                {
-                                    opacity: 1,
-                                    x: 0,
-                                    duration: 0.7,
-                                },
-                                '-=0.4',
-                            )
-                            .fromTo(
-                                el.querySelector('[data-gsap-watermark]'),
-                                {
-                                    opacity: 0,
-                                    x: 60,
-                                },
-                                {
-                                    opacity: 1,
-                                    x: 0,
-                                    duration: 1,
-                                    ease: 'power3.out',
-                                },
-                                '-=0.3',
-                            );
-                    }, el);
-
-                    return { ctx };
-                },
-
-                destroy(el, state) {
-                    if (state?.ctx) {
-                        state.ctx.revert();
-                    }
-                },
-            },
-            { lazy: true },
-        );
-    })();
-{%- endjavascript -%}
 
 {% stylesheet %}
     .main-page-contact-section .rte :is(h1, h2, h3, h4, h5, h6) {

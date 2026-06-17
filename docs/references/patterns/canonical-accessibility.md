@@ -43,7 +43,6 @@ Rules:
         aria-labelledby="faq-trigger-{{ block.id }}"
         x-show="open"
         x-cloak
-        {% render 'motion-transition', preset: 'fade' %}
     >
         {{ block.settings.content }}
     </div>

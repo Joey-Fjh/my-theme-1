@@ -8,24 +8,26 @@
     data-component-kind="section"
     data-component-type="philosophy-section"
     data-component-id="{{ section.id }}"
+    x-data="motionRevealSection()"
+    data-motion-section
 >
     <div class="layout container-page">
         {%- comment -%} Header {%- endcomment -%}
         <div class="mx-auto mb-12 text-center pc:mb-20">
             <h3
-                data-gsap-item
+                data-motion-reveal="content"
                 class="sub-heading"
             >
                 {{ section.settings.subtitle }}
             </h3>
             <h1
-                data-gsap-item
+                data-motion-reveal="content"
                 class="mt-3"
             >
                 {{ section.settings.heading }}
             </h1>
             <div
-                data-gsap-item
+                data-motion-reveal="content"
                 class="rte rte--compact mx-auto mt-4 max-w-prose"
             >
                 {{ section.settings.description }}
@@ -37,10 +39,7 @@
             {%- for block in section.blocks -%}
                 {%- case block.type -%}
                     {%- when 'card' -%}
-                        <div
-                            data-gsap-card
-                            {{ block.shopify_attributes }}
-                        >
+                        <div {{ block.shopify_attributes }}>
                             {%- liquid
                                 assign card_link = block.settings.link
                             -%}
@@ -53,8 +52,7 @@
                                         wrapper: 'div',
                                         image: block.settings.image,
                                         alt: image_alt,
-                                        width: block.settings.image.width,
-                                        img_class: 'image_img transition-transform duration-300 ease-out will-change-transform pc:group-hover:scale-105'
+                                        width: block.settings.image.width
                                     -%}
                                 </div>
                             {%- endcapture -%}
@@ -71,97 +69,36 @@
                                 {{ philosophy_card_media }}
                             {%- endif -%}
 
-                            <h3 class="mt-5">
-                                {{ block.settings.title }}
-                            </h3>
+                            <div data-motion-reveal="content">
+                                <h3 class="mt-5">
+                                    {{ block.settings.title }}
+                                </h3>
 
-                            <div class="rte rte--compact mt-2">
-                                {{ block.settings.text }}
-                            </div>
-
-                            {%- if card_link != blank and block.settings.link_text != blank -%}
-                                <div class="mt-4">
-                                    {%- capture card_cta_content -%}
-                                        <span>{{ block.settings.link_text }}</span>
-                                        {% render 'icons', icon: 'icon-arrow2', class: 'ml-3' %}
-                                    {%- endcapture -%}
-
-                                    {%- render 'link',
-                                        href: card_link,
-                                        content: card_cta_content,
-                                        variant: 'underline'
-                                    -%}
+                                <div class="rte rte--compact mt-2">
+                                    {{ block.settings.text }}
                                 </div>
-                            {%- endif -%}
+
+                                {%- if card_link != blank and block.settings.link_text != blank -%}
+                                    <div class="mt-4">
+                                        {%- capture card_cta_content -%}
+                                            <span>{{ block.settings.link_text }}</span>
+                                            {% render 'icons', icon: 'icon-arrow2', class: 'ml-3' %}
+                                        {%- endcapture -%}
+
+                                        {%- render 'link',
+                                            href: card_link,
+                                            content: card_cta_content,
+                                            variant: 'underline'
+                                        -%}
+                                    </div>
+                                {%- endif -%}
+                            </div>
                         </div>
                 {%- endcase -%}
             {%- endfor -%}
         </div>
     </div>
 </div>
-
-{%- javascript -%}
-    (function () {
-        const Components = window.__Theme__?.Components;
-        if (!Components || typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined')
-            return;
-
-        gsap.registerPlugin(ScrollTrigger);
-
-        Components.register(
-            'philosophy-section',
-            {
-                init(el) {
-                    const ctx = gsap.context(() => {
-                        const items = el.querySelectorAll('[data-gsap-item]');
-                        const cards = el.querySelectorAll('[data-gsap-card]');
-
-                        if (!items.length) return;
-
-                        gsap.set(items, { y: 30, opacity: 0 });
-                        gsap.set(cards, { y: 40, opacity: 0 });
-
-                        const tl = gsap.timeline({
-                            defaults: { ease: 'power2.out' },
-                            scrollTrigger: {
-                                trigger: el,
-                                start: 'top 80%',
-                                once: true,
-                            },
-                        });
-
-                        tl.to(items, {
-                            y: 0,
-                            opacity: 1,
-                            duration: 0.8,
-                            stagger: 0.2,
-                        });
-
-                        tl.to(
-                            cards,
-                            {
-                                y: 0,
-                                opacity: 1,
-                                duration: 0.9,
-                                stagger: 0.15,
-                            },
-                            '-=0.4',
-                        );
-                    }, el);
-
-                    return { ctx };
-                },
-
-                destroy(el, state) {
-                    if (state?.ctx) {
-                        state.ctx.revert();
-                    }
-                },
-            },
-            { lazy: true },
-        );
-    })();
-{%- endjavascript -%}
 
 {% schema %}
 {

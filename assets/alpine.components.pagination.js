@@ -118,9 +118,6 @@
                             if (updateHistory) {
                                 window.history.pushState({ path: url }, '', url);
                             }
-                            if (typeof window.ScrollTrigger !== 'undefined') {
-                                requestAnimationFrame(() => window.ScrollTrigger.refresh());
-                            }
                         })
                         .catch((err) => {
                             if (err?.isAbort || err?.name === 'AbortError') return;

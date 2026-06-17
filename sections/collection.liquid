@@ -16,7 +16,7 @@
         {%- comment -%} Hero {%- endcomment -%}
         <div class="relative py-20 pc:py-40">
             <div class="flex items-start justify-between">
-                <div data-gsap-hero>
+                <div>
                     <h1 class="mb-10 heading-4xl">
                         {{ section.settings.header | default: 'Products' }}
                     </h1>
@@ -31,7 +31,7 @@
                     </div>
                 </div>
 
-                <div data-gsap-badge>
+                <div>
                     {%- render 'rotating-badge',
                         classes: 'relative justify-self-center',
                         badge_class: 'text-theme-text',
@@ -290,6 +290,8 @@
                                     data-component-kind="section"
                                     data-component-type="product-grid"
                                     data-component-id="{{ section.id }}-grid"
+                                    x-data="motionRevealSection()"
+                                    data-motion-section
                                 >
                                     {%- for product in collection.products -%}
                                         {%- if forloop.index <= first_row_count -%}
@@ -310,7 +312,7 @@
                                                 -%}
                                             </div>
                                         {%- else -%}
-                                            <div class="group translate-y-7.5 opacity-0" data-gsap-card>
+                                            <div class="group">
                                                 {%-
                                                     render 'product-card',
                                                         product: product,
@@ -388,53 +390,6 @@
         </div>
     {%- endif -%}
 </div>
-
-{% javascript %}
-    (function () {
-        const Components = window.__Theme__?.Components;
-        const Motion = window.__Theme__?.Motion;
-        if (!Components) return;
-
-        Components.register(
-            'collection',
-            {
-                init(el) {
-                    return {};
-                },
-
-                destroy(el, state) {
-                    if (state?.ctx) {
-                        state.ctx.revert();
-                    }
-                },
-            },
-            { lazy: true },
-        );
-
-        Components.register(
-            'product-grid',
-            {
-                init(el) {
-                    if (!Motion) return;
-
-                    const { ctx } = Motion.scrollReveal(el, {
-                        selector: '[data-gsap-card]',
-                        duration: 0.5,
-                        stagger: { amount: 0.6, from: 'start' },
-                        scrollTriggerStart: 'top 85%',
-                    });
-
-                    return { ctx };
-                },
-
-                destroy(el, state) {
-                    if (state?.ctx) state.ctx.revert();
-                },
-            },
-            { lazy: true },
-        );
-    })();
-{% endjavascript %}
 
 {% stylesheet %}
     .price-range-thumb {

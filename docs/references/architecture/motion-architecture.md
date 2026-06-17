@@ -21,8 +21,8 @@ Ordinary animation is **CSS/Alpine-first**:
 
 | Layer | Owns | Does not own | Examples |
 | --- | --- | --- | --- |
-| CSS capability (`tailwind.animates.css`) | Tokens, keyframes, transition/animation classes, motion phase classes, reduced-motion and motion-disabled kill rules | Section business structure, trigger logic, state management | `motion-fade-*`, `animate-spin-slow`, hover/focus micro-motion, icon animations, spinners, pulses |
-| Alpine components | UI state, trigger behavior, open/close/show/hide/active/loading transitions, ordinary reveal state changes | Animation keyframes, animation values | `x-show`, `x-transition`, shared `IntersectionObserver`, `data-motion-state` |
+| CSS capability (`tailwind.animates.css`) | Tokens, keyframes, animation classes, reveal behavior, reduced-motion and motion-disabled kill rules | Section business structure, trigger logic, state management | `[data-motion-reveal]` rules, `animate-spin-slow`, icon animations, spinners, pulses |
+| Alpine components | UI state, trigger behavior, open/close/show/hide/active/loading visibility, ordinary reveal state changes | Animation keyframes, animation values | `x-show`, shared `IntersectionObserver`, `data-motion-state` |
 | GSAP / ScrollTrigger | Complex narrative choreography: timeline, parallax, scrub, split text, coordinated storytelling | Ordinary content/media reveal, simple fade/rise/zoom, card entrance | Homepage hero timeline, scroll-linked parallax, brand-level site motion |
 
 ### Decision Rules
@@ -30,7 +30,7 @@ Ordinary animation is **CSS/Alpine-first**:
 | Motion need | Default path | Do not |
 | --- | --- | --- |
 | Hover/focus, loader, decorative loop, pause/running | CSS capability utility | GSAP |
-| Open/close, show/hide, active/inactive, loading visibility | Alpine state + CSS state classes | GSAP |
+| Open/close, show/hide, active/inactive, loading visibility | Alpine state + direct CSS/state classes when needed | GSAP, restored `motion-transition` |
 | Ordinary content/media reveal across sections | Alpine component with shared `IntersectionObserver` + CSS rules in `tailwind.animates.css` | GSAP |
 | Complex narrative choreography (parallax, scrub, timeline, split text, coordinated storytelling) | GSAP — only after explicit classification | — |
 
@@ -51,17 +51,15 @@ Allowed in `tailwind/tailwind.animates.css`:
 - motion CSS variables and foundation tokens
 - `@keyframes`
 - animation utility classes
-- transition/animation phase classes for state motion presets
-- hover/focus micro-motion utilities
+- current reveal rules and approved animation utilities
+- functional hover/focus feedback utilities when they are not part of the visual motion language
 - text/media reveal classes
 - icon animations, spinners, pulses
 - pause/running helpers
 - loader, spinner, and decorative loop utilities
 - reduced-motion and motion-disabled kill rules
 
-Capability utilities SHOULD use the `motion-*` naming namespace for new code.
-
-Existing non-`motion-*` utilities MAY remain as legacy aliases during migration, but new code SHOULD NOT introduce more non-`motion-*` animation utilities.
+Capability utilities SHOULD use semantic data hooks or a clear motion namespace for new code. Do not recreate the removed legacy `motion-*` state transition recipe layer.
 
 `tailwind.animates.css` also owns the global setting selectors that map body-level motion settings to CSS behavior, for example `body[data-content-reveal-style]`, `body[data-media-reveal-style]`, `body[data-motion-enabled]`, and `@media (prefers-reduced-motion: reduce)`.
 
@@ -107,255 +105,34 @@ Recommended CSS contract:
 
 `x-intersect` MAY be used for isolated simple cases, but it is not the preferred architecture for ordinary reveal coverage. The preferred architecture is one shared observer behind the Alpine component, rather than many scattered `x-intersect` directives.
 
-## State Motion Recipe Layer
+## Removed State Motion Recipe Layer
 
-State motion recipes describe reusable UI state transitions. They answer "how should this UI pattern move when state changes?"
+`snippets/motion-transition.liquid` and the old `motion-*` enter/leave recipe classes have been removed.
 
-Examples:
+Do not restore this layer, replace it with scattered `x-transition:*`, or use historical preset examples as a template for new motion work.
 
-- `fade`
-- `dropdown`
-- `modal`
-- `drawer-left`
-- `drawer-right`
-- `toast`
-- `accordion`
-- `loading`
+Stateful UI such as dropdowns, drawers, tabs, toast visibility, loading visibility, and dialogs should keep functional state logic simple. Add motion back only through an explicit global data-hook and `tailwind.animates.css` contract.
 
-State motion recipes are consumed by Alpine/CSS state changes such as:
-
-- open / close
-- active / inactive
-- expanded / collapsed
-- loading / idle
-- visible / hidden
-
-Repeated Alpine `x-transition:*` attribute groups MAY be replaced with a named motion helper while legacy markup is being cleaned up, but `motion-transition` is not the primary architecture for ordinary reveal.
-
-Preferred template usage:
-
-```liquid
-<div
-    x-show='open'
-    {% render 'motion-transition', preset: 'dropdown' %}
-></div>
-```
-
-`snippets/motion-transition.liquid` currently owns the mapping from preset name to Alpine `x-transition:*` attributes. It is a legacy/state-motion helper, not the preferred section reveal API. New ordinary reveal work should use the data-hook + Alpine component model above.
-
-The `motion-transition` snippet is for Alpine x-transition state motion only: dropdown, drawer, modal, toast, tab-content, fade, and similar open/close/show/hide patterns. It is not the full section content/media reveal architecture and may be simplified or removed if state motion is moved to direct data-state CSS rules.
-
-Ordinary section content/media reveal should use the documented CSS/Alpine reveal pattern, not GSAP by default.
+Ordinary section content/media reveal must use the documented CSS/Alpine reveal pattern.
 
 ## Optional GSAP Narrative Layer
 
-GSAP is reserved for complex homepage/storytelling choreography only. It is not the default implementation for content fade/rise, media fade/zoom, card reveal, or ordinary section entrance.
+The current theme has no active GSAP runtime or project consumers. Do not reintroduce GSAP during ordinary Motion cleanup.
 
-### When GSAP is valid
+GSAP remains an explicitly approved future option only for complex narrative choreography such as parallax, scrubbed timelines, split text, or coordinated storytelling. It is invalid for simple fade, rise, zoom, card entrance, content reveal, or media reveal.
 
-- Parallax
-- Scroll-linked scrub
-- Complex timeline sequences
-- Split text animation
-- Coordinated multi-section storytelling
-- Brand-level site motion language
-
-### When GSAP is invalid (use CSS/Alpine instead)
-
-- Simple fade
-- Simple rise
-- Simple image zoom
-- Ordinary card entrance
-- Ordinary section content reveal
-- Ordinary media reveal
-
-### GSAP Lifecycle Rules
-
-GSAP recipes MUST be initialized through `Components.register()` and cleaned up in `destroy()`. The component lifecycle owns when GSAP starts and stops; the motion recipe owns animation values.
-
-Reusable GSAP motion SHOULD live under `window.__Theme__.Motion` once the motion runtime exists. Until then, local GSAP in a section is allowed when the animation is one-off and classified as narrative choreography.
-
-### ScrollTrigger Project Rules
-
-**Allowed Configuration:**
-
-| Option | Project Rule | Example |
-|--------|--------------|---------|
-| `trigger` | MUST use component root or `el` | `trigger: el` or `trigger: el.querySelector('[data-gsap-trigger]')` |
-| `start` | SHOULD use `'top 80%'` for reveal | `start: 'top 80%'` |
-| `scrub` | Use `1` for smooth lag, `true` for direct | `scrub: 1` |
-| `toggleActions` | Use `'play none none reverse'` for reversible | `'play none none reverse'` |
-| `once` | Use `true` for one-time reveal | `once: true` |
-| `markers` | MUST remove before production | `markers: false` |
-
-**Important:** Use `scrub` OR `toggleActions`, never both on the same trigger.
-
-**Allowed Patterns (one-time narrative reveal):**
-
-```javascript
-Components.register(
-    'section-reveal',
-    {
-        init(el) {
-            if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') {
-                return {};
-            }
-
-            gsap.registerPlugin(ScrollTrigger);
-
-            const ctx = gsap.context(() => {
-                const items = el.querySelectorAll('[data-gsap-item]');
-                if (!items.length) return;
-
-                gsap.set(items, { opacity: 0, y: 24 });
-                gsap.to(items, {
-                    opacity: 1,
-                    y: 0,
-                    duration: 0.5,
-                    stagger: 0.12,
-                    ease: 'power2.out',
-                    scrollTrigger: {
-                        trigger: el,
-                        start: 'top 80%',
-                        once: true,
-                    },
-                });
-            }, el);
-
-            return { ctx };
-        },
-
-        destroy(_el, state) {
-            state?.ctx?.revert();
-        },
-    },
-    { lazy: true },
-);
-```
-
-**Allowed Patterns (scrub scroll-linked):**
-
-```javascript
-Components.register(
-    'parallax-section',
-    {
-        init(el) {
-            if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') {
-                return {};
-            }
-
-            gsap.registerPlugin(ScrollTrigger);
-
-            const content = el.querySelector('[data-gsap-content]');
-            if (!content) return {};
-
-            const ctx = gsap.context(() => {
-                gsap.from(content, {
-                    y: 100,
-                    scrollTrigger: {
-                        trigger: el,
-                        start: 'top bottom',
-                        end: 'bottom top',
-                        scrub: 1,
-                    },
-                });
-            }, el);
-
-            return { ctx };
-        },
-
-        destroy(_el, state) {
-            state?.ctx?.revert();
-        },
-    },
-    { lazy: true },
-);
-```
-
-**Prohibited:**
-
-- PROHIBITED: Global selectors `.section`, `.hero`, `.card`, `.title`
-- PROHIBITED: `trigger: '.section'` -- MUST use component root or scoped selector
-- PROHIBITED: Both `scrub` and `toggleActions` on same trigger
-- PROHIBITED: `markers: true` in production
-
-### ScrollTrigger Refresh and Cleanup
-
-**When to Refresh:**
-
-```javascript
-// After dynamic content changes (images, fonts, dynamic sections)
-ScrollTrigger.refresh();
-
-// Debounced refresh (avoid excessive calls)
-let refreshTimeout;
-function debouncedRefresh() {
-    clearTimeout(refreshTimeout);
-    refreshTimeout = setTimeout(() => {
-        ScrollTrigger.refresh();
-    }, 200);
-}
-```
-
-**Cleanup Pattern (gsap.context):**
-
-```javascript
-Components.register(
-    'animated-section',
-    {
-        init(el) {
-            if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') {
-                return {};
-            }
-
-            gsap.registerPlugin(ScrollTrigger);
-
-            const ctx = gsap.context(() => {
-                const items = el.querySelectorAll('[data-gsap-item]');
-                if (!items.length) return;
-
-                gsap.set(items, { opacity: 0, y: 24 });
-                gsap.to(items, {
-                    opacity: 1,
-                    y: 0,
-                    duration: 0.5,
-                    stagger: 0.12,
-                    ease: 'power2.out',
-                    scrollTrigger: {
-                        trigger: el,
-                        start: 'top 80%',
-                        once: true,
-                    },
-                });
-            }, el);
-
-            return { ctx };
-        },
-
-        destroy(_el, state) {
-            state?.ctx?.revert();
-        },
-    },
-    { lazy: true },
-);
-```
-
-**Prohibited:**
-
-- PROHIBITED: `ScrollTrigger.getAll().forEach(t => t.kill())` -- kills other sections' triggers
-- PROHIBITED: Global cleanup that affects sibling components
-- PROHIBITED: Missing cleanup in `destroy()`
+If GSAP is ever approved again, the implementation must follow `AGENTS.md`: use `Components.register()`, scope triggers to the component root, clean up in `destroy()`, respect reduced motion, and keep no-JS critical content visible.
 
 ## Execution Layer Boundaries
 
 Use this decision tree:
 
 1. Hover/focus, loader, decorative loop, pause/running state -> CSS capability utility in `tailwind/tailwind.animates.css`.
-2. Open/close, show/hide, active/inactive, loading visibility -> Alpine state + CSS state classes. Existing `motion-transition` usage is legacy/helper code, not the long-term ordinary reveal model.
+2. Open/close, show/hide, active/inactive, loading visibility -> Alpine state + direct CSS/state classes only when needed. Do not restore `motion-transition`.
 3. Ordinary section content/media reveal -> `data-motion-reveal` hooks + Alpine component with shared `IntersectionObserver` + CSS rules in `tailwind.animates.css`. NOT GSAP.
 4. Complex narrative choreography (parallax, scrub, timeline, split text, coordinated storytelling) -> GSAP, only after classification confirms narrative value.
-5. One-off complex section animation -> local GSAP inside that section's `{%- javascript -%}` block, still using `Components.register()` and cleanup.
-6. Repeated section animation or global motion language -> shared GSAP recipe under `window.__Theme__.Motion`.
+5. One-off complex section animation -> only after explicit approval, with a dedicated runtime contract documented in the same change.
+6. Repeated section animation or global motion language -> prefer the current data-hook CSS/Alpine chain; do not resurrect the removed `Motion.*` runtime by default.
 
 ## Page-Type Motion Policy
 
@@ -399,10 +176,10 @@ Motion cleanup MUST be staged:
 
 1. Audit current motion usage before refactoring.
 2. Group findings as CSS capabilities, Alpine/state recipes, GSAP/choreography, and mixed-ownership risks.
-3. Clean up existing `motion-transition` and `motion-*` classes by classifying them as state motion, ordinary reveal capability, element utility, or dead code.
+3. Keep `motion-transition` removed; do not introduce replacement preset snippets or scattered `x-transition:*`.
 4. Build ordinary content/media reveal around data hooks, a shared-observer Alpine component, and CSS rules in `tailwind.animates.css`.
-5. Rename CSS animation utilities toward `motion-*` with legacy aliases when needed.
-6. Introduce shared GSAP recipes only after explicit narrative classification.
+5. Remove scattered visual motion that bypasses the global data-hook chain, or connect it through semantic component/section hooks.
+6. Introduce shared GSAP recipes only after explicit narrative classification and explicit approval.
 7. Add merchant-facing global motion settings only after the relevant CSS/Alpine consumers and tokens exist.
 
 During cleanup, preserve visual behavior unless the task explicitly asks to redesign motion.
@@ -413,10 +190,10 @@ This table lists repeated patterns to check before adding another copy. It is a 
 
 | Repeated pattern to check before adding another copy                        | Destination                                | Namespace                    |
 | --------------------------------------------------------------------------- | ------------------------------------------ | ---------------------------- |
-| Alpine `x-transition:*` attribute group already defined elsewhere           | Existing state-motion helper or direct data-state CSS | State motion |
+| Repeated visual state motion                                                | Explicit data-state/data-motion contract in `tailwind/tailwind.animates.css`; do not restore `motion-transition` | State motion |
 | Ordinary content/media reveal hook already exists                           | Shared Alpine reveal component + `tailwind.animates.css` | `data-motion-reveal` |
 | CSS `@keyframes`, `animation-*`, or phase class already defined elsewhere   | `tailwind/tailwind.animates.css`           | `motion-*` utility namespace |
-| GSAP narrative timeline/parallax/scrub already defined elsewhere            | Optional GSAP narrative recipe             | `Motion.*` method            |
+| Approved narrative timeline/parallax/scrub need                             | Dedicated future runtime contract; not the removed `Motion.*` path | Explicit narrative runtime |
 
 One-off section choreography MAY remain local in that section's `{%- javascript -%}` block, but it MUST still be lifecycle-scoped through `Components.register()` with proper `destroy()` cleanup.
 
@@ -455,216 +232,10 @@ If any criterion fails, the motion pattern needs better encapsulation even if it
 - Duplication or encapsulation issues escalate from warning to now/blocker when they affect visibility, accessibility, Lighthouse scores, runtime stability, mobile layout, or production behavior.
 - Do not require immediate refactoring of all historical motion code in one pass.
 
-## Performance Rules
+## Performance And Reduced Motion Rules
 
-### Transform-First Rule
-
-**Allowed (compositor-friendly):**
-
-```javascript
-// Transform aliases
-gsap.to(el, { x: 100, y: 50, scale: 1.2, rotation: 45 });
-
-// autoAlpha (opacity + visibility)
-gsap.to(el, { autoAlpha: 0 }); // Sets visibility: hidden when opacity: 0
-```
-
-**autoAlpha boundary:** Do NOT use `autoAlpha` on critical first-viewport content that must be visible before JavaScript loads. Critical content MUST render visible without JS or animation completion. Use `autoAlpha` only for below-the-fold or non-critical elements.
-
-**Prohibited (triggers layout):**
-
-```javascript
-// Layout properties - causes jank
-gsap.to(el, { width: '200px', height: '100px', top: '50px', left: '100px' });
-gsap.to(el, { margin: '20px', padding: '10px' });
-```
-
-**Rule:** Use `x`, `y`, `scale`, `rotation`, `autoAlpha` for movement. Use `width`/`height` only when explicitly needed for layout changes.
-
-### Stagger Rule
-
-**Required:** Use `stagger` parameter, not manual `delay` calculations.
-
-```javascript
-// CORRECT: Use stagger
-gsap.from(items, { y: 50, opacity: 0, stagger: 0.1 });
-
-// PROHIBITED: Manual delays
-items.forEach((item, i) => {
-    gsap.from(item, { y: 50, opacity: 0, delay: i * 0.1 });
-});
-```
-
-### Cleanup Rule
-
-**Required:** All GSAP animations MUST be cleaned up in `destroy()` using `gsap.context(..., el)` + `ctx.revert()`. See canonical pattern above for complete example.
-
-**Prohibited:**
-
-- PROHIBITED: `ScrollTrigger.getAll().forEach(t => t.kill())` -- kills other sections
-- PROHIBITED: `gsap.killTweensOf('*')` -- kills everything
-- PROHIBITED: Missing cleanup in `destroy()`
-
-## Responsive and Reduced Motion Rules
-
-### Responsive Animation with gsap.matchMedia()
-
-**Required:** Use `gsap.matchMedia()` for responsive animations. All animations and ScrollTriggers created in that run are reverted automatically when media query stops matching.
-
-```javascript
-Components.register(
-    'responsive-section',
-    {
-        init(el) {
-            if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') {
-                return {};
-            }
-
-            gsap.registerPlugin(ScrollTrigger);
-
-            const mm = gsap.matchMedia();
-
-            mm.add('(min-width: 768px)', () => {
-                const items = el.querySelectorAll('[data-gsap-item]');
-                if (!items.length) return;
-
-                gsap.from(items, {
-                    y: 50,
-                    opacity: 0,
-                    stagger: 0.1,
-                    scrollTrigger: { trigger: el, start: 'top 80%', once: true },
-                });
-            });
-
-            mm.add('(max-width: 767px)', () => {
-                const mobileItems = el.querySelectorAll('[data-gsap-mobile]');
-                if (!mobileItems.length) return;
-
-                gsap.from(mobileItems, { y: 30, opacity: 0 });
-            });
-
-            return { mm };
-        },
-
-        destroy(_el, state) {
-            state?.mm?.revert();
-        },
-    },
-    { lazy: true },
-);
-```
-
-### Reduced Motion Rule
-
-**Required:** Respect `prefers-reduced-motion`. Use `gsap.matchMedia()` to disable animations. Set final visible state for reduced motion users.
-
-```javascript
-Components.register(
-    'animated-section',
-    {
-        init(el) {
-            if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') {
-                return {};
-            }
-
-            gsap.registerPlugin(ScrollTrigger);
-
-            const mm = gsap.matchMedia();
-
-            mm.add('(prefers-reduced-motion: reduce)', () => {
-                const items = el.querySelectorAll('[data-gsap-item]');
-                gsap.set(items, { opacity: 1, y: 0 });
-            });
-
-            mm.add('(prefers-reduced-motion: no-preference)', () => {
-                const items = el.querySelectorAll('[data-gsap-item]');
-                if (!items.length) return;
-
-                gsap.from(items, {
-                    y: 50,
-                    opacity: 0,
-                    stagger: 0.1,
-                    scrollTrigger: { trigger: el, start: 'top 80%', once: true },
-                });
-            });
-
-            return { mm };
-        },
-
-        destroy(_el, state) {
-            state?.mm?.revert();
-        },
-    },
-    { lazy: true },
-);
-```
-
-**Prohibited:**
-
-- PROHIBITED: `gsap.globalTimeline.timeScale(100)` -- global side effect
-- PROHIBITED: Skipping cleanup for reduced motion branch
-
-## Common Pitfalls
-
-### Pitfall 1: immediateRender with from()
-
-When stacking multiple `from()` tweens on same property/target:
-
-```javascript
-// BAD: Second tween's immediateRender conflicts
-gsap.from(el, { x: -100, duration: 1 });
-gsap.from(el, { x: 100, duration: 1, delay: 1 });
-
-// GOOD: Set immediateRender: false on later tweens
-gsap.from(el, { x: -100, duration: 1 });
-gsap.from(el, { x: 100, duration: 1, delay: 1, immediateRender: false });
-```
-
-### Pitfall 2: ScrollTrigger with Dynamic Content
-
-**Problem:** ScrollTrigger calculates positions before images/fonts load, causing incorrect pin/trigger positions.
-
-**Rule:** When section contains dynamic content (images, fonts, AJAX-loaded content), refresh ScrollTrigger after content loads. Use one of:
-
-1. **MutationObserver in component lifecycle** -- observe `el` for child/subtree changes, call `ScrollTrigger.refresh()` on mutation, disconnect in `destroy()`.
-2. **Image load events** -- listen for `load` on images inside `el`, call `ScrollTrigger.refresh()` after all images load.
-3. **Debounced refresh** -- if many dynamic changes, debounce `ScrollTrigger.refresh()` to avoid excessive calls.
-
-All approaches MUST clean up listeners/observers in `destroy()` to prevent leaks.
-
-**Prohibited:**
-
-- PROHIBITED: Creating ScrollTrigger before dynamic content loads without refresh plan
-- PROHIBITED: `window.addEventListener('load', ...)` without cleanup in component lifecycle
-
-### Pitfall 3: Timeline Position Mistakes
-
-```javascript
-// BAD: Overlapping tweens without position parameter
-const tl = gsap.timeline();
-tl.from(el.querySelector('[data-gsap-title]'), { y: 50, opacity: 0, duration: 0.5 });
-tl.from(el.querySelector('[data-gsap-subtitle]'), { y: 30, opacity: 0, duration: 0.5 });
-
-// GOOD: Use position parameter for precise control
-const tl = gsap.timeline();
-tl.from(el.querySelector('[data-gsap-title]'), { y: 50, opacity: 0, duration: 0.5 })
-    .from(el.querySelector('[data-gsap-subtitle]'), { y: 30, opacity: 0, duration: 0.5 }, '-=0.3')
-    .from(el.querySelector('[data-gsap-cta]'), { y: 20, opacity: 0, duration: 0.5 }, '+=0.2');
-```
-
-**Position Parameter Reference:**
-
-| Value | Meaning |
-|-------|---------|
-| `0.5` | Absolute time (0.5s from start) |
-| `'-=0.3'` | Relative to previous end (0.3s before) |
-| `'+=0.2'` | Relative to previous end (0.2s after) |
-| `'myLabel'` | Named label |
-
-## External GSAP Reference
-
-Core GSAP patterns used in this project are documented above. These patterns are informed by `greensock/gsap-skills` (reviewed at commit `aed9cfd`, 2026-04-21). The original skill files are not vendored into this repository.
-
-For advanced GSAP API behavior not covered here, consult the upstream `greensock/gsap-skills` repository. Any external recommendation must map back to this theme's lifecycle (`Components.register()`), motion runtime (`window.__Theme__.Motion`), cleanup (`ctx.revert()`), no-JS visibility, reduced-motion, and launch-readiness rules.
-
-See `docs/references/agent-workflow/external-skills.md` for adoption history.
+- Prefer opacity and transform for visual motion; avoid layout-changing animation properties.
+- Critical first-viewport content must render visible without JavaScript or animation completion.
+- Reduced motion and `body[data-motion-enabled='false']` must leave content visible and must not break UI state such as `x-show`.
+- Shared observers, timers, listeners, or animation runtimes must be cleaned up through the owning component lifecycle.
+- Do not add cookbook examples for inactive runtimes to this file. Add future runtime-specific guidance only when that runtime is approved and active again.

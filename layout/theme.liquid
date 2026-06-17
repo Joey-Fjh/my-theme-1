@@ -10,17 +10,12 @@
         {% # Load and preload the CSS %}
         {{ 'tailwind.output.css' | asset_url | stylesheet_tag: preload: true }}
 
-        {% comment %} --- 1. Third-party animation/UI libraries (No external dependencies) --- {% endcomment %}
-        <script src="{{ 'vendor-gsap.min.js' | asset_url }}" defer></script>
-        <script src="{{ 'vendor-gsap-scrolltrigger.min.js' | asset_url }}" defer></script>
+        {% comment %} --- 1. Third-party UI libraries --- {% endcomment %}
         <script src="{{ 'vendor-swiper.min.js' | asset_url }}" defer></script>
 
         {% comment %} --- 2. Core utility classes (No external dependencies) --- {% endcomment %}
         <script src="{{ 'utils.js' | asset_url }}" defer></script>
         <script src="{{ 'events.js' | asset_url }}" defer></script>
-
-        {% comment %} --- 2b. Motion runtime (Depends on GSAP + ScrollTrigger) --- {% endcomment %}
-        <script src="{{ 'motion.js' | asset_url }}" defer></script>
 
         {% comment %} --- 3. Alpine component definitions (Depends on Utils) --- {% endcomment %}
         <script src="{{ 'alpine.components.js' | asset_url }}" defer></script>
@@ -58,7 +53,19 @@
         {{ content_for_header }}
     </head>
 
-    <body data-initial-cart="{{ cart | json | escape }}" data-cart-type="{{ settings.cart_type }}">
+    <body
+        data-initial-cart="{{ cart | json | escape }}"
+        data-cart-type="{{ settings.cart_type }}"
+        {% if settings.motion_enabled == false %}
+            data-motion-enabled="false"
+        {% endif %}
+        {% if settings.content_reveal_style != blank and settings.content_reveal_style != 'none' %}
+            data-content-reveal-style="{{ settings.content_reveal_style }}"
+        {% endif %}
+        {% if settings.media_reveal_style != blank and settings.media_reveal_style != 'none' %}
+            data-media-reveal-style="{{ settings.media_reveal_style }}"
+        {% endif %}
+    >
         {% sections 'overlay-group' %}
 
         {% sections 'header-group' %}

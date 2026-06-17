@@ -8,11 +8,12 @@
     data-component-kind="section"
     data-component-type="brand-statement"
     data-component-id="{{ section.id }}"
+    x-data="motionRevealSection()"
+    data-motion-section
 >
     {% comment %} Decorative brushstroke {% endcomment %}
     <div
-        class="pointer-events-none absolute inset-x-0 bottom-0 z-0 flex translate-y-6 justify-center opacity-0 max-pc:h-full"
-        data-gsap-brush
+        class="pointer-events-none absolute inset-x-0 bottom-0 z-0 flex justify-center max-pc:h-full"
     >
         {%- if section.settings.brushstroke_image != blank -%}
             {%- assign brushstroke_alt_fallback = 'sections.brand-statement.defaults.image_alt'
@@ -36,79 +37,14 @@
         {% comment %} Statement Text {% endcomment %}
         <div class="mx-auto flex min-h-96 items-center justify-center py-8 pc:min-h-120 pc:py-0">
             <div
-                class="rte rte--compact translate-y-4 text-center body-lg text-balance opacity-0 pc:max-w-5/6 pc:body-xl"
-                data-gsap-text
+                class="rte rte--compact text-center body-lg text-balance pc:max-w-5/6 pc:body-xl"
+                data-motion-reveal="content"
             >
                 {{ section.settings.statement }}
             </div>
         </div>
     </div>
 </div>
-
-{%- javascript -%}
-    (function () {
-        const Components = window.__Theme__?.Components;
-        if (!Components) return;
-
-        Components.register(
-            'brand-statement',
-            {
-                init(el) {
-                    const brush = el.querySelector('[data-gsap-brush]');
-                    const text = el.querySelector('[data-gsap-text]');
-                    if (!brush || !text) return;
-
-                    if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') {
-                        brush.classList.remove('translate-y-6', 'opacity-0');
-                        text.classList.remove('translate-y-4', 'opacity-0');
-                        return;
-                    }
-
-                    gsap.registerPlugin(ScrollTrigger);
-
-                    const ctx = gsap.context(() => {
-                        const tl = gsap.timeline({
-                            scrollTrigger: {
-                                trigger: el,
-                                start: 'top 80%',
-                                once: true,
-                            },
-                            defaults: { ease: 'power2.out' },
-                        });
-
-                        gsap.set(brush, { y: 24, opacity: 0 });
-                        gsap.set(text, { y: 16, opacity: 0 });
-
-                        tl.to(brush, {
-                            opacity: 1,
-                            y: 0,
-                            duration: 0.8,
-                        });
-
-                        tl.to(
-                            text,
-                            {
-                                opacity: 1,
-                                y: 0,
-                                duration: 0.9,
-                            },
-                            '-=0.35',
-                        );
-                    }, el);
-
-                    return { ctx };
-                },
-
-                destroy(el, state) {
-                    if (state?.ctx) {
-                        state.ctx.revert();
-                    }
-                },
-            },
-            { lazy: true },
-        );
-    })();
-{%- endjavascript -%}
 
 {% schema %}
 {

@@ -65,7 +65,7 @@ phase and the user approves the scope expansion.
 | Toasts | Verify toast settings reach shared toast styling, placement, states, and all emitters. Review message ownership and accessibility announcements. | Connect shared toast contract; correct state styling and emitter usage without changing unrelated cart/search behavior. | `npm run lint:theme`; test success/error messages, repeated events, dismissal, and screen-reader announcements. |
 | Cart behavior | Verify all storefront cart mutations and cart UI state use `$store.cart`; review drawers, page cart, quantities, errors, and section refresh behavior. | Correct cart-owned behavior and state flow; use `ShopifyHttp`, `ShopifySectionRefresher`, and `ThemeEvents` where required. | `npm run lint:theme`; test add, remove, quantity changes, errors, empty cart, drawer/page synchronization, and mobile. |
 | Search behavior | Verify predictive search, search overlay, results tabs, pagination, empty states, and request/state ownership. | Correct search-owned behavior and shared search contracts; preserve intentional visual overrides until their owning phase approves changes. | `npm run lint:theme`; test queries, empty/error states, keyboard flow, result types, pagination, and mobile. |
-| Motion | Verify motion settings reach CSS/runtime policy, shared recipes, GSAP/Swiper consumers, reduced-motion handling, and no-JS visibility. | Connect shared motion variables and recipes; remove duplicate or conflicting choreography; keep critical content visible without animation completion. | `npm run lint:theme`; test reduced motion, no-JS/failed-init visibility, lifecycle cleanup, and responsive behavior. |
+| Motion | Verify motion settings reach CSS/runtime policy, global reveal consumers, optional narrative/Swiper consumers, reduced-motion handling, and no-JS visibility. | Connect shared motion variables and current data-hook consumers; remove duplicate or conflicting choreography; keep critical content visible without animation completion. | `npm run lint:theme`; test reduced motion, no-JS/failed-init visibility, lifecycle cleanup, and responsive behavior. |
 | Focus | Verify visible focus, focus order, focus trapping/return, keyboard activation, and minimal correct ARIA across interactive UI. | Correct focus and keyboard behavior without redesigning unrelated visuals or changing domain business logic. | `npm run lint:theme`; keyboard-only checks across navigation, forms, dialogs, filters, cart, search, and product media. |
 | Final launch regression | Verify completed domains together for launch blockers, cross-domain regressions, mobile reliability, accessibility, SEO, Theme Check, and merchant-owned boundaries. | Fix only confirmed regressions from approved work; classify unrelated or ownership-ambiguous findings before action. | `npm run lint`; `npm test`; targeted storefront regression across core templates and supported breakpoints. |
 
@@ -209,12 +209,13 @@ Ordinary animation is CSS/Alpine-first. GSAP is optional narrative choreography 
 - **tailwind.animates.css** owns how / animation capability.
 - **GSAP** reserved for complex homepage/storytelling choreography (parallax, scrub, timeline, split text, coordinated storytelling).
 - Previous Motion GSAP-first direction was reverted.
-- `motion-transition` snippet is legacy/state-motion helper only. Do not expand it into ordinary section reveal; it may be simplified or removed during Motion cleanup.
+- `snippets/motion-transition.liquid` has been removed. Do not restore it, replace it with scattered `x-transition:*`, or use it as a reference for new motion work.
 - Ordinary section content/media reveal should use `data-motion-reveal` hooks, an Alpine behavior with a module-level shared `IntersectionObserver`, and CSS rules in `tailwind.animates.css`.
 - Each section-level `x-data` instance may be independent, but reveal observation should be shared through one observer/registry implementation, not one observer per target.
 - `tailwind.animates.css` should own body setting selectors such as `body[data-content-reveal-style]`, `body[data-media-reveal-style]`, `body[data-motion-enabled]`, and reduced-motion rules.
-- Existing scattered transition/hover motion is not accepted as the final architecture, but it is temporarily tolerated to avoid regressing completed domains before the new CSS/Alpine motion chain exists.
-- Motion cleanup order: first build and verify the ordinary content/media reveal chain, then classify and migrate/remove scattered transitions by ownership (element, component state, ordinary reveal, narrative GSAP, dead/legacy).
+- Existing scattered visual motion is not accepted as the final architecture. Motion behavior should either join the global `data-*` -> `tailwind.animates.css` chain or be removed.
+- Preserve interaction/accessibility feedback only when it is clearly functional, such as focus states, active state affordances, loading indicators, drag handles, or component state visibility.
+- Motion cleanup order is now: remove old motion systems, connect global settings, make sections/snippets/components emit semantic `data-motion-*` hooks, and let `tailwind.animates.css` own the visual behavior.
 
 ### Final Regression Checks
 
@@ -222,18 +223,39 @@ Ordinary animation is CSS/Alpine-first. GSAP is optional narrative choreography 
   footer chrome, merchant-configured product-comparison colors on dark schemes, toast
   contrast, dark-scheme loading overlay, and pagination current-page distinction.
 
+### Motion Current Status
+
+The current Motion architecture is the global reveal chain:
+
+`settings` -> `body data-*` -> section/component `data-motion-*` hooks -> `motionRevealSection()` -> `tailwind/tailwind.animates.css`.
+
+Completed cleanup:
+
+- `assets/motion.js` removed.
+- GSAP project consumers removed.
+- GSAP vendor script tags and vendor files removed.
+- `snippets/motion-transition.liquid` removed.
+- Legacy `motion-*` state transition recipe CSS removed.
+- Ordinary reveal sections use `x-data="motionRevealSection()"`, `data-motion-section`, and `data-motion-reveal="content|media"`.
+- No-JS, reduced-motion, motion-disabled, Theme Editor, and first-viewport reveal guards are handled by the shared reveal chain.
+
+Current rule:
+
+- Do not restore GSAP, `Motion.*`, `motion-transition`, legacy motion recipe classes, scattered hover zoom, or scattered `x-transition:*`.
+- Components and sections should emit semantic motion hooks only.
+- `tailwind/tailwind.animates.css` owns the visual motion behavior.
+- Scattered visual motion that bypasses the global data chain should be removed or connected to the chain.
+- Functional UI feedback may remain when it is not part of the visual motion language.
+
 ### Next Session Entry
 
-Continue Motion by designing the CSS/Alpine ordinary reveal primitive before implementation.
+Motion cleanup is focused on the current chain, not old animation compatibility.
 
-1. Design `data-motion-reveal` hooks and the `motionRevealSection` Alpine behavior with a shared `IntersectionObserver`.
-2. Design the `tailwind.animates.css` body setting selectors and reveal animation families for content/media.
-3. Implement and verify the ordinary content/media reveal chain before broad transition cleanup.
-4. After the chain works, classify scattered transitions/hover motion by ownership: shared element, component state, ordinary reveal, narrative GSAP, dead/legacy.
-5. Decide how to clean up or remove `motion-transition` without breaking current dropdown/drawer/modal/toast/tab state animations.
-6. Resolve Motion deferred items (toast entrance/exit transitions, etc.).
-7. Preserve completed-domain visual checks for final launch regression.
-8. After Motion is committed, proceed to Final launch regression.
+1. Continue removing visual motion that bypasses the global `data-*` -> `tailwind.animates.css` chain.
+2. Image components output `data-motion-reveal="media"` as an internal semantic hook by default; do not expose this as an external parameter.
+3. Do not add hover-motion compatibility parameters or restore scattered hover zoom.
+4. Preserve functional interaction feedback only when it is clearly not part of the visual motion language.
+5. Preserve completed-domain visual checks for final launch regression.
 
 ### Deferred Cross-Phase Items
 
@@ -248,10 +270,6 @@ Continue Motion by designing the CSS/Alpine ordinary reveal primitive before imp
   requires overflow clipping). Acceptable; verify visually during final launch regression.
 - Focus (resolved): Toast dismiss button now uses shared `focus-ring` utility. Manual
   keyboard check deferred to final launch regression.
-- Motion: Toast entrance/exit transitions are currently managed by the
-  `motion-transition` snippet preset. Re-evaluate during Motion cleanup because
-  `motion-transition` is now classified as legacy/state-motion helper, not the
-  ordinary reveal architecture.
 - Search / Motion: `hover:shadow-sm` on predictive-search overlay cards is an
   intentional interactive enhancement. Re-evaluate during Search or Motion phase
   if global shadow opacity > 0 creates a visual conflict.

@@ -117,6 +117,6 @@
         SORTBYDROPDOWN: 'sortByDropdown',
         FLIPDIGIT: 'flipDigit',
         TOASTCONTAINER: 'toastContainer',
-        FOOTER_SECTION: 'footerSection',
+        MOTIONREVEALSECTION: 'motionRevealSection',
     });
 })();

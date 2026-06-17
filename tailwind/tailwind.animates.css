@@ -42,351 +42,127 @@
     animation-play-state: running !important;
 }
 
-/* State motion recipe: fade */
+/* ================================================================
+   Motion reveal: ordinary content/media section reveal
 
-@utility motion-fade-enter {
-    transition: opacity 200ms ease-out;
-}
+   Controlled by body[data-content-reveal-style] and
+   body[data-media-reveal-style] set from theme settings.
 
-@utility motion-fade-enter-start {
+   Alpine motionRevealSection sets data-motion-state on the
+   section root [data-motion-section], not on individual targets.
+   Targets are visible by default (no-JS safe). Hiding only
+   activates when root has data-motion-state="pending".
+
+   --motion-index is set by JS per target for stagger.
+   ================================================================ */
+
+/* Content reveal: fade */
+body[data-content-reveal-style='fade']
+    [data-motion-section][data-motion-state='pending']
+    [data-motion-reveal='content'] {
     opacity: 0;
+    transition: opacity var(--motion-duration-base, 400ms)
+        var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1));
+    transition-delay: calc(var(--motion-index, 0) * var(--motion-reveal-stagger, 80ms));
 }
 
-@utility motion-fade-enter-end {
+body[data-content-reveal-style='fade']
+    [data-motion-section][data-motion-state='revealed']
+    [data-motion-reveal='content'] {
     opacity: 1;
+    transition: opacity var(--motion-duration-base, 400ms)
+        var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1));
 }
 
-@utility motion-fade-leave {
-    transition: opacity 150ms ease-in;
-}
-
-@utility motion-fade-leave-start {
-    opacity: 1;
-}
-
-@utility motion-fade-leave-end {
+/* Content reveal: rise */
+body[data-content-reveal-style='rise']
+    [data-motion-section][data-motion-state='pending']
+    [data-motion-reveal='content'] {
     opacity: 0;
-}
-
-/* State motion recipe: image-fade (opacity-only, 200ms both phases - equiv. Alpine x-transition.opacity.duration.200ms) */
-
-@utility motion-image-fade-enter {
-    transition: opacity 200ms ease-out;
-}
-
-@utility motion-image-fade-enter-start {
-    opacity: 0;
-}
-
-@utility motion-image-fade-enter-end {
-    opacity: 1;
-}
-
-@utility motion-image-fade-leave {
-    transition: opacity 200ms ease-in;
-}
-
-@utility motion-image-fade-leave-start {
-    opacity: 1;
-}
-
-@utility motion-image-fade-leave-end {
-    opacity: 0;
-}
-
-/* State motion recipe: dropdown */
-
-@utility motion-dropdown-enter {
+    transform: translateY(var(--motion-reveal-distance, 1.5rem));
     transition:
-        opacity 200ms ease-out,
-        transform 200ms ease-out;
+        opacity var(--motion-duration-base, 400ms)
+            var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1)),
+        transform var(--motion-duration-base, 400ms)
+            var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1));
+    transition-delay: calc(var(--motion-index, 0) * var(--motion-reveal-stagger, 80ms));
 }
 
-@utility motion-dropdown-enter-start {
-    opacity: 0;
-    transform: scale(0.95);
-}
-
-@utility motion-dropdown-enter-end {
-    opacity: 1;
-    transform: scale(1);
-}
-
-@utility motion-dropdown-leave {
-    transition:
-        opacity 150ms ease-in,
-        transform 150ms ease-in;
-}
-
-@utility motion-dropdown-leave-start {
-    opacity: 1;
-    transform: scale(1);
-}
-
-@utility motion-dropdown-leave-end {
-    opacity: 0;
-    transform: scale(0.95);
-}
-
-/* State motion recipe: dropdown-slide */
-
-@utility motion-dropdown-slide-enter {
-    transition:
-        opacity 200ms ease-out,
-        transform 200ms ease-out;
-}
-
-@utility motion-dropdown-slide-enter-start {
-    opacity: 0;
-    transform: translateY(-0.75rem) scale(0.98);
-}
-
-@utility motion-dropdown-slide-enter-end {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-}
-
-@utility motion-dropdown-slide-leave {
-    transition:
-        opacity 150ms ease-in,
-        transform 150ms ease-in;
-}
-
-@utility motion-dropdown-slide-leave-start {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-}
-
-@utility motion-dropdown-slide-leave-end {
-    opacity: 0;
-    transform: translateY(-0.75rem) scale(0.98);
-}
-
-/* State motion recipe: modal */
-
-@utility motion-modal-enter {
-    transition:
-        opacity 200ms ease-out,
-        transform 200ms ease-out;
-}
-
-@utility motion-modal-enter-start {
-    opacity: 0;
-    transform: scale(0.95);
-}
-
-@utility motion-modal-enter-end {
-    opacity: 1;
-    transform: scale(1);
-}
-
-@utility motion-modal-leave {
-    transition:
-        opacity 150ms ease-in,
-        transform 150ms ease-in;
-}
-
-@utility motion-modal-leave-start {
-    opacity: 1;
-    transform: scale(1);
-}
-
-@utility motion-modal-leave-end {
-    opacity: 0;
-    transform: scale(0.95);
-}
-
-/* State motion recipe: drawer-left */
-
-@utility motion-drawer-left-enter {
-    transition: transform 300ms ease-out;
-}
-
-@utility motion-drawer-left-enter-start {
-    transform: translateX(-100%);
-}
-
-@utility motion-drawer-left-enter-end {
-    transform: translateX(0);
-}
-
-@utility motion-drawer-left-leave {
-    transition: transform 200ms ease-in;
-}
-
-@utility motion-drawer-left-leave-start {
-    transform: translateX(0);
-}
-
-@utility motion-drawer-left-leave-end {
-    transform: translateX(-100%);
-}
-
-/* State motion recipe: drawer-right */
-
-@utility motion-drawer-right-enter {
-    transition: transform 300ms ease-out;
-}
-
-@utility motion-drawer-right-enter-start {
-    transform: translateX(100%);
-}
-
-@utility motion-drawer-right-enter-end {
-    transform: translateX(0);
-}
-
-@utility motion-drawer-right-leave {
-    transition: transform 200ms ease-in;
-}
-
-@utility motion-drawer-right-leave-start {
-    transform: translateX(0);
-}
-
-@utility motion-drawer-right-leave-end {
-    transform: translateX(100%);
-}
-
-/* State motion recipe: lightbox-shell */
-
-@utility motion-lightbox-shell-enter {
-    transition: opacity 300ms ease-out;
-}
-
-@utility motion-lightbox-shell-enter-start {
-    opacity: 0;
-}
-
-@utility motion-lightbox-shell-enter-end {
-    opacity: 1;
-}
-
-@utility motion-lightbox-shell-leave {
-    transition: opacity 200ms ease-in;
-}
-
-@utility motion-lightbox-shell-leave-start {
-    opacity: 1;
-}
-
-@utility motion-lightbox-shell-leave-end {
-    opacity: 0;
-}
-
-/* State motion recipe: media-enter (enter-only, no leave) */
-
-@utility motion-media-enter {
-    transition:
-        opacity 200ms ease-out,
-        transform 200ms ease-out;
-}
-
-@utility motion-media-enter-start {
-    opacity: 0;
-    transform: scale(0.95);
-}
-
-@utility motion-media-enter-end {
-    opacity: 1;
-    transform: scale(1);
-}
-
-/* State motion recipe: toast */
-
-@utility motion-toast-enter {
-    transition:
-        opacity 300ms ease-out,
-        transform 300ms ease-out;
-}
-
-@utility motion-toast-enter-start {
-    opacity: 0;
-    transform: translateY(0.5rem) scale(0.95);
-}
-
-@utility motion-toast-enter-end {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-}
-
-@utility motion-toast-leave {
-    transition:
-        opacity 200ms ease-in,
-        transform 200ms ease-in;
-}
-
-@utility motion-toast-leave-start {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-}
-
-@utility motion-toast-leave-end {
-    opacity: 0;
-    transform: translateY(0.5rem) scale(0.95);
-}
-
-/* State motion recipe: magnifier-preview */
-
-@utility motion-magnifier-preview-enter {
-    transition:
-        opacity 300ms ease-out,
-        transform 300ms ease-out;
-}
-
-@utility motion-magnifier-preview-enter-start {
-    opacity: 0;
-    transform: scale(0.75);
-}
-
-@utility motion-magnifier-preview-enter-end {
-    opacity: 1;
-    transform: scale(1);
-}
-
-@utility motion-magnifier-preview-leave {
-    transition:
-        opacity 150ms ease-in,
-        transform 150ms ease-in;
-}
-
-@utility motion-magnifier-preview-leave-start {
-    opacity: 1;
-    transform: scale(1);
-}
-
-@utility motion-magnifier-preview-leave-end {
-    opacity: 0;
-    transform: scale(0.9);
-}
-
-/* State motion recipe: tab-content (featured-products tab panels) */
-
-@utility motion-tab-content-enter {
-    transition:
-        opacity 200ms ease-out,
-        transform 200ms ease-out;
-}
-
-@utility motion-tab-content-enter-start {
-    opacity: 0;
-    transform: translateY(6px);
-}
-
-@utility motion-tab-content-enter-end {
+body[data-content-reveal-style='rise']
+    [data-motion-section][data-motion-state='revealed']
+    [data-motion-reveal='content'] {
     opacity: 1;
     transform: translateY(0);
+    transition:
+        opacity var(--motion-duration-base, 400ms)
+            var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1)),
+        transform var(--motion-duration-base, 400ms)
+            var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1));
 }
 
-@utility motion-tab-content-leave {
-    @apply absolute top-0 left-0 w-full;
-    transition: opacity 150ms ease-in;
-}
-
-@utility motion-tab-content-leave-start {
-    opacity: 1;
-}
-
-@utility motion-tab-content-leave-end {
+/* Media reveal: fade */
+body[data-media-reveal-style='fade']
+    [data-motion-section][data-motion-state='pending']
+    [data-motion-reveal='media'] {
     opacity: 0;
+    transition: opacity var(--motion-duration-base, 400ms)
+        var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1));
+    transition-delay: calc(var(--motion-index, 0) * var(--motion-reveal-stagger, 80ms));
 }
+
+body[data-media-reveal-style='fade']
+    [data-motion-section][data-motion-state='revealed']
+    [data-motion-reveal='media'] {
+    opacity: 1;
+    transition: opacity var(--motion-duration-base, 400ms)
+        var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+/* Media reveal: zoom */
+body[data-media-reveal-style='zoom']
+    [data-motion-section][data-motion-state='pending']
+    [data-motion-reveal='media'] {
+    opacity: 0;
+    transform: scale(0.92);
+    transition:
+        opacity var(--motion-duration-base, 400ms)
+            var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1)),
+        transform var(--motion-duration-base, 400ms)
+            var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1));
+    transition-delay: calc(var(--motion-index, 0) * var(--motion-reveal-stagger, 80ms));
+}
+
+body[data-media-reveal-style='zoom']
+    [data-motion-section][data-motion-state='revealed']
+    [data-motion-reveal='media'] {
+    opacity: 1;
+    transform: scale(1);
+    transition:
+        opacity var(--motion-duration-base, 400ms)
+            var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1)),
+        transform var(--motion-duration-base, 400ms)
+            var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+/* Kill switch: motion disabled */
+body[data-motion-enabled='false'] [data-motion-section] [data-motion-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+}
+
+/* Kill switch: reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    [data-motion-section] [data-motion-reveal] {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+    }
+}
+
+/*
+   No-JS fallback: no rule needed.
+   Targets render visible by default in HTML.
+   Hiding only activates via [data-motion-state="pending"]
+   which Alpine sets after init.
+*/

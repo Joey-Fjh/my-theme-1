@@ -525,7 +525,7 @@
                         Factory.register?.(Comps.SORTBYDROPDOWN, Comps.sortByDropdown);
                         Factory.register?.(Comps.FLIPDIGIT, Comps.flipDigit);
                         Factory.register?.(Comps.TOASTCONTAINER, Comps.toastContainer);
-                        Factory.register?.(Comps.FOOTER_SECTION, Comps.footerSection);
+                        Factory.register?.(Comps.MOTIONREVEALSECTION, Comps.motionRevealSection);
                     }
                 },
                 { once: true },

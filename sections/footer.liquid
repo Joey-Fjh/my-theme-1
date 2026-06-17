@@ -1,8 +1,8 @@
 <footer
     data-section-id="{{ section.id }}"
     class="footer-section full-width relative color-{{ section.settings.color_scheme }}"
-    x-data="footerSection"
-    x-intersect:enter.once="visible = true"
+    x-data="motionRevealSection()"
+    data-motion-section
 >
     {%- if section.settings.bg_image -%}
         {% render 'image',
@@ -17,8 +17,8 @@
         <div class="relative overflow-hidden p-12">
             {% comment %} Top Content Area {% endcomment %}
             <div
-                class="z-10 flex flex-col gap-12 transition-all duration-300 ease-out pc:mb-24 pc:flex-row pc:justify-between"
-                :class="visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'"
+                class="z-10 flex flex-col gap-12 pc:mb-24 pc:flex-row pc:justify-between"
+                data-motion-reveal="content"
             >
                 {%- comment -%} Navigation Link Columns {%- endcomment -%}
                 <div class="grid grid-cols-3 gap-x-4 gap-y-10 pc:flex pc:gap-20 fw:gap-28">
@@ -101,8 +101,8 @@
 
             {%- comment -%} Large Brand Name with Brush Texture {%- endcomment -%}
             <div
-                class="transtion-all z-0 mb-8 delay-300 duration-300 ease-out select-none pc:mb-12"
-                :class="visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'"
+                class="z-0 mb-8 select-none pc:mb-12"
+                data-motion-reveal="content"
             >
                 {%- comment -%} Brush stroke decoration {%- endcomment -%}
                 {% if section.settings.brush_image != blank %}
@@ -126,11 +126,8 @@
 
             {%- comment -%} Bottom Bar {%- endcomment -%}
             <div
-                class="
-                    z-10 grid grid-cols-2 gap-y-8 border-t border-theme-border-50 pt-6
-                    transition-all delay-300 duration-300 ease-out pc:flex pc:flex-row pc:items-center pc:justify-between
-                "
-                :class="visible ? 'opacity-100' : 'opacity-0'"
+                class="z-10 grid grid-cols-2 gap-y-8 border-t border-theme-border-50 pt-6 pc:flex pc:flex-row pc:items-center pc:justify-between"
+                data-motion-reveal="content"
             >
                 <span class="col-span-1 pc:order-first">
                     {{ section.settings.location | default: 'Shibuya, JP' }}
@@ -142,7 +139,7 @@
                 </span>
                 <button
                     type="button"
-                    @click="scrollToTop()"
+                    @click="window.scrollTo({ top: 0, behavior: 'smooth' })"
                     class="col-span-2 flex cursor-pointer items-center justify-center gap-1 opacity-50 transition-opacity hover:opacity-100 pc:order-last pc:col-span-1 pc:justify-end"
                 >
                     <span>{{ 'footer.back_to_top' | t }}</span>

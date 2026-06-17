@@ -8,6 +8,8 @@
     data-component-kind="section"
     data-component-type="collections"
     data-component-id="{{ section.id }}"
+    x-data="motionRevealSection()"
+    data-motion-section
 >
     <div class="layout container-page">
         <div class="relative mb-8 pt-14 text-center pc:mb-10 pc:pt-25">
@@ -43,12 +45,11 @@
                         <a
                             href="{{ collection.url }}"
                             class="
-                                group block translate-y-7.5 overflow-hidden
-                                bg-theme-bg opacity-0 transition-shadow duration-300
+                                group block overflow-hidden
+                                bg-theme-bg transition-shadow duration-300
                                 hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)]
                                 max-pc:shadow-[0_8px_30px_rgba(0,0,0,0.08)]
                             "
-                            data-gsap-card
                         >
                             {%- comment -%} Image {%- endcomment -%}
                             <div class="relative aspect-square overflow-hidden bg-theme-bg">
@@ -76,13 +77,15 @@
                                     sizes: sizes,
                                     widths: widths,
                                     loading: image_loading,
-                                    class: 'w-full h-full object-cover
-                                        transition-transform duration-[600ms] ease-[cubic-bezier(0.25,0.46,0.45,0.94)] group-hover:scale-105'
+                                    class: 'w-full h-full'
                                 -%}
                             </div>
 
                             {%- comment -%} Info {%- endcomment -%}
-                            <div class="flex items-center justify-between gap-2 px-2 py-1.5 pc:px-3 pc:py-2">
+                            <div
+                                class="flex items-center justify-between gap-2 px-2 py-1.5 pc:px-3 pc:py-2"
+                                data-motion-reveal="content"
+                            >
                                 <span class="line-clamp-1">
                                     {{- collection.title -}}
                                 </span>
@@ -102,39 +105,6 @@
         {% endpaginate %}
     </div>
 </div>
-
-{%- javascript -%}
-    (function () {
-        const Components = window.__Theme__?.Components;
-        const Motion = window.__Theme__?.Motion;
-        if (!Components) return;
-
-        Components.register(
-            'collections',
-            {
-                init(el) {
-                    if (!Motion) return;
-
-                    const { ctx } = Motion.scrollReveal(el, {
-                        selector: '[data-gsap-card]',
-                        duration: 0.5,
-                        stagger: 0.1,
-                        scrollTriggerStart: 'top 85%',
-                    });
-
-                    return { ctx };
-                },
-
-                destroy(el, state) {
-                    if (state?.ctx) {
-                        state.ctx.revert();
-                    }
-                },
-            },
-            { lazy: true },
-        );
-    })();
-{%- endjavascript -%}
 
 {% schema %}
 {

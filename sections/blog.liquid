@@ -19,9 +19,13 @@
         "
     >
         {%- comment -%} Hero {%- endcomment -%}
-        <div class="relative py-20 pc:py-40">
+        <div
+            class="relative py-20 pc:py-40"
+            x-data="motionRevealSection()"
+            data-motion-section
+        >
             <div class="flex items-start justify-between">
-                <div class="-translate-x-7.5 opacity-0" data-gsap-hero>
+                <div data-motion-reveal="content">
                     <h1 class="mb-10 heading-4xl">
                         {{ section.settings.header | default: 'Blog' }}
                     </h1>
@@ -32,8 +36,8 @@
                 </div>
 
                 <div
-                    class="absolute top-8 right-0 z-10 scale-50 opacity-0 pc:static"
-                    data-gsap-badge
+                    class="absolute top-8 right-0 z-10 pc:static"
+                    data-motion-reveal="media"
                 >
                     {%- render 'rotating-badge',
                         classes: 'relative justify-self-center',
@@ -123,14 +127,16 @@
                         {% render 'loading', overlay: true, size: 'large' %}
 
                         {% paginate blog.articles by section.settings.articles_per_page %}
-                            <div 
+                            <div
                                 class="grid grid-cols-1 gap-8 pb-10 pc:grid-cols-3"
                                 data-component-kind="component"
                                 data-component-type="article-grid"
                                 data-component-id="{{ section.id }}-grid"
+                                x-data="motionRevealSection()"
+                                data-motion-section
                             >
                                 {% for article in blog.articles %}
-                                    <article class="group translate-y-7.5 opacity-0" data-gsap-card>
+                                    <article class="group">
                                         <div class="mb-4 block aspect-4/3 overflow-hidden rounded-sm">
                                             {% comment %} Image {% endcomment %}
                                             {%- capture sizes -%}
@@ -141,9 +147,9 @@
                                                 400, 700
                                             {%- endcapture -%}
 
-                                            {%- render 'image', 
+                                            {%- render 'image',
                                                 url: article.url,
-                                                img_class:'h-full w-full object-cover transition-transform duration-[600ms] ease-[cubic-bezier(0.25,0.46,0.45,0.94)] group-hover:scale-105',
+                                                img_class:'h-full w-full object-cover',
                                                 image: article.image,
                                                 alt: article.title,
                                                 width: article.image.width,
@@ -152,22 +158,24 @@
                                             -%}
                                         </div>
 
-                                        <p class="sub-heading my-6">
-                                            {{ article.tags | first }}
-                                        </p>
+                                        <div data-motion-reveal="content">
+                                            <p class="sub-heading my-6">
+                                                {{ article.tags | first }}
+                                            </p>
 
-                                        <h2 class="my-6">
-                                            <a href="{{ article.url }}">{{ article.title }}</a>
-                                        </h2>
+                                            <h2 class="my-6">
+                                                <a href="{{ article.url }}">{{ article.title }}</a>
+                                            </h2>
 
-                                        {%- if article.url !=blank -%}
-                                            {%- capture link_content -%}
-                                                <span>{{ section.settings.link_text }}</span>
-                                                {% render 'icons', icon: 'icon-arrow2', class: 'ml-3' %}
-                                            {%- endcapture -%}
+                                            {%- if article.url !=blank -%}
+                                                {%- capture link_content -%}
+                                                    <span>{{ section.settings.link_text }}</span>
+                                                    {% render 'icons', icon: 'icon-arrow2', class: 'ml-3' %}
+                                                {%- endcapture -%}
 
-                                            {%- render 'link', href: article.url, content: link_content, variant: "underline"-%}
-                                        {%- endif -%}
+                                                {%- render 'link', href: article.url, content: link_content, variant: "underline"-%}
+                                            {%- endif -%}
+                                        </div>
                                     </article>
                                 {% endfor %}
                             </div>
@@ -198,57 +206,6 @@
         </div>
     </div>
 </div>
-
-{%- javascript -%}
-    (function () {
-        const Components = window.__Theme__?.Components;
-        const Motion = window.__Theme__?.Motion;
-        if (!Components) return;
-
-        Components.register(
-            'blog',
-            {
-                init(el) {
-                    if (!Motion) return;
-
-                    const { ctx } = Motion.heroReveal(el);
-
-                    return { ctx };
-                },
-
-                destroy(el, state) {
-                    if (state?.ctx) {
-                        state.ctx.revert();
-                    }
-                },
-            },
-            { lazy: true },
-        );
-
-        Components.register(
-            'article-grid',
-            {
-                init(el) {
-                    if (!Motion) return;
-
-                    const { ctx } = Motion.scrollReveal(el, {
-                        selector: '[data-gsap-card]',
-                        duration: 0.5,
-                        stagger: { amount: 0.6, from: 'start' },
-                        scrollTriggerStart: 'top 85%',
-                    });
-
-                    return { ctx };
-                },
-
-                destroy(el, state) {
-                    if (state?.ctx) state.ctx.revert();
-                },
-            },
-            { lazy: true },
-        );
-    })();
-{%- endjavascript -%}
 
 {% schema %}
 {

@@ -1,6 +1,6 @@
 # JavaScript Runtime Reference
 
-This reference stores JavaScript runtime details that are too long for `AGENTS.md`. `AGENTS.md` remains the rule source. Read this file only when implementing or reviewing JavaScript runtime behavior, lifecycle code, Alpine components or stores, ThemeEvents, ShopifyHttp, SectionRefresher, Swiper, GSAP setup, or script load order.
+This reference stores JavaScript runtime details that are too long for `AGENTS.md`. `AGENTS.md` remains the rule source. Read this file only when implementing or reviewing JavaScript runtime behavior, lifecycle code, Alpine components or stores, ThemeEvents, ShopifyHttp, SectionRefresher, Swiper, explicitly approved narrative motion runtime, or script load order.
 
 ## Namespace
 
@@ -12,7 +12,6 @@ All theme runtime objects live under `window.__Theme__`:
 | `__Theme__.Components`              | `base.js`              | Section/block lifecycle engine  |
 | `__Theme__.ThemePerformance`        | `performance.js`       | Debug-only CWV monitoring       |
 | `__Theme__.AlpineComponentsFactory` | `alpine.components.js` | Alpine component registry       |
-| `__Theme__.Motion`                  | `motion.js`            | Optional GSAP narrative choreography recipes |
 
 Additional globals:
 
@@ -25,33 +24,30 @@ Additional globals:
 ## Script Load Order
 
 ```text
- 1.  vendor-gsap.min.js
- 2.  vendor-gsap-scrolltrigger.min.js
- 3.  vendor-swiper.min.js
- 4.  utils.js
- 5.  events.js
- 6.  motion.js
- 7.  alpine.components.js
- 8.  alpine.components.ui.js
- 9.  alpine.components.header.js
-10.  alpine.components.pagination.js
-11.  alpine.components.filters.js
-12.  alpine.components.product.js
-13.  alpine.components.product-media.js
-14.  alpine.components.product-cards.js
-15.  alpine.components.search.js
-16.  alpine.components.overlays.js
-17.  alpine.components.registry.js      <- merges groups into window.__Theme__.AlpineComponents
-18.  performance.js
-19.  https.js
-20.  base.js
-21.  alpine.store.js
-22.  alpine.store.toast.js
-23.  alpine.store.dialog.js
-24.  alpine.store.cart.js
-25.  alpine.store.registry.js           <- merges/registers stores
-26.  vendor-alpine-intersect.min.js
-27.  vendor-alpine.min.js               <- MUST be last
+ 1.  vendor-swiper.min.js
+ 2.  utils.js
+ 3.  events.js
+ 4.  alpine.components.js
+ 5.  alpine.components.ui.js
+ 6.  alpine.components.header.js
+ 7.  alpine.components.pagination.js
+ 8.  alpine.components.filters.js
+ 9.  alpine.components.product.js
+10.  alpine.components.product-media.js
+11.  alpine.components.product-cards.js
+12.  alpine.components.search.js
+13.  alpine.components.overlays.js
+14.  alpine.components.registry.js      <- merges groups into window.__Theme__.AlpineComponents
+15.  performance.js
+16.  https.js
+17.  base.js
+18.  alpine.store.js
+19.  alpine.store.toast.js
+20.  alpine.store.dialog.js
+21.  alpine.store.cart.js
+22.  alpine.store.registry.js           <- merges/registers stores
+23.  vendor-alpine-intersect.min.js
+24.  vendor-alpine.min.js               <- MUST be last
 ```
 
 Constraints:
@@ -268,7 +264,6 @@ Always call `.dispose()` in component `destroy()` to prevent memory leaks.
 | `vendor-*.min.js`               | Third-party | DO NOT EDIT                                                                                                                          |
 | `utils.js`                      | Custom      | Utility functions                                                                                                                    |
 | `events.js`                     | Custom      | ThemeEvents event bus                                                                                                                |
-| `motion.js`                     | Custom      | Optional GSAP narrative choreography recipes; not required for ordinary animation                                                   |
 | `alpine.components.js`          | Custom      | Base Alpine component factory                                                                                                        |
 | `alpine.components.*.js`        | Custom      | Grouped Alpine component definition files                                                                                            |
 | `alpine.components.registry.js` | Custom      | Merges component groups into `window.__Theme__.AlpineComponents`                                                                     |
@@ -279,38 +274,13 @@ Always call `.dispose()` in component `destroy()` to prevent memory leaks.
 | `alpine.store.*.js`             | Custom      | Grouped Alpine store definitions                                                                                                     |
 | `alpine.store.registry.js`      | Custom      | Merges/registers stores into Alpine                                                                                                  |
 
-## GSAP Pattern
+## Motion Runtime
 
-GSAP is optional narrative infrastructure for complex choreography only. Ordinary Alpine/CSS animation should not depend on `motion.js`. For simple animation and ordinary reveal, use CSS/Alpine first.
+The current theme has no active GSAP runtime, no `motion.js`, and no `__Theme__.Motion` namespace.
 
-When GSAP is needed, always guard, use `gsap.context()`, and scope to `el`:
+Ordinary motion uses semantic `data-motion-*` hooks, Alpine components such as `motionRevealSection()`, and CSS rules in `tailwind/tailwind.animates.css`.
 
-```javascript
-init(el) {
-    if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
-    gsap.registerPlugin(ScrollTrigger);
-
-    const ctx = gsap.context(() => {
-        const items = el.querySelectorAll('[data-gsap-item]');
-        gsap.set(items, { opacity: 0, y: 30 });
-        gsap.to(items, {
-            opacity: 1,
-            y: 0,
-            duration: 0.5,
-            stagger: 0.15,
-            ease: 'power2.out',
-            scrollTrigger: { trigger: el, start: 'top 80%', once: true },
-        });
-    }, el);
-
-    return { ctx };
-},
-destroy(el, state) {
-    if (state?.ctx) state.ctx.revert();
-}
-```
-
-Mark animation targets with `data-gsap-*` attributes.
+Do not add GSAP, `data-gsap-*`, `Motion.*`, or a new motion runtime during ordinary Motion cleanup. If complex narrative GSAP is explicitly approved later, document that runtime in a dedicated future change.
 
 ## Swiper Pattern
 
@@ -342,7 +312,6 @@ destroy(el, state) {
 | Manual section `innerHTML` after AJAX                | `window.ShopifySectionRefresher.render()`                                                   |
 | Custom CSS in `<style>` tags                         | Tailwind utility classes                                                                    |
 | Liquid values directly in `x-data="..."`             | `data-*` attributes + `this.$el.dataset`                                                    |
-| Bare `gsap.to(...)` outside context                  | `gsap.context(() => { ... }, el)` with cleanup                                              |
 | Cross-component event via `new CustomEvent(...)`     | `ThemeEvents.emit(type, detail)`                                                            |
 | Raw `<svg>` pasted in Liquid                         | `{%- render 'icons', icon: 'icon-name' -%}` via icon pipeline                               |
 | Manually editing `assets/icon-*.svg`                 | Generate from `icons/` via `npm run build:svg` after checking for existing equivalent icons |

@@ -8,6 +8,8 @@
     data-component-kind="section"
     data-component-type="article"
     data-component-id="{{ section.id }}"
+    x-data="motionRevealSection()"
+    data-motion-section
 >
     <div class="article-hero relative overflow-hidden pc:max-h-200">
         {%- capture sizes -%}
@@ -58,8 +60,8 @@
         <div class="flex flex-col gap-16 pc:flex-row pc:gap-24 fw:gap-32">
             {% comment %} Aside Bar {% endcomment %}
             <aside
-                class="shrink-0 -translate-x-7.5 body-lg opacity-0 max-pc:hidden pc:w-72 fw:w-80"
-                data-gsap-sidebar
+                class="shrink-0 body-lg max-pc:hidden pc:w-72 fw:w-80"
+                data-motion-reveal="content"
             >
                 <nav class="pc:sticky">
                     <ul
@@ -90,8 +92,8 @@
 
             {% comment %} Article  {% endcomment %}
             <article
-                class="article-content min-w-0 flex-1 translate-y-7.5 opacity-0"
-                data-gsap-content
+                class="article-content min-w-0 flex-1"
+                data-motion-reveal="content"
             >
                 <div class="flex items-center justify-between border-b border-theme-border-20 pb-3">
                     <h2>{{ article.title }}</h2>
@@ -113,64 +115,6 @@
         </div>
     </div>
 </div>
-
-{%- javascript -%}
-    (function () {
-        const Components = window.__Theme__?.Components;
-        if (!Components) return;
-
-        Components.register(
-            'article',
-            {
-                init(el) {
-                    if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
-
-                    gsap.registerPlugin(ScrollTrigger);
-
-                    const sidebar = el.querySelector('[data-gsap-sidebar]');
-                    const content = el.querySelector('[data-gsap-content]');
-
-                    const ctx = gsap.context(() => {
-                        const tl = gsap.timeline({
-                            defaults: { ease: 'power2.out' },
-                        });
-
-                        /* Sidebar slide in */
-                        if (sidebar) {
-                            tl.to(sidebar, {
-                                opacity: 1,
-                                x: 0,
-                                duration: 0.7,
-                            });
-                        }
-
-                        /* Content fade up */
-                        if (content) {
-                            tl.to(
-                                content,
-                                {
-                                    opacity: 1,
-                                    y: 0,
-                                    duration: 0.7,
-                                },
-                                '-=0.4',
-                            );
-                        }
-                    }, el);
-
-                    return { ctx };
-                },
-
-                destroy(el, state) {
-                    if (state?.ctx) {
-                        state.ctx.revert();
-                    }
-                },
-            },
-            { lazy: true },
-        );
-    })();
-{%- endjavascript -%}
 
 {%- stylesheet -%}
     .article-hero {

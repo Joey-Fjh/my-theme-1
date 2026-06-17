@@ -8,13 +8,15 @@
     data-component-kind="section"
     data-component-type="promise-section"
     data-component-id="{{ section.id }}"
+    x-data="motionRevealSection()"
+    data-motion-section
 >
     <div class="layout container-page text-theme-text">
         <div class="grid grid-cols-1 gap-8 pc:grid-cols-2 pc:grid-rows-[auto_auto] pc:items-stretch pc:gap-10 fw:gap-16">
             {% comment %} Right - Heading {% endcomment %}
             <div
-                class="order-1 translate-x-10 opacity-0 pc:order-2 pc:col-start-2 pc:row-start-1 pc:max-w-160"
-                data-gsap-content
+                class="order-1 pc:order-2 pc:col-start-2 pc:row-start-1 pc:max-w-160"
+                data-motion-reveal="content"
             >
                 <h3 class="mb-4">{{ section.settings.subtitle }}</h3>
                 <h1 class="heading-xl text-balance">
@@ -24,8 +26,7 @@
 
             {% comment %} Left - Image {% endcomment %}
             <div
-                class="order-2 min-h-80 -translate-x-10 overflow-hidden rounded-sm opacity-0 pc:order-1 pc:col-start-1 pc:row-span-2 pc:row-start-1 pc:h-full pc:min-h-0"
-                data-gsap-image
+                class="order-2 min-h-80 overflow-hidden rounded-sm pc:order-1 pc:col-start-1 pc:row-span-2 pc:row-start-1 pc:h-full pc:min-h-0"
             >
                 {%- assign image_alt_fallback = 'sections.promise-section.defaults.image_alt'
                     | t
@@ -42,8 +43,8 @@
 
             {% comment %} Right - Accordion  {% endcomment %}
             <div
-                class="order-3 flex h-full translate-x-10 flex-col gap-9 opacity-0 pc:order-3 pc:col-start-2 pc:row-start-2 pc:justify-start pc:gap-8"
-                data-gsap-content
+                class="order-3 flex h-full flex-col gap-9 pc:order-3 pc:col-start-2 pc:row-start-2 pc:justify-start pc:gap-8"
+                data-motion-reveal="content"
             >
                 {% comment %} Accordion {% endcomment %}
                 {%- render 'accordion',
@@ -62,65 +63,6 @@
         </div>
     </div>
 </div>
-
-{%- javascript -%}
-    (function () {
-        const Components = window.__Theme__?.Components;
-        if (!Components || typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined')
-            return;
-
-        gsap.registerPlugin(ScrollTrigger);
-
-        Components.register(
-            'promise-section',
-            {
-                init(el) {
-                    const ctx = gsap.context(() => {
-                        const image = el.querySelector('[data-gsap-image]');
-                        const contentItems = el.querySelectorAll('[data-gsap-content]');
-
-                        const tl = gsap.timeline({
-                            scrollTrigger: {
-                                trigger: el,
-                                start: 'top 75%',
-                                once: true,
-                            },
-                            defaults: { ease: 'power2.out' },
-                        });
-
-                        if (image) {
-                            tl.to(image, {
-                                opacity: 1,
-                                x: 0,
-                                duration: 0.8,
-                            });
-                        }
-                        if (contentItems.length) {
-                            tl.to(
-                                contentItems,
-                                {
-                                    opacity: 1,
-                                    x: 0,
-                                    duration: 0.8,
-                                },
-                                '-=0.5',
-                            );
-                        }
-                    }, el);
-
-                    return { ctx };
-                },
-
-                destroy(el, state) {
-                    if (state?.ctx) {
-                        state.ctx.revert();
-                    }
-                },
-            },
-            { lazy: true },
-        );
-    })();
-{%- endjavascript -%}
 
 {% schema %}
 {
