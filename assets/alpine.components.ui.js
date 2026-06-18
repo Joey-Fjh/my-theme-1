@@ -656,10 +656,12 @@
 
         motionRevealSection() {
             const registry = motionRevealSharedRegistry;
+            const ThemeEvents = window.__Theme__?.Events;
 
             return {
                 ...AlpineComponentsFactory.useDisposable(),
                 _revealed: false,
+                _cleanupEditor: null,
 
                 _shouldSkipAnimation() {
                     if (document.body.dataset.motionEnabled === 'false') return true;
@@ -669,19 +671,7 @@
                     )
                         return true;
                     if (!('IntersectionObserver' in window)) return true;
-                    if (window.Shopify?.designMode) return true;
                     return false;
-                },
-
-                /**
-                 * True when the section root is already inside or near the
-                 * first viewport. Revealing immediately avoids the brief
-                 * "pending → IO callback" hiding gap that would hide
-                 * critical above-the-fold content.
-                 */
-                _isInFirstViewport() {
-                    const rect = this.$el.getBoundingClientRect();
-                    return rect.top < window.innerHeight * 0.85;
                 },
 
                 /**
@@ -702,30 +692,119 @@
                     });
                 },
 
-                init() {
+                _applyRevealed() {
+                    this.$el.setAttribute('data-motion-state', 'revealed');
+                    this._revealed = true;
+                },
+
+                _applyPending() {
+                    this._revealed = false;
+                    this.$el.setAttribute('data-motion-state', 'pending');
+                },
+
+                /**
+                 * Replay the reveal sequence for this section.
+                 * Respects motion_enabled, prefers-reduced-motion, and
+                 * no-IntersectionObserver skip guards only.
+                 * All eligible sections enter pending → observer → revealed,
+                 * matching Dawn's unified trigger strategy.
+                 */
+                _refresh() {
+                    registry.unobserve(this.$el);
+                    this._revealed = false;
                     this._prepareTargets();
 
-                    if (this._shouldSkipAnimation() || this._isInFirstViewport()) {
-                        this.$el.setAttribute('data-motion-state', 'revealed');
-                        this._revealed = true;
+                    if (this._shouldSkipAnimation()) {
+                        this._applyRevealed();
                         return;
                     }
 
-                    this.$el.setAttribute('data-motion-state', 'pending');
-                    registry.observe(this.$el, this._onIntersect.bind(this));
+                    this._applyPending();
+
+                    requestAnimationFrame(() => {
+                        registry.observe(this.$el, this._onIntersect.bind(this));
+                    });
+                },
+
+                init() {
+                    this._prepareTargets();
+
+                    if (this._shouldSkipAnimation()) {
+                        this._applyRevealed();
+                    } else {
+                        this._applyPending();
+                        registry.observe(this.$el, this._onIntersect.bind(this));
+                    }
+
+                    // Theme Editor: replay on section select/reorder.
+                    // Only register in designMode to avoid unnecessary listeners
+                    // on the storefront.
+                    if (
+                        window.Shopify?.designMode &&
+                        ThemeEvents &&
+                        typeof ThemeEvents.on === 'function'
+                    ) {
+                        const self = this;
+                        const el = this.$el;
+
+                        const offSelect = ThemeEvents.on(
+                            'shopify:section:select',
+                            function (e) {
+                                if (self._matchesSection(e, el)) {
+                                    self._refresh();
+                                }
+                            },
+                            { target: document },
+                        );
+
+                        const offReorder = ThemeEvents.on(
+                            'shopify:section:reorder',
+                            function (e) {
+                                if (self._matchesSection(e, el)) {
+                                    self._refresh();
+                                }
+                            },
+                            { target: document },
+                        );
+
+                        this._cleanupEditor = function () {
+                            offSelect();
+                            offReorder();
+                        };
+                    }
+                },
+
+                /**
+                 * Match a Shopify editor event to this section root.
+                 * Checks event.detail.sectionId against data-section-id,
+                 * then falls back to DOM containment.
+                 */
+                _matchesSection(event, el) {
+                    const detail = event.detail;
+                    if (detail && detail.sectionId) {
+                        return el.dataset.sectionId === String(detail.sectionId);
+                    }
+                    const target = event.target;
+                    if (target instanceof Node) {
+                        return el.contains(target) || target.contains(el);
+                    }
+                    return false;
                 },
 
                 _onIntersect(entry) {
                     if (this._revealed) return;
                     if (!entry.isIntersecting) return;
 
-                    this._revealed = true;
-                    this.$el.setAttribute('data-motion-state', 'revealed');
+                    this._applyRevealed();
                     registry.unobserve(this.$el);
                 },
 
                 destroy() {
                     registry.unobserve(this.$el);
+                    if (this._cleanupEditor) {
+                        this._cleanupEditor();
+                        this._cleanupEditor = null;
+                    }
                     this.dispose();
                 },
             };
@@ -751,7 +830,7 @@
                         if (cb) cb(entry);
                     });
                 },
-                { threshold: 0.15 },
+                { rootMargin: '0px 0px -50px 0px', threshold: 0 },
             );
             return observer;
         }

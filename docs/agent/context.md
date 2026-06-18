@@ -237,6 +237,7 @@ Completed cleanup:
 - `snippets/motion-transition.liquid` removed.
 - Legacy `motion-*` state transition recipe CSS removed.
 - Ordinary reveal sections use `x-data="motionRevealSection()"`, `data-motion-section`, and `data-motion-reveal="content|media"`.
+- Motion hook ownership is semantic: media primitives such as `snippets/image.liquid` own `data-motion-reveal="media"` internally; stable content components may own their own content hooks; sections and future blocks own reveal roots and broad content groups; controls, forms, conversion-critical UI, and merchant-owned custom content do not output reveal hooks by default.
 - No-JS, reduced-motion, motion-disabled, Theme Editor, and first-viewport reveal guards are handled by the shared reveal chain.
 
 Current rule:
@@ -252,7 +253,7 @@ Current rule:
 Motion cleanup is focused on the current chain, not old animation compatibility.
 
 1. Continue removing visual motion that bypasses the global `data-*` -> `tailwind.animates.css` chain.
-2. Image components output `data-motion-reveal="media"` as an internal semantic hook by default; do not expose this as an external parameter.
+2. Image/media primitives output `data-motion-reveal="media"` as an internal semantic hook by default; do not expose this as an external parameter.
 3. Do not add hover-motion compatibility parameters or restore scattered hover zoom.
 4. Preserve functional interaction feedback only when it is clearly not part of the visual motion language.
 5. Preserve completed-domain visual checks for final launch regression.

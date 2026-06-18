@@ -92,6 +92,22 @@ Recommended runtime contract:
 - If motion is disabled, reduced motion is preferred, or reveal should not wait for viewport entry, set `data-motion-state="revealed"` immediately.
 - The component may assign lightweight per-target variables such as `--motion-index` for stagger, but it should not compute animation types or keyframes.
 
+### Trigger Behavior
+
+- The shared `IntersectionObserver` uses `rootMargin: '0px 0px -50px 0px'` and `threshold: 0`. This triggers slightly before the section fully enters the viewport, matching Dawn's unified trigger strategy.
+- There is **no first-viewport guard**. All eligible sections — including hero and above-the-fold — go through the same `pending → observer → revealed` path. HTML renders visible by default; JS initialization sets `pending` only after Alpine mounts, so no-JS and pre-init states remain safe.
+- Sections already in the viewport when the observer attaches are naturally triggered by the next `IntersectionObserver` callback cycle, producing a near-immediate reveal animation — consistent with Dawn's behavior.
+- Ordinary reveal remains once-only: `revealed` + `unobserve` on first intersection. No replay on scroll-leave.
+- Sections with critical LCP or carousel media may opt media out with `data-motion-media="static"` on the section root while still allowing content reveal. Use this for hero/Swiper media where animating the image itself causes flashing or conflicts with carousel effects.
+
+### Theme Editor Preview
+
+- `motionRevealSection()` does NOT skip animation in `designMode`. Merchants can preview reveal effects in the Theme Editor.
+- On `shopify:section:select`, the component replays the reveal for the selected section only. This is scoped via `event.detail.sectionId` matching `data-section-id`, with DOM containment as fallback.
+- On `shopify:section:reorder`, the component replays the reveal for the matching section only; reorder may change viewport position, so the section re-enters the observer path.
+- Editor event listeners use `ThemeEvents.on()` with cleanup in `destroy()`. No bare `document.addEventListener` calls.
+- `motion_enabled=false`, `prefers-reduced-motion`, and no-IntersectionObserver guards still apply in design mode.
+
 Recommended CSS contract:
 
 - HTML should render visible by default without JavaScript.
@@ -104,6 +120,19 @@ Recommended CSS contract:
 - Global motion setting effects should be expressed in CSS through body data attributes and motion variables, not through per-section GSAP timelines.
 
 `x-intersect` MAY be used for isolated simple cases, but it is not the preferred architecture for ordinary reveal coverage. The preferred architecture is one shared observer behind the Alpine component, rather than many scattered `x-intersect` directives.
+
+## Motion Hook Ownership And Granularity
+
+Motion hooks are semantic component contracts, not caller-managed parameters.
+
+- Media primitives such as `snippets/image.liquid` should own `data-motion-reveal="media"` internally by default.
+- Stable content components such as product cards, article cards, collection cards, testimonial cards, and promotion cards MAY own internal `data-motion-reveal="content"` hooks for their own stable content regions.
+- Layout, control, form, drawer, dialog, filter, search, cart, pagination, and button/link primitives should not output reveal hooks by default.
+- Sections and theme blocks own the reveal root (`x-data="motionRevealSection()" data-motion-section`) and broad content grouping hooks.
+- Do not expose generic motion parameters such as `motion`, `enable_reveal`, or `motion_type` unless a real reusable exception is approved.
+- Prefer coarse reveal targets: content groups, media components, and stable card regions. Do not add reveal hooks to every heading, paragraph, icon, or button.
+- Avoid placing a broad parent `data-motion-reveal` around child components that already own reveal hooks; parent/child opacity or transform stacking can make animation timing look inconsistent.
+- Conversion-critical controls and merchant-owned custom content should not be reveal targets by default.
 
 ## Removed State Motion Recipe Layer
 
