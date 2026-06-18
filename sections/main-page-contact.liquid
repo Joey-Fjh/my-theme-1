@@ -1,6 +1,6 @@
 <div
     data-section-id="{{ section.id }}"
-    class="main-page-contact-section full-width color-{{ section.settings.color_scheme }}"
+    class="main-page-contact-section full-width color-{{ section.settings.color_scheme }} bg-scheme-surface"
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
@@ -8,15 +8,16 @@
     data-component-kind="section"
     data-component-type="main-page-contact"
     data-component-id="{{ section.id }}"
+    x-data="motionRevealSection()"
+    data-motion-section
 >
-    <div class="layout container-page bg-theme-bg text-theme-text">
+    <div class="layout container-page">
         {%- comment -%} Main Content: Image + Form {%- endcomment -%}
         <div class="relative z-1 mx-auto w-full max-w-full pc:max-w-5/6">
-            <div class="grid grid-cols-1 gap-0 overflow-hidden bg-theme-bg shadow-surface pc:grid-cols-2">
+            <div class="grid grid-cols-1 gap-0 overflow-hidden pc:grid-cols-2">
                 {%- comment -%} Left: Image {%- endcomment -%}
                 <div
-                    class="relative hidden aspect-528/582 -translate-x-7.5 overflow-hidden opacity-0 pc:block pc:aspect-auto"
-                    data-gsap-image
+                    class="relative hidden aspect-528/582 overflow-hidden pc:block pc:aspect-auto"
                 >
                     {% capture sizes %}
                         (max-width: 768px) 100vw, 50vw    
@@ -26,10 +27,16 @@
                         400,600,800
                     {% endcapture %}
 
-                    {%
-                        render 'image',
+                    {%- assign image_alt_fallback = 'sections.main-page-contact.defaults.image_alt'
+                        | t
+                    -%}
+                    {%- assign image_alt = section.settings.image.image_alt
+                        | default: image_alt_fallback
+                        | escape
+                    -%}
+                    {% render 'image',
                         image: section.settings.image,
-                        alt: section.settings.image.image_alt | default: 'Contact us' | escape,
+                        alt: image_alt,
                         width: section.settings.image.width,
                         sizes: sizes,
                         widths: widths,
@@ -37,56 +44,64 @@
                     %}
 
                     {%- comment -%} hCaptcha Notice {%- endcomment -%}
-                    <p class="absolute right-4 bottom-4 left-4 body-sm leading-snug text-white/80">
-                        This site is protected by hCaptcha and the hCaptcha<br>
+                    <p class="absolute right-4 bottom-4 left-4">
+                        {{ 'contact.hcaptcha_notice' | t -}}
+                        <br>
+
+                        {%- assign link_text = 'contact.privacy_policy' | t -%}
                         {% render 'link',
-                            text: 'Privacy Policy',
+                            text: link_text,
                             href: 'https://www.hcaptcha.com/privacy',
                             class: 'underline',
                             target: '_blank',
-                            attributes: 'rel="noopener"',
-                            color: 'current'
+                            attributes: 'rel="noopener"'
                         %}
-                        and
+                        {{ 'general.and' | t }}
+                        {%- assign link_text = 'contact.terms_of_service' | t -%}
                         {% render 'link',
-                            text: 'Terms of Service',
+                            text: link_text,
                             href: 'https://www.hcaptcha.com/terms',
                             class: 'underline',
                             target: '_blank',
-                            attributes: 'rel="noopener"',
-                            color: 'current'
+                            attributes: 'rel="noopener"'
                         %}
-                        apply.
+                        {{ 'contact.apply' | t }}
                     </p>
                 </div>
                 {%- comment -%} Right: Form {%- endcomment -%}
+                {%- assign form_bg = section.settings.form_background_color | default: '#ffffff' -%}
+                {%- assign form_text = section.settings.form_text_color | default: '#1a1a1a' -%}
                 <div
-                    class="flex translate-x-7.5 flex-col justify-center px-6 py-8 opacity-0 pc:px-10 pc:py-10 fw:px-12"
-                    style="background-color: {{ section.settings.form_background_color }};"
-                    data-gsap-form
+                    class="flex flex-col justify-center bg-(--contact-form-bg) px-6 py-8 text-(--contact-form-text) pc:px-10 pc:py-10 fw:px-12"
+                    style="--contact-form-bg: {{ form_bg }}; --contact-form-text: {{ form_text }};"
+                    data-motion-reveal="content"
                 >
-                    <h1 class="text-center h2 text-primary">
-                        {{ section.settings.heading | default: 'Reach Us For Radiance' }}
+                    {%- assign heading_fallback = 'sections.main-page-contact.defaults.heading'
+                        | t
+                    -%}
+                    <h1 class="text-center text-(--contact-form-text)">
+                        {{ section.settings.heading | default: heading_fallback }}
                     </h1>
-                    <div class="rte rte--compact mt-3 text-center body-md text-primary/70">
-                        {{
-                            section.settings.description
-                            | default: '<p>Unlock personalized experiences with our AI technology. Get insights that evolve with your preferences.</p>'
-                        }}
+                    <div class="rte rte--compact mt-3 text-center opacity-80">
+                        {%- assign contact_description_fallback = 'contact.description_html' | t -%}
+                        {{ section.settings.description | default: contact_description_fallback }}
                     </div>
 
                     {%- form 'contact', class: 'mt-6 flex flex-col gap-5 pc:mt-8 pc:gap-6' -%}
+                        {%- assign success_message_fallback = 'sections.main-page-contact.defaults.success_message'
+                            | t
+                        -%}
                         {%- if form.posted_successfully? -%}
-                            <div class="rounded bg-green-50 p-4 text-center body-md text-green-800">
+                            <div class="rounded p-4 text-center">
                                 {{
                                     section.settings.success_message
-                                    | default: 'Thank you for your message. We will get back to you soon.'
+                                    | default: success_message_fallback
                                 }}
                             </div>
                         {%- endif -%}
 
                         {%- if form.errors -%}
-                            <div class="rounded bg-red-50 p-4 body-md text-red-700">
+                            <div class="rounded p-4 text-error-text">
                                 {{ form.errors | default_errors }}
                             </div>
                         {%- endif -%}
@@ -96,31 +111,31 @@
                             <div class="flex flex-col gap-1.5">
                                 <label
                                     for="ContactFirstName"
-                                    class="body-md font-medium text-primary/80"
-                                    >First name</label
                                 >
+                                    {{- 'contact.first_name' | t -}}
+                                </label>
                                 <input
                                     type="text"
                                     id="ContactFirstName"
                                     name="contact[first_name]"
-                                    placeholder="Enter your first name"
+                                    placeholder="{{ 'contact.first_name_placeholder' | t }}"
                                     autocomplete="given-name"
-                                    class="h-12 field border-theme-border-soft bg-theme-bg body-md text-theme-text shadow-none placeholder:text-theme-text/50 pc:h-14"
+                                    class="field"
                                 >
                             </div>
                             <div class="flex flex-col gap-1.5">
                                 <label
                                     for="ContactLastName"
-                                    class="body-md font-medium text-primary/80"
-                                    >Last name</label
                                 >
+                                    {{- 'contact.last_name' | t -}}
+                                </label>
                                 <input
                                     type="text"
                                     id="ContactLastName"
                                     name="contact[last_name]"
-                                    placeholder="Enter your last name"
+                                    placeholder="{{ 'contact.last_name_placeholder' | t }}"
                                     autocomplete="family-name"
-                                    class="h-12 field border-theme-border-soft bg-theme-bg body-md text-theme-text shadow-none placeholder:text-theme-text/50 pc:h-14"
+                                    class="field"
                                 >
                             </div>
                         </div>
@@ -130,56 +145,59 @@
                             <div class="flex flex-col gap-1.5">
                                 <label
                                     for="ContactEmail"
-                                    class="body-md font-medium text-primary/80"
-                                    >Email</label
                                 >
+                                    {{- 'contact.email' | t -}}
+                                </label>
                                 <input
                                     type="email"
                                     id="ContactEmail"
                                     name="contact[email]"
-                                    placeholder="Enter your email address"
+                                    placeholder="{{ 'contact.email_placeholder' | t }}"
                                     autocomplete="email"
                                     required
-                                    class="h-12 field border-theme-border-soft bg-theme-bg body-md text-theme-text shadow-none placeholder:text-theme-text/50 pc:h-14"
+                                    class="field"
                                 >
                             </div>
                             <div class="hidden flex-col gap-1.5 pc:flex">
                                 <label
                                     for="ContactPhone"
-                                    class="body-md font-medium text-primary/80"
-                                    >Phone</label
                                 >
+                                    {{- 'contact.phone' | t -}}
+                                </label>
                                 <input
                                     type="tel"
                                     id="ContactPhone"
                                     name="contact[phone]"
-                                    placeholder="Enter your phone number"
+                                    placeholder="{{ 'contact.phone_placeholder' | t }}"
                                     autocomplete="tel"
-                                    class="h-12 field border-theme-border-soft bg-theme-bg body-md text-theme-text shadow-none placeholder:text-theme-text/50 pc:h-14"
+                                    class="field"
                                 >
                             </div>
                         </div>
 
                         {%- comment -%} Message {%- endcomment -%}
                         <div class="flex flex-col gap-1.5">
-                            <label for="ContactMessage" class="body-md font-medium text-primary/80"
-                                >Message</label
-                            >
+                            <label for="ContactMessage">
+                                {{- 'contact.message' | t -}}
+                            </label>
                             <textarea
                                 id="ContactMessage"
                                 name="contact[body]"
-                                placeholder="Enter your message"
+                                placeholder="{{ 'contact.message_placeholder' | t }}"
                                 rows="4"
-                                class="min-h-24 field w-full resize-none border-theme-border-soft bg-theme-bg py-3 body-md text-theme-text shadow-none placeholder:text-theme-text/50 pc:min-h-28"
+                                class="min-h-24 field resize-none pc:min-h-28"
                             ></textarea>
                         </div>
 
+                        {%- assign button_text_fallback = 'sections.main-page-contact.defaults.button_text'
+                            | t
+                        -%}
                         {%- comment -%} Submit {%- endcomment -%}
                         <button
                             type="submit"
-                            class="btn h-12 w-full border-primary-border bg-primary body-md text-primary-text shadow-none hover:brightness-110 pc:h-14"
+                            class="btn-primary w-full"
                         >
-                            {{ section.settings.button_text | default: 'Send' }}
+                            {{ section.settings.button_text | default: button_text_fallback }}
                         </button>
                     {%- endform -%}
                 </div>
@@ -189,77 +207,31 @@
         {%- comment -%} Brand Watermark {%- endcomment -%}
         {% render 'watermark',
             container_class: 'absolute left-0 bottom-0 right-0 z-0 overflow-hidden pointer-events-none select-none',
-            text_class: 'tracking-wide font-bold text-theme-text opacity-10',
-            html_attr: 'data-gsap-watermark',
+            text_class: 'tracking-wide text-theme-text opacity-20',
+            html_attr: 'data-motion-reveal="media"',
             text: section.settings.watermark_text
         %}
     </div>
 </div>
 
-{%- javascript -%}
-    (function () {
-        const Components = window.__Theme__?.Components;
-        if (!Components || typeof gsap === 'undefined') return;
-
-        Components.register(
-            'main-page-contact',
-            {
-                init(el) {
-                    const ctx = gsap.context(() => {
-                        const tl = gsap.timeline({
-                            defaults: { ease: 'power2.out' },
-                        });
-
-                        tl.to(el.querySelector('[data-gsap-image]'), {
-                            opacity: 1,
-                            x: 0,
-                            duration: 0.7,
-                        })
-                            .to(
-                                el.querySelector('[data-gsap-form]'),
-                                {
-                                    opacity: 1,
-                                    x: 0,
-                                    duration: 0.7,
-                                },
-                                '-=0.4',
-                            )
-                            .fromTo(
-                                el.querySelector('[data-gsap-watermark]'),
-                                {
-                                    opacity: 0,
-                                    x: 60,
-                                },
-                                {
-                                    opacity: 1,
-                                    x: 0,
-                                    duration: 1,
-                                    ease: 'power3.out',
-                                },
-                                '-=0.3',
-                            );
-                    }, el);
-
-                    return { ctx };
-                },
-
-                destroy(el, state) {
-                    if (state?.ctx) {
-                        state.ctx.revert();
-                    }
-                },
-            },
-            { lazy: true },
-        );
-    })();
-{%- endjavascript -%}
-
-{%- stylesheet -%}
-{%- endstylesheet -%}
+{% stylesheet %}
+    .main-page-contact-section .rte :is(h1, h2, h3, h4, h5, h6) {
+        color: var(--contact-form-text);
+    }
+    .main-page-contact-section .rte blockquote {
+        color: var(--contact-form-text);
+    }
+    .main-page-contact-section .rte figcaption {
+        color: var(--contact-form-text);
+    }
+    .main-page-contact-section .rte :is(code, pre) {
+        color: var(--contact-form-text);
+    }
+{% endstylesheet %}
 
 {% schema %}
 {
-    "name": "Contact Us",
+    "name": "t:sections.main-page-contact.name",
     "tag": "section",
     "class": "section",
     "enabled_on": {
@@ -269,59 +241,65 @@
         {
             "type": "color_scheme",
             "id": "color_scheme",
-            "label": "Color scheme",
+            "label": "t:sections.main-page-contact.settings.color_scheme",
             "default": "scheme-1"
         },
         {
             "type": "color",
             "id": "form_background_color",
-            "label": "Form background color",
+            "label": "t:sections.main-page-contact.settings.form_background_color",
             "default": "#ffffff"
+        },
+        {
+            "type": "color",
+            "id": "form_text_color",
+            "label": "t:sections.main-page-contact.settings.form_text_color",
+            "default": "#1a1a1a"
         },
         {
             "type": "image_picker",
             "id": "image",
-            "label": "Image"
+            "label": "t:sections.main-page-contact.settings.image"
         },
         {
             "type": "text",
             "id": "image_alt",
-            "default": "Contact us",
-            "label": "Image alt text"
+            "default": "t:sections.main-page-contact.defaults.image_alt",
+            "label": "t:sections.main-page-contact.settings.image_alt_text"
         },
         {
             "type": "inline_richtext",
             "id": "heading",
-            "default": "Reach Us For Radiance",
-            "label": "Heading"
+            "default": "t:sections.main-page-contact.defaults.heading",
+            "label": "t:sections.main-page-contact.settings.heading"
         },
         {
             "type": "richtext",
             "id": "description",
-            "default": "<p>Unlock personalized experiences with our AI technology. Get insights that evolve with your preferences.</p>",
-            "label": "Description"
+            "default": "t:sections.main-page-contact.defaults.description",
+            "label": "t:sections.main-page-contact.settings.description"
         },
         {
             "type": "text",
             "id": "button_text",
-            "default": "Send",
-            "label": "Button text"
+            "default": "t:sections.main-page-contact.defaults.button_text",
+            "label": "t:sections.main-page-contact.settings.button_text"
         },
         {
             "type": "textarea",
             "id": "success_message",
-            "default": "Thank you for your message. We will get back to you soon.",
-            "label": "Success message"
+            "default": "t:sections.main-page-contact.defaults.success_message",
+            "label": "t:sections.main-page-contact.settings.success_message"
         },
         {
             "type": "text",
             "id": "watermark_text",
-            "default": "Eccenova®",
-            "label": "Watermark text"
+            "default": "t:sections.main-page-contact.defaults.watermark_text",
+            "label": "t:sections.main-page-contact.settings.watermark_text"
         },
         {
             "type": "header",
-            "content": "Padding"
+            "content": "t:sections.main-page-contact.content.padding"
         },
         {
             "type": "range",
@@ -330,7 +308,7 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Top",
+            "label": "t:sections.main-page-contact.settings.padding_top",
             "default": 0
         },
         {
@@ -340,14 +318,8 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Bottom",
+            "label": "t:sections.main-page-contact.settings.padding_bottom",
             "default": 0
-        }
-    ],
-    "presets": [
-        {
-            "name": "Contact Us",
-            "settings": {}
         }
     ]
 }

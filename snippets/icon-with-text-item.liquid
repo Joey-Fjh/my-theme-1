@@ -1,0 +1,84 @@
+{% doc %}
+    Renders a compact icon with text item.
+
+    @param {string} title - Item title. The item is hidden when blank.
+    @param {string} icon - Existing theme icon name.
+    @param {image} [image_icon] - Optional image icon. When present, it is rendered instead of the selected icon.
+    @param {string} [link] - Optional item link.
+    @param {number} [icon_size] - Icon size in pixels.
+    @param {number} [icon_size_mobile] - Mobile icon size in pixels.
+    @param {string} [direction] - Layout direction: 'vertical' or 'horizontal'.
+    @param {number} [gap] - Gap between icon and text in pixels.
+    @param {string} [alignment] - Text and item alignment: 'left', 'center', or 'right'.
+    @param {string} [class] - Optional extra classes for the root element.
+    @param {string} [title_class] - Optional extra classes for the title element.
+{% enddoc %}
+
+{%- liquid
+    assign item_title = title
+    assign item_icon = icon | default: 'icon-check'
+    assign item_image_icon = image_icon
+    assign item_link = link
+    assign item_icon_size = icon_size | default: 24 | plus: 0
+    assign item_icon_size_mobile = icon_size_mobile | default: item_icon_size | plus: 0
+    assign item_direction = direction | default: 'vertical'
+    assign item_gap = gap | default: 8 | plus: 0
+    assign item_alignment = alignment | default: 'center'
+    assign extra_class = class | default: ''
+    assign extra_title_class = title_class | default: ''
+
+    assign direction_class = 'icon-with-text-item--vertical'
+    if item_direction == 'horizontal'
+        assign direction_class = 'icon-with-text-item--horizontal'
+    endif
+
+    assign alignment_class = 'items-center text-center'
+    if item_alignment == 'left'
+        assign alignment_class = 'items-start text-left'
+    elsif item_alignment == 'right'
+        assign alignment_class = 'items-end text-right'
+    endif
+-%}
+
+{%- if item_title != blank -%}
+    {%- capture item_content -%}
+        {%- if item_image_icon != blank -%}
+            {{
+                item_image_icon
+                | image_url: width: item_icon_size
+                | image_tag:
+                    loading: 'lazy',
+                    widths: '32, 48, 64, 96, 128, 192',
+                    sizes: '96px',
+                    class: 'icon-with-text-item__image',
+                    alt: ''
+            }}
+        {%- else -%}
+            {%- render 'product-block-icon',
+                icon: item_icon,
+                size_px: item_icon_size,
+                class: 'icon-with-text-item__icon'
+            -%}
+        {%- endif -%}
+        <div class="icon-with-text-item__title {{ extra_title_class }}">
+            {{ item_title }}
+        </div>
+    {%- endcapture -%}
+
+    {%- if item_link != blank -%}
+        <a
+            href="{{ item_link }}"
+            class="icon-with-text-item icon-with-text-item--link {{ direction_class }} {{ alignment_class }} {{ extra_class }}"
+            style="--icon-with-text-icon-size: {{ item_icon_size }}px; --icon-with-text-icon-size-mobile: {{ item_icon_size_mobile }}px; --icon-with-text-gap: {{ item_gap }}px;"
+        >
+            {{ item_content }}
+        </a>
+    {%- else -%}
+        <div
+            class="icon-with-text-item {{ direction_class }} {{ alignment_class }} {{ extra_class }}"
+            style="--icon-with-text-icon-size: {{ item_icon_size }}px; --icon-with-text-icon-size-mobile: {{ item_icon_size_mobile }}px; --icon-with-text-gap: {{ item_gap }}px;"
+        >
+            {{ item_content }}
+        </div>
+    {%- endif -%}
+{%- endif -%}

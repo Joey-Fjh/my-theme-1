@@ -1,6 +1,6 @@
 <section
     data-section-id="{{ section.id }}"
-    class="product-comparison-table-section full-width color-{{ section.settings.color_scheme }}"
+    class="product-comparison-table-section full-width color-{{ section.settings.color_scheme }} bg-scheme-surface"
     style="
         --section-padding-top: {{ section.settings.padding_top | default: 0 }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom | default: 0 }}px;
@@ -11,6 +11,8 @@
     data-component-kind="section"
     data-component-type="product-comparison-table"
     data-component-id="{{ section.id }}"
+    x-data="motionRevealSection()"
+    data-motion-section
 >
     <div
         class="layout container-page mx-auto pb-8"
@@ -20,20 +22,23 @@
         "
     >
         {% if section.settings.heading != blank %}
-            <h2 class="mb-10 text-center h1 font-bold text-theme-text pc:mb-16">
+            <h1 class="mb-10 text-center pc:mb-16" data-motion-reveal="content">
                 {{ section.settings.heading }}
-            </h2>
+            </h1>
         {% endif %}
         {% if section.settings.products != blank and section.blocks.size > 0 %}
             <div
                 class="comparison-table-scroll overflow-x-auto"
-                aria-label="Scroll to compare more products"
+                data-motion-reveal="content"
+                tabindex="0"
+                role="group"
+                aria-label="{{ 'accessibility.scroll_to_compare' | t }}"
                 data-comparison-scroll
             >
                 <table
                     class="comparison-table table-fixed border-collapse text-left"
                     role="grid"
-                    aria-label="Product comparison"
+                    aria-label="{{ 'accessibility.product_comparison' | t }}"
                 >
                     <tbody>
                         {% for block in section.blocks %}
@@ -45,22 +50,22 @@
                                         comparison-table__sticky-col
                                         comparison-table__row-header
                                         sticky left-0 z-10
-                                        border border-theme-border-soft bg-theme-bg
-                                        px-4 py-5 align-middle body-md leading-snug font-medium whitespace-normal text-theme-text/70 shadow-[2px_0_6px_-2px_rgba(0,0,0,0.06)]
+                                        border border-theme-border-20 bg-theme-bg
+                                        px-4 py-5 align-middle whitespace-normal shadow-[2px_0_6px_-2px_rgba(0,0,0,0.06)]
                                         pc:px-6 pc:py-7
                                     "
                                 >
                                     {% case block.type %}
                                         {% when 'header' %}
-                                            Product
+                                            {{ 'products.comparison.product' | t }}
                                         {% when 'price' %}
-                                            Price
+                                            {{ 'products.comparison.price' | t }}
                                         {% when 'rating' %}
-                                            Rating
+                                            {{ 'products.comparison.rating' | t }}
                                         {% when 'metafield_text' %}
                                             {{ block.settings.row_title | default: '—' }}
                                         {% when 'availability' %}
-                                            Availability
+                                            {{ 'products.comparison.availability' | t }}
                                         {% else %}
                                             —
                                     {% endcase %}
@@ -77,7 +82,7 @@
                                     <td
                                         class="
                                             comparison-table__product-cell
-                                            border border-theme-border-soft p-3 align-middle pc:p-6
+                                            border border-theme-border-20 p-3 align-middle pc:p-6
                                             {% if is_highlight %}bg-(--comparison-column-bg-color){% else %}bg-transparent{% endif %}
                                         "
                                     >
@@ -89,32 +94,34 @@
                                                 >
                                                     <div class="mb-4 flex h-44 w-full items-center justify-center pc:mb-6 pc:h-[260px]">
                                                         <div class="h-full w-full max-w-[76%] pc:max-w-[74%]">
-                                                            {%-
-                                                                render 'image',
+                                                            {%- assign image_alt = item.featured_image.alt
+                                                                | default: item.title
+                                                            -%}
+                                                            {%- render 'image',
                                                                 image: item.featured_image,
                                                                 width: 360,
                                                                 aspect_ratio: '3/4',
                                                                 wrapper: 'div',
                                                                 class: 'w-full h-full',
                                                                 img_class: 'image_img w-full h-full object-contain object-center',
-                                                                alt: item.featured_image.alt | default: item.title
+                                                                alt: image_alt
                                                             -%}
                                                         </div>
                                                     </div>
-                                                    <span class="block w-full text-center body-md font-semibold text-theme-text">
+                                                    <span class="block w-full text-center">
                                                         {{- item.title -}}
                                                     </span>
                                                 </a>
 
                                             {% when 'price' %}
                                                 <div class="flex flex-wrap items-baseline gap-2">
-                                                    <span class="font-medium">
+                                                    <span>
                                                         {{- item.price | money -}}
                                                     </span>
                                                     {% if item.compare_at_price != blank
                                                         and item.compare_at_price > item.price
                                                     %}
-                                                        <span class="body-md text-theme-text/70 line-through">
+                                                        <span class="line-through">
                                                             {{- item.compare_at_price | money -}}
                                                         </span>
                                                     {% endif %}
@@ -125,10 +132,9 @@
                                                     {%- render 'starts',
                                                         rating: 4.5,
                                                         max: 5,
-                                                        size: 'lg',
                                                         wrapper_class: 'mb-0 inline-flex items-center flex-none comparison-table__rating-stars'
                                                     -%}
-                                                    <span class="comparison-table__rating-value shrink-0 body-md text-theme-text/70"
+                                                    <span class="comparison-table__rating-value shrink-0"
                                                         >4.5</span
                                                     >
                                                 </div>
@@ -142,7 +148,7 @@
                                                     {% assign meta_ns = meta_parts[0] %}
                                                     {% assign meta_key_name = meta_parts[1] %}
                                                     {% assign meta_val = item.metafields[meta_ns][meta_key_name] %}
-                                                    <div class="body-md text-theme-text/70">
+                                                    <div>
                                                         {% if meta_val != blank
                                                             and meta_val.value != blank
                                                         %}
@@ -154,24 +160,25 @@
                                                         {% endif %}
                                                     </div>
                                                 {% else %}
-                                                    <span class="body-md text-theme-text/60"
-                                                        >—</span
-                                                    >
+                                                    <span>—</span>
                                                 {% endif %}
 
                                             {% when 'availability' %}
                                                 {% if item.available %}
-                                                    <span class="body-md text-(--comparison-success-color)"
-                                                        >In stock</span
-                                                    >
+                                                    <span class="text-(--comparison-success-color)">
+                                                        {{- 'products.comparison.in_stock' | t -}}
+                                                    </span>
                                                 {% else %}
-                                                    <span class="body-md text-(--comparison-danger-color)"
-                                                        >Out of Stock</span
-                                                    >
+                                                    <span class="text-(--comparison-danger-color)">
+                                                        {{-
+                                                            'products.comparison.out_of_stock'
+                                                            | t
+                                                        -}}
+                                                    </span>
                                                 {% endif %}
 
                                             {% else %}
-                                                <span class="text-theme-text/60">—</span>
+                                                <span>—</span>
                                         {% endcase %}
                                     </td>
                                 {% endfor %}
@@ -181,9 +188,9 @@
                 </table>
             </div>
         {% else %}
-            <div class="py-12 text-center text-gray-500">
-                <p class="h5">Select products in the section settings to compare.</p>
-                <p class="mt-2 h6">Add blocks (Price, Rating, etc.) to define comparison rows.</p>
+            <div class="py-12 text-center text-theme-text/60">
+                <h4>{{ 'products.comparison.no_products' | t }}</h4>
+                <p class="mt-2">{{ 'products.comparison.no_blocks' | t }}</p>
             </div>
         {% endif %}
     </div>
@@ -201,9 +208,13 @@
                     const scrollEl = el.querySelector('[data-comparison-scroll]');
                     if (!scrollEl) return {};
 
-                    const timeoutRef = { id: null };
-                    const showDelayMs = 1000;
-                    const dragThresholdPx = 5;
+                    var Events = window.__Theme__?.Events;
+                    if (!Events?.createScope) return {};
+
+                    var scope = Events.createScope({ target: window });
+                    var timeoutRef = { id: null };
+                    var showDelayMs = 1000;
+                    var dragThresholdPx = 5;
 
                     function showScrollbar() {
                         scrollEl.classList.add('is-scrolling');
@@ -224,8 +235,29 @@
                     var dragStartScrollLeft = 0;
                     var isPointerDown = false;
                     var didDrag = false;
-                    var boundMove = null;
-                    var boundUp = null;
+
+                    scope.on(
+                        'mousemove',
+                        function (e) {
+                            if (!isPointerDown) return;
+                            var dx = dragStartX - e.clientX;
+                            scrollEl.scrollLeft = dragStartScrollLeft + dx;
+                            if (Math.abs(e.clientX - dragStartX) >= dragThresholdPx) {
+                                didDrag = true;
+                                scrollEl.classList.add('is-dragging');
+                                showScrollbar();
+                            }
+                        },
+                        { passive: true },
+                    );
+
+                    scope.on('mouseup', function () {
+                        isPointerDown = false;
+                        scrollEl.classList.remove('is-dragging');
+                        setTimeout(function () {
+                            didDrag = false;
+                        }, 0);
+                    });
 
                     function onPointerDown(e) {
                         if (e.button !== 0) return;
@@ -233,33 +265,6 @@
                         didDrag = false;
                         dragStartX = e.clientX;
                         dragStartScrollLeft = scrollEl.scrollLeft;
-                        boundMove = onPointerMove;
-                        boundUp = onPointerUp;
-                        window.addEventListener('mousemove', boundMove, { passive: true });
-                        window.addEventListener('mouseup', boundUp);
-                    }
-
-                    function onPointerMove(e) {
-                        if (!isPointerDown) return;
-                        var dx = dragStartX - e.clientX;
-                        scrollEl.scrollLeft = dragStartScrollLeft + dx;
-                        if (Math.abs(e.clientX - dragStartX) >= dragThresholdPx) {
-                            didDrag = true;
-                            scrollEl.classList.add('is-dragging');
-                            showScrollbar();
-                        }
-                    }
-
-                    function onPointerUp() {
-                        isPointerDown = false;
-                        scrollEl.classList.remove('is-dragging');
-                        if (boundMove) window.removeEventListener('mousemove', boundMove);
-                        if (boundUp) window.removeEventListener('mouseup', boundUp);
-                        boundMove = null;
-                        boundUp = null;
-                        setTimeout(function () {
-                            didDrag = false;
-                        }, 0);
                     }
 
                     scrollEl.addEventListener('mousedown', onPointerDown);
@@ -274,6 +279,7 @@
                     scrollEl.addEventListener('click', onLinkClick, true);
 
                     return {
+                        scope: scope,
                         scrollEl: scrollEl,
                         onScroll: onScroll,
                         timeoutRef: timeoutRef,
@@ -287,6 +293,7 @@
                     if (state.timeoutRef?.id) clearTimeout(state.timeoutRef.id);
                     state.scrollEl.removeEventListener('mousedown', state.onPointerDown);
                     state.scrollEl.removeEventListener('click', state.onLinkClick, true);
+                    state?.scope?.dispose();
                 },
             },
             { lazy: true },
@@ -391,14 +398,14 @@
             height: 8px;
         }
         .comparison-table-scroll.is-scrolling {
-            scrollbar-color: rgba(0, 0, 0, 0.25) transparent;
+            scrollbar-color: rgba(var(--color-foreground), 0.25) transparent;
         }
         .comparison-table-scroll::-webkit-scrollbar-track {
             background: transparent;
             border-radius: 4px;
         }
         .comparison-table-scroll::-webkit-scrollbar-thumb {
-            background: rgba(0, 0, 0, 0.25);
+            background: rgba(var(--color-foreground), 0.25);
             border-radius: 4px;
             opacity: 0;
             transition: opacity 0.25s ease-out;
@@ -407,14 +414,18 @@
             opacity: 1;
         }
         .comparison-table-scroll.is-scrolling::-webkit-scrollbar-thumb:hover {
-            background: rgba(0, 0, 0, 0.35);
+            background: rgba(var(--color-foreground), 0.35);
+        }
+        .comparison-table-scroll:focus-visible {
+            outline: 2px solid var(--color-theme-text);
+            outline-offset: -2px;
         }
     }
 {% endstylesheet %}
 
 {% schema %}
 {
-    "name": "Comparison Table",
+    "name": "t:sections.product-comparison-table.name",
     "tag": "section",
     "class": "section",
     "disabled_on": {
@@ -424,37 +435,37 @@
         {
             "type": "color_scheme",
             "id": "color_scheme",
-            "label": "Color scheme",
+            "label": "t:sections.product-comparison-table.settings.color_scheme",
             "default": "scheme-1"
         },
         {
             "type": "inline_richtext",
             "id": "heading",
-            "label": "Section heading",
-            "default": "Similar Comparison Products"
+            "label": "t:sections.product-comparison-table.settings.section_heading",
+            "default": "t:sections.product-comparison-table.defaults.heading"
         },
         {
             "type": "color",
             "id": "comparison_column_bg_color",
-            "label": "Highlight column background",
+            "label": "t:sections.product-comparison-table.settings.highlight_column_background",
             "default": "#F4F1E8"
         },
         {
             "type": "color",
             "id": "comparison_success_color",
-            "label": "Availability in stock color",
+            "label": "t:sections.product-comparison-table.settings.availability_in_stock_color",
             "default": "#228E58"
         },
         {
             "type": "color",
             "id": "comparison_danger_color",
-            "label": "Availability out of stock color",
+            "label": "t:sections.product-comparison-table.settings.availability_out_of_stock_color",
             "default": "#E04A4A"
         },
         {
             "type": "product_list",
             "id": "products",
-            "label": "Select Products",
+            "label": "t:sections.product-comparison-table.settings.select_products",
             "limit": 8
         },
         {
@@ -463,13 +474,13 @@
             "min": 0,
             "max": 8,
             "step": 1,
-            "default": 1,
-            "label": "Highlight Column Index",
-            "info": "1 = first product column; 0 = no highlight"
+            "default": 0,
+            "label": "t:sections.product-comparison-table.settings.highlight_column_index",
+            "info": "t:sections.product-comparison-table.info.1_first_product_column_0_no_highlight"
         },
         {
             "type": "header",
-            "content": "Padding"
+            "content": "t:sections.product-comparison-table.content.padding"
         },
         {
             "type": "range",
@@ -478,7 +489,7 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Top",
+            "label": "t:sections.product-comparison-table.settings.padding_top",
             "default": 0
         },
         {
@@ -488,58 +499,64 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Bottom",
+            "label": "t:sections.product-comparison-table.settings.padding_bottom",
             "default": 0
         }
     ],
     "blocks": [
         {
             "type": "header",
-            "name": "Product Info",
+            "name": "t:sections.product-comparison-table.blocks.product_info",
             "limit": 1
         },
         {
             "type": "price",
-            "name": "Price",
+            "name": "t:sections.product-comparison-table.blocks.price",
             "limit": 1
         },
         {
             "type": "rating",
-            "name": "Rating",
+            "name": "t:sections.product-comparison-table.blocks.rating",
             "limit": 1
         },
         {
             "type": "metafield_text",
-            "name": "Ingredients / Metafield",
+            "name": "t:sections.product-comparison-table.blocks.ingredients_metafield",
             "settings": [
                 {
                     "type": "inline_richtext",
                     "id": "row_title",
-                    "label": "Row title",
-                    "default": "Ingredients"
+                    "label": "t:sections.product-comparison-table.block_settings.row_title",
+                    "default": "t:sections.product-comparison-table.blocks_defaults.row_title"
                 },
                 {
                     "type": "text",
                     "id": "metafield_key",
-                    "label": "Metafield key (namespace.key)",
+                    "label": "t:sections.product-comparison-table.block_settings.metafield_key_namespace_key",
                     "default": "custom.ingredients",
-                    "info": "e.g. custom.ingredients"
+                    "info": "t:sections.product-comparison-table.block_info.e_g_custom_ingredients"
                 }
             ]
         },
         {
             "type": "availability",
-            "name": "Availability",
+            "name": "t:sections.product-comparison-table.blocks.availability",
             "limit": 1
         }
     ],
     "presets": [
         {
-            "name": "Comparison Table",
+            "name": "t:sections.product-comparison-table.presets.comparison_table",
             "blocks": [
-                { "type": "header" },
-                { "type": "price" },
-                { "type": "rating" },
+                {
+                    "type": "header"
+                },
+                {
+                    "type": "price"
+                },
+                {
+                    "type": "rating"
+                },
                 {
                     "type": "metafield_text",
                     "settings": {
@@ -547,7 +564,9 @@
                         "metafield_key": "custom.ingredients"
                     }
                 },
-                { "type": "availability" }
+                {
+                    "type": "availability"
+                }
             ]
         }
     ]

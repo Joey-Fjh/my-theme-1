@@ -29,6 +29,7 @@
             @click="open = !open"
             :aria-expanded="open"
             aria-haspopup="true"
+            aria-controls="country-list-{{ localPosition }}"
             class="localization-toggle"
         >
             <span>{{ localization.country.name }}</span>
@@ -39,19 +40,14 @@
         </button>
 
         <div
+            id="country-list-{{ localPosition }}"
             x-show="open"
             x-cloak
-            x-transition:enter="transition ease-out duration-200"
-            x-transition:enter-start="opacity-0 scale-95"
-            x-transition:enter-end="opacity-100 scale-100"
-            x-transition:leave="transition ease-in duration-150"
-            x-transition:leave-start="opacity-100 scale-100"
-            x-transition:leave-end="opacity-0 scale-95"
             class="localization-menu"
         >
             {%- if show_popular_countries -%}
                 <div>
-                    <div>Popular countries/regions</div>
+                    <div>{{ 'collections.popular_countries' | t }}</div>
                     {%- for country in popular_countries -%}
                         <div class="localization-item">
                             <button

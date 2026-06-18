@@ -6,16 +6,21 @@
       </div>
 {% endcomment %}
 
-<template x-for="(digit, i) in $data.getValue('{{ value }}').split('')" :key="`{{ unit }}-${i}`">
+<template
+    x-for="(digit, i) in $data.getValue($el.dataset.flipValue).split('')"
+    :key="`${$el.dataset.flipUnit}-${i}`"
+    data-flip-value="{{ value }}"
+    data-flip-unit="{{ unit | escape }}"
+>
     <div
         class="relative h-20 w-12 rounded-sm bg-theme-text perspective-[1000px] pc:h-32 pc:w-20 fw:h-36 fw:w-24"
-        x-data="{ prev: digit, current: digit, oldDigit: digit, flipping: false }"
-        x-effect="if (digit !== oldDigit) { current = digit; oldDigit = digit; flipping = true; setTimeout(() => { prev = current; flipping = false; }, 600); }"
+        x-data="flipDigit"
+        x-effect="updateDigit(digit)"
     >
         <!-- Background Top (shows NEW digit) -->
         <div class="absolute inset-x-0 top-0 h-1/2 overflow-hidden rounded-t-sm border-b border-theme-bg/20 bg-theme-text brightness-95">
             <span
-                class="absolute inset-x-0 top-0 flex h-[200%] items-center justify-center h0 font-bold text-theme-bg"
+                class="absolute inset-x-0 top-0 flex h-[200%] items-center justify-center body-xl font-bold text-theme-bg"
                 x-text="current"
             ></span>
         </div>
@@ -23,31 +28,29 @@
         <!-- Background Bottom (shows OLD digit until flip completes) -->
         <div class="absolute inset-x-0 bottom-0 h-1/2 overflow-hidden rounded-b-sm bg-theme-text">
             <span
-                class="absolute inset-x-0 bottom-0 flex h-[200%] items-center justify-center h0 font-bold text-theme-bg"
+                class="absolute inset-x-0 bottom-0 flex h-[200%] items-center justify-center body-xl font-bold text-theme-bg"
                 x-text="prev"
             ></span>
         </div>
 
         <!-- Flipping Top (shows OLD digit, flips down) -->
         <div
-            class="absolute inset-x-0 top-0 z-10 h-1/2 origin-bottom overflow-hidden rounded-t-sm border-b border-theme-bg/20 bg-theme-text brightness-95"
+            class="absolute inset-x-0 top-0 z-10 h-1/2 origin-bottom overflow-hidden rounded-t-sm border-b border-theme-bg/20 bg-theme-text brightness-95 backface-hidden"
             :class="flipping ? 'transition-transform duration-300 ease-in [transform:rotateX(-90deg)]' : '[transform:rotateX(0deg)]'"
-            style="backface-visibility: hidden;"
         >
             <span
-                class="absolute inset-x-0 top-0 flex h-[200%] items-center justify-center h0 font-bold text-theme-bg"
+                class="absolute inset-x-0 top-0 flex h-[200%] items-center justify-center body-xl font-bold text-theme-bg"
                 x-text="prev"
             ></span>
         </div>
 
         <!-- Flipping Bottom (shows NEW digit, flips down from 90deg) -->
         <div
-            class="absolute inset-x-0 bottom-0 z-10 h-1/2 origin-top overflow-hidden rounded-b-sm bg-theme-text"
+            class="absolute inset-x-0 bottom-0 z-10 h-1/2 origin-top overflow-hidden rounded-b-sm bg-theme-text backface-hidden"
             :class="flipping ? 'transition-transform duration-300 ease-out delay-300 [transform:rotateX(0deg)]' : '[transform:rotateX(90deg)]'"
-            style="backface-visibility: hidden;"
         >
             <span
-                class="absolute inset-x-0 bottom-0 flex h-[200%] items-center justify-center h0 font-bold text-theme-bg"
+                class="absolute inset-x-0 bottom-0 flex h-[200%] items-center justify-center body-xl font-bold text-theme-bg"
                 x-text="current"
             ></span>
         </div>

@@ -1,9 +1,6 @@
 <div
     data-section-id="{{ section.id }}"
-    class="
-        testimonial-featured-section full-width
-        color-{{ section.settings.color_scheme }}
-    "
+    class="testimonial-featured-section full-width color-{{ section.settings.color_scheme }} bg-scheme-surface"
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
@@ -13,11 +10,13 @@
     data-component-id="{{ section.id }}"
     data-auto-slide="{{ section.settings.is_auto_slide }}"
     data-slide-delay="{{ section.settings.slide_delay }}"
+    x-data="motionRevealSection()"
+    data-motion-section
 >
     <div class="layout container-page pc:h-full">
         <div class="flex flex-col gap-12 pc:h-screen pc:flex-row pc:gap-0">
             {% comment %} Left - Testimonial {% endcomment %}
-            <div class="swiper w-full flex-1 text-theme-text pc:h-full pc:w-1/2">
+            <div class="swiper w-full flex-1 pc:h-full pc:w-1/2" data-motion-reveal="content">
                 <div class="swiper-wrapper">
                     {% for block in section.blocks %}
                         <div class="swiper-slide h-auto pc:h-full" {{ block.shopify_attributes }}>
@@ -30,14 +29,14 @@
                                 {% render 'starts', rating: block.settings.rating, size: 'lg' %}
 
                                 <blockquote
-                                    class="max-w-[90%] h2 leading-relaxed pc:max-w-[60%]"
+                                    class="rte rte--compact max-w-[90%] body-lg pc:max-w-[60%]"
                                 >
                                     {{ block.settings.quote }}
                                 </blockquote>
 
                                 <div class="flex flex-col gap-3">
                                     <p
-                                        class="h4 font-bold"
+                                        class="body-lg font-bold"
                                     >
                                         {{
                                             block.settings.author_name
@@ -45,7 +44,7 @@
                                         }}
                                     </p>
                                     <p
-                                        class="body-lg opacity-80"
+                                        class="body-lg"
                                     >
                                         {{
                                             block.settings.author_title
@@ -60,7 +59,7 @@
             </div>
 
             {% comment %} Right - Image  {% endcomment %}
-            <div class="relative flex-1 text-theme-text pc:w-1/2">
+            <div class="relative flex-1 pc:w-1/2">
                 {% render 'image',
                     class: 'h-full w-full object-cover',
                     image: section.settings.image,
@@ -71,12 +70,12 @@
                 {% comment %} Floating Card {% endcomment %}
                 {% if section.settings.show_floating_card %}
                     <div
-                        class="absolute bottom-8 w-[90%] justify-self-center bg-theme-bg p-6 text-theme-text italic shadow-surface"
+                        class="absolute bottom-8 w-[90%] justify-self-center bg-theme-bg p-6 italic"
                     >
-                        <p class="mb-3 body-lg opacity-80">
+                        <p class="mb-3 body-lg">
                             {{ section.settings.card_label }}
                         </p>
-                        <p class="h4 font-bold">
+                        <p class="body-lg font-bold">
                             {{ section.settings.card_title }}
                         </p>
                     </div>
@@ -139,7 +138,7 @@
 
 {% schema %}
 {
-    "name": "Testimonial Featured",
+    "name": "t:sections.testimonial-featured.name",
     "tag": "section",
     "class": "section",
     "disabled_on": {
@@ -149,44 +148,44 @@
         {
             "type": "color_scheme",
             "id": "color_scheme",
-            "label": "Color Scheme",
-            "default": "color-scheme-1"
+            "label": "t:sections.testimonial-featured.settings.color_scheme",
+            "default": "scheme-1"
         },
         {
             "type": "image_picker",
             "id": "image",
-            "label": "Image"
+            "label": "t:sections.testimonial-featured.settings.image"
         },
         {
             "type": "header",
-            "content": "Floating Card"
+            "content": "t:sections.testimonial-featured.content.floating_card"
         },
         {
             "type": "checkbox",
             "id": "show_floating_card",
-            "label": "Show Floating Card",
+            "label": "t:sections.testimonial-featured.settings.show_floating_card",
             "default": true
         },
         {
             "type": "inline_richtext",
             "id": "card_label",
-            "label": "Card Label",
-            "default": "Recent Purchased"
+            "label": "t:sections.testimonial-featured.settings.card_label",
+            "default": "t:sections.testimonial-featured.defaults.card_label"
         },
         {
             "type": "inline_richtext",
             "id": "card_title",
-            "label": "Card Title",
-            "default": "Skincare Momonies"
+            "label": "t:sections.testimonial-featured.settings.card_title",
+            "default": "t:sections.testimonial-featured.defaults.card_title"
         },
         {
             "type": "header",
-            "content": "Slide Setting"
+            "content": "t:sections.testimonial-featured.content.slide_setting"
         },
         {
             "type": "checkbox",
             "id": "is_auto_slide",
-            "label": "Auto Slide",
+            "label": "t:sections.testimonial-featured.settings.auto_slide",
             "default": true
         },
         {
@@ -196,12 +195,12 @@
             "max": 10,
             "step": 1,
             "unit": "s",
-            "label": "Slide Delay",
+            "label": "t:sections.testimonial-featured.settings.slide_delay",
             "default": 5
         },
         {
             "type": "header",
-            "content": "Padding"
+            "content": "t:sections.testimonial-featured.content.padding"
         },
         {
             "type": "range",
@@ -210,7 +209,7 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Top",
+            "label": "t:sections.testimonial-featured.settings.padding_top",
             "default": 0
         },
         {
@@ -220,19 +219,19 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Bottom",
+            "label": "t:sections.testimonial-featured.settings.padding_bottom",
             "default": 0
         }
     ],
     "blocks": [
         {
             "type": "testimonial",
-            "name": "Testimonial",
+            "name": "t:sections.testimonial-featured.blocks.testimonial",
             "settings": [
                 {
                     "type": "range",
                     "id": "rating",
-                    "label": "Star Rating",
+                    "label": "t:sections.testimonial-featured.block_settings.star_rating",
                     "min": 1,
                     "max": 5,
                     "step": 1,
@@ -241,27 +240,27 @@
                 {
                     "type": "richtext",
                     "id": "quote",
-                    "label": "Quote",
-                    "default": "<p>Using this software has transformed my workflow! The AI insights are incredibly personalized, making my tasks easier and more efficient. I can't imagine going back to the old way of doing things!</p>"
+                    "label": "t:sections.testimonial-featured.block_settings.quote",
+                    "default": "t:sections.testimonial-featured.defaults.quote"
                 },
                 {
                     "type": "inline_richtext",
                     "id": "author_name",
-                    "label": "Author Name",
-                    "default": "Alexandria Maria"
+                    "label": "t:sections.testimonial-featured.block_settings.author_name",
+                    "default": "t:sections.testimonial-featured.defaults.author_name"
                 },
                 {
                     "type": "inline_richtext",
                     "id": "author_title",
-                    "label": "Author Title",
-                    "default": "Beauty Influencer"
+                    "label": "t:sections.testimonial-featured.block_settings.author_title",
+                    "default": "t:sections.testimonial-featured.defaults.author_title"
                 }
             ]
         }
     ],
     "presets": [
         {
-            "name": "Testimonial Featured"
+            "name": "t:sections.testimonial-featured.presets.testimonial_featured"
         }
     ]
 }

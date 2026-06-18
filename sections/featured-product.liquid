@@ -3,10 +3,7 @@
 
 <div
     data-section-id="{{ section.id }}"
-    class="
-        featured-product-section full-width bg-theme-bg text-theme-text
-        color-{{ section.settings.color_scheme }}
-    "
+    class="featured-product-section full-width color-{{ section.settings.color_scheme }} bg-scheme-surface"
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
@@ -14,8 +11,13 @@
     data-component-kind="section"
     data-component-type="featured-product"
     data-component-id="{{ section.id }}"
+    x-data="productLayout"
 >
-    <div class="layout container-page overflow-visible!">
+    <div
+        class="layout container-page overflow-visible!"
+        x-data="motionRevealSection()"
+        data-motion-section
+    >
         <div
             class="grid w-full min-w-0 grid-cols-1 items-start gap-8 pc:grid-cols-[minmax(0,var(--product-media-fr))_minmax(0,var(--product-info-fr))] pc:items-stretch pc:gap-10 fw:gap-12"
             style="
@@ -26,6 +28,7 @@
             <div
                 class="flex min-w-0 flex-col gap-8"
                 data-product-media-column
+                data-motion-reveal="media"
             >
                 <div
                     class="min-w-0 overflow-hidden"
@@ -43,7 +46,7 @@
                 </div>
             </div>
 
-            <div class="min-w-0" data-product-info-panel>
+            <div class="min-w-0" data-product-info-panel data-motion-reveal="content">
                 <div class="self-start" data-product-info-sticky-target>
                     {%- render 'product-info-blocks',
                         product: section.settings.product,
@@ -58,35 +61,9 @@
     </div>
 </div>
 
-{%- javascript -%}
-    (function () {
-        const Components = window.__Theme__?.Components;
-        const Utils = window.__Theme__?.Utils;
-        if (!Components || !Utils?.setupProductLayout) return;
-
-        Components.register(
-            'featured-product',
-            {
-                init(el) {
-                    return Utils.setupProductLayout(el);
-                },
-
-                destroy(el, state) {
-                    if (state?.frame) cancelAnimationFrame(state.frame);
-                    state?.resizeObserver?.disconnect?.();
-                    window.removeEventListener('resize', state?.sync);
-                    state?.desktopQuery?.removeEventListener?.('change', state?.sync);
-                    state?.reset?.();
-                },
-            },
-            { lazy: true },
-        );
-    })();
-{%- endjavascript -%}
-
 {% schema %}
 {
-    "name": "Featured Product",
+    "name": "t:sections.featured-product.name",
     "tag": "section",
     "class": "section",
     "disabled_on": {
@@ -96,21 +73,27 @@
         {
             "type": "color_scheme",
             "id": "color_scheme",
-            "label": "Color Scheme",
-            "default": "color-scheme-1"
+            "label": "t:sections.featured-product.settings.color_scheme",
+            "default": "scheme-1"
         },
         {
             "type": "product",
             "id": "product",
-            "label": "Select Product"
+            "label": "t:sections.featured-product.settings.select_product"
         },
         {
             "type": "select",
             "id": "thumb_position",
-            "label": "Thumbnail position",
+            "label": "t:sections.featured-product.settings.thumbnail_position",
             "options": [
-                { "value": "left", "label": "Left" },
-                { "value": "bottom", "label": "Bottom" }
+                {
+                    "value": "left",
+                    "label": "t:sections.featured-product.options.left"
+                },
+                {
+                    "value": "bottom",
+                    "label": "t:sections.featured-product.options.bottom"
+                }
             ],
             "default": "left"
         },
@@ -121,25 +104,37 @@
             "max": 60,
             "step": 1,
             "unit": "%",
-            "label": "Desktop media width",
+            "label": "t:sections.featured-product.settings.desktop_media_width",
             "default": 60
         },
         {
             "type": "select",
             "id": "thumbnail_visible_count",
-            "label": "Bottom visible thumbnails",
+            "label": "t:sections.featured-product.settings.bottom_visible_thumbnails",
             "options": [
-                { "value": "3", "label": "3" },
-                { "value": "4", "label": "4" },
-                { "value": "5", "label": "5" },
-                { "value": "6", "label": "6" }
+                {
+                    "value": "3",
+                    "label": "t:sections.featured-product.options.3"
+                },
+                {
+                    "value": "4",
+                    "label": "t:sections.featured-product.options.4"
+                },
+                {
+                    "value": "5",
+                    "label": "t:sections.featured-product.options.5"
+                },
+                {
+                    "value": "6",
+                    "label": "t:sections.featured-product.options.6"
+                }
             ],
             "default": "4",
-            "info": "Applies when thumbnail position is bottom."
+            "info": "t:sections.featured-product.info.applies_when_thumbnail_position_is_botto"
         },
         {
             "type": "header",
-            "content": "Padding"
+            "content": "t:sections.featured-product.content.padding"
         },
         {
             "type": "range",
@@ -148,7 +143,7 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Top",
+            "label": "t:sections.featured-product.settings.padding_top",
             "default": 0
         },
         {
@@ -158,7 +153,7 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Bottom",
+            "label": "t:sections.featured-product.settings.padding_bottom",
             "default": 0
         }
     ],
@@ -168,47 +163,62 @@
         },
         {
             "type": "title",
-            "name": "Title",
+            "name": "t:sections.featured-product.blocks.title",
             "limit": 1
         },
         {
             "type": "vendor",
-            "name": "Vendor",
+            "name": "t:sections.featured-product.blocks.vendor",
             "limit": 1
         },
         {
             "type": "price",
-            "name": "Price",
+            "name": "t:sections.featured-product.blocks.price",
             "limit": 1
         },
         {
             "type": "description",
-            "name": "Description",
+            "name": "t:sections.featured-product.blocks.description",
             "limit": 1
         },
         {
             "type": "variant_picker",
-            "name": "Variant picker",
+            "name": "t:sections.featured-product.blocks.variant_picker",
             "limit": 1,
             "settings": [
                 {
                     "type": "select",
                     "id": "picker_type",
-                    "label": "Style",
+                    "label": "t:sections.featured-product.block_settings.style",
                     "options": [
-                        { "value": "dropdown", "label": "Dropdown" },
-                        { "value": "button", "label": "Pills" }
+                        {
+                            "value": "dropdown",
+                            "label": "t:sections.featured-product.options.dropdown"
+                        },
+                        {
+                            "value": "button",
+                            "label": "t:sections.featured-product.options.pills"
+                        }
                     ],
                     "default": "button"
                 },
                 {
                     "type": "select",
                     "id": "swatch_shape",
-                    "label": "Swatch shape",
+                    "label": "t:sections.featured-product.block_settings.swatch_shape",
                     "options": [
-                        { "value": "circle", "label": "Circle" },
-                        { "value": "square", "label": "Square" },
-                        { "value": "none", "label": "None" }
+                        {
+                            "value": "circle",
+                            "label": "t:sections.featured-product.options.circle"
+                        },
+                        {
+                            "value": "square",
+                            "label": "t:sections.featured-product.options.square"
+                        },
+                        {
+                            "value": "none",
+                            "label": "t:sections.featured-product.options.none"
+                        }
                     ],
                     "default": "circle"
                 }
@@ -216,47 +226,61 @@
         },
         {
             "type": "quantity_selector",
-            "name": "Quantity selector",
+            "name": "t:sections.featured-product.blocks.quantity_selector",
             "limit": 1
         },
         {
             "type": "buy_buttons",
-            "name": "Buy buttons",
+            "name": "t:sections.featured-product.blocks.buy_buttons",
             "limit": 1,
             "settings": [
                 {
                     "type": "checkbox",
                     "id": "show_dynamic_checkout",
-                    "label": "Show dynamic checkout buttons",
-                    "info": "Using the payment methods available on your store, customers see their preferred option, like PayPal or Apple Pay.",
+                    "label": "t:sections.featured-product.block_settings.show_dynamic_checkout_buttons",
+                    "info": "t:sections.featured-product.block_info.using_the_payment_methods_available_on_y",
                     "default": true
                 }
             ]
         },
         {
             "type": "custom_liquid",
-            "name": "Custom liquid",
+            "name": "t:sections.featured-product.blocks.custom_liquid",
             "settings": [
                 {
                     "type": "liquid",
                     "id": "custom_liquid",
-                    "label": "Custom liquid"
+                    "label": "t:sections.featured-product.block_settings.custom_liquid"
                 }
             ]
         }
     ],
     "presets": [
         {
-            "name": "Featured Product",
+            "name": "t:sections.featured-product.presets.featured_product",
             "settings": {},
             "blocks": [
-                { "type": "vendor" },
-                { "type": "title" },
-                { "type": "price" },
-                { "type": "description" },
-                { "type": "variant_picker" },
-                { "type": "quantity_selector" },
-                { "type": "buy_buttons" }
+                {
+                    "type": "vendor"
+                },
+                {
+                    "type": "title"
+                },
+                {
+                    "type": "price"
+                },
+                {
+                    "type": "description"
+                },
+                {
+                    "type": "variant_picker"
+                },
+                {
+                    "type": "quantity_selector"
+                },
+                {
+                    "type": "buy_buttons"
+                }
             ]
         }
     ]

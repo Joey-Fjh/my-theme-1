@@ -2,7 +2,7 @@
     data-section-id="{{ section.id }}"
     class="
         main-page-about-section full-width relative overflow-hidden color-{{ section.settings.color_scheme }}
-        min-h-168 pc:min-h-0
+        min-h-200 pc:min-h-0
     "
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
@@ -11,9 +11,10 @@
     data-component-kind="section"
     data-component-type="main-page-about"
     data-component-id="{{ section.id }}"
+    x-data="motionRevealSection()"
+    data-motion-section
 >
     <div
-        data-gsap-image
         class="absolute inset-0 h-full w-full pc:static pc:h-auto"
     >
         {%- capture sizes -%}
@@ -24,10 +25,11 @@
             400,768,1280,1536,2560
         {%- endcapture -%}
 
-        {%-
-            render 'image',
+        {%- assign image_alt_fallback = 'sections.main-page-about.defaults.image_alt' | t -%}
+        {%- assign image_alt = section.settings.image_alt | default: image_alt_fallback | escape -%}
+        {%- render 'image',
             image: section.settings.image,
-            alt: section.settings.image_alt | default: 'About Us' | escape,
+            alt: image_alt,
             width: section.settings.image.width,
             sizes: sizes,
             widths: widths,
@@ -37,22 +39,22 @@
     </div>
 
     <div class="layout container-page absolute inset-0">
-        <div class="mx-auto flex h-full w-full max-w-lg flex-col items-center justify-start gap-3 px-6 pt-28 text-center text-white pc:max-w-1/2 pc:justify-center pc:gap-5 pc:pt-0">
-            <h3
-                data-gsap-item
-                class="h5 text-theme-text pc:h3"
+        <div class="mx-auto flex h-full w-full max-w-3xl flex-col items-center justify-start gap-3 px-6 pt-28 text-center pc:max-w-1/2 pc:justify-center pc:gap-5 pc:pt-0">
+            <p
+                class="sub-heading"
+                data-motion-reveal="content"
             >
                 {{ section.settings.eyebrow }}
-            </h3>
+            </p>
             <h1
-                data-gsap-item
-                class="h2 font-bold pc:hxl"
+                data-motion-reveal="content"
+                class="pc:heading-2xl"
             >
                 {{ section.settings.heading }}
             </h1>
             <div
-                data-gsap-item
-                class="rte rte--compact body-sm opacity-80 pc:body-md"
+                data-motion-reveal="content"
+                class="rte rte--compact"
             >
                 {{ section.settings.description }}
             </div>
@@ -60,72 +62,9 @@
     </div>
 </div>
 
-{%- javascript -%}
-    (function () {
-        const Components = window.__Theme__?.Components;
-        if (!Components || typeof gsap === 'undefined') return;
-
-        Components.register(
-            'main-page-about',
-            {
-                init(el) {
-                    const ctx = gsap.context(() => {
-                        const imageWrapper = el.querySelector('[data-gsap-image]');
-                        const image = imageWrapper?.querySelector('img');
-                        const items = el.querySelectorAll('[data-gsap-item]');
-
-                        if (!image || !items.length) return;
-
-                        gsap.set(image, { scale: 1.1, opacity: 0 });
-                        gsap.set(items, { y: 40, opacity: 0 });
-
-                        const tl = gsap.timeline({
-                            defaults: { ease: 'power2.out' },
-                            scrollTrigger: {
-                                trigger: el,
-                                start: 'top 80%',
-                                once: true,
-                            },
-                        });
-
-                        tl.to(image, {
-                            scale: 1,
-                            opacity: 1,
-                            duration: 1.3,
-                        });
-
-                        tl.to(
-                            items,
-                            {
-                                y: 0,
-                                opacity: 1,
-                                duration: 0.9,
-                                stagger: 0.2,
-                            },
-                            '-=0.8',
-                        );
-                    }, el);
-
-                    return { ctx };
-                },
-
-                destroy(el, state) {
-                    if (state?.ctx) {
-                        state.ctx.revert();
-                    }
-                },
-            },
-            { lazy: true },
-        );
-    })();
-{%- endjavascript -%}
-
-{%- stylesheet -%}
-{%- endstylesheet -%}
-
 {% schema %}
 {
-    "name": "About Us",
+    "name": "t:sections.main-page-about.name",
     "tag": "section",
     "class": "section",
     "enabled_on": {
@@ -135,41 +74,41 @@
         {
             "type": "color_scheme",
             "id": "color_scheme",
-            "label": "Color scheme",
+            "label": "t:sections.main-page-about.settings.color_scheme",
             "default": "scheme-1"
         },
         {
             "type": "image_picker",
             "id": "image",
-            "label": "Image"
+            "label": "t:sections.main-page-about.settings.image"
         },
         {
             "type": "inline_richtext",
             "id": "eyebrow",
-            "default": "About Eccenova",
-            "label": "Eyebrow text"
+            "default": "t:sections.main-page-about.defaults.eyebrow",
+            "label": "t:sections.main-page-about.settings.eyebrow_text"
         },
         {
             "type": "inline_richtext",
             "id": "heading",
-            "default": "A Gentle Approach to Better Skin",
-            "label": "Heading"
+            "default": "t:sections.main-page-about.defaults.heading",
+            "label": "t:sections.main-page-about.settings.heading"
         },
         {
             "type": "richtext",
             "id": "description",
-            "default": "<p>Because your skin deserves more than promises.</p>",
-            "label": "Description"
+            "default": "t:sections.main-page-about.defaults.description",
+            "label": "t:sections.main-page-about.settings.description"
         },
         {
             "type": "text",
             "id": "image_alt",
-            "default": "About Us",
-            "label": "Image alt text"
+            "default": "t:sections.main-page-about.defaults.image_alt",
+            "label": "t:sections.main-page-about.settings.image_alt_text"
         },
         {
             "type": "header",
-            "content": "Padding"
+            "content": "t:sections.main-page-about.content.padding"
         },
         {
             "type": "range",
@@ -178,7 +117,7 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Top",
+            "label": "t:sections.main-page-about.settings.padding_top",
             "default": 0
         },
         {
@@ -188,14 +127,8 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Bottom",
+            "label": "t:sections.main-page-about.settings.padding_bottom",
             "default": 0
-        }
-    ],
-    "presets": [
-        {
-            "name": "About Us",
-            "settings": {}
         }
     ]
 }

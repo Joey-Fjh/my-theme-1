@@ -17,20 +17,14 @@
 {%- unless product.has_only_default_variant -%}
     {%- assign product_form_id = product_form_id | default: 'product-form-' | append: section_id -%}
 
-    <script id="ProductVariants-{{ section_id }}" type="application/json">
-        {{ product.variants | json }}
-    </script>
-
     <div
         id="VariantPicker-{{ section_id }}"
         class="flex flex-col gap-4 pc:gap-5"
-        x-data="
-            VariantPicker({
-              sectionId: '{{ section_id }}',
-              productId: {{ product.id }},
-              productFormId: '{{ product_form_id }}'
-            })
-        "
+        data-section-id="{{ section_id }}"
+        data-product-id="{{ product.id }}"
+        data-product-form-id="{{ product_form_id }}"
+        data-variants="{{ product.variants | json | escape }}"
+        x-data="VariantPicker()"
         {{ block.shopify_attributes }}
     >
         {%- for option in product.options_with_values -%}
@@ -66,7 +60,7 @@
                     <div class="relative mt-5 p-0.5">
                         <select
                             id="OptionDropdown-{{ section_id }}-{{ forloop.index0 }}"
-                            class="w-full cursor-pointer appearance-none rounded-sm border border-theme-border px-4 py-3 body-md text-theme-text focus:border-theme-border-strong focus:outline-none"
+                            class="field-select"
                             name="options[{{ option_name_escaped }}]"
                             form="{{ product_form_id }}"
                             x-model="selectedOptions['{{ option_name_escaped }}']"
@@ -84,7 +78,7 @@
                                     {%- if value.available -%}
                                         {{- value -}}
                                     {%- else -%}
-                                        {{- value }} — Sold out
+                                        {{- value }} — {{ 'products.product.sold_out' | t }}
                                     {%- endif -%}
                                 </option>
                             {%- endfor -%}
@@ -93,9 +87,7 @@
                             class="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-theme-text/60"
                             aria-hidden="true"
                         >
-                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z"/>
-                            </svg>
+                            {%- render 'icons', icon: 'icon-chevron-down' -%}
                         </span>
                     </div>
                 </div>
@@ -157,13 +149,16 @@
                                         x-model="selectedOptions['{{ option_name_escaped }}']"
                                         @change="onVariantChange()"
                                         data-option-value-id="{{ value.id }}"
+                                        {% if value == option.selected_value %}
+                                            checked
+                                        {% endif %}
                                     >
                                     <span
                                         class="block h-8 w-8 border transition-all {{ shape_class }} border-theme-border"
                                         :class="
                                             selectedOptions['{{ option_name_escaped }}'] === '{{ escaped_value }}'
                                             ? 'ring-2 ring-theme-text ring-offset-2 ring-offset-theme-bg'
-                                            : 'hover:border-theme-border-strong'
+                                            : 'hover:border-theme-border'
                                         "
                                         {%- if swatch_bg %}
                                             style="background: {{ swatch_bg }}; background-size: cover;"
@@ -180,7 +175,9 @@
                                     {%- endunless -%}
                                     <span class="sr-only">
                                         {{ escaped_value }}
-                                        {%- unless value.available %} - Sold out{%- endunless -%}
+                                        {%- unless value.available %}
+                                            - {{ 'products.product.sold_out' | t }}
+                                        {%- endunless -%}
                                     </span>
                                 </label>
 
@@ -197,14 +194,17 @@
                                         x-model="selectedOptions['{{ option_name_escaped }}']"
                                         @change="onVariantChange()"
                                         data-option-value-id="{{ value.id }}"
+                                        {% if value == option.selected_value %}
+                                            checked
+                                        {% endif %}
                                     >
                                     <span
                                         class="block rounded-sm border px-4 py-2 body-md transition-colors"
                                         :class="
                                             [
                                               selectedOptions['{{ option_name_escaped }}'] === '{{ escaped_value }}'
-                                                ? 'border-theme-border-strong text-theme-text'
-                                                : 'border-theme-border text-theme-text/70 hover:border-theme-border-strong hover:text-theme-text',
+                                                ? 'border-theme-text bg-theme-text text-theme-bg'
+                                                : 'border-theme-border bg-transparent text-theme-text/70 hover:border-theme-border hover:text-theme-text',
                                               !isValueAvailable('{{ option_name_escaped }}', '{{ escaped_value }}') && 'opacity-40 line-through'
                                             ]
                                         "
@@ -212,7 +212,9 @@
                                         {{ value }}
                                     </span>
                                     {%- unless value.available -%}
-                                        <span class="sr-only">Sold out</span>
+                                        <span class="sr-only">
+                                            {{- 'products.product.sold_out' | t -}}
+                                        </span>
                                     {%- endunless -%}
                                 </label>
                             {%- endif -%}

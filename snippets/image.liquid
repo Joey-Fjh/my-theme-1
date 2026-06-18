@@ -22,12 +22,13 @@
     @param {string} [sizes] - Optional sizes attribute for responsive images
     @param {string} [loading] - Optional loading attribute for the img tag ('lazy' or 'eager')
     @param {string} [decoding] - Optional decoding attribute for the img tag ('async', 'sync' or 'auto')
-    @param {string} [alt] - Optional alt text for the image
+    @param {string} [alt] - Alt text for the image (defaults to empty string for decorative images)
     @param {string} [aspect_ratio] - Optional aspect ratio for the image (e.g. '16:9')
     @param {string} [placeholder_key] - Optional placeholder key for nil image
     @param {string} [placeholder_class] - Optional extra class for the placeholder svg
     @param {string} [placeholder_aspect_ratio] - Optional fallback aspect ratio when image is nil (defaults to '4/3')
     @param {string} [extra_attributes] - Additional raw HTML attributes applied to the <img> element
+    @param {string} [fetchpriority] - Optional fetchpriority attribute for the img tag ('high', 'low', or 'auto')
 
     @example
     {% render 'image', image: product.featured_image, url: product.url %}
@@ -49,6 +50,7 @@
 
     assign loading = loading | default: 'lazy'
     assign decoding = decoding | default: 'async'
+    assign fetchpriority = fetchpriority
     assign placeholder_aspect_ratio = placeholder_aspect_ratio | default: '4/3'
     assign aspect_ratio = aspect_ratio
     if aspect_ratio == blank and image != blank and image.width and image.height
@@ -60,6 +62,11 @@
     assign class = class | default: ''
     assign img_class = img_class | default: ''
     assign extra_attributes = extra_attributes | default: ''
+    assign alt = alt | default: ''
+
+    if fetchpriority != blank
+        assign extra_attributes = extra_attributes | append: ' fetchpriority="' | append: fetchpriority | append: '"'
+    endif
 -%}
 
 {% liquid
@@ -92,7 +99,7 @@
     assign placeholder_class = 'svg-placeholder ' | append: placeholder_class
     assign placeholder_class = placeholder_class | strip
 
-    assign wrapper_class = 'image'
+    assign wrapper_class = 'theme-image'
     if class != blank
         assign wrapper_class = wrapper_class | append: ' ' | append: class
     endif
@@ -103,6 +110,7 @@
     {% if url %}
         href="{{ url }}"
     {% endif %}
+    data-motion-reveal="media"
     {%- if aspect_ratio -%}
         style="--aspect-ratio: {{ aspect_ratio }}"
     {%- endif -%}
@@ -133,7 +141,7 @@
 </{{ wrapper }}>
 
 {% stylesheet %}
-    .image {
+    .theme-image {
         display: block;
         position: relative;
         overflow: hidden;
@@ -142,7 +150,7 @@
         height: 100%;
     }
 
-    .image > .image_img {
+    .theme-image > .image_img {
         width: 100%;
         height: 100%;
         display: block;

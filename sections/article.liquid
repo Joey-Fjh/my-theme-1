@@ -1,6 +1,6 @@
 <div
     data-section-id="{{ section.id }}"
-    class="article-section full-width color-{{ section.settings.color_scheme }}"
+    class="article-section full-width color-{{ section.settings.color_scheme }} bg-scheme-surface"
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
@@ -8,6 +8,8 @@
     data-component-kind="section"
     data-component-type="article"
     data-component-id="{{ section.id }}"
+    x-data="motionRevealSection()"
+    data-motion-section
 >
     <div class="article-hero relative overflow-hidden pc:max-h-200">
         {%- capture sizes -%}
@@ -23,10 +25,10 @@
             {%- assign image = section.settings.image -%}
         {%- endif -%}
 
-        {%-
-            render 'image',
+        {%- assign image_alt = image.alt | default: section.settings.image_alt | escape -%}
+        {%- render 'image',
             image: image,
-            alt: image.alt | default: section.settings.image_alt | escape,
+            alt: image_alt,
             width: image.width,
             class: 'h-full w-full',
             img_class: 'h-full w-full object-cover object-center',
@@ -36,27 +38,31 @@
 
         <div class="article-hero__overlay absolute inset-0 z-10">
             <div
-                class="article-hero__content mx-auto flex h-full w-full max-w-lg flex-col items-center justify-center gap-4 px-6 text-center text-theme-text pc:max-w-1/2 pc:gap-5"
+                class="article-hero__content mx-auto flex h-full w-full max-w-lg flex-col items-center justify-center gap-4 px-6 text-center pc:max-w-1/2 pc:gap-5"
+                data-motion-reveal="content"
             >
                 {%- if section.settings.eyebrow != blank -%}
-                    <h3 class="opacity-80">
+                    <p class="sub-heading">
                         {{ section.settings.eyebrow }}
-                    </h3>
+                    </p>
                 {%- endif -%}
 
-                <h1 class="font-bold pc:hxl">
+                <h1
+                    class="line-clamp-3 max-w-full min-w-0 pc:heading-2xl"
+                    title="{{ article.title | escape }}"
+                >
                     {{ article.title }}
                 </h1>
             </div>
         </div>
     </div>
 
-    <div class="layout layout-no-pt container-page mt-12 bg-theme-bg text-theme-text">
+    <div class="layout layout-no-pt container-page mt-12">
         <div class="flex flex-col gap-16 pc:flex-row pc:gap-24 fw:gap-32">
             {% comment %} Aside Bar {% endcomment %}
             <aside
-                class="shrink-0 -translate-x-7.5 h2 opacity-0 max-pc:hidden pc:w-72 fw:w-80"
-                data-gsap-sidebar
+                class="shrink-0 body-lg max-pc:hidden pc:w-72 fw:w-80"
+                data-motion-reveal="content"
             >
                 <nav class="pc:sticky">
                     <ul
@@ -69,11 +75,11 @@
                                 <a
                                     href="{{ a.url }}"
                                     class="
-                                        inline-block max-w-full truncate body-md leading-snug underline-offset-4 transition-colors duration-200 hover:underline
+                                        inline-block max-w-full truncate underline-offset-4 transition-colors duration-200 hover:underline
                                         {% if a.id == article.id %}
-                                          text-theme-text underline
+                                          text-theme-text-80 underline
                                         {% else %}
-                                          text-theme-text/60 hover:text-theme-text
+                                          text-theme-text/50 hover:text-theme-text-80
                                         {% endif %}
                                     "
                                 >
@@ -87,90 +93,29 @@
 
             {% comment %} Article  {% endcomment %}
             <article
-                class="article-content min-w-0 flex-1 translate-y-7.5 opacity-0"
-                data-gsap-content
+                class="article-content min-w-0 flex-1"
+                data-motion-reveal="content"
             >
-                <div class="flex items-center justify-between border-b border-theme-border-soft pb-3">
-                    <h1 class="h2">{{ article.title }}</h1>
+                <div class="flex items-center justify-between border-b border-theme-border-20 pb-3">
+                    <h2>{{ article.title }}</h2>
+
                     {%- assign date = article.published_at | time_tag: format: 'date' -%}
-                    <p class="body-sm text-theme-text/70">
+                    <p>
                         {{ 'blog.article_metadata_html' | t: date: date, author: article.author }}
                     </p>
                 </div>
                 <div class="rte py-10">
                     {{ article.content }}
                 </div>
-                <div class="flex flex-col gap-3 border-t border-theme-border-soft pt-3">
+                <div class="flex flex-col gap-3 border-t border-theme-border-20 pt-3">
                     {%- if section.settings.show_social -%}
-                        {%- render 'social-icons',
-                            type: 'name',
-                            color: 'current',
-                            class: 'self-end'
-                        -%}
+                        {%- render 'social-icons', type: 'name', class: 'self-end' -%}
                     {%- endif -%}
                 </div>
             </article>
         </div>
     </div>
 </div>
-
-{%- javascript -%}
-    (function () {
-        const Components = window.__Theme__?.Components;
-        if (!Components) return;
-
-        Components.register(
-            'article',
-            {
-                init(el) {
-                    if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
-
-                    gsap.registerPlugin(ScrollTrigger);
-
-                    const sidebar = el.querySelector('[data-gsap-sidebar]');
-                    const content = el.querySelector('[data-gsap-content]');
-
-                    const ctx = gsap.context(() => {
-                        const tl = gsap.timeline({
-                            defaults: { ease: 'power2.out' },
-                        });
-
-                        /* Sidebar slide in */
-                        if (sidebar) {
-                            tl.to(sidebar, {
-                                opacity: 1,
-                                x: 0,
-                                duration: 0.7,
-                            });
-                        }
-
-                        /* Content fade up */
-                        if (content) {
-                            tl.to(
-                                content,
-                                {
-                                    opacity: 1,
-                                    y: 0,
-                                    duration: 0.7,
-                                },
-                                '-=0.4',
-                            );
-                        }
-                    }, el);
-
-                    return { ctx };
-                },
-
-                destroy(el, state) {
-                    if (state?.ctx) {
-                        state.ctx.revert();
-                    }
-                },
-            },
-            { lazy: true },
-        );
-    })();
-{%- endjavascript -%}
 
 {%- stylesheet -%}
     .article-hero {
@@ -206,25 +151,25 @@
         {
             "type": "color_scheme",
             "id": "color_scheme",
-            "label": "Color scheme",
+            "label": "t:sections.article.settings.color_scheme",
             "default": "scheme-1"
         },
         {
             "type": "image_picker",
             "id": "image",
-            "label": "Image"
+            "label": "t:sections.article.settings.image"
         },
         {
             "type": "text",
             "id": "image_alt",
-            "default": "About Us",
-            "label": "Image alt text"
+            "default": "t:sections.article.defaults.image_alt",
+            "label": "t:sections.article.settings.image_alt_text"
         },
         {
             "type": "inline_richtext",
             "id": "eyebrow",
             "default": "categories",
-            "label": "Eyebrow text"
+            "label": "t:sections.article.settings.eyebrow_text"
         },
         {
             "type": "range",
@@ -233,18 +178,18 @@
             "max": 10,
             "step": 1,
             "default": 8,
-            "label": "Maximum items"
+            "label": "t:sections.article.settings.maximum_items"
         },
         {
             "type": "checkbox",
             "id": "show_social",
             "default": false,
-            "label": "Social icon",
-            "info": "[Manage social accounts](/editor?context=theme&category=social%20icon)"
+            "label": "t:sections.article.settings.social_icon",
+            "info": "t:sections.article.info.manage_social_accounts_editor_context_th"
         },
         {
             "type": "header",
-            "content": "Padding"
+            "content": "t:sections.article.content.padding"
         },
         {
             "type": "range",
@@ -253,7 +198,7 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Top",
+            "label": "t:sections.article.settings.padding_top",
             "default": 0
         },
         {
@@ -263,13 +208,8 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Bottom",
+            "label": "t:sections.article.settings.padding_bottom",
             "default": 0
-        }
-    ],
-    "presets": [
-        {
-            "name": "t:general.article"
         }
     ]
 }

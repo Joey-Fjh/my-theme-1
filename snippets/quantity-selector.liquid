@@ -23,27 +23,28 @@
 {% endcomment %}
 
 <div
-    x-data="
-        QuantitySelector({
-          value: {{ value | default: 1 }},
-          min: {{ min | default: 1 }},
-          max: {{ max | default: 'null' }},
-          step: {{ step | default: 1 }}{% if section_id %},
-          sectionId: '{{ section_id }}'{% endif %}
-        })
-    "
-    class="{{ wrapper_class | default: 'flex items-center border border-theme-border-soft rounded-sm w-max' }}"
+    data-qty-value="{{ value | default: 1 }}"
+    data-qty-min="{{ min | default: 1 }}"
+    data-qty-max="{{ max | default: 'null' }}"
+    data-qty-step="{{ step | default: 1 }}"
+    {% if section_id %}
+        data-qty-section-id="{{ section_id }}"
+    {% endif %}
+    data-qty-msg-max="{{ 'toast.max_quantity' | t: max: '%%MAX%%' | escape }}"
+    data-qty-msg-min="{{ 'toast.min_quantity' | t: min: '%%MIN%%' | escape }}"
+    data-qty-msg-below-min="{{ 'toast.quantity_below_min' | t: min: '%%MIN%%' | escape }}"
+    data-qty-msg-above-max="{{ 'toast.quantity_above_max' | t: max: '%%MAX%%' | escape }}"
+    x-data="QuantitySelector()"
+    class="{{ wrapper_class | default: 'flex items-center border border-theme-border-20 rounded-sm w-max' }}"
 >
     <button
         type="button"
         class="{{ button_class | default: 'flex h-10 w-10 cursor-pointer items-center justify-center text-current transition-opacity hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-30' }}"
-        aria-label="Decrease quantity"
+        aria-label="{{ 'accessibility.decrease_quantity' | t }}"
         @click="decrement()"
         :disabled="!canDecrement"
     >
-        <svg class="h-10 w-10" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M19 13H5v-2h14z"/>
-        </svg>
+        {%- render 'icons', icon: 'icon-minus' -%}
     </button>
 
     <input
@@ -52,7 +53,7 @@
             id="{{ input_id }}"
         {% endif %}
         name="{{ name | default: 'quantity' }}"
-        class="{{ input_class | default: 'w-[4ch] appearance-none border-b border-current bg-transparent p-0 text-center h6 font-medium text-current [-moz-appearance:textfield] focus:ring-0 focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none' }}"
+        class="{{ input_class | default: 'w-[4ch] appearance-none border-b border-current bg-transparent p-0 text-center body-sm font-medium text-current [-moz-appearance:textfield] focus:ring-0 focus:outline-none focus-ring [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none' }}"
         x-model.number="qty"
         :min="min"
         :max="max"
@@ -61,18 +62,16 @@
             form="{{ product_form_id }}"
         {% endif %}
         @change="onInput()"
-        aria-label="{{ label | default: 'Quantity' }}"
+        aria-label="{{ label | default: 'accessibility.quantity' | t }}"
     >
 
     <button
         type="button"
         class="{{ button_class | default: 'flex h-10 w-10 cursor-pointer items-center justify-center text-current transition-opacity hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-30' }}"
-        aria-label="Increase quantity"
+        aria-label="{{ 'accessibility.increase_quantity' | t }}"
         @click="increment()"
         :disabled="!canIncrement"
     >
-        <svg class="h-10 w-10" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z"/>
-        </svg>
+        {%- render 'icons', icon: 'icon-plus' -%}
     </button>
 </div>

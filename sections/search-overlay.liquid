@@ -6,35 +6,38 @@
 >
     {%- capture drawer_content -%}
         <div
-            class="flex h-full flex-col text-theme-text"
-            x-data="predictiveSearch({ limit: {{ section.settings.search_result_limit | json }} })"
+            class="flex h-full flex-col"
+            data-search-limit="{{ section.settings.search_result_limit | json }}"
+            x-data="predictiveSearch()"
+            data-predictive-search-enabled="{{ settings.predictive_search_enabled }}"
             data-predictive-search-url="{{ routes.search_url }}"
+            data-toast-search-failed="{{ 'toast.search_failed' | t | escape }}"
             @keydown.escape.window="$store.dialog.close()"
         >
             <div class="p-6">
                 <div class="mb-5 flex items-center justify-between gap-4">
-                    <h2 id="dialog-title-{{ popup_id }}">Search</h2>
+                    <h1 id="dialog-title-{{ popup_id }}">{{ 'search.title' | t }}</h1>
                     
                     <button
                         type="button"
-                        class="inline-flex h-8 w-8 cursor-pointer items-center justify-center text-theme-text/75 transition hover:text-theme-text"
+                        class="inline-flex cursor-pointer items-center justify-center text-theme-text/80 transition hover:text-theme-text"
                         @click="$store.dialog.close()"
-                        aria-label="Close search drawer"
+                        aria-label="{{ 'accessibility.close_search_drawer' | t }}"
                     >
-                        {% render 'icons', icon: 'icon-close', size: 'lg', color: 'current' %}
+                        {% render 'icons', icon: 'icon-close' %}
                     </button>
                 </div>
 
                 <form @submit.prevent="performSearch()" role="search" class="w-full">
-                    <div class="flex items-center gap-2 border-b border-theme-border-strong pb-2">
-                        {% render 'icons', icon: 'icon-search', size: 'lg', class: 'shrink-0 opacity-70', color: 'current' %}
+                    <div class="flex items-center gap-2 border-b border-theme-border pb-2">
+                        {% render 'icons', icon: 'icon-search', class: 'shrink-0 opacity-80' %}
                         <input
                             id="SearchOverlayInput-{{ section.id }}"
                             type="search"
                             name="q"
-                            class="w-full min-w-0 border-none bg-transparent outline-none placeholder:text-theme-text/45"
+                            class="w-full min-w-0 border-none bg-transparent focus-ring outline-none placeholder:text-theme-text/50"
                             autocomplete="off"
-                            placeholder="Search"
+                            placeholder="{{ 'search.placeholder' | t }}"
                             x-model="query"
                             @input="onInput($event.target.value)"
                             @compositionend="onInput($event.target.value)"
@@ -54,7 +57,7 @@
                             <li>
                                 <button
                                     type="button"
-                                    class="border-b border-theme-border-soft transition-colors hover:border-theme-border-strong"
+                                    class="border-b border-theme-border-20 transition-colors hover:border-theme-border"
                                     @click="onSuggestionClick(item)"
                                     x-html="highlightSuggestion(item.text)"
                                 ></button>
@@ -66,7 +69,7 @@
 
             <div class="flex min-h-0 flex-1 flex-col px-5 py-4 pc:px-6">
                 <div x-show="!isLoading && hasEmptyState && query" class="py-6 text-center">
-                    <p class="body-md">No results found for "<span x-text="query"></span>"</p>
+                    <p>{{ 'search.no_results_for' | t }} "<span x-text="query"></span>"</p>
                 </div>
 
                 <div x-show="!isLoading && hasSearched && !hasEmptyState" class="flex min-h-0 flex-1 flex-col">
@@ -74,43 +77,54 @@
                         <button
                             type="button"
                             role="tab"
+                            id="search-tab-products-{{ section.id }}"
+                            aria-controls="search-panel-products-{{ section.id }}"
                             x-data="{ index: null }"
                             x-init="index = registerTab($el)"
                             @click="setActive(index); activeTab = 'products'"
+                            :aria-selected="isActive(index)"
                             class="border-b pb-2 tracking-[0.16em] uppercase transition-colors"
-                            :class="isActive(index) ? 'text-theme-text border-theme-border-strong' : 'text-theme-text/45 border-transparent hover:text-theme-text'"
+                            :class="isActive(index) ? 'text-theme-text border-theme-border' : 'text-theme-text/50 border-transparent hover:text-theme-text'"
                         >
-                            Products
+                            {{ 'search.products' | t }}
                         </button>
 
                         <button
                             type="button"
                             role="tab"
+                            id="search-tab-articles-{{ section.id }}"
+                            aria-controls="search-panel-articles-{{ section.id }}"
                             x-data="{ index: null }"
                             x-init="index = registerTab($el)"
                             @click="setActive(index); activeTab = 'articles'"
+                            :aria-selected="isActive(index)"
                             class="border-b pb-2 tracking-[0.16em] uppercase transition-colors"
-                            :class="isActive(index) ? 'text-theme-text border-theme-border-strong' : 'text-theme-text/45 border-transparent hover:text-theme-text'"
+                            :class="isActive(index) ? 'text-theme-text border-theme-border' : 'text-theme-text/50 border-transparent hover:text-theme-text'"
                         >
-                            Articles
+                            {{ 'search.articles' | t }}
                         </button>
 
                         <button
                             type="button"
                             role="tab"
+                            id="search-tab-pages-{{ section.id }}"
+                            aria-controls="search-panel-pages-{{ section.id }}"
                             x-data="{ index: null }"
                             x-init="index = registerTab($el)"
                             @click="setActive(index); activeTab = 'pages'"
+                            :aria-selected="isActive(index)"
                             class="border-b pb-2 tracking-[0.16em] uppercase transition-colors"
-                            :class="isActive(index) ? 'text-theme-text border-theme-border-strong' : 'text-theme-text/45 border-transparent hover:text-theme-text'"
+                            :class="isActive(index) ? 'text-theme-text border-theme-border' : 'text-theme-text/50 border-transparent hover:text-theme-text'"
                         >
-                            Pages
+                            {{ 'search.pages' | t }}
                         </button>
                     {% endcapture %}
 
                     {% capture tab_content %}
                         <div
                             role="tabpanel"
+                            id="search-panel-products-{{ section.id }}"
+                            aria-labelledby="search-tab-products-{{ section.id }}"
                             x-data="{ index: null }"
                             x-init="index = registerPanel($el)"
                             x-show="activeTab === 'products'"
@@ -123,11 +137,13 @@
                                     -%}
                                 </template>
                             </div>
-                            <p x-show="!products.length" class="py-4 body-md text-theme-text/45">No products found.</p>
+                            <p x-show="!products.length" class="py-4">{{ 'search.no_products' | t }}</p>
                         </div>
 
                         <div
                             role="tabpanel"
+                            id="search-panel-articles-{{ section.id }}"
+                            aria-labelledby="search-tab-articles-{{ section.id }}"
                             x-data="{ index: null }"
                             x-init="index = registerPanel($el)"
                             x-show="activeTab === 'articles'"
@@ -135,16 +151,18 @@
                         >
                             <ul class="space-y-3">
                                 <template x-for="article in articles" :key="article.id">
-                                    <li class="border-b border-theme-border-soft pb-2">
-                                        <a class="body-md hover:underline" :href="article.url" x-text="article.title"></a>
+                                    <li class="border-b border-theme-border-20 pb-2">
+                                        <a class="hover:underline" :href="article.url" x-text="article.title"></a>
                                     </li>
                                 </template>
                             </ul>
-                            <p x-show="!articles.length" class="py-4 body-md text-theme-text/45">No articles found.</p>
+                            <p x-show="!articles.length" class="py-4">{{ 'search.no_articles' | t }}</p>
                         </div>
 
                         <div
                             role="tabpanel"
+                            id="search-panel-pages-{{ section.id }}"
+                            aria-labelledby="search-tab-pages-{{ section.id }}"
                             x-data="{ index: null }"
                             x-init="index = registerPanel($el)"
                             x-show="activeTab === 'pages'"
@@ -152,12 +170,12 @@
                         >
                             <ul class="space-y-3">
                                 <template x-for="page in pages" :key="page.id">
-                                    <li class="border-b border-theme-border-soft pb-2">
-                                        <a class="body-md hover:underline" :href="page.url" x-text="page.title"></a>
+                                    <li class="border-b border-theme-border-20 pb-2">
+                                        <a class="hover:underline" :href="page.url" x-text="page.title"></a>
                                     </li>
                                 </template>
                             </ul>
-                            <p x-show="!pages.length" class="py-4 body-md text-theme-text/45">No pages found.</p>
+                            <p x-show="!pages.length" class="py-4">{{ 'search.no_pages' | t }}</p>
                         </div>
                     {% endcapture %}
 
@@ -178,7 +196,7 @@
     {%- render 'ui-dialog',
         id: popup_id,
         type: 'drawer',
-        position: 'right',
+        position: section.settings.drawer_position,
         top_class: 'top-[var(--announcement-bar-height)] pc:top-0',
         color_scheme: section.settings.color_scheme,
         root_class: 'z-[10010]',
@@ -190,7 +208,7 @@
 
 {% schema %}
 {
-    "name": "Search Overlay",
+    "name": "t:sections.search-overlay.name",
     "tag": "section",
     "class": "section",
     "limit": 1,
@@ -198,8 +216,24 @@
         {
             "type": "color_scheme",
             "id": "color_scheme",
-            "label": "Color scheme",
+            "label": "t:sections.search-overlay.settings.color_scheme",
             "default": "scheme-1"
+        },
+        {
+            "type": "select",
+            "id": "drawer_position",
+            "label": "t:sections.search-overlay.settings.drawer_position",
+            "default": "right",
+            "options": [
+                {
+                    "value": "left",
+                    "label": "t:sections.search-overlay.options.left"
+                },
+                {
+                    "value": "right",
+                    "label": "t:sections.search-overlay.options.right"
+                }
+            ]
         },
         {
             "type": "range",
@@ -208,12 +242,12 @@
             "max": 20,
             "step": 1,
             "default": 8,
-            "label": "Predictive search result limit"
+            "label": "t:sections.search-overlay.settings.predictive_search_result_limit"
         }
     ],
     "presets": [
         {
-            "name": "Search Overlay"
+            "name": "t:sections.search-overlay.presets.search_overlay"
         }
     ]
 }

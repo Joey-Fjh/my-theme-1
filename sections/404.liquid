@@ -1,6 +1,6 @@
 <div
     data-section-id="{{ section.id }}"
-    class="404-section full-width color-{{ section.settings.color_scheme }}"
+    class="404-section full-width color-{{ section.settings.color_scheme }} bg-scheme-surface"
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
@@ -8,25 +8,27 @@
     data-component-kind="section"
     data-component-type="404"
     data-component-id="{{ section.id }}"
+    x-data="motionRevealSection()"
+    data-motion-section
 >
-    <div class="layout container-page flex min-h-[60vh] flex-col justify-center bg-theme-bg text-theme-text pc:min-h-[80vh]">
+    <div class="layout container-page flex min-h-[60vh] flex-col justify-center pc:min-h-[80vh]">
         <div class="flex flex-col gap-40 overflow-hidden">
+            {%- assign fallback_heading_line2 = '404.heading_line_2' | t -%}
+            {%- assign fallback_description = '404.description_html' | t -%}
+
             {%- comment -%} Main Content {%- endcomment -%}
-            <div class="relative p-3">
+            <div class="relative p-3" data-motion-reveal="content">
                 <h1
-                    class="hxxl font-bold pc:hxxxl"
+                    class="heading-3xl pc:heading-4xl"
                 >
                     {{ section.settings.heading_line1 | default: '404' -}}
                     <br>
-                    {{ section.settings.heading_line2 | default: 'Not Found' }}
+                    {{ section.settings.heading_line2 | default: fallback_heading_line2 }}
                 </h1>
                 <div
-                    class="rte rte--compact max-w-2/3 body-md pc:max-w-1/3"
+                    class="rte rte--compact max-w-2/3 pc:max-w-1/3"
                 >
-                    {{
-                        section.settings.description
-                        | default: '<p>Tailored experiences powered by AI intelligence. Discover insights that adapt to your needs.</p>'
-                    }}
+                    {{ section.settings.description | default: fallback_description }}
                 </div>
 
                 {%- if section.settings.show_button -%}
@@ -35,16 +37,14 @@
 
                         {% render 'icons',
                             icon: 'icon-arrow2',
-                            size: 'lg',
-                            class: 'ml-3',
-                            color: 'current'
+                            class: 'ml-3'
                         %}
                     {%- endcapture -%}
 
-                    {%
-                        render 'link',
-                        href: section.settings.button_link | default: '/',
-                        class: 'mt-8 btn btn-primary inline-flex items-center justify-center',
+                    {%- assign link_href = section.settings.button_link | default: '/' -%}
+                    {% render 'link',
+                        href: link_href,
+                        class: 'mt-8 btn-primary',
                         variant: 'plain',
                         content: button_content
                     %}
@@ -54,8 +54,8 @@
             {%- comment -%} Brand Watermark {%- endcomment -%}
             {% render 'watermark',
                 container_class: 'relative w-full overflow-hidden pointer-events-none select-none',
-                text_class: 'font-bold text-theme-text opacity-10',
-                text: section.settings.watermark_text
+                text: section.settings.watermark_text,
+                html_attr: 'data-motion-reveal="media"'
             %}
         </div>
     </div>
@@ -73,54 +73,54 @@
         {
             "type": "color_scheme",
             "id": "color_scheme",
-            "label": "Color scheme",
+            "label": "t:sections.404.settings.color_scheme",
             "default": "scheme-1"
         },
         {
             "type": "inline_richtext",
             "id": "heading_line1",
             "default": "404",
-            "label": "Heading line 1"
+            "label": "t:sections.404.settings.heading_line_1"
         },
         {
             "type": "inline_richtext",
             "id": "heading_line2",
-            "default": "Not Found",
-            "label": "Heading line 2"
+            "default": "t:sections.404.defaults.heading_line_2",
+            "label": "t:sections.404.settings.heading_line_2"
         },
         {
             "type": "richtext",
             "id": "description",
-            "default": "<p>Tailored experiences powered by AI intelligence. Discover insights that adapt to your needs.</p>",
-            "label": "Description"
+            "default": "t:sections.404.defaults.description_html",
+            "label": "t:sections.404.settings.description"
         },
         {
             "type": "checkbox",
             "id": "show_button",
             "default": true,
-            "label": "Show button"
+            "label": "t:sections.404.settings.show_button"
         },
         {
             "type": "text",
             "id": "button_text",
-            "default": "Back to Home",
-            "label": "Button text"
+            "default": "t:sections.404.defaults.button_text",
+            "label": "t:sections.404.settings.button_text"
         },
         {
             "type": "url",
             "id": "button_link",
             "default": "/",
-            "label": "Button link"
+            "label": "t:sections.404.settings.button_link"
         },
         {
             "type": "text",
             "id": "watermark_text",
-            "default": "Eccenova®",
-            "label": "Watermark text"
+            "default": "t:sections.404.defaults.watermark_text",
+            "label": "t:sections.404.settings.watermark_text"
         },
         {
             "type": "header",
-            "content": "Padding"
+            "content": "t:sections.404.content.padding"
         },
         {
             "type": "range",
@@ -129,7 +129,7 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Top",
+            "label": "t:sections.404.settings.padding_top",
             "default": 0
         },
         {
@@ -139,13 +139,8 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Bottom",
+            "label": "t:sections.404.settings.padding_bottom",
             "default": 0
-        }
-    ],
-    "presets": [
-        {
-            "name": "t:general.404"
         }
     ]
 }

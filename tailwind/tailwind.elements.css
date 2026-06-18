@@ -1,39 +1,21 @@
 /* =========================================================
-surface
-========================================================= */
-@utility surface-base {
-    @apply border border-theme-border-soft bg-theme-bg text-theme-text;
-
-    background-image: var(--gradient-background);
-    border-width: var(--surface-border-width);
-    border-style: solid;
-}
-
-@utility surface-elevated {
-    @apply rounded-surface shadow-surface;
-}
-
-@utility surface {
-    @apply surface-elevated surface-base;
-}
-
-/* =========================================================
 icon
 ========================================================= */
 @utility icons {
-    @apply inline-flex items-center justify-center text-theme-icon transition-all duration-200 ease-in-out;
+    @apply inline-flex items-center justify-center transition-all duration-300 ease-in-out;
 }
 
 /* =========================================================
 link
 ========================================================= */
 @utility links {
-    @apply inline-flex w-fit cursor-pointer items-center text-theme-link no-underline transition-colors duration-300 outline-none;
+    @apply inline-flex w-fit cursor-pointer items-center text-theme-text no-underline transition-colors duration-300 outline-none;
 
     position: relative;
 
     &:focus-visible {
-        outline: var(--focus-ring-width) solid var(--color-focus-soft);
+        outline: var(--focus-ring-width) solid
+            rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
         outline-offset: var(--focus-ring-offset);
     }
 }
@@ -88,26 +70,48 @@ link
 /* =========================================================
 button
 ========================================================= */
-@utility btn {
-    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-button border px-4 py-2.5 font-body shadow-button transition-all duration-200 ease-in-out outline-none pc:px-6 pc:py-3;
 
+/* 基础按钮 */
+@utility btn {
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 border font-body transition-all duration-200 ease-in-out outline-none;
+
+    padding: var(--button-padding-y) var(--button-padding-x);
+
+    border-radius: var(--button-radius);
     border-width: var(--button-border-width);
     border-style: solid;
-    font-style: var(--font-body-style);
-    font-weight: var(--font-body-weight);
+
+    box-shadow: var(--button-shadow-horizontal-offset) var(--button-shadow-vertical-offset)
+        var(--button-shadow-blur-radius) rgba(var(--color-foreground), var(--button-shadow-opacity));
+
+    line-height: 1.2;
+    text-align: center;
+    text-decoration: none;
+    white-space: nowrap;
+    user-select: none;
 
     &:focus-visible {
-        outline: var(--focus-ring-width) solid var(--color-focus-soft);
+        outline: var(--focus-ring-width) solid
+            rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
         outline-offset: var(--focus-ring-offset);
+    }
+
+    &:disabled,
+    &[aria-disabled='true'] {
+        cursor: not-allowed;
+        opacity: 0.5;
+        pointer-events: none;
     }
 }
 
+/* 主按钮 */
 @utility btn-primary {
-    @apply border-primary-border bg-primary text-primary-text hover:brightness-110;
+    @apply btn border-primary-border bg-primary text-primary-text hover:brightness-110;
 }
 
+/* 次按钮 */
 @utility btn-secondary {
-    @apply border-secondary-border bg-secondary text-secondary-text hover:bg-theme-bg hover:text-secondary;
+    @apply btn border-secondary-border bg-secondary text-secondary-text hover:brightness-95;
 }
 
 .shopify-payment-button-wrapper,
@@ -116,36 +120,147 @@ button
 }
 
 button.shopify-payment-button__button--unbranded {
-    @apply btn w-full btn-primary;
+    @apply btn-primary w-full;
 }
 
+/*
+ * Unbranded payment button — specificity override.
+ *
+ * Shopify's stylesheet targets:
+ *   .shopify-payment-button__button--unbranded:hover:not([disabled])
+ * with specificity (0,3,0), which overrides the theme's btn-primary hover
+ * background-color. The selector below exceeds Shopify's specificity so the
+ * theme's primary-button color is preserved on hover.
+ */
+button.shopify-payment-button__button--unbranded:hover:not([disabled]) {
+    background-color: rgb(var(--color-primary-button));
+}
+
+/*
+ * Accelerated checkout — branded payment buttons (Apple Pay, Google Pay, Shop Pay).
+ *
+ * These buttons render inside a closed shadow DOM. Theme CSS cannot reach their
+ * internal markup. The four custom properties below are the only supported
+ * bridge between global button settings and branded accelerated-checkout buttons.
+ *
+ * Variables consumed by Shopify's accelerated-checkout.css:
+ *   --shopify-accelerated-checkout-button-border-radius  → wallet button border-radius
+ *   --shopify-accelerated-checkout-button-box-shadow     → wallet button drop shadow
+ *   --shopify-accelerated-checkout-skeleton-background-color → loading skeleton background
+ *
+ * Not set (accepts Shopify defaults):
+ *   --shopify-accelerated-checkout-button-block-size     → wallet button height (default 44px on PDP, 42px on cart)
+ *     The theme's --button-padding-y produces values (e.g. 24px → 48px total) that fall within Shopify's
+ *     clamp(25px, var(...), 55px) range, so no override is needed. If the merchant sets padding_higher
+ *     such that total height would exceed 55px, Shopify's clamp caps it at 55px.
+ *
+ * Platform limitations — cannot override:
+ *   - padding: button height is controlled by block-size clamp; merchant padding settings have no effect
+ *   - border: Shopify sets border: none internally; no custom-property exposure
+ *   - colors: brand buttons enforce their own brand colors (Apple, Google, Shop)
+ *   - internal DOM: closed shadow-DOM is not styleable from the theme
+ */
 shopify-accelerated-checkout {
-    --shopify-accelerated-checkout-button-block-size: 4.4rem;
+    /* necessary global-setting bridge: radius maps to wallet button corners */
     --shopify-accelerated-checkout-button-border-radius: var(--button-radius);
-    --shopify-accelerated-checkout-button-box-shadow: var(--shadow-button);
+    /* necessary global-setting bridge: shadow maps to wallet button drop shadow */
+    --shopify-accelerated-checkout-button-box-shadow: var(--button-shadow-horizontal-offset)
+        var(--button-shadow-vertical-offset) var(--button-shadow-blur-radius)
+        rgba(var(--color-foreground), var(--button-shadow-opacity));
+    /* optional loading-state styling: skeleton uses primary color as background */
     --shopify-accelerated-checkout-skeleton-background-color: var(--color-primary);
-}
-
-@media (width >= theme(--breakpoint-pc)) {
-    shopify-accelerated-checkout {
-        --shopify-accelerated-checkout-button-block-size: 4.8rem;
-    }
 }
 
 /* =========================================================
 field
 ========================================================= */
+
+/* 标准输入框 */
 @utility field {
-    @apply w-full rounded-input border border-theme-border-soft bg-theme-bg px-3 py-2.5 text-theme-text shadow-input transition-all duration-200 outline-none pc:px-4 pc:py-3;
+    @apply w-full border-field-border bg-field text-field-text;
+
+    padding: var(--input-padding-y) var(--input-padding-x);
 
     font: inherit;
+
     border-width: var(--input-border-width);
     border-style: solid;
+    border-radius: var(--input-radius);
+
+    box-shadow: var(--input-shadow-horizontal-offset) var(--input-shadow-vertical-offset)
+        var(--input-shadow-blur-radius) rgba(var(--color-foreground), var(--input-shadow-opacity));
+
+    outline: none;
+
+    transition:
+        color 300ms ease,
+        background-color 300ms ease,
+        border-color 300ms ease,
+        box-shadow 300ms ease,
+        outline-color 300ms ease;
+
+    &::placeholder {
+        color: var(--color-field-placeholder);
+        opacity: 0.8;
+    }
 
     &:focus-visible {
-        outline: var(--focus-ring-width) solid var(--color-focus-soft);
+        outline: var(--focus-ring-width) solid
+            rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
         outline-offset: var(--focus-ring-offset);
-        @apply border-theme-border-strong;
+        border-color: rgb(var(--color-focus-ring));
+    }
+
+    &:disabled,
+    &[aria-disabled='true'] {
+        cursor: not-allowed;
+        opacity: 0.5;
+    }
+}
+
+/* 下划线输入框：搜索类 */
+@utility field-underline {
+    @apply field;
+
+    border-width: 0;
+    border-bottom-width: var(--input-border-width);
+    border-radius: 0;
+    background-color: transparent;
+    box-shadow: none;
+}
+
+/* textarea */
+@utility field-textarea {
+    @apply field;
+
+    min-height: 12rem;
+    resize: vertical;
+}
+
+/* select */
+@utility field-select {
+    @apply field;
+
+    appearance: none;
+    cursor: pointer;
+}
+
+/* =========================================================
+focus-ring — shared visible-focus utility
+
+Consumes the global focus-ring variables set by css-variables.liquid:
+  --focus-ring-width   (settings.focus_ring_width)
+  --focus-ring-offset  (settings.focus_ring_offset)
+  --color-focus-ring   (per-scheme focus_ring_color, RGB triplet)
+
+Apply via class="... focus-ring" on any interactive element that
+removes the browser default outline (outline-none / focus:outline-none).
+========================================================= */
+@utility focus-ring {
+    &:focus-visible {
+        outline: var(--focus-ring-width) solid
+            rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+        outline-offset: var(--focus-ring-offset);
     }
 }
 
@@ -154,13 +269,11 @@ badge
 ========================================================= */
 @utility badge {
     @apply inline-flex items-center justify-center font-body;
+    @apply border-badge-bdr bg-badge text-badge-text;
     border-radius: 999px;
     border-width: 1px;
     border-style: solid;
-    border-color: var(--color-badge-border);
-    background-color: var(--color-badge-bg);
-    color: var(--color-badge-text);
-    font-weight: 600;
+    /* font-weight: 600; */
     line-height: 1;
     white-space: nowrap;
 }

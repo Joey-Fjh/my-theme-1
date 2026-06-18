@@ -13,6 +13,8 @@
     @param {string} [hover_mode] - Optional. 'actions' | 'none' | 'variants'. Defaults to 'actions'.
     @param {string} [scope_id] - Optional stable scope used for nested dialog/form ids.
     @param {string} [color_scheme] - Optional color scheme passed to quick view modal content.
+    @param {string} [primary_image_loading] - Optional loading attribute for the primary image only ('lazy' or 'eager'). Defaults to 'lazy'. Carousel/secondary images remain lazy.
+    @param {string} [primary_image_fetchpriority] - Optional fetchpriority attribute for the primary image only ('high', 'low', or 'auto'). Defaults to blank. Carousel/secondary images do not get fetchpriority.
 
     @example
     {% render 'product-card', product: product, class: 'my-product-card' %}
@@ -33,10 +35,46 @@
     endif
 
     assign card_mode = card_mode | default: 'full'
-    assign aspect_ratio = image_ratio | default: '1/1'
     assign hover_mode = hover_mode | default: 'actions'
+
+    comment
+        Image ratio: explicit param wins, then global setting.
+        Named values map to fixed ratios; any other explicit value passes through as-is.
+        Adapt mode (no explicit param + global setting) uses the product's natural image ratio.
+        Missing image in adapt mode falls back to 1/1.
+    endcomment
+    if image_ratio != blank
+        case image_ratio
+            when 'square'
+                assign aspect_ratio = '1/1'
+            when 'portrait'
+                assign aspect_ratio = '3/4'
+            when 'landscape'
+                assign aspect_ratio = '4/3'
+            else
+                assign aspect_ratio = image_ratio
+        endcase
+    else
+        case settings.product_card_image_ratio
+            when 'square'
+                assign aspect_ratio = '1/1'
+            when 'portrait'
+                assign aspect_ratio = '3/4'
+            when 'landscape'
+                assign aspect_ratio = '4/3'
+            else
+                if product.featured_image != blank and product.featured_image.width and product.featured_image.height
+                    assign aspect_ratio = product.featured_image.width | append: '/' | append: product.featured_image.height
+                else
+                    assign aspect_ratio = '1/1'
+                endif
+        endcase
+    endif
+    assign pc_media_ratio = aspect_ratio
     assign scope_id = scope_id | default: 'card'
     assign color_scheme = color_scheme | default: ''
+    assign primary_image_loading = primary_image_loading | default: 'lazy'
+    assign primary_image_fetchpriority = primary_image_fetchpriority | default: ''
     assign show_hover_actions_enabled = true
     assign show_image_navigation_enabled = true
     assign show_hover_actions_explicit = false
@@ -101,23 +139,18 @@
     data-enable-image-navigation="{{ show_image_navigation_enabled }}"
     data-quick-view-dialog-id="{{ quick_view_dialog_id | escape }}"
     data-cart-dialog-id="cart-overlay-drawer"
+    data-cart-type="{{ settings.cart_type }}"
+    data-cart-url="{{ routes.cart_url | escape }}"
     data-primary-variant-id="{{ selected_variant.id }}"
     data-primary-variant-available="{{ selected_variant.available }}"
-    x-data="
-        productCard({
-            imageCount: Number($el.dataset.imageCount || 1),
-            hoverMode: $el.dataset.hoverMode || 'actions',
-            hasVariantPanel: $el.dataset.hasVariantPanel === 'true',
-            enableImageNavigation: $el.dataset.enableImageNavigation !== 'false',
-            quickViewDialogId: $el.dataset.quickViewDialogId || '',
-            cartDialogId: $el.dataset.cartDialogId || '',
-            primaryVariantId: Number($el.dataset.primaryVariantId || 0),
-            primaryVariantAvailable: $el.dataset.primaryVariantAvailable === 'true'
-        })
-    "
+    data-toast-added="{{ 'toast.added_to_cart' | t | escape }}"
+    x-data="productCard"
     @mouseleave="setImageHover(false); setActionsHover(false)"
 >
-    <div class="product-card__category product-card-shell__meta">
+    <div
+        class="product-card__category product-card-shell__meta"
+        data-motion-reveal="content"
+    >
         <div class="product-card__category-brand product-card-shell__brand" title="{{ brand }}">
             {{ brand }}
         </div>
@@ -125,16 +158,17 @@
             {%- if show_image_navigation_enabled and image_count > 1 -%}
                 <div
                     class="product-card-shell__pagination"
-                    aria-label="Image navigation"
+                    aria-label="{{ 'accessibility.image_navigation' | t }}"
                 >
                     {%- if image_count <= 3 -%}
                         {%- for image in product.images -%}
                             <button
                                 type="button"
                                 class="product-card-shell__pagination-dot"
-                                :class="{ 'is-active': activeImageIndex === {{ forloop.index0 }} }"
-                                @click.prevent="setActiveImage({{ forloop.index0 }})"
-                                aria-label="Show image {{ forloop.index }}"
+                                data-index="{{ forloop.index0 }}"
+                                :class="{ 'is-active': activeImageIndex === Number($el.dataset.index) }"
+                                @click.prevent="setActiveImage(Number($el.dataset.index))"
+                                aria-label="{{ 'accessibility.show_image' | t: index: forloop.index }}"
                             ></button>
                         {%- endfor -%}
                     {%- else -%}
@@ -143,14 +177,9 @@
                                 type="button"
                                 class="product-card-shell__pagination-arrow"
                                 @click.prevent="prevImage()"
-                                aria-label="Previous image"
+                                aria-label="{{ 'accessibility.previous_image' | t }}"
                             >
-                                {%- render 'icons',
-                                    icon: 'icon-arrow2',
-                                    size: 'xl',
-                                    class: 'rotate-180',
-                                    color: 'current'
-                                -%}
+                                {%- render 'icons', icon: 'icon-arrow2', class: 'rotate-180' -%}
                             </button>
                             <span
                                 class="product-card-shell__pagination-text"
@@ -162,13 +191,9 @@
                                 type="button"
                                 class="product-card-shell__pagination-arrow"
                                 @click.prevent="nextImage()"
-                                aria-label="Next image"
+                                aria-label="{{ 'accessibility.next_image' | t }}"
                             >
-                                {%- render 'icons',
-                                    icon: 'icon-arrow2',
-                                    size: 'xl',
-                                    color: 'current'
-                                -%}
+                                {%- render 'icons', icon: 'icon-arrow2' -%}
                             </button>
                         </div>
                     {%- endif -%}
@@ -179,6 +204,7 @@
 
     <div
         class="product-card__image product-card-shell__media"
+        style="--pc-media-ratio: {{ pc_media_ratio }};"
         @mouseenter="setImageHover(true)"
         @mouseleave="setImageHover(false)"
     >
@@ -187,40 +213,51 @@
         {%- endcapture -%}
 
         {%- capture widths -%}
-            200,320,480,640,800
+            200,360,480,640,800,960
         {%- endcapture -%}
 
         <a href="{{ product.url }}" class="product-card__image-link product-card-shell__media-link">
             {%- for image in product.images -%}
+                {%- if forloop.first -%}
+                    {%- assign img_loading = primary_image_loading -%}
+                    {%- assign img_fetchpriority = primary_image_fetchpriority -%}
+                {%- else -%}
+                    {%- assign img_loading = 'lazy' -%}
+                    {%- assign img_fetchpriority = '' -%}
+                {%- endif -%}
                 <div
                     class="product-card__carousel-slide"
-                    x-show="activeImageIndex === {{ forloop.index0 }}"
-                    x-transition.opacity.duration.200ms
+                    data-index="{{ forloop.index0 }}"
+                    x-show="activeImageIndex === Number($el.dataset.index)"
                 >
-                    {%-
-                        render 'image',
+                    {%- assign image_alt = image.alt | default: product.title -%}
+                    {%- render 'image',
                         image: image,
-                        alt: image.alt | default: product.title,
+                        alt: image_alt,
                         width: image.width,
                         sizes: sizes,
                         widths: widths,
                         aspect_ratio: aspect_ratio,
                         class: 'product-card-shell__media-frame',
-                        img_class: 'product-card-shell__image'
+                        img_class: 'product-card-shell__image',
+                        loading: img_loading,
+                        fetchpriority: img_fetchpriority
                     -%}
                 </div>
             {%- else -%}
                 <div class="product-card__carousel-slide" x-show="true">
-                    {%-
-                        render 'image',
+                    {%- assign image_alt = product.featured_image.alt | default: product.title -%}
+                    {%- render 'image',
                         image: product.featured_image,
-                        alt: product.featured_image.alt | default: product.title,
+                        alt: image_alt,
                         width: product.featured_image.width,
                         sizes: sizes,
                         widths: widths,
                         aspect_ratio: aspect_ratio,
                         class: 'product-card-shell__media-frame',
-                        img_class: 'product-card-shell__image'
+                        img_class: 'product-card-shell__image',
+                        loading: primary_image_loading,
+                        fetchpriority: primary_image_fetchpriority
                     -%}
                 </div>
             {%- endfor -%}
@@ -232,9 +269,9 @@
                 class="product-card__quick-view-trigger"
                 :class="imageHover ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'"
                 @click.prevent.stop="openQuickView()"
-                aria-label="Quick view {{ product.title | escape }}"
+                aria-label="{{ 'accessibility.quick_view' | t: product: product.title | escape }}"
             >
-                {% render 'icons', icon: 'icon-eye', size: 'lg', color: 'current' %}
+                {% render 'icons', icon: 'icon-eye' %}
             </button>
 
             {%- if has_variant_panel -%}
@@ -279,7 +316,10 @@
     </div>
 
     {%- unless hover_mode == 'variants' -%}
-        <div class="product-card__info product-card-shell__info">
+        <div
+            class="product-card__info product-card-shell__info"
+            data-motion-reveal="content"
+        >
             <div
                 class="product-card__info-title product-card-shell__title"
                 title="{{ product.title }}"
@@ -304,7 +344,7 @@
                 data-product-handle="{{ product.handle }}"
                 @click.prevent.stop="openQuickView()"
             >
-                Quick View
+                {{ 'products.product.quick_view' | t }}
             </button>
             <button
                 class="product-card__btn-secondary"
@@ -313,9 +353,13 @@
                 :class="{ 'is-disabled': !primaryVariantAvailable }"
                 @click.prevent.stop="addPrimaryVariantToCart()"
             >
-                <span x-show="!isAddingToCart && primaryVariantAvailable">Add to Cart</span>
-                <span x-show="!isAddingToCart && !primaryVariantAvailable">Sold out</span>
-                <span x-show="isAddingToCart" x-cloak>Adding...</span>
+                <span x-show="!isAddingToCart && primaryVariantAvailable">
+                    {{- 'products.product.add_to_cart' | t -}}
+                </span>
+                <span x-show="!isAddingToCart && !primaryVariantAvailable">
+                    {{- 'products.product.sold_out' | t -}}
+                </span>
+                <span x-show="isAddingToCart" x-cloak>{{ 'products.product.adding' | t }}</span>
             </button>
         </div>
     {%- endif -%}
@@ -331,15 +375,16 @@
 {%- endcapture -%}
 
 <template x-teleport="body">
-    {%- render 'ui-dialog',
+    {%-
+        render 'ui-dialog',
         id: quick_view_dialog_id,
         type: 'modal',
         color_scheme: color_scheme,
         root_class: 'z-[10020]',
         modal_wrapper_class: 'items-center justify-center px-3 py-4 pc:px-[8vw] pc:py-[5vh]',
-        modal_panel_class: 'h-full w-full !max-h-full !max-w-full overflow-hidden rounded-sm shadow-xl',
+        modal_panel_class: 'h-full w-full !max-h-full !max-w-full overflow-hidden',
         show_close_button: true,
-        close_label: 'Close quick view',
+        close_label: 'accessibility.close_quick_view' | t,
         content: quick_view_content
     -%}
 </template>

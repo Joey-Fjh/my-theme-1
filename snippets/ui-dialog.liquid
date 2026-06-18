@@ -13,7 +13,6 @@
     @param {string} [modal_wrapper_class] - Classes for modal outer wrapper.
     @param {string} [modal_panel_class] - Classes for modal panel.
     @param {string} [drawer_wrapper_class] - Classes for drawer wrapper, including width/position overrides.
-    @param {string} [drawer_panel_base_class] - Base semantic classes for drawer panel (default: 'ui-dialog-drawer-panel').
     @param {string} [drawer_panel_class] - Extra classes for drawer panel.
     @param {string} [content]  - HTML content (use capture in parent and pass as content).
 {% endcomment %}
@@ -28,15 +27,12 @@
 {%- assign modal_wrapper_classes = modal_wrapper_class | default: '' -%}
 {%- assign modal_panel_classes = modal_panel_class | default: '' -%}
 {%- assign drawer_wrapper_classes = drawer_wrapper_class | default: '' -%}
-{%- assign drawer_panel_base_classes = drawer_panel_base_class
-    | default: 'ui-dialog-drawer-panel'
--%}
 {%- assign drawer_panel_classes = drawer_panel_class | default: '' -%}
 {%- assign dialog_show_close_button = show_close_button | default: false -%}
-{%- assign dialog_close_label = close_label | default: 'Close dialog' -%}
+{%- assign dialog_close_label = close_label | default: 'accessibility.close_dialog' | t -%}
 
 {%- liquid
-    assign modal_panel_classes = 'ui-dialog-modal-panel ui-dialog-modal-width-default ui-dialog-modal-height-default ' | append: modal_panel_classes | strip
+    assign modal_panel_classes = 'ui-dialog-panel ui-dialog-modal-panel ui-dialog-modal-width-default ui-dialog-modal-height-default ' | append: modal_panel_classes | strip
     assign drawer_wrapper_classes = 'ui-dialog-drawer-width-default ' | append: drawer_wrapper_classes | strip
     assign color_scope_class = color_scheme | default: ''
     if color_scope_class != blank
@@ -58,11 +54,11 @@
     {%- if dialog_show_close_button -%}
         <button
             type="button"
-            class="absolute top-3 right-3 z-10 inline-flex h-8 w-8 cursor-pointer items-center justify-center text-theme-text/75 transition hover:text-theme-text"
+            class="absolute top-3 right-3 z-10 inline-flex cursor-pointer items-center justify-center text-theme-text/80 transition hover:text-theme-text"
             @click="$store.dialog.close()"
             aria-label="{{ dialog_close_label | escape }}"
         >
-            {% render 'icons', icon: 'icon-close', size: 'lg', color: 'current' %}
+            {% render 'icons', icon: 'icon-close' %}
         </button>
     {%- endif -%}
 {%- endcapture -%}
@@ -73,17 +69,13 @@
     x-cloak
     class="fixed inset-0 z-100 {{ root_classes }}"
     @keydown.escape.window="$store.dialog.close()"
+    data-dialog-root
+    data-dialog-id="{{ id | escape }}"
 >
     {%- if dialog_show_overlay -%}
         <div
             class="fixed inset-x-0 bottom-0 z-100 {{ dialog_top_class }} {{ overlay_bg }}"
             @click="$store.dialog.close()"
-            x-transition:enter="transition ease-out duration-200"
-            x-transition:enter-start="opacity-0"
-            x-transition:enter-end="opacity-100"
-            x-transition:leave="transition ease-in duration-150"
-            x-transition:leave-start="opacity-100"
-            x-transition:leave-end="opacity-0"
         ></div>
     {%- endif -%}
 
@@ -103,16 +95,12 @@
             role="dialog"
             aria-modal="true"
             aria-labelledby="dialog-title-{{ id | escape }}"
+            data-dialog-panel
+            tabindex="-1"
             @click.stop
         >
             <div
-                class="{{ drawer_panel_base_classes }} {{ drawer_panel_classes }}"
-                x-transition:enter="transition ease-out duration-300"
-                x-transition:enter-start="{% if dialog_position == 'left' %}-translate-x-full{% else %}translate-x-full{% endif %}"
-                x-transition:enter-end="translate-x-0"
-                x-transition:leave="transition ease-in duration-200"
-                x-transition:leave-start="translate-x-0"
-                x-transition:leave-end="{% if dialog_position == 'left' %}-translate-x-full{% else %}translate-x-full{% endif %}"
+                class="ui-dialog-panel ui-dialog-drawer-panel {{ drawer_panel_classes }}"
             >
                 {{ dialog_close_button_markup }}
                 {{ content }}
@@ -129,16 +117,12 @@
             role="dialog"
             aria-modal="true"
             aria-labelledby="dialog-title-{{ id | escape }}"
+            data-dialog-panel
+            tabindex="-1"
         >
             <div
                 class="{{ modal_panel_classes }}{% if color_scheme != blank %} {{ color_scope_class }}{% endif %}"
                 @click.stop
-                x-transition:enter="transition ease-out duration-200"
-                x-transition:enter-start="opacity-0 scale-95"
-                x-transition:enter-end="opacity-100 scale-100"
-                x-transition:leave="transition ease-in duration-150"
-                x-transition:leave-start="opacity-100 scale-100"
-                x-transition:leave-end="opacity-0 scale-95"
             >
                 {{ dialog_close_button_markup }}
                 {{ content }}

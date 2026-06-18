@@ -1,6 +1,6 @@
 <div
     data-section-id="{{ section.id }}"
-    class="brand-statement-section full-width relative overflow-hidden color-{{ section.settings.color_scheme }}"
+    class="brand-statement-section full-width relative overflow-hidden color-{{ section.settings.color_scheme }} bg-scheme-surface"
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
@@ -8,17 +8,24 @@
     data-component-kind="section"
     data-component-type="brand-statement"
     data-component-id="{{ section.id }}"
+    x-data="motionRevealSection()"
+    data-motion-section
 >
     {% comment %} Decorative brushstroke {% endcomment %}
     <div
-        class="pointer-events-none absolute inset-x-0 bottom-0 z-0 flex translate-y-6 justify-center opacity-0 max-pc:h-full"
-        data-gsap-brush
+        class="pointer-events-none absolute inset-x-0 bottom-0 z-0 flex justify-center max-pc:h-full"
     >
         {%- if section.settings.brushstroke_image != blank -%}
-            {%-
-                render 'image',
+            {%- assign brushstroke_alt_fallback = 'sections.brand-statement.defaults.image_alt'
+                | t
+            -%}
+            {%- assign image_alt = section.settings.brushstroke_image.image_alt
+                | default: brushstroke_alt_fallback
+                | escape
+            -%}
+            {%- render 'image',
                 image: section.settings.brushstroke_image,
-                alt: section.settings.brushstroke_image.image_alt | default: 'Brushstroke' | escape,
+                alt: image_alt,
                 width: section.settings.brushstroke_image.width,
                 class: 'max-w-none w-full',
                 img_class: 'h-full pc:h-auto w-full pc:object-contain object-center'
@@ -30,8 +37,8 @@
         {% comment %} Statement Text {% endcomment %}
         <div class="mx-auto flex min-h-96 items-center justify-center py-8 pc:min-h-120 pc:py-0">
             <div
-                class="translate-y-4 text-center h2 leading-[1.12] font-bold text-balance text-theme-text opacity-0 pc:max-w-5/6 pc:h0"
-                data-gsap-text
+                class="rte rte--compact text-center body-lg text-balance pc:max-w-5/6 pc:body-xl"
+                data-motion-reveal="content"
             >
                 {{ section.settings.statement }}
             </div>
@@ -39,100 +46,32 @@
     </div>
 </div>
 
-{%- javascript -%}
-    (function () {
-        const Components = window.__Theme__?.Components;
-        if (!Components) return;
-
-        Components.register(
-            'brand-statement',
-            {
-                init(el) {
-                    const brush = el.querySelector('[data-gsap-brush]');
-                    const text = el.querySelector('[data-gsap-text]');
-                    if (!brush || !text) return;
-
-                    if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') {
-                        brush.classList.remove('translate-y-6', 'opacity-0');
-                        text.classList.remove('translate-y-4', 'opacity-0');
-                        return;
-                    }
-
-                    gsap.registerPlugin(ScrollTrigger);
-
-                    const ctx = gsap.context(() => {
-                        const tl = gsap.timeline({
-                            scrollTrigger: {
-                                trigger: el,
-                                start: 'top 80%',
-                                once: true,
-                            },
-                            defaults: { ease: 'power2.out' },
-                        });
-
-                        gsap.set(brush, { y: 24, opacity: 0 });
-                        gsap.set(text, { y: 16, opacity: 0 });
-
-                        tl.to(brush, {
-                            opacity: 1,
-                            y: 0,
-                            duration: 0.8,
-                        });
-
-                        tl.to(
-                            text,
-                            {
-                                opacity: 1,
-                                y: 0,
-                                duration: 0.9,
-                            },
-                            '-=0.35',
-                        );
-                    }, el);
-
-                    return { ctx };
-                },
-
-                destroy(el, state) {
-                    if (state?.ctx) {
-                        state.ctx.revert();
-                    }
-                },
-            },
-            { lazy: true },
-        );
-    })();
-{%- endjavascript -%}
-
-{%- stylesheet -%}
-{%- endstylesheet -%}
-
 {% schema %}
 {
-    "name": "Brand Statement",
+    "name": "t:sections.brand-statement.name",
     "tag": "section",
     "class": "section",
     "settings": [
         {
             "type": "color_scheme",
             "id": "color_scheme",
-            "label": "Color scheme",
+            "label": "t:sections.brand-statement.settings.color_scheme",
             "default": "scheme-1"
         },
         {
             "type": "richtext",
             "id": "statement",
-            "default": "<p>Eccenova brings together innovation, transparency, and quality to redefine the skincare shopping experience.</p>",
-            "label": "Statement text"
+            "default": "t:sections.brand-statement.defaults.statement",
+            "label": "t:sections.brand-statement.settings.statement_text"
         },
         {
             "type": "image_picker",
             "id": "brushstroke_image",
-            "label": "Brushstroke decoration image"
+            "label": "t:sections.brand-statement.settings.brushstroke_decoration_image"
         },
         {
             "type": "header",
-            "content": "Padding"
+            "content": "t:sections.brand-statement.content.padding"
         },
         {
             "type": "range",
@@ -141,7 +80,7 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Top",
+            "label": "t:sections.brand-statement.settings.padding_top",
             "default": 0
         },
         {
@@ -151,13 +90,13 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Bottom",
+            "label": "t:sections.brand-statement.settings.padding_bottom",
             "default": 0
         }
     ],
     "presets": [
         {
-            "name": "Brand Statement",
+            "name": "t:sections.brand-statement.presets.brand_statement",
             "settings": {}
         }
     ]

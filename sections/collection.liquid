@@ -1,14 +1,13 @@
 <div
     data-section-id="{{ section.id }}"
-    class="
-        collection-section full-width
-        color-{{ section.settings.color_scheme }}
-    "
+    class="collection-section full-width color-{{ section.settings.color_scheme }} bg-scheme-surface"
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
     "
-    x-data="collectionFilters('{{ section.id }}', ['[data-collection-dynamic-content]','[data-collection-drawer-shell]'])"
+    data-pagination-section-id="{{ section.id }}"
+    data-pagination-selectors='["[data-collection-dynamic-content]","[data-collection-drawer-shell]"]'
+    x-data="collectionFilters()"
     data-component-kind="section"
     data-component-type="collection"
     data-component-id="{{ section.id }}"
@@ -17,23 +16,26 @@
         {%- comment -%} Hero {%- endcomment -%}
         <div class="relative py-20 pc:py-40">
             <div class="flex items-start justify-between">
-                <div class="-translate-x-7.5 opacity-0" data-gsap-hero>
-                    <h1 class="mb-10 hxxxl leading-none font-bold">
+                <div>
+                    <h1 class="mb-10 heading-4xl">
                         {{ section.settings.header | default: 'Products' }}
                     </h1>
-                    <div class="rte rte--compact max-w-xl body-md leading-relaxed opacity-80">
+                    <div class="rte rte--compact max-w-3xl">
+                        {%- assign collection_description_fallback = 'collections.description_html'
+                            | t
+                        -%}
                         {{
                             section.settings.description
-                            | default: '<p>Tailored experiences powered by AI intelligence. Discover insights that adapt to your needs.</p>'
+                            | default: collection_description_fallback
                         }}
                     </div>
                 </div>
 
-                <div class="scale-50 opacity-0" data-gsap-badge>
+                <div>
                     {%- render 'rotating-badge',
                         classes: 'relative justify-self-center',
-                        badge_class: 'text-[#000000]',
-                        center_class: 'text-[#1B2608]',
+                        badge_class: 'text-theme-text',
+                        center_class: 'text-theme-text',
                         unique_id: section.id,
                         size: 100,
                         badge_text: section.settings.rotate_badge_text,
@@ -86,22 +88,21 @@
                         <button
                             type="button"
                             @click="$store.dialog.open('collection-filters')"
-                            class="flex shrink-0 cursor-pointer items-center gap-3 h2"
+                            class="flex shrink-0 cursor-pointer items-center gap-3"
                         >
-                            {% render 'icons',
-                                icon: 'icon-filter',
-                                class: 'h-10 w-10',
-                                color: 'currentColor'
-                            %}
-                            <span>Filter</span>
+                            {% render 'icons', icon: 'icon-filter' %}
+                            <span>{{ 'collections.filter' | t }}</span>
                         </button>
                     {%- endif -%}
 
                     {%- if enable_sorting -%}
+                        {%- capture sort_id_prefix_mobile -%}{{ section.id }}-mobile{%- endcapture -%}
+
                         {%- render 'sort-by-dropdown',
                             results: collection,
                             form_id: 'CollectionFiltersForm',
-                            class: 'h2 shrink-0'
+                            class: 'shrink-0',
+                            id_prefix: sort_id_prefix_mobile
                         -%}
                     {%- endif -%}
                 </div>
@@ -125,10 +126,12 @@
                             {%- endif -%}
 
                             {%- if enable_sorting -%}
+                                {%- capture sort_id_prefix_desktop_h -%}{{ section.id }}-desktop-h{%- endcapture -%}
                                 {%- render 'sort-by-dropdown',
                                     results: collection,
                                     form_id: 'CollectionFiltersForm',
-                                    class: 'h2 shrink-0 self-start'
+                                    class: 'shrink-0 self-start',
+                                    id_prefix: sort_id_prefix_desktop_h
                                 -%}
                             {%- endif -%}
                         </div>
@@ -148,10 +151,11 @@
             >
                 {%- if enable_filtering and is_vertical_filter -%}
                     <aside class="hidden pc:block">
-                        <div class="sticky top-20 border-r border-theme-border-soft pr-6">
+                        <div class="sticky top-20 border-r border-theme-border-20 pr-6">
                             {%- render 'filter-vertical',
                                 filter_source: collection,
-                                show_more_limit: section.settings.filter_visible_values_limit
+                                show_more_limit: section.settings.filter_visible_values_limit,
+                                scope_id: section.id
                             -%}
                         </div>
                     </aside>
@@ -191,10 +195,10 @@
                                 <button
                                     type="button"
                                     @click="$store.dialog.open('collection-filters')"
-                                    class="flex shrink-0 cursor-pointer items-center gap-2.5 h2"
+                                    class="flex shrink-0 cursor-pointer items-center gap-2.5"
                                 >
-                                    {% render 'icons', icon: 'icon-filter', class: 'h-10 w-10', color: 'currentColor' %}
-                                    <span>Filter</span>
+                                    {% render 'icons', icon: 'icon-filter' %}
+                                    <span>{{ 'collections.filter' | t }}</span>
                                 </button>
                             </div>
                         {%- else -%}
@@ -206,11 +210,13 @@
                         {%- comment -%} Tab header right slot: sort when enable_sorting and desktop is not Horizontal (horizontal row above already renders sort). Vertical/Drawer use this slot. {%- endcomment -%}
                         {%- if enable_sorting -%}
                             {%- if is_horizontal_filter == false -%}
+                                {%- capture sort_id_prefix_desktop_v -%}{{ section.id }}-desktop-v{%- endcapture -%}
                                 <div class="hidden pc:flex pc:items-center pc:justify-end pc:pb-3">
                                     {%- render 'sort-by-dropdown',
                                         results: collection,
                                         form_id: 'CollectionFiltersForm',
-                                        class: 'h2 shrink-0'
+                                        class: 'shrink-0',
+                                        id_prefix: sort_id_prefix_desktop_v
                                     -%}
                                 </div>
                             {%- else -%}
@@ -235,10 +241,10 @@
                             :tabindex="isActive(index) ? 0 : -1"
                             :aria-selected="isActive(index)"
                             :class="isActive(index) ? 'opacity-100 border-b-2 border-current' : 'opacity-50 hover:opacity-100 border-b-2 border-transparent'"
-                            class="flex cursor-pointer flex-nowrap items-center gap-1 h2 whitespace-nowrap transition-all duration-300 focus:outline-none"
+                            class="flex cursor-pointer flex-nowrap items-center gap-1 whitespace-nowrap focus-ring transition-all duration-300 focus:outline-none"
                         >
-                            All
-                            <sup class="leading-none">({{ all_products_collection.all_products_count | default: 0 }})</sup>
+                            {{ 'collections.all' | t }}
+                            <sup class="sup-badge">({{ all_products_collection.all_products_count | default: 0 }})</sup>
                         </a>
 
                         {%- for tab_collection in collections -%}
@@ -257,10 +263,10 @@
                                 :tabindex="isActive(index) ? 0 : -1"
                                 :aria-selected="isActive(index)"
                                 :class="isActive(index) ? 'opacity-100 border-b-2 border-current' : 'opacity-50 hover:opacity-100 border-b-2 border-transparent'"
-                                class="flex cursor-pointer flex-nowrap items-center gap-1 h2 whitespace-nowrap transition-all duration-300 focus:outline-none"
+                                class="flex cursor-pointer flex-nowrap items-center gap-1 whitespace-nowrap focus-ring transition-all duration-300 focus:outline-none"
                             >
                                 {{ tab_collection.title }}
-                                <sup class="leading-none">({{ tab_collection.all_products_count | default: 0 }})</sup>
+                                <sup class="sup-badge">({{ tab_collection.all_products_count | default: 0 }})</sup>
                             </a>
                         {%- endfor -%}
                     {% endcapture %}
@@ -275,28 +281,52 @@
                         >
                             {% render 'loading', overlay: true, size: 'large' %}
 
+                            {%- liquid
+                                assign first_row_count = section.settings.mobile_card_columns | default: '2' | plus: 0
+                            -%}
                             {% paginate collection.products by section.settings.products_per_page %}
-                                <div 
+                                <div
                                     class="grid {{ mobile_grid_class }} {{ desktop_grid_class }} gap-x-4 gap-y-8 pb-10"
                                     data-component-kind="section"
                                     data-component-type="product-grid"
                                     data-component-id="{{ section.id }}-grid"
+                                    x-data="motionRevealSection()"
+                                    data-motion-section
                                 >
-                                    {% for product in collection.products %}
-                                        <div class="group translate-y-7.5 opacity-0" data-gsap-card>
-                                            {% render 
-                                                'product-card', 
-                                                product: product,
-                                                hover_mode: 'variants',
-                                                scope_id: section.id,
-                                                color_scheme: section.settings.color_scheme
-                                            %}
+                                    {%- for product in collection.products -%}
+                                        {%- if forloop.index <= first_row_count -%}
+                                            {%- if forloop.index == 1 -%}
+                                                {%- assign row_fetchpriority = 'high' -%}
+                                            {%- else -%}
+                                                {%- assign row_fetchpriority = '' -%}
+                                            {%- endif -%}
+                                            <div class="group">
+                                                {%-
+                                                    render 'product-card',
+                                                        product: product,
+                                                        hover_mode: 'variants',
+                                                        scope_id: section.id,
+                                                        color_scheme: section.settings.color_scheme,
+                                                        primary_image_loading: 'eager',
+                                                        primary_image_fetchpriority: row_fetchpriority
+                                                -%}
+                                            </div>
+                                        {%- else -%}
+                                            <div class="group">
+                                                {%-
+                                                    render 'product-card',
+                                                        product: product,
+                                                        hover_mode: 'variants',
+                                                        scope_id: section.id,
+                                                        color_scheme: section.settings.color_scheme
+                                                %}
+                                            </div>
+                                        {%- endif -%}
+                                    {%- else -%}
+                                        <div class="col-span-full py-20 text-center body-lg">
+                                            {{ 'collections.no_products' | t }}
                                         </div>
-                                    {% else %}
-                                        <div class="col-span-full py-20 text-center h3 opacity-60">
-                                            No products found.
-                                        </div>
-                                    {% endfor %}
+                                    {%- endfor -%}
                                 </div>
 
                                 <div
@@ -312,9 +342,9 @@
                     {%- comment -%} Tab strip chrome: full-width bottom border on desktop when filter_type is not Horizontal (horizontal filters live in their own row); horizontal mode removes pc border from the tab row. {%- endcomment -%}
                     {%- liquid
                         assign header_outer_class_value = 'w-full pc:grid pc:grid-cols-[max-content_minmax(0,1fr)_max-content] pc:items-end pc:gap-12'
-                        assign header_class_value = 'gap-6 pc:gap-12 max-pc:border-b max-pc:border-theme-border-soft'
+                        assign header_class_value = 'body-lg gap-6 pc:gap-12 max-pc:border-b max-pc:border-theme-border-20'
                         if is_horizontal_filter == false
-                            assign header_outer_class_value = header_outer_class_value | append: ' pc:border-b pc:border-theme-border-soft'
+                            assign header_outer_class_value = header_outer_class_value | append: ' pc:border-b pc:border-theme-border-20'
                         else
                             assign header_class_value = header_class_value | append: ' pc:border-0'
                         endif
@@ -339,11 +369,13 @@
         {%- capture drawer_content -%}
             {%- render 'filters-drawer',
                 filter_source: collection,
-                show_more_limit: section.settings.filter_visible_values_limit
+                show_more_limit: section.settings.filter_visible_values_limit,
+                scope_id: section.id
             -%}
         {%- endcapture -%}
 
         <div data-collection-drawer-shell>
+            {%- assign close_label = 'accessibility.close_filters_drawer' | t -%}
             {%- render 'ui-dialog',
                 id: 'collection-filters',
                 type: 'drawer',
@@ -352,102 +384,12 @@
                 root_class: 'z-10140',
                 drawer_wrapper_class: 'max-pc:w-4/5 max-pc:max-w-none max-pc:top-3 max-pc:bottom-3 max-pc:left-1/2 max-pc:right-auto max-pc:-translate-x-1/2',
                 show_close_button: false,
-                close_label: 'Close filters drawer',
+                close_label: close_label,
                 content: drawer_content
             -%}
         </div>
     {%- endif -%}
 </div>
-
-{% javascript %}
-    (function () {
-        const Components = window.__Theme__?.Components;
-        if (!Components) return;
-
-        Components.register(
-            'collection',
-            {
-                init(el) {
-                    if (typeof gsap === 'undefined') return;
-                    if (typeof ScrollTrigger === 'undefined') return;
-
-                    gsap.registerPlugin(ScrollTrigger);
-
-                    const heroEl = el.querySelector('[data-gsap-hero]');
-                    const badgeEl = el.querySelector('[data-gsap-badge]');
-
-                    const ctx = gsap.context(() => {
-                        if (heroEl) {
-                            gsap.to(heroEl, {
-                                opacity: 1,
-                                x: 0,
-                                duration: 0.8,
-                                ease: 'power2.out',
-                            });
-                        }
-
-                        if (badgeEl) {
-                            gsap.to(badgeEl, {
-                                opacity: 1,
-                                scale: 1,
-                                duration: 0.6,
-                                delay: 0.3,
-                                ease: 'back.out(1.7)',
-                            });
-                        }
-                    }, el);
-
-                    return { ctx };
-                },
-
-                destroy(el, state) {
-                    if (state?.ctx) {
-                        state.ctx.revert();
-                    }
-                },
-            },
-            { lazy: true },
-        );
-
-        Components.register(
-            'product-grid',
-            {
-                init(el) {
-                    if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
-                    gsap.registerPlugin(ScrollTrigger);
-
-                    const cards = el.querySelectorAll('[data-gsap-card]');
-
-                    const ctx = gsap.context(() => {
-                        if (cards.length) {
-                            gsap.set(cards, { opacity: 0, y: 30 });
-
-                            gsap.to(cards, {
-                                opacity: 1,
-                                y: 0,
-                                duration: 0.5,
-                                stagger: { amount: 0.6, from: 'start' },
-                                ease: 'power2.out',
-                                scrollTrigger: {
-                                    trigger: el,
-                                    start: 'top 85%',
-                                    once: true,
-                                },
-                            });
-                        }
-                    }, el);
-
-                    return { ctx };
-                },
-
-                destroy(el, state) {
-                    if (state?.ctx) state.ctx.revert();
-                },
-            },
-            { lazy: true },
-        );
-    })();
-{% endjavascript %}
 
 {% stylesheet %}
     .price-range-thumb {
@@ -512,31 +454,31 @@
         {
             "type": "color_scheme",
             "id": "color_scheme",
-            "label": "Color Scheme",
-            "default": "color-scheme-1"
+            "label": "t:sections.collection.settings.color_scheme",
+            "default": "scheme-1"
         },
         {
             "type": "inline_richtext",
             "id": "header",
-            "default": "Products",
-            "label": "Header"
+            "default": "t:sections.collection.defaults.header",
+            "label": "t:sections.collection.settings.header"
         },
         {
             "type": "richtext",
             "id": "description",
-            "default": "<p>Tailored experiences powered by AI intelligence. Discover insights that adapt to your needs.</p>",
-            "label": "Description"
+            "default": "t:sections.collection.defaults.description",
+            "label": "t:sections.collection.settings.description"
         },
         {
             "type": "text",
             "id": "rotate_badge_text",
-            "label": "Rotate Badge Text",
-            "default": "PRODUCT GUARANTEE NATURAL"
+            "label": "t:sections.collection.settings.rotate_badge_text",
+            "default": "t:sections.collection.defaults.rotate_badge_text"
         },
         {
             "type": "text",
             "id": "rotate_badge_percent",
-            "label": "Rotate Badge Percent",
+            "label": "t:sections.collection.settings.rotate_badge_percent",
             "default": "100%"
         },
         {
@@ -546,32 +488,32 @@
             "max": 24,
             "step": 3,
             "default": 12,
-            "label": "Products per page"
+            "label": "t:sections.collection.settings.products_per_page"
         },
         {
             "type": "checkbox",
             "id": "enable_filtering",
             "default": true,
-            "label": "Enable filtering",
-            "info": "Customize filters with the [Search & Discovery app](https://help.shopify.com/manual/online-store/search-and-discovery/filters)"
+            "label": "t:sections.collection.settings.enable_filtering",
+            "info": "t:sections.collection.info.customize_filters_with_the_search_discov"
         },
         {
             "type": "select",
             "id": "filter_type",
-            "label": "Desktop filter layout",
+            "label": "t:sections.collection.settings.desktop_filter_layout",
             "default": "horizontal",
             "options": [
                 {
                     "value": "horizontal",
-                    "label": "Horizontal"
+                    "label": "t:sections.collection.options.horizontal"
                 },
                 {
                     "value": "vertical",
-                    "label": "Vertical"
+                    "label": "t:sections.collection.options.vertical"
                 },
                 {
                     "value": "drawer",
-                    "label": "Drawer"
+                    "label": "t:sections.collection.options.drawer"
                 }
             ]
         },
@@ -582,49 +524,49 @@
             "max": 12,
             "step": 1,
             "default": 6,
-            "label": "Visible filter values before show more"
+            "label": "t:sections.collection.settings.visible_filter_values_before_show_more"
         },
         {
             "type": "checkbox",
             "id": "enable_sorting",
             "default": true,
-            "label": "Enable sorting"
+            "label": "t:sections.collection.settings.enable_sorting"
         },
         {
             "type": "select",
             "id": "desktop_card_columns",
-            "label": "Desktop product card columns",
+            "label": "t:sections.collection.settings.desktop_product_card_columns",
             "default": "4",
             "options": [
                 {
                     "value": "3",
-                    "label": "3 columns"
+                    "label": "t:sections.collection.options.3_columns"
                 },
                 {
                     "value": "4",
-                    "label": "4 columns"
+                    "label": "t:sections.collection.options.4_columns"
                 }
             ]
         },
         {
             "type": "select",
             "id": "mobile_card_columns",
-            "label": "Mobile product card columns",
+            "label": "t:sections.collection.settings.mobile_product_card_columns",
             "default": "2",
             "options": [
                 {
                     "value": "1",
-                    "label": "1 column"
+                    "label": "t:sections.collection.options.1_column"
                 },
                 {
                     "value": "2",
-                    "label": "2 columns"
+                    "label": "t:sections.collection.options.2_columns"
                 }
             ]
         },
         {
             "type": "header",
-            "content": "Padding"
+            "content": "t:sections.collection.content.padding"
         },
         {
             "type": "range",
@@ -633,7 +575,7 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Top",
+            "label": "t:sections.collection.settings.padding_top",
             "default": 0
         },
         {
@@ -643,13 +585,8 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Bottom",
+            "label": "t:sections.collection.settings.padding_bottom",
             "default": 0
-        }
-    ],
-    "presets": [
-        {
-            "name": "t:general.collection"
         }
     ]
 }

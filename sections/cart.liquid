@@ -1,6 +1,6 @@
 <div
     data-section-id="{{ section.id }}"
-    class="cart-section full-width color-{{ section.settings.color_scheme }}"
+    class="cart-section full-width color-{{ section.settings.color_scheme }} bg-scheme-surface"
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
@@ -14,12 +14,12 @@
     <div class="layout container-page">
         <div class="grid grid-cols-1 gap-10 pc:grid-cols-[minmax(0,1fr)_auto]">
             {%- comment -%} Left: Cart list (Liquid-rendered for SRA) {%- endcomment -%}
-            <div class="flex flex-col gap-10 text-theme-text pc:gap-30">
-                <h1 class="hxxxl font-bold">Cart</h1>
+            <div class="flex flex-col gap-10 pc:gap-30">
+                <h1 class="heading-4xl">{{ 'cart.title' | t }}</h1>
 
                 <ul class="flex flex-col">
                     {%- for item in cart.items -%}
-                        <li class="grid grid-cols-3 gap-x-2 gap-y-3 border-b border-theme-border-soft py-3 first:pt-0 pc:grid-cols-[minmax(7.75rem,1fr)_minmax(0,3fr)_minmax(8rem,1fr)] pc:gap-6 pc:py-6">
+                        <li class="grid grid-cols-3 gap-x-2 gap-y-3 border-b border-theme-border-20 py-3 first:pt-0 pc:grid-cols-[minmax(7.75rem,1fr)_minmax(0,3fr)_minmax(8rem,1fr)] pc:gap-6 pc:py-6">
                             <div class="flex aspect-square w-full items-center justify-center overflow-hidden bg-theme-bg/50">
                                 {%- if item.image -%}
                                     {% render 'image',
@@ -32,20 +32,23 @@
                                         img_class: 'object-contain p-3'
                                     %}
                                 {%- else -%}
-                                    <span class="body-md text-theme-text/60">No image</span>
+                                    <span>
+                                        {{- 'cart.no_image' | t -}}
+                                    </span>
                                 {%- endif -%}
                             </div>
 
                             <div class="flex min-w-0 flex-col py-1">
-                                <p class="body-xs tracking-[0.08em] text-theme-text/70 uppercase">
+                                <p class="body-sm uppercase">
                                     {{ item.vendor | default: ' ' }}
                                 </p>
                                 <a
                                     href="{{ item.url }}"
-                                    class="mt-1 block body-md leading-tight font-medium hover:underline pc:mt-5 pc:h2"
+                                    class="mt-3 block hover:underline pc:mt-5 pc:body-lg"
                                 >
                                     {{ item.product.title }}
                                 </a>
+
                                 <p class="mt-auto pt-2 body-sm pc:pt-4 pc:body-md">
                                     {{ item.final_line_price | money }}
                                 </p>
@@ -54,19 +57,15 @@
                             <div class="flex items-center justify-end self-end py-1 pc:col-span-1">
                                 <a
                                     href="{{ item.url_to_remove }}"
-                                    class="inline-flex h-6 w-6 items-center justify-center text-current opacity-75 transition-opacity hover:opacity-100 pc:h-10 pc:w-10"
-                                    aria-label="Remove {{ item.product.title }}"
+                                    class="inline-flex items-center justify-center text-current opacity-50 transition-opacity hover:opacity-100"
+                                    aria-label="{{ 'accessibility.remove_item' | t: item: item.product.title }}"
                                     @click.prevent="$store.cart.change('{{ item.key }}', 0, ['{{ section.id }}'])"
                                 >
-                                    {% render 'icons',
-                                        icon: 'icon-trash',
-                                        size: 'xl',
-                                        color: 'current'
-                                    %}
+                                    {% render 'icons', icon: 'icon-trash' %}
                                 </a>
 
                                 <span
-                                    class="mx-5 h-5 border-l border-theme-border-soft pc:mx-10 pc:h-10"
+                                    class="mx-5 h-5 border-l border-theme-border-20 pc:mx-10 pc:h-10"
                                     aria-hidden="true"
                                 ></span>
 
@@ -84,8 +83,8 @@
                                         max: max_qty,
                                         label: item.product.title,
                                         wrapper_class: 'flex items-center gap-1 text-current pc:gap-2',
-                                        button_class: 'flex h-6 w-6 cursor-pointer items-center justify-center text-current transition-opacity hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-30 pc:h-10 pc:w-10',
-                                        input_class: 'min-w-7 w-[3ch] appearance-none border-b border-theme-border-strong bg-transparent p-0 pb-1 text-center body-sm text-current tabular-nums pc:min-w-9 pc:body-md [-moz-appearance:textfield] focus:ring-0 focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'
+                                        button_class: 'flex  cursor-pointer items-center justify-center text-current transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-20',
+                                        input_class: 'min-w-7 w-[3ch] appearance-none border-b border-theme-border bg-transparent p-0 pb-1 text-center body-sm text-current tabular-nums pc:min-w-9 pc:body-md [-moz-appearance:textfield] focus:ring-0 focus:outline-none focus-ring [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'
                                     -%}
                                 </div>
                             </div>
@@ -94,27 +93,26 @@
                 </ul>
 
                 <div class="text-center">
+                    {%- assign link_text = 'cart.shop_more' | t -%}
                     {%- render 'link',
-                        text: 'Shop More',
+                        text: link_text,
                         href: routes.root_url,
-                        variant: 'underline',
-                        color: 'current',
-                        class: 'body-md text-current'
+                        variant: 'underline'
                     -%}
                 </div>
             </div>
 
             {%- comment -%} Right: Order Summary card {%- endcomment -%}
             <aside class="self-start">
-                <div class="w-full surface p-5 pc:p-6">
-                    <h2 class="font-semibold text-current">Order Summary</h2>
+                <div class="w-full p-5 pc:p-6">
+                    <h2 class="heading-h1">{{ 'cart.order_summary' | t }}</h2>
 
                     {%- comment -%} Accordion: Order Special Instruction + Estimate Shipping {%- endcomment -%}
                     {%- capture note_html -%}
                         <textarea
                             name="note"
-                            class="min-h-20 field resize-y bg-theme-bg/60 body-sm"
-                            placeholder="Add a note to your order..."
+                            class="min-h-20 field resize-y body-sm"
+                            placeholder="{{ 'cart.note_placeholder' | t }}"
                             @change="$store.cart.update({ note: $event.target.value })"
                         >
                             {{ cart.note }}
@@ -127,31 +125,33 @@
                                 <input
                                     type="text"
                                     name="attributes[Country]"
-                                    class="field bg-theme-bg/60 body-md"
-                                    placeholder="Country"
+                                    class="field"
+                                    placeholder="{{ 'cart.country_placeholder' | t }}"
                                     value="{{ cart.attributes.Country | default: 'China' }}"
                                     @change="$store.cart.update({ attributes: { Country: $event.target.value } })"
                                 >
                                 <input
                                     type="text"
                                     name="attributes[Province]"
-                                    class="field bg-theme-bg/60 body-md"
-                                    placeholder="Province"
+                                    class="field"
+                                    placeholder="{{ 'cart.province_placeholder' | t }}"
                                     value="{{ cart.attributes.Province | default: 'Anhui' }}"
                                     @change="$store.cart.update({ attributes: { Province: $event.target.value } })"
                                 >
                             </div>
+
                             <input
                                 type="text"
                                 name="attributes[Pincode]"
-                                class="field bg-theme-bg/60 body-md"
-                                placeholder="Pincode"
+                                class="field"
+                                placeholder="{{ 'cart.pincode_placeholder' | t }}"
                             >
+
                             <button
                                 type="button"
-                                class="btn w-full btn-secondary"
+                                class="btn-secondary w-full"
                             >
-                                Get Estimate
+                                {{ 'cart.get_estimate' | t }}
                             </button>
                         </div>
                     {%- endcapture -%}
@@ -161,30 +161,37 @@
                         | append: shipping_html
                     -%}
 
+                    {%- assign accordion_title_note = 'cart.order_special_instruction' | t -%}
+                    {%- assign accordion_title_shipping = 'cart.estimate_shipping' | t -%}
+                    {%- assign accordion_titles = accordion_title_note
+                        | append: '|'
+                        | append: accordion_title_shipping
+                    -%}
                     {% render 'accordion',
                         wrapper_class: 'mt-6 flex flex-col gap-6',
                         initial_active: 1,
-                        titles: 'Order Special Instruction|Estimate Shipping',
+                        id_prefix: section.id,
+                        titles: accordion_titles,
                         contents: accordion_contents,
                         icon_type: 'plus',
-                        icon_size: 'w-10 h-10',
-                        item_class: 'pt-6 border-t border-theme-border-soft first:border-t-0',
-                        title_class: 'h3',
+                        item_class: 'pt-6 border-t border-theme-border-20 first:border-t-0',
+                        title_class: 'heading-h3',
                         title_active_class: 'text-current',
                         title_inactive_class: 'text-current/80',
-                        icon_color_class: 'text-current',
-                        content_class: 'pb-6 pr-0 text-current/75'
+                        content_class: 'pb-6 pr-0 text-current/80'
                     %}
 
-                    <div class="mt-10 border-t border-theme-border-soft pt-10">
+                    <div class="mt-10 border-t border-theme-border-20 pt-10">
                         <div class="flex items-baseline justify-between gap-4">
-                            <span class="font-semibold text-current">Estimate Total</span>
-                            <span class="text-current">
+                            <span>
+                                {{- 'cart.estimate_total' | t -}}
+                            </span>
+                            <span>
                                 {{- cart.total_price | money -}}
                             </span>
                         </div>
-                        <p class="mt-10 body-md text-current/65">
-                            Taxes, discounts and shipping calculated at checkout.
+                        <p class="mt-10 text-theme-text-80">
+                            {{ 'cart.taxes_note' | t }}
                         </p>
                     </div>
 
@@ -192,9 +199,9 @@
                         <button
                             type="submit"
                             name="checkout"
-                            class="btn w-full btn-primary py-4 font-medium pc:py-6"
+                            class="btn-primary w-full"
                         >
-                            Checkout
+                            {{ 'cart.checkout' | t }}
                             <sup class="sup-badge">( {{ cart.item_count | default: 0 }} )</sup>
                         </button>
                     </form>
@@ -204,42 +211,24 @@
     </div>
 </div>
 
-{%- javascript -%}
-    (function () {
-        const Components = window.__Theme__?.Components;
-        if (!Components) return;
-
-        Components.register(
-            'cart',
-            {
-                init(el) {
-                    return {};
-                },
-                destroy(el, state) {},
-            },
-            { lazy: true },
-        );
-    })();
-{%- endjavascript -%}
-
-{%- stylesheet -%}
-{%- endstylesheet -%}
-
 {% schema %}
 {
     "name": "t:general.cart",
     "tag": "section",
     "class": "section",
+    "enabled_on": {
+        "templates": ["cart"]
+    },
     "settings": [
         {
             "type": "color_scheme",
             "id": "color_scheme",
-            "label": "Color scheme",
+            "label": "t:sections.cart.settings.color_scheme",
             "default": "scheme-1"
         },
         {
             "type": "header",
-            "content": "Padding"
+            "content": "t:sections.cart.content.padding"
         },
         {
             "type": "range",
@@ -248,7 +237,7 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Top",
+            "label": "t:sections.cart.settings.padding_top",
             "default": 0
         },
         {
@@ -258,13 +247,8 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Bottom",
+            "label": "t:sections.cart.settings.padding_bottom",
             "default": 0
-        }
-    ],
-    "presets": [
-        {
-            "name": "t:general.cart"
         }
     ]
 }

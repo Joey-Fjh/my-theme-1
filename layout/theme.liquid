@@ -10,17 +10,25 @@
         {% # Load and preload the CSS %}
         {{ 'tailwind.output.css' | asset_url | stylesheet_tag: preload: true }}
 
-        {% comment %} --- 1. Third-party animation/UI libraries (No external dependencies) --- {% endcomment %}
-        <script src="{{ 'vendor-gsap.min.js' | asset_url }}" defer></script>
-        <script src="{{ 'vendor-gsap-scrolltrigger.min.js' | asset_url }}" defer></script>
+        {% comment %} --- 1. Third-party UI libraries --- {% endcomment %}
         <script src="{{ 'vendor-swiper.min.js' | asset_url }}" defer></script>
 
         {% comment %} --- 2. Core utility classes (No external dependencies) --- {% endcomment %}
         <script src="{{ 'utils.js' | asset_url }}" defer></script>
         <script src="{{ 'events.js' | asset_url }}" defer></script>
 
-        {% comment %} --- 3. Business component definitions (Depends on Utils) --- {% endcomment %}
+        {% comment %} --- 3. Alpine component definitions (Depends on Utils) --- {% endcomment %}
         <script src="{{ 'alpine.components.js' | asset_url }}" defer></script>
+        <script src="{{ 'alpine.components.ui.js' | asset_url }}" defer></script>
+        <script src="{{ 'alpine.components.header.js' | asset_url }}" defer></script>
+        <script src="{{ 'alpine.components.pagination.js' | asset_url }}" defer></script>
+        <script src="{{ 'alpine.components.filters.js' | asset_url }}" defer></script>
+        <script src="{{ 'alpine.components.product.js' | asset_url }}" defer></script>
+        <script src="{{ 'alpine.components.product-media.js' | asset_url }}" defer></script>
+        <script src="{{ 'alpine.components.product-cards.js' | asset_url }}" defer></script>
+        <script src="{{ 'alpine.components.search.js' | asset_url }}" defer></script>
+        <script src="{{ 'alpine.components.overlays.js' | asset_url }}" defer></script>
+        <script src="{{ 'alpine.components.registry.js' | asset_url }}" defer></script>
 
         {% comment %} --- 3b. Performance monitoring (debug only, no dependencies) --- {% endcomment %}
         <script src="{{ 'performance.js' | asset_url }}" defer></script>
@@ -31,8 +39,12 @@
         {% comment %} --- 5. Core dispatcher & entry point (Depends on Utils, AlpineComponents, and third-party libs) --- {% endcomment %}
         <script src="{{ 'base.js' | asset_url }}" defer></script>
 
-        {% comment %} --- 5b. Alpine global stores (dialog, cart) — must run before Alpine --- {% endcomment %}
+        {% comment %} --- 5b. Alpine global stores -- must run before Alpine --- {% endcomment %}
         <script src="{{ 'alpine.store.js' | asset_url }}" defer></script>
+        <script src="{{ 'alpine.store.toast.js' | asset_url }}" defer></script>
+        <script src="{{ 'alpine.store.dialog.js' | asset_url }}" defer></script>
+        <script src="{{ 'alpine.store.cart.js' | asset_url }}" defer></script>
+        <script src="{{ 'alpine.store.registry.js' | asset_url }}" defer></script>
 
         {% comment %} --- 6. Alpine.js framework initialization (Must be loaded last) --- {% endcomment %}
         <script src="{{ 'vendor-alpine-intersect.min.js' | asset_url }}" defer></script>
@@ -41,7 +53,19 @@
         {{ content_for_header }}
     </head>
 
-    <body>
+    <body
+        data-initial-cart="{{ cart | json | escape }}"
+        data-cart-type="{{ settings.cart_type }}"
+        {% if settings.motion_enabled == false %}
+            data-motion-enabled="false"
+        {% endif %}
+        {% if settings.content_reveal_style != blank and settings.content_reveal_style != 'none' %}
+            data-content-reveal-style="{{ settings.content_reveal_style }}"
+        {% endif %}
+        {% if settings.media_reveal_style != blank and settings.media_reveal_style != 'none' %}
+            data-media-reveal-style="{{ settings.media_reveal_style }}"
+        {% endif %}
+    >
         {% sections 'overlay-group' %}
 
         {% sections 'header-group' %}
@@ -53,13 +77,5 @@
         {% sections 'footer-group' %}
 
         {% render 'ui-toast' %}
-
-        {% comment %} Global initial state hydration for Alpine stores {% endcomment %}
-        <script>
-            window.__Theme__ = window.__Theme__ || {};
-            window.__Theme__.initialState = {
-              cart: {{ cart | json }}
-            };
-        </script>
     </body>
 </html>

@@ -1,4 +1,5 @@
 <nav
+    aria-label="{{ 'accessibility.main_menu' | t }}"
     class="header-dropdown-menu"
     x-data="dropdown"
     @mouseenter="onHeaderEnter()"
@@ -20,6 +21,7 @@
                         <summary
                             class="dropdown-trigger flex items-center gap-1"
                             id="HeaderMenu-{{ link.handle }}"
+                            :aria-expanded="$el.parentElement.open"
                             @click.stop.prevent="toggle($el.parentElement)"
                         >
                             {% capture link_content %}
@@ -28,17 +30,14 @@
                                 </span>
                                 {% render 'icons',
                                     icon: 'icon-arrow',
-                                    size: 'lg',
-                                    class: 'dropdown-icon dropdown-icon--down',
-                                    color:'current'
+                                    class: 'dropdown-icon dropdown-icon--down'
                                 %}
                             {% endcapture %}
 
                             {% render 'link',
                                 content: link_content,
                                 variant: 'underline',
-                                class: 'flex items-center gap-3',
-                                color: 'current'
+                                class: 'flex items-center gap-3'
                             %}
                         </summary>
 
@@ -67,8 +66,7 @@
                                             class: childlink_classes,
                                             href: childlink.url,
                                             variant: "underline",
-                                            attributes: childlink_attributes,
-                                            color:'current'
+                                            attributes: childlink_attributes
                                         -%}
                                     {%- else -%}
                                         <details
@@ -79,6 +77,7 @@
                                             <summary
                                                 class="dropdown-trigger flex items-center justify-between px-4 py-2"
                                                 id="HeaderMenu-{{ childlink.handle }}"
+                                                :aria-expanded="$el.parentElement.open"
                                                 @click.stop.prevent="toggle($el.parentElement)"
                                             >
                                                 {% capture link_content %}
@@ -87,17 +86,14 @@
                                                     </span>
                                                     {% render 'icons',
                                                         icon: 'icon-arrow1',
-                                                        size: 'lg',
-                                                        class: 'dropdown-icon dropdown-icon--tilt',
-                                                        color: 'current'
+                                                        class: 'dropdown-icon dropdown-icon--tilt'
                                                     %}
                                                 {% endcapture %}
 
                                                 {% render 'link',
                                                     content: link_content,
                                                     variant: 'underline',
-                                                    class: 'flex items-center gap-3',
-                                                    color: 'current'
+                                                    class: 'flex items-center gap-3'
                                                 %}
                                             </summary>
 
@@ -124,8 +120,7 @@
                                                             class: grand_child_link_classes,
                                                             href: grandChildLink.url,
                                                             variant: "underline",
-                                                            attributes: grand_child_link_attributes,
-                                                            color:'current'
+                                                            attributes: grand_child_link_attributes
                                                         -%}
                                                     </li>
                                                 {%- endfor -%}
@@ -148,8 +143,7 @@
                         text: link.title | escape,
                         href: link.url,
                         variant: "underline",
-                        attributes: link_attributes,
-                        color:'current'
+                        attributes: link_attributes
                     -%}
                 {%- endif -%}
             </li>

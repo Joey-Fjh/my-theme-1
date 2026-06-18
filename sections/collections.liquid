@@ -1,6 +1,6 @@
 <div
     data-section-id="{{ section.id }}"
-    class="collections-section full-width h-full color-{{ section.settings.color_scheme }}"
+    class="collections-section full-width h-full color-{{ section.settings.color_scheme }} bg-scheme-surface"
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
@@ -8,14 +8,15 @@
     data-component-kind="section"
     data-component-type="collections"
     data-component-id="{{ section.id }}"
+    x-data="motionRevealSection()"
+    data-motion-section
 >
-    <div class="layout container-page bg-theme-bg text-theme-text">
+    <div class="layout container-page">
         <div class="relative mb-8 pt-14 text-center pc:mb-10 pc:pt-25">
             <div class="mx-auto flex flex-col gap-3 pc:gap-6">
-                <h1>Latest Brand</h1>
-                <p class="body-sm opacity-80 pc:body-md">
-                    Tailored experiences powered by AI intelligence. Discover insights that adapt to
-                    your needs.
+                <h1 class="heading-2xl">{{ 'collections.latest_brand' | t }}</h1>
+                <p>
+                    {{ 'collections.latest_brand_description' | t }}
                 </p>
             </div>
 
@@ -44,12 +45,11 @@
                         <a
                             href="{{ collection.url }}"
                             class="
-                                group block translate-y-7.5 overflow-hidden
-                                bg-theme-bg opacity-0 transition-shadow duration-300
+                                group block overflow-hidden
+                                bg-theme-bg transition-shadow duration-300
                                 hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)]
                                 max-pc:shadow-[0_8px_30px_rgba(0,0,0,0.08)]
                             "
-                            data-gsap-card
                         >
                             {%- comment -%} Image {%- endcomment -%}
                             <div class="relative aspect-square overflow-hidden bg-theme-bg">
@@ -66,29 +66,33 @@
                                     {%- assign image_loading = 'eager' -%}
                                 {%- endif -%}
 
-                                {%-
-                                    render 'image',
+                                {%- assign image_alt = collection.image.alt
+                                    | default: shop.name
+                                    | escape
+                                -%}
+                                {%- render 'image',
                                     image: collection.image,
-                                    alt: collection.image.alt | default: shop.name | escape,
+                                    alt: image_alt,
                                     width: collection.image.width,
                                     sizes: sizes,
                                     widths: widths,
                                     loading: image_loading,
-                                    class: 'w-full h-full object-cover
-                                    transition-transform duration-[600ms] ease-[cubic-bezier(0.25,0.46,0.45,0.94)] group-hover:scale-105'
+                                    class: 'w-full h-full'
                                 -%}
                             </div>
 
                             {%- comment -%} Info {%- endcomment -%}
-                            <div class="flex items-center justify-between gap-2 px-2 py-1.5 pc:px-3 pc:py-2">
-                                <span class="line-clamp-1 body-md">
+                            <div
+                                class="flex items-center justify-between gap-2 px-2 py-1.5 pc:px-3 pc:py-2"
+                                data-motion-reveal="content"
+                            >
+                                <span class="line-clamp-1">
                                     {{- collection.title -}}
                                 </span>
+
                                 {% render 'icons',
                                     icon: 'icon-arrow2',
-                                    size: 'lg',
-                                    class: 'transition-transform duration-300 group-hover:translate-x-1',
-                                    color: 'current'
+                                    class: 'transition-transform duration-300 group-hover:translate-x-1'
                                 %}
                             </div>
                         </a>
@@ -102,50 +106,6 @@
     </div>
 </div>
 
-{%- javascript -%}
-    (function () {
-        const Components = window.__Theme__?.Components;
-        if (!Components || typeof gsap === 'undefined') return;
-
-        gsap.registerPlugin(ScrollTrigger);
-
-        Components.register(
-            'collections',
-            {
-                init(el) {
-                    const ctx = gsap.context(() => {
-                        const cards = el.querySelectorAll('[data-gsap-card]');
-
-                        gsap.to(cards, {
-                            opacity: 1,
-                            y: 0,
-                            duration: 0.5,
-                            stagger: 0.1,
-                            scrollTrigger: {
-                                trigger: el,
-                                start: 'top 85%',
-                                once: true,
-                            },
-                        });
-                    }, el);
-
-                    return { ctx };
-                },
-
-                destroy(el, state) {
-                    if (state?.ctx) {
-                        state.ctx.revert();
-                    }
-                },
-            },
-            { lazy: true },
-        );
-    })();
-{%- endjavascript -%}
-
-{% stylesheet %}
-{% endstylesheet %}
-
 {% schema %}
 {
     "name": "t:general.collections_grid",
@@ -158,7 +118,7 @@
         {
             "type": "color_scheme",
             "id": "color_scheme",
-            "label": "Color scheme",
+            "label": "t:sections.collections.settings.color_scheme",
             "default": "scheme-1"
         },
         {
@@ -168,29 +128,29 @@
             "max": 24,
             "step": 4,
             "default": 12,
-            "label": "Collections per page"
+            "label": "t:sections.collections.settings.collections_per_page"
         },
         {
             "type": "checkbox",
             "id": "show_badge",
-            "label": "Show Badge",
+            "label": "t:sections.collections.settings.show_badge",
             "default": true
         },
         {
             "type": "text",
             "id": "badge_text",
-            "label": "Badge Text",
-            "default": "PRODUCT GUARANTEE • NATURAL •"
+            "label": "t:sections.collections.settings.badge_text",
+            "default": "t:sections.collections.defaults.badge_text"
         },
         {
             "type": "text",
             "id": "badge_value",
-            "label": "Badge Value",
+            "label": "t:sections.collections.settings.badge_value",
             "default": "100%"
         },
         {
             "type": "header",
-            "content": "Padding"
+            "content": "t:sections.collections.content.padding"
         },
         {
             "type": "range",
@@ -199,7 +159,7 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Top",
+            "label": "t:sections.collections.settings.padding_top",
             "default": 0
         },
         {
@@ -209,13 +169,8 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Bottom",
+            "label": "t:sections.collections.settings.padding_bottom",
             "default": 0
-        }
-    ],
-    "presets": [
-        {
-            "name": "t:general.collections_grid"
         }
     ]
 }

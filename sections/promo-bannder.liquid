@@ -1,22 +1,26 @@
 <div
     data-section-id="{{ section.id }}"
-    class="
-        promo-banner-section full-width
-        color-{{ section.settings.color_scheme }}
-    "
+    class="promo-banner-section full-width color-{{ section.settings.color_scheme }}"
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
     "
+    x-data="motionRevealSection()"
+    data-motion-section
 >
     <div class="layout container-page">
         {% comment %} Hero Banner {% endcomment %}
         <div class="relative mb-2 aspect-4/5 overflow-hidden pc:aspect-16/7 fw:aspect-16/6">
+            {%- assign iamge_alt = section.settings.hero_image.alt
+                | default: section.settings.hero_heading
+                | default: shop.name
+                | escape
+            -%}
             {%- render 'image',
                 image: section.settings.hero_image,
-                alt: section.settings.hero_image.alt,
+                alt: iamge_alt,
                 width: section.settings.hero_image.width,
-                loading: 'eager'
+                loading: 'lazy'
             -%}
 
             {%- if section.settings.show_badge -%}
@@ -30,15 +34,18 @@
                 -%}
             {%- endif -%}
 
-            <div class="absolute inset-0 flex flex-col justify-end gap-6 p-6 pc:p-10 fw:p-14">
+            <div
+                class="absolute inset-0 flex flex-col justify-end gap-6 p-6 pc:p-10 fw:p-14"
+                data-motion-reveal="content"
+            >
                 {%- if section.settings.hero_subtitle != blank -%}
-                    <p class="body-xl tracking-wide text-theme-text/80">
+                    <h3 class="sub-heading">
                         {{ section.settings.hero_subtitle }}
-                    </p>
+                    </h3>
                 {%- endif -%}
 
                 {%- if section.settings.hero_heading != blank -%}
-                    <h1 class="h1 font-light tracking-tight text-theme-text">
+                    <h1>
                         {{ section.settings.hero_heading }}
                     </h1>
                 {%- endif -%}
@@ -46,13 +53,13 @@
                 {%- if section.settings.hero_link != blank -%}
                     {%- capture link_content -%}
                         <span>{{ section.settings.hero_link_text }}</span>
-                        {% render 'icons', icon: 'icon-arrow2', size: 'lg', class: 'ml-3', color: 'current' %}
+                        {% render 'icons', icon: 'icon-arrow2', class: 'ml-3' %}
                     {%- endcapture -%}
+
                     {%- render 'link',
                         href: section.settings.hero_link,
                         content: link_content,
-                        variant: 'underline',
-                        color: 'current'
+                        variant: 'underline'
                     -%}
                 {%- endif -%}
             </div>
@@ -65,37 +72,44 @@
                     class="pc:aspect-4/3.5 relative aspect-square overflow-hidden"
                     {{ block.shopify_attributes }}
                 >
+                    {%- assign image_alt = block.settings.image.alt
+                        | default: block.settings.heading
+                        | escape
+                    -%}
                     {%- render 'image',
                         image: block.settings.image,
-                        alt: block.settings.image.alt,
+                        alt: image_alt,
                         width: block.settings.image.width,
                         sizes: '(max-width: 767px) 100vw, 50vw',
                         loading: 'lazy'
                     -%}
 
-                    <div class="absolute inset-0 flex flex-col justify-end gap-6 p-6 pc:p-8">
+                    <div
+                        class="absolute inset-0 flex flex-col justify-end gap-6 p-6 pc:p-8"
+                        data-motion-reveal="content"
+                    >
                         {%- if block.settings.subtitle != blank -%}
-                            <p class="mb-1 body-xl tracking-wide text-theme-text/80">
+                            <h3 class="sub-heading mb-1">
                                 {{ block.settings.subtitle }}
-                            </p>
+                            </h3>
                         {%- endif -%}
 
                         {%- if block.settings.heading != blank -%}
-                            <h2 class="h2 font-light tracking-tight text-theme-text">
+                            <h1>
                                 {{ block.settings.heading }}
-                            </h2>
+                            </h1>
                         {%- endif -%}
 
                         {%- if block.settings.link != blank -%}
                             {%- capture link_content -%}
                                 <span>{{ block.settings.link_text }}</span>
-                                {% render 'icons', icon: 'icon-arrow2', size: 'lg', class: 'ml-3', color: 'current' %}
+                                {% render 'icons', icon: 'icon-arrow2', class: 'ml-3' %}
                             {%- endcapture -%}
+
                             {%- render 'link',
                                 href: block.settings.link,
                                 content: link_content,
-                                variant: 'underline',
-                                color: 'current'
+                                variant: 'underline'
                             -%}
                         {%- endif -%}
                     </div>
@@ -107,7 +121,7 @@
 
 {% schema %}
 {
-    "name": "Promo Banner",
+    "name": "t:sections.promo-bannder.name",
     "tag": "section",
     "class": "section",
     "disabled_on": {
@@ -117,66 +131,66 @@
         {
             "type": "color_scheme",
             "id": "color_scheme",
-            "label": "Color Scheme",
-            "default": "color-scheme-1"
+            "label": "t:sections.promo-bannder.settings.color_scheme",
+            "default": "scheme-1"
         },
         {
             "type": "header",
-            "content": "Hero Banner"
+            "content": "t:sections.promo-bannder.content.hero_banner"
         },
         {
             "type": "image_picker",
             "id": "hero_image",
-            "label": "Hero Image"
+            "label": "t:sections.promo-bannder.settings.hero_image"
         },
         {
             "type": "inline_richtext",
             "id": "hero_subtitle",
-            "label": "Subtitle",
-            "default": "Lorem Ipsum"
+            "label": "t:sections.promo-bannder.settings.subtitle",
+            "default": "t:sections.promo-bannder.defaults.subtitle"
         },
         {
             "type": "inline_richtext",
             "id": "hero_heading",
-            "label": "Heading",
-            "default": "Up To 50% Off Everything"
+            "label": "t:sections.promo-bannder.settings.heading",
+            "default": "t:sections.promo-bannder.defaults.heading"
         },
         {
             "type": "url",
             "id": "hero_link",
-            "label": "Link"
+            "label": "t:sections.promo-bannder.settings.link"
         },
         {
             "type": "text",
             "id": "hero_link_text",
-            "label": "Link Text",
-            "default": "Watch Now"
+            "label": "t:sections.promo-bannder.settings.link_text",
+            "default": "t:sections.promo-bannder.defaults.link_text"
         },
         {
             "type": "header",
-            "content": "Badge"
+            "content": "t:sections.promo-bannder.content.badge"
         },
         {
             "type": "checkbox",
             "id": "show_badge",
-            "label": "Show Badge",
+            "label": "t:sections.promo-bannder.settings.show_badge",
             "default": true
         },
         {
             "type": "text",
             "id": "badge_text",
-            "label": "Badge Text",
-            "default": "PRODUCT GUARANTEE • NATURAL •"
+            "label": "t:sections.promo-bannder.settings.badge_text",
+            "default": "t:sections.promo-bannder.defaults.badge_text"
         },
         {
             "type": "text",
             "id": "badge_value",
-            "label": "Badge Value",
+            "label": "t:sections.promo-bannder.settings.badge_value",
             "default": "100%"
         },
         {
             "type": "header",
-            "content": "Padding"
+            "content": "t:sections.promo-bannder.content.padding"
         },
         {
             "type": "range",
@@ -185,7 +199,7 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Top",
+            "label": "t:sections.promo-bannder.settings.padding_top",
             "default": 0
         },
         {
@@ -195,49 +209,49 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Bottom",
+            "label": "t:sections.promo-bannder.settings.padding_bottom",
             "default": 0
         }
     ],
     "blocks": [
         {
             "type": "card",
-            "name": "Card",
+            "name": "t:sections.promo-bannder.blocks.card",
             "settings": [
                 {
                     "type": "image_picker",
                     "id": "image",
-                    "label": "Image"
+                    "label": "t:sections.promo-bannder.block_settings.image"
                 },
                 {
                     "type": "inline_richtext",
                     "id": "subtitle",
-                    "label": "Subtitle",
-                    "default": "Lorem Ipsum"
+                    "label": "t:sections.promo-bannder.block_settings.subtitle",
+                    "default": "t:sections.promo-bannder.blocks.defaults.subtitle"
                 },
                 {
                     "type": "inline_richtext",
                     "id": "heading",
-                    "label": "Heading",
-                    "default": "Lorem Ipsum"
+                    "label": "t:sections.promo-bannder.block_settings.heading",
+                    "default": "t:sections.promo-bannder.blocks.defaults.heading"
                 },
                 {
                     "type": "url",
                     "id": "link",
-                    "label": "Link"
+                    "label": "t:sections.promo-bannder.block_settings.link"
                 },
                 {
                     "type": "text",
                     "id": "link_text",
-                    "label": "Link Text",
-                    "default": "Watch Now"
+                    "label": "t:sections.promo-bannder.block_settings.link_text",
+                    "default": "t:sections.promo-bannder.blocks.defaults.link_text"
                 }
             ]
         }
     ],
     "presets": [
         {
-            "name": "Promo Banner",
+            "name": "t:sections.promo-bannder.presets.promo_banner",
             "settings": {}
         }
     ]

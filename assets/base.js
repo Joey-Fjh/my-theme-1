@@ -55,7 +55,7 @@
 
         static refreshElements() {
             this.announcementBar = document.querySelector('.announcement-bar');
-            this.header = document.querySelector('.header');
+            this.header = document.querySelector('.site-header > header');
         }
 
         static updateLayout() {
@@ -470,7 +470,13 @@
                         if (Stores.dialog) window.Alpine.store('dialog', Stores.dialog);
 
                         if (Stores.cart) {
-                            const initialCartData = window.__Theme__?.initialState?.cart || {};
+                            let initialCartData = {};
+                            try {
+                                const raw = document.body.dataset.initialCart;
+                                if (raw) initialCartData = JSON.parse(raw);
+                            } catch (_) {
+                                /* ignore parse errors */
+                            }
                             Stores.cart.init(initialCartData);
                             window.Alpine.store('cart', Stores.cart);
                         }
@@ -507,12 +513,19 @@
                         Factory.register?.(Comps.PICKUPAVAILABILITY, Comps.PickupAvailability);
                         Factory.register?.(Comps.PREDICTIVESEARCH, Comps.predictiveSearch);
                         Factory.register?.(Comps.RELATEDPRODUCTS, Comps.relatedProducts);
+                        Factory.register?.(Comps.NEWSLETTERBANNER, Comps.newsletterBanner);
                         Factory.register?.(Comps.NEWSLETTEROVERLAY, Comps.newsletterOverlay);
                         Factory.register?.(Comps.CARTOVERLAY, Comps.cartOverlay);
                         Factory.register?.(Comps.CARDGALLERY, Comps.cardGallery);
                         Factory.register?.(Comps.PRODUCTCARD, Comps.productCard);
                         Factory.register?.(Comps.IMAGELIGHTBOX, Comps.imageLightbox);
                         Factory.register?.(Comps.IMAGEMAGNIFIER, Comps.imageMagnifier);
+                        Factory.register?.(Comps.PRODUCTLAYOUT, Comps.productLayout);
+                        Factory.register?.(Comps.ACCORDION, Comps.accordion);
+                        Factory.register?.(Comps.SORTBYDROPDOWN, Comps.sortByDropdown);
+                        Factory.register?.(Comps.FLIPDIGIT, Comps.flipDigit);
+                        Factory.register?.(Comps.TOASTCONTAINER, Comps.toastContainer);
+                        Factory.register?.(Comps.MOTIONREVEALSECTION, Comps.motionRevealSection);
                     }
                 },
                 { once: true },

@@ -1,21 +1,8 @@
 <footer
     data-section-id="{{ section.id }}"
-    class="
-        footer-section full-width relative
-        color-{{ section.settings.color_scheme }}
-    "
-    x-data="
-        {
-          visible:false,
-          scrollToTop() {
-            window.scrollTo({
-              top: 0,
-              behavior: 'smooth'
-            })
-          }
-        }
-    "
-    x-intersect:enter.once="visible = true"
+    class="footer-section full-width relative color-{{ section.settings.color_scheme }}"
+    x-data="motionRevealSection()"
+    data-motion-section
 >
     {%- if section.settings.bg_image -%}
         {% render 'image',
@@ -30,15 +17,15 @@
         <div class="relative overflow-hidden p-12">
             {% comment %} Top Content Area {% endcomment %}
             <div
-                class="z-10 flex flex-col gap-12 transition-all duration-700 ease-out pc:mb-24 pc:flex-row pc:justify-between"
-                :class="visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'"
+                class="z-10 flex flex-col gap-12 pc:mb-24 pc:flex-row pc:justify-between"
+                data-motion-reveal="content"
             >
                 {%- comment -%} Navigation Link Columns {%- endcomment -%}
                 <div class="grid grid-cols-3 gap-x-4 gap-y-10 pc:flex pc:gap-20 fw:gap-28">
                     {% for block in section.blocks %}
                         {% if block.type == 'link_column' %}
                             <div {{ block.shopify_attributes }}>
-                                <h2 class="mb-6 body-lg font-medium tracking-wider pc:mb-10">
+                                <h2 class="mb-6 pc:mb-10">
                                     {{ block.settings.heading }}
                                 </h2>
                                 <ul class="flex flex-col gap-3">
@@ -48,8 +35,6 @@
                                             <li>
                                                 {% render 'link',
                                                     text: link.title,
-                                                    class: 'body-md',
-                                                    color: 'current',
                                                     variant: 'underline',
                                                     href: link.url
                                                 %}
@@ -61,11 +46,9 @@
                                         %}
                                         {% for i in (1..4) %}
                                             <li>
-                                                {%
-                                                    render 'link',
-                                                    text: 'Link ' | append: i,
-                                                    class: 'body-md',
-                                                    color: 'current',
+                                                {%- assign link_text = 'Link ' | append: i -%}
+                                                {% render 'link',
+                                                    text: link_text,
                                                     variant: 'underline',
                                                     href: '#'
                                                 %}
@@ -79,28 +62,27 @@
                 </div>
 
                 {%- comment -%} Right Content Block {%- endcomment -%}
-                <div class="flex max-w-2xl flex-col gap-8 pc:gap-12">
+                <div class="flex max-w-3xl flex-col gap-8 pc:gap-12">
                     {% if section.settings.content_heading != blank %}
-                        <h3 class="body-lg font-medium">
+                        <h3>
                             {{ section.settings.content_heading }}
                         </h3>
                     {% endif %}
                     {% if section.settings.content_text != blank %}
-                        <div class="rte rte--compact body-lg leading-relaxed">
+                        <div class="rte rte--compact body-lg">
                             {{ section.settings.content_text }}
                         </div>
                     {% endif %}
                     {% if section.settings.content_link != blank %}
                         {%- capture link_content -%}
                             <span>{{ section.settings.content_link_text }}</span>
-                            {% render 'icons', icon: 'icon-arrow2', size: 'lg', class: 'ml-3', color: 'current' %}
+                            {% render 'icons', icon: 'icon-arrow2', class: 'ml-3' %}
                         {%- endcapture -%}
 
                         {%- render 'link',
                             href: section.settings.content_link,
                             content: link_content,
                             class: 'body-lg',
-                            color: 'current',
                             variant: 'underline'
                         -%}
                     {% endif %}
@@ -108,7 +90,7 @@
                         and shop.features.follow_on_shop?
                     %}
                         <div class="flex flex-col gap-3">
-                            <p class="body-md opacity-60">Follow on Shop</p>
+                            <p>{{ 'footer.follow_on_shop' | t }}</p>
                             <div>
                                 {{ shop | login_button: action: 'follow' }}
                             </div>
@@ -119,12 +101,12 @@
 
             {%- comment -%} Large Brand Name with Brush Texture {%- endcomment -%}
             <div
-                class="transtion-all z-0 mb-8 delay-300 duration-1000 ease-out select-none pc:mb-12"
-                :class="visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'"
+                class="z-0 mb-8 select-none pc:mb-12"
+                data-motion-reveal="content"
             >
                 {%- comment -%} Brush stroke decoration {%- endcomment -%}
                 {% if section.settings.brush_image != blank %}
-                    <div class="pointer-events-none absolute inset-0 flex items-center justify-center opacity-20">
+                    <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
                         {% render 'image',
                             class: '!h-fit object-contain mix-blend-lighten',
                             image: section.settings.brush_image,
@@ -137,49 +119,36 @@
                         text: section.settings.brand_name,
                         container_class: 'relative z-10 w-full',
                         svg_class: 'mx-auto',
-                        text_class: 'font-bold'
+                        text_class: ''
                     %}
                 {% endif %}
             </div>
 
             {%- comment -%} Bottom Bar {%- endcomment -%}
             <div
-                class="
-                    z-10 grid grid-cols-2 gap-y-8 border-t border-theme-border-soft pt-6
-                    transition-all delay-500 duration-700 ease-out pc:flex pc:flex-row pc:items-center pc:justify-between
-                "
-                :class="visible ? 'opacity-100' : 'opacity-0'"
+                class="z-10 grid grid-cols-2 gap-y-8 border-t border-theme-border-50 pt-6 pc:flex pc:flex-row pc:items-center pc:justify-between"
+                data-motion-reveal="content"
             >
-                <span class="col-span-1 body-sm opacity-60 pc:order-first">
+                <span class="col-span-1 pc:order-first">
                     {{ section.settings.location | default: 'Shibuya, JP' }}
                 </span>
-                <span class="col-span-1 text-right body-sm opacity-60 pc:order-0 pc:text-center">
-                    {{ 'now' | date: '%Y' }}©
-                    {{ section.settings.brand_name | default: 'Eccenova' }}® allright reserved.
+                <span class="col-span-1 text-right pc:order-0 pc:text-center">
+                    {{ 'now' | date: '%Y' }}
+                    {{ section.settings.brand_name | default: 'Eccenova' }}
+                    {{ 'footer.all_rights_reserved' | t }}
                 </span>
                 <button
                     type="button"
-                    @click="scrollToTop()"
-                    class="col-span-2 flex cursor-pointer items-center justify-center gap-1 body-sm opacity-60 transition-opacity hover:opacity-100 pc:order-last pc:col-span-1 pc:justify-end"
+                    @click="window.scrollTo({ top: 0, behavior: 'smooth' })"
+                    class="col-span-2 flex cursor-pointer items-center justify-center gap-1 opacity-50 transition-opacity hover:opacity-100 pc:order-last pc:col-span-1 pc:justify-end"
                 >
-                    <span>Back to Top</span>
-                    <svg
-                        class="h-4 w-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        stroke-width="2"
-                    >
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7" />
-                    </svg>
+                    <span>{{ 'footer.back_to_top' | t }}</span>
+                    {%- render 'icons', icon: 'icon-chevron-up' -%}
                 </button>
             </div>
         </div>
     </div>
 </footer>
-
-{% stylesheet %}
-{% endstylesheet %}
 
 {% schema %}
 {
@@ -194,99 +163,114 @@
         {
             "type": "color_scheme",
             "id": "color_scheme",
-            "label": "Color Scheme",
-            "default": "color-scheme-1"
+            "label": "t:sections.footer.settings.color_scheme",
+            "default": "scheme-1"
         },
         {
             "type": "image_picker",
             "id": "bg_image",
-            "label": "Background Image"
+            "label": "t:sections.footer.settings.background_image"
         },
         {
             "type": "header",
-            "content": "Brand"
+            "content": "t:sections.footer.content.brand"
         },
         {
             "type": "inline_richtext",
             "id": "brand_name",
-            "label": "Brand Name",
-            "default": "Eccenova"
+            "label": "t:sections.footer.settings.brand_name",
+            "default": "t:sections.footer.defaults.brand_name"
         },
         {
             "type": "image_picker",
             "id": "brush_image",
-            "label": "Brush Texture Image"
+            "label": "t:sections.footer.settings.brush_texture_image"
         },
         {
             "type": "inline_richtext",
             "id": "location",
-            "label": "Location Text",
-            "default": "Shibuya, JP"
+            "label": "t:sections.footer.settings.location_text",
+            "default": "t:sections.footer.defaults.location"
         },
         {
             "type": "header",
-            "content": "Right Content"
+            "content": "t:sections.footer.content.right_content"
         },
         {
             "type": "inline_richtext",
             "id": "content_heading",
-            "label": "Heading",
-            "default": "#1 China Cosmetic Products"
+            "label": "t:sections.footer.settings.heading",
+            "default": "t:sections.footer.defaults.content_heading"
         },
         {
             "type": "richtext",
             "id": "content_text",
-            "label": "Description",
-            "default": "<p>Personalized with AI insight. Personalized with AI insight. Personalized with AI insight.</p>"
+            "label": "t:sections.footer.settings.description",
+            "default": "t:sections.footer.defaults.content_text"
         },
         {
             "type": "url",
             "id": "content_link",
-            "label": "Link"
+            "label": "t:sections.footer.settings.link"
         },
         {
             "type": "text",
             "id": "content_link_text",
-            "label": "Link Text",
-            "default": "See Our New Product"
+            "label": "t:sections.footer.settings.link_text",
+            "default": "t:sections.footer.defaults.content_link_text"
         },
         {
             "type": "header",
-            "content": "Follow on Shop"
+            "content": "t:sections.footer.content.follow_on_shop"
         },
         {
             "type": "checkbox",
             "id": "enable_follow_on_shop",
-            "label": "Enable Follow on Shop button",
+            "label": "t:sections.footer.settings.enable_follow_on_shop_button",
             "default": true
         }
     ],
     "blocks": [
         {
             "type": "link_column",
-            "name": "Link Column",
+            "name": "t:sections.footer.blocks.link_column",
             "settings": [
                 {
                     "type": "inline_richtext",
                     "id": "heading",
-                    "label": "Column Heading",
-                    "default": "Catalog"
+                    "label": "t:sections.footer.block_settings.column_heading",
+                    "default": "t:sections.footer.defaults.link_column_heading"
                 },
                 {
                     "type": "link_list",
                     "id": "menu",
-                    "label": "Menu"
+                    "label": "t:sections.footer.block_settings.menu"
                 }
             ]
         }
     ],
     "presets": [
         {
-            "name": "Footer",
+            "name": "t:sections.footer.presets.footer",
             "blocks": [
-                { "type": "link_column", "settings": { "heading": "Catalog" } },
-                { "type": "link_column", "settings": { "heading": "Pages" } },
-                { "type": "link_column", "settings": { "heading": "Social" } }
+                {
+                    "type": "link_column",
+                    "settings": {
+                        "heading": "Catalog"
+                    }
+                },
+                {
+                    "type": "link_column",
+                    "settings": {
+                        "heading": "Pages"
+                    }
+                },
+                {
+                    "type": "link_column",
+                    "settings": {
+                        "heading": "Social"
+                    }
+                }
             ]
         }
     ]

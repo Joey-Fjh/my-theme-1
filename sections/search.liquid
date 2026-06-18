@@ -4,10 +4,7 @@
 
 <div
     data-section-id="{{ section.id }}"
-    class="
-        search-section full-width min-h-[50vh]
-        color-{{ section.settings.color_scheme }} bg-theme-bg text-theme-text
-    "
+    class="search-section full-width min-h-[50vh] color-{{ section.settings.color_scheme }} bg-scheme-surface"
     style="
         --section-padding-top: {{ section.settings.padding_top | default: 0 }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom | default: 0 }}px;
@@ -20,10 +17,14 @@
         <div
             class="mx-auto w-full pc:max-w-1/2"
             x-data="predictiveSearch"
+            data-predictive-search-enabled="{{ settings.predictive_search_enabled }}"
             data-predictive-search-url="{{ routes.search_url }}"
             data-predictive-search-query="{{ terms | escape }}"
             data-predictive-search-performed="{{ search.performed }}"
+            data-toast-search-failed="{{ 'toast.search_failed' | t | escape }}"
         >
+            <h1 class="sr-only">{{ 'search.title' | t }}</h1>
+
             <form
                 @submit.prevent="performSearch()"
                 role="search"
@@ -31,21 +32,16 @@
                 @click.outside="closePanel()"
             >
                 <div class="mb-1 flex items-center gap-3 border-b border-theme-border pb-3 text-theme-text">
-                    {%- render 'icons',
-                        icon: 'icon-search',
-                        size: 'xl',
-                        class: 'shrink-0',
-                        color: 'current'
-                    -%}
+                    {%- render 'icons', icon: 'icon-search', class: 'shrink-0' -%}
 
                     <input
                         id="SearchInput-{{ section.id }}"
                         type="search"
                         name="q"
-                        class="w-full flex-1 appearance-none border-none bg-transparent body-xl text-theme-text outline-none placeholder:text-theme-text/50"
+                        class="w-full flex-1 appearance-none border-none bg-transparent body-xl text-theme-text focus-ring outline-none placeholder:text-theme-text/50"
                         autocomplete="off"
                         :aria-expanded="isOpen"
-                        placeholder="Search"
+                        placeholder="{{ 'search.search' | t }}"
                         x-model="query"
                         @input="onInput($event.target.value)"
                         @compositionend="onInput($event.target.value)"
@@ -100,12 +96,15 @@
     "name": "t:general.search",
     "tag": "section",
     "class": "section",
+    "enabled_on": {
+        "templates": ["search"]
+    },
     "settings": [
         {
             "type": "color_scheme",
             "id": "color_scheme",
-            "label": "Color Scheme",
-            "default": "color-scheme-1"
+            "label": "t:sections.search.settings.color_scheme",
+            "default": "scheme-1"
         },
         {
             "type": "range",
@@ -114,11 +113,11 @@
             "max": 24,
             "step": 3,
             "default": 12,
-            "label": "Search per page"
+            "label": "t:sections.search.settings.search_per_page"
         },
         {
             "type": "header",
-            "content": "Padding"
+            "content": "t:sections.search.content.padding"
         },
         {
             "type": "range",
@@ -127,7 +126,7 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Top",
+            "label": "t:sections.search.settings.padding_top",
             "default": 0
         },
         {
@@ -137,14 +136,8 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Bottom",
+            "label": "t:sections.search.settings.padding_bottom",
             "default": 0
-        }
-    ],
-    "presets": [
-        {
-            "name": "t:general.search",
-            "settings": {}
         }
     ]
 }

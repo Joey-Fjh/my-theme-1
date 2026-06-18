@@ -5,74 +5,86 @@
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
     "
+    x-data="motionRevealSection()"
+    data-motion-section
 >
     <div class="layout container-page color-{{ section.settings.color_scheme }}">
-        {%- assign collection = section.settings.collection -%}
+        {%- assign selected_collection = section.settings.collection -%}
 
         <div class="flex flex-col gap-16">
-            <div class="flex flex-col gap-3 pc:flex-row pc:items-center pc:justify-between">
+            <div
+                class="flex flex-col gap-3 pc:flex-row pc:items-center pc:justify-between"
+                data-motion-reveal="content"
+            >
                 {%- capture link_content -%}
-                    <h1 class="font-bold">
+                    <h1>
                         {%- if section.settings.heading != blank -%}
                             {{ section.settings.heading }}
                         {%- else -%}
-                            {{ collection.title }}
+                            {{ selected_collection.title }}
                         {%- endif -%}
 
-                        {%- if collection != nil and collection.products_count > 0 -%}
-                            <sup class="sup-badge">({{ collection.products_count }})</sup>
+                        {%- if selected_collection != nil and selected_collection.products_count > 0 -%}
+                            <sup class="sup-badge">({{ selected_collection.products_count }})</sup>
                         {%- endif -%}
                     </h1>
                 {%- endcapture -%}
 
                 {%- render 'link',
-                    href: collection.url,
+                    href: selected_collection.url,
                     content: link_content,
-                    variant: 'underline',
-                    color: 'current'
+                    variant: 'underline'
                 -%}
 
-                <div class="rte rte--compact opacity-80">{{ section.settings.description }}</div>
+                <div class="rte rte--compact">{{ section.settings.description }}</div>
             </div>
 
-            <div>
+            <div data-motion-reveal="content">
                 {%- assign max_items = section.settings.max_items -%}
 
                 {% # theme-check-disable-next-line LiquidHTMLSyntaxError %}
-                {%- for product in collection.products limit: max_items -%}
+                {%- for product in selected_collection.products limit: max_items -%}
                     <a
-                        class="flex flex-col gap-3 py-8 body-md pc:flex-row pc:items-center pc:justify-between pc:p-8"
+                        class="flex flex-col gap-3 py-8 pc:flex-row pc:items-center pc:justify-between pc:p-8"
                         href="{{ product.url }}"
+                        title="{{ product.title | escape }}"
                         x-data="{hover:false}"
                         @mouseenter="hover = true"
                         @mouseleave="hover = false"
+                        @focus="hover = true"
+                        @blur="hover = false"
                         :class=" hover ? 'bg-theme-text text-theme-bg':'' "
                     >
-                        <span class="opacity-80">
+                        <span class="shrink-0">
                             {{ product.type | default: 'Momonise' }}
                         </span>
 
-                        <div class="relative flex items-center gap-4">
-                            <h2 class="h1">{{ product.title }}</h2>
+                        <div class="relative flex min-w-0 items-center gap-4 pc:pr-44">
+                            <h1 class="truncate">{{ product.title }}</h1>
 
                             <div
                                 class="
                                     absolute
                                     top-1/2
-                                    -right-4
-                                    aspect-100/72
-                                    h-30 translate-x-full -translate-y-1/2
-                                    scale-95 opacity-0
-                                    transition-all
-                                    duration-300 ease-out
+                                    right-0
+                                    hidden
+                                    aspect-100/72 h-30
+                                    -translate-y-1/2 scale-95
+                                    opacity-0
+                                    transition-all duration-300
+                                    ease-out pc:block
                                 "
                                 :class="hover ? 'opacity-100 scale-100' : ''"
                             >
                                 {%- if product.featured_image != blank -%}
+                                    {%- assign alt = product.featured_image.alt
+                                        | default: product.title
+                                        | escape
+                                    -%}
                                     {%- render 'image-magnifier',
                                         class: 'h-full w-full',
                                         image: product.featured_image,
-                                        alt: product.featured_image.alt,
+                                        alt: alt,
                                         width: 220,
                                         sizes: '220px',
                                         zoom_width: 1200,
@@ -81,10 +93,14 @@
                                         preview_height: 200
                                     -%}
                                 {%- else -%}
+                                    {%- assign image_alt = product.featured_image.alt
+                                        | default: product.title
+                                        | escape
+                                    -%}
                                     {%- render 'image',
                                         class: 'h-full w-full',
                                         image: product.featured_image,
-                                        alt: product.featured_image.alt,
+                                        alt: image_alt,
                                         width: 220,
                                         sizes: '220px'
                                     -%}
@@ -92,15 +108,15 @@
                             </div>
                         </div>
 
-                        <span>
+                        <span class="shrink-0">
                             {{ product.price | money }}
                         </span>
                     </a>
                 {%- endfor -%}
             </div>
 
-            <div class="rte rte--compact flex flex-col items-center justify-center self-center text-center body-md">
-                {% render 'icons', icon: 'icon-eyeglasses', size: 'lg', color: 'current' %}
+            <div class="rte rte--compact flex flex-col items-center justify-center self-center text-center">
+                {% render 'icons', icon: 'icon-eyeglasses' %}
 
                 {{ section.settings.caption }}
             </div>
@@ -110,7 +126,7 @@
 
 {% schema %}
 {
-    "name": "Scroll Categories",
+    "name": "t:sections.scroll-categories.name",
     "tag": "section",
     "class": "section",
     "disabled_on": {
@@ -120,8 +136,8 @@
         {
             "type": "color_scheme",
             "id": "color_scheme",
-            "label": "Color Scheme",
-            "default": "color-scheme-1"
+            "label": "t:sections.scroll-categories.settings.color_scheme",
+            "default": "scheme-1"
         },
         {
             "type": "range",
@@ -130,33 +146,33 @@
             "max": 8,
             "step": 1,
             "default": 4,
-            "label": "Maximum items"
+            "label": "t:sections.scroll-categories.settings.maximum_items"
         },
         {
             "type": "inline_richtext",
             "id": "heading",
-            "label": "Heading"
+            "label": "t:sections.scroll-categories.settings.heading"
         },
         {
             "type": "richtext",
             "id": "description",
-            "label": "Description",
-            "default": "<p>Add a description to your category.</p>"
+            "label": "t:sections.scroll-categories.settings.description",
+            "default": "t:sections.scroll-categories.defaults.description"
         },
         {
             "type": "collection",
             "id": "collection",
-            "label": "Select Collection"
+            "label": "t:sections.scroll-categories.settings.select_collection"
         },
         {
             "type": "richtext",
             "id": "caption",
-            "label": "Caption",
-            "default": "<p>Add a caption to your category.</p>"
+            "label": "t:sections.scroll-categories.settings.caption",
+            "default": "t:sections.scroll-categories.defaults.caption"
         },
         {
             "type": "header",
-            "content": "Padding"
+            "content": "t:sections.scroll-categories.content.padding"
         },
         {
             "type": "range",
@@ -165,7 +181,7 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Top",
+            "label": "t:sections.scroll-categories.settings.padding_top",
             "default": 0
         },
         {
@@ -175,13 +191,13 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Bottom",
+            "label": "t:sections.scroll-categories.settings.padding_bottom",
             "default": 0
         }
     ],
     "presets": [
         {
-            "name": "Scroll Categories",
+            "name": "t:sections.scroll-categories.presets.scroll_categories",
             "settings": {}
         }
     ]

@@ -5,12 +5,20 @@
     Supports Shopify dynamic checkout (Buy it now) via {{ form | payment_button }}.
     Supports pickup availability on PDP via a separate Alpine fetch component.
 
-    @param {Object}  product           - Product object
-    @param {Object}  [block]           - Block object (for shopify_attributes + settings)
-    @param {string}  [product_form_id] - Form ID (default: 'product-form-' + section.id)
-    @param {string}  [section_id]      - Section ID for SRA refresh after add
-    @param {string}  [layout]          - Button layout: 'stack' or 'purchase_group'
-    @param {Object}  [quantity_block]  - Optional quantity selector block rendered in purchase_group layout
+    @param {Object}  product                - Product object
+    @param {Object}  [block]                - Block object (for shopify_attributes + settings)
+    @param {string}  [product_form_id]      - Form ID (default: 'product-form-' + section.id)
+    @param {string}  [section_id]           - Section ID for SRA refresh after add
+    @param {string}  [layout]               - Button layout: 'stack' or 'purchase_group'
+    @param {boolean} [show_quantity]        - Show quantity selector (default: false)
+    @param {Object}  [quantity_block]       - Optional quantity selector block rendered in purchase_group layout
+    @param {string}  [context]              - Rendering context: 'product' or 'featured' (default: 'featured')
+    @param {boolean} [show_buy_now]         - Show "Buy it now" button; when true with context 'product', Add to Cart becomes secondary (default: false)
+    @param {boolean} [show_dynamic_checkout] - Show Shopify dynamic checkout buttons; falls back to block.settings.show_dynamic_checkout (default: false)
+    @param {boolean} [open_cart_on_add]     - Open cart drawer on successful add (default: false)
+    @param {string}  [open_dialog_id]       - Dialog ID to open on successful add (default: '')
+    @param {string}  [success_message]      - Toast message on successful add (default: localized 'Added to cart!')
+    @param {Array}   [request_sections]     - Section IDs to refresh via SRA after add; false to skip (default: standard SRA)
 
     Usage:
     {% render 'buy-buttons', product: product, block: block, product_form_id: product_form_id, section_id: section.id %}
@@ -21,7 +29,10 @@
 {%- assign context = context | default: 'featured' -%}
 {%- assign open_cart_on_add = open_cart_on_add | default: false -%}
 {%- assign open_dialog_id = open_dialog_id | default: '' -%}
-{%- assign success_message = success_message | default: 'Added to cart!' -%}
+{%- assign cart_type = cart_type | default: settings.cart_type -%}
+{%- if success_message == null -%}
+    {%- assign success_message = 'toast.added_to_cart' | t -%}
+{%- endif -%}
 {%- assign show_buy_now = show_buy_now | default: false -%}
 {%- assign layout = layout | default: 'stack' -%}
 {%- assign show_quantity_control = false -%}
@@ -36,20 +47,19 @@
         | default: false
     -%}
 
+    {%- assign use_secondary_add_button = false -%}
     {%- if context == 'product' -%}
-        {%- assign available_classes = 'btn-primary' -%}
         {%- if show_buy_now == true or show_buy_now == 'true' -%}
-            {%- assign available_classes = 'btn-secondary' -%}
+            {%- assign use_secondary_add_button = true -%}
         {%- endif -%}
-        {%- assign unavailable_classes = 'border-theme-border-soft bg-theme-border-soft text-theme-text/45 opacity-100' -%}
-    {%- else -%}
-        {%- if show_dynamic_checkout -%}
-            {%- assign available_classes = 'btn-secondary' -%}
-        {%- else -%}
-            {%- assign available_classes = 'btn-primary' -%}
-        {%- endif -%}
-        {%- assign unavailable_classes = 'border-theme-border-soft bg-theme-border-soft text-theme-text/45 opacity-100' -%}
     {%- endif -%}
+
+    {%- if use_secondary_add_button -%}
+        {%- assign available_classes = 'btn-secondary' -%}
+    {%- else -%}
+        {%- assign available_classes = 'btn-primary' -%}
+    {%- endif -%}
+    {%- assign unavailable_classes = 'border-theme-border-20 bg-theme-border-20 text-theme-text/45 opacity-100' -%}
 
     <div
         data-section-id="{{ section_id }}"
@@ -59,6 +69,8 @@
         data-open-cart-on-add="{{ open_cart_on_add | json | escape }}"
         data-open-dialog-id="{{ open_dialog_id | escape }}"
         data-success-message="{{ success_message | escape }}"
+        data-cart-type="{{ cart_type | escape }}"
+        data-cart-url="{{ routes.cart_url | escape }}"
         data-show-buy-now="{{ show_buy_now | json | escape }}"
         data-request-sections="{% if request_sections == false or request_sections == 'false' %}{% else %}{{ request_sections | join: ',' | escape }}{% endif %}"
         x-data="BuyButtons()"
@@ -112,7 +124,7 @@
                         <button
                             type="submit"
                             name="add"
-                            class="relative btn w-full disabled:cursor-not-allowed"
+                            class="btn relative w-full disabled:cursor-not-allowed"
                             :class="
                                 available
                                 ? '{{ available_classes }} disabled:opacity-70'
@@ -148,7 +160,7 @@
                     <button
                         type="submit"
                         name="add"
-                        class="relative btn w-full disabled:cursor-not-allowed"
+                        class="btn relative w-full disabled:cursor-not-allowed"
                         :class="
                             available
                             ? '{{ available_classes }} disabled:opacity-70'
@@ -184,13 +196,13 @@
                 {%- if show_buy_now == true or show_buy_now == 'true' -%}
                     <button
                         type="button"
-                        class="relative btn w-full btn-primary disabled:cursor-not-allowed disabled:opacity-50"
+                        class="btn-primary relative w-full disabled:cursor-not-allowed disabled:opacity-50"
                         :disabled="!available || isLoading"
                         @click.prevent="buyNow()"
                         x-show="available"
                         x-cloak
                     >
-                        Buy it now
+                        {{ 'products.product.buy_it_now' | t }}
                     </button>
                 {%- endif -%}
 
@@ -217,7 +229,7 @@
                 <div
                     x-show="isLoading"
                     x-cloak
-                    class="rounded-sm border border-theme-border-soft px-4 py-3 body-md text-theme-text/70"
+                    class="rounded-sm border border-theme-border-20 px-4 py-3 body-md text-theme-text/70"
                     role="status"
                     aria-live="polite"
                     x-text="loadingText"
@@ -226,7 +238,7 @@
                 <div
                     x-show="showError"
                     x-cloak
-                    class="flex flex-wrap items-center gap-3 rounded-sm border border-theme-border-soft px-4 py-3"
+                    class="flex flex-wrap items-center gap-3 rounded-sm border border-theme-border-20 px-4 py-3"
                 >
                     <p
                         class="body-md text-theme-text/70"
@@ -253,10 +265,10 @@
     <div {{ block.shopify_attributes }}>
         <button
             type="button"
-            class="relative btn w-full cursor-not-allowed btn-secondary opacity-50"
+            class="btn-secondary relative w-full"
             disabled
         >
-            Unavailable
+            {{ 'products.product.unavailable' | t }}
         </button>
     </div>
 {%- endif -%}

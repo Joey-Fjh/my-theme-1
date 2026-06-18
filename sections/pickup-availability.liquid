@@ -14,21 +14,21 @@
         {%- if has_pickup_availability -%}
             {%- assign closest_location = pick_up_availabilities.first -%}
 
-            <div class="rounded-sm border border-theme-border-soft px-4 py-4 pc:px-5">
+            <div class="rounded-sm border border-theme-border-20 px-4 py-4 pc:px-5">
                 <div class="flex items-start gap-3">
                     <span
-                        class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full body-sm font-medium {% if closest_location.available %}bg-theme-text text-theme-bg{% else %}border border-theme-border text-theme-text{% endif %}"
+                        class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full {% if closest_location.available %}bg-theme-bg text-theme-text-80{% else %}border border-theme-border text-theme-text{% endif %}"
                         aria-hidden="true"
                     >
                         {% if closest_location.available %}
-                            {% render 'icons', icon: 'icon-check', size: 'xs', color: 'current' %}
+                            {% render 'icons', icon: 'icon-check' %}
                         {% else %}
-                            {% render 'icons', icon: 'icon-close', size: 'xs', color: 'current' %}
+                            {% render 'icons', icon: 'icon-close' %}
                         {% endif %}
                     </span>
 
                     <div class="min-w-0 flex-1">
-                        <p class="body-md font-medium text-theme-text">
+                        <p>
                             {% if closest_location.available %}
                                 {{
                                     'products.product.pickup_availability.available_at_html'
@@ -51,7 +51,7 @@
                         {% endif %}
 
                         <details class="group mt-3">
-                            <summary class="flex cursor-pointer list-none items-center gap-2 body-sm font-medium text-theme-text/80 transition-opacity hover:opacity-70 [&::-webkit-details-marker]:hidden">
+                            <summary class="flex cursor-pointer list-none items-center gap-2 transition-opacity hover:opacity-100 [&::-webkit-details-marker]:hidden">
                                 <span>
                                     {% if pick_up_availabilities.size == 1 %}
                                         {{
@@ -67,21 +67,20 @@
                                 </span>
                                 {% render 'icons',
                                     icon: 'icon-arrow2',
-                                    size: 'xs',
-                                    class: 'transition-transform group-open:rotate-90',
-                                    color: 'current'
+                                    class: 'transition-transform group-open:rotate-90'
                                 %}
                             </summary>
 
-                            <ul class="mt-4 flex flex-col gap-4 border-t border-theme-border-soft pt-4">
+                            <ul class="mt-4 flex flex-col gap-4 border-t border-theme-border-20 pt-4">
                                 {%- for availability in pick_up_availabilities -%}
                                     {%- assign address = availability.location.address -%}
                                     <li class="flex flex-col gap-2">
                                         <div class="flex items-start justify-between gap-4">
-                                            <h3 class="body-md font-medium text-theme-text">
+                                            <h3>
                                                 {{ availability.location.name }}
                                             </h3>
-                                            <p class="text-right body-sm text-theme-text/70">
+
+                                            <p class="text-right">
                                                 {% if availability.available %}
                                                     {{
                                                         'products.product.pickup_availability.available'
@@ -99,17 +98,17 @@
                                         {% if availability.available
                                             and availability.pick_up_time != blank
                                         %}
-                                            <p class="body-sm text-theme-text/70">
+                                            <p>
                                                 {{ availability.pick_up_time }}
                                             </p>
                                         {% endif %}
 
-                                        <div class="body-sm text-theme-text/70 [&_p]:m-0">
+                                        <div>
                                             {{ address | format_address }}
                                         </div>
 
                                         {% if address.phone != blank %}
-                                            <p class="body-sm text-theme-text/70">
+                                            <p>
                                                 {{ address.phone }}
                                             </p>
                                         {% endif %}
@@ -126,7 +125,7 @@
 
 {% schema %}
 {
-    "name": "Pickup availability",
+    "name": "t:sections.pickup-availability.name",
     "settings": []
 }
 {% endschema %}

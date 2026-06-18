@@ -10,6 +10,7 @@
     @param {number}  magnifier_preview_height - Optional fixed magnifier preview height in pixels
     @param {number}  magnifier_preview_max_width - Maximum magnifier preview width in pixels
     @param {string}  aspect_ratio - Optional CSS aspect-ratio (fallback when first image has no ratio)
+    @param {string}  max_height   - Optional desktop max height for the first grid media box
 {% endcomment %}
 
 {%- assign first_img = images.first -%}
@@ -19,48 +20,90 @@
 {%- elsif gallery_aspect == blank -%}
     {%- assign gallery_aspect = images.first.aspect_ratio | default: '3/4' -%}
 {%- endif -%}
-{%- assign images_mod_2 = images.size | modulo: 2 -%}
-
 <div class="grid w-full min-w-0 grid-cols-2 gap-2">
     {%- for image in images -%}
         {%- assign media_image = image.preview_image | default: image -%}
-        <div
-            class="
-                min-w-0 overflow-hidden rounded-sm
-                {% if forloop.first and images_mod_2 == 1 %}
-                  col-span-2
-                {% endif %}
-            "
-            style="aspect-ratio: {{ gallery_aspect }}; {% if zoom %}cursor: zoom-in;{% endif %}"
-            {% if zoom %}
+        {%- assign item_aspect = '1/1' -%}
+        {%- if forloop.first -%}
+            {%- assign item_aspect = gallery_aspect -%}
+        {%- endif -%}
+        {%- if zoom -%}
+            <button
+                type="button"
+                aria-label="{{ 'accessibility.open_image_zoom' | t }}"
+                class="
+                    min-w-0 cursor-zoom-in overflow-hidden rounded-sm
+                    {% if forloop.first %}
+                      col-span-2
+                      {% if max_height != blank %}
+                        pc:max-h-(--product-gallery-max-height)
+                      {% endif %}
+                    {% endif %}
+                "
+                style="
+                    aspect-ratio: {{ item_aspect }};
+                    {% if forloop.first and max_height != blank %}
+                        --product-gallery-max-height: {{ max_height }};
+                    {% endif %}
+                "
                 @click="openLightbox({{ forloop.index0 }})"
-            {% endif %}
-        >
-            {%- if magnifier -%}
-                {%- render 'image-magnifier',
-                    image: media_image,
-                    width: 800,
-                    img_class: 'w-full h-full object-cover',
-                    alt: media_image.alt,
-                    sizes: '(min-width: 48rem) 25vw, 50vw',
-                    widths: '300,400,600,800',
-                    loading: 'lazy',
-                    zoom_scale: magnifier_zoom_scale,
-                    preview_width: magnifier_preview_width,
-                    preview_height: magnifier_preview_height,
-                    preview_max_width: magnifier_preview_max_width
-                -%}
-            {%- else -%}
-                {%- render 'image',
-                    image: media_image,
-                    width: 800,
-                    img_class: 'w-full h-full object-cover',
-                    alt: media_image.alt,
-                    sizes: '(min-width: 48rem) 25vw, 50vw',
-                    widths: '300,400,600,800',
-                    loading: 'lazy'
-                -%}
-            {%- endif -%}
-        </div>
+            >
+        {%- else -%}
+            <div
+                class="
+                    min-w-0 overflow-hidden rounded-sm
+                    {% if forloop.first %}
+                      col-span-2
+                      {% if max_height != blank %}
+                        pc:max-h-(--product-gallery-max-height)
+                      {% endif %}
+                    {% endif %}
+                "
+                style="
+                    aspect-ratio: {{ item_aspect }};
+                    {% if forloop.first and max_height != blank %}
+                        --product-gallery-max-height: {{ max_height }};
+                    {% endif %}
+                "
+            >
+        {%- endif -%}
+        {%- assign gallery_loading = 'lazy' -%}
+        {%- assign gallery_fetchpriority = 'auto' -%}
+        {%- if forloop.first -%}
+            {%- assign gallery_loading = 'eager' -%}
+            {%- assign gallery_fetchpriority = 'high' -%}
+        {%- endif -%}
+        {%- if magnifier -%}
+            {%- render 'image-magnifier',
+                image: media_image,
+                width: 800,
+                img_class: 'w-full h-full object-cover',
+                alt: media_image.alt,
+                sizes: '(min-width: 48rem) 25vw, 50vw',
+                widths: '300,400,600,800',
+                loading: gallery_loading,
+                fetchpriority: gallery_fetchpriority,
+                zoom_scale: magnifier_zoom_scale,
+                preview_width: magnifier_preview_width,
+                preview_height: magnifier_preview_height,
+                preview_max_width: magnifier_preview_max_width
+            -%}
+        {%- else -%}
+            {%- render 'image',
+                image: media_image,
+                width: 800,
+                img_class: 'w-full h-full object-cover',
+                alt: media_image.alt,
+                sizes: '(min-width: 48rem) 25vw, 50vw',
+                widths: '300,400,600,800',
+                loading: gallery_loading,
+                fetchpriority: gallery_fetchpriority
+            -%}
+        {%- endif -%}
+        {%- if zoom -%}
+            </button>
+        {%- else -%}
+            </div>
+        {%- endif -%}
     {%- endfor -%}
 </div>

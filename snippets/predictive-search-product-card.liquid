@@ -18,24 +18,21 @@
 
 <div
     class="product-card-shell {{ predictive_card_class }}"
-    x-data="
-        cardGallery({
-            imageCount: Array.isArray(product.images) && product.images.length ? product.images.length : 1,
-            enableImageNavigation: Array.isArray(product.images) && product.images.length > 1
-        })
-    "
+    x-data="cardGallery"
 >
     <div class="product-card-shell__meta">
         <span
             class="product-card-shell__brand"
-            x-text="product.vendor || 'Product'"
+            data-fallback-vendor-label="{{ 'products.product.fallback_vendor' | t | escape }}"
+            x-text="product.vendor || $el.dataset.fallbackVendorLabel"
         ></span>
 
         <div
             class="product-card-shell__pagination"
             x-show="canNavigateImages"
             x-cloak
-            aria-label="Image navigation"
+            aria-label="{{ 'accessibility.image_navigation' | t }}"
+            data-show-image-label="{{ 'accessibility.show_image' | t: index: '__INDEX__' }}"
         >
             <template x-if="product.images && product.images.length <= 3">
                 <div class="flex items-center gap-3">
@@ -48,7 +45,7 @@
                             class="product-card-shell__pagination-dot"
                             :class="{ 'is-active': activeImageIndex === imageIndex }"
                             @click.prevent="setActiveImage(imageIndex)"
-                            :aria-label="`Show image ${imageIndex + 1}`"
+                            :aria-label="$el.closest('.product-card-shell__pagination').dataset.showImageLabel.replace('__INDEX__', imageIndex + 1)"
                         ></button>
                     </template>
                 </div>
@@ -60,14 +57,9 @@
                         type="button"
                         class="product-card-shell__pagination-arrow"
                         @click.prevent="prevImage()"
-                        aria-label="Previous image"
+                        aria-label="{{ 'accessibility.previous_image' | t }}"
                     >
-                        {%- render 'icons',
-                            icon: 'icon-arrow2',
-                            size: 'xl',
-                            class: 'rotate-180',
-                            color: 'current'
-                        -%}
+                        {%- render 'icons', icon: 'icon-arrow2', class: 'rotate-180' -%}
                     </button>
                     <span
                         class="product-card-shell__pagination-text"
@@ -77,9 +69,9 @@
                         type="button"
                         class="product-card-shell__pagination-arrow"
                         @click.prevent="nextImage()"
-                        aria-label="Next image"
+                        aria-label="{{ 'accessibility.next_image' | t }}"
                     >
-                        {%- render 'icons', icon: 'icon-arrow2', size: 'xl', color: 'current' -%}
+                        {%- render 'icons', icon: 'icon-arrow2' -%}
                     </button>
                 </div>
             </template>
@@ -96,7 +88,6 @@
                     <div
                         class="absolute inset-0"
                         x-show="activeImageIndex === imageIndex"
-                        x-transition.opacity.duration.200ms
                     >
                         <div class="product-card-shell__media-frame {{ predictive_frame_class }}">
                             <img

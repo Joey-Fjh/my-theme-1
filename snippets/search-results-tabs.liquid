@@ -40,7 +40,9 @@
 
 <div
     class="mt-20 w-full"
-    x-data="sectionPagination('{{ section_id }}', ['[data-search-tabs-header]','[data-search-tabs-panel]'])"
+    data-pagination-section-id="{{ section_id }}"
+    data-pagination-selectors='["[data-search-tabs-header]","[data-search-tabs-panel]"]'
+    x-data="sectionPagination()"
 >
     {% capture results_tab_header %}
         <div
@@ -60,13 +62,13 @@
                 @popstate.window="isUrlMatch($el.href) && setActive(index)"
                 :tabindex="isActive(index) ? 0 : -1"
                 :aria-selected="isActive(index)"
-                class="inline-flex cursor-pointer items-baseline gap-1 border-b pb-2 leading-tight transition-opacity"
+                class="inline-flex cursor-pointer items-baseline gap-1 border-b pb-2 transition-opacity"
                 :class="isActive(index)
                 ? 'text-theme-text font-medium border-theme-text'
                 : 'text-theme-text/60 hover:text-theme-text border-transparent'
                 "
             >
-                Products
+                {{ 'search.products' | t }}
             </a>
 
             <a
@@ -80,13 +82,13 @@
                 @popstate.window="isUrlMatch($el.href) && setActive(index)"
                 :tabindex="isActive(index) ? 0 : -1"
                 :aria-selected="isActive(index)"
-                class="inline-flex cursor-pointer items-baseline gap-1 border-b pb-2 leading-tight transition-opacity"
+                class="inline-flex cursor-pointer items-baseline gap-1 border-b pb-2 transition-opacity"
                 :class="isActive(index)
                 ? 'text-theme-text font-medium border-theme-text'
                 : 'text-theme-text/60 hover:text-theme-text border-transparent'
                 "
             >
-                Articles
+                {{ 'search.articles' | t }}
             </a>
 
             <a
@@ -100,13 +102,13 @@
                 @popstate.window="isUrlMatch($el.href) && setActive(index)"
                 :tabindex="isActive(index) ? 0 : -1"
                 :aria-selected="isActive(index)"
-                class="inline-flex cursor-pointer items-baseline gap-1 border-b pb-2 leading-tight transition-opacity"
+                class="inline-flex cursor-pointer items-baseline gap-1 border-b pb-2 transition-opacity"
                 :class="isActive(index)
                 ? 'text-theme-text font-medium border-theme-text'
                 : 'text-theme-text/60 hover:text-theme-text border-transparent'
                 "
             >
-                Pages
+                {{ 'search.pages' | t }}
             </a>
         </div>
     {% endcapture %}
@@ -124,9 +126,9 @@
 
             {% unless search.results_count == 0 %}
                 <div class="mb-6 text-theme-text">
-                    <p class="h6 tracking-[0.16em] uppercase opacity-70">
+                    <p class="body-sm tracking-[0.16em] uppercase opacity-70">
                         <span class="opacity-60">
-                            Search for <span class="truncate h6 opacity-60">“{{ search.terms | escape }}”</span> : {{ search.results_count }}
+                            {{ 'search.search_for' | t }} <span class="truncate body-sm opacity-60">"{{ search.terms | escape }}"</span> : {{ search.results_count }}
                         </span>
                     </p>
                 </div>
@@ -135,7 +137,7 @@
             {% paginate search.results by search_per_page %}
                 {%- if search.results_count == 0 -%}
                     <div class="py-16 text-center text-theme-text">
-                        <p class="h5 opacity-80">No results found.</p>
+                        <p class="body-md opacity-80">{{ 'search.no_results_for' | t }} "{{ search.terms | escape }}"</p>
                     </div>
                 {%- else -%}
                     {%- case param_type -%}
@@ -154,7 +156,7 @@
                             <ul class="space-y-4">
                                 {%- for item in search.results -%}
                                     {%- if item.object_type == 'article' -%}
-                                        <li class="border-b border-theme-border-soft pb-3">
+                                        <li class="border-b border-theme-border-20 pb-3">
                                             <a class="text-theme-text hover:underline" href="{{ item.url }}">{{ item.title }}</a>
                                         </li>
                                     {%- endif -%}
@@ -165,7 +167,7 @@
                             <ul class="space-y-4">
                                 {%- for item in search.results -%}
                                     {%- if item.object_type == 'page' -%}
-                                        <li class="border-b border-theme-border-soft pb-3">
+                                        <li class="border-b border-theme-border-20 pb-3">
                                             <a class="text-theme-text hover:underline" href="{{ item.url }}">{{ item.title }}</a>
                                         </li>
                                     {%- endif -%}

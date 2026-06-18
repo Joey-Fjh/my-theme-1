@@ -1,6 +1,6 @@
 <div
     data-section-id="{{ section.id }}"
-    class="promise-section full-width color-{{ section.settings.color_scheme }}"
+    class="promise-section full-width color-{{ section.settings.color_scheme }} bg-scheme-surface"
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
@@ -8,29 +8,33 @@
     data-component-kind="section"
     data-component-type="promise-section"
     data-component-id="{{ section.id }}"
+    x-data="motionRevealSection()"
+    data-motion-section
 >
     <div class="layout container-page text-theme-text">
         <div class="grid grid-cols-1 gap-8 pc:grid-cols-2 pc:grid-rows-[auto_auto] pc:items-stretch pc:gap-10 fw:gap-16">
             {% comment %} Right - Heading {% endcomment %}
             <div
-                class="order-1 translate-x-10 opacity-0 pc:order-2 pc:col-start-2 pc:row-start-1 pc:max-w-160"
-                data-gsap-content
+                class="order-1 pc:order-2 pc:col-start-2 pc:row-start-1 pc:max-w-160"
+                data-motion-reveal="content"
             >
-                <h3 class="mb-4 body-xs">{{ section.settings.subtitle }}</h3>
-                <h1 class="h0 leading-tight text-balance">
+                <h3 class="mb-4">{{ section.settings.subtitle }}</h3>
+                <h1 class="heading-xl text-balance">
                     {{ section.settings.heading }}
                 </h1>
             </div>
 
             {% comment %} Left - Image {% endcomment %}
             <div
-                class="order-2 min-h-80 -translate-x-10 overflow-hidden rounded-sm opacity-0 pc:order-1 pc:col-start-1 pc:row-span-2 pc:row-start-1 pc:h-full pc:min-h-0"
-                data-gsap-image
+                class="order-2 min-h-80 overflow-hidden rounded-sm pc:order-1 pc:col-start-1 pc:row-span-2 pc:row-start-1 pc:h-full pc:min-h-0"
             >
+                {%- assign image_alt_fallback = 'sections.promise-section.defaults.image_alt'
+                    | t
+                -%}
                 {%-
                     render 'image',
                     image: section.settings.image,
-                    alt: section.settings.image.alt | default: 'Promise Section Image' | escape,
+                    alt: section.settings.image.alt | default: image_alt_fallback | escape,
                     class: 'h-full',
                     aspect_ratio: '1/1',
                     width: section.settings.image.width
@@ -39,19 +43,20 @@
 
             {% comment %} Right - Accordion  {% endcomment %}
             <div
-                class="order-3 flex h-full translate-x-10 flex-col gap-9 opacity-0 pc:order-3 pc:col-start-2 pc:row-start-2 pc:justify-start pc:gap-8"
-                data-gsap-content
+                class="order-3 flex h-full flex-col gap-9 pc:order-3 pc:col-start-2 pc:row-start-2 pc:justify-start pc:gap-8"
+                data-motion-reveal="content"
             >
                 {% comment %} Accordion {% endcomment %}
                 {%- render 'accordion',
                     blocks: section.blocks,
                     initial_active: 0,
+                    id_prefix: section.id,
                     icon_type: 'chevron',
                     wrapper_class: 'flex flex-col',
-                    item_class: 'border-t border-theme-border-soft first:border-t-0',
-                    title_active_class: 'h4 text-theme-text',
-                    title_inactive_class: 'h4 text-theme-text opacity-60',
-                    content_class: 'rte rte--compact body-sm pb-6 pr-8 text-theme-text opacity-75 leading-relaxed',
+                    item_class: 'border-t border-theme-border-20 first:border-t-0',
+                    title_active_class: 'heading-h4 text-theme-text',
+                    title_inactive_class: 'heading-h4 text-theme-text opacity-80',
+                    content_class: 'rte rte--compact pb-6 pr-8 text-theme-text opacity-80',
                     icon_color_class: 'text-current'
                 -%}
             </div>
@@ -59,99 +64,38 @@
     </div>
 </div>
 
-{%- javascript -%}
-    (function () {
-        const Components = window.__Theme__?.Components;
-        if (!Components || typeof gsap === 'undefined') return;
-
-        gsap.registerPlugin(ScrollTrigger);
-
-        Components.register(
-            'promise-section',
-            {
-                init(el) {
-                    const ctx = gsap.context(() => {
-                        const image = el.querySelector('[data-gsap-image]');
-                        const contentItems = el.querySelectorAll('[data-gsap-content]');
-
-                        const tl = gsap.timeline({
-                            scrollTrigger: {
-                                trigger: el,
-                                start: 'top 75%',
-                                once: true,
-                            },
-                            defaults: { ease: 'power2.out' },
-                        });
-
-                        if (image) {
-                            tl.to(image, {
-                                opacity: 1,
-                                x: 0,
-                                duration: 0.8,
-                            });
-                        }
-                        if (contentItems.length) {
-                            tl.to(
-                                contentItems,
-                                {
-                                    opacity: 1,
-                                    x: 0,
-                                    duration: 0.8,
-                                },
-                                '-=0.5',
-                            );
-                        }
-                    }, el);
-
-                    return { ctx };
-                },
-
-                destroy(el, state) {
-                    if (state?.ctx) {
-                        state.ctx.revert();
-                    }
-                },
-            },
-            { lazy: true },
-        );
-    })();
-{%- endjavascript -%}
-
-{%- stylesheet -%}
-{%- endstylesheet -%}
-
 {% schema %}
 {
-    "name": "Promise Section",
+    "name": "t:sections.promise-section.name",
     "tag": "section",
     "class": "section",
     "settings": [
         {
             "type": "color_scheme",
             "id": "color_scheme",
-            "label": "Color scheme",
+            "label": "t:sections.promise-section.settings.color_scheme",
             "default": "scheme-1"
         },
         {
             "type": "image_picker",
             "id": "image",
-            "label": "Image"
+            "label": "t:sections.promise-section.settings.image"
         },
         {
             "type": "inline_richtext",
             "id": "subtitle",
-            "default": "Our Promise",
-            "label": "Subtitle"
+            "default": "t:sections.promise-section.defaults.subtitle",
+            "label": "t:sections.promise-section.settings.subtitle"
         },
         {
             "type": "inline_richtext",
             "id": "heading",
-            "default": "Thoughtfully Crafted for Your Skin",
-            "label": "Heading"
+            "default": "t:sections.promise-section.defaults.heading",
+            "label": "t:sections.promise-section.settings.heading"
         },
         {
             "type": "header",
-            "content": "Padding"
+            "content": "t:sections.promise-section.content.padding"
         },
         {
             "type": "range",
@@ -160,7 +104,7 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Top",
+            "label": "t:sections.promise-section.settings.padding_top",
             "default": 0
         },
         {
@@ -170,33 +114,33 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Bottom",
+            "label": "t:sections.promise-section.settings.padding_bottom",
             "default": 0
         }
     ],
     "blocks": [
         {
             "type": "accordion_item",
-            "name": "Accordion Item",
+            "name": "t:sections.promise-section.blocks.accordion_item",
             "settings": [
                 {
                     "type": "inline_richtext",
                     "id": "title",
-                    "default": "Accordion title",
-                    "label": "Title"
+                    "default": "t:sections.promise-section.blocks_defaults.title",
+                    "label": "t:sections.promise-section.block_settings.title"
                 },
                 {
                     "type": "richtext",
                     "id": "text",
-                    "default": "<p>Accordion description text goes here.</p>",
-                    "label": "Content"
+                    "default": "t:sections.promise-section.blocks_defaults.text",
+                    "label": "t:sections.promise-section.block_settings.content"
                 }
             ]
         }
     ],
     "presets": [
         {
-            "name": "Promise Section",
+            "name": "t:sections.promise-section.presets.promise_section",
             "blocks": [
                 {
                     "type": "accordion_item",

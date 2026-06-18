@@ -3,34 +3,16 @@
 
     Accepts:
     - type: {String} 'icon' | 'name' (Optional, default: icon)
-    - color: {String} 'theme' | 'current' | 'currentColor' (Optional, default: theme)
     - class: {String} Additional class for the <ul> (optional)
     - visibility_class: {String} Responsive visibility class for the <ul> (optional, default: '')
-    - font_class: {String} Additional class for the <span> (optional)
-    - size:  {String} 'small' | 'medium' | 'large' (optional, default: medium)
 
     Usage:
-    {% render 'social-icons', class: 'my-class', size: 'small' %}
+    {% render 'social-icons', class: 'my-class' %}
 {%- endcomment -%}
 
 {% assign type = type | default: 'icon' %}
-{% assign social_color = color | default: 'theme' %}
 {% assign visibility_class = visibility_class | default: '' %}
-{% assign social_list_color_class = 'text-theme-icon' %}
-{% if social_color == 'current' or social_color == 'currentColor' %}
-    {% assign social_list_color_class = 'text-current' %}
-{% endif %}
 {% assign social_link_class = 'inline-flex items-center justify-center icons-animate-breathe transition-all duration-200 ease-in-out' %}
-
-{%- assign size_class = '' -%}
-{%- case size -%}
-    {%- when 'small' -%}
-        {%- assign size_class = 'w-6 h-6' -%}
-    {%- when 'large' -%}
-        {%- assign size_class = 'w-10 h-10' -%}
-    {%- else -%}
-        {%- assign size_class = 'w-8 h-8' -%}
-{%- endcase -%}
 
 {%- assign social_platforms = 'facebook,instagram,youtube,tiktok,twitter,pinterest,snapchat,tumblr,vimeo'
     | split: ','
@@ -47,7 +29,7 @@
 
 {%- if has_any_social -%}
     <ul
-        class="social-icons flex flex-wrap items-center gap-5 {{ visibility_class }} {{ social_list_color_class }} {% if class %} {{ class }}{% endif %}"
+        class="social-icons flex flex-wrap items-center gap-5 {{ visibility_class }} {% if class %} {{ class }}{% endif %}"
         role="list"
     >
         {%- for platform in social_platforms -%}
@@ -59,12 +41,10 @@
                     {%- capture social_link_content -%}
                         {% if type == 'icon' %}
                             {% render 'icons',
-                                icon: social_icon_name,
-                                class: size_class,
-                                color: 'current'
+                                icon: social_icon_name
                             %}
                         {% else %}
-                            <span class="{{ font_class }}">{{ platform }}</span>
+                            <span>{{ platform }}</span>
                         {% endif %}
                     {%- endcapture -%}
                     {%- render 'link',

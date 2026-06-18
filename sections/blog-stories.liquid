@@ -1,61 +1,74 @@
 <div
     data-section-id="{{ section.id }}"
-    class="
-        blog-stories-section full-width
-        color-{{ section.settings.color_scheme }}
-    "
+    class="blog-stories-section full-width color-{{ section.settings.color_scheme }} bg-scheme-surface"
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
     "
+    x-data="motionRevealSection()"
+    data-motion-section
 >
     <div class="layout container-page">
         {% comment %} Header {% endcomment %}
-        <div class="mb-12 flex flex-col justify-between gap-8 pc:flex-row pc:items-start">
+        <div
+            class="mb-12 flex flex-col justify-between gap-8 pc:flex-row pc:items-start"
+            data-motion-reveal="content"
+        >
             <h1 class="pc:w-1/2">
                 {{ section.settings.heading }}
             </h1>
+
             <div class="flex items-start gap-4 pc:w-1/3">
-                <div class="body-base opacity-80">
+                <div class="rte rte--compact">
                     {{ section.settings.description }}
                 </div>
-                <span class="mt-2 h-3 w-3 shrink-0 rounded-full bg-current"></span>
+                <span class="mt-2 h-3 w-3 shrink-0 rounded-full bg-theme-text"></span>
             </div>
         </div>
 
         {% comment %} Article Grid {% endcomment %}
-        <div class="grid gap-6 pc:grid-cols-3">
+        <div class="grid gap-6 pc:grid-cols-3" data-motion-reveal="content">
             {%- if section.settings.blog != blank -%}
                 {%- for article in section.settings.blog.articles
                     limit: section.settings.articles_limit
                 -%}
                     <article class="group">
                         <div class="relative mb-4 aspect-4/3 overflow-hidden">
+                            {%- assign image_alt = article.title | escape -%}
                             {%- render 'image',
-                                class: 'transition-transform duration-300 group-hover:scale-105',
                                 image: article.image,
-                                alt: article.title,
+                                alt: image_alt,
                                 width: article.image.width
                             -%}
                         </div>
 
-                        <h4 class="mb-3 opacity-80">
+                        <p class="mb-3">
                             {{ article.tags | first }}
-                        </h4>
-                        <h3 class="mb-3">
+                        </p>
+                        <h3 class="mb-3 line-clamp-1 min-w-0" title="{{ article.title | escape }}">
                             {{ article.title }}
                         </h3>
+
                         {%- if article.url != blank -%}
+                            {%- liquid
+                                assign link_label = section.settings.link_text | strip
+                                if link_label == blank
+                                    assign link_label = 'sections.blog-stories.defaults.link_text' | t
+                                endif
+                                assign read_more_aria = 'accessibility.read_more_about' | t: title: article.title
+                            -%}
+
                             {%- capture link_content -%}
-                                <span class="body-base">{{ section.settings.link_text }}</span>
-                                {% render 'icons', icon: 'icon-arrow2', size: 'lg', class: 'ml-3', color: 'current' %}
+                                <span>{{ link_label }}</span>
+                                {% render 'icons', icon: 'icon-arrow2', class: 'ml-3' %}
                             {%- endcapture -%}
+
                             {%- render 'link',
-                                class: 'opacity-80 hover:opacity-100 transition-opacity',
+                                class: 'hover:opacity-100 transition-opacity',
                                 href: article.url,
                                 content: link_content,
-                                variant: 'underline',
-                                color: 'current'
+                                aria_label: read_more_aria,
+                                variant: 'underline'
                             -%}
                         {%- endif -%}
                     </article>
@@ -67,31 +80,53 @@
                         {{ block.shopify_attributes }}
                     >
                         <div class="relative mb-4 aspect-4/3 overflow-hidden">
+                            {%- assign image_alt = block.settings.image.alt
+                                | default: block.settings.title
+                                | escape
+                            -%}
                             {%- render 'image',
-                                class: 'transition-transform duration-300 group-hover:scale-105',
                                 image: block.settings.image,
-                                alt: block.settings.image.alt,
+                                alt: image_alt,
                                 width: block.settings.image.width
                             -%}
                         </div>
 
-                        <h4 class="mb-3 opacity-80">
+                        <p class="mb-3">
                             {{ block.settings.subtitle }}
-                        </h4>
-                        <h3 class="mb-3">
+                        </p>
+
+                        <h3
+                            class="mb-3 line-clamp-1 min-w-0"
+                            title="{{ block.settings.title | strip_html | strip | escape }}"
+                        >
                             {{ block.settings.title }}
                         </h3>
+
                         {%- if block.settings.link != blank -%}
+                            {%- liquid
+                                assign link_label = block.settings.article_link_text | strip
+                                if link_label == blank
+                                    assign link_label = 'sections.blog-stories.defaults.link_text' | t
+                                endif
+                                assign block_title_plain = block.settings.title | strip_html | strip
+                                if block_title_plain != blank
+                                    assign read_more_aria = 'accessibility.read_more_about' | t: title: block_title_plain
+                                else
+                                    assign read_more_aria = link_label
+                                endif
+                            -%}
+
                             {%- capture link_content -%}
-                                <span class="body-base">{{ block.settings.link_text }}</span>
-                                {% render 'icons', icon: 'icon-arrow2', size: 'lg', class: 'ml-3', color: 'current' %}
+                                <span>{{ link_label }}</span>
+                                {% render 'icons', icon: 'icon-arrow2', class: 'ml-3' %}
                             {%- endcapture -%}
+
                             {%- render 'link',
-                                class: 'opacity-80 hover:opacity-100 transition-opacity',
+                                class: 'hover:opacity-100 transition-opacity',
                                 href: block.settings.link,
                                 content: link_content,
-                                variant: 'underline',
-                                color: 'current'
+                                aria_label: read_more_aria,
+                                variant: 'underline'
                             -%}
                         {%- endif -%}
                     </article>
@@ -103,7 +138,7 @@
 
 {% schema %}
 {
-    "name": "Blog Stories",
+    "name": "t:sections.blog-stories.name",
     "tag": "section",
     "class": "section",
     "disabled_on": {
@@ -113,13 +148,13 @@
         {
             "type": "color_scheme",
             "id": "color_scheme",
-            "label": "Color Scheme",
-            "default": "color-scheme-1"
+            "label": "t:sections.blog-stories.settings.color_scheme",
+            "default": "scheme-1"
         },
         {
             "type": "blog",
             "id": "blog",
-            "label": "Blog"
+            "label": "t:sections.blog-stories.settings.blog"
         },
         {
             "type": "range",
@@ -128,31 +163,31 @@
             "max": 12,
             "step": 1,
             "default": 3,
-            "label": "Articles to show",
+            "label": "t:sections.blog-stories.settings.articles_to_show",
             "visible_if": "{{ section.settings.blog }}"
         },
         {
             "type": "text",
             "id": "link_text",
-            "label": "Link text",
-            "default": "Read More",
+            "label": "t:sections.blog-stories.settings.link_text",
+            "default": "t:sections.blog-stories.defaults.link_text",
             "visible_if": "{{ section.settings.blog }}"
         },
         {
             "type": "inline_richtext",
             "id": "heading",
-            "label": "Heading",
-            "default": "Product stories, updates, and useful insights."
+            "label": "t:sections.blog-stories.settings.heading",
+            "default": "t:sections.blog-stories.defaults.heading"
         },
         {
             "type": "richtext",
             "id": "description",
-            "label": "Description",
-            "default": "<p>Personalized with AI insight. Personalized with AI insight. Personalized with AI insight.</p>"
+            "label": "t:sections.blog-stories.settings.description",
+            "default": "t:sections.blog-stories.defaults.description"
         },
         {
             "type": "header",
-            "content": "Padding"
+            "content": "t:sections.blog-stories.content.padding"
         },
         {
             "type": "range",
@@ -161,7 +196,7 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Top",
+            "label": "t:sections.blog-stories.settings.padding_top",
             "default": 0
         },
         {
@@ -171,49 +206,49 @@
             "max": 100,
             "step": 4,
             "unit": "px",
-            "label": "Padding Bottom",
+            "label": "t:sections.blog-stories.settings.padding_bottom",
             "default": 0
         }
     ],
     "blocks": [
         {
             "type": "article",
-            "name": "Article",
+            "name": "t:sections.blog-stories.blocks.article",
             "settings": [
                 {
                     "type": "image_picker",
                     "id": "image",
-                    "label": "Image"
+                    "label": "t:sections.blog-stories.block_settings.image"
                 },
                 {
                     "type": "inline_richtext",
                     "id": "subtitle",
-                    "label": "Subtitle",
-                    "default": "Lorem Ipsum"
+                    "label": "t:sections.blog-stories.block_settings.subtitle",
+                    "default": "t:sections.blog-stories.blocks.defaults.subtitle"
                 },
                 {
                     "type": "inline_richtext",
                     "id": "title",
-                    "label": "Title",
-                    "default": "Lorem Ipsum"
+                    "label": "t:sections.blog-stories.block_settings.title",
+                    "default": "t:sections.blog-stories.blocks.defaults.title"
                 },
                 {
                     "type": "url",
                     "id": "link",
-                    "label": "Link"
+                    "label": "t:sections.blog-stories.block_settings.link"
                 },
                 {
                     "type": "text",
-                    "id": "link_text",
-                    "label": "Link Text",
-                    "default": "Read More"
+                    "id": "article_link_text",
+                    "label": "t:sections.blog-stories.block_settings.link_text",
+                    "default": "t:sections.blog-stories.blocks.defaults.link_text"
                 }
             ]
         }
     ],
     "presets": [
         {
-            "name": "Blog Stories",
+            "name": "t:sections.blog-stories.presets.blog_stories",
             "settings": {}
         }
     ]

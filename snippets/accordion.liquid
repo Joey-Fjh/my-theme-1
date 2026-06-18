@@ -7,20 +7,17 @@
     - contents:             {String} Optional. '|'-delimited HTML content strings (used when blocks is not provided).
     - initial_active:       {Number|String} Optional. Index of initially expanded item. Pass string 'null' to close all (Default: 0).
     - icon_type:            {String} Optional. Icon style for all items: 'chevron' | 'plus' (Default: 'chevron').
-    - icon_size:            {String} Optional. Tailwind size classes for the icon (Default: 'w-5 h-5').
     - wrapper_class:        {String} Optional. CSS class for the outermost container.
     - item_class:           {String} Optional. CSS class for each accordion item.
     - title_class:          {String} Optional. Extra CSS class for the title text.
     - title_active_class:   {String} Optional. CSS class for the title when active.
     - title_inactive_class: {String} Optional. CSS class for the title when inactive.
     - content_class:        {String} Optional. CSS class for the content wrapper.
-    - icon_color_class:     {String} Optional. CSS class for icon color.
+    - id_prefix:            {String} Optional. Unique prefix for panel/button IDs (e.g. section.id). Ensures aria-controls uniqueness across multiple accordion instances.
 {% endcomment %}
 
 {%- assign init_state = initial_active | default: 0 -%}
 {%- assign icon_style = icon_type | default: 'chevron' -%}
-{%- assign icon_dim = icon_size | default: 'w-5 h-5' -%}
-{%- assign icon_color_class = icon_color_class | default: 'text-current' -%}
 {%- assign title_class = title_class | default: '' -%}
 {%- assign icon_rotate = 'rotate-180' -%}
 {%- if icon_style == 'plus' -%}{%- assign icon_rotate = 'rotate-45' -%}{%- endif -%}
@@ -30,25 +27,28 @@
 {%- endif -%}
 
 <div
-    x-data="{ active: {% if has_single_item %}{% if init_state == 'null' %}null{% else %}0{% endif %}{% else %}{{ init_state }}{% endif %} }"
+    x-data="accordion"
+    data-initial-active="{% if has_single_item %}{% if init_state == 'null' %}null{% else %}0{% endif %}{% else %}{{ init_state }}{% endif %}"
+    data-icon-rotate="{{ icon_rotate }}"
+    data-title-active-class="{{ title_active_class | default: 'text-current' | escape }}"
+    data-title-inactive-class="{{ title_inactive_class | default: 'text-current opacity-80' | escape }}"
     class="{{ wrapper_class | default: 'flex flex-col gap-8' }}"
 >
     {%- if has_single_item -%}
-        <div class="{{ item_class | default: 'border-t border-theme-border-soft first:border-t-0' }}">
+        <div class="{{ item_class | default: 'border-t border-theme-border-20 first:border-t-0' }}">
             <button
                 type="button"
-                @click="active = active === 0 ? null : 0"
+                data-index="0"
+                @click="toggle($el.dataset.index)"
+                :aria-expanded="isActive($el.dataset.index)"
+                aria-controls="accordion-panel-{{ id_prefix | default: 'default' }}-0"
                 class="group flex w-full cursor-pointer items-center justify-between py-5 text-left"
             >
                 <div class="flex min-w-0 flex-1 items-center gap-3">
                     <h2
+                        data-index="0"
                         class="{{ title_class }} transition-colors duration-300"
-                        :class="
-                            {
-                                '{{ title_active_class | default: 'text-current' }}': active === 0,
-                                '{{ title_inactive_class | default: 'text-current opacity-70' }}': active !== 0
-                            }
-                        "
+                        :class="titleClass($el.dataset.index)"
                     >
                         {{ item_title }}
                     </h2>
@@ -56,33 +56,36 @@
                     {%- if show_clear and clear_url != blank -%}
                         <a
                             href="{{ clear_url }}"
-                            class="inline-flex h-5 w-5 items-center justify-center opacity-65 transition-opacity hover:opacity-100"
-                            aria-label="Clear {{ clear_label | default: item_title }}"
+                            class="inline-flex items-center justify-center opacity-80 transition-opacity hover:opacity-100"
+                            aria-label="{{ 'accessibility.clear_item' | t: item: clear_label | default: item_title }}"
                             @click.stop
                         >
-                            {% render 'icons', icon: 'icon-close', size: 'xs', color: 'current' %}
+                            {% render 'icons', icon: 'icon-close' %}
                         </a>
                     {%- endif -%}
                 </div>
 
                 <span
-                    class="ml-4 inline-block shrink-0 {{ icon_dim }} {{ icon_color_class }} transition-transform duration-300"
-                    :class="{ '{{ icon_rotate }}': active === 0 }"
+                    data-index="0"
+                    class="ml-4 inline-block shrink-0  transition-transform duration-300"
+                    :class="{ [iconRotate]: isActive($el.dataset.index) }"
                 >
                     {%- if icon_style == 'chevron' -%}
-                        {% render 'icons', icon: 'icon-arrow', class: icon_dim, color: 'current' %}
+                        {% render 'icons', icon: 'icon-arrow' %}
                     {%- elsif icon_style == 'plus' -%}
-                        {% render 'icons', icon: 'icon-plus', class: icon_dim, color: 'current' %}
+                        {% render 'icons', icon: 'icon-plus' %}
                     {%- endif -%}
                 </span>
             </button>
 
             <div
+                id="accordion-panel-{{ id_prefix | default: 'default' }}-0"
+                data-index="0"
                 class="grid transition-all duration-300 ease-in-out"
-                :class="active === 0 ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'"
+                :class="isActive($el.dataset.index) ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'"
             >
                 <div class="-m-1 overflow-hidden p-1">
-                    <div class="{{ content_class | default: 'body-md pb-5 pr-8 leading-relaxed text-current opacity-75' }}">
+                    <div class="{{ content_class | default: 'pb-5 pr-8' }}">
                         {{ item_content }}
                     </div>
                 </div>
@@ -91,52 +94,46 @@
     {%- elsif blocks -%}
         {%- for block in blocks -%}
             <div
-                class="{{ item_class | default: 'border-t border-theme-border-soft first:border-t-0' }}"
+                class="{{ item_class | default: 'border-t border-theme-border-20 first:border-t-0' }}"
                 {{ block.shopify_attributes }}
             >
                 <button
                     type="button"
-                    @click="active = active === {{ forloop.index0 }} ? null : {{ forloop.index0 }}"
+                    data-index="{{ forloop.index0 }}"
+                    @click="toggle($el.dataset.index)"
+                    :aria-expanded="isActive($el.dataset.index)"
+                    aria-controls="accordion-panel-{{ block.id }}"
                     class="group flex w-full cursor-pointer items-center justify-between py-5 text-left"
                 >
                     <h2
+                        data-index="{{ forloop.index0 }}"
                         class="{{ title_class }} transition-colors duration-300"
-                        :class="
-                            {
-                                '{{ title_active_class | default: 'text-current' }}': active === {{ forloop.index0 }},
-                                '{{ title_inactive_class | default: 'text-current opacity-70' }}': active !== {{ forloop.index0 }}
-                            }
-                        "
+                        :class="titleClass($el.dataset.index)"
                     >
                         {{ block.settings.title }}
                     </h2>
 
                     <span
-                        class="ml-4 inline-block shrink-0 {{ icon_dim }} {{ icon_color_class }} transition-transform duration-300"
-                        :class="{ '{{ icon_rotate }}': active === {{ forloop.index0 }} }"
+                        data-index="{{ forloop.index0 }}"
+                        class="ml-4 inline-block shrink-0  transition-transform duration-300"
+                        :class="{ [iconRotate]: isActive($el.dataset.index) }"
                     >
                         {%- if icon_style == 'chevron' -%}
-                            {% render 'icons',
-                                icon: 'icon-arrow',
-                                class: icon_dim,
-                                color: 'current'
-                            %}
+                            {% render 'icons', icon: 'icon-arrow' %}
                         {%- elsif icon_style == 'plus' -%}
-                            {% render 'icons',
-                                icon: 'icon-plus',
-                                class: icon_dim,
-                                color: 'current'
-                            %}
+                            {% render 'icons', icon: 'icon-plus' %}
                         {%- endif -%}
                     </span>
                 </button>
 
                 <div
+                    id="accordion-panel-{{ block.id }}"
+                    data-index="{{ forloop.index0 }}"
                     class="grid transition-all duration-300 ease-in-out"
-                    :class="active === {{ forloop.index0 }} ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'"
+                    :class="isActive($el.dataset.index) ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'"
                 >
                     <div class="-m-1 overflow-hidden p-1">
-                        <div class="{{ content_class | default: 'body-md pb-5 pr-8 leading-relaxed text-current opacity-75' }}">
+                        <div class="{{ content_class | default: 'pb-5 pr-8' }}">
                             {{ block.settings.text }}
                         </div>
                     </div>
@@ -148,50 +145,45 @@
         {%- assign content_array = contents | split: '|' -%}
 
         {%- for title in title_array -%}
-            <div class="{{ item_class | default: 'border-t border-theme-border-soft first:border-t-0' }}">
+            <div class="{{ item_class | default: 'border-t border-theme-border-20 first:border-t-0' }}">
                 <button
                     type="button"
-                    @click="active = active === {{ forloop.index0 }} ? null : {{ forloop.index0 }}"
+                    s
+                    data-index="{{ forloop.index0 }}"
+                    @click="toggle($el.dataset.index)"
+                    :aria-expanded="isActive($el.dataset.index)"
+                    aria-controls="accordion-panel-{{ id_prefix | default: 'default' }}-{{ forloop.index0 }}"
                     class="group flex w-full cursor-pointer items-center justify-between py-5 text-left"
                 >
                     <h2
+                        data-index="{{ forloop.index0 }}"
                         class="{{ title_class }} transition-colors duration-300"
-                        :class="
-                            {
-                                '{{ title_active_class | default: 'text-current' }}': active === {{ forloop.index0 }},
-                                '{{ title_inactive_class | default: 'text-current opacity-70' }}': active !== {{ forloop.index0 }}
-                            }
-                        "
+                        :class="titleClass($el.dataset.index)"
                     >
                         {{ title }}
                     </h2>
 
                     <span
-                        class="ml-4 inline-block shrink-0 {{ icon_dim }} {{ icon_color_class }} transition-transform duration-300"
-                        :class="{ '{{ icon_rotate }}': active === {{ forloop.index0 }} }"
+                        data-index="{{ forloop.index0 }}"
+                        class="ml-4 inline-block shrink-0 transition-transform duration-300"
+                        :class="{ [iconRotate]: isActive($el.dataset.index) }"
                     >
                         {%- if icon_style == 'chevron' -%}
-                            {% render 'icons',
-                                icon: 'icon-arrow',
-                                class: icon_dim,
-                                color: 'current'
-                            %}
+                            {% render 'icons', icon: 'icon-arrow' %}
                         {%- elsif icon_style == 'plus' -%}
-                            {% render 'icons',
-                                icon: 'icon-plus',
-                                class: icon_dim,
-                                color: 'current'
-                            %}
+                            {% render 'icons', icon: 'icon-plus' %}
                         {%- endif -%}
                     </span>
                 </button>
 
                 <div
+                    id="accordion-panel-{{ id_prefix | default: 'default' }}-{{ forloop.index0 }}"
+                    data-index="{{ forloop.index0 }}"
                     class="grid transition-all duration-300 ease-in-out"
-                    :class="active === {{ forloop.index0 }} ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'"
+                    :class="isActive($el.dataset.index) ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'"
                 >
                     <div class="-m-1 overflow-hidden p-1">
-                        <div class="{{ content_class | default: 'body-md pb-5 pr-8 leading-relaxed text-current opacity-75' }}">
+                        <div class="{{ content_class | default: 'pb-5 pr-8' }}">
                             {{ content_array[forloop.index0] }}
                         </div>
                     </div>
