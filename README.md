@@ -98,3 +98,85 @@ npm test           # shopify theme check
 | [docs/agent/README.md](docs/agent/README.md)                                           | Current agent context index                             |
 | [.agents/skills/code-review/SKILL.md](.agents/skills/code-review/SKILL.md)             | Shared code review skill                                |
 | [.agents/skills/run-shopify-theme/SKILL.md](.agents/skills/run-shopify-theme/SKILL.md) | Validation command dispatcher                           |
+
+---
+
+## Windows Git Symlink 注意事项
+
+本项目使用 Git 符号链接维护 Agent 入口文件，例如：
+
+```txt
+.claude/skills -> .agents/skills
+CLAUDE.md -> AGENTS.md
+```
+
+Windows 环境下，拉取或切换分支时可能出现：
+
+```txt
+error: unable to create symlink .claude/skills: Permission denied
+error: unable to create symlink CLAUDE.md: Permission denied
+```
+
+这是因为当前终端没有创建符号链接的权限。
+
+### 首次配置
+
+建议在 Windows 上先开启 Git symlink 支持：
+
+```cmd
+git config --global core.symlinks true
+```
+
+确认配置：
+
+```cmd
+git config --global --get core.symlinks
+```
+
+应返回：
+
+```txt
+true
+```
+
+### 拉取代码推荐方式
+
+首次 clone / pull / checkout 涉及 symlink 的分支时，建议使用以下任一方式：
+
+1. 使用“管理员身份运行”的 CMD / PowerShell；
+2. 或开启 Windows 开发者模式后，重新打开终端；
+3. 或以管理员身份启动 VSCode，再使用 VSCode 集成终端。
+
+推荐命令：
+
+```cmd
+cd /d D:\path\to\project
+git config --local core.symlinks true
+git pull --ff-only
+```
+
+### 已经出现 symlink 权限错误时
+
+先确认当前是否有自己的本地改动：
+
+```cmd
+git status -sb
+```
+
+如果只是 pull 失败产生的残留文件，可以清理后重新拉取：
+
+```cmd
+git clean -fd
+git config --local core.symlinks true
+git pull --ff-only
+```
+
+如果需要彻底同步远端 main：
+
+```cmd
+git fetch origin
+git reset --hard origin/main
+git clean -fd
+```
+
+注意：`git clean -fd` 会删除本地未追踪文件，执行前需要确认这些文件不是自己新建但尚未提交的代码。
