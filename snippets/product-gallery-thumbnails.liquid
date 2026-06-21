@@ -73,13 +73,9 @@
                     :tabindex="activeIndex === {{ forloop.index0 }} ? 0 : -1"
                     :aria-selected="activeIndex === {{ forloop.index0 }}"
                     @click="setActive({{ forloop.index0 }})"
-                    class="block w-20 shrink-0 cursor-pointer rounded-sm border-2 focus-ring transition-all duration-200 pc:w-full"
+                    class="product-gallery__thumbnail block w-20 shrink-0 pc:w-full"
                     style="aspect-ratio: {{ gallery_aspect }};"
-                    :class="
-                        activeIndex === {{ forloop.index0 }}
-                        ? 'border-current'
-                        : 'border-transparent hover:border-theme-border'
-                    "
+                    :class="activeIndex === {{ forloop.index0 }} && 'is-active'"
                 >
                     {%- render 'image',
                         image: media_image,
@@ -105,13 +101,9 @@
                     :tabindex="activeIndex === {{ forloop.index0 }} ? 0 : -1"
                     :aria-selected="activeIndex === {{ forloop.index0 }}"
                     @click="setActive({{ forloop.index0 }})"
-                    class="block w-20 shrink-0 cursor-pointer rounded-sm border-2 focus-ring transition-all duration-200 pc:w-[calc((100%-((var(--thumbnail-visible-count)-1)*0.5rem))/var(--thumbnail-visible-count))]"
+                    class="product-gallery__thumbnail block w-20 shrink-0 pc:w-[calc((100%-((var(--thumbnail-visible-count)-1)*0.5rem))/var(--thumbnail-visible-count))]"
                     style="aspect-ratio: {{ gallery_aspect }};"
-                    :class="
-                        activeIndex === {{ forloop.index0 }}
-                        ? 'border-current'
-                        : 'border-transparent hover:border-theme-border'
-                    "
+                    :class="activeIndex === {{ forloop.index0 }} && 'is-active'"
                 >
                     {%- render 'image',
                         image: media_image,
@@ -154,22 +146,14 @@
                 <button
                     type="button"
                     aria-label="{{ 'accessibility.open_image_zoom' | t }}"
-                    class="absolute inset-0 h-full w-full cursor-zoom-in transition-opacity duration-300 ease-out"
-                    :class="
-                        activeIndex === {{ forloop.index0 }}
-                        ? 'opacity-100 z-10'
-                        : 'opacity-0 z-0 pointer-events-none'
-                    "
+                    class="product-gallery__zoom-button"
+                    :class="activeIndex === {{ forloop.index0 }} && 'is-active'"
                     @click="openLightbox({{ forloop.index0 }})"
                 >
             {%- else -%}
                 <div
-                    class="absolute inset-0 h-full w-full transition-opacity duration-300 ease-out"
-                    :class="
-                        activeIndex === {{ forloop.index0 }}
-                        ? 'opacity-100 z-10'
-                        : 'opacity-0 z-0 pointer-events-none'
-                    "
+                    class="product-gallery__zoom-button"
+                    :class="activeIndex === {{ forloop.index0 }} && 'is-active'"
                 >
             {%- endif -%}
             {%- assign gallery_loading = 'lazy' -%}

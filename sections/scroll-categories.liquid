@@ -45,7 +45,7 @@
                 {% # theme-check-disable-next-line LiquidHTMLSyntaxError %}
                 {%- for product in selected_collection.products limit: max_items -%}
                     <a
-                        class="flex flex-col gap-3 py-8 pc:flex-row pc:items-center pc:justify-between pc:p-8"
+                        class="scroll-categories__item flex flex-col gap-3 py-8 pc:flex-row pc:items-center pc:justify-between pc:p-8"
                         href="{{ product.url }}"
                         title="{{ product.title | escape }}"
                         x-data="{hover:false}"
@@ -53,7 +53,7 @@
                         @mouseleave="hover = false"
                         @focus="hover = true"
                         @blur="hover = false"
-                        :class=" hover ? 'bg-theme-text text-theme-bg':'' "
+                        :class="{ 'is-hovered': hover }"
                     >
                         <span class="shrink-0">
                             {{ product.type | default: 'Momonise' }}
@@ -123,6 +123,24 @@
         </div>
     </div>
 </div>
+
+{% stylesheet %}
+    .scroll-categories__item {
+        color: rgb(var(--color-foreground));
+        transition:
+            background-color var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease),
+            color var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease);
+    }
+
+    .scroll-categories__item.is-hovered {
+        background-color: rgb(var(--color-foreground));
+        color: rgb(var(--color-background));
+    }
+
+    .scroll-categories__item :where(h1, h2, h3, h4, h5, h6) {
+        color: currentColor;
+    }
+{% endstylesheet %}
 
 {% schema %}
 {

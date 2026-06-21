@@ -1,18 +1,19 @@
-{% comment %}
+{% doc %}
     Renders product variant picker (Tailwind + Alpine.js).
     Supports Schema-driven picker_type (dropdown / button) and swatch_shape (circle / square / none).
 
-    Accepts:
-    - product: {Object} product object.
-    - block: {Object} passing the block information (expects block.settings.picker_type, block.settings.swatch_shape).
-    - product_form_id: {String} Id of the product form to which the variant picker is associated.
+    @param {product} product - Product object.
+    @param [block] - Block object for shopify_attributes and settings (picker_type, swatch_shape). Optional when rendered outside section blocks (e.g. quick-view).
+    @param {string} [product_form_id] - Form ID to associate inputs with. Defaults to 'product-form-' + section_id.
+    @param {string} [context] - Rendering context: 'product' (PDP) or 'featured' (home/quick-view). Default: 'featured'.
+    @param {string} [section_id] - Section ID for Alpine sync and element IDs. Expected from caller.
 
-    Usage:
-    {% render 'product-variant-picker', product: product, block: block, product_form_id: product_form_id %}
-{% endcomment %}
+    Usage: {% render 'product-variant-picker', product: product, block: block, product_form_id:
+    product_form_id, section_id: section_id %}
+{% enddoc %}
 
 {%- assign context = context | default: 'featured' -%}
-{%- assign section_id = section_id | default: section.id -%}
+{%- assign section_id = section_id | default: '' -%}
 
 {%- unless product.has_only_default_variant -%}
     {%- assign product_form_id = product_form_id | default: 'product-form-' | append: section_id -%}
@@ -25,7 +26,9 @@
         data-product-form-id="{{ product_form_id }}"
         data-variants="{{ product.variants | json | escape }}"
         x-data="VariantPicker()"
-        {{ block.shopify_attributes }}
+        {% if block %}
+            {{- block.shopify_attributes -}}
+        {% endif %}
     >
         {%- for option in product.options_with_values -%}
             {%- liquid
@@ -45,7 +48,7 @@
                 {%- comment -%} ═══ Dropdown mode ═══ {%- endcomment -%}
                 <div class="flex flex-col">
                     <label
-                        class="body-md text-theme-text/80"
+                        class="body-md"
                         for="OptionDropdown-{{ section_id }}-{{ forloop.index0 }}"
                     >
                         {{ option.name }}:
@@ -99,7 +102,7 @@
                     role="radiogroup"
                     aria-label="{{ option.name }}"
                 >
-                    <legend class="body-md text-theme-text/80">
+                    <legend class="body-md">
                         {{ option.name }}:
                         <span
                             x-text="selectedOptions['{{ option_name_escaped }}']"
@@ -127,11 +130,6 @@
                                         assign render_swatch = true
                                     endif
                                 endif
-
-                                assign shape_class = 'rounded-full'
-                                if swatch_shape == 'square'
-                                    assign shape_class = 'rounded-sm'
-                                endif
                             -%}
 
                             {%- capture input_id -%}VariantOption-{{ section_id }}-{{ option.position }}-{{ forloop.index0 }}{%- endcapture -%}
@@ -154,12 +152,8 @@
                                         {% endif %}
                                     >
                                     <span
-                                        class="block h-8 w-8 border transition-all {{ shape_class }} border-theme-border"
-                                        :class="
-                                            selectedOptions['{{ option_name_escaped }}'] === '{{ escaped_value }}'
-                                            ? 'ring-2 ring-theme-text ring-offset-2 ring-offset-theme-bg'
-                                            : 'hover:border-theme-border'
-                                        "
+                                        class="variant-picker__swatch variant-picker__swatch--{{ swatch_shape }}"
+                                        :class="selectedOptions['{{ option_name_escaped }}'] === '{{ escaped_value }}' && 'is-selected'"
                                         {%- if swatch_bg %}
                                             style="background: {{ swatch_bg }}; background-size: cover;"
                                         {%- elsif is_color %}
@@ -199,13 +193,11 @@
                                         {% endif %}
                                     >
                                     <span
-                                        class="block rounded-sm border px-4 py-2 body-md transition-colors"
+                                        class="variant-picker__pill"
                                         :class="
                                             [
-                                              selectedOptions['{{ option_name_escaped }}'] === '{{ escaped_value }}'
-                                                ? 'border-theme-text bg-theme-text text-theme-bg'
-                                                : 'border-theme-border bg-transparent text-theme-text/70 hover:border-theme-border hover:text-theme-text',
-                                              !isValueAvailable('{{ option_name_escaped }}', '{{ escaped_value }}') && 'opacity-40 line-through'
+                                              selectedOptions['{{ option_name_escaped }}'] === '{{ escaped_value }}' && 'is-selected',
+                                              !isValueAvailable('{{ option_name_escaped }}', '{{ escaped_value }}') && 'is-unavailable'
                                             ]
                                         "
                                     >

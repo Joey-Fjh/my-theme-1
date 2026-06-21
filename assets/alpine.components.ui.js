@@ -530,15 +530,13 @@
         accordion() {
             return {
                 active: null,
-                iconRotate: 'rotate-180',
-                titleActiveClass: 'text-current',
-                titleInactiveClass: 'text-current opacity-70',
+                titleActiveClass: 'accordion__title--active',
+                titleInactiveClass: 'accordion__title--inactive',
 
                 init() {
                     const ds = this.$el?.dataset;
                     if (!ds) return;
 
-                    this.iconRotate = ds.iconRotate || this.iconRotate;
                     this.titleActiveClass = ds.titleActiveClass || this.titleActiveClass;
                     this.titleInactiveClass = ds.titleInactiveClass || this.titleInactiveClass;
 

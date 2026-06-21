@@ -44,7 +44,7 @@
                 _syncNavigationState() {
                     this._hydrateFromDataset();
                     const slideCount = this.$el?.querySelectorAll?.(
-                        '.product-card__carousel-slide[data-index]',
+                        '[data-product-card-carousel-slide][data-index]',
                     ).length;
                     if (slideCount > 1) {
                         this.imageCount = Math.max(this.imageCount, slideCount);

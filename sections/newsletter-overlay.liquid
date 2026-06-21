@@ -42,7 +42,7 @@
     >
       <button
         type="button"
-        class="absolute top-3 right-3 z-10 inline-flex h-8 w-8 cursor-pointer items-center justify-center text-(--newsletter-text)/80 focus-ring transition hover:text-(--newsletter-text)"
+        class="close-button absolute top-3 right-3 z-10 text-(--newsletter-text)/80 hover:text-(--newsletter-text)"
         @click="hide()"
         aria-label="{{ 'accessibility.close_newsletter_popup' | t }}"
       >
@@ -122,7 +122,7 @@
 
                             <button
                                 type="submit"
-                                class="inline-flex h-12 w-12 cursor-pointer items-center justify-center bg-(--newsletter-button-bg) text-(--newsletter-button-text) transition-opacity disabled:opacity-50"
+                                class="newsletter-overlay__submit"
                                 :disabled="isLoading"
                                 aria-label="{{ 'accessibility.submit_newsletter_form' | t }}"
                             >
@@ -144,6 +144,7 @@
     {%- render 'ui-dialog',
         id: popup_id,
         type: 'modal',
+        layer: 'modal',
         modal_placement: section.settings.modal_placement,
         overlay_class: 'bg-black/60',
         modal_wrapper_class: 'p-4 pc:p-8 fw:p-10',
@@ -151,6 +152,33 @@
         content: dialog_content
     -%}
 </div>
+
+{% stylesheet %}
+    .newsletter-overlay__submit {
+        display: inline-flex;
+        width: 3rem;
+        height: 3rem;
+        cursor: pointer;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--newsletter-button-bg);
+        color: var(--newsletter-button-text);
+        transition: opacity var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease);
+    }
+
+    .newsletter-overlay__submit:focus-visible {
+        outline: var(--focus-ring-width) solid
+            rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+        outline-offset: var(--focus-ring-offset);
+    }
+
+    .newsletter-overlay__submit:disabled,
+    .newsletter-overlay__submit[aria-disabled='true'] {
+        cursor: not-allowed;
+        opacity: 0.5;
+        pointer-events: none;
+    }
+{% endstylesheet %}
 
 {% schema %}
 {

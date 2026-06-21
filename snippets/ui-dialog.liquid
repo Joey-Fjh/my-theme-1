@@ -5,11 +5,12 @@
     @param {string} [type]      - 'modal' | 'drawer' (default: 'modal').
     @param {string} [position]  - For drawer only: 'left' | 'right' (default: 'right').
     @param {string} [modal_placement] - For modal only: 'center' | 'bottom-left' | 'bottom-right' (default: 'center').
+    @param {string} [layer]     - Semantic z-index layer: 'drawer' | 'modal' | 'modal-focus' (default: 'modal').
     @param {string} [top_class] - Viewport top offset class for overlay/wrapper (default: 'top-0').
     @param {string} [color_scheme] - Optional color scheme id (e.g. 'scheme-1'). Applied as outer scope class `color-{id}`.
     @param {string} [overlay_class] - Tailwind classes for overlay background (default: 'bg-dialog-overlay').
     @param {boolean} [show_overlay] - Whether to render the overlay (default: true).
-    @param {string} [root_class] - Extra classes for root wrapper.
+    @param {string} [root_class] - Extra classes for root wrapper (layout/positioning escape hatch).
     @param {string} [modal_wrapper_class] - Classes for modal outer wrapper.
     @param {string} [modal_panel_class] - Classes for modal panel.
     @param {string} [drawer_wrapper_class] - Classes for drawer wrapper, including width/position overrides.
@@ -19,6 +20,7 @@
 
 {%- assign dialog_type = type | default: 'modal' -%}
 {%- assign dialog_position = position | default: 'right' -%}
+{%- assign dialog_layer = layer | default: 'modal' -%}
 {%- assign dialog_top_class = top_class | default: 'top-0' -%}
 {%- assign overlay_bg = overlay_class | default: 'bg-dialog-overlay' -%}
 {%- assign dialog_show_overlay = show_overlay | default: true -%}
@@ -30,6 +32,19 @@
 {%- assign drawer_panel_classes = drawer_panel_class | default: '' -%}
 {%- assign dialog_show_close_button = show_close_button | default: false -%}
 {%- assign dialog_close_label = close_label | default: 'accessibility.close_dialog' | t -%}
+
+{%- comment -%} Resolve semantic z-index layer classes {%- endcomment -%}
+{%- case dialog_layer -%}
+    {%- when 'drawer' -%}
+        {%- assign backdrop_z_class = 'z-layer-drawer-backdrop' -%}
+        {%- assign panel_z_class = 'z-layer-drawer' -%}
+    {%- when 'modal-focus' -%}
+        {%- assign backdrop_z_class = 'z-layer-modal-backdrop' -%}
+        {%- assign panel_z_class = 'z-layer-modal-focus' -%}
+    {%- else -%}
+        {%- assign backdrop_z_class = 'z-layer-modal-backdrop' -%}
+        {%- assign panel_z_class = 'z-layer-modal' -%}
+{%- endcase -%}
 
 {%- liquid
     assign modal_panel_classes = 'ui-dialog-panel ui-dialog-modal-panel ui-dialog-modal-width-default ui-dialog-modal-height-default ' | append: modal_panel_classes | strip
@@ -54,7 +69,7 @@
     {%- if dialog_show_close_button -%}
         <button
             type="button"
-            class="absolute top-3 right-3 z-10 inline-flex cursor-pointer items-center justify-center text-theme-text/80 transition hover:text-theme-text"
+            class="close-button absolute top-3 right-3 z-10"
             @click="$store.dialog.close()"
             aria-label="{{ dialog_close_label | escape }}"
         >
@@ -67,14 +82,14 @@
     x-data="{}"
     x-show="$store.dialog.active === '{{ id | escape }}'"
     x-cloak
-    class="fixed inset-0 z-100 {{ root_classes }}"
+    class="fixed inset-0 {{ backdrop_z_class }} {{ root_classes }}"
     @keydown.escape.window="$store.dialog.close()"
     data-dialog-root
     data-dialog-id="{{ id | escape }}"
 >
     {%- if dialog_show_overlay -%}
         <div
-            class="fixed inset-x-0 bottom-0 z-100 {{ dialog_top_class }} {{ overlay_bg }}"
+            class="fixed inset-x-0 bottom-0 {{ backdrop_z_class }} {{ dialog_top_class }} {{ overlay_bg }}"
             @click="$store.dialog.close()"
         ></div>
     {%- endif -%}
@@ -82,7 +97,7 @@
     {%- if dialog_type == 'drawer' -%}
         <div
             class="
-                fixed bottom-0 z-101 w-full
+                fixed bottom-0 {{ panel_z_class }} w-full
                 {{ dialog_top_class }}
                 {% if dialog_position == 'left' %}
                     left-0
@@ -109,7 +124,7 @@
     {%- else -%}
         <div
             class="
-                pointer-events-none fixed inset-x-0 bottom-0 z-101 flex p-4
+                pointer-events-none fixed inset-x-0 bottom-0 {{ panel_z_class }} flex p-4
                 {{ dialog_top_class }}
                 {{ modal_placement_classes }}
                 {{ modal_wrapper_classes }}

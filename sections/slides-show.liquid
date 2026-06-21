@@ -116,14 +116,14 @@
             <div class="slides-show__controls absolute right-6 bottom-6 z-10 flex items-center gap-3 pc:right-10 pc:bottom-10">
                 <button
                     type="button"
-                    class="slides-show__nav-prev flex items-center justify-center rounded-full bg-theme-bg/50 text-theme-text focus-ring backdrop-blur-sm hover:bg-theme-bg/80"
+                    class="slides-show__nav-button slides-show__nav-prev"
                     aria-label="{{ 'accessibility.previous_slide' | t }}"
                 >
                     {%- render 'icons', icon: 'icon-arrow2', class: 'scale-x-[-1]' -%}
                 </button>
                 <button
                     type="button"
-                    class="slides-show__nav-next flex items-center justify-center rounded-full bg-theme-bg/50 text-theme-text focus-ring backdrop-blur-sm hover:bg-theme-bg/80"
+                    class="slides-show__nav-button slides-show__nav-next"
                     aria-label="{{ 'accessibility.next_slide' | t }}"
                 >
                     {%- render 'icons', icon: 'icon-arrow2' -%}
@@ -131,7 +131,7 @@
                 {%- if section.settings.is_auto_slide -%}
                     <button
                         type="button"
-                        class="slides-show__pause-toggle flex h-20 w-20 items-center justify-center rounded-full bg-theme-bg/50 text-theme-text focus-ring backdrop-blur-sm hover:bg-theme-bg/80"
+                        class="slides-show__nav-button slides-show__pause-toggle"
                         aria-label="{{ 'accessibility.pause_slideshow' | t }}"
                         aria-pressed="false"
                         data-play-label="{{ 'accessibility.play_slideshow' | t }}"
@@ -251,6 +251,34 @@
 {% endjavascript %}
 
 {% stylesheet %}
+    .slides-show__nav-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 9999px;
+        background-color: rgb(var(--color-background) / 0.5);
+        color: rgb(var(--color-foreground));
+        backdrop-filter: blur(8px);
+        transition:
+            background-color var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease),
+            color var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease);
+    }
+
+    .slides-show__nav-button:hover {
+        background-color: rgb(var(--color-background) / 0.8);
+    }
+
+    .slides-show__nav-button:focus-visible {
+        outline: var(--focus-ring-width) solid
+            rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+        outline-offset: var(--focus-ring-offset);
+    }
+
+    .slides-show__pause-toggle {
+        width: 5rem;
+        height: 5rem;
+    }
+
     .slides-show__pause-toggle::before {
         content: '\23F8';
         font-size: 0.75rem;

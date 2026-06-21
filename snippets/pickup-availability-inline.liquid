@@ -1,0 +1,57 @@
+{% doc %}
+    Inline pickup availability status for the product page.
+    Renders loading, error/retry, and content states via the PickupAvailability Alpine component.
+
+    Designed to be rendered inside buy-buttons when context is 'product'.
+    The parent BuyButtons Alpine scope is not required; this snippet owns its own x-data.
+
+    @param {string} section_id - Section ID for SRA refresh targeting.
+    @param {string} variant_id - Current variant ID to query pickup availability for.
+
+    Usage: {% render 'pickup-availability-inline', section_id: section_id, variant_id:
+    current_variant.id %}
+{% enddoc %}
+
+<div
+    class="mt-4"
+    data-pickup-availability-root="{{ section_id }}"
+    data-section-id="{{ section_id }}"
+    data-root-url="{{ routes.root_url }}"
+    data-variant-id="{{ variant_id }}"
+    data-loading-text="{{ 'products.product.pickup_availability.loading' | t | escape }}"
+    data-error-text="{{ 'products.product.pickup_availability.error' | t | escape }}"
+    data-retry-text="{{ 'products.product.pickup_availability.retry' | t | escape }}"
+    x-data="PickupAvailability()"
+>
+    <div
+        x-show="isLoading"
+        x-cloak
+        class="rounded-sm border border-theme-border-20 px-4 py-3 body-md text-theme-text/70"
+        role="status"
+        aria-live="polite"
+        x-text="loadingText"
+    ></div>
+
+    <div
+        x-show="showError"
+        x-cloak
+        class="flex flex-wrap items-center gap-3 rounded-sm border border-theme-border-20 px-4 py-3"
+    >
+        <p
+            class="body-md text-theme-text/70"
+            role="status"
+            aria-live="polite"
+            x-text="errorText"
+        ></p>
+        <button
+            type="button"
+            class="buy-buttons__retry-action"
+            @click="retry()"
+            x-text="retryText"
+        ></button>
+    </div>
+
+    <div x-show="hasContent" x-cloak>
+        <div data-pickup-availability-content></div>
+    </div>
+</div>

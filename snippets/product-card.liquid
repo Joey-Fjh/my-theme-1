@@ -9,7 +9,6 @@
     @param {string} [card_mode] - Optional. 'full' | 'lite'. Defaults to 'full'.
     @param {boolean} [show_hover_actions] - Optional. Defaults to true. Disable Quick View / Add to Cart layer when false.
     @param {boolean} [show_image_navigation] - Optional. Defaults to true. Hide image navigation controls when false.
-    @param {boolean} [show_image_pagination] - Deprecated alias for `show_image_navigation`.
     @param {string} [hover_mode] - Optional. 'actions' | 'none' | 'variants'. Defaults to 'actions'.
     @param {string} [scope_id] - Optional stable scope used for nested dialog/form ids.
     @param {string} [color_scheme] - Optional color scheme passed to quick view modal content.
@@ -86,9 +85,6 @@
 
     if show_image_navigation != null
         assign show_image_navigation_explicit = true
-    elsif show_image_pagination != null
-        assign show_image_navigation_explicit = true
-        assign show_image_navigation = show_image_pagination
     endif
 
     if card_mode == 'lite'
@@ -227,6 +223,7 @@
                 {%- endif -%}
                 <div
                     class="product-card__carousel-slide"
+                    data-product-card-carousel-slide
                     data-index="{{ forloop.index0 }}"
                     x-show="activeImageIndex === Number($el.dataset.index)"
                 >
@@ -267,7 +264,7 @@
             <button
                 type="button"
                 class="product-card__quick-view-trigger"
-                :class="imageHover ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'"
+                :class="imageHover && 'is-visible'"
                 @click.prevent.stop="openQuickView()"
                 aria-label="{{ 'accessibility.quick_view' | t: product: product.title | escape }}"
             >
@@ -335,7 +332,7 @@
     {%- if show_hover_actions_enabled -%}
         <div
             class="product-card__hover-actions"
-            :class="showHoverActions ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'"
+            :class="showHoverActions && 'is-visible'"
             @mouseenter="setActionsHover(true)"
             @mouseleave="setActionsHover(false)"
         >
@@ -379,8 +376,8 @@
         render 'ui-dialog',
         id: quick_view_dialog_id,
         type: 'modal',
+        layer: 'modal-focus',
         color_scheme: color_scheme,
-        root_class: 'z-[10020]',
         modal_wrapper_class: 'items-center justify-center px-3 py-4 pc:px-[8vw] pc:py-[5vh]',
         modal_panel_class: 'h-full w-full !max-h-full !max-w-full overflow-hidden',
         show_close_button: true,

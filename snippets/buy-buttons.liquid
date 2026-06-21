@@ -1,31 +1,35 @@
-{% comment %}
+{% doc %}
     Renders product buy buttons (Tailwind + Alpine.js).
     Syncs with VariantPicker via variant:change events.
     Uses $store.cart.add() for AJAX add-to-cart with toast feedback.
     Supports Shopify dynamic checkout (Buy it now) via {{ form | payment_button }}.
     Supports pickup availability on PDP via a separate Alpine fetch component.
 
-    @param {Object}  product                - Product object
-    @param {Object}  [block]                - Block object (for shopify_attributes + settings)
-    @param {string}  [product_form_id]      - Form ID (default: 'product-form-' + section.id)
-    @param {string}  [section_id]           - Section ID for SRA refresh after add
-    @param {string}  [layout]               - Button layout: 'stack' or 'purchase_group'
-    @param {boolean} [show_quantity]        - Show quantity selector (default: false)
-    @param {Object}  [quantity_block]       - Optional quantity selector block rendered in purchase_group layout
-    @param {string}  [context]              - Rendering context: 'product' or 'featured' (default: 'featured')
-    @param {boolean} [show_buy_now]         - Show "Buy it now" button; when true with context 'product', Add to Cart becomes secondary (default: false)
+    @param {product} product - Product object
+    @param [block] - Block object (for shopify_attributes + settings)
+    @param {string} [section_id] - Section ID for Alpine sync and SRA refresh. Expected from caller.
+    @param {string} [product_form_id] - Form ID. Defaults to 'product-form-' + section_id when omitted.
+    @param {string} [layout] - Button layout: 'stack' or 'purchase_group'
+    @param {boolean} [show_quantity] - Show quantity selector (default: false)
+    @param [quantity_block] - Optional quantity selector block rendered in purchase_group layout
+    @param {string} [context] - Rendering context: 'product' or 'featured' (default: 'featured')
+    @param {boolean} [show_buy_now] - Show "Buy it now" button; when true with context 'product', Add to Cart becomes secondary (default: false)
     @param {boolean} [show_dynamic_checkout] - Show Shopify dynamic checkout buttons; falls back to block.settings.show_dynamic_checkout (default: false)
-    @param {boolean} [open_cart_on_add]     - Open cart drawer on successful add (default: false)
-    @param {string}  [open_dialog_id]       - Dialog ID to open on successful add (default: '')
-    @param {string}  [success_message]      - Toast message on successful add (default: localized 'Added to cart!')
-    @param {Array}   [request_sections]     - Section IDs to refresh via SRA after add; false to skip (default: standard SRA)
+    @param {boolean} [open_cart_on_add] - Open cart drawer on successful add (default: false)
+    @param {string} [open_dialog_id] - Dialog ID to open on successful add (default: '')
+    @param {string} [success_message] - Toast message on successful add (default: localized 'Added to cart!')
+    @param [request_sections] - Section IDs to refresh via SRA after add; false to skip (default: standard SRA)
+    @param {string} [cart_type] - Cart type override; defaults to settings.cart_type.
+    @param {string} [quantity_wrapper_class] - Escape hatch: forwarded to quantity-selector wrapper_class.
+    @param {string} [quantity_button_class] - Escape hatch: forwarded to quantity-selector button_class.
+    @param {string} [quantity_input_class] - Escape hatch: forwarded to quantity-selector input_class.
 
-    Usage:
-    {% render 'buy-buttons', product: product, block: block, product_form_id: product_form_id, section_id: section.id %}
-{% endcomment %}
+    Usage: {% render 'buy-buttons', product: product, block: block, product_form_id:
+    product_form_id, section_id: section_id %}
+{% enddoc %}
 
-{%- assign product_form_id = product_form_id | default: 'product-form-' | append: section.id -%}
-{%- assign section_id = section_id | default: section.id -%}
+{%- assign section_id = section_id | default: '' -%}
+{%- assign product_form_id = product_form_id | default: 'product-form-' | append: section_id -%}
 {%- assign context = context | default: 'featured' -%}
 {%- assign open_cart_on_add = open_cart_on_add | default: false -%}
 {%- assign open_dialog_id = open_dialog_id | default: '' -%}
@@ -59,7 +63,7 @@
     {%- else -%}
         {%- assign available_classes = 'btn-primary' -%}
     {%- endif -%}
-    {%- assign unavailable_classes = 'border-theme-border-20 bg-theme-border-20 text-theme-text/45 opacity-100' -%}
+    {%- assign unavailable_classes = 'buy-buttons__submit--unavailable' -%}
 
     <div
         data-section-id="{{ section_id }}"
@@ -72,6 +76,9 @@
         data-cart-type="{{ cart_type | escape }}"
         data-cart-url="{{ routes.cart_url | escape }}"
         data-show-buy-now="{{ show_buy_now | json | escape }}"
+        data-add-to-cart-text="{{ 'products.product.add_to_cart' | t | escape }}"
+        data-sold-out-text="{{ 'products.product.sold_out' | t | escape }}"
+        data-unavailable-text="{{ 'products.product.unavailable' | t | escape }}"
         data-request-sections="{% if request_sections == false or request_sections == 'false' %}{% else %}{{ request_sections | join: ',' | escape }}{% endif %}"
         x-data="BuyButtons()"
         {{ block.shopify_attributes }}
@@ -124,24 +131,25 @@
                         <button
                             type="submit"
                             name="add"
-                            class="btn relative w-full disabled:cursor-not-allowed"
+                            class="btn relative w-full"
                             :class="
                                 available
-                                ? '{{ available_classes }} disabled:opacity-70'
+                                ? '{{ available_classes }}'
                                 : '{{ unavailable_classes }}'
                             "
                             :disabled="!available || isLoading"
                             @click.prevent="addToCart()"
                         >
                             <span
-                                class="inline-block transition-opacity"
-                                :class="{ 'opacity-0': isLoading }"
+                                class="buy-buttons__label"
+                                :class="{ 'is-loading': isLoading }"
                                 x-text="buttonText"
+                                data-add-to-cart-label
                             >
                                 {%- if current_variant.available -%}
-                                    Add to cart
+                                    {{ 'products.product.add_to_cart' | t }}
                                 {%- else -%}
-                                    Sold out
+                                    {{ 'products.product.sold_out' | t }}
                                 {%- endif -%}
                             </span>
                             <span
@@ -160,24 +168,25 @@
                     <button
                         type="submit"
                         name="add"
-                        class="btn relative w-full disabled:cursor-not-allowed"
+                        class="btn relative w-full"
                         :class="
                             available
-                            ? '{{ available_classes }} disabled:opacity-70'
+                            ? '{{ available_classes }}'
                             : '{{ unavailable_classes }}'
                         "
                         :disabled="!available || isLoading"
                         @click.prevent="addToCart()"
                     >
                         <span
-                            class="inline-block transition-opacity"
-                            :class="{ 'opacity-0': isLoading }"
+                            class="buy-buttons__label"
+                            :class="{ 'is-loading': isLoading }"
                             x-text="buttonText"
+                            data-add-to-cart-label
                         >
                             {%- if current_variant.available -%}
-                                Add to cart
+                                {{ 'products.product.add_to_cart' | t }}
                             {%- else -%}
-                                Sold out
+                                {{ 'products.product.sold_out' | t }}
                             {%- endif -%}
                         </span>
                         <span
@@ -196,7 +205,7 @@
                 {%- if show_buy_now == true or show_buy_now == 'true' -%}
                     <button
                         type="button"
-                        class="btn-primary relative w-full disabled:cursor-not-allowed disabled:opacity-50"
+                        class="btn-primary relative w-full"
                         :disabled="!available || isLoading"
                         @click.prevent="buyNow()"
                         x-show="available"
@@ -215,49 +224,10 @@
         {%- endform -%}
 
         {%- if context == 'product' and current_variant != blank -%}
-            <div
-                class="mt-4"
-                data-pickup-availability-root="{{ section_id }}"
-                data-section-id="{{ section_id }}"
-                data-root-url="{{ routes.root_url }}"
-                data-variant-id="{{ current_variant.id }}"
-                data-loading-text="{{ 'products.product.pickup_availability.loading' | t | escape }}"
-                data-error-text="{{ 'products.product.pickup_availability.error' | t | escape }}"
-                data-retry-text="{{ 'products.product.pickup_availability.retry' | t | escape }}"
-                x-data="PickupAvailability()"
-            >
-                <div
-                    x-show="isLoading"
-                    x-cloak
-                    class="rounded-sm border border-theme-border-20 px-4 py-3 body-md text-theme-text/70"
-                    role="status"
-                    aria-live="polite"
-                    x-text="loadingText"
-                ></div>
-
-                <div
-                    x-show="showError"
-                    x-cloak
-                    class="flex flex-wrap items-center gap-3 rounded-sm border border-theme-border-20 px-4 py-3"
-                >
-                    <p
-                        class="body-md text-theme-text/70"
-                        role="status"
-                        aria-live="polite"
-                        x-text="errorText"
-                    ></p>
-                    <button
-                        type="button"
-                        class="body-md font-medium underline underline-offset-4 transition-opacity hover:opacity-70"
-                        @click="retry()"
-                        x-text="retryText"
-                    ></button>
-                </div>
-
-                <div x-show="hasContent" x-cloak>
-                    <div data-pickup-availability-content></div>
-                </div>
-            </div>
+            {%- render 'pickup-availability-inline',
+                section_id: section_id,
+                variant_id: current_variant.id
+            -%}
         {%- endif -%}
     </div>
 

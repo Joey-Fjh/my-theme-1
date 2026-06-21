@@ -1,21 +1,22 @@
 {%- liquid
     assign recommendation_type = section.settings.recommendation_type | default: 'related'
-    assign default_heading = 'Related products'
+    assign default_heading = 'components.product_recommendations.heading_related' | t
     if recommendation_type == 'complementary'
-        assign default_heading = 'Complementary products'
+        assign default_heading = 'components.product_recommendations.heading_complementary' | t
     endif
     assign heading = section.settings.heading | default: default_heading
     assign description = section.settings.description
     assign limit = section.settings.limit | default: 4
-    assign empty_text = 'No related products available right now.'
-    assign loading_text = 'Loading related products...'
-    assign timeout_text = 'Request timed out. You can retry loading related products.'
-    assign error_text = 'Failed to load related products.'
+
+    assign empty_key = 'components.product_recommendations.empty_related'
+    assign loading_key = 'components.product_recommendations.loading_related'
+    assign timeout_key = 'components.product_recommendations.timeout_related'
+    assign error_key = 'components.product_recommendations.error_related'
     if recommendation_type == 'complementary'
-        assign empty_text = 'No complementary products available right now.'
-        assign loading_text = 'Loading complementary products...'
-        assign timeout_text = 'Request timed out. You can retry loading complementary products.'
-        assign error_text = 'Failed to load complementary products.'
+        assign empty_key = 'components.product_recommendations.empty_complementary'
+        assign loading_key = 'components.product_recommendations.loading_complementary'
+        assign timeout_key = 'components.product_recommendations.timeout_complementary'
+        assign error_key = 'components.product_recommendations.error_complementary'
     endif
 -%}
 
@@ -32,19 +33,21 @@
     x-data="motionRevealSection()"
     data-motion-section
 >
-    {% render 'product-recommendations-section',
+    {%-
+        render 'product-recommendations-section',
         product: product,
         section: section,
+        recommendations: recommendations,
         heading: heading,
         description: description,
         limit: limit,
         intent: recommendation_type,
-        empty_text: empty_text,
-        loading_text: loading_text,
-        timeout_text: timeout_text,
-        error_text: error_text,
-        retry_text: 'Retry'
-    %}
+        empty_text: empty_key | t,
+        loading_text: loading_key | t,
+        timeout_text: timeout_key | t,
+        error_text: error_key | t,
+        retry_text: 'components.product_recommendations.retry' | t
+    -%}
 </section>
 
 {% schema %}

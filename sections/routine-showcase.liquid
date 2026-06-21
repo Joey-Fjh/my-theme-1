@@ -72,6 +72,8 @@
                                             x-data="{ hover: false }"
                                             @mouseenter="hover = true"
                                             @mouseleave="hover = false"
+                                            @focus="hover = true"
+                                            @blur="hover = false"
                                         >
                                             {%- assign image_alt = product.title | escape -%}
                                             {%- render 'image',
@@ -83,10 +85,11 @@
 
                                             <div
                                                 class="
+                                                    routine-showcase__product-info
                                                     absolute right-0 bottom-0 left-0
-                                                    flex items-center justify-between p-2 transition-colors pc:p-4
+                                                    flex items-center justify-between p-2 pc:p-4
                                                 "
-                                                :class=" hover ? 'bg-theme-text text-theme-bg' : 'bg-theme-bg text-theme-text' "
+                                                :class="{ 'is-hovered': hover }"
                                             >
                                                 <h3 class="truncate">{{ product.title }}</h3>
                                                 <div class="text-nowrap">
@@ -126,7 +129,7 @@
 
                         <div class="gap-2">
                             <h1>{{ section.settings.heading }}</h1>
-                            <div class="rte rte--compact opacity-60">
+                            <div class="rte rte--compact">
                                 {{ section.settings.description }}
                             </div>
                         </div>
@@ -251,6 +254,23 @@
                 visibility: visible;
             }
         }
+    }
+
+    .routine-showcase__product-info {
+        background-color: rgb(var(--color-background));
+        color: rgb(var(--color-foreground));
+        transition:
+            background-color var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease),
+            color var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease);
+    }
+
+    .routine-showcase__product-info.is-hovered {
+        background-color: rgb(var(--color-foreground));
+        color: rgb(var(--color-background));
+    }
+
+    .routine-showcase__product-info :where(h1, h2, h3, h4, h5, h6) {
+        color: currentColor;
     }
 {% endstylesheet %}
 

@@ -41,3 +41,15 @@ Never add a parameter to an existing public method just to make a divergent new 
 ## Why This Matters
 
 A shared abstraction's contract is consumed by every caller. Extending it for one new caller silently changes the contract for all the others, and the resulting bugs surface in code that has nothing to do with the change. Boundary discipline is a stability investment, not a code-style preference.
+
+## Snippet API Semantics
+
+Snippets are the theme's reusable UI components. Their parameter contracts follow these rules:
+
+1. **Semantic variants over raw class params.** When a snippet needs visual variants, expose semantic parameters (e.g., `size: 'sm'`, `style: 'outline'`) that map to internal Tailwind classes. Do not expose raw `class` parameters as the primary way to customize appearance.
+
+2. **Raw class params as escape hatches.** A `class` parameter MAY exist for documented edge cases where a consumer needs one-off customization that does not warrant a new semantic variant. Document this as an escape hatch, not the primary API.
+
+3. **Do not split snippets only because they are long.** A snippet that is long but has a single coherent responsibility should stay as one file. Split only when the parts have genuinely different consumers, lifetimes, or contracts. Length alone is not a boundary signal.
+
+4. **Parameter defaults must be safe.** Every snippet parameter with a default must render a correct, visible, accessible result when the consumer omits it. An omitted parameter must never produce broken HTML, invisible content, or missing ARIA.

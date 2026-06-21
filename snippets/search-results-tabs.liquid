@@ -62,11 +62,8 @@
                 @popstate.window="isUrlMatch($el.href) && setActive(index)"
                 :tabindex="isActive(index) ? 0 : -1"
                 :aria-selected="isActive(index)"
-                class="inline-flex cursor-pointer items-baseline gap-1 border-b pb-2 transition-opacity"
-                :class="isActive(index)
-                ? 'text-theme-text font-medium border-theme-text'
-                : 'text-theme-text/60 hover:text-theme-text border-transparent'
-                "
+                class="search-results-tabs__tab"
+                :class="{ 'is-active': isActive(index) }"
             >
                 {{ 'search.products' | t }}
             </a>
@@ -82,11 +79,8 @@
                 @popstate.window="isUrlMatch($el.href) && setActive(index)"
                 :tabindex="isActive(index) ? 0 : -1"
                 :aria-selected="isActive(index)"
-                class="inline-flex cursor-pointer items-baseline gap-1 border-b pb-2 transition-opacity"
-                :class="isActive(index)
-                ? 'text-theme-text font-medium border-theme-text'
-                : 'text-theme-text/60 hover:text-theme-text border-transparent'
-                "
+                class="search-results-tabs__tab"
+                :class="{ 'is-active': isActive(index) }"
             >
                 {{ 'search.articles' | t }}
             </a>
@@ -102,11 +96,8 @@
                 @popstate.window="isUrlMatch($el.href) && setActive(index)"
                 :tabindex="isActive(index) ? 0 : -1"
                 :aria-selected="isActive(index)"
-                class="inline-flex cursor-pointer items-baseline gap-1 border-b pb-2 transition-opacity"
-                :class="isActive(index)
-                ? 'text-theme-text font-medium border-theme-text'
-                : 'text-theme-text/60 hover:text-theme-text border-transparent'
-                "
+                class="search-results-tabs__tab"
+                :class="{ 'is-active': isActive(index) }"
             >
                 {{ 'search.pages' | t }}
             </a>
@@ -126,9 +117,9 @@
 
             {% unless search.results_count == 0 %}
                 <div class="mb-6 text-theme-text">
-                    <p class="body-sm tracking-[0.16em] uppercase opacity-70">
-                        <span class="opacity-60">
-                            {{ 'search.search_for' | t }} <span class="truncate body-sm opacity-60">"{{ search.terms | escape }}"</span> : {{ search.results_count }}
+                    <p class="body-sm tracking-[0.16em] uppercase">
+                        <span>
+                            {{ 'search.search_for' | t }} <span class="truncate body-sm">"{{ search.terms | escape }}"</span> : {{ search.results_count }}
                         </span>
                     </p>
                 </div>
@@ -137,7 +128,7 @@
             {% paginate search.results by search_per_page %}
                 {%- if search.results_count == 0 -%}
                     <div class="py-16 text-center text-theme-text">
-                        <p class="body-md opacity-80">{{ 'search.no_results_for' | t }} "{{ search.terms | escape }}"</p>
+                        <p class="body-md">{{ 'search.no_results_for' | t }} "{{ search.terms | escape }}"</p>
                     </div>
                 {%- else -%}
                     {%- case param_type -%}
@@ -157,7 +148,7 @@
                                 {%- for item in search.results -%}
                                     {%- if item.object_type == 'article' -%}
                                         <li class="border-b border-theme-border-20 pb-3">
-                                            <a class="text-theme-text hover:underline" href="{{ item.url }}">{{ item.title }}</a>
+                                            <a class="search-results-tabs__result-link" href="{{ item.url }}">{{ item.title }}</a>
                                         </li>
                                     {%- endif -%}
                                 {%- endfor -%}
@@ -168,7 +159,7 @@
                                 {%- for item in search.results -%}
                                     {%- if item.object_type == 'page' -%}
                                         <li class="border-b border-theme-border-20 pb-3">
-                                            <a class="text-theme-text hover:underline" href="{{ item.url }}">{{ item.title }}</a>
+                                            <a class="search-results-tabs__result-link" href="{{ item.url }}">{{ item.title }}</a>
                                         </li>
                                     {%- endif -%}
                                 {%- endfor -%}
@@ -178,7 +169,7 @@
                     <div
                         class="mt-10"
                         @click="
-                            let link = $event.target.closest('nav.pagination a');
+                            let link = $event.target.closest('[data-pagination-nav] a');
                             if (link) {
                                 $event.preventDefault();
                                 loadUrl(link.href);

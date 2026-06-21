@@ -214,6 +214,19 @@ Not allowed:
 
 When Tailwind has a matching utility, use it. When Tailwind does not have a matching utility, consider adding a reusable class to the appropriate `tailwind.*.css` layer file before falling back to inline `style`. Use `style` only when the value is dynamic (Liquid-driven), one-off, or cannot be expressed as a reusable class.
 
+## Global z-Index Layer System
+
+The theme uses a unified z-index layer hierarchy defined in `tailwind/tailwind.utilities.css`. All z-index values for stacking contexts (header, announcement bar, dropdowns, drawers, toasts, dialogs, modals, lightbox) MUST use the documented layer utilities. Do not add ad-hoc `z-[...]` arbitrary values or inline `z-index` styles for these layers.
+
+Layer utilities are sorted low-to-high. A higher layer always sits above a lower layer. If a new stacking context is needed, add it to the existing layer system rather than inventing a one-off value.
+
+## CSS Ownership Rules
+
+- Tailwind source files (`tailwind/*.css`) own all reusable styles.
+- Section `{% stylesheet %}` blocks own only section-specific CSS that Tailwind cannot express cleanly.
+- Do not add reusable component, typography, color, or motion styles to section `{% stylesheet %}` blocks.
+- When a style is needed by more than one section or snippet, it belongs in a `tailwind/*.css` layer file.
+
 ## SVG Icon Pipeline
 
 ```text

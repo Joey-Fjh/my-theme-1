@@ -1,4 +1,166 @@
 /* =========================================================
+Quantity Selector
+========================================================= */
+@layer components {
+    .quantity-selector {
+        @apply inline-flex w-max items-center text-current;
+        gap: 0.5rem;
+    }
+
+    .quantity-selector__button {
+        @apply flex h-10 w-10 cursor-pointer items-center justify-center text-current transition-opacity hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-30;
+    }
+
+    .quantity-selector__input {
+        @apply w-[4ch] appearance-none border-b border-current bg-transparent p-0 text-center text-current tabular-nums focus-ring [-moz-appearance:textfield] focus:ring-0 focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none;
+        font: inherit;
+    }
+
+    .quantity-selector__value {
+        @apply min-w-9 border-b border-current px-2 pb-1 text-center text-current tabular-nums;
+        font: inherit;
+    }
+}
+
+/* =========================================================
+Pagination
+========================================================= */
+@layer components {
+    .pagination {
+        list-style: none;
+    }
+
+    .pagination__inner {
+        @apply mx-auto flex w-fit max-w-full items-center;
+        gap: 0.25rem;
+    }
+
+    /* ---- shared button base ---- */
+    .pagination__button {
+        @apply inline-flex h-10 shrink-0 items-center justify-center gap-1 rounded px-2 whitespace-nowrap transition-colors;
+
+        font-family: inherit;
+        font-size: var(--pagination-font-size);
+        border-radius: var(--pagination-radius);
+    }
+
+    .pagination__button--disabled {
+        @apply pointer-events-none cursor-default opacity-40;
+    }
+
+    /* hover variants (applied alongside pagination__button) */
+    .pagination__button--hover-default {
+        &:hover {
+            background-color: rgb(var(--color-foreground) / 0.5);
+        }
+    }
+
+    .pagination__button--hover-minimal {
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+
+    .pagination__button--outline {
+        @apply border border-theme-border-20;
+    }
+
+    .pagination__button--hover-outline {
+        @apply border border-theme-border-20;
+
+        &:hover {
+            background-color: rgb(var(--color-foreground) / 0.5);
+        }
+    }
+
+    /* ---- page number base ---- */
+    .pagination__page {
+        @apply inline-flex h-10 min-w-10 shrink-0 items-center justify-center rounded px-2 transition-colors;
+
+        font-family: inherit;
+        font-size: var(--pagination-font-size);
+        border-radius: var(--pagination-radius);
+    }
+
+    /* hover variants (applied alongside pagination__page) */
+    .pagination__page--hover-default {
+        &:hover {
+            background-color: rgb(var(--color-foreground) / 0.5);
+        }
+    }
+
+    .pagination__page--hover-minimal {
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+
+    .pagination__page--outline {
+        @apply border border-theme-border-20;
+    }
+
+    .pagination__page--hover-outline {
+        @apply border border-theme-border-20;
+
+        &:hover {
+            background-color: rgb(var(--color-foreground) / 0.5);
+        }
+    }
+
+    /* current page variants */
+    .pagination__page--current--default {
+        @apply bg-theme-text text-theme-bg;
+    }
+
+    .pagination__page--current--outline {
+        @apply border border-theme-text text-theme-text;
+    }
+
+    .pagination__page--current--minimal {
+        @apply text-theme-text underline;
+    }
+
+    /* ellipsis */
+    .pagination__page--ellipsis {
+        @apply cursor-default;
+        font-size: var(--pagination-font-size);
+    }
+
+    /* ---- pages container ---- */
+    .pagination__pages-wrap {
+        @apply max-w-full min-w-0 overflow-x-auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+
+        &::-webkit-scrollbar {
+            display: none;
+        }
+    }
+
+    .pagination__pages {
+        @apply mx-auto inline-flex min-w-max items-center;
+        gap: 0.25rem;
+    }
+}
+
+/* =========================================================
+Active Filters
+========================================================= */
+@layer components {
+    .active-filter-chip {
+        @apply inline-flex min-h-10 items-center gap-2 rounded-full border border-theme-border-20 px-4 py-2 transition-colors;
+
+        &:hover {
+            border-color: rgb(var(--color-foreground));
+        }
+    }
+
+    .filter-count-badge {
+        @apply inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-theme-text px-2;
+    }
+}
+
+/* =========================================================
 Product Info Blocks
 ========================================================= */
 @layer components {
@@ -288,6 +450,108 @@ Product Info Blocks
         width: 100%;
         justify-content: space-between;
     }
+
+    .buy-buttons__submit--unavailable {
+        @apply border-theme-border-20 bg-theme-border-20 text-theme-text/45 opacity-100;
+    }
+
+    .buy-buttons__label {
+        @apply inline-block transition-opacity;
+    }
+
+    .buy-buttons__label.is-loading {
+        @apply opacity-0;
+    }
+}
+
+/* =========================================================
+Product Gallery — Thumbnails
+========================================================= */
+@layer components {
+    .product-gallery__thumbnail {
+        @apply block shrink-0 cursor-pointer overflow-hidden rounded-sm border-2 focus-ring;
+        border-color: transparent;
+        transition:
+            border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+            opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+
+        &:hover {
+            border-color: rgb(var(--color-foreground) / 0.15);
+        }
+
+        &.is-active {
+            border-color: rgb(var(--color-foreground));
+        }
+    }
+
+    .product-gallery__zoom-button {
+        @apply absolute inset-0 h-full w-full cursor-zoom-in;
+        opacity: 0;
+        z-index: 0;
+        pointer-events: none;
+        transition: opacity var(--motion-duration-slow, 400ms) var(--motion-ease-exit, ease-out);
+
+        &.is-active {
+            opacity: 1;
+            z-index: 10;
+            pointer-events: auto;
+        }
+    }
+}
+
+/* =========================================================
+Variant Picker
+========================================================= */
+@layer components {
+    .variant-picker__swatch {
+        @apply block h-8 w-8 cursor-pointer border transition-all;
+        border-color: rgb(var(--color-border) / 0.2);
+        transition-property: border-color, box-shadow;
+
+        &:hover {
+            border-color: rgb(var(--color-foreground));
+        }
+
+        &.is-selected {
+            box-shadow:
+                0 0 0 2px rgb(var(--color-background)),
+                0 0 0 4px rgb(var(--color-foreground));
+        }
+    }
+
+    .variant-picker__swatch--circle {
+        @apply rounded-full;
+    }
+
+    .variant-picker__swatch--square {
+        @apply rounded-sm;
+    }
+
+    .variant-picker__pill {
+        @apply block cursor-pointer rounded-sm border px-4 py-2 body-md;
+        border-color: rgb(var(--color-border) / 0.2);
+        color: rgb(var(--color-foreground) / 0.7);
+        transition:
+            border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+            background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+            color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+
+        &:hover {
+            border-color: rgb(var(--color-foreground));
+            color: rgb(var(--color-foreground));
+        }
+
+        &.is-selected {
+            border-color: rgb(var(--color-foreground));
+            background-color: rgb(var(--color-foreground));
+            color: rgb(var(--color-background));
+        }
+
+        &.is-unavailable {
+            opacity: 0.4;
+            text-decoration: line-through;
+        }
+    }
 }
 
 /* =========================================================
@@ -431,7 +695,15 @@ Product-card
         }
 
         .product-card__hover-actions {
-            @apply absolute inset-x-0 bottom-0 z-10 m-3 flex flex-col gap-3 bg-theme-bg pt-3 transition-opacity duration-300;
+            @apply absolute inset-x-0 bottom-0 z-10 m-3 flex flex-col gap-3 bg-theme-bg pt-3;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+
+            &.is-visible {
+                opacity: 1;
+                pointer-events: auto;
+            }
 
             .product-card__btn-primary {
                 @apply btn-primary;
@@ -447,7 +719,17 @@ Product-card
         }
 
         .product-card__quick-view-trigger {
-            @apply absolute top-1/2 left-1/2 z-10 flex h-18 w-18 -translate-x-1/2 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-theme-border bg-theme-bg text-theme-text shadow-[0_10px_30px_rgba(0,0,0,0.12)] transition-all duration-300;
+            @apply absolute top-1/2 left-1/2 z-10 flex h-18 w-18 -translate-x-1/2 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-theme-border bg-theme-bg text-theme-text shadow-[0_10px_30px_rgba(0,0,0,0.12)];
+            opacity: 0;
+            pointer-events: none;
+            transition:
+                opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+                transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+
+            &.is-visible {
+                opacity: 1;
+                pointer-events: auto;
+            }
         }
 
         .product-card__variant-shell {
@@ -630,18 +912,6 @@ Quick view
         @apply flex flex-col gap-3;
     }
 
-    .product-quick-view__quantity-control {
-        @apply inline-flex w-max items-center border border-theme-border-20 px-2 py-1.5;
-    }
-
-    .product-quick-view__quantity-button {
-        @apply flex h-10 w-10 cursor-pointer items-center justify-center text-current transition-opacity hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-30;
-    }
-
-    .product-quick-view__quantity-input {
-        @apply w-[4ch] appearance-none bg-transparent p-0 text-center body-md text-current focus-ring [-moz-appearance:textfield] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none;
-    }
-
     .product-quick-view__purchase {
         @apply mt-1;
     }
@@ -670,6 +940,457 @@ Quick view
 
         .product-quick-view__info {
             overflow-y: visible;
+        }
+    }
+}
+
+/* =========================================================
+Image Lightbox
+========================================================= */
+@layer components {
+    .image-lightbox__nav-button {
+        @apply absolute flex h-10 w-10 cursor-pointer items-center justify-center text-white/80 transition-colors hover:text-white;
+        z-index: var(--z-layer-lightbox-controls);
+
+        &:focus-visible {
+            outline: var(--focus-ring-width) solid
+                rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+            outline-offset: var(--focus-ring-offset);
+        }
+    }
+
+    .image-lightbox__nav-button--prev {
+        @apply left-4;
+    }
+
+    .image-lightbox__nav-button--next {
+        @apply right-4;
+    }
+}
+
+/* =========================================================
+Search Predictive Panel
+========================================================= */
+@layer components {
+    .search-predictive-panel__tab {
+        @apply -mb-px inline-flex items-baseline gap-1 border-b border-transparent pb-2;
+        color: rgb(var(--color-foreground) / 0.6);
+        transition:
+            color var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease),
+            border-color var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease);
+
+        &:hover,
+        &:focus-visible {
+            color: rgb(var(--color-foreground));
+        }
+
+        &:focus-visible {
+            outline: var(--focus-ring-width) solid
+                rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+            outline-offset: var(--focus-ring-offset);
+        }
+
+        &.is-active {
+            border-color: rgb(var(--color-foreground));
+            color: rgb(var(--color-foreground));
+            font-weight: 500;
+        }
+    }
+}
+
+/* =========================================================
+Search Results Tabs
+========================================================= */
+@layer components {
+    .search-results-tabs__tab {
+        @apply inline-flex cursor-pointer items-baseline gap-1 border-b border-transparent pb-2;
+        color: rgb(var(--color-foreground) / 0.6);
+        transition:
+            color var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease),
+            border-color var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease);
+
+        &:hover,
+        &:focus-visible {
+            color: rgb(var(--color-foreground));
+        }
+
+        &:focus-visible {
+            outline: var(--focus-ring-width) solid
+                rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+            outline-offset: var(--focus-ring-offset);
+        }
+
+        &.is-active {
+            border-color: rgb(var(--color-foreground));
+            color: rgb(var(--color-foreground));
+            font-weight: 500;
+        }
+    }
+}
+
+/* =========================================================
+Filters Drawer
+========================================================= */
+@layer components {
+    .filters-drawer__footer-button {
+        @apply btn-primary w-full bg-theme-text text-theme-bg hover:opacity-90;
+    }
+}
+
+/* =========================================================
+Filters Field
+========================================================= */
+@layer components {
+    .filters-field__show-more {
+        @apply inline-flex cursor-pointer items-center gap-3 transition-opacity hover:opacity-80;
+    }
+
+    .filters-field__show-more--panel {
+        @apply pt-1;
+    }
+
+    .filters-field__show-more--horizontal {
+        @apply pt-2;
+    }
+
+    .filters-field__summary {
+        @apply flex cursor-pointer list-none items-center gap-3 marker:content-none;
+        transition: border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+
+        &:hover {
+            border-color: rgb(var(--color-foreground));
+        }
+    }
+
+    details[open] > .filters-field__summary {
+        border-color: rgb(var(--color-foreground));
+    }
+
+    .filters-field__summary-icon {
+        @apply shrink-0;
+        transition: transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+    }
+
+    details[open] > .filters-field__summary .filters-field__summary-icon {
+        transform: rotate(180deg);
+    }
+
+    .filters-field__range-wrapper {
+        @apply relative flex h-8 w-full items-center;
+        transition: opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+    }
+
+    .filters-field__range-wrapper.is-loading {
+        @apply cursor-not-allowed opacity-50;
+    }
+
+    .filters-field__range-input-wrapper {
+        @apply flex items-center border-b bg-theme-border-20 px-3 py-2;
+    }
+
+    .filters-field__range-input-wrapper.is-loading {
+        @apply cursor-not-allowed opacity-80;
+    }
+
+    .filters-field__option--disabled {
+        @apply cursor-not-allowed opacity-50;
+    }
+}
+
+/* =========================================================
+Sort By Dropdown
+========================================================= */
+@layer components {
+    .sort-by-dropdown__trigger {
+        @apply flex cursor-pointer items-center gap-3 text-theme-text;
+        @apply focus-ring focus:outline-none;
+    }
+
+    .sort-by-dropdown__panel {
+        @apply absolute top-full right-0 min-w-100 rounded-lg border border-theme-border-20 bg-theme-bg;
+        z-index: var(--z-layer-dropdown);
+    }
+
+    .sort-by-dropdown__option {
+        @apply block w-full text-left body-md text-current;
+        transition: opacity var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease);
+    }
+
+    .sort-by-dropdown__option--active {
+        @apply font-bold underline;
+    }
+
+    .sort-by-dropdown__option--inactive {
+        @apply opacity-60;
+    }
+
+    .sort-by-dropdown__option--inactive:hover {
+        @apply opacity-100;
+    }
+}
+
+/* =========================================================
+Accordion
+========================================================= */
+@layer components {
+    .accordion__trigger {
+        @apply flex w-full cursor-pointer items-center justify-between py-5 text-left;
+    }
+
+    .accordion__title {
+        @apply text-left;
+        opacity: 0.7;
+        transition:
+            color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+            opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+    }
+
+    .accordion__title.is-active {
+        @apply font-semibold;
+        opacity: 1;
+    }
+
+    .accordion__title--active {
+        opacity: 1;
+    }
+
+    .accordion__title--inactive {
+        opacity: 0.7;
+    }
+
+    .accordion__icon {
+        @apply inline-flex shrink-0 items-center justify-center;
+        --_accordion-rotate: rotate(180deg);
+        transition: transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+    }
+
+    .accordion__icon--plus {
+        --_accordion-rotate: rotate(45deg);
+    }
+
+    .accordion__icon.is-active {
+        transform: var(--_accordion-rotate);
+    }
+
+    .accordion__panel {
+        display: grid;
+        grid-template-rows: 0fr;
+        opacity: 0;
+        transition:
+            grid-template-rows var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+            opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+    }
+
+    .accordion__panel.is-active {
+        grid-template-rows: 1fr;
+        opacity: 1;
+    }
+
+    .accordion__panel-inner {
+        overflow: hidden;
+    }
+}
+
+/* =========================================================
+Blog Tabs
+========================================================= */
+@layer components {
+    .blog__tab {
+        @apply flex cursor-pointer flex-wrap items-center gap-x-4 gap-y-2 focus-ring;
+        opacity: 0.4;
+        transition: opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+
+        &:hover {
+            opacity: 0.6;
+        }
+
+        &.is-active {
+            opacity: 1;
+            border-bottom: 2px solid currentColor;
+        }
+    }
+}
+
+/* =========================================================
+Collection Tabs
+========================================================= */
+@layer components {
+    .collection__tab {
+        @apply flex cursor-pointer flex-nowrap items-center gap-1 whitespace-nowrap focus-ring;
+        opacity: 0.5;
+        border-bottom: 2px solid transparent;
+        transition:
+            opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+            border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+
+        &:hover {
+            opacity: 1;
+        }
+
+        &.is-active {
+            opacity: 1;
+            border-color: currentColor;
+        }
+    }
+}
+
+/* =========================================================
+Featured Products Tabs
+========================================================= */
+@layer components {
+    .featured-products__tab {
+        @apply cursor-pointer focus-ring;
+        opacity: 0.4;
+        transition: opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+
+        &:hover,
+        &:focus-visible {
+            opacity: 1;
+        }
+
+        &.is-active {
+            opacity: 1;
+        }
+    }
+}
+
+/* =========================================================
+Header Dropdown Super Menu
+========================================================= */
+@layer components {
+    .header-dropdown-super-menu__tab {
+        @apply border-b-2 border-transparent pb-2 text-current;
+        opacity: 0.6;
+        transition:
+            opacity var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease),
+            border-color var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease);
+
+        &:hover,
+        &:focus-visible {
+            opacity: 1;
+        }
+
+        &:focus-visible {
+            outline: var(--focus-ring-width) solid
+                rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+            outline-offset: var(--focus-ring-offset);
+        }
+
+        &.is-active {
+            border-color: currentColor;
+            opacity: 1;
+        }
+    }
+}
+
+/* =========================================================
+Active Filters
+========================================================= */
+@layer components {
+    .active-filters__clear-action {
+        @apply underline underline-offset-4;
+        transition: opacity var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease);
+
+        &:hover {
+            opacity: 0.8;
+        }
+
+        &:focus-visible {
+            outline: var(--focus-ring-width) solid
+                rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+            outline-offset: var(--focus-ring-offset);
+        }
+    }
+}
+
+/* =========================================================
+Buy Buttons (retry action)
+========================================================= */
+@layer components {
+    .buy-buttons__retry-action {
+        @apply body-md font-medium underline underline-offset-4;
+        transition: opacity var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease);
+
+        &:hover {
+            opacity: 0.7;
+        }
+
+        &:focus-visible {
+            outline: var(--focus-ring-width) solid
+                rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+            outline-offset: var(--focus-ring-offset);
+        }
+    }
+}
+
+/* =========================================================
+Cart
+========================================================= */
+@layer components {
+    .cart__product-link {
+        &:hover {
+            text-decoration: underline;
+        }
+
+        &:focus-visible {
+            outline: var(--focus-ring-width) solid
+                rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+            outline-offset: var(--focus-ring-offset);
+        }
+    }
+}
+
+/* =========================================================
+Cart Overlay
+========================================================= */
+@layer components {
+    .cart-overlay__product-link {
+        &:hover {
+            text-decoration: underline;
+        }
+
+        &:focus-visible {
+            outline: var(--focus-ring-width) solid
+                rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+            outline-offset: var(--focus-ring-offset);
+        }
+    }
+}
+
+/* =========================================================
+Search Results Tabs
+========================================================= */
+@layer components {
+    .search-results-tabs__result-link {
+        @apply text-theme-text;
+
+        &:hover {
+            text-decoration: underline;
+        }
+
+        &:focus-visible {
+            outline: var(--focus-ring-width) solid
+                rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+            outline-offset: var(--focus-ring-offset);
+        }
+    }
+}
+
+/* =========================================================
+Search Predictive Panel
+========================================================= */
+@layer components {
+    .search-predictive-panel__result-link {
+        @apply text-theme-text;
+
+        &:hover {
+            text-decoration: underline;
+        }
+
+        &:focus-visible {
+            outline: var(--focus-ring-width) solid
+                rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+            outline-offset: var(--focus-ring-offset);
         }
     }
 }

@@ -23,7 +23,7 @@
 
                     <button
                         type="button"
-                        class="inline-flex cursor-pointer items-center justify-center text-theme-text-80 transition hover:text-theme-text"
+                        class="close-button"
                         @click="$store.dialog.close()"
                         aria-label="{{ 'accessibility.close_cart_drawer' | t }}"
                     >
@@ -48,7 +48,11 @@
 
                 <ul x-show="showItems" class="flex flex-col divide-y divide-theme-border-20">
                     <template x-for="item in items" :key="item.key">
-                        <li class="grid grid-cols-[minmax(6rem,0.95fr)_minmax(0,1.35fr)_auto] gap-4 py-3">
+                        <li
+                            class="grid grid-cols-[minmax(6rem,0.95fr)_minmax(0,1.35fr)_auto] gap-4 py-3"
+                            data-cart-product-alt="{{ 'cart.product_alt' | t | escape }}"
+                            data-cart-item-fallback="{{ 'general.item' | t | escape }}"
+                        >
                             <a
                                 :href="item.url"
                                 class="flex aspect-square w-full items-center justify-center overflow-hidden bg-theme-bg/50"
@@ -56,7 +60,7 @@
                                 <img
                                     class="h-full w-full object-contain p-3"
                                     :src="typeof item.image === 'string' ? item.image : (item.image?.url || item.featured_image?.url || '')"
-                                    :alt="item.product_title || item.title || 'Cart product'"
+                                    :alt="item.product_title || item.title || $el.closest('li').dataset.cartProductAlt"
                                     width="120"
                                     height="120"
                                     loading="lazy"
@@ -67,7 +71,7 @@
                                 <p class="body-sm uppercase" x-text="item.vendor || ''"></p>
                                 <a
                                     :href="item.url"
-                                    class="mt-3 line-clamp-2 body-lg hover:underline"
+                                    class="cart-overlay__product-link mt-3 line-clamp-2 body-lg"
                                     x-text="item.product_title || item.title"
                                 >
                                 </a>
@@ -77,18 +81,18 @@
                             <div class="flex shrink-0 flex-col items-end justify-between py-1">
                                 <button
                                     type="button"
-                                    class="inline-flex cursor-pointer items-center justify-center opacity-80 hover:opacity-100"
+                                    class="cart-overlay__remove-button"
                                     @click="remove(item)"
                                     data-remove-item-label="{{ 'accessibility.remove_item' | t: item: '__ITEM__' | escape }}"
-                                    :aria-label="$el.dataset.removeItemLabel.replace('__ITEM__', item.product_title || item.title || 'item')"
+                                    :aria-label="$el.dataset.removeItemLabel.replace('__ITEM__', item.product_title || item.title || $el.closest('li').dataset.cartItemFallback)"
                                 >
                                     {% render 'icons', icon: 'icon-trash' %}
                                 </button>
 
-                                <div class="flex items-center gap-2">
+                                <div class="quantity-selector">
                                     <button
                                         type="button"
-                                        class="inline-flex cursor-pointer items-center justify-center disabled:opacity-50"
+                                        class="quantity-selector__button"
                                         @click="decrement(item)"
                                         :disabled="Number(item.quantity || 0) <= 1"
                                         aria-label="{{ 'accessibility.decrease_quantity' | t }}"
@@ -96,15 +100,15 @@
                                         {% render 'icons', icon: 'icon-minus' %}
                                     </button>
 
-                                    <span 
-                                        class="min-w-9 border-b border-theme-border-80 px-2 pb-1 text-center tabular-nums" 
+                                    <span
+                                        class="quantity-selector__value"
                                         x-text="item.quantity"
                                     >
                                     </span>
-                                    
+
                                     <button
                                         type="button"
-                                        class="inline-flex cursor-pointer items-center justify-center disabled:opacity-50"
+                                        class="quantity-selector__button"
                                         @click="increment(item)"
                                         :disabled="maxQty(item) !== null && Number(item.quantity || 0) >= maxQty(item)"
                                         aria-label="{{ 'accessibility.increase_quantity' | t }}"
@@ -158,10 +162,10 @@
     {%- render 'ui-dialog',
         id: popup_id,
         type: 'drawer',
+        layer: 'drawer',
         position: section.settings.drawer_position,
         top_class: 'top-[var(--announcement-bar-height)] pc:top-0',
         color_scheme: section.settings.color_scheme,
-        root_class: 'z-[10010]',
         drawer_wrapper_class: '
             !left-1/2 !right-auto !-translate-x-1/2 !top-[calc(var(--announcement-bar-height)+3rem)] !bottom-12 !w-[calc(100%-2rem)] !max-w-none
             pc:!left-auto pc:!right-0 pc:!-translate-x-0 pc:!top-[var(--announcement-bar-height)] pc:!bottom-0 pc:!w-full pc:!max-w-[40rem] fw:!max-w-[33vw]
@@ -170,6 +174,27 @@
         content: drawer_content
     -%}
 </div>
+
+{% stylesheet %}
+    .cart-overlay__remove-button {
+        display: inline-flex;
+        cursor: pointer;
+        align-items: center;
+        justify-content: center;
+        opacity: 0.8;
+        transition: opacity var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease);
+    }
+
+    .cart-overlay__remove-button:hover {
+        opacity: 1;
+    }
+
+    .cart-overlay__remove-button:focus-visible {
+        outline: var(--focus-ring-width) solid
+            rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+        outline-offset: var(--focus-ring-offset);
+    }
+{% endstylesheet %}
 
 {% schema %}
 {

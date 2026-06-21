@@ -361,15 +361,21 @@
                 cartUrl,
                 isLoading: false,
                 _eventScope: null,
+                _buttonTextFallback: '',
 
                 get buttonText() {
-                    if (!this.variantId) return 'Unavailable';
-                    if (!this.available) return 'Sold out';
-                    return 'Add to cart';
+                    const dataset = this.$el?.dataset || {};
+                    const fallback = this._buttonTextFallback || '';
+                    if (!this.variantId) return dataset.unavailableText || fallback;
+                    if (!this.available) return dataset.soldOutText || fallback;
+                    return dataset.addToCartText || fallback;
                 },
 
                 init() {
                     const dataset = this.$el?.dataset || {};
+                    const label = this.$el?.querySelector('[data-add-to-cart-label]');
+                    this._buttonTextFallback = label?.textContent?.trim() || '';
+
                     this.sectionId = this.sectionId || dataset.sectionId || '';
                     this.productFormId = this.productFormId || dataset.productFormId || '';
 
@@ -434,8 +440,7 @@
                         form?.querySelector('input[name="quantity"]') ||
                         document.querySelector(
                             `input[name="quantity"][form="${this.productFormId}"]`,
-                        ) ||
-                        this.$el.closest('.product-info')?.querySelector('input[name="quantity"]');
+                        );
                     return qtyInput ? parseInt(qtyInput.value) || 1 : 1;
                 },
 
@@ -529,9 +534,9 @@
             sectionId,
             variantId = null,
             rootUrl = '/',
-            loadingText = 'Checking store pickup availability...',
-            errorText = 'Unable to load pickup availability right now.',
-            retryText = 'Try again',
+            loadingText = '',
+            errorText = '',
+            retryText = '',
         } = {}) {
             return {
                 ...AlpineComponentsFactory.useDisposable(),
@@ -689,13 +694,13 @@
                     this._mediaTarget = el.querySelector('[data-product-media-sticky-target]');
                     this._infoTarget = el.querySelector('[data-product-info-sticky-target]');
                     this._infoBlocks = el.querySelector(
-                        '[data-product-info-panel] .product-info-blocks',
+                        '[data-product-info-panel] [data-product-info-blocks]',
                     );
                     this._descriptionBlock = this._infoBlocks?.querySelector(
-                        '.product-info-blocks__description-block',
+                        '[data-product-description-block]',
                     );
                     this._description = this._descriptionBlock?.querySelector(
-                        '.product-info-blocks__description',
+                        '[data-product-description]',
                     );
 
                     if (!this._mediaTarget || !this._infoTarget) return;
