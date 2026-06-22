@@ -9,7 +9,9 @@
     StoreGroups.cart = {
         items: [],
         total_price: 0,
+        total_discount: 0,
         item_count: 0,
+        cart_level_discount_applications: [],
         loading: false,
         hasFetched: false,
         fetchError: null,
@@ -42,6 +44,12 @@
             this.items = Array.isArray(data.items) ? data.items : [];
             this.item_count = typeof data.item_count === 'number' ? data.item_count : 0;
             this.total_price = typeof data.total_price === 'number' ? data.total_price : 0;
+            this.total_discount = typeof data.total_discount === 'number' ? data.total_discount : 0;
+            this.cart_level_discount_applications = Array.isArray(
+                data.cart_level_discount_applications,
+            )
+                ? data.cart_level_discount_applications
+                : [];
             this.hasFetched =
                 Array.isArray(data.items) ||
                 typeof data.item_count === 'number' ||
@@ -68,6 +76,13 @@
                     this.items = Array.isArray(data.items) ? data.items : [];
                     this.item_count = typeof data.item_count === 'number' ? data.item_count : 0;
                     this.total_price = typeof data.total_price === 'number' ? data.total_price : 0;
+                    this.total_discount =
+                        typeof data.total_discount === 'number' ? data.total_discount : 0;
+                    this.cart_level_discount_applications = Array.isArray(
+                        data.cart_level_discount_applications,
+                    )
+                        ? data.cart_level_discount_applications
+                        : [];
                     this.hasFetched = true;
                     this.fetchError = null;
 
@@ -153,6 +168,15 @@
                         typeof parsedState.item_count === 'number' ? parsedState.item_count : 0;
                     this.total_price =
                         typeof parsedState.total_price === 'number' ? parsedState.total_price : 0;
+                    this.total_discount =
+                        typeof parsedState.total_discount === 'number'
+                            ? parsedState.total_discount
+                            : 0;
+                    this.cart_level_discount_applications = Array.isArray(
+                        parsedState.cart_level_discount_applications,
+                    )
+                        ? parsedState.cart_level_discount_applications
+                        : [];
                     this.hasFetched = true;
                     this.fetchError = null;
                     return parsedState;
@@ -189,6 +213,13 @@
                     this.items = Array.isArray(data.items) ? data.items : [];
                     this.item_count = typeof data.item_count === 'number' ? data.item_count : 0;
                     this.total_price = typeof data.total_price === 'number' ? data.total_price : 0;
+                    this.total_discount =
+                        typeof data.total_discount === 'number' ? data.total_discount : 0;
+                    this.cart_level_discount_applications = Array.isArray(
+                        data.cart_level_discount_applications,
+                    )
+                        ? data.cart_level_discount_applications
+                        : [];
                     this.hasFetched = true;
                     this.fetchError = null;
                     return data;

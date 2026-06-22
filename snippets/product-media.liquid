@@ -1,0 +1,144 @@
+{% doc %}
+    Renders a single product media item for use inside product galleries.
+    Supports image, video, external_video, and model media types.
+
+    @param {object} media - A product.media item (image, video, external_video, or model)
+    @param {string} [aspect_ratio] - Optional CSS aspect-ratio
+    @param {string} [sizes] - Optional sizes attribute (default: '100vw')
+    @param {string} [widths] - Optional widths for srcset
+    @param {string} [loading] - Image loading mode ('lazy' or 'eager', default: 'lazy')
+    @param {string} [fetchpriority] - Optional fetchpriority ('high', 'low', 'auto')
+    @param {string} [class] - Optional wrapper CSS classes
+    @param {string} [img_class] - Optional image CSS classes
+    @param {boolean} [magnifier] - Use image magnifier (default: false)
+    @param {number} [magnifier_zoom_scale] - Magnifier zoom scale
+    @param {number} [magnifier_preview_width] - Magnifier preview width
+    @param {number} [magnifier_preview_height] - Magnifier preview height
+    @param {number} [magnifier_preview_max_width] - Magnifier max preview width
+
+    @example
+    {% render 'product-media',
+        media: media,
+        aspect_ratio: '3/4',
+        sizes: '(min-width: 48rem) 50vw, 100vw',
+        loading: 'eager',
+        fetchpriority: 'high'
+    %}
+{% enddoc %}
+
+{%- liquid
+    assign media_type = media.media_type | default: 'image'
+    assign media_image = media.preview_image | default: media
+    assign aspect_ratio = aspect_ratio
+    assign sizes = sizes | default: '100vw'
+    assign widths = widths | default: '400,600,800,1200'
+    assign loading = loading | default: 'lazy'
+    assign fetchpriority = fetchpriority | default: 'auto'
+    assign class = class | default: ''
+    assign img_class = img_class | default: 'w-full h-full object-cover'
+    assign magnifier = magnifier | default: false
+    assign magnifier_zoom_scale = magnifier_zoom_scale | default: 2
+    assign magnifier_preview_width = magnifier_preview_width | default: 0
+    assign magnifier_preview_height = magnifier_preview_height | default: 0
+    assign magnifier_preview_max_width = magnifier_preview_max_width | default: 560
+-%}
+
+{%- case media_type -%}
+    {%- when 'image' -%}
+        {%- if magnifier -%}
+            {%- render 'image-magnifier',
+                image: media_image,
+                width: 1200,
+                img_class: img_class,
+                alt: media_image.alt,
+                sizes: sizes,
+                widths: widths,
+                loading: loading,
+                fetchpriority: fetchpriority,
+                zoom_scale: magnifier_zoom_scale,
+                preview_width: magnifier_preview_width,
+                preview_height: magnifier_preview_height,
+                preview_max_width: magnifier_preview_max_width
+            -%}
+        {%- else -%}
+            {%- render 'image',
+                image: media_image,
+                width: 1200,
+                img_class: img_class,
+                alt: media_image.alt,
+                sizes: sizes,
+                widths: widths,
+                loading: loading,
+                fetchpriority: fetchpriority
+            -%}
+        {%- endif -%}
+
+    {%- when 'video' -%}
+        <div
+            class="product-media-item product-media-item--video relative h-full w-full"
+            data-media-type="video"
+            data-media-id="{{ media.id }}"
+        >
+            {%- render 'image',
+                image: media_image,
+                width: 1200,
+                img_class: img_class,
+                alt: media_image.alt,
+                sizes: sizes,
+                widths: widths,
+                loading: loading,
+                fetchpriority: fetchpriority
+            -%}
+            <div class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+                <span class="text-theme-fg flex h-14 w-14 items-center justify-center rounded-full bg-theme-bg/80 shadow-lg backdrop-blur-sm">
+                    {%- render 'icons', icon: 'icon-play', class: 'w-6 h-6 ml-1' -%}
+                </span>
+            </div>
+        </div>
+
+    {%- when 'external_video' -%}
+        <div
+            class="product-media-item product-media-item--external-video relative h-full w-full"
+            data-media-type="external_video"
+            data-media-id="{{ media.id }}"
+        >
+            {%- render 'image',
+                image: media_image,
+                width: 1200,
+                img_class: img_class,
+                alt: media_image.alt,
+                sizes: sizes,
+                widths: widths,
+                loading: loading,
+                fetchpriority: fetchpriority
+            -%}
+            <div class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+                <span class="text-theme-fg flex h-14 w-14 items-center justify-center rounded-full bg-theme-bg/80 shadow-lg backdrop-blur-sm">
+                    {%- render 'icons', icon: 'icon-play', class: 'w-6 h-6 ml-1' -%}
+                </span>
+            </div>
+        </div>
+
+    {%- when 'model' -%}
+        <div
+            class="product-media-item product-media-item--model relative h-full w-full"
+            data-media-type="model"
+            data-media-id="{{ media.id }}"
+        >
+            {%- render 'image',
+                image: media_image,
+                width: 1200,
+                img_class: img_class,
+                alt: media_image.alt,
+                sizes: sizes,
+                widths: widths,
+                loading: loading,
+                fetchpriority: fetchpriority
+            -%}
+            <div class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+                <span class="text-theme-fg flex h-14 w-14 items-center justify-center rounded-full bg-theme-bg/80 shadow-lg backdrop-blur-sm">
+                    {%- render 'icons', icon: 'icon-3d-model', class: 'w-6 h-6' -%}
+                </span>
+            </div>
+        </div>
+{%- endcase -%}

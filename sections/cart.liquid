@@ -49,9 +49,42 @@
                                     {{ item.product.title }}
                                 </a>
 
-                                <p class="mt-auto pt-2 body-sm pc:pt-4 pc:body-md">
-                                    {{ item.final_line_price | money }}
-                                </p>
+                                {%- if item.selling_plan_allocation -%}
+                                    <p class="mt-1 body-xs text-theme-text-80">
+                                        {{ 'cart.selling_plan_label' | t }}:
+                                        {{ item.selling_plan_allocation.selling_plan.name }}
+                                    </p>
+                                {%- endif -%}
+
+                                {%- if item.original_line_price > item.final_line_price -%}
+                                    <div class="mt-auto pt-2 pc:pt-4">
+                                        <p class="body-sm pc:body-md">
+                                            <span class="text-theme-text-80 line-through">
+                                                {{- item.original_line_price | money -}}
+                                            </span>
+                                            <span class="ml-1">
+                                                {{- item.final_line_price | money -}}
+                                            </span>
+                                        </p>
+                                        {%- if item.line_level_discount_allocations.size > 0 -%}
+                                            <ul
+                                                class="mt-1"
+                                                aria-label="{{ 'cart.discounts' | t }}"
+                                            >
+                                                {%- for allocation in item.line_level_discount_allocations -%}
+                                                    <li class="body-xs text-theme-text-80">
+                                                        {{ allocation.discount_application.title }}
+                                                        (-{{ allocation.amount | money }})
+                                                    </li>
+                                                {%- endfor -%}
+                                            </ul>
+                                        {%- endif -%}
+                                    </div>
+                                {%- else -%}
+                                    <p class="mt-auto pt-2 body-sm pc:pt-4 pc:body-md">
+                                        {{ item.final_line_price | money }}
+                                    </p>
+                                {%- endif -%}
                             </div>
 
                             <div class="flex items-center justify-end self-end py-1 pc:col-span-1">
@@ -179,6 +212,35 @@
                     %}
 
                     <div class="mt-10 border-t border-theme-border-20 pt-10">
+                        {%- if cart.cart_level_discount_applications.size > 0 -%}
+                            <div class="mb-4">
+                                <p class="body-sm font-medium">{{ 'cart.discounts' | t }}</p>
+                                <ul class="mt-2 space-y-1" aria-label="{{ 'cart.discounts' | t }}">
+                                    {%- for discount_application in cart.cart_level_discount_applications -%}
+                                        <li class="flex items-baseline justify-between gap-4 body-sm text-theme-text-80">
+                                            <span>{{ discount_application.title }}</span>
+                                            <span
+                                                >-
+                                                {{-
+                                                    discount_application.total_allocated_amount
+                                                    | money
+                                                -}}
+                                            </span>
+                                        </li>
+                                    {%- endfor -%}
+                                </ul>
+                            </div>
+                        {%- endif -%}
+
+                        {%- if cart.total_discount > 0 -%}
+                            <div class="mb-4 flex items-baseline justify-between gap-4 body-sm">
+                                <span>{{ 'cart.you_saved' | t }}</span>
+                                <span class="text-theme-text-80"
+                                    >-{{ cart.total_discount | money -}}
+                                </span>
+                            </div>
+                        {%- endif -%}
+
                         <div class="flex items-baseline justify-between gap-4">
                             <span>
                                 {{- 'cart.estimate_total' | t -}}
@@ -202,6 +264,12 @@
                             <sup class="sup-badge">( {{ cart.item_count | default: 0 }} )</sup>
                         </button>
                     </form>
+
+                    {%- if additional_checkout_buttons -%}
+                        <div class="additional-checkout-buttons mt-4">
+                            {{ content_for_additional_checkout_buttons }}
+                        </div>
+                    {%- endif -%}
                 </div>
             </aside>
         </div>

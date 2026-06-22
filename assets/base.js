@@ -526,6 +526,8 @@
                         Factory.register?.(Comps.FLIPDIGIT, Comps.flipDigit);
                         Factory.register?.(Comps.TOASTCONTAINER, Comps.toastContainer);
                         Factory.register?.(Comps.MOTIONREVEALSECTION, Comps.motionRevealSection);
+                        Factory.register?.(Comps.PRODUCTMEDIAMODAL, Comps.productMediaModal);
+                        Factory.register?.(Comps.MEDIAVIDEO, Comps.mediaVideo);
                     }
                 },
                 { once: true },

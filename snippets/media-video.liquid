@@ -1,0 +1,197 @@
+{% doc %}
+    Renders a responsive video player with support for desktop/mobile sources,
+    autoplay, loop, controls, custom play/pause and mute/unmute buttons, and poster images.
+
+    Designed for section-level video settings (e.g. a section with a video_picker setting).
+    For product media video inside a product gallery, use the product-media snippet instead.
+
+    @param {video} [video] - Shopify-hosted video object (from video_picker setting)
+    @param {video} [video_mobile] - Optional Shopify-hosted video for mobile
+    @param {image} [poster] - Optional poster/preview image
+    @param {boolean} [autoplay] - Autoplay the video (default: false)
+    @param {boolean} [loop] - Loop the video (default: false)
+    @param {boolean} [muted] - Mute the video (default: true)
+    @param {boolean} [playsinline] - Play inline on mobile (default: true)
+    @param {boolean} [controls] - Show native video controls (default: true)
+    @param {boolean} [show_play_button] - Show custom play/pause button overlay (default: false)
+    @param {boolean} [show_mute_button] - Show custom mute/unmute button overlay (default: false)
+    @param {string} [class] - Optional CSS classes for the wrapper
+    @param {string} [aspect_ratio] - Optional CSS aspect-ratio (e.g. '16/9')
+    @param {string} [sizes] - Optional sizes attribute for the poster image
+    @param {string} [widths] - Optional widths for the poster image srcset
+
+    @example
+    {% render 'media-video',
+        video: section.settings.video,
+        video_mobile: section.settings.video_mobile,
+        autoplay: true,
+        loop: true,
+        muted: true,
+        controls: false,
+        show_play_button: true,
+        show_mute_button: true
+    %}
+{% enddoc %}
+
+{%- liquid
+    assign autoplay = autoplay | default: false
+    assign loop_enabled = loop | default: false
+    assign muted = muted | default: true
+    assign playsinline = playsinline | default: true
+    assign controls = controls | default: true
+    assign show_play_button = show_play_button | default: false
+    assign show_mute_button = show_mute_button | default: false
+    assign class = class | default: ''
+    assign aspect_ratio = aspect_ratio
+    assign sizes = sizes | default: '100vw'
+    assign widths = widths | default: '400,600,800,1200,1600'
+
+    assign has_desktop_video = false
+    assign has_mobile_video = false
+    if video != blank
+        assign has_desktop_video = true
+    endif
+    if video_mobile != blank
+        assign has_mobile_video = true
+    endif
+    assign has_media = false
+    if has_desktop_video or has_mobile_video
+        assign has_media = true
+    endif
+
+    assign poster_image = poster
+    if poster_image == blank and video != blank
+        assign poster_image = video.preview_image
+    endif
+
+    assign wrapper_class = 'media-video relative w-full overflow-hidden'
+    if class != blank
+        assign wrapper_class = wrapper_class | append: ' ' | append: class
+    endif
+-%}
+
+{%- if has_media -%}
+    <div
+        class="{{ wrapper_class }}"
+        x-data="mediaVideo()"
+        {% if aspect_ratio != blank %}
+            style="--aspect-ratio: {{ aspect_ratio }};"
+        {% endif %}
+    >
+        <div
+            class="relative w-full"
+            {% if aspect_ratio != blank %}
+                style="aspect-ratio: {{ aspect_ratio }};"
+            {% endif %}
+        >
+            {%- if poster_image != blank -%}
+                <div
+                    class="media-video__poster absolute inset-0 z-10"
+                    x-show="!hasPlayed"
+                    x-cloak
+                >
+                    {%- render 'image',
+                        image: poster_image,
+                        width: 1600,
+                        img_class: 'w-full h-full object-cover',
+                        alt: '',
+                        sizes: sizes,
+                        widths: widths,
+                        loading: 'lazy'
+                    -%}
+                </div>
+            {%- endif -%}
+
+            {%- if has_desktop_video -%}
+                <div
+                    class="{% if has_mobile_video %}hidden pc:block{% else %}block{% endif %} h-full w-full"
+                    data-video-desktop
+                >
+                    {{
+                        video
+                        | video_tag:
+                            class: 'w-full h-full object-cover',
+                            autoplay: autoplay,
+                            loop: loop_enabled,
+                            muted: muted,
+                            playsinline: playsinline,
+                            controls: controls
+                    }}
+                </div>
+            {%- endif -%}
+
+            {%- if has_mobile_video -%}
+                <div class="block h-full w-full pc:hidden" data-video-mobile>
+                    {{
+                        video_mobile
+                        | video_tag:
+                            class: 'w-full h-full object-cover',
+                            autoplay: autoplay,
+                            loop: loop_enabled,
+                            muted: muted,
+                            playsinline: playsinline,
+                            controls: controls
+                    }}
+                </div>
+            {%- endif -%}
+
+            {%- if show_play_button -%}
+                <button
+                    type="button"
+                    class="media-video__play-btn absolute inset-0 z-20 flex items-center justify-center"
+                    x-show="!isPlaying"
+                    @click="play()"
+                    aria-label="{{ 'accessibility.play_video' | t }}"
+                >
+                    <span class="text-theme-fg flex h-16 w-16 items-center justify-center rounded-full bg-theme-bg/80 shadow-lg backdrop-blur-sm transition-transform hover:scale-110">
+                        {%- render 'icons', icon: 'icon-play', class: 'w-6 h-6 ml-1' -%}
+                    </span>
+                </button>
+            {%- endif -%}
+
+            {%- if show_play_button -%}
+                <button
+                    type="button"
+                    class="media-video__pause-btn absolute inset-0 z-20"
+                    x-show="isPlaying"
+                    @click="pause()"
+                    aria-label="{{ 'accessibility.pause_video' | t }}"
+                    tabindex="-1"
+                ></button>
+            {%- endif -%}
+
+            {%- if show_mute_button -%}
+                <button
+                    type="button"
+                    class="media-video__mute-btn text-theme-fg absolute right-4 bottom-4 z-30 flex h-10 w-10 items-center justify-center rounded-full bg-theme-bg/80 shadow backdrop-blur-sm transition-opacity"
+                    @click="toggleMute()"
+                    :aria-label="isMuted ? '{{ 'accessibility.unmute_video' | t }}' : '{{ 'accessibility.mute_video' | t }}'"
+                >
+                    <span x-show="isMuted">
+                        {%- render 'icons', icon: 'icon-mute', class: 'w-5 h-5' -%}
+                    </span>
+                    <span x-show="!isMuted">
+                        {%- render 'icons', icon: 'icon-unmute', class: 'w-5 h-5' -%}
+                    </span>
+                </button>
+            {%- endif -%}
+        </div>
+    </div>
+{%- endif -%}
+
+{% stylesheet %}
+    .media-video {
+        display: block;
+        position: relative;
+    }
+
+    .media-video video {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+
+    .media-video [x-cloak] {
+        display: none;
+    }
+{% endstylesheet %}

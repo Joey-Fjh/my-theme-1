@@ -118,5 +118,7 @@
         FLIPDIGIT: 'flipDigit',
         TOASTCONTAINER: 'toastContainer',
         MOTIONREVEALSECTION: 'motionRevealSection',
+        PRODUCTMEDIAMODAL: 'productMediaModal',
+        MEDIAVIDEO: 'mediaVideo',
     });
 })();

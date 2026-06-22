@@ -1,0 +1,145 @@
+{% doc %}
+    Renders a modal dialog for interactive product media (3D models, external videos, Shopify-hosted videos).
+    Activated via Alpine $store.dialog.open() from the product gallery.
+
+    @param {string} id - Unique dialog identifier
+    @param [media] - Array of product.media items to display in the modal
+
+    @example
+    {%- render 'product-media-modal',
+        id: 'product-media-modal-' | append: section.id,
+        media: product.media
+    -%}
+{% enddoc %}
+
+{%- assign media_items = media | default: blank -%}
+{%- assign modal_media_count = 0 -%}
+{%- if media_items != blank -%}
+    {%- for media_item in media_items -%}
+        {%- if media_item.media_type == 'model'
+            or media_item.media_type == 'external_video'
+            or media_item.media_type == 'video'
+        -%}
+            {%- assign modal_media_count = modal_media_count | plus: 1 -%}
+        {%- endif -%}
+    {%- endfor -%}
+{%- endif -%}
+
+{%- if modal_media_count > 0 -%}
+    <div
+        data-dialog-root
+        data-dialog-id="{{ id }}"
+    >
+        <div
+            x-show="$store.dialog.active === '{{ id }}'"
+            x-cloak
+            class="z-layer-lightbox fixed inset-0 flex items-center justify-center"
+            role="dialog"
+            aria-modal="true"
+            aria-label="{{ 'accessibility.product_media_viewer' | t }}"
+            tabindex="-1"
+            @keydown.escape.window="$store.dialog.active === '{{ id }}' && $store.dialog.close()"
+            data-dialog-panel
+        >
+            <div
+                class="absolute inset-0 bg-black/80"
+                aria-hidden="true"
+                @click="$store.dialog.close()"
+            ></div>
+
+            <button
+                type="button"
+                @click="$store.dialog.close()"
+                class="z-layer-lightbox-controls absolute top-4 right-4 text-white/80 hover:text-white"
+                aria-label="{{ 'accessibility.close' | t }}"
+            >
+                {%- render 'icons', icon: 'icon-close' -%}
+            </button>
+
+            <div
+                class="product-media-modal__content relative z-10 max-h-[90vh] max-w-[90vw] overflow-hidden"
+                x-data="productMediaModal()"
+            >
+                {%- for media_item in media_items -%}
+                    {%- case media_item.media_type -%}
+                        {%- when 'model' -%}
+                            <div
+                                x-show="activeMediaId === {{ media_item.id }}"
+                                class="flex items-center justify-center"
+                            >
+                                {{
+                                    media_item | model_viewer_tag:
+                                    class: 'max-w-[90vw] max-h-[85vh]',
+                                    'interaction-policy': 'allow-when-focused',
+                                    'camera-controls': true
+                                }}
+                            </div>
+
+                        {%- when 'external_video' -%}
+                            <div
+                                x-show="activeMediaId === {{ media_item.id }}"
+                                class="flex items-center justify-center"
+                            >
+                                {%- if media_item.host == 'youtube' -%}
+                                    {{
+                                        media_item
+                                        | external_video_url: autoplay: '1', muted: '1'
+                                        | external_video_tag:
+                                            class: 'w-[80vw] aspect-video pc:w-[70vw]'
+                                    }}
+                                {%- elsif media_item.host == 'vimeo' -%}
+                                    {{
+                                        media_item
+                                        | external_video_url: autoplay: '1', muted: '1'
+                                        | external_video_tag:
+                                            class: 'w-[80vw] aspect-video pc:w-[70vw]'
+                                    }}
+                                {%- else -%}
+                                    {{
+                                        media_item
+                                        | external_video_tag:
+                                            class: 'w-[80vw] aspect-video pc:w-[70vw]'
+                                    }}
+                                {%- endif -%}
+                            </div>
+
+                        {%- when 'video' -%}
+                            <div
+                                x-show="activeMediaId === {{ media_item.id }}"
+                                class="flex items-center justify-center"
+                            >
+                                {{
+                                    media_item
+                                    | video_tag:
+                                        class: 'max-w-[90vw] max-h-[85vh]',
+                                        controls: true,
+                                        autoplay: false
+                                }}
+                            </div>
+                    {%- endcase -%}
+                {%- endfor -%}
+            </div>
+        </div>
+    </div>
+{%- endif -%}
+
+{% stylesheet %}
+    [x-cloak] {
+        display: none;
+    }
+
+    .product-media-modal__content model-viewer {
+        width: min(90vw, 800px);
+        height: min(85vh, 600px);
+    }
+
+    .product-media-modal__content video {
+        max-width: 90vw;
+        max-height: 85vh;
+    }
+
+    .product-media-modal__content iframe {
+        width: min(80vw, 960px);
+        aspect-ratio: 16 / 9;
+    }
+{% endstylesheet %}

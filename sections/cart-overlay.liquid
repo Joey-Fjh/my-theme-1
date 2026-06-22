@@ -75,7 +75,27 @@
                                     x-text="item.product_title || item.title"
                                 >
                                 </a>
-                                <p class="mt-auto pt-4" x-text="linePrice(item)"></p>
+                                <template x-if="item.selling_plan_allocation && item.selling_plan_allocation.selling_plan">
+                                    <p class="mt-1 body-xs text-theme-text-80" x-text="'{{ 'cart.selling_plan_label' | t | escape }}: ' + item.selling_plan_allocation.selling_plan.name"></p>
+                                </template>
+                                <template x-if="item.original_line_price > item.final_line_price">
+                                    <div class="mt-auto pt-4">
+                                        <p>
+                                            <span class="text-theme-text-80 line-through" x-text="formatMoney(item.original_line_price)"></span>
+                                            <span class="ml-1" x-text="formatMoney(item.final_line_price)"></span>
+                                        </p>
+                                        <template x-if="item.line_level_discount_allocations && item.line_level_discount_allocations.length > 0">
+                                            <ul class="mt-1">
+                                                <template x-for="alloc in item.line_level_discount_allocations" :key="alloc.discount_application.title">
+                                                    <li class="body-xs text-theme-text-80" x-text="alloc.discount_application.title + ' (-' + formatMoney(alloc.amount) + ')'"></li>
+                                                </template>
+                                            </ul>
+                                        </template>
+                                    </div>
+                                </template>
+                                <template x-if="!(item.original_line_price > item.final_line_price)">
+                                    <p class="mt-auto pt-4" x-text="linePrice(item)"></p>
+                                </template>
                             </div>
 
                             <div class="flex shrink-0 flex-col items-end justify-between py-1">
@@ -132,6 +152,27 @@
             </div>
 
             <div class="mt-auto border-t border-theme-border-20 px-5 py-4 pc:px-6">
+                <template x-if="$store.cart.cart_level_discount_applications && $store.cart.cart_level_discount_applications.length > 0">
+                    <div class="mb-3">
+                        <p class="body-sm font-medium">{{ 'cart.discounts' | t }}</p>
+                        <ul class="mt-2 space-y-1">
+                            <template x-for="disc in $store.cart.cart_level_discount_applications" :key="disc.title">
+                                <li class="flex items-baseline justify-between gap-4 body-sm text-theme-text-80">
+                                    <span x-text="disc.title"></span>
+                                    <span x-text="'-' + formatMoney(disc.total_allocated_amount)"></span>
+                                </li>
+                            </template>
+                        </ul>
+                    </div>
+                </template>
+
+                <template x-if="$store.cart.total_discount > 0">
+                    <div class="mb-3 flex items-center justify-between body-sm">
+                        <span>{{ 'cart.you_saved' | t }}</span>
+                        <span class="text-theme-text-80" x-text="'-' + formatMoney($store.cart.total_discount)"></span>
+                    </div>
+                </template>
+
                 <div class="mb-3 flex items-center justify-between">
                     <p>{{ 'cart.total' | t }}</p>
                     <p x-text="formatMoney($store.cart.total_price)"></p>

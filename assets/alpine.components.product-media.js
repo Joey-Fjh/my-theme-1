@@ -36,6 +36,7 @@
                 setActive(index) {
                     if (this.imageCount === 0) return;
                     index = Math.max(0, Math.min(index, this.imageCount - 1));
+                    this._pauseActiveVideo();
                     this.activeIndex = index;
                     if (this._swiper) this._swiper.slideTo(index);
                 },
@@ -46,6 +47,35 @@
 
                 prev() {
                     this.setActive((this.activeIndex - 1 + this.imageCount) % this.imageCount);
+                },
+
+                activateMediaById(mediaId) {
+                    if (!mediaId) return;
+                    const item = this.$el.querySelector(
+                        '[data-media-id="' + CSS.escape(String(mediaId)) + '"]',
+                    );
+                    if (!item) return;
+                    const mediaType = item.dataset.mediaType;
+                    if (
+                        mediaType === 'model' ||
+                        mediaType === 'external_video' ||
+                        mediaType === 'video'
+                    ) {
+                        const dialogId = this.$el.dataset.mediaModalId;
+                        if (dialogId) {
+                            const Events = window.__Theme__.Events;
+                            Events.emit(Events.events.PRODUCT_MEDIA_MODAL_ACTIVATE, {
+                                mediaId: Number(mediaId),
+                            });
+                            window.Alpine.store('dialog').open(dialogId);
+                        }
+                    }
+                },
+
+                _pauseActiveVideo() {
+                    this.$el.querySelectorAll('video').forEach((video) => {
+                        if (!video.paused) video.pause();
+                    });
                 },
 
                 _handleThumbnailKeydown(event) {
@@ -592,6 +622,147 @@
                 },
 
                 destroy() {
+                    this.dispose();
+                },
+            };
+        },
+
+        productMediaModal() {
+            return {
+                ...AlpineComponentsFactory.useDisposable(),
+                activeMediaId: null,
+                _eventScope: null,
+
+                init() {
+                    const Events = window.__Theme__.Events;
+                    this._eventScope = Events.createScope();
+                    this._eventScope.on(Events.events.PRODUCT_MEDIA_MODAL_ACTIVATE, (e) => {
+                        if (e.detail?.mediaId) {
+                            this.activeMediaId = e.detail.mediaId;
+                        }
+                    });
+                },
+
+                setMedia(mediaId) {
+                    this.activeMediaId = mediaId;
+                },
+
+                destroy() {
+                    this._eventScope?.dispose?.();
+                    this._eventScope = null;
+                    this.dispose();
+                },
+            };
+        },
+
+        mediaVideo() {
+            return {
+                ...AlpineComponentsFactory.useDisposable(),
+                isPlaying: false,
+                isMuted: true,
+                hasPlayed: false,
+                _videoCleanups: [],
+
+                init() {
+                    const videos = this._getAllVideos();
+                    if (!videos.length) return;
+
+                    const visible = this._getVideo();
+                    if (visible) {
+                        this.isMuted = visible.muted;
+                        this.isPlaying = !visible.paused;
+                    }
+
+                    const onPlay = () => {
+                        const current = this._getVideo();
+                        if (current && !current.paused) {
+                            this.isPlaying = true;
+                            this.hasPlayed = true;
+                        }
+                    };
+                    const onPause = () => {
+                        const current = this._getVideo();
+                        if (current && current.paused) {
+                            this.isPlaying = false;
+                        }
+                    };
+                    const onVolumeChange = () => {
+                        const current = this._getVideo();
+                        if (current) {
+                            this.isMuted = current.muted;
+                        }
+                    };
+
+                    videos.forEach((video) => {
+                        video.addEventListener('play', onPlay);
+                        video.addEventListener('pause', onPause);
+                        video.addEventListener('volumechange', onVolumeChange);
+                    });
+
+                    this._videoCleanups.push(() => {
+                        videos.forEach((video) => {
+                            video.removeEventListener('play', onPlay);
+                            video.removeEventListener('pause', onPause);
+                            video.removeEventListener('volumechange', onVolumeChange);
+                        });
+                    });
+                },
+
+                _getAllVideos() {
+                    const el = this.$el;
+                    if (!el) return [];
+                    return Array.from(el.querySelectorAll('video'));
+                },
+
+                _getVideo() {
+                    const el = this.$el;
+                    if (!el) return null;
+                    const desktop = el.querySelector('[data-video-desktop]');
+                    const mobile = el.querySelector('[data-video-mobile]');
+                    const desktopVideo = desktop?.querySelector('video');
+                    const mobileVideo = mobile?.querySelector('video');
+                    if (mobileVideo && mobile.offsetParent !== null) return mobileVideo;
+                    if (desktopVideo && desktop.offsetParent !== null) return desktopVideo;
+                    return desktopVideo || mobileVideo || el.querySelector('video');
+                },
+
+                _pauseOthers(currentVideo) {
+                    const videos = this._getAllVideos();
+                    videos.forEach((v) => {
+                        if (v !== currentVideo && !v.paused) v.pause();
+                    });
+                },
+
+                play() {
+                    const video = this._getVideo();
+                    if (video) {
+                        this._pauseOthers(video);
+                        video.play().catch(() => {});
+                    }
+                },
+
+                pause() {
+                    const video = this._getVideo();
+                    if (video) {
+                        video.pause();
+                    }
+                },
+
+                toggleMute() {
+                    const video = this._getVideo();
+                    if (video) {
+                        video.muted = !video.muted;
+                        this.isMuted = video.muted;
+                    }
+                },
+
+                destroy() {
+                    this._videoCleanups.forEach((fn) => fn());
+                    this._videoCleanups = [];
+                    const videos = this._getAllVideos();
+                    videos.forEach((v) => {
+                        if (!v.paused) v.pause();
+                    });
                     this.dispose();
                 },
             };
