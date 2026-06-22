@@ -46,7 +46,7 @@
                         <div
                             class="
                                 dropdown-panel dropdown-open
-                                fixed top-[calc(var(--announcement-bar-height)+var(--header-height))] right-0 left-0
+                                fixed inset-x-0 top-[calc(var(--announcement-bar-height)+var(--header-height))]
                                 max-w-none min-w-auto rounded-none px-8 py-5
                                 color-{{ section.settings.menu_color_scheme }}
                                 bg-theme-bg text-theme-text
@@ -82,12 +82,17 @@
                                                     {%- endcapture -%}
 
                                                     <div class="header-super-menu-child-item">
-                                                        {%-
-                                                            render 'link',
-                                                            text: childlink.title | escape,
+                                                        {%- assign super_child_link_text = childlink.title
+                                                            | escape
+                                                        -%}
+                                                        {%- assign super_child_link_class = child_link_class
+                                                            | strip
+                                                        -%}
+                                                        {%- render 'link',
+                                                            text: super_child_link_text,
                                                             href: childlink.url,
                                                             variant: 'underline',
-                                                            class: child_link_class | strip,
+                                                            class: super_child_link_class,
                                                             attributes: child_link_attributes
                                                         -%}
                                                     </div>
@@ -109,9 +114,11 @@
                                                                     {%- endif -%}
                                                                 {%- endcapture -%}
 
-                                                                {%-
-                                                                    render 'link',
-                                                                    text: grandchild.title | escape,
+                                                                {%- assign super_grandchild_text = grandchild.title
+                                                                    | escape
+                                                                -%}
+                                                                {%- render 'link',
+                                                                    text: super_grandchild_text,
                                                                     href: grandchild.url,
                                                                     variant: 'underline',
                                                                     class: 'text-theme-text',
@@ -208,7 +215,7 @@
 
                                 {% render 'watermark',
                                     container_class: 'absolute -bottom-20 w-full overflow-hidden pointer-events-none select-none -z-1',
-                                    text_class: 'font-bold opacity-12',
+                                    text_class: 'opacity-12',
                                     text: section.settings.super_menu_watermark_text
                                 %}
                             </div>
@@ -221,9 +228,9 @@
                         {%- endif -%}
                     {%- endcapture -%}
 
-                    {%-
-                        render 'link',
-                        text: link.title | escape,
+                    {%- assign super_nav_link_text = link.title | escape -%}
+                    {%- render 'link',
+                        text: super_nav_link_text,
                         href: link.url,
                         variant: 'underline',
                         attributes: link_attributes

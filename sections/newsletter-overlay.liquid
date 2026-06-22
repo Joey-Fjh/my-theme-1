@@ -20,13 +20,7 @@
 >
     {%- capture dialog_content -%}
     <div
-      class="relative bg-(--newsletter-bg) text-(--newsletter-text)"
-      style="
-        --newsletter-bg: {{ section.settings.background_color }};
-        --newsletter-text: {{ section.settings.foreground_color }};
-        --newsletter-button-bg: {{ section.settings.button_background_color }};
-        --newsletter-button-text: {{ section.settings.button_color }};
-      "
+      class="relative"
       data-newsletter-dialog-id="{{ popup_id }}"
       data-newsletter-display-mode="{{ section.settings.display_mode }}"
       data-newsletter-show-in-home="{{ section.settings.show_in_home | json }}"
@@ -42,7 +36,7 @@
     >
       <button
         type="button"
-        class="close-button absolute top-3 right-3 z-10 text-(--newsletter-text)/80 hover:text-(--newsletter-text)"
+        class="close-button close-button-corner opacity-70 hover:opacity-100"
         @click="hide()"
         aria-label="{{ 'accessibility.close_newsletter_popup' | t }}"
       >
@@ -110,19 +104,19 @@
                             {{ 'newsletter.email_address' | t }}
                         </label>
 
-                        <div class="flex items-center border border-current/20">
+                        <div class="inline-submit-field">
                             <input
                                 id="newsletter-email-{{ section.id }}"
                                 type="email"
                                 name="contact[email]"
-                                class="min-w-0 flex-1 bg-transparent px-4 py-3 body-sm focus-ring outline-none placeholder:opacity-50"
+                                class="inline-submit-field__input body-sm"
                                 placeholder="{{ section.settings.placeholder }}"
                                 required
                             >
 
                             <button
                                 type="submit"
-                                class="newsletter-overlay__submit"
+                                class="inline-submit-field__button inline-submit-field__button--icon"
                                 :disabled="isLoading"
                                 aria-label="{{ 'accessibility.submit_newsletter_form' | t }}"
                             >
@@ -145,6 +139,7 @@
         id: popup_id,
         type: 'modal',
         layer: 'modal',
+        color_scheme: section.settings.color_scheme,
         modal_placement: section.settings.modal_placement,
         overlay_class: 'bg-black/60',
         modal_wrapper_class: 'p-4 pc:p-8 fw:p-10',
@@ -152,33 +147,6 @@
         content: dialog_content
     -%}
 </div>
-
-{% stylesheet %}
-    .newsletter-overlay__submit {
-        display: inline-flex;
-        width: 3rem;
-        height: 3rem;
-        cursor: pointer;
-        align-items: center;
-        justify-content: center;
-        background-color: var(--newsletter-button-bg);
-        color: var(--newsletter-button-text);
-        transition: opacity var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease);
-    }
-
-    .newsletter-overlay__submit:focus-visible {
-        outline: var(--focus-ring-width) solid
-            rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
-        outline-offset: var(--focus-ring-offset);
-    }
-
-    .newsletter-overlay__submit:disabled,
-    .newsletter-overlay__submit[aria-disabled='true'] {
-        cursor: not-allowed;
-        opacity: 0.5;
-        pointer-events: none;
-    }
-{% endstylesheet %}
 
 {% schema %}
 {
@@ -297,28 +265,10 @@
             "label": "t:sections.newsletter-overlay.settings.left_image"
         },
         {
-            "type": "color",
-            "id": "background_color",
-            "label": "t:sections.newsletter-overlay.settings.background_color",
-            "default": "#ffffff"
-        },
-        {
-            "type": "color",
-            "id": "foreground_color",
-            "label": "t:sections.newsletter-overlay.settings.foreground_color",
-            "default": "#263D29"
-        },
-        {
-            "type": "color",
-            "id": "button_background_color",
-            "label": "t:sections.newsletter-overlay.settings.button_background",
-            "default": "#263D29"
-        },
-        {
-            "type": "color",
-            "id": "button_color",
-            "label": "t:sections.newsletter-overlay.settings.button_text_color",
-            "default": "#ffffff"
+            "type": "color_scheme",
+            "id": "color_scheme",
+            "label": "t:sections.newsletter-overlay.settings.color_scheme",
+            "default": "scheme-1"
         }
     ],
     "blocks": [

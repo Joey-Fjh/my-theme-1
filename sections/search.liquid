@@ -13,12 +13,14 @@
     data-component-type="search-section"
     data-component-id="{{ section.id }}"
 >
-    <div class="layout container-page overflow-visible!">
+    {%- comment -%} Search form: always visible, independent of results {%- endcomment -%}
+    <div class="layout container-page overflow-visible!{% unless search.performed %} flex min-h-[50vh] flex-col items-center justify-center{% endunless %}">
         <div
-            class="mx-auto w-full pc:max-w-1/2"
+            class="mx-auto w-full pc:max-w-1/2{% if search.performed %} py-10{% endif %}"
             x-data="predictiveSearch"
             data-predictive-search-enabled="{{ settings.predictive_search_enabled }}"
-            data-predictive-search-url="{{ routes.search_url }}"
+            data-search-url="{{ routes.search_url | escape }}"
+            data-predictive-search-url="{{ routes.predictive_search_url | escape }}"
             data-predictive-search-query="{{ terms | escape }}"
             data-predictive-search-performed="{{ search.performed }}"
             data-toast-search-failed="{{ 'toast.search_failed' | t | escape }}"
@@ -55,8 +57,11 @@
                 {% render 'search-predictive-panel' %}
             </form>
         </div>
+    </div>
 
-        {% if search.performed %}
+    {%- comment -%} Results tabs: only rendered after a search {%- endcomment -%}
+    {% if search.performed %}
+        <div class="layout container-page overflow-visible!">
             {%- liquid
                 assign q = search.terms | default: '' | strip | url_encode
                 assign param_type = request.params.type | default: '' | downcase | strip
@@ -87,8 +92,8 @@
                 param_type: param_type,
                 search_per_page: section.settings.search_per_page
             -%}
-        {% endif %}
-    </div>
+        </div>
+    {% endif %}
 </div>
 
 {% schema %}

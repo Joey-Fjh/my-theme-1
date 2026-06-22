@@ -39,69 +39,64 @@
 {% enddoc %}
 
 <div
-    class="mt-20 w-full"
+    class="w-full"
     data-pagination-section-id="{{ section_id }}"
-    data-pagination-selectors='["[data-search-tabs-header]","[data-search-tabs-panel]"]'
+    data-pagination-selectors='["[role=tablist]","[data-search-tabs-panel]"]'
     x-data="sectionPagination()"
 >
     {% capture results_tab_header %}
-        <div
-            class="mx-auto flex max-w-1/2 gap-40 pt-6 tracking-[0.16em] text-theme-text uppercase"
-            data-search-tabs-header
+        <span class="hidden" x-init="$nextTick(() => { setActive({{ active_tab_index }}) })"></span>
+
+        <a
+            href="{{ products_url }}"
+            role="tab"
+            x-data="{ index: null }"
+            x-init="index = registerTab($el);"
+            :id="`tab-${index}`"
+            aria-controls="search-results-panel"
+            @click.prevent="loadUrl($el.href); setActive(index)"
+            @popstate.window="isUrlMatch($el.href) && setActive(index)"
+            :tabindex="isActive(index) ? 0 : -1"
+            :aria-selected="isActive(index)"
+            class="search-results-tabs__tab whitespace-nowrap"
+            :class="{ 'is-active': isActive(index) }"
         >
-            <span class="hidden" x-init="$nextTick(() => { setActive({{ active_tab_index }}) })"></span>
+            {{ 'search.products' | t }}
+        </a>
 
-            <a
-                href="{{ products_url }}"
-                role="tab"
-                x-data="{ index: null }"
-                x-init="index = registerTab($el);"
-                :id="`tab-${index}`"
-                aria-controls="search-results-panel"
-                @click.prevent="loadUrl($el.href); setActive(index)"
-                @popstate.window="isUrlMatch($el.href) && setActive(index)"
-                :tabindex="isActive(index) ? 0 : -1"
-                :aria-selected="isActive(index)"
-                class="search-results-tabs__tab"
-                :class="{ 'is-active': isActive(index) }"
-            >
-                {{ 'search.products' | t }}
-            </a>
+        <a
+            href="{{ articles_url }}"
+            role="tab"
+            x-data="{ index: null }"
+            x-init="index = registerTab($el);"
+            :id="`tab-${index}`"
+            aria-controls="search-results-panel"
+            @click.prevent="loadUrl($el.href); setActive(index)"
+            @popstate.window="isUrlMatch($el.href) && setActive(index)"
+            :tabindex="isActive(index) ? 0 : -1"
+            :aria-selected="isActive(index)"
+            class="search-results-tabs__tab whitespace-nowrap"
+            :class="{ 'is-active': isActive(index) }"
+        >
+            {{ 'search.articles' | t }}
+        </a>
 
-            <a
-                href="{{ articles_url }}"
-                role="tab"
-                x-data="{ index: null }"
-                x-init="index = registerTab($el);"
-                :id="`tab-${index}`"
-                aria-controls="search-results-panel"
-                @click.prevent="loadUrl($el.href); setActive(index)"
-                @popstate.window="isUrlMatch($el.href) && setActive(index)"
-                :tabindex="isActive(index) ? 0 : -1"
-                :aria-selected="isActive(index)"
-                class="search-results-tabs__tab"
-                :class="{ 'is-active': isActive(index) }"
-            >
-                {{ 'search.articles' | t }}
-            </a>
-
-            <a
-                href="{{ pages_url }}"
-                role="tab"
-                x-data="{ index: null }"
-                x-init="index = registerTab($el);"
-                :id="`tab-${index}`"
-                aria-controls="search-results-panel"
-                @click.prevent="loadUrl($el.href); setActive(index)"
-                @popstate.window="isUrlMatch($el.href) && setActive(index)"
-                :tabindex="isActive(index) ? 0 : -1"
-                :aria-selected="isActive(index)"
-                class="search-results-tabs__tab"
-                :class="{ 'is-active': isActive(index) }"
-            >
-                {{ 'search.pages' | t }}
-            </a>
-        </div>
+        <a
+            href="{{ pages_url }}"
+            role="tab"
+            x-data="{ index: null }"
+            x-init="index = registerTab($el);"
+            :id="`tab-${index}`"
+            aria-controls="search-results-panel"
+            @click.prevent="loadUrl($el.href); setActive(index)"
+            @popstate.window="isUrlMatch($el.href) && setActive(index)"
+            :tabindex="isActive(index) ? 0 : -1"
+            :aria-selected="isActive(index)"
+            class="search-results-tabs__tab whitespace-nowrap"
+            :class="{ 'is-active': isActive(index) }"
+        >
+            {{ 'search.pages' | t }}
+        </a>
     {% endcapture %}
 
     {% capture results_tab_content %}
@@ -186,6 +181,8 @@
     {%- render 'tab-control',
         type: 'underlined',
         initialTabStrategy: 'first',
+        header_outer_class: 'w-full',
+        header_class: 'mx-auto max-w-3xl flex-wrap items-center justify-center gap-8 border-none tracking-[0.16em] text-theme-text uppercase',
         tab_header: results_tab_header,
         tab_content: results_tab_content
     -%}

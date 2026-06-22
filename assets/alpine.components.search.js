@@ -15,7 +15,8 @@
 
             return {
                 ...(Utils ? AlpineComponentsFactory.useDisposable() : {}),
-                searchUrl: '/search',
+                searchUrl: '',
+                predictiveSearchUrl: '',
                 query: '',
                 isOpen: false,
                 isLoading: false,
@@ -57,8 +58,12 @@
                         this._predictiveEnabled = dataset.predictiveSearchEnabled !== 'false';
                     }
 
+                    if (dataset.searchUrl) {
+                        this.searchUrl = dataset.searchUrl;
+                    }
+
                     if (dataset.predictiveSearchUrl) {
-                        this.searchUrl = dataset.predictiveSearchUrl;
+                        this.predictiveSearchUrl = dataset.predictiveSearchUrl;
                     }
 
                     if (typeof dataset.predictiveSearchQuery === 'string') {
@@ -184,7 +189,7 @@
                     const controller = this._abortController;
                     const requestedTerm = term;
 
-                    const url = new URL('/search/suggest.json', window.location.origin);
+                    const url = new URL(this.predictiveSearchUrl, window.location.origin);
                     url.searchParams.set('q', term);
                     url.searchParams.set('resources[type]', 'query,product,article,page');
                     const lim = Math.max(1, Math.min(20, Number(this.resultLimit) || 8));
@@ -328,14 +333,16 @@
 
                 performSearch() {
                     const term = (this.query || '').trim();
-                    if (!term) return;
-
-                    // When executing a full search navigation, ensure the predictive panel closes
-                    // so the UI doesn't remain open during/after navigation on the search page.
                     this.closePanel();
 
                     const url = new URL(this.searchUrl, window.location.origin);
-                    url.searchParams.set('q', term);
+
+                    if (term) {
+                        url.searchParams.set('q', term);
+                    } else {
+                        url.searchParams.delete('q');
+                    }
+
                     window.location.assign(url.toString());
                 },
 

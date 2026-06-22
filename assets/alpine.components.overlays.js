@@ -383,7 +383,9 @@
 
                 goCheckout() {
                     if (!this.canCheckout) return;
-                    window.location.assign('/checkout');
+                    window.location.assign(
+                        (window.Shopify?.routes?.root || '/').replace(/\/+$/, '') + '/checkout',
+                    );
                 },
             };
         },

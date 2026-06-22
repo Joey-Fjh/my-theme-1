@@ -512,7 +512,10 @@
 
                     cart.add([{ id: this.variantId, quantity: this._getQuantity() }], [])
                         .then(() => {
-                            window.location.assign('/checkout');
+                            window.location.assign(
+                                (window.Shopify?.routes?.root || '/').replace(/\/+$/, '') +
+                                    '/checkout',
+                            );
                         })
                         .catch(() => {
                             // Error toast handled by $store.cart._handleError
