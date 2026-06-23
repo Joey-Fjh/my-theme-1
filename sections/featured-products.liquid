@@ -3,7 +3,7 @@
     data-component-type="featured-products"
     data-component-id="{{ section.id }}"
     data-section-id="{{ section.id }}"
-    class="featured-products-section full-width color-{{ section.settings.color_scheme }} bg-scheme-surface"
+    class="featured-products-section full-width color-{{ section.settings.color_scheme }} surface-section"
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
@@ -24,7 +24,8 @@
 
         {%- capture tab_header -%}
             {%- for block in section.blocks -%}
-                <h1
+                <button
+                    type="button"
                     role="tab"
                     x-data="{ index: null }"
                     x-init="index = registerTab($el)"
@@ -34,10 +35,10 @@
                     :tabindex="isActive(index) ? 0 : -1"
                     :aria-selected="isActive(index)"
                     :class="isActive(index) && 'is-active'"
-                    class="featured-products__tab"
+                    class="featured-products__tab font-inherit border-0 bg-transparent p-0 text-start text-inherit"
                     {{ block.shopify_attributes }}
                 >
-                    <div>                        
+                    <div>
                         {%- if block.settings.collection_heading != blank -%}
                             {{ block.settings.collection_heading }}
                         {%- else -%}
@@ -47,7 +48,7 @@
                             ({{ block.settings.collection.products_count | default: 0 }})
                         </sup>
                     </div>
-                </h1>
+                </button>
             {%- endfor -%}
         {%- endcapture -%}
 

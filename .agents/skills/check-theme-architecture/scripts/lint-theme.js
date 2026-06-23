@@ -10,6 +10,8 @@ const { parseLiquidAst, walk } = require('./lib/liquid-ast');
 const ROOT = process.cwd();
 
 const LIQUID_GLOBS = ['layout/**/*.liquid', 'sections/**/*.liquid', 'snippets/**/*.liquid'];
+const SECTION_GLOBS = ['sections/**/*.liquid'];
+const SNIPPET_GLOBS = ['snippets/**/*.liquid'];
 const SCHEMA_GLOBS = ['sections/**/*.liquid', 'blocks/**/*.liquid', 'config/settings_schema.json'];
 const ASSET_JS_GLOBS = ['assets/**/*.js'];
 
@@ -285,7 +287,7 @@ async function checkLiquidArchitecture() {
     const headingTextSizeRe =
         /<h[1-6]\b[^>]*class=["'][^"']*\b(?:pc:|max-pc:)?text-(?:xs|sm|base|lg|xl|[2-9]xl)\b/gi;
     const nonHeadingHeadingClassRe =
-        /<(?!h[1-6]\b)([a-z][\w:-]*)\b[^>]*class=["'][^"']*\b(?:heading-4xl|heading-3xl|heading-2xl|heading-xl|heading-h[1-6])\b/gi;
+        /<(?!h[1-6]\b)([a-z][\w:-]*)\b[^>]*class=["'][^"']*\bheading-h[1-6]\b/gi;
     const oldTypographyTokenRe =
         /\b(?:class|_class)\s*[:=]\s*["'][^"']*(?<![-])(?:hxxxl|hxxl|hxl|h0|h[1-6])\b(?![a-zA-Z0-9-])[^"']*["']/gi;
     const genericCssSelectorRe = /^\s*\.([a-z][\w-]*)\s*[{,.#:[>+~]/gm;
@@ -388,7 +390,7 @@ async function checkLiquidArchitecture() {
             report(
                 file,
                 lineAt(text, match.index ?? 0),
-                `Do not apply heading class to <${match[1]}>.`,
+                `Do not apply semantic heading tier heading-h* to <${match[1]}>; use a heading element or a display tier (heading-4xl–heading-xl).`,
             );
         }
 
@@ -541,6 +543,95 @@ async function checkHttpCartGuard() {
     }
 }
 
+// --- Surface consumption protocol ---
+
+const BG_SCHEME_SURFACE_RE = /\bbg-scheme-surface\b/g;
+const TEXT_THEME_FG_RE = /\btext-theme-fg\b/g;
+const LIQUID_COLOR_SCHEME_RE = /color-\{\{/;
+const CLASS_ATTR_RE = /\bclass\s*=\s*(["'])([\s\S]*?)\1/gi;
+const ASSIGN_QUOTED_VALUE_RE = /\{%-?\s*assign\s+[\w-]+\s*=[\s\S]*?['"]([^'"]*)['"]/g;
+
+function hasPlainBgThemeBg(value) {
+    return /\bbg-theme-bg(?![/\d])/.test(value);
+}
+
+function checkOverlaySurfaceClassString(file, text, classValue, offset) {
+    if (!LIQUID_COLOR_SCHEME_RE.test(classValue)) return;
+    if (!hasPlainBgThemeBg(classValue)) return;
+    if (!/\btext-theme-text\b/.test(classValue)) return;
+
+    report(
+        file,
+        lineAt(text, offset),
+        'Overlay surfaces with color-{{ ... }} should use surface-component instead of bg-theme-bg text-theme-text.',
+    );
+}
+
+// --- Typography consumption protocol ---
+
+const HEADING_BASE_RE = /\bheading-base\b/g;
+const BODY_BASE_RE = /\bbody-base\b/g;
+
+async function checkTypographyProtocol() {
+    for (const file of await getFiles(LIQUID_GLOBS)) {
+        const text = await readText(file);
+
+        for (const match of text.matchAll(HEADING_BASE_RE)) {
+            report(
+                file,
+                lineAt(text, match.index ?? 0),
+                'heading-base is a foundation utility for CSS only; use heading-* tiers or native headings.',
+            );
+        }
+
+        for (const match of text.matchAll(BODY_BASE_RE)) {
+            report(
+                file,
+                lineAt(text, match.index ?? 0),
+                'body-base is a foundation utility for CSS only; use body-* tiers or inherit body.',
+            );
+        }
+    }
+}
+
+async function checkSurfaceProtocol() {
+    for (const file of await getFiles(SECTION_GLOBS)) {
+        const text = await readText(file);
+
+        for (const match of text.matchAll(BG_SCHEME_SURFACE_RE)) {
+            report(
+                file,
+                lineAt(text, match.index ?? 0),
+                'Section gradient roots should use surface-section instead of bg-scheme-surface.',
+            );
+        }
+    }
+
+    for (const file of await getFiles(SNIPPET_GLOBS)) {
+        const text = await readText(file);
+
+        for (const match of text.matchAll(CLASS_ATTR_RE)) {
+            checkOverlaySurfaceClassString(file, text, match[2], match.index ?? 0);
+        }
+
+        for (const match of text.matchAll(ASSIGN_QUOTED_VALUE_RE)) {
+            checkOverlaySurfaceClassString(file, text, match[1], match.index ?? 0);
+        }
+    }
+
+    for (const file of await getFiles(LIQUID_GLOBS)) {
+        const text = await readText(file);
+
+        for (const match of text.matchAll(TEXT_THEME_FG_RE)) {
+            report(
+                file,
+                lineAt(text, match.index ?? 0),
+                'text-theme-fg is not a defined utility; use text-theme-text.',
+            );
+        }
+    }
+}
+
 async function checkDomReplacement() {
     // Liquid files: extract JS blocks only
     for (const file of await getFiles(LIQUID_GLOBS)) {
@@ -566,6 +657,8 @@ async function main() {
     await Promise.all([
         checkSchemaIds(),
         checkLiquidArchitecture(),
+        checkTypographyProtocol(),
+        checkSurfaceProtocol(),
         checkAlpineComponentGroupReferences(),
         checkDomReplacement(),
         checkHttpCartGuard(),

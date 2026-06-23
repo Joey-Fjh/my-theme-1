@@ -309,8 +309,6 @@ Rich text (RTE)
 Standard:
 - `.rte` handles shared rich-text structure and the default long-form media treatment.
 - `rte--compact` reduces vertical rhythm for short supporting copy.
-- `rte--supporting` is for secondary content areas where media should stay
-  smaller and align with the copy instead of centering like a main editorial image.
 
 Used to style backend rich-text HTML output:
 - {{ page.content }}
@@ -554,28 +552,6 @@ Used to style backend rich-text HTML output:
     .rte > *:last-child {
         margin-bottom: 0;
     }
-
-    .rte.rte--supporting {
-        max-width: 42rem;
-    }
-
-    .rte.rte--supporting :is(p, div):has(> img:only-child),
-    .rte.rte--supporting figure {
-        margin-inline: 0;
-    }
-
-    .rte.rte--supporting img,
-    .rte.rte--supporting figure {
-        max-width: min(100%, 36rem);
-    }
-
-    .rte.rte--supporting img {
-        margin-inline: 0;
-    }
-
-    .rte.rte--supporting figcaption {
-        text-align: start;
-    }
 }
 
 /* Compact variant: keep paragraph spacing but reduce vertical rhythm.
@@ -589,5 +565,157 @@ Used to style backend rich-text HTML output:
     .rte.rte--compact :is(h1, h2, h3, h4, h5, h6) {
         margin-top: 0.8em;
         margin-bottom: 0.3em;
+    }
+}
+
+/* =========================================================
+Quantity Selector
+
+Reusable across: product, cart, featured-product, cart-overlay.
+Consumed via snippets/quantity-selector.liquid and inline in cart sections.
+========================================================= */
+@layer components {
+    .quantity-selector {
+        @apply inline-flex w-max items-center text-current;
+        gap: 0.5rem;
+    }
+
+    .quantity-selector__button {
+        @apply flex h-10 w-10 cursor-pointer items-center justify-center text-current transition-opacity hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-30;
+    }
+
+    .quantity-selector__input {
+        @apply w-[4ch] appearance-none border-b border-current bg-transparent p-0 text-center text-current tabular-nums focus-ring [-moz-appearance:textfield] focus:ring-0 focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none;
+        font: inherit;
+    }
+
+    .quantity-selector__value {
+        @apply min-w-9 border-b border-current px-2 pb-1 text-center text-current tabular-nums;
+        font: inherit;
+    }
+}
+
+/* =========================================================
+Pagination
+
+Reusable across: collection, blog, slides-show, announcement-bar,
+featured-products, collections, testimonial-featured, icon-with-text.
+Consumed via snippets/pagination.liquid.
+========================================================= */
+@layer components {
+    .pagination {
+        list-style: none;
+    }
+
+    .pagination__inner {
+        @apply mx-auto flex w-fit max-w-full items-center;
+        gap: 0.25rem;
+    }
+
+    /* ---- shared button base ---- */
+    .pagination__button {
+        @apply inline-flex h-10 shrink-0 items-center justify-center gap-1 rounded px-2 whitespace-nowrap transition-colors;
+
+        font-family: inherit;
+        font-size: var(--pagination-font-size);
+        border-radius: var(--pagination-radius);
+    }
+
+    .pagination__button--disabled {
+        @apply pointer-events-none cursor-default opacity-40;
+    }
+
+    /* hover variants (applied alongside pagination__button) */
+    .pagination__button--hover-default {
+        &:hover {
+            background-color: rgb(var(--color-foreground) / 0.5);
+        }
+    }
+
+    .pagination__button--hover-minimal {
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+
+    .pagination__button--outline {
+        @apply border border-theme-border-20;
+    }
+
+    .pagination__button--hover-outline {
+        @apply border border-theme-border-20;
+
+        &:hover {
+            background-color: rgb(var(--color-foreground) / 0.5);
+        }
+    }
+
+    /* ---- page number base ---- */
+    .pagination__page {
+        @apply inline-flex h-10 min-w-10 shrink-0 items-center justify-center rounded px-2 transition-colors;
+
+        font-family: inherit;
+        font-size: var(--pagination-font-size);
+        border-radius: var(--pagination-radius);
+    }
+
+    /* hover variants (applied alongside pagination__page) */
+    .pagination__page--hover-default {
+        &:hover {
+            background-color: rgb(var(--color-foreground) / 0.5);
+        }
+    }
+
+    .pagination__page--hover-minimal {
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+
+    .pagination__page--outline {
+        @apply border border-theme-border-20;
+    }
+
+    .pagination__page--hover-outline {
+        @apply border border-theme-border-20;
+
+        &:hover {
+            background-color: rgb(var(--color-foreground) / 0.5);
+        }
+    }
+
+    /* current page variants */
+    .pagination__page--current--default {
+        @apply surface-inverted;
+    }
+
+    .pagination__page--current--outline {
+        @apply border border-theme-text text-theme-text;
+    }
+
+    .pagination__page--current--minimal {
+        @apply text-theme-text underline;
+    }
+
+    /* ellipsis */
+    .pagination__page--ellipsis {
+        @apply cursor-default;
+        font-size: var(--pagination-font-size);
+    }
+
+    /* ---- pages container ---- */
+    .pagination__pages-wrap {
+        @apply max-w-full min-w-0 overflow-x-auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+
+        &::-webkit-scrollbar {
+            display: none;
+        }
+    }
+
+    .pagination__pages {
+        @apply mx-auto inline-flex min-w-max items-center;
+        gap: 0.25rem;
     }
 }

@@ -14,12 +14,26 @@
     data-motion-section
     data-motion-media="static"
 >
+    {%- liquid
+        assign slides_show_sr_only_title = shop.name
+        assign slides_show_first_block = section.blocks.first
+        if slides_show_first_block.settings.headline != blank
+            assign slides_show_sr_only_title = slides_show_first_block.settings.headline
+        endif
+        assign slides_show_multi_slide = false
+        if section.blocks.size > 1
+            assign slides_show_multi_slide = true
+        endif
+    -%}
     <div
         class="swiper h-full w-full"
         role="region"
         aria-label="{{ 'accessibility.hero_slides' | t }}"
         aria-roledescription="{{ 'accessibility.carousel' | t }}"
     >
+        {%- if slides_show_multi_slide -%}
+            <h1 class="sr-only">{{ slides_show_sr_only_title }}</h1>
+        {%- endif -%}
         <div class="swiper-wrapper">
             {%- for block in section.blocks -%}
                 <div class="swiper-slide" {{ block.shopify_attributes }}>
@@ -96,9 +110,15 @@
                             <div
                                 class="{{ block.settings.heading_position }} flex items-center pc:h-full pc:w-full"
                             >
-                                <h1 class="heading-2xl">
-                                    {{ block.settings.headline }}
-                                </h1>
+                                {%- if slides_show_multi_slide -%}
+                                    <p class="heading-2xl">
+                                        {{ block.settings.headline }}
+                                    </p>
+                                {%- else -%}
+                                    <h1 class="heading-2xl">
+                                        {{ block.settings.headline }}
+                                    </h1>
+                                {%- endif -%}
                             </div>
 
                             <div
@@ -176,6 +196,25 @@
                         },
                         pagination: false,
                         navigation: false,
+                    });
+
+                    function syncSlideAriaHidden() {
+                        swiperContainer.querySelectorAll('.swiper-slide').forEach(function (slide) {
+                            slide.setAttribute(
+                                'aria-hidden',
+                                slide.classList.contains('swiper-slide-active') ? 'false' : 'true',
+                            );
+                        });
+                    }
+
+                    function onSlideChange() {
+                        syncSlideAriaHidden();
+                    }
+
+                    swiper.on('slideChange', onSlideChange);
+                    syncSlideAriaHidden();
+                    cleanups.push(function () {
+                        swiper.off('slideChange', onSlideChange);
                     });
 
                     const prevBtn = el.querySelector('.slides-show__nav-prev');
