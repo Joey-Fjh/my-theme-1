@@ -25,27 +25,6 @@ Inline Submit Field
 }
 
 /* =========================================================
-Newsletter Banner – mobile-only form overrides
-
-Scoped to .newsletter-banner-section so it does not affect
-newsletter-overlay, password, or other inline-submit-field users.
-========================================================= */
-@layer components {
-    @media (width < 768px) {
-        .newsletter-banner-section .inline-submit-field__input {
-            padding-top: 0.5rem;
-            padding-bottom: 0.5rem;
-        }
-
-        .newsletter-banner-section .inline-submit-field__button--icon {
-            width: 2.25rem;
-            min-width: 2.25rem;
-            height: 2.25rem;
-        }
-    }
-}
-
-/* =========================================================
 Localization Switcher
 ========================================================= */
 @layer components {
@@ -95,9 +74,9 @@ Dropdown
             transform: translateY(-12px) scale(0.98);
 
             transition:
-                opacity 0.25s ease,
-                transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
-                visibility 0s linear 0.25s;
+                opacity var(--motion-duration-fast) var(--motion-ease-default),
+                transform var(--motion-duration-fast) var(--motion-ease-enter),
+                visibility 0s linear var(--motion-duration-fast);
         }
 
         .dropdown-open {
@@ -129,8 +108,8 @@ Dropdown
             justify-content: center;
 
             transition:
-                transform 0.24s cubic-bezier(0.22, 1, 0.36, 1),
-                opacity 0.24s ease;
+                transform var(--motion-duration-fast) var(--motion-ease-enter),
+                opacity var(--motion-duration-fast) var(--motion-ease-default);
         }
 
         .dropdown-icon--down {
@@ -223,6 +202,204 @@ Tab Control
     .tab-content-default,
     .tab-content-underlined {
         @apply relative w-full overflow-hidden;
+    }
+}
+
+/* =========================================================
+Tab Nav Item
+
+Trigger chrome for role="tab" inside tab-control.
+Shell/layout: tab-control-default | tab-control-underlined (unchanged).
+Layout (flex, gap, uppercase, tracking): tab-header header_class or legacy owner delta.
+Active contract: .is-active on trigger (Alpine tabControl).
+========================================================= */
+@layer components {
+    .tab-nav-item {
+        @apply cursor-pointer focus-ring;
+    }
+
+    .tab-nav-item--search {
+        @apply border-b border-transparent pb-2;
+        color: rgb(var(--color-foreground) / 0.6);
+        transition:
+            color var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease),
+            border-color var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease);
+
+        &:hover,
+        &:focus-visible {
+            color: rgb(var(--color-foreground));
+        }
+
+        &.is-active {
+            border-color: rgb(var(--color-foreground));
+            color: rgb(var(--color-foreground));
+            font-weight: 500;
+        }
+    }
+
+    .tab-nav-item--search.tab-nav-item--search-border-token.is-active {
+        border-color: rgb(var(--color-border));
+    }
+
+    .tab-nav-item--underline-opacity {
+        border-bottom: 2px solid transparent;
+        opacity: 0.5;
+        transition:
+            opacity var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease),
+            border-color var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease);
+
+        &:hover,
+        &:focus-visible {
+            opacity: 1;
+        }
+
+        &.is-active {
+            opacity: 1;
+            border-color: currentColor;
+        }
+    }
+
+    .tab-nav-item--underline-opacity.tab-nav-item--hover-muted {
+        opacity: 0.4;
+
+        &:hover {
+            opacity: 0.6;
+        }
+
+        &:focus-visible,
+        &.is-active {
+            opacity: 1;
+        }
+    }
+
+    .tab-nav-item--opacity {
+        opacity: 0.4;
+        transition: opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+
+        &:hover,
+        &:focus-visible,
+        &.is-active {
+            opacity: 1;
+        }
+    }
+}
+
+/* =========================================================
+Accordion
+
+CSS promoted from snippets.css (Phase 5B layer promotion).
+Render/API owner: snippets/accordion.liquid
+Consumers: sections/promise-section, sections/cart, snippets/filters-groups
+========================================================= */
+@layer components {
+    .accordion__trigger {
+        @apply flex w-full cursor-pointer items-center justify-between py-5 text-start;
+    }
+
+    .accordion__title {
+        @apply text-start;
+        opacity: 0.7;
+        transition:
+            color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+            opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+    }
+
+    .accordion__title.is-active {
+        @apply font-semibold;
+        opacity: 1;
+    }
+
+    .accordion__title--active {
+        opacity: 1;
+    }
+
+    .accordion__title--inactive {
+        opacity: 0.7;
+    }
+
+    .accordion__icon {
+        @apply inline-flex shrink-0 items-center justify-center;
+        --_accordion-rotate: rotate(180deg);
+        transition: transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+    }
+
+    .accordion__icon--plus {
+        --_accordion-rotate: rotate(45deg);
+    }
+
+    .accordion__icon.is-active {
+        transform: var(--_accordion-rotate);
+    }
+
+    .accordion__panel {
+        display: grid;
+        grid-template-rows: 0fr;
+        opacity: 0;
+        transition:
+            grid-template-rows var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+            opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+    }
+
+    .accordion__panel.is-active {
+        grid-template-rows: 1fr;
+        opacity: 1;
+    }
+
+    .accordion__panel-inner {
+        overflow: hidden;
+    }
+}
+
+/* =========================================================
+Icon With Text Item
+
+CSS promoted from snippets.css (Phase 5D-1 layer promotion).
+Render/API owner: snippets/icon-with-text-item.liquid
+Consumers: sections/icon-with-text, snippets/product-info-blocks
+Uses snippet-local vars (injected per item in markup):
+  --icon-with-text-icon-size, --icon-with-text-icon-size-mobile, --icon-with-text-gap
+Hybrid pattern — same as pagination: components.css reads vars from snippet inline style.
+Section grid/carousel (.icon-with-text-section__*) and PDP wrappers stay in snippets.css.
+========================================================= */
+@layer components {
+    .icon-with-text-item {
+        @apply flex min-w-0 text-theme-text;
+        gap: var(--icon-with-text-gap, 0.5rem);
+    }
+
+    .icon-with-text-item--link {
+        @apply no-underline transition-opacity hover:opacity-75;
+    }
+
+    .icon-with-text-item--vertical {
+        @apply flex-col;
+    }
+
+    .icon-with-text-item--horizontal {
+        @apply flex-row;
+    }
+
+    .icon-with-text-item__icon {
+        width: var(--icon-with-text-icon-size-mobile, var(--icon-with-text-icon-size, 24px));
+        height: var(--icon-with-text-icon-size-mobile, var(--icon-with-text-icon-size, 24px));
+    }
+
+    .icon-with-text-item__image {
+        @apply shrink-0 object-contain;
+        width: var(--icon-with-text-icon-size-mobile, var(--icon-with-text-icon-size, 24px));
+        height: var(--icon-with-text-icon-size-mobile, var(--icon-with-text-icon-size, 24px));
+    }
+
+    .icon-with-text-item__title {
+        @apply min-w-0 leading-tight break-words;
+    }
+
+    @media (width >= theme(--breakpoint-pc)) {
+        .icon-with-text-item__icon,
+        .icon-with-text-item__image {
+            width: var(--icon-with-text-icon-size, 24px);
+            height: var(--icon-with-text-icon-size, 24px);
+        }
     }
 }
 
@@ -592,6 +769,48 @@ Consumed via snippets/quantity-selector.liquid and inline in cart sections.
     .quantity-selector__value {
         @apply min-w-9 border-b border-current px-2 pb-1 text-center text-current tabular-nums;
         font: inherit;
+    }
+}
+
+/* =========================================================
+Buy Buttons — purchase_group chrome
+
+Reusable across: PDP, featured-product, quick view.
+Consumed via snippets/buy-buttons.liquid (render/API owner).
+Not included: buy-buttons__retry-action (pickup owner delta in snippets.css, Phase 5D-2a).
+========================================================= */
+@layer components {
+    .buy-buttons__actions--purchase-group {
+        @apply flex w-full flex-col gap-3;
+    }
+
+    .buy-buttons__primary-row {
+        @apply grid w-full grid-cols-1 items-stretch gap-3;
+    }
+
+    .buy-buttons__actions--with-quantity .buy-buttons__primary-row {
+        @apply grid-cols-[minmax(8.75rem,9.75rem)_minmax(0,1fr)] pc:grid-cols-[10.5rem_minmax(0,1fr)];
+    }
+
+    .buy-buttons__quantity {
+        @apply flex min-w-0 items-stretch;
+    }
+
+    .buy-buttons__quantity > * {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .buy-buttons__submit--unavailable {
+        @apply border-theme-border-20 bg-theme-border-20 text-theme-text/45 opacity-100;
+    }
+
+    .buy-buttons__label {
+        @apply inline-block transition-opacity;
+    }
+
+    .buy-buttons__label.is-loading {
+        @apply opacity-0;
     }
 }
 

@@ -112,6 +112,7 @@ Read only the matching reference for the current task:
 - JS runtime, lifecycle, events, HTTP, SectionRefresher, Alpine stores/components, Swiper, GSAP setup: `docs/references/architecture/javascript-runtime.md`
 - Motion policy, choreography, reduced motion, animation ownership, duplication: `docs/references/architecture/motion-architecture.md`
 - Shared abstraction boundaries and whether to extend an existing utility/component: `docs/references/architecture/abstraction-boundaries.md`
+- CSS layer ownership, token/bridge contract, placement audits: `docs/references/style-system/css-architecture.md`
 - CSS layers, Tailwind, typography, color, inline styles, SVG icon pipeline: `docs/references/style-system/css-and-typography.md`
 - Section lifecycle, Alpine, events, HTTP refresh, cart, Swiper, GSAP, motion transitions, CSS layering, accessibility examples: `docs/references/patterns/`
 - i18n keys, locale structure, schema translation, hardcoded copy review: `docs/references/code-review/i18n-checklist.md`

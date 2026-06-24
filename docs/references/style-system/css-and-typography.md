@@ -2,6 +2,8 @@
 
 This reference stores style-system details that are too long for `AGENTS.md`. `AGENTS.md` remains the rule source. Read this file only when changing CSS layers, Tailwind source, typography tiers, color tokens, inline styles, SVG icons, or related cleanup.
 
+**CSS architecture contract (token flow, layer ownership, bridge gaps, migration backlog):** see [`css-architecture.md`](css-architecture.md). Read that file first for layer-placement audits; use this file for typography, color, surface, and icon consumption detail.
+
 For animation and transition work, classify through `docs/references/architecture/motion-architecture.md` before applying CSS layer rules.
 
 ## CSS Layer Files
@@ -83,7 +85,7 @@ Each `tailwind/*.css` file owns a distinct responsibility. Use the decision tabl
 
 - A snippet-scoped class (e.g. `.product-info-blocks__*`) inside `tailwind.components.css` → move to snippets.
 - A generic reusable pattern (e.g. `.quantity-selector`) inside `tailwind.snippets.css` → move to components.
-- A section override (e.g. `.newsletter-banner-section .inline-submit-field__input`) inside `tailwind.components.css` → acceptable only if scoped with a comment explaining the section constraint. Otherwise move to the section's `{% stylesheet %}` block.
+- A section-specific override (e.g. `.newsletter-banner-section .inline-submit-field__input`) inside `tailwind.components.css` → **does not belong** in the components layer. Migrate to the owning section's `{% stylesheet %}`, a `snippets.css` owner/modifier, or track as Phase 3 backlog (`css-architecture.md` §六 P2). Never leave section-root scoping in `components.css`, with or without a comment.
 - An atomic primitive with child selectors or layout composition → split: primitive stays in elements, composition moves to components.
 
 ## Breakpoints
@@ -95,10 +97,12 @@ Each `tailwind/*.css` file owns a distinct responsibility. Use the decision tabl
 
 ## Token Flow
 
+Full chain, bridge mapping table, and unbridged variable policy: [`css-architecture.md`](css-architecture.md) §一–§三.
+
 ```text
 Shopify Settings -> snippets/css-variables.liquid -> CSS custom properties
     -> tailwind/tailwind.input.css (@theme inline) -> Tailwind tokens
-    -> utility classes in templates
+    -> layered tailwind/*.css + base.css -> utility classes in templates
 ```
 
 ## Build Commands

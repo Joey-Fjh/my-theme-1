@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const fs = require('node:fs/promises');
+const fsSync = require('node:fs');
 const path = require('node:path');
 const process = require('node:process');
 const fg = require('fast-glob');
@@ -14,6 +15,23 @@ const SECTION_GLOBS = ['sections/**/*.liquid'];
 const SNIPPET_GLOBS = ['snippets/**/*.liquid'];
 const SCHEMA_GLOBS = ['sections/**/*.liquid', 'blocks/**/*.liquid', 'config/settings_schema.json'];
 const ASSET_JS_GLOBS = ['assets/**/*.js'];
+
+const CSS_LAYER_ALLOWLIST_PATH = path.join(
+    ROOT,
+    '.agents/skills/check-theme-architecture/css-layer-allowlist.json',
+);
+
+const COMPONENTS_CSS_FILE = 'tailwind/tailwind.components.css';
+const SNIPPETS_CSS_FILE = 'tailwind/tailwind.snippets.css';
+
+const MOTION_LINT_CSS_FILES = [
+    'tailwind/tailwind.components.css',
+    'tailwind/tailwind.elements.css',
+    'tailwind/tailwind.snippets.css',
+    'tailwind/tailwind.utilities.css',
+    'tailwind/tailwind.typography.css',
+    'assets/base.css',
+];
 
 const DOM_REPLACEMENT_ALLOWLIST = new Set(['assets/https.js']);
 
@@ -58,9 +76,14 @@ const GENERIC_CLASS_NAMES = new Set([
 ]);
 
 const failures = [];
+const warnings = [];
 
 function report(file, line, message) {
     failures.push({ file, line, message });
+}
+
+function reportWarning(file, line, message) {
+    warnings.push({ file, line, message });
 }
 
 function lineAt(text, offset) {
@@ -653,6 +676,310 @@ async function checkDomReplacement() {
     }
 }
 
+// --- CSS layer placement protocol (Phase 6) ---
+
+function loadCssLayerAllowlist() {
+    return JSON.parse(fsSync.readFileSync(CSS_LAYER_ALLOWLIST_PATH, 'utf8'));
+}
+
+function maskCssComments(source) {
+    return source.replace(/\/\*[\s\S]*?\*\//g, (match) => ' '.repeat(match.length));
+}
+
+const COMPONENTS_SECTION_ROOT_RE = /\.[a-z][\w-]*-section(?![\w-])/;
+
+function checkComponentsSectionRootBan(file, text, allowlist) {
+    const masked = maskCssComments(text);
+    const lines = masked.split(/\r\n|\r|\n/);
+    const allowed = new Set(allowlist.componentsSectionRootSelectors ?? []);
+
+    for (let index = 0; index < lines.length; index++) {
+        const line = lines[index];
+        if (!COMPONENTS_SECTION_ROOT_RE.test(line)) continue;
+
+        const match = line.match(/\.[a-z][\w-]*-section(?![\w-])/);
+        if (match && allowed.has(match[0].slice(1))) continue;
+
+        report(
+            file,
+            index + 1,
+            'components.css must not use *-section root/scoping selectors; use section {% stylesheet %} or snippets owner blocks.',
+        );
+    }
+}
+
+function checkSnippetsPromotedPrefixBan(file, text, allowlist) {
+    const masked = maskCssComments(text);
+    const lines = masked.split(/\r\n|\r|\n/);
+
+    for (let index = 0; index < lines.length; index++) {
+        const line = lines[index];
+        if (/^\s*\/\//.test(line)) continue;
+
+        for (const prefix of allowlist.snippetsPromotedPrefixes ?? []) {
+            const selectorPrefix = prefix.endsWith('__') ? prefix : prefix;
+            const re = new RegExp(`^\\s*\\.${escapeRegExp(selectorPrefix)}`);
+            if (re.test(line)) {
+                report(
+                    file,
+                    index + 1,
+                    `Promoted component API ".${prefix}*" belongs in components.css, not snippets.css.`,
+                );
+            }
+        }
+
+        for (const selector of allowlist.snippetsPromotedSelectors ?? []) {
+            const normalized = selector.trim();
+            if (!normalized) continue;
+
+            const pattern = normalized.startsWith('.') ? normalized : `.${normalized}`;
+            const re = new RegExp(`^\\s*${escapeRegExp(pattern)}(?![\\w-])`);
+            if (re.test(line)) {
+                report(
+                    file,
+                    index + 1,
+                    `Promoted component selector "${pattern}" belongs in components.css, not snippets.css.`,
+                );
+            }
+        }
+    }
+}
+
+function escapeRegExp(value) {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function getHtmlAttributeValue(attributes, name) {
+    if (!attributes) return '';
+
+    for (const attr of attributes) {
+        if (!Array.isArray(attr.name)) continue;
+        const attrName = attr.name.map((part) => part.value || '').join('');
+        if (attrName !== name) continue;
+
+        return (attr.value ?? [])
+            .map((part) => {
+                if (part.type === 'TextNode') return part.value || '';
+                return '';
+            })
+            .join('')
+            .trim();
+    }
+
+    return '';
+}
+
+function isAllowlistedTabNavClass(classValue, allowlist) {
+    return allowlist.tabNavRoleTabClassAllowlist.some((allowed) =>
+        new RegExp(`\\b${escapeRegExp(allowed)}\\b`).test(classValue),
+    );
+}
+
+async function checkLiquidTabNavProtocolAsync(allowlist) {
+    for (const file of await getFiles(LIQUID_GLOBS)) {
+        const text = await readText(file);
+        const { ast, error: parseError } = parseLiquidAst(text);
+
+        if (parseError) continue;
+
+        walk(ast, (node) => {
+            if (!node.attributes) return;
+
+            const role = getHtmlAttributeValue(node.attributes, 'role');
+            if (role !== 'tab') return;
+
+            const classValue = getHtmlAttributeValue(node.attributes, 'class');
+            if (isAllowlistedTabNavClass(classValue, allowlist)) return;
+
+            if (!/\btab-nav-item\b/.test(classValue)) {
+                report(
+                    file,
+                    lineAt(text, node.position?.start ?? 0),
+                    'Text tab triggers (role="tab") must include tab-nav-item alongside legacy BEM classes.',
+                );
+            }
+        });
+    }
+}
+
+const TAB_SELECTOR_RE = /^\s*\.[\w-]+__tab\b/;
+const TAB_CHROME_SIGNAL_RES = [
+    /@apply[^;{]*\bfocus-ring\b/,
+    /\bborder-bottom\b/,
+    /\bborder-b\b/,
+    /(?:^|[;\s{])opacity\s*:/,
+    /(?:^|[;\s{])color\s*:/,
+    /font-weight\s*:/,
+];
+
+function extractRuleBlock(lines, startIndex) {
+    let depth = 0;
+    let body = '';
+
+    for (let index = startIndex; index < lines.length; index++) {
+        const line = lines[index];
+        body += `${line}\n`;
+
+        for (const char of line) {
+            if (char === '{') depth++;
+            if (char === '}') depth--;
+        }
+
+        if (index > startIndex && depth <= 0) {
+            return { body, endIndex: index };
+        }
+    }
+
+    return { body, endIndex: lines.length - 1 };
+}
+
+function hasTabChromeCommentAllowance(lines, startIndex, allowlist) {
+    const context = lines.slice(Math.max(0, startIndex - 25), startIndex).join('\n');
+    return allowlist.snippetsTabChromeCommentTokens.some((token) => context.includes(token));
+}
+
+function checkSnippetsTabChromeComments(file, text, allowlist) {
+    const lines = text.split(/\r\n|\r|\n/);
+
+    for (let index = 0; index < lines.length; index++) {
+        if (!TAB_SELECTOR_RE.test(lines[index])) continue;
+
+        const { body } = extractRuleBlock(lines, index);
+        const hasChrome = TAB_CHROME_SIGNAL_RES.some((re) => re.test(body));
+        if (!hasChrome) continue;
+
+        if (hasTabChromeCommentAllowance(lines, index, allowlist)) continue;
+
+        reportWarning(
+            file,
+            index + 1,
+            'snippets.css *__tab rule includes trigger chrome; document as layout delta only or use tab-nav-item in components.css.',
+        );
+    }
+}
+
+const BARE_DURATION_RE = /\d+(?:\.\d+)?(?:ms|s)\b/;
+const TRANSITION_PROPERTY_RE = /\btransition\s*:/i;
+const TRANSITION_APPLY_UTILITY_RE =
+    /^\s*@apply\s+[^;{]*\btransition-(?:colors|opacity|all|transform|none)\b/;
+
+function stripCssVarFunctions(text) {
+    return text.replace(/var\([^)]*\)/g, (match) => ' '.repeat(match.length));
+}
+
+function splitCssCommaList(value) {
+    const segments = [];
+    let depth = 0;
+    let current = '';
+
+    for (const char of value) {
+        if (char === '(') depth++;
+        if (char === ')') depth = Math.max(0, depth - 1);
+
+        if (char === ',' && depth === 0) {
+            segments.push(current);
+            current = '';
+            continue;
+        }
+
+        current += char;
+    }
+
+    if (current.trim()) segments.push(current);
+
+    return segments;
+}
+
+function isAllowedTransitionSegment(segment) {
+    const trimmed = segment.trim();
+    if (!trimmed) return true;
+
+    if (/\bvisibility\s+0s\b/.test(trimmed)) return true;
+    if (/\btransition-delay\s*:\s*0s\b/.test(trimmed)) return true;
+    if (/\b0s\s+linear\b/.test(trimmed) && /\bvisibility\b/.test(trimmed)) return true;
+
+    return false;
+}
+
+function segmentHasBareDuration(segment) {
+    if (isAllowedTransitionSegment(segment)) return false;
+
+    const sanitized = stripCssVarFunctions(segment).replace(/transition-[a-z-]+/gi, '');
+    return BARE_DURATION_RE.test(sanitized);
+}
+
+function transitionBlockHasBareDuration(blockContent) {
+    const masked = blockContent.replace(/\/\*[\s\S]*?\*\//g, (match) => ' '.repeat(match.length));
+    const value = masked
+        .replace(/^\s*\btransition\s*:/i, '')
+        .replace(/;[\s\S]*$/, '');
+
+    return splitCssCommaList(value).some(segmentHasBareDuration);
+}
+
+function collectTransitionPropertyBlocks(lines) {
+    const blocks = [];
+
+    for (let index = 0; index < lines.length; index++) {
+        const line = lines[index];
+        if (!TRANSITION_PROPERTY_RE.test(line)) continue;
+
+        let content = line;
+        let endIndex = index;
+
+        while (!content.includes(';') && endIndex + 1 < lines.length) {
+            endIndex++;
+            content += `\n${lines[endIndex]}`;
+        }
+
+        blocks.push({ startLine: index + 1, content });
+        index = endIndex;
+    }
+
+    return blocks;
+}
+
+function checkMotionBareDuration(file, text) {
+    const lines = text.split(/\r\n|\r|\n/);
+
+    for (const block of collectTransitionPropertyBlocks(lines)) {
+        if (TRANSITION_APPLY_UTILITY_RE.test(block.content) && !transitionBlockHasBareDuration(block.content)) {
+            continue;
+        }
+
+        if (!transitionBlockHasBareDuration(block.content)) continue;
+
+        reportWarning(
+            file,
+            block.startLine,
+            'Interactive transition should use motion vars (var(--motion-duration-*), var(--motion-ease-*)); bare ms/s is discouraged outside animates.css.',
+        );
+    }
+}
+
+async function checkCssLayerProtocol() {
+    const allowlist = loadCssLayerAllowlist();
+
+    const componentsText = await readText(COMPONENTS_CSS_FILE);
+    checkComponentsSectionRootBan(COMPONENTS_CSS_FILE, componentsText, allowlist);
+
+    const snippetsText = await readText(SNIPPETS_CSS_FILE);
+    checkSnippetsPromotedPrefixBan(SNIPPETS_CSS_FILE, snippetsText, allowlist);
+    checkSnippetsTabChromeComments(SNIPPETS_CSS_FILE, snippetsText, allowlist);
+
+    await checkLiquidTabNavProtocolAsync(allowlist);
+
+    const excluded = new Set(
+        (allowlist.motionLintExcludedFiles ?? []).map((file) => formatPath(file)),
+    );
+
+    for (const file of MOTION_LINT_CSS_FILES) {
+        if (excluded.has(formatPath(file))) continue;
+        const text = await readText(file);
+        checkMotionBareDuration(file, text);
+    }
+}
+
 async function main() {
     await Promise.all([
         checkSchemaIds(),
@@ -662,7 +989,15 @@ async function main() {
         checkAlpineComponentGroupReferences(),
         checkDomReplacement(),
         checkHttpCartGuard(),
+        checkCssLayerProtocol(),
     ]);
+
+    if (warnings.length > 0) {
+        console.warn(`theme architecture lint found ${warnings.length} warning(s):`);
+        for (const warning of warnings) {
+            console.warn(`${warning.file}:${warning.line}: ${warning.message}`);
+        }
+    }
 
     if (failures.length === 0) {
         console.log('theme architecture lint passed.');
