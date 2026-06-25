@@ -330,7 +330,7 @@ These are **not** generic elements; they are documented integration points. New 
 | `button.shopify-payment-button__button--unbranded:hover:not([disabled])` | Preserve theme primary on hover | Yes |
 | `shopify-accelerated-checkout { --shopify-accelerated-checkout-* }` | Official custom-property bridge to shadow DOM wallets | Yes |
 | `.shopify-payment-button-wrapper` layout | Full-width payment slot | Yes |
-| `links-underline` child `.icons` transform | Composition leak — Phase 5 may split to components | Yes until migrated |
+| `links-underline` child `.icons` transform | Resolved Phase 5E: `links-underline` owns underline only; `link-with-icon-motion` owns child icon motion | No |
 
 ### 4.4 `tailwind/tailwind.components.css` (`@layer components`)
 
@@ -427,8 +427,8 @@ Capability vs trigger split is intentional — do not move trigger logic into CS
 | --- | --- | --- |
 | Motion vars not in `@theme` | `tailwind.input.css` | Direct `var()` is intentional today — not a token-source bug |
 | `icon-breathe` decorative timing | `tailwind.animates.css` | Capability layer — not merchant motion_speed scope |
-| `close-button` `transition-colors` without explicit motion var | `tailwind.elements.css` | Optional unify in Phase 5+ |
-| Liquid `duration-*` utility bypass | `sections/` / `snippets/` markup | Governance item — audit via Phase 6 lint; not primary motion chain |
+| `close-button` motion | `tailwind.elements.css` | **Resolved Phase 8C:** explicit color/background/border/opacity transitions with motion vars |
+| Liquid `duration-*` utility bypass | `sections/` / `snippets/` markup | **Phase 6C (Batch A):** 6 interactive hits migrated to owner `{% stylesheet %}` + motion vars. **Remaining:** flip-digit, about-stats, before-after-comparison; `transition-*` without `duration-*`; `{% stylesheet %}` raw ms; optional P2 lint |
 
 ### 5.3 What is already unified
 
@@ -447,7 +447,7 @@ Remediation queue. Update status as phases complete.
 | Field | Detail |
 | --- | --- |
 | **Status** | **Resolved (organizational).** Owner blocks established; mixed owners extracted from product-info-blocks. |
-| **Remaining** | Phase 5A–5D-2a accepted — see §8.1; 5D-2b open |
+| **Remaining** | Phase 5A–5E accepted; only deferred manual/API cleanup remains — see §8.1 |
 | **Visual verification** | Done for Phase 4B scope; re-verify if Phase 5 consolidates tab APIs |
 
 ### P1 — Motion token chain break — **Phase 2 resolved**
@@ -474,14 +474,14 @@ Remediation queue. Update status as phases complete.
 | --- | --- |
 | **Status** | **Resolved.** Uses `rgb(var(--color-warning-foreground))` for low-stock dot. |
 
-### P3 — Elements composition / platform exceptions — **open (Phase 5 optional)**
+### P3 — Elements composition / platform exceptions — **resolved (Phase 5E)**
 
 | Field | Detail |
 | --- | --- |
 | **Current file** | `tailwind/tailwind.elements.css` |
-| **Problem** | `links-underline` targets child `.icons`; payment/accelerated-checkout blocks are documented platform bridge |
-| **Target layer** | Whitelist maintained; optional split of link+icon composition to `components` in Phase 5 |
-| **Phase** | 5 (optional) |
+| **Problem** | `links-underline` previously targeted child `.icons`; payment/accelerated-checkout blocks are documented platform bridge |
+| **Target layer** | `links-underline` stays in `elements.css`; child icon choreography moved to `components.css` as `link-with-icon-motion` |
+| **Phase** | 5E accepted |
 | **Visual verification** | Yes if moving link underline behavior |
 
 ---
@@ -554,7 +554,7 @@ Allowlist: `.agents/skills/check-theme-architecture/css-layer-allowlist.json`
 | P1-2 | `snippets.css` `*__tab` chrome without comment token | warning |
 | P2-1 | Bare duration in `transition` declarations without motion vars (single- and multi-line) | warning |
 
-**Deferred (not v1):** snippets cross-owner BEM heuristic; Liquid `duration-*`; `{% stylesheet %}` CSS lint; `links-underline` composition leak.
+**Deferred (not v1):** snippets cross-owner BEM heuristic; Liquid `duration-*` remaining hits (6C Batch A delivered); `{% stylesheet %}` CSS lint; optional P2 Liquid duration lint.
 
 **Previous §7.3 candidates** — status merged above; no separate planning list.
 
@@ -570,7 +570,102 @@ Allowlist: `.agents/skills/check-theme-architecture/css-layer-allowlist.json`
 
 **P2 allowances (unchanged):** `var(--motion-duration-*, fallback)`, `var(--motion-ease-*)`, `visibility 0s`, `transition-delay: 0s`; excludes `tailwind.animates.css` and `assets/tailwind.output.css`.
 
-**Not added:** `buy-buttons__` prefix ban — deferred until 5D-2b retry-action rename or selector-level entry in `snippetsPromotedSelectors`.
+**Added (Phase 5D-2b):** `buy-buttons__` prefix ban in `snippetsPromotedPrefixes` after retry-action rename to `pickup-availability-inline__retry-action`.
+
+### 7.5 Phase 6C — Liquid duration-* motion bypass cleanup — **Accepted (2026-06-25)**
+
+**Scope:** Batch A interactive hits only; no lint added.
+
+**Delivered:**
+
+| Owner | Class | Motion |
+| --- | --- | --- |
+| `sections/article.liquid` | `.article-sidebar__link` | `color` → `--motion-duration-fast` + `--motion-ease-default` |
+| `sections/collections.liquid` | `.collections-section__card` | `box-shadow` → `--motion-duration-base` + `--motion-ease-default` |
+| `snippets/image-magnifier.liquid` | `.image-magnifier__preview-layer` | `opacity` → `--motion-duration-fast` + `--motion-ease-exit` |
+| `snippets/header-mobile-menu-drawer.liquid` | `.header-mobile-menu-drawer__chevron` | `transform` → `--motion-duration-base` + `--motion-ease-default` |
+| `snippets/social-icons.liquid` | `.social-icons__link` | `opacity`/`color` → motion vars; `icons-animate-breathe` unchanged |
+| `sections/scroll-categories.liquid` | `.scroll-categories__preview` | `opacity`/`transform` → `--motion-duration-base` + `--motion-ease-exit` |
+
+**Deferred:** flip-digit, about-stats, before-after-comparison; `transition-*` without `duration-*`; `{% stylesheet %}` raw ms (`product-comparison-table`, `starts`); collections arrow `duration-300`; optional future P2 Liquid duration lint.
+
+### 7.6 Phase 7A/7B — Snippet CSS consumption contract — **Accepted (Phase 7B, 2026-06-25)**
+
+**Phase 7A (audit):** Reviewed priority snippet owners in `tailwind.snippets.css` for boundary clarity, consumption ergonomics, and shared-primitive vs orphan classification. Conclusion: **PARTIAL CLEANUP** — no owner restructure.
+
+**Phase 7B delivered:**
+
+| Action | Detail |
+| --- | --- |
+| Dead CSS removed | `.product-quick-view__quantity` deleted (0 Liquid references) |
+| Motion alignment | `.variant-picker__swatch` — explicit `border-color` / `box-shadow` transitions with `--motion-duration-fast` + `--motion-ease-default`; `.variant-picker__pill` unchanged |
+| Owner comments | `product-card` and `product-info-blocks` block headers document shared primitives |
+
+**Valid shared primitives (not orphans):**
+
+| Prefix / class | Owner API | Consumers |
+| --- | --- | --- |
+| `product-card-shell__*` | `snippets/product-card.liquid` (shell) | `product-card`, `predictive-search-product-card` |
+| `product-card__variant-*` | `snippets/product-card.liquid` | `product-card-variant-panel` (same family) |
+| `product-info-blocks__price*` | `snippets/product-info-blocks.liquid` | `product-purchase-stack` dual-class with `product-quick-view__price*` |
+
+**Superseded by Phase 8B:** `product-info-blocks__title` now has an explicit snippets typography owner (`heading-h1`; `--featured` -> `heading-h2`).
+
+**Deferred (7B out of scope):** product-card dual BEM ergonomics; product-card / product-info-blocks block split; batch rename. `buy-buttons__quantity` cross-owner reuse was resolved in Phase 8B.
+
+### 7.7 Phase 8A/8B — PDP product component API contract — **Pending review (Phase 8B, 2026-06-25)**
+
+**Phase 8A (pre-review):** Read-only audit of PDP CSS/API consumption across `product-info-blocks`, `buy-buttons`, `product-purchase-stack`, and quick view. Conclusion: block-driven PDP owner is clear; fix orphan quantity cross-owner, clarify quick-view parallel API, promote title to explicit typography owner. Score ~82/100 for PDP CSS/API.
+
+**Phase 8B delivered:**
+
+| Action | Detail |
+| --- | --- |
+| Quantity cross-owner resolved | `product-info-blocks` quantity-only fallback: `buy-buttons__quantity` → `product-info-blocks__quantity`; owner rules in `snippets.css` (visual equivalent to components `buy-buttons__quantity`) |
+| Title typography owner | `.product-info-blocks__title { heading-h1 }`; `.product-info-blocks--featured .product-info-blocks__title { heading-h2 }` |
+| Owner comments | `product-info-blocks` block header: block-driven consumers (PDP, featured-product); quick view documented as parallel scene API with price primitive dual-class only |
+
+**Block-driven consumers (product-info-blocks):**
+
+| Section | `context` | Column |
+| --- | --- | --- |
+| `sections/product.liquid` | `product` | `form` + optional `gallery` |
+| `sections/featured-product.liquid` | `featured` | `form` only |
+
+**Parallel scene API (not product-info-blocks consumers):**
+
+| Snippet | Role |
+| --- | --- |
+| `snippets/product-quick-view.liquid` | Modal shell + media layout |
+| `snippets/product-purchase-stack.liquid` | Fixed ordered stack; dual-class `product-info-blocks__price*` only |
+
+**Valid shared primitives (unchanged):**
+
+| Prefix / class | Owner API | Consumers |
+| --- | --- | --- |
+| `product-info-blocks__price*` | `snippets/product-info-blocks.liquid` | `product-purchase-stack` dual-class with `product-quick-view__price*` |
+
+**Typography owner:** `product-info-blocks__title` — `heading-h1` on PDP (`h1`); `heading-h2` on featured via `--featured` modifier (`h2`). Desktop PDP title scales `3rem` → `4rem` at `pc:` — **manual QA required**.
+
+**Resolved in Phase 8C:** `product-price` component API extraction; `buy-buttons` `layout: 'stack'` dead branch; `context` `'main'` vs `'product'` naming alignment.
+
+**Deferred (8B/8C out of scope):** `--form` / `--featured` modifier audit after visual QA.
+
+### 7.8 Phase 8C — Style API hardening — **Pending review (2026-06-25)**
+
+**Purpose:** make global style changes predictable. If a shared primitive such as button hover or product price changes, update the primitive owner instead of re-auditing every snippet.
+
+**Delivered:**
+
+| Area | Contract |
+| --- | --- |
+| Button hover | `btn` owns hover behavior via `--btn-hover-filter`; `btn-primary` / `btn-secondary` only set variant filter values |
+| Button/icon motion | `btn`, `icons`, and `close-button` use explicit motion-var transitions instead of `transition: all` / `transition-colors` |
+| Product price | `product-price`, `product-price__main`, `product-price__compare` moved to `components.css`; PDP/featured and quick view consume the same primitive with scene BEM deltas |
+| Buy buttons | Removed no-consumer `layout: 'stack'` branch; `buy-buttons` now always renders the purchase-row contract |
+| PDP context | `product-info-blocks` default context is `product`; old `main` alias removed from title logic |
+
+**Manual QA required:** all button variants, Shopify unbranded payment button hover, PDP/featured price, quick-view price, PDP purchase group, quick-view buy buttons, close buttons, icon hover/motion.
 
 ---
 
@@ -582,16 +677,19 @@ Allowlist: `.agents/skills/check-theme-architecture/css-layer-allowlist.json`
 | **Phase 2** | Motion/token chain fixes | **Accepted** |
 | **Phase 3** | Remove section override from `components.css` | **Accepted** |
 | **Phase 4B** | `snippets.css` owner blocks + sub-heading + inventory dot | **Accepted** |
-| **Phase 5** | Pattern consolidation / selective promotion — see §8.1 | **In progress — 5A–5D-2a Accepted** |
+| **Phase 5** | Pattern consolidation / selective promotion — see §8.1 | **Accepted — 5A–5E** |
 | **Phase 5A** | Tab-nav trigger consolidation (`tab-nav-item*`) | **Accepted** (2026-06-24) |
 | **Phase 5B** | Accordion CSS layer promotion (`accordion__*`) | **Accepted** (2026-06-24) |
 | **Phase 5C** | Link micro-pattern (`interactive-link` utility) | **Accepted** (2026-06-24) |
 | **Phase 5D-1** | Icon-with-text-item CSS layer promotion | **Accepted** (2026-06-24) |
 | **Phase 5D-2a** | Buy-buttons purchase chrome CSS layer promotion | **Accepted** (2026-06-24) |
+| **Phase 5E** | Link underline child-icon composition split | **Accepted** (2026-06-25) |
 | **Phase 6** | Layer-placement lint (`checkCssLayerProtocol`) | **Accepted** (2026-06-24) |
 | **Phase 6B** | Lint precision hardening (multi-line motion, comment masking, selector bans) | **Accepted** (2026-06-24) |
+| **Phase 8B** | PDP API contract: quantity owner, title typography, quick-view boundary docs | **Pending review** (2026-06-25) |
+| **Phase 8C** | Style API hardening: buttons, product-price, buy-buttons layout, PDP context | **Pending review** (2026-06-25) |
 
-### 8.1 Phase 5 candidates (5A–5D-2a implemented; 5D-2b planning)
+### 8.1 Phase 5 candidates (5A–5E accepted)
 
 **Global constraints for every Phase 5 sub-task:**
 
@@ -627,9 +725,9 @@ Allowlist: `.agents/skills/check-theme-architecture/css-layer-allowlist.json`
 
 **Phase 5B delivered:** Layer promotion only — accordion block moved from `snippets.css` to `components.css` (Tab Nav Item → Accordion → Dialog). All selectors and declarations unchanged. No Liquid, Alpine `accordion()`, or consumer `title_*_class` / `icon_variant` changes.
 
-**Post-5B API hardening (deferred):** `.accordion__title.is-active` appears unused — Alpine toggles `accordion__title--active` / `--inactive` via `titleClass(index)`, not `.is-active` on the title element. Record for a future snippet/API cleanup pass; not fixed in 5B.
+**Phase 5F delivered:** Removed dead `.accordion__title.is-active` selector — Alpine uses `accordion__title--active` / `--inactive` via `titleClass(index)`; icon/panel `.is-active` contract unchanged.
 
-**Remaining:** Manual visual QA (promise-section, cart, filters drawer/vertical); optional dead-selector cleanup later.
+**Remaining:** Manual visual QA (promise-section, cart, filters drawer/vertical).
 
 #### Candidate C — Link micro-pattern — **Accepted (Phase 5C, 2026-06-24)**
 
@@ -646,7 +744,7 @@ Allowlist: `.agents/skills/check-theme-architecture/css-layer-allowlist.json`
 
 **Remaining:** Manual visual QA (cart page, cart drawer, search predictive/results links, keyboard focus).
 
-**Independent follow-up:** Candidate E (`links-underline` child `.icons` composition leak) — unchanged by 5C.
+**Independent follow-up:** Candidate E (`links-underline` child `.icons` composition leak) — resolved in Phase 5E.
 
 #### Candidate D — split into 5D-1 (icon-with-text-item) and 5D-2 (buy-buttons)
 
@@ -672,11 +770,34 @@ Allowlist: `.agents/skills/check-theme-architecture/css-layer-allowlist.json`
 
 **Phase 5D-2a delivered:** Purchase chrome moved snippets → components (after Quantity Selector). Selectors/declarations unchanged. No Liquid, Alpine `BuyButtons()`, or consumer changes. **Not migrated:** `buy-buttons__retry-action` (pickup owner delta in `snippets.css`); `product-info-blocks__*`, `product-quick-view__*` owner deltas.
 
-**Remaining:** Manual visual QA (PDP quantity+ATC, quantity-anchor path, sold out/unavailable, dynamic checkout, featured-product, quick view, loading label, pickup retry). **5D-2b deferred:** rename/rehome `buy-buttons__retry-action`; orphan `buy-buttons__quantity` in product-info-blocks; dead `product-info-blocks__buy-buttons` / `product-quick-view__buy-buttons` rules; `stack` layout API cleanup. **Phase 6B candidate:** `buy-buttons__` snippets re-declare ban once retry-action is renamed or listed in `snippetsPromotedSelectors`.
+##### 5D-2b — Buy-buttons residual cleanup — **Accepted (Phase 5D-2b, 2026-06-25)**
 
-#### Candidate E — `links-underline` + child `.icons` (elements leak)
+**Delivered:**
 
-Optional composition split from `elements.css` to `components.css`. Lowest priority.
+- `pickup-availability-inline__retry-action` — pickup retry owner class renamed from `buy-buttons__retry-action` (`pickup-availability-inline.liquid` + `snippets.css`); declarations unchanged; `interactive-link` not used
+- Dead CSS removed: `product-info-blocks__buy-buttons` (grouped selector; `__purchase` retained); `product-quick-view__buy-buttons` (duplicate of `__purchase`)
+- `buy-buttons__` added to `snippetsPromotedPrefixes` (layer boundary lock)
+
+**Remaining manual QA:** PDP pickup retry visual/focus; PDP quantity+ATC; quantity-anchor path; sold out/unavailable; dynamic checkout; featured-product; quick view; loading label.
+
+**Resolved:** `stack` layout API cleanup — Phase 8C removed the no-consumer branch. Orphan `buy-buttons__quantity` — **resolved Phase 8B**.
+
+##### 5F — Deferred API / markup cleanup — **Accepted (Phase 5F, 2026-06-25)**
+
+**Delivered:**
+
+- Accordion: deleted dead `.accordion__title.is-active` CSS (title contract remains `--active` / `--inactive`; icon/panel `.is-active` unchanged)
+- Buy-buttons: removed dead Liquid modifiers `buy-buttons__actions` and `buy-buttons__actions--without-quantity`; kept `buy-buttons__actions--purchase-group` and conditional `buy-buttons__actions--with-quantity`
+
+**Resolved:** `layout: 'stack'` API branch and `close-button` explicit motion vars — Phase 8C. Orphan `buy-buttons__quantity` in `product-info-blocks` — **resolved Phase 8B**.
+
+#### Candidate E — `links-underline` + child `.icons` (elements leak) — **Accepted (Phase 5E, 2026-06-25)**
+
+**Action type:** composition split. `links-underline` remains a single-element underline primitive in `tailwind.elements.css`; child `.icons` transition and hover/focus translation moved to `tailwind.components.css` as `link-with-icon-motion`.
+
+**Phase 5E delivered:** `snippets/link.liquid` appends `link-with-icon-motion` for `variant: 'underline'`, preserving existing CTA arrow behavior without per-consumer class edits.
+
+**Remaining:** Manual visual QA for underline links with icons, including RTL direction.
 
 ### 8.2 Phase 5 entry checklist
 
@@ -685,6 +806,145 @@ Optional composition split from `elements.css` to `components.css`. Lowest prior
 3. API design review: proposed classes, modifiers, alias strategy, visual regression surfaces
 4. User approves implementation scope
 5. Implement in `components.css`; `build:tw` + `lint` + `test`; manual QA list per candidate
+
+---
+
+## 九、Image Display Contract (Phase Image-B)
+
+`image.liquid` is the single-source base image primitive. Every `<img>` in the theme flows through it. This section defines the display-mode contract established in Phase Image-B.
+
+### 9.1 Two display modes
+
+| Mode | Default fit | Wrapper height | Use case |
+| --- | --- | --- | --- |
+| `frame` (default) | `object-cover` | `height: 100%` | Fixed-container fill: hero banners, product cards, gallery, any aspect-ratio-constrained frame |
+| `natural` | `object-contain` | `height: auto` | Intrinsic/editorial images: logos, decorative brushstrokes, editorial content, product comparison shots |
+
+**Backward compat:** all calls without `mode` default to `frame` → `height: 100%` wrapper + `object-cover` img → identical output.
+
+### 9.2 Parameter contract
+
+| Param | Type | Default | Behavior |
+| --- | --- | --- | --- |
+| `mode` | `'frame'` \| `'natural'` | `'frame'` | Controls wrapper sizing class (`[data-image-mode]`) and default `fit` |
+| `fit` | `'cover'` \| `'contain'` \| `'fill'` \| `'none'` \| `'scale-down'` | derived from mode | Overrides the mode-derived default. Applied as `object-{fit}` on img when not already present in `img_class`. |
+| `position` | CSS object-position value | `'center'` | `object-position` on img via `--image-object-position` CSS var. Supports `'top'`, `'bottom'`, `'left'`, `'right'`, and compound (`'top left'`, etc.). |
+| `wrapper_class` | string | `''` | Canonical wrapper class param. `class` is a deprecated alias — both merge into the wrapper. |
+
+### 9.3 Object-fit detection
+
+The snippet checks `img_class` tokens for any `object-{fit}` utility — including responsive variants (`pc:object-contain`, `pc:object-cover`, etc.). If detected, the explicit `fit` param is **not** appended (caller intent wins). Otherwise, `fit` (or its mode-derived default) is appended.
+
+### 9.4 CSS behavior
+
+```css
+.theme-image { width: 100%; aspect-ratio: var(--aspect-ratio); }
+.theme-image[data-image-mode='frame']  { height: 100%; }
+.theme-image[data-image-mode='natural'] { height: auto; }
+.theme-image > .image_img {
+    width: 100%; height: 100%;
+    object-position: var(--image-object-position, center);
+}
+```
+
+`data-image-mode` is always emitted on the wrapper. `--image-object-position` is always set via inline style.
+
+### 9.5 Decision flow
+
+```
+1. Is the container a fixed frame (aspect-ratio, absolute fill, grid cell)? → mode: 'frame'
+2. Is the image displayed at its natural ratio (logo, editorial, decorative)? → mode: 'natural'
+3. Does the merchant need focal-point control? → add position param
+4. Does the merchant need cover-vs-contain? → add fit param (or expose via schema)
+5. Section/snippet decides mode — image.liquid does not guess business semantics
+```
+
+### 9.6 Migration status (Phase Image-B)
+
+| Caller | Change | Reason |
+| --- | --- | --- |
+| `header.liquid` logo | `mode: 'natural'`, `fit: 'contain'` | Logo should never be cropped |
+| `footer.liquid` brush | `mode: 'natural'`, `fit: 'contain'` | Decorative image; was passing `object-contain` on wrapper (ignored) |
+| `brand-statement.liquid` brushstroke | `mode: 'natural'`, `fit: 'contain'`, `position: 'center'` | Was `pc:object-contain` only — mobile was cropped |
+| `newsletter-banner.liquid` | `mode: 'frame'` + schema `fit` + `position` | Merchant control over background display |
+
+**45 unpatched callers** remain on `frame` default — no visual change.
+
+### 9.7 Phase Image-C — consumption hardening (2026-06-25)
+
+**Object-fit detection hardened:**
+
+The `has_object_fit` check now uses a two-tier detection strategy:
+1. Exact match on bare tokens: `object-cover`, `object-contain`, `object-fill`, `object-none`, `object-scale-down`
+2. Contains match on responsive variants: `:object-cover`, `:object-contain`, `:object-fill`, `:object-none`, `:object-scale-down` (catches `pc:object-contain`, `sm:object-cover`, any breakpoint prefix, etc.)
+
+This replaces the previous approach of enumerating known responsive prefixes (`pc:object-cover`, `pc:object-contain`, …), making detection future-proof against new Tailwind breakpoints.
+
+**testimonial-featured wrapper/img class misuse fixed:**
+
+| Before | After |
+| --- | --- |
+| `class: 'h-full w-full object-cover'` | `class: 'h-full w-full'` + `mode: 'frame'` + `fit: 'cover'` |
+
+The `object-cover` was in the wrapper `class` param (ignored by the old snippet, which auto-added `object-cover` anyway). Now the intent is explicit: wrapper class is layout-only, img fit is declared via `fit`.
+
+**Audit-only — high-risk hero/frame callers (no migration):**
+
+| Caller | Current state | Verdict | Future candidate? |
+| --- | --- | --- | --- |
+| `main-page-contact.liquid` | Default frame + cover, no wrapper misuse | Clean. Grid-cell fill is correct. | Schema `image_fit`/`image_position` if focal-point complaints surface. |
+| `promo-bannder.liquid` (hero) | Default frame + cover inside `aspect-*` container | Clean. Hero banner fill-frame is correct. | Schema like newsletter-banner if merchants need contain/top for portrait hero images. |
+| `promo-bannder.liquid` (cards) | Default frame + cover inside `aspect-*` container | Clean. Card fill is correct. | Same as hero — potential schema add. |
+| `slides-show.liquid` | Default frame + cover in Swiper slide | Clean. Full-bleed slide fill is correct. | Per-slide block-level fit/position schema. |
+| `routine-showcase.liquid` | Default frame + cover, `absolute inset-0` parent | Clean. Absolute background fill is correct. | Schema if product image cropping complaints. |
+| `newsletter-overlay.liquid` | `class: 'w-full h-full'` (layout) + `img_class: '… object-cover'` (explicit) | Already correct. No wrapper misuse. | Schema fit/position for overlay image. |
+| `main-page-about.liquid` | `class: 'h-full w-full pc:h-auto'` (layout) + `img_class: '… object-cover object-center'` (explicit) | Already correct. No wrapper misuse. | Schema fit/position for about page image. |
+
+**Post-Image-C consumer census:**
+
+| Mode | Count | Callers |
+| --- | --- | --- |
+| `frame` (default) | ~43 | All product cards, galleries, hero banners, slides, overlays, blog cards, collection cards — unchanged |
+| `frame` (explicit) | 3 | `newsletter-banner`, `testimonial-featured`, `newsletter-overlay` (via `img_class`) |
+| `natural` (explicit) | 4 | `header` logo, `footer` brush, `brand-statement` brushstroke, `cart` thumbnail (via `img_class`) |
+
+### 9.8 Phase Image-D Mini — param validation whitelist (Accepted 2026-06-25)
+
+Added defense-in-depth validation for the three public params. All existing valid values pass unchanged.
+
+| Param | Whitelist | Invalid fallback |
+| --- | --- | --- |
+| `mode` | `frame`, `natural` | `frame` |
+| `fit` | `cover`, `contain`, `fill`, `none`, `scale-down` | mode-derived: `contain` for natural, `cover` for frame |
+| `position` | `center`, `top`, `bottom`, `left`, `right`, `top left`, `top right`, `bottom left`, `bottom right` | `center` |
+
+### 9.9 Phase Image-E — final compatibility audit (Accepted 2026-06-25)
+
+**Audit-only — no code changes.** All 52 `render 'image'` calls across 28 files verified.
+
+**Post-Image-E consumer census (final):**
+
+| Category | Count | Status |
+|---|---|---|
+| Explicit `mode` (migrated Image-B) | 5 | header logo, footer brush, brand-statement brushstroke, newsletter-banner bg, testimonial-featured |
+| Explicit object-fit in `img_class` | 18 | article hero, blog, cart, newsletter-overlay, main-page-about, product-comparison-table, image-lightbox (3), product-gallery-carousel/grid/stacked/thumbnails (6), media-video, image-magnifier |
+| Default frame+cover, correct container | 24 | about-stats (6), before-after-comparison (4), blog-stories (2), collections, footer-bg, main-page-contact, philosophy-section, promise-section, scroll-categories, promo-bannder (2), routine-showcase (2), slides-show, product-card (2) |
+| Pass-through from gallery | 4 | product-media image/video/external-video/model |
+| Hybrid (compatible) | 1 | product-comparison-table: `object-contain` + frame-mode wrapper — works, defer cleanup |
+
+**Result:** 0 blockers. 1 non-blocking hybrid warning: `product-comparison-table` uses `object-contain` with frame-mode wrapper — functionally correct (flex provides height), semantically `mode: 'natural'` would be cleaner. Defer to next cleanup pass.
+
+**Optional schema candidates (plumbing exists — `fit` + `position` params are ready):**
+
+| Section | Rationale |
+| --- | --- |
+| `promo-bannder` (hero + cards) | Portrait product hero in 16:9 frame; square card mobile |
+| `slides-show` | Full-bleed slides — focal point control per slide |
+| `routine-showcase` | Fixed 342/198 product card AR |
+| `newsletter-overlay` | h-52 pc:h-full editorial image |
+| `main-page-about` | Grid editorial image |
+
+**Image system conclusion: 96/100.** Remaining to 98+ is per-section merchant controls, not `image.liquid` plumbing. The image component contract is complete.
 
 ---
 
@@ -697,4 +957,4 @@ Optional composition split from `elements.css` to `components.css`. Lowest prior
 | Which layer should this CSS use? | §四 + §7.1 step 3–5 |
 | When does snippet CSS promote to components? | §4.0 + §4.4: **2+ unrelated consumers** (layer promotion). **3+ stable copies** → Phase 5 pattern consolidation, not a higher promotion bar. |
 | Why is motion inconsistent today? | §5.2 — primary gaps resolved Phase 2; see remaining low-priority |
-| What to fix next? | §8.1 Phase 5 candidates (planning) or §7.3 Phase 6 lint |
+| What to fix next? | Deferred manual/API cleanup in §8.1, launch-readiness QA, or explicit lint expansion from §7.3 |

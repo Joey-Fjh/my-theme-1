@@ -9,9 +9,8 @@
     @param [block] - Block object (for shopify_attributes + settings)
     @param {string} [section_id] - Section ID for Alpine sync and SRA refresh. Expected from caller.
     @param {string} [product_form_id] - Form ID. Defaults to 'product-form-' + section_id when omitted.
-    @param {string} [layout] - Button layout: 'stack' or 'purchase_group'
     @param {boolean} [show_quantity] - Show quantity selector (default: false)
-    @param [quantity_block] - Optional quantity selector block rendered in purchase_group layout
+    @param [quantity_block] - Optional quantity selector block rendered in the purchase row
     @param {string} [context] - Rendering context: 'product' or 'featured' (default: 'featured')
     @param {boolean} [show_buy_now] - Show "Buy it now" button; when true with context 'product', Add to Cart becomes secondary (default: false)
     @param {boolean} [show_dynamic_checkout] - Show Shopify dynamic checkout buttons; falls back to block.settings.show_dynamic_checkout (default: false)
@@ -38,7 +37,6 @@
     {%- assign success_message = 'toast.added_to_cart' | t -%}
 {%- endif -%}
 {%- assign show_buy_now = show_buy_now | default: false -%}
-{%- assign layout = layout | default: 'stack' -%}
 {%- assign show_quantity_control = false -%}
 {%- if quantity_block != blank or show_quantity == true or show_quantity == 'true' -%}
     {%- assign show_quantity_control = true -%}
@@ -99,72 +97,30 @@
 
             <div
                 class="
-                    {%- if layout == 'purchase_group' -%}
-                        buy-buttons__actions buy-buttons__actions--purchase-group
-                        {%- if show_quantity_control %} buy-buttons__actions--with-quantity{% else %} buy-buttons__actions--without-quantity{% endif -%}
-                    {%- else -%}
-                        flex flex-col gap-3
-                    {%- endif -%}
+                    buy-buttons__actions--purchase-group
+                    {%- if show_quantity_control %} buy-buttons__actions--with-quantity{% endif -%}
                 "
             >
-                {%- if layout == 'purchase_group' -%}
-                    <div class="buy-buttons__primary-row">
-                        {%- if show_quantity_control -%}
-                            <div
-                                class="buy-buttons__quantity"
-                                {% if quantity_block != blank %}
-                                    {{ quantity_block.shopify_attributes }}
-                                {% endif %}
-                            >
-                                {%- render 'quantity-selector',
-                                    value: 1,
-                                    min: 1,
-                                    product_form_id: product_form_id,
-                                    section_id: section_id,
-                                    wrapper_class: quantity_wrapper_class,
-                                    button_class: quantity_button_class,
-                                    input_class: quantity_input_class
-                                -%}
-                            </div>
-                        {%- endif -%}
-
-                        <button
-                            type="submit"
-                            name="add"
-                            class="btn relative w-full"
-                            :class="
-                                available
-                                ? '{{ available_classes }}'
-                                : '{{ unavailable_classes }}'
-                            "
-                            :disabled="!available || isLoading"
-                            @click.prevent="addToCart()"
+                <div class="buy-buttons__primary-row">
+                    {%- if show_quantity_control -%}
+                        <div
+                            class="buy-buttons__quantity"
+                            {% if quantity_block != blank %}
+                                {{ quantity_block.shopify_attributes }}
+                            {% endif %}
                         >
-                            <span
-                                class="buy-buttons__label"
-                                :class="{ 'is-loading': isLoading }"
-                                x-text="buttonText"
-                                data-add-to-cart-label
-                            >
-                                {%- if current_variant.available -%}
-                                    {{ 'products.product.add_to_cart' | t }}
-                                {%- else -%}
-                                    {{ 'products.product.sold_out' | t }}
-                                {%- endif -%}
-                            </span>
-                            <span
-                                x-show="isLoading"
-                                x-cloak
-                                class="absolute inset-0 flex items-center justify-center"
-                                aria-hidden="true"
-                            >
-                                <span
-                                    class="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent"
-                                ></span>
-                            </span>
-                        </button>
-                    </div>
-                {%- else -%}
+                            {%- render 'quantity-selector',
+                                value: 1,
+                                min: 1,
+                                product_form_id: product_form_id,
+                                section_id: section_id,
+                                wrapper_class: quantity_wrapper_class,
+                                button_class: quantity_button_class,
+                                input_class: quantity_input_class
+                            -%}
+                        </div>
+                    {%- endif -%}
+
                     <button
                         type="submit"
                         name="add"
@@ -200,7 +156,7 @@
                             ></span>
                         </span>
                     </button>
-                {%- endif -%}
+                </div>
 
                 {%- if show_buy_now == true or show_buy_now == 'true' -%}
                     <button

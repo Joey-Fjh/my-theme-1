@@ -25,6 +25,32 @@ Inline Submit Field
 }
 
 /* =========================================================
+Link With Icon Motion
+
+Composition class for links that render child icons through snippets/icons.liquid.
+The base underline primitive stays in elements.css; child icon choreography belongs here.
+========================================================= */
+@layer components {
+    .link-with-icon-motion {
+        .icons {
+            transition:
+                transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+                opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+        }
+
+        &:hover .icons,
+        &:focus-visible .icons {
+            transform: translateX(0.2rem);
+        }
+
+        [dir='rtl'] &:hover .icons,
+        [dir='rtl'] &:focus-visible .icons {
+            transform: translateX(-0.2rem);
+        }
+    }
+}
+
+/* =========================================================
 Localization Switcher
 ========================================================= */
 @layer components {
@@ -302,11 +328,6 @@ Consumers: sections/promise-section, sections/cart, snippets/filters-groups
         transition:
             color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
             opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
-    }
-
-    .accordion__title.is-active {
-        @apply font-semibold;
-        opacity: 1;
     }
 
     .accordion__title--active {
@@ -746,6 +767,26 @@ Used to style backend rich-text HTML output:
 }
 
 /* =========================================================
+Product Price
+
+Shared price primitive used by PDP/featured product-info-blocks and quick view.
+Scene owners can add BEM classes for typography/order/color deltas.
+========================================================= */
+@layer components {
+    .product-price {
+        @apply flex items-center gap-3;
+    }
+
+    .product-price__main {
+        @apply font-medium;
+    }
+
+    .product-price__compare {
+        @apply text-theme-text/80 line-through;
+    }
+}
+
+/* =========================================================
 Quantity Selector
 
 Reusable across: product, cart, featured-product, cart-overlay.
@@ -777,7 +818,7 @@ Buy Buttons — purchase_group chrome
 
 Reusable across: PDP, featured-product, quick view.
 Consumed via snippets/buy-buttons.liquid (render/API owner).
-Not included: buy-buttons__retry-action (pickup owner delta in snippets.css, Phase 5D-2a).
+Not included: pickup-availability-inline__retry-action (pickup owner delta in snippets.css, Phase 5D-2b).
 ========================================================= */
 @layer components {
     .buy-buttons__actions--purchase-group {

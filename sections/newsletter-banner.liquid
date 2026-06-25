@@ -1,3 +1,12 @@
+{%- liquid
+    assign banner_aspect_mobile = '9/16'
+    assign banner_aspect_desktop = '16/9'
+    if section.settings.background_image != blank
+        if section.settings.background_image.width != blank and section.settings.background_image.height != blank
+            assign banner_aspect_desktop = section.settings.background_image.width | append: '/' | append: section.settings.background_image.height
+        endif
+    endif
+-%}
 <div
     data-section-id="{{ section.id }}"
     class="newsletter-banner-section full-width color-{{ section.settings.color_scheme }}"
@@ -9,7 +18,13 @@
     data-motion-section
 >
     <div class="layout container-page">
-        <div class="relative aspect-9/16 overflow-hidden pc:aspect-16/9">
+        <div
+            class="newsletter-banner__media relative overflow-hidden"
+            style="
+                --newsletter-banner-aspect-mobile: {{ banner_aspect_mobile }};
+                --newsletter-banner-aspect-desktop: {{ banner_aspect_desktop }};
+            "
+        >
             {% comment %} Background Image {% endcomment %}
             {%- assign image_alt = section.settings.background_image.alt
                 | default: section.settings.heading
@@ -19,7 +34,10 @@
                 class: '!absolute inset-0',
                 image: section.settings.background_image,
                 alt: image_alt,
-                width: section.settings.background_image.width
+                width: section.settings.background_image.width,
+                mode: 'frame',
+                fit: section.settings.background_image_fit,
+                position: section.settings.background_image_position
             -%}
 
             {% comment %} Frosted glass center overlay {% endcomment %}
@@ -95,6 +113,18 @@
 </div>
 
 {% stylesheet %}
+    .newsletter-banner-section .newsletter-banner__media {
+        aspect-ratio: var(--newsletter-banner-aspect-mobile, 9/16);
+        min-height: 32rem;
+    }
+
+    @media (width >= 48rem) {
+        .newsletter-banner-section .newsletter-banner__media {
+            aspect-ratio: var(--newsletter-banner-aspect-desktop, 16/9);
+            min-height: 0;
+        }
+    }
+
     /* Mobile-only inline-submit-field sizing for this section's hero form layout.
        Scoped here — not in components.css — so newsletter-overlay and other
        inline-submit-field consumers keep the default component chrome. */
@@ -102,12 +132,17 @@
         .newsletter-banner-section .inline-submit-field__input {
             padding-top: 0.5rem;
             padding-bottom: 0.5rem;
+            border-start-end-radius: 0;
+            border-end-end-radius: 0;
         }
 
         .newsletter-banner-section .inline-submit-field__button--icon {
-            width: 2.25rem;
-            min-width: 2.25rem;
-            height: 2.25rem;
+            width: auto;
+            min-width: 2.75rem;
+            height: auto;
+            aspect-ratio: auto;
+            align-self: stretch;
+            padding-inline: 0.75rem;
         }
     }
 {% endstylesheet %}
@@ -131,6 +166,66 @@
             "type": "image_picker",
             "id": "background_image",
             "label": "t:sections.newsletter-banner.settings.background_image"
+        },
+        {
+            "type": "select",
+            "id": "background_image_fit",
+            "label": "t:sections.newsletter-banner.settings.background_image_fit",
+            "options": [
+                {
+                    "value": "cover",
+                    "label": "t:sections.newsletter-banner.options.fit_cover"
+                },
+                {
+                    "value": "contain",
+                    "label": "t:sections.newsletter-banner.options.fit_contain"
+                }
+            ],
+            "default": "cover"
+        },
+        {
+            "type": "select",
+            "id": "background_image_position",
+            "label": "t:sections.newsletter-banner.settings.background_image_position",
+            "options": [
+                {
+                    "value": "center",
+                    "label": "t:sections.newsletter-banner.options.position_center"
+                },
+                {
+                    "value": "top",
+                    "label": "t:sections.newsletter-banner.options.position_top"
+                },
+                {
+                    "value": "bottom",
+                    "label": "t:sections.newsletter-banner.options.position_bottom"
+                },
+                {
+                    "value": "left",
+                    "label": "t:sections.newsletter-banner.options.position_left"
+                },
+                {
+                    "value": "right",
+                    "label": "t:sections.newsletter-banner.options.position_right"
+                },
+                {
+                    "value": "top left",
+                    "label": "t:sections.newsletter-banner.options.position_top_left"
+                },
+                {
+                    "value": "top right",
+                    "label": "t:sections.newsletter-banner.options.position_top_right"
+                },
+                {
+                    "value": "bottom left",
+                    "label": "t:sections.newsletter-banner.options.position_bottom_left"
+                },
+                {
+                    "value": "bottom right",
+                    "label": "t:sections.newsletter-banner.options.position_bottom_right"
+                }
+            ],
+            "default": "center"
         },
         {
             "type": "inline_richtext",

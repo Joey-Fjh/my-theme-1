@@ -10,11 +10,26 @@
   This is a component that defaults to assuming "full-width" layout.
   If the image is not actually displayed at full width in your layout, please be sure to override the sizes parameter when invoking it.
 
+  ## Display contract (Phase Image-B)
+
+  Two display modes control wrapper sizing and the default object-fit:
+  - `frame` (default): the image fills a fixed container. Wrapper gets `height: 100%`; img defaults to `object-cover`.
+  - `natural`: the image displays at its intrinsic ratio without forced fill. Wrapper gets `height: auto`; img defaults to `object-contain`.
+
+  `fit` overrides the mode-derived default: `cover` | `contain` | `fill` | `none` | `scale-down`.
+  `position` sets `object-position` on the img element.
+
+  Backward compat: all existing calls without `mode` get `frame` behavior, so visual output is unchanged.
+
     @param {image} image - The image to be rendered
     @param {string} [url] - An optional destination URL for the image
     @param {string} [wrapper] - An optional wrapper element, either 'a' or 'div'. If not provided, it will be 'a' if url is provided, otherwise 'div'.
-    @param {string} [class] - Optional class to be added to the image wrapper
-    @param {string} [img_class] - Optional class to be added to the img tag. `image_img` is always applied and `object-cover` is added unless an object-fit utility is provided.
+    @param {string} [wrapper_class] - Optional class added to the image wrapper. Canonical name; `class` is a deprecated alias merged into this.
+    @param {string} [class] - Deprecated alias for `wrapper_class`. If both are provided, they are merged.
+    @param {string} [img_class] - Optional class to be added to the img tag. `image_img` is always applied.
+    @param {string} [mode] - Display mode: 'frame' (default) or 'natural'. Controls wrapper height and default object-fit.
+    @param {string} [fit] - Object-fit override: 'cover' | 'contain' | 'fill' | 'none' | 'scale-down'. Default derived from mode: 'cover' for frame, 'contain' for natural.
+    @param {string} [position] - Object-position value for the img element. Defaults to 'center'. Supports 'top', 'bottom', 'left', 'right', and compound values like 'top left'.
     @param {number} [width] - The highest resolution width of the image to be rendered
     @param {number} [height] - The highest resolution height of the image to be rendered
     @param {string} [crop] - The crop position of the image
@@ -59,10 +74,68 @@
         assign aspect_ratio = placeholder_aspect_ratio
     endif
 
-    assign class = class | default: ''
+    assign mode = mode | default: 'frame'
+    assign explicit_wrapper_class = wrapper_class | default: ''
+    assign legacy_wrapper_class = class | default: ''
     assign img_class = img_class | default: ''
     assign extra_attributes = extra_attributes | default: ''
     assign alt = alt | default: ''
+
+    if mode == 'natural'
+        assign fit = fit | default: 'contain'
+    else
+        assign fit = fit | default: 'cover'
+    endif
+
+    assign position = position | default: 'center'
+
+    assign valid_modes = 'frame,natural'
+    assign valid_fits = 'cover,contain,fill,none,scale-down'
+    assign valid_positions = 'center,top,bottom,left,right,top left,top right,bottom left,bottom right'
+
+    assign mode_allowed = false
+    assign mode_tokens = valid_modes | split: ','
+    for m in mode_tokens
+        if m == mode
+            assign mode_allowed = true
+            break
+        endif
+    endfor
+    unless mode_allowed
+        assign mode = 'frame'
+    endunless
+
+    if fit != blank
+        assign fit_allowed = false
+        assign fit_tokens = valid_fits | split: ','
+        for f in fit_tokens
+            if f == fit
+                assign fit_allowed = true
+                break
+            endif
+        endfor
+        unless fit_allowed
+            if mode == 'natural'
+                assign fit = 'contain'
+            else
+                assign fit = 'cover'
+            endif
+        endunless
+    endif
+
+    if position != blank
+        assign position_allowed = false
+        assign position_tokens = valid_positions | split: ','
+        for p in position_tokens
+            if p == position
+                assign position_allowed = true
+                break
+            endif
+        endfor
+        unless position_allowed
+            assign position = 'center'
+        endunless
+    endif
 
     if fetchpriority != blank
         assign extra_attributes = extra_attributes | append: ' fetchpriority="' | append: fetchpriority | append: '"'
@@ -77,10 +150,14 @@
             assign has_object_fit = true
             break
         endif
+        if img_class_token contains ':object-cover' or img_class_token contains ':object-contain' or img_class_token contains ':object-fill' or img_class_token contains ':object-none' or img_class_token contains ':object-scale-down'
+            assign has_object_fit = true
+            break
+        endif
     endfor
 
     unless has_object_fit
-        assign img_class = img_class | append: ' object-cover'
+        assign img_class = img_class | append: ' object-' | append: fit
     endunless
     assign img_class = 'image_img ' | append: img_class
     assign img_class = img_class | strip
@@ -100,8 +177,11 @@
     assign placeholder_class = placeholder_class | strip
 
     assign wrapper_class = 'theme-image'
-    if class != blank
-        assign wrapper_class = wrapper_class | append: ' ' | append: class
+    if explicit_wrapper_class != blank
+        assign wrapper_class = wrapper_class | append: ' ' | append: explicit_wrapper_class
+    endif
+    if legacy_wrapper_class != blank
+        assign wrapper_class = wrapper_class | append: ' ' | append: legacy_wrapper_class
     endif
 %}
 
@@ -111,8 +191,11 @@
         href="{{ url }}"
     {% endif %}
     data-motion-reveal="media"
+    data-image-mode="{{ mode }}"
     {%- if aspect_ratio -%}
-        style="--aspect-ratio: {{ aspect_ratio }}"
+        style="--aspect-ratio: {{ aspect_ratio }}; --image-object-position: {{ position }}"
+    {%- else -%}
+        style="--image-object-position: {{ position }}"
     {%- endif -%}
 >
     {%- if image != blank -%}
@@ -147,13 +230,21 @@
         overflow: hidden;
         width: 100%;
         aspect-ratio: var(--aspect-ratio);
+    }
+
+    .theme-image[data-image-mode='frame'] {
         height: 100%;
+    }
+
+    .theme-image[data-image-mode='natural'] {
+        height: auto;
     }
 
     .theme-image > .image_img {
         width: 100%;
         height: 100%;
         display: block;
+        object-position: var(--image-object-position, center);
     }
 
     .svg-placeholder {

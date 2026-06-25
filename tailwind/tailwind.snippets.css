@@ -45,10 +45,10 @@ Layer: snippets — layout delta only (trigger chrome: tab-nav-item* in componen
 /* =========================================================
 Owner: snippets/pickup-availability-inline.liquid
 Consumers: buy-buttons (PDP context only)
-Layer: snippets — pickup retry owner delta; not part of promoted buy-buttons core chrome (Phase 5D-2a)
+Layer: snippets — pickup retry owner delta (Phase 5D-2b)
 ========================================================= */
 @layer snippets {
-    .buy-buttons__retry-action {
+    .pickup-availability-inline__retry-action {
         @apply body-md font-medium underline underline-offset-4 focus-ring;
         transition: opacity var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease);
 
@@ -72,8 +72,34 @@ Layer: snippets — layout delta only (trigger chrome: tab-nav-item* in componen
 /* =========================================================
 Owner: sections/featured-products.liquid
 Consumers: featured products section tabs
-Layer: snippets — chrome in components.css tab-nav-item--opacity (Phase 5A); no layout delta
+Layer: snippets — typography via body-size-custom; chrome in components.css tab-nav-item--opacity (Phase 5A)
 ========================================================= */
+@layer snippets {
+    .featured-products__tab-header {
+        align-items: flex-start;
+        /* Horizontal scrollport clips vertical ink without inner padding (mobile overflow-x: auto). */
+        padding-block: 0.6rem;
+    }
+
+    .featured-products__tab {
+        /* 64px at default root (62.5% html → 1rem = 10px), scaled by merchant body_scale */
+        --body-size-custom: calc(var(--font-body-scale) * 3.5rem);
+        --body-size-custom-pc: calc(var(--font-body-scale) * 4.2rem);
+        padding-block: 0.12em;
+    }
+}
+
+/* =========================================================
+Owner: sections/scroll-categories.liquid
+Consumers: product list row title
+Layer: snippets — typography via body-size-custom (beyond body-3xl)
+========================================================= */
+@layer snippets {
+    .scroll-categories__product-title {
+        --body-size-custom: calc(var(--font-body-scale) * 3.2rem);
+        --body-size-custom-pc: calc(var(--font-body-scale) * 4.8rem);
+    }
+}
 
 /* =========================================================
 Owner: filters drawer snippet
@@ -156,10 +182,10 @@ Layer: snippets temporary owner block
 @layer snippets {
     .flip-digit__value {
         @apply body-base font-bold text-theme-bg;
-        font-size: calc(var(--font-body-scale) * 3rem);
+        font-size: calc(var(--font-body-scale) * 2.4rem);
 
         @media (width >= theme(--breakpoint-pc)) {
-            font-size: calc(var(--font-body-scale) * 4.6rem);
+            font-size: calc(var(--font-body-scale) * 3.6rem);
         }
     }
 }
@@ -263,8 +289,13 @@ Layer: snippets temporary owner block
 
 /* =========================================================
 Owner: snippets/product-card.liquid
-Consumers: collection grids, featured products, recommendations
+Consumers: collection grids, featured products, recommendations,
+  snippets/predictive-search-product-card.liquid (product-card-shell__* only)
 Layer: snippets temporary owner block
+
+Shared primitives (valid cross-snippet — not orphans):
+- product-card-shell__* — lite shell shared by product-card and predictive-search-product-card
+- product-card__variant-* — same family; consumed by snippets/product-card-variant-panel.liquid
 ========================================================= */
 @layer snippets {
     .product-card-shell {
@@ -592,8 +623,16 @@ Layer: snippets temporary owner block
 
 /* =========================================================
 Owner: snippets/product-info-blocks.liquid
-Consumers: PDP, featured product, quick view info stack
+Block-driven consumers: PDP (sections/product.liquid), featured-product (sections/featured-product.liquid)
 Layer: snippets temporary owner block
+
+Parallel scene API (not product-info-blocks consumers):
+- product-quick-view + product-purchase-stack — independent quick-view stack; dual-class reuses price primitive only
+
+Shared primitives (valid cross-snippet — not orphans):
+- product-price* — components primitive consumed by product-info-blocks and quick view
+- product-info-blocks__price* — scene/API hooks; quick view dual-classes only for price primitive compatibility
+- product-info-blocks__title — typography owner: heading-h1 (PDP); heading-h2 via --featured modifier
 ========================================================= */
 @layer snippets {
     .product-info-blocks {
@@ -614,16 +653,12 @@ Layer: snippets temporary owner block
         }
     }
 
-    .product-info-blocks__price {
-        @apply flex items-center gap-3;
+    .product-info-blocks__title {
+        @apply heading-h1;
     }
 
-    .product-info-blocks__price-main {
-        @apply font-medium;
-    }
-
-    .product-info-blocks__price-compare {
-        @apply text-theme-text/80 line-through;
+    .product-info-blocks--featured .product-info-blocks__title {
+        @apply heading-h2;
     }
 
     .product-info-blocks__vendor {
@@ -647,9 +682,17 @@ Layer: snippets temporary owner block
         @apply pc:min-h-0 pc:shrink pc:overflow-hidden;
     }
 
-    .product-info-blocks__buy-buttons,
     .product-info-blocks__purchase {
         @apply mt-auto w-full pt-6;
+    }
+
+    .product-info-blocks__quantity {
+        @apply flex min-w-0 items-stretch;
+    }
+
+    .product-info-blocks__quantity > * {
+        width: 100%;
+        justify-content: space-between;
     }
 
     .product-info-blocks__inventory-notice {
@@ -832,7 +875,7 @@ Layer: snippets temporary owner block
     }
 
     .product-quick-view__price {
-        @apply flex flex-wrap items-center gap-3;
+        @apply flex-wrap;
     }
 
     .product-quick-view__price-main {
@@ -847,15 +890,7 @@ Layer: snippets temporary owner block
         @apply flex flex-col gap-4 ps-1;
     }
 
-    .product-quick-view__quantity {
-        @apply flex flex-col gap-3;
-    }
-
     .product-quick-view__purchase {
-        @apply mt-1;
-    }
-
-    .product-quick-view__buy-buttons {
         @apply mt-1;
     }
 
@@ -958,9 +993,11 @@ Layer: snippets temporary owner block
 ========================================================= */
 @layer snippets {
     .variant-picker__swatch {
-        @apply block h-8 w-8 cursor-pointer border transition-all;
+        @apply block h-8 w-8 cursor-pointer border;
         border-color: rgb(var(--color-border) / 0.2);
-        transition-property: border-color, box-shadow;
+        transition:
+            border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+            box-shadow var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
 
         &:hover {
             border-color: rgb(var(--color-foreground));

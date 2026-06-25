@@ -3,14 +3,14 @@
 
     @param {product} product - Product object (from section.settings.product or product)
     @param {section} section - Section object (for blocks and id)
-    @param {string} [context] - Rendering context, e.g. 'main' (PDP) or 'featured' (home)
+    @param {string} [context] - Rendering context: 'product' (PDP/default) or 'featured' (home)
     @param {string} [container_class] - Optional extra classes for the root container (merged with defaults)
     @param {string} [product_form_id] - Shared form ID for variant picker, quantity, and buy buttons
     @param {string} [render_column] - Product block column to render: 'form' or 'gallery'
 {% enddoc %}
 
 {%- assign product_data = product | default: section.settings.product -%}
-{%- assign context = context | default: 'main' -%}
+{%- assign context = context | default: 'product' -%}
 {%- assign container_class = container_class | default: '' -%}
 {%- assign product_form_id = product_form_id | default: 'product-form-' | append: section.id -%}
 {%- assign render_column = render_column | default: 'form' -%}
@@ -78,7 +78,7 @@
             {%- when 'title' -%}
                 <div {{ block.shopify_attributes }}>
                     {%- if product_data != blank -%}
-                        {%- if context == 'main' or context == 'product' -%}
+                        {%- if context == 'product' -%}
                             <h1 class="product-info-blocks__title">
                                 {{ product_data.title }}
                             </h1>
@@ -99,7 +99,7 @@
                     {%- if product_data != blank -%}
                         {%- assign current_variant = product_data.selected_or_first_available_variant -%}
                         <div
-                            class="product-info-blocks__price"
+                            class="product-price product-info-blocks__price"
                             data-section-id="{{ section.id }}"
                             data-price="{{ current_variant.price | default: 0 }}"
                             data-compare-price="{{ current_variant.compare_at_price | default: 0 }}"
@@ -107,13 +107,13 @@
                             x-data="ProductPrice()"
                         >
                             <span
-                                class="product-info-blocks__price-main body-lg"
+                                class="product-price__main product-info-blocks__price-main body-lg"
                                 x-text="formattedPrice"
                             >
                                 {{- current_variant.price | money -}}
                             </span>
                             <s
-                                class="product-info-blocks__price-compare"
+                                class="product-price__compare product-info-blocks__price-compare"
                                 x-show="hasComparePrice"
                                 x-text="formattedComparePrice"
                             >
@@ -123,7 +123,7 @@
                             </s>
                         </div>
                     {%- else -%}
-                        <p class="product-info-blocks__price-main body-lg">
+                        <p class="product-price__main product-info-blocks__price-main body-lg">
                             {{ 'products.product.example_price' | t }}
                         </p>
                     {%- endif -%}
@@ -435,14 +435,16 @@
                                 product_form_id: product_form_id,
                                 section_id: section.id,
                                 context: context,
-                                layout: 'purchase_group',
                                 quantity_block: quantity_block,
                                 cart_type: settings.cart_type
                             -%}
                         </div>
                     {%- else -%}
                         <div class="product-info-blocks__purchase">
-                            <div class="buy-buttons__quantity" {{ block.shopify_attributes }}>
+                            <div
+                                class="product-info-blocks__quantity"
+                                {{ block.shopify_attributes }}
+                            >
                                 {%- render 'quantity-selector',
                                     value: 1,
                                     min: 1,
@@ -463,7 +465,6 @@
                             product_form_id: product_form_id,
                             section_id: section.id,
                             context: context,
-                            layout: 'purchase_group',
                             quantity_block: quantity_block,
                             cart_type: settings.cart_type
                         -%}

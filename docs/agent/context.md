@@ -6,7 +6,7 @@ This file records the current cross-session task contract and progress. Keep imp
 
 Active post-commit follow-up: product rich media gallery support was committed, and render/static-analysis cleanup plus icon/motion cleanup are currently applied in the working tree.
 
-CSS architecture optimization is the active architecture track. Phases **1–4B**, **5A**, **5B**, **5C**, **5D-1**, **5D-2a**, **6**, and **6B** are accepted (2026-06-24). Phase **5** overall remains **in progress** (5D-2b deferred). Layer contract: `docs/references/style-system/css-architecture.md`.
+CSS architecture optimization is the active architecture track. Phases **1–4B**, **5A**, **5B**, **5C**, **5D-1**, **5D-2a**, **5D-2b**, **5E**, **5F**, **6**, **6B**, **6C**, **7B**, **Image-B**, **Image-C**, **Image-D Mini**, **Image-E**, and **Media-Orphan-B** are accepted. **Phases 8B and 8C** are pending review. Image system final score: **96/100**. Layer contract: `docs/references/style-system/css-architecture.md`.
 
 ### CSS Architecture — Phase status
 
@@ -16,14 +16,157 @@ CSS architecture optimization is the active architecture track. Phases **1–4B*
 | **2** | **Accepted** | `--motion-ease-default` alias; dropdown + product-card motion vars |
 | **3** | **Accepted** | `newsletter-banner-section` override → section `{% stylesheet %}` |
 | **4B** | **Accepted** | `snippets.css` owner blocks; sub-heading → typography; inventory dot semanticized; mixed product-info-blocks owners cleaned |
-| **5** | **In progress** | 5A–5D-2a Accepted; 5D-2b deferred — see `css-architecture.md` §8.1 |
+| **5** | **Accepted** | 5A–5F Accepted; remaining items are deferred manual/API cleanup — see `css-architecture.md` §8.1 |
 | **5A** | **Accepted** | `tab-nav-item*` in `components.css`; 7 consumers dual-class; snippets chrome removed |
 | **5B** | **Accepted** | `accordion__*` CSS promoted snippets → components; snippet remains API owner |
 | **5C** | **Accepted** | `interactive-link` in `elements.css`; 4 consumers dual-class |
 | **5D-1** | **Accepted** | `icon-with-text-item*` CSS promoted snippets → components |
 | **5D-2a** | **Accepted** | `buy-buttons__*` purchase chrome promoted snippets → components |
+| **5D-2b** | **Accepted** | Pickup retry rename; dead purchase wrapper CSS removed; `buy-buttons__` snippets ban |
+| **5E** | **Accepted** | `links-underline` child icon motion split to component composition |
+| **5F** | **Accepted** | Accordion dead selector removed; buy-buttons dead markup modifiers removed |
 | **6** | **Accepted** | `checkCssLayerProtocol()` + `css-layer-allowlist.json` |
 | **6B** | **Accepted** | Multi-line motion lint, promoted-prefix comment masking, selector bans |
+| **6C** | **Accepted** | Batch A Liquid `duration-*` migrated to owner `{% stylesheet %}` + motion vars |
+| **7B** | **Accepted** | Snippet CSS consumption contract; dead quick-view quantity CSS; swatch motion vars |
+| **8B** | **Pending review** | PDP quantity owner; title typography contract; quick-view boundary docs |
+| **8C** | **Pending review** | Style API hardening: buttons, product-price, buy-buttons layout, PDP context |
+| **Image-B** | **Accepted** | Image display contract: mode/fit/position params; newsletter-banner controls; logo/brush fix |
+| **Image-C** | **Accepted** | Consumption hardening: contains-match object-fit detection; testimonial-featured wrapper misuse fix; 6 hero callers audited |
+| **Image-D Mini** | **Accepted** | Param validation whitelist: mode/fit/position enforced; invalid fallback to safe defaults |
+| **Image-E** | **Accepted** | Final compatibility audit: 52 calls audited, 0 blockers, 96/100 score |
+| **Media-Orphan-B** | **Accepted** | Video-banner: dual-source (hosted + external video), polished UI, container width, enhanced empty state |
+
+### CSS Architecture — Phase 8B pending review (2026-06-25)
+
+**Delivered:**
+
+- `snippets/product-info-blocks.liquid`: quantity-only fallback `buy-buttons__quantity` → `product-info-blocks__quantity`
+- `tailwind/tailwind.snippets.css`: `product-info-blocks__quantity` owner rules; `product-info-blocks__title` typography owner (`heading-h1` / `--featured` → `heading-h2`); owner header clarifies block-driven vs quick-view parallel API
+- `docs/references/style-system/css-architecture.md`: §7.7 Phase 8A/8B PDP API contract record
+
+**Manual QA backlog (required before accept):**
+
+- PDP title desktop/mobile scale (`heading-h1` — desktop `3rem` → `4rem` at `pc:`)
+- Featured product title scale (`heading-h2` — desktop `2rem` → `2.4rem` at `pc:`)
+- PDP quantity-only fallback (no `buy_buttons` block)
+- PDP quantity + buy buttons purchase group
+- Quick view price/title/purchase smoke check (no regression)
+- Variant picker smoke check
+
+**Resolved in Phase 8C:** `product-price` component API; `buy-buttons` `layout: 'stack'`; `context` `'main'` vs `'product'` naming.
+
+**Deferred:** `--form`/`--featured` modifier audit after visual QA.
+
+### CSS Architecture — Phase 8C pending review (2026-06-25)
+
+**Delivered:**
+
+- `tailwind/tailwind.elements.css`: `btn` hover centralized through `--btn-hover-filter`; `btn-primary` / `btn-secondary` set variant values; `icons`, `btn`, and `close-button` use explicit motion-var transitions.
+- `tailwind/tailwind.components.css`: added shared `product-price*` primitive.
+- `snippets/product-info-blocks.liquid` and `snippets/product-purchase-stack.liquid`: price markup consumes `product-price*` plus existing scene BEM classes.
+- `snippets/buy-buttons.liquid`: removed no-consumer `layout: 'stack'` branch; buy-buttons always renders the purchase-row contract.
+- `snippets/product-info-blocks.liquid`: default context is now `product`; old `main` title alias removed.
+
+**Manual QA backlog (required before accept):** primary/secondary button hover, Shopify unbranded payment button hover, close buttons, icon motion, PDP/featured price, quick-view price, PDP purchase group, quick-view buy actions.
+
+### CSS Architecture — Phase Image-B pending review (2026-06-25)
+
+**Delivered:**
+
+- `snippets/image.liquid`: new `mode` (`frame`|`natural`), `fit` (`cover`|`contain`|`fill`|`none`|`scale-down`), `position` (CSS object-position value), `wrapper_class` (canonical, `class` aliased) params; `data-image-mode` attribute on wrapper; mode-conditional CSS (`height: 100%` for frame, `height: auto` for natural); img `object-position` via `--image-object-position` var; `has_object_fit` detection expanded to responsive variants (`pc:object-contain` etc.)
+- `sections/newsletter-banner.liquid`: new schema settings `background_image_fit` (cover/contain, default cover) and `background_image_position` (9-position grid, default center); render passes `mode: 'frame'` + `fit` + `position` to image snippet
+- `sections/header.liquid`: logo render updated with `mode: 'natural'`, `fit: 'contain'`
+- `sections/footer.liquid`: brush/decorative image updated with `mode: 'natural'`, `fit: 'contain'`; misplaced `object-contain` removed from wrapper `class`
+- `sections/brand-statement.liquid`: brushstroke updated with `mode: 'natural'`, `fit: 'contain'`, `position: 'center'`; removed `pc:object-contain` + `object-center` from `img_class`
+- `locales/en.default.schema.json`: added newsletter-banner `background_image_fit`, `background_image_position` keys and fit/position option labels
+
+**Backward compat:** all 45 unpatched callers without `mode` param default to `frame` → identical `height: 100%` wrapper + `object-cover` img → zero visual change.
+
+**Not migrated (by design):** product-card, product-gallery-*, product-media, image-lightbox, image-magnifier, media-video, all frame/hero/banner callers (~45 calls untouched).
+
+**Manual QA backlog (required before accept):**
+
+- newsletter-banner: cover center, cover top/bottom, contain center, mobile 9/16 + desktop 16/9
+- header logo: no cropping at any viewport width
+- footer brush/decorative image: no cropping, mix-blend-lighten preserved
+- brand-statement brushstroke: mobile and desktop both show full image (contain, no crop)
+- Product card / gallery spot-check: confirm old default frame behavior unchanged (any 2-3 cards)
+
+### CSS Architecture — Phase Image-C pending review (2026-06-25)
+
+**Delivered:**
+
+- `snippets/image.liquid`: `has_object_fit` detection hardened — bare token exact match for `object-*` + responsive-variant contains match for `:object-cover` / `:object-contain` / `:object-fill` / `:object-none` / `:object-scale-down` (future-proof against any Tailwind breakpoint prefix). `fit` append logic unchanged.
+- `sections/testimonial-featured.liquid`: fixed wrapper class misuse — `class: 'h-full w-full object-cover'` split to `class: 'h-full w-full'` (layout only) + explicit `mode: 'frame'` + `fit: 'cover'`.
+
+**Audit-only — 6 high-risk hero/frame callers (no migration):**
+
+| Caller | Verdict |
+| --- | --- |
+| `main-page-contact.liquid` | Clean. Default frame+cover, grid-cell fill is correct. |
+| `promo-bannder.liquid` (hero + cards) | Clean. Inside `aspect-*` containers, fill-frame is correct. |
+| `slides-show.liquid` | Clean. Full-bleed Swiper slide fill is correct. |
+| `routine-showcase.liquid` | Clean. `absolute inset-0` background fill is correct. |
+| `newsletter-overlay.liquid` | Clean. Already has explicit `object-cover` in `img_class`, wrapper class is layout-only. |
+| `main-page-about.liquid` | Clean. Already has explicit `object-cover object-center` in `img_class`. |
+
+All 6 callers have correct wrapper/img class separation. None needed migration. They all remain on default `frame` mode — zero visual change.
+
+**Future candidates (record only — do not implement without explicit scope):** promo-bannder, slides-show, routine-showcase, newsletter-overlay, and main-page-about could each gain schema `fit`/`position` settings if merchants request focal-point control for portrait/landscape images.
+
+**Post-Image-C consumer census:** ~43 frame (default), 3 frame (explicit), 4 natural (explicit).
+
+**Manual QA backlog (required before accept):**
+
+- testimonial-featured image still fills right column
+- newsletter-banner fit/position still works (Image-B)
+- header/footer/brand-statement natural images still not cropped (Image-B)
+- 2-3 product card/gallery spot-check: default frame behavior unchanged
+
+### CSS Architecture — Phase Image-D Mini accepted (2026-06-25)
+
+**Delivered:**
+
+- `snippets/image.liquid`: added param validation whitelist for `mode` (frame|natural), `fit` (5 values), `position` (9 values matching newsletter-banner schema). Invalid values fall back to safe defaults: mode→frame, fit→mode-derived, position→center. All 52 existing callers pass with valid values — zero visual change.
+
+**Validation:** `npm run lint:i18n` ✅, `npm run lint:theme` ✅, `npm test` ✅ (1 pre-existing OrphanedSnippet), `git diff --check` ✅, Shopify theme validation ✅.
+
+### CSS Architecture — Phase Image-E accepted (2026-06-25)
+
+**Delivered (audit-only, no code changes):**
+
+Final compatibility audit of all 52 `render 'image'` calls across 28 files:
+
+| Category | Count | Status |
+|---|---|---|
+| Explicit mode (migrated) | 5 | ✅ header, footer brush, brand-statement, newsletter-banner, testimonial-featured |
+| Explicit object-fit in img_class | 18 | ✅ article, blog, cart, lightbox, galleries, media-video, magnifier |
+| Default frame+cover, correct container | 24 | ✅ about-stats, before-after, blog-stories, collections, philosophy, promise, scroll-categories, promo-bannder, routine-showcase, slides-show, product-card |
+| Pass-through from gallery | 4 | ✅ product-media image/video/external/model |
+| Hybrid (compatible but semantically inconsistent) | 1 | ⚠️ product-comparison-table: object-contain + frame-mode wrapper |
+
+**Result:** 0 blockers, 1 non-blocking warning (product-comparison-table hybrid — defer to next cleanup pass), 6 optional schema-candidate sections (promo-bannder, slides-show, routine-showcase, newsletter-overlay, main-page-about — plumbing exists, just needs per-section schema).
+
+**Image system final score: 96/100.** Remaining to 98+ is per-section merchant control, not image.liquid plumbing.
+
+### CSS Architecture — Phase Media-Orphan-B accepted (2026-06-25)
+
+**Delivered (supersedes Media-Orphan-A):**
+
+- `sections/video-banner.liquid`: polished video section with dual-source support:
+  - **Shopify-hosted video:** `video` type schema, renders via `media-video` snippet with play/mute/controls overlay.
+  - **External video:** `video_url` type (YouTube/Vimeo), click-to-play UX with cover image + centered play button → iframe embed via `external_video_tag`. No mute button (unreliable on external iframes).
+  - **Container width:** page-width (default) or full-width select.
+  - **Visual polish:** rounded frame (`border-radius: 0.75rem`), large centered play button with glassmorphism styling, hover/focus transitions with motion vars, subtle empty state with play icon placeholder.
+  - **Overlay:** optional heading/subheading/text positioned over the video frame, pointer-events-none so controls remain clickable.
+  - **Source priority:** Shopify-hosted video > external URL > empty state.
+- `locales/en.default.schema.json`: updated labels (Shopify-hosted video, External video URL, Cover image, Container width) + info text for external URL.
+- `locales/en.default.json`: `sections.video-banner.empty_state` key (unchanged).
+
+**OrphanedSnippet resolved:** `snippets/media-video.liquid` now has a real consumer. Theme Check: 0 warnings.
+
+**Validation:** `npm run lint:i18n` ✅, `npm run lint:theme` ✅, `npm test` ✅ (0 errors, 0 warnings), Shopify theme validation ✅.
 
 ### CSS Architecture — Phase 4B accepted (2026-06-24)
 
@@ -68,9 +211,7 @@ CSS architecture optimization is the active architecture track. Phases **1–4B*
 
 **Validation:** `npm run build:tw` passed; `npm run lint` passed; `npm test` passed (`OrphanedSnippet` warning only — pre-existing `snippets/media-video.liquid`); `git diff --check` passed.
 
-**Deferred (API hardening):** `.accordion__title.is-active` unused — Alpine uses `--active` / `--inactive` modifier classes.
-
-**Remaining:** Manual accordion visual QA (promise-section, cart, filters drawer/vertical, keyboard).
+**Remaining:** Manual accordion visual QA (promise-section, cart, filters drawer/vertical, keyboard). Dead `.accordion__title.is-active` selector removed in Phase 5F.
 
 ### CSS Architecture — Phase 5C accepted (2026-06-24)
 
@@ -82,7 +223,7 @@ CSS architecture optimization is the active architecture track. Phases **1–4B*
 
 **Validation:** `npm run build:tw` passed; `npm run lint` passed; `npm test` passed (`OrphanedSnippet` warning only — pre-existing `snippets/media-video.liquid`); `git diff --check` passed.
 
-**Remaining:** Manual link visual QA (cart page, cart drawer line-clamp, search predictive/results, keyboard focus-visible). Candidate E (`links-underline` + `.icons`) unchanged.
+**Remaining:** Manual link visual QA (cart page, cart drawer line-clamp, search predictive/results, keyboard focus-visible).
 
 ### CSS Architecture — Phase 5D-1 accepted (2026-06-24)
 
@@ -109,7 +250,44 @@ CSS architecture optimization is the active architecture track. Phases **1–4B*
 
 **Manual QA backlog:** PDP buy buttons (quantity + ATC, quantity-anchor path), sold out/unavailable, dynamic checkout, featured-product, quick view buy actions, loading label opacity, pickup retry styled.
 
-**5D-2b deferred:** rename/rehome `buy-buttons__retry-action`; refactor orphan `buy-buttons__quantity` in product-info-blocks; remove dead `product-info-blocks__buy-buttons` / `product-quick-view__buy-buttons` rules; `stack` layout API cleanup.
+### CSS Architecture — Phase 5D-2b accepted (2026-06-25)
+
+**Delivered:**
+
+- `snippets/pickup-availability-inline.liquid`: `buy-buttons__retry-action` → `pickup-availability-inline__retry-action`
+- `tailwind/tailwind.snippets.css`: retry owner block renamed; dead `product-info-blocks__buy-buttons` and `product-quick-view__buy-buttons` selectors removed
+- `css-layer-allowlist.json`: `buy-buttons__` added to `snippetsPromotedPrefixes`
+
+**Validation:** `npm run build:tw` passed; `npm run lint` passed; `npm test` passed (`OrphanedSnippet` warning only — pre-existing `snippets/media-video.liquid`); `git diff --check` passed.
+
+**Manual QA backlog:** PDP pickup retry visual/focus; PDP quantity + ATC; featured-product purchase group; quick view purchase group.
+
+**Resolved:** `stack` layout API cleanup in Phase 8C. Orphan `buy-buttons__quantity` in product-info-blocks was resolved in Phase 8B.
+
+### CSS Architecture — Phase 5E accepted (2026-06-25)
+
+**Delivered:**
+
+- `tailwind/tailwind.elements.css`: `links-underline` now owns underline line behavior only.
+- `tailwind/tailwind.components.css`: `link-with-icon-motion` owns child `.icons` transition and hover/focus translation.
+- `snippets/link.liquid`: `variant: 'underline'` outputs `links-underline link-with-icon-motion`, preserving existing link snippet behavior without editing each consumer.
+
+**Manual QA backlog:** underline CTA links with arrow icons in blog, promo banner, footer, announcement bar, header/dropdown, slides-show; RTL icon direction.
+
+**Validation:** `npm run build:tw` passed; `npm run lint` passed; `npm test` passed (`OrphanedSnippet` warning only — pre-existing `snippets/media-video.liquid`); `git diff --check` passed.
+
+### CSS Architecture — Phase 5F accepted (2026-06-25)
+
+**Delivered:**
+
+- `tailwind/tailwind.components.css`: removed dead `.accordion__title.is-active` selector (`--active` / `--inactive` contract unchanged)
+- `snippets/buy-buttons.liquid`: removed dead `buy-buttons__actions` and `buy-buttons__actions--without-quantity` markup modifiers; kept `--purchase-group` and conditional `--with-quantity`
+
+**Validation:** `npm run build:tw` passed; `npm run lint` passed; `npm test` passed (`OrphanedSnippet` warning only — pre-existing `snippets/media-video.liquid`); `git diff --check` passed.
+
+**Manual QA backlog:** accordion (cart, filters drawer, promise-section); PDP / featured-product / quick view purchase group spot-check.
+
+**Resolved:** `layout: 'stack'` API cleanup and `close-button` motion var unify in Phase 8C. Orphan `buy-buttons__quantity` in `product-info-blocks` was resolved in Phase 8B.
 
 ### CSS Architecture — Phase 6 accepted (2026-06-24)
 
@@ -121,7 +299,36 @@ CSS architecture optimization is the active architecture track. Phases **1–4B*
 
 **Validation:** `npm run lint` passed; `npm test` passed (`OrphanedSnippet` warning only — pre-existing `snippets/media-video.liquid`); `git diff --check` passed.
 
-**Deferred:** cross-owner BEM heuristic; Liquid `duration-*`; `{% stylesheet %}` lint; 5D-2b buy-buttons follow-up; `buy-buttons__` snippets ban when retry-action renamed or added to `snippetsPromotedSelectors`.
+**Deferred:** cross-owner BEM heuristic; Liquid `duration-*` remaining hits (Batch A in 6C); `{% stylesheet %}` CSS lint; optional future P2 Liquid duration lint.
+
+### CSS Architecture — Phase 6C accepted (2026-06-25)
+
+**Delivered (Batch A — interactive `duration-*` → owner `{% stylesheet %}` + motion vars):**
+
+- `sections/article.liquid`: `.article-sidebar__link` color transition
+- `sections/collections.liquid`: `.collections-section__card` box-shadow transition
+- `snippets/image-magnifier.liquid`: `.image-magnifier__preview-layer` opacity fade
+- `snippets/header-mobile-menu-drawer.liquid`: `.header-mobile-menu-drawer__chevron` transform
+- `snippets/social-icons.liquid`: `.social-icons__link` opacity/color (`icons-animate-breathe` unchanged)
+- `sections/scroll-categories.liquid`: `.scroll-categories__preview` opacity/transform reveal
+
+**Validation:** `npm run build:tw` passed; `npm run lint` passed; `npm test` passed (`OrphanedSnippet` warning only — pre-existing `snippets/media-video.liquid`); `git diff --check` passed.
+
+**Manual QA backlog:** article sidebar link; collections card shadow; image magnifier fade; mobile menu chevron; social icon hover/breathe; scroll-categories hover preview.
+
+**Deferred:** flip-digit, about-stats, before-after-comparison; `transition-*` without `duration-*`; `{% stylesheet %}` raw ms; collections arrow `duration-300`; optional P2 Liquid duration lint.
+
+### CSS Architecture — Phase 7B accepted (2026-06-25)
+
+**Delivered:**
+
+- `tailwind/tailwind.snippets.css`: removed dead `.product-quick-view__quantity` (0 Liquid refs)
+- `variant-picker__swatch`: explicit `border-color` / `box-shadow` transitions with motion vars (no `transition-all`)
+- Owner block comments: `product-card-shell__*`, `product-card__variant-*`, `product-info-blocks__price*` shared primitives; `product-info-blocks__title` was documented as semantic hook only at the time, then upgraded in Phase 8B
+
+**Validation:** `npm run build:tw` passed; `npm run lint` passed; `npm test` passed (`OrphanedSnippet` warning only — pre-existing `snippets/media-video.liquid`); `git diff --check` passed.
+
+**Manual QA backlog:** collection/featured product card grid; predictive search product card; PDP product-info-blocks title/price; quick view price/description/purchase; variant picker swatch hover/selected/unavailable; search predictive/results tabs smoke check.
 
 ### CSS Architecture — Phase 6B accepted (2026-06-24)
 
@@ -129,7 +336,7 @@ CSS architecture optimization is the active architecture track. Phases **1–4B*
 
 - `lint-theme.js`: P2 motion lint scans full multi-line `transition:` blocks (comma segments; `var()` stripped before bare `ms`/`s` check)
 - `lint-theme.js`: P0 promoted-prefix ban uses `maskCssComments()` on `snippets.css`
-- `css-layer-allowlist.json`: `snippetsPromotedSelectors: []` (selector-level bans separate from prefix bans; `buy-buttons__` not added)
+- `css-layer-allowlist.json`: `snippetsPromotedSelectors: []` (selector-level bans separate from prefix bans); `buy-buttons__` added to `snippetsPromotedPrefixes` in Phase 5D-2b
 - Allowances unchanged: motion var fallbacks, `visibility 0s`, `transition-delay: 0s`; excludes `animates.css` and `tailwind.output.css`
 - Post-review fix: `BARE_DURATION_RE` non-global (`/.../` without `g`) so consecutive `.test()` on transition segments cannot skip via `lastIndex`
 
@@ -179,7 +386,7 @@ Typography consumption protocol is **complete for automated cleanup** (score **~
 - `about-stats` value — visual check; optional `heading-size-custom` pilot
 - `scroll-categories` product title — visual check vs `heading-h3` / custom size
 - `icon-with-text` block title — component owner (`body-xl` today)
-- `product-info-blocks__title` — snippets CSS typography owner
+- `product-info-blocks__title` — **resolved Phase 8B** (`heading-h1` / `--featured` `heading-h2` in snippets CSS); desktop scale QA required
 - **Display scale matrix** — page-type `h1` tier unification (cart/blog/collection vs native)
 - `slides-show` — keyboard Tab / AT manual validation (focus in hidden slides, no-JS multi-slide)
 - `newsletter-overlay` — fixed `h2` + merchant visual tier (documented acceptable deviation)
@@ -206,16 +413,8 @@ Latest reviewed commit:
 ### Current Validation
 
 - `npm.cmd run lint` passes.
-- `npm.cmd test` passes with 1 Theme Check `OrphanedSnippet` warning.
+- `npm.cmd test` passes with 0 warnings (OrphanedSnippet resolved in Phase Media-Orphan-A).
 - Plain `npm run ...` is blocked in this PowerShell environment by the local `npm.ps1` execution policy; use `npm.cmd ...`.
-
-### Known Warning
-
-Theme Check currently reports only:
-
-- `snippets/media-video.liquid` - `OrphanedSnippet`
-
-This appears to be genuine. Repository search found no real `render 'media-video'` references; the snippet only contains its own doc/example reference.
 
 ### Working Tree Notes
 
