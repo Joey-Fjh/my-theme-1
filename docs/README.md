@@ -10,7 +10,7 @@ Use `docs/` for durable context that is useful to agents but too large, too cont
 - `references/`: Shared references, architecture details, canonical implementation examples, and long checklists that may be read on demand.
     - `architecture/`: Runtime, motion, and abstraction-boundary references routed from `AGENTS.md`.
     - `agent-workflow/`: Collaboration standard, task routing, third-party skill governance, and task frame references routed from `AGENTS.md`.
-    - `style-system/`: CSS, typography, color, inline style, and SVG icon references routed from `AGENTS.md`.
+    - `style-system/`: CSS, typography, color/surface, image display, inline style, z-index, and SVG icon references routed from `AGENTS.md`.
     - `patterns/`: Canonical implementation examples.
     - `code-review/`: Review checklists, i18n references, and launch-gate references.
 

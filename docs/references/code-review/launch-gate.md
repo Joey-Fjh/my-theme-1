@@ -111,16 +111,16 @@ Some rules are enforced by tooling; others remain review-only. `AGENTS.md` is st
 
 | Rule family                               | Current coverage                   | Gate                            |
 | ----------------------------------------- | ---------------------------------- | ------------------------------- |
-| Inline `<script>` in Liquid               | `npm run lint:theme`               | Blocker                         |
-| Inline `<style>` in Liquid                | `npm run lint:theme`               | Blocker                         |
-| Complex `x-data` values                   | `npm run lint:theme` partial check | Blocker for new code            |
-| Raw `fetch()` in application code         | `npm run lint:theme`               | Blocker                         |
-| Direct cart endpoints outside cart store  | `npm run lint:theme`               | Blocker                         |
-| Manual section HTML replacement           | `npm run lint:theme`               | Blocker                         |
-| Alpine component group references         | `npm run lint:theme`               | Blocker                         |
-| Heading text-size utilities               | `npm run lint:theme`               | Blocker                         |
-| Heading class on non-heading elements     | `npm run lint:theme`               | Blocker                         |
-| i18n key usage                            | `npm run lint:i18n` plus review    | Blocker for user-facing strings |
+| Inline `<script>` in Liquid               | `npm.cmd run lint:theme`               | Blocker                         |
+| Inline `<style>` in Liquid                | `npm.cmd run lint:theme`               | Blocker                         |
+| Complex `x-data` values                   | `npm.cmd run lint:theme` partial check | Blocker for new code            |
+| Raw `fetch()` in application code         | `npm.cmd run lint:theme`               | Blocker                         |
+| Direct cart endpoints outside cart store  | `npm.cmd run lint:theme`               | Blocker                         |
+| Manual section HTML replacement           | `npm.cmd run lint:theme`               | Blocker                         |
+| Alpine component group references         | `npm.cmd run lint:theme`               | Blocker                         |
+| Heading text-size utilities               | `npm.cmd run lint:theme`               | Blocker                         |
+| Heading class on non-heading elements     | `npm.cmd run lint:theme`               | Blocker                         |
+| i18n key usage                            | `npm.cmd run lint:i18n` plus review    | Blocker for user-facing strings |
 | CSS syntax and common style issues        | Review only                        | Warning                         |
 | Redundant matching heading classes        | Review only                        | Warning                         |
 | Mismatched heading classes                | Review only                        | Warning; needs user decision    |
@@ -180,7 +180,7 @@ Repository safety rules:
 
 1. Never edit minified vendor files (`vendor-*.min.js`, `vendor-*.min.css`).
 2. Never manually edit `assets/tailwind.output.css`.
-3. Never manually edit `assets/icon-*.svg`; regenerate via `icons/` + `npm run build:svg`.
+3. Never manually edit `assets/icon-*.svg`; regenerate via `icons/` + `npm.cmd run build:svg`.
 4. Use 4-space indentation.
 5. Prefer minimal diffs and do not reformat unrelated code.
 6. Separate structural refactors from behavior changes.
@@ -224,16 +224,16 @@ Before considering a task complete, verify all applicable items below.
 2. New reusable CSS is placed in the correct Tailwind layer source file.
 3. Empty `{% stylesheet %}` blocks are removed during cleanup.
 4. Motion changes follow Motion Architecture; repeated Alpine transition groups use named recipes when available.
-5. If Tailwind source changed, run `npm run build:tw`.
-6. If SVG source changed, run `npm run build:svg`.
+5. If Tailwind source changed, run `npm.cmd run build:tw`.
+6. If SVG source changed, run `npm.cmd run build:svg`.
 
 ### Validation
 
 1. Update locales when new user-facing strings are introduced.
 2. Update README/docs when architecture, vendor, or build expectations change.
-3. Run `npm run lint` after meaningful theme changes.
-4. Run `npm test` after meaningful theme changes.
-5. Run `npm run build:tw` when Tailwind source changed, then verify `assets/tailwind.output.css` is the only expected generated CSS output.
-6. Run `npm run build:svg` when files in `icons/` changed, then verify generated `assets/icon-*.svg` output before using the icon snippet.
+3. Run `npm.cmd run lint` after meaningful theme changes.
+4. Run `npm.cmd test` after meaningful theme changes.
+5. Run `npm.cmd run build:tw` when Tailwind source changed, then verify `assets/tailwind.output.css` is the only expected generated CSS output.
+6. Run `npm.cmd run build:svg` when files in `icons/` changed, then verify generated `assets/icon-*.svg` output before using the icon snippet.
 7. Keep the diff scoped to the task; avoid unrelated churn.
 8. For cleanup tasks, report the rule family cleaned and any remaining staged follow-up.

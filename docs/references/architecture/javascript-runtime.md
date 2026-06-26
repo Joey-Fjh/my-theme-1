@@ -315,4 +315,4 @@ destroy(el, state) {
 | Liquid values directly in `x-data="..."`             | `data-*` attributes + `this.$el.dataset`                                                    |
 | Cross-component event via `new CustomEvent(...)`     | `ThemeEvents.emit(type, detail)`                                                            |
 | Raw `<svg>` pasted in Liquid                         | `{%- render 'icons', icon: 'icon-name' -%}` via icon pipeline                               |
-| Manually editing `assets/icon-*.svg`                 | Generate from `icons/` via `npm run build:svg` after checking for existing equivalent icons |
+| Manually editing `assets/icon-*.svg`                 | Generate from `icons/` via `npm.cmd run build:svg` after checking for existing equivalent icons |

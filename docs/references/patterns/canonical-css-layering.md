@@ -73,4 +73,4 @@ Use section `{% stylesheet %}` only for section-specific CSS that Tailwind canno
 - Do not use heading classes on non-heading elements.
 - Do not use arbitrary colors to bypass theme tokens.
 - Use inline `style` only for dynamic CSS variables, grid area names, or calculated Liquid values.
-- Run `npm run build:tw` after changing Tailwind source files.
+- Run `npm.cmd run build:tw` after changing Tailwind source files.

@@ -34,28 +34,9 @@
     --default-transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
     --default-font-family: var(--font-sans);
     --default-mono-font-family: var(--font-mono);
-    --breakpoint-pc: 48rem;
-    --breakpoint-fw: 80rem;
-    --font-heading: var(--font-heading-family);
-    --font-body: var(--font-body-family);
-    --color-theme-bg: rgb(var(--color-background));
     --color-theme-text: rgb(var(--color-foreground));
-    --color-theme-text-80: rgba(var(--color-foreground), 0.8);
-    --color-theme-border: rgb(var(--color-border));
-    --color-focus-80: rgba(var(--color-focus-ring), 0.8);
-    --color-dialog-overlay: rgba(0, 0, 0, 0.45);
-    --color-field: rgb(var(--color-input-background));
-    --color-field-text: rgb(var(--color-input-text));
     --color-field-placeholder: rgb(var(--color-input-placeholder));
     --color-primary: rgb(var(--color-primary-button));
-    --color-primary-text: rgb(var(--color-primary-button-text));
-    --color-primary-border: rgb(var(--color-primary-button-border));
-    --color-secondary: rgb(var(--color-secondary-button));
-    --color-badge: rgb(var(--color-badge-background));
-    --color-badge-text: rgb(var(--color-badge-foreground));
-    --color-badge-bdr: rgb(var(--color-badge-border));
-    --color-success: rgb(var(--color-success-background));
-    --color-warning: rgb(var(--color-warning-background));
     --z-layer-dropdown: 20;
     --z-layer-popover: 30;
     --z-layer-sticky: 100;
@@ -252,6 +233,15 @@
     --tw-outline-style: none;
     outline-style: none;
     --btn-hover-filter: none;
+    --btn-active-filter: brightness(0.95);
+    --btn-hover-y: -2px;
+    --btn-active-scale: 0.98;
+    --btn-hover-shadow-opacity: 1.35;
+    --btn-shadow-hover-y: calc(var(--button-shadow-vertical-offset) - 2px);
+    --btn-shadow-hover-blur: calc(var(--button-shadow-blur-radius) * 1.12);
+    --btn-shadow-hover-opacity: calc(
+        var(--button-shadow-opacity) * var(--btn-hover-shadow-opacity)
+    );
     transition: color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), box-shadow var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), filter var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
     padding: var(--button-padding-y) var(--button-padding-x);
     border-radius: var(--button-radius);
@@ -267,18 +257,35 @@
       outline: var(--focus-ring-width) solid rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
       outline-offset: var(--focus-ring-offset);
     }
-    &:hover:not(:disabled):not([aria-disabled='true']) {
-      filter: var(--btn-hover-filter);
+    @media (hover: hover) and (pointer: fine) {
+      &:hover:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+        transform: translateY(var(--btn-hover-y));
+        filter: var(--btn-hover-filter);
+        box-shadow: var(--button-shadow-horizontal-offset) var(--btn-shadow-hover-y) var(--btn-shadow-hover-blur) rgba(var(--color-foreground), var(--btn-shadow-hover-opacity));
+        animation: btn-breathe 2.8s var(--motion-ease-default, ease) 0.35s infinite;
+      }
+    }
+    &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+      animation: none;
+      transform: scale(var(--btn-active-scale));
+      filter: var(--btn-active-filter);
     }
     &:disabled, &[aria-disabled='true'] {
       cursor: not-allowed;
       opacity: 0.5;
       pointer-events: none;
     }
+    &[aria-busy='true'] {
+      cursor: wait;
+      opacity: 0.82;
+      pointer-events: none;
+    }
     border-color: rgb(var(--color-primary-button-border));
     background-color: rgb(var(--color-primary-button));
     color: rgb(var(--color-primary-button-text));
-    --btn-hover-filter: brightness(1.1);
+    --btn-hover-filter: brightness(1.08);
+    --btn-active-filter: brightness(0.94);
+    --btn-hover-shadow-opacity: 1.45;
   }
   .btn-secondary {
     display: inline-flex;
@@ -292,6 +299,15 @@
     --tw-outline-style: none;
     outline-style: none;
     --btn-hover-filter: none;
+    --btn-active-filter: brightness(0.95);
+    --btn-hover-y: -2px;
+    --btn-active-scale: 0.98;
+    --btn-hover-shadow-opacity: 1.35;
+    --btn-shadow-hover-y: calc(var(--button-shadow-vertical-offset) - 2px);
+    --btn-shadow-hover-blur: calc(var(--button-shadow-blur-radius) * 1.12);
+    --btn-shadow-hover-opacity: calc(
+        var(--button-shadow-opacity) * var(--btn-hover-shadow-opacity)
+    );
     transition: color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), box-shadow var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), filter var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
     padding: var(--button-padding-y) var(--button-padding-x);
     border-radius: var(--button-radius);
@@ -307,18 +323,35 @@
       outline: var(--focus-ring-width) solid rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
       outline-offset: var(--focus-ring-offset);
     }
-    &:hover:not(:disabled):not([aria-disabled='true']) {
-      filter: var(--btn-hover-filter);
+    @media (hover: hover) and (pointer: fine) {
+      &:hover:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+        transform: translateY(var(--btn-hover-y));
+        filter: var(--btn-hover-filter);
+        box-shadow: var(--button-shadow-horizontal-offset) var(--btn-shadow-hover-y) var(--btn-shadow-hover-blur) rgba(var(--color-foreground), var(--btn-shadow-hover-opacity));
+        animation: btn-breathe 2.8s var(--motion-ease-default, ease) 0.35s infinite;
+      }
+    }
+    &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+      animation: none;
+      transform: scale(var(--btn-active-scale));
+      filter: var(--btn-active-filter);
     }
     &:disabled, &[aria-disabled='true'] {
       cursor: not-allowed;
       opacity: 0.5;
       pointer-events: none;
     }
+    &[aria-busy='true'] {
+      cursor: wait;
+      opacity: 0.82;
+      pointer-events: none;
+    }
     border-color: rgb(var(--color-secondary-button-border));
     background-color: rgb(var(--color-secondary-button));
     color: rgb(var(--color-secondary-button-text));
-    --btn-hover-filter: brightness(0.95);
+    --btn-hover-filter: brightness(0.97);
+    --btn-active-filter: brightness(0.9);
+    --btn-hover-shadow-opacity: 1.28;
   }
   .btn {
     display: inline-flex;
@@ -332,6 +365,15 @@
     --tw-outline-style: none;
     outline-style: none;
     --btn-hover-filter: none;
+    --btn-active-filter: brightness(0.95);
+    --btn-hover-y: -2px;
+    --btn-active-scale: 0.98;
+    --btn-hover-shadow-opacity: 1.35;
+    --btn-shadow-hover-y: calc(var(--button-shadow-vertical-offset) - 2px);
+    --btn-shadow-hover-blur: calc(var(--button-shadow-blur-radius) * 1.12);
+    --btn-shadow-hover-opacity: calc(
+        var(--button-shadow-opacity) * var(--btn-hover-shadow-opacity)
+    );
     transition: color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), box-shadow var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), filter var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
     padding: var(--button-padding-y) var(--button-padding-x);
     border-radius: var(--button-radius);
@@ -347,12 +389,27 @@
       outline: var(--focus-ring-width) solid rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
       outline-offset: var(--focus-ring-offset);
     }
-    &:hover:not(:disabled):not([aria-disabled='true']) {
-      filter: var(--btn-hover-filter);
+    @media (hover: hover) and (pointer: fine) {
+      &:hover:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+        transform: translateY(var(--btn-hover-y));
+        filter: var(--btn-hover-filter);
+        box-shadow: var(--button-shadow-horizontal-offset) var(--btn-shadow-hover-y) var(--btn-shadow-hover-blur) rgba(var(--color-foreground), var(--btn-shadow-hover-opacity));
+        animation: btn-breathe 2.8s var(--motion-ease-default, ease) 0.35s infinite;
+      }
+    }
+    &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+      animation: none;
+      transform: scale(var(--btn-active-scale));
+      filter: var(--btn-active-filter);
     }
     &:disabled, &[aria-disabled='true'] {
       cursor: not-allowed;
       opacity: 0.5;
+      pointer-events: none;
+    }
+    &[aria-busy='true'] {
+      cursor: wait;
+      opacity: 0.82;
       pointer-events: none;
     }
   }
@@ -585,9 +642,6 @@
   .z-30 {
     z-index: 30;
   }
-  .z-\[\.\.\.\] {
-    z-index: ...;
-  }
   .order-1 {
     order: 1;
   }
@@ -736,9 +790,6 @@
   }
   .mb-16 {
     margin-bottom: calc(var(--spacing) * 16);
-  }
-  .ml-0 {
-    margin-left: calc(var(--spacing) * 0);
   }
   .badge-cart {
     display: inline-flex;
@@ -997,38 +1048,6 @@
     appearance: none;
     cursor: pointer;
   }
-  .field-underline {
-    width: 100%;
-    border-color: rgb(var(--color-input-border));
-    background-color: rgb(var(--color-input-background));
-    color: rgb(var(--color-input-text));
-    padding: var(--input-padding-y) var(--input-padding-x);
-    font: inherit;
-    border-width: var(--input-border-width);
-    border-style: solid;
-    border-radius: var(--input-radius);
-    box-shadow: var(--input-shadow-horizontal-offset) var(--input-shadow-vertical-offset) var(--input-shadow-blur-radius) rgba(var(--color-foreground), var(--input-shadow-opacity));
-    outline: none;
-    transition: color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), box-shadow var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), outline-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
-    &::placeholder {
-      color: var(--color-field-placeholder);
-      opacity: 0.8;
-    }
-    &:focus-visible {
-      outline: var(--focus-ring-width) solid rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
-      outline-offset: var(--focus-ring-offset);
-      border-color: rgb(var(--color-focus-ring));
-    }
-    &:disabled, &[aria-disabled='true'] {
-      cursor: not-allowed;
-      opacity: 0.5;
-    }
-    border-width: 0;
-    border-bottom-width: var(--input-border-width);
-    border-radius: 0;
-    background-color: transparent;
-    box-shadow: none;
-  }
   .\!field {
     width: 100% !important;
     border-color: rgb(var(--color-input-border)) !important;
@@ -1142,6 +1161,9 @@
   }
   .w-100 {
     width: calc(var(--spacing) * 100);
+  }
+  .w-\[3\.25rem\] {
+    width: 3.25rem;
   }
   .w-\[62\.5\%\] {
     width: 62.5%;
@@ -1694,12 +1716,6 @@
   .bg-dialog-overlay {
     background-color: rgba(0, 0, 0, 0.45);
   }
-  .bg-field {
-    background-color: rgb(var(--color-input-background));
-  }
-  .bg-primary {
-    background-color: rgb(var(--color-primary-button));
-  }
   .bg-theme-bg {
     background-color: rgb(var(--color-background));
   }
@@ -1753,9 +1769,6 @@
   }
   .bg-transparent\! {
     background-color: transparent !important;
-  }
-  .bg-scheme-surface {
-    background-image: var(--gradient-background);
   }
   .surface-section {
     background-image: var(--gradient-background);
@@ -1942,20 +1955,6 @@
   }
   .align-super {
     vertical-align: super;
-  }
-  .body-2xl {
-    font-family: var(--font-body-family);
-    font-style: var(--font-body-style);
-    font-weight: var(--font-body-weight);
-    line-height: var(--font-body-line-height);
-    letter-spacing: var(--font-body-letter-spacing);
-    text-transform: var(--font-body-text-transform);
-    word-break: break-word;
-    color: rgba(var(--color-foreground), 0.8);
-    font-size: calc(var(--font-body-scale) * 2rem);
-    @media (width >= 48rem) {
-      font-size: calc(var(--font-body-scale) * 2.2rem);
-    }
   }
   .body-3xl {
     font-family: var(--font-body-family);
@@ -2215,9 +2214,6 @@
     word-break: break-word;
     color: rgb(var(--color-foreground));
   }
-  .font-body {
-    font-family: var(--font-body-family);
-  }
   .font-heading {
     font-family: var(--font-heading-family);
   }
@@ -2275,14 +2271,8 @@
   .text-\(--comparison-success-color\) {
     color: var(--comparison-success-color);
   }
-  .text-\(--component-color\) {
-    color: var(--component-color);
-  }
   .text-\(--contact-form-text\) {
     color: var(--contact-form-text);
-  }
-  .text-\[\.\.\.\] {
-    color: ...;
   }
   .text-current {
     color: currentcolor;
@@ -2296,17 +2286,8 @@
   .text-error-text {
     color: rgb(var(--color-error-foreground));
   }
-  .text-field-text {
-    color: rgb(var(--color-input-text));
-  }
   .text-inherit {
     color: inherit;
-  }
-  .text-primary-text {
-    color: rgb(var(--color-primary-button-text));
-  }
-  .text-theme-bg {
-    color: rgb(var(--color-background));
   }
   .text-theme-text {
     color: rgb(var(--color-foreground));
@@ -2503,11 +2484,6 @@
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
     transition-duration: var(--tw-duration, var(--default-transition-duration));
   }
-  .transition-all {
-    transition-property: all;
-    transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
-    transition-duration: var(--tw-duration, var(--default-transition-duration));
-  }
   .transition-colors {
     transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
@@ -2540,10 +2516,6 @@
   .duration-300 {
     --tw-duration: 300ms;
     transition-duration: 300ms;
-  }
-  .duration-400 {
-    --tw-duration: 400ms;
-    transition-duration: 400ms;
   }
   .duration-\[520ms\] {
     --tw-duration: 520ms;
@@ -2933,11 +2905,6 @@
   .pc\:mt-8 {
     @media (width >= 48rem) {
       margin-top: calc(var(--spacing) * 8);
-    }
-  }
-  .pc\:mt-10 {
-    @media (width >= 48rem) {
-      margin-top: calc(var(--spacing) * 10);
     }
   }
   .pc\:mb-6 {
@@ -3449,16 +3416,6 @@
   .pc\:border-theme-border-20 {
     @media (width >= 48rem) {
       border-color: rgba(var(--color-border), 0.2);
-    }
-  }
-  .pc\:object-contain {
-    @media (width >= 48rem) {
-      object-fit: contain;
-    }
-  }
-  .pc\:object-cover {
-    @media (width >= 48rem) {
-      object-fit: cover;
     }
   }
   .pc\:p-4 {
@@ -4621,6 +4578,26 @@
   font-weight: var(--font-weight-normal);
   color: rgba(var(--color-foreground), 0.8);
 }
+@keyframes btn-breathe {
+  0%, 100% {
+    transform: translateY(var(--btn-hover-y));
+    filter: var(--btn-hover-filter);
+    box-shadow: var(--button-shadow-horizontal-offset) var(--btn-shadow-hover-y) var(--btn-shadow-hover-blur) rgba(var(--color-foreground), var(--btn-shadow-hover-opacity));
+  }
+  50% {
+    transform: translateY(calc(var(--btn-hover-y) - 1px));
+    filter: var(--btn-hover-filter);
+    box-shadow: var(--button-shadow-horizontal-offset) calc(var(--btn-shadow-hover-y) - 1px) calc(var(--btn-shadow-hover-blur) * 1.08) rgba(var(--color-foreground), calc(var(--btn-shadow-hover-opacity) * 1.08));
+  }
+}
+body[data-motion-enabled='false'] :is(.btn, .btn-primary, .btn-secondary):hover {
+  animation: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  :is(.btn, .btn-primary, .btn-secondary):hover {
+    animation: none !important;
+  }
+}
 .shopify-payment-button-wrapper, .shopify-payment-button {
   width: 100%;
 }
@@ -4636,6 +4613,15 @@ button.shopify-payment-button__button--unbranded {
   --tw-outline-style: none;
   outline-style: none;
   --btn-hover-filter: none;
+  --btn-active-filter: brightness(0.95);
+  --btn-hover-y: -2px;
+  --btn-active-scale: 0.98;
+  --btn-hover-shadow-opacity: 1.35;
+  --btn-shadow-hover-y: calc(var(--button-shadow-vertical-offset) - 2px);
+  --btn-shadow-hover-blur: calc(var(--button-shadow-blur-radius) * 1.12);
+  --btn-shadow-hover-opacity: calc(
+        var(--button-shadow-opacity) * var(--btn-hover-shadow-opacity)
+    );
   transition: color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), box-shadow var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), filter var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
   padding: var(--button-padding-y) var(--button-padding-x);
   border-radius: var(--button-radius);
@@ -4651,18 +4637,35 @@ button.shopify-payment-button__button--unbranded {
     outline: var(--focus-ring-width) solid rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
     outline-offset: var(--focus-ring-offset);
   }
-  &:hover:not(:disabled):not([aria-disabled='true']) {
-    filter: var(--btn-hover-filter);
+  @media (hover: hover) and (pointer: fine) {
+    &:hover:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+      transform: translateY(var(--btn-hover-y));
+      filter: var(--btn-hover-filter);
+      box-shadow: var(--button-shadow-horizontal-offset) var(--btn-shadow-hover-y) var(--btn-shadow-hover-blur) rgba(var(--color-foreground), var(--btn-shadow-hover-opacity));
+      animation: btn-breathe 2.8s var(--motion-ease-default, ease) 0.35s infinite;
+    }
+  }
+  &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+    animation: none;
+    transform: scale(var(--btn-active-scale));
+    filter: var(--btn-active-filter);
   }
   &:disabled, &[aria-disabled='true'] {
     cursor: not-allowed;
     opacity: 0.5;
     pointer-events: none;
   }
+  &[aria-busy='true'] {
+    cursor: wait;
+    opacity: 0.82;
+    pointer-events: none;
+  }
   border-color: rgb(var(--color-primary-button-border));
   background-color: rgb(var(--color-primary-button));
   color: rgb(var(--color-primary-button-text));
-  --btn-hover-filter: brightness(1.1);
+  --btn-hover-filter: brightness(1.08);
+  --btn-active-filter: brightness(0.94);
+  --btn-hover-shadow-opacity: 1.45;
   width: 100%;
 }
 button.shopify-payment-button__button--unbranded:hover:not([disabled]) {
@@ -4725,6 +4728,15 @@ shopify-accelerated-checkout {
     --tw-outline-style: none;
     outline-style: none;
     --btn-hover-filter: none;
+    --btn-active-filter: brightness(0.95);
+    --btn-hover-y: -2px;
+    --btn-active-scale: 0.98;
+    --btn-hover-shadow-opacity: 1.35;
+    --btn-shadow-hover-y: calc(var(--button-shadow-vertical-offset) - 2px);
+    --btn-shadow-hover-blur: calc(var(--button-shadow-blur-radius) * 1.12);
+    --btn-shadow-hover-opacity: calc(
+        var(--button-shadow-opacity) * var(--btn-hover-shadow-opacity)
+    );
     transition: color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), box-shadow var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), filter var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
     padding: var(--button-padding-y) var(--button-padding-x);
     border-radius: var(--button-radius);
@@ -4740,18 +4752,35 @@ shopify-accelerated-checkout {
       outline: var(--focus-ring-width) solid rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
       outline-offset: var(--focus-ring-offset);
     }
-    &:hover:not(:disabled):not([aria-disabled='true']) {
-      filter: var(--btn-hover-filter);
+    @media (hover: hover) and (pointer: fine) {
+      &:hover:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+        transform: translateY(var(--btn-hover-y));
+        filter: var(--btn-hover-filter);
+        box-shadow: var(--button-shadow-horizontal-offset) var(--btn-shadow-hover-y) var(--btn-shadow-hover-blur) rgba(var(--color-foreground), var(--btn-shadow-hover-opacity));
+        animation: btn-breathe 2.8s var(--motion-ease-default, ease) 0.35s infinite;
+      }
+    }
+    &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+      animation: none;
+      transform: scale(var(--btn-active-scale));
+      filter: var(--btn-active-filter);
     }
     &:disabled, &[aria-disabled='true'] {
       cursor: not-allowed;
       opacity: 0.5;
       pointer-events: none;
     }
+    &[aria-busy='true'] {
+      cursor: wait;
+      opacity: 0.82;
+      pointer-events: none;
+    }
     border-color: rgb(var(--color-primary-button-border));
     background-color: rgb(var(--color-primary-button));
     color: rgb(var(--color-primary-button-text));
-    --btn-hover-filter: brightness(1.1);
+    --btn-hover-filter: brightness(1.08);
+    --btn-active-filter: brightness(0.94);
+    --btn-hover-shadow-opacity: 1.45;
     flex-shrink: 0;
     border-start-start-radius: 0;
     border-end-start-radius: 0;
@@ -5852,6 +5881,15 @@ shopify-accelerated-checkout {
     --tw-outline-style: none;
     outline-style: none;
     --btn-hover-filter: none;
+    --btn-active-filter: brightness(0.95);
+    --btn-hover-y: -2px;
+    --btn-active-scale: 0.98;
+    --btn-hover-shadow-opacity: 1.35;
+    --btn-shadow-hover-y: calc(var(--button-shadow-vertical-offset) - 2px);
+    --btn-shadow-hover-blur: calc(var(--button-shadow-blur-radius) * 1.12);
+    --btn-shadow-hover-opacity: calc(
+        var(--button-shadow-opacity) * var(--btn-hover-shadow-opacity)
+    );
     transition: color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), box-shadow var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), filter var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
     padding: var(--button-padding-y) var(--button-padding-x);
     border-radius: var(--button-radius);
@@ -5867,18 +5905,35 @@ shopify-accelerated-checkout {
       outline: var(--focus-ring-width) solid rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
       outline-offset: var(--focus-ring-offset);
     }
-    &:hover:not(:disabled):not([aria-disabled='true']) {
-      filter: var(--btn-hover-filter);
+    @media (hover: hover) and (pointer: fine) {
+      &:hover:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+        transform: translateY(var(--btn-hover-y));
+        filter: var(--btn-hover-filter);
+        box-shadow: var(--button-shadow-horizontal-offset) var(--btn-shadow-hover-y) var(--btn-shadow-hover-blur) rgba(var(--color-foreground), var(--btn-shadow-hover-opacity));
+        animation: btn-breathe 2.8s var(--motion-ease-default, ease) 0.35s infinite;
+      }
+    }
+    &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+      animation: none;
+      transform: scale(var(--btn-active-scale));
+      filter: var(--btn-active-filter);
     }
     &:disabled, &[aria-disabled='true'] {
       cursor: not-allowed;
       opacity: 0.5;
       pointer-events: none;
     }
+    &[aria-busy='true'] {
+      cursor: wait;
+      opacity: 0.82;
+      pointer-events: none;
+    }
     border-color: rgb(var(--color-primary-button-border));
     background-color: rgb(var(--color-primary-button));
     color: rgb(var(--color-primary-button-text));
-    --btn-hover-filter: brightness(1.1);
+    --btn-hover-filter: brightness(1.08);
+    --btn-active-filter: brightness(0.94);
+    --btn-hover-shadow-opacity: 1.45;
     width: 100%;
     background-color: rgb(var(--color-foreground));
     color: rgb(var(--color-background));
@@ -5993,6 +6048,60 @@ shopify-accelerated-checkout {
     font-size: calc(var(--font-body-scale) * 2.4rem);
     @media (width >= 48rem) {
       font-size: calc(var(--font-body-scale) * 3.6rem);
+    }
+  }
+}
+@layer snippets {
+  .promotion-countdown-section__timer {
+    align-items: flex-start;
+    gap: 0;
+    @media (width >= 48rem) {
+      gap: calc(var(--spacing) * 6);
+    }
+  }
+  .promotion-countdown-section__digits {
+    display: flex;
+    height: calc(var(--spacing) * 24);
+    align-items: center;
+    justify-content: center;
+    gap: calc(var(--spacing) * 1.5);
+    @media (width >= 48rem) {
+      height: calc(var(--spacing) * 36);
+      gap: calc(var(--spacing) * 2);
+    }
+  }
+  .promotion-countdown-section__separator {
+    display: flex;
+    height: calc(var(--spacing) * 24);
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-body-family);
+    font-style: var(--font-body-style);
+    font-weight: var(--font-body-weight);
+    line-height: var(--font-body-line-height);
+    letter-spacing: var(--font-body-letter-spacing);
+    text-transform: var(--font-body-text-transform);
+    word-break: break-word;
+    color: rgba(var(--color-foreground), 0.8);
+    --tw-leading: 1;
+    line-height: 1;
+    padding-inline: 3px;
+    @media (width >= 48rem) {
+      height: calc(var(--spacing) * 36);
+      font-family: var(--font-body-family);
+      font-style: var(--font-body-style);
+      font-weight: var(--font-body-weight);
+      line-height: var(--font-body-line-height);
+      letter-spacing: var(--font-body-letter-spacing);
+      text-transform: var(--font-body-text-transform);
+      word-break: break-word;
+      color: rgba(var(--color-foreground), 0.8);
+      font-size: calc(var(--font-body-scale) * 1.8rem);
+      @media (width >= 48rem) {
+        font-size: calc(var(--font-body-scale) * 2rem);
+      }
+      padding-inline: 0;
     }
   }
 }
@@ -6329,6 +6438,15 @@ shopify-accelerated-checkout {
         --tw-outline-style: none;
         outline-style: none;
         --btn-hover-filter: none;
+        --btn-active-filter: brightness(0.95);
+        --btn-hover-y: -2px;
+        --btn-active-scale: 0.98;
+        --btn-hover-shadow-opacity: 1.35;
+        --btn-shadow-hover-y: calc(var(--button-shadow-vertical-offset) - 2px);
+        --btn-shadow-hover-blur: calc(var(--button-shadow-blur-radius) * 1.12);
+        --btn-shadow-hover-opacity: calc(
+        var(--button-shadow-opacity) * var(--btn-hover-shadow-opacity)
+    );
         transition: color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), box-shadow var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), filter var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
         padding: var(--button-padding-y) var(--button-padding-x);
         border-radius: var(--button-radius);
@@ -6344,18 +6462,35 @@ shopify-accelerated-checkout {
           outline: var(--focus-ring-width) solid rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
           outline-offset: var(--focus-ring-offset);
         }
-        &:hover:not(:disabled):not([aria-disabled='true']) {
-          filter: var(--btn-hover-filter);
+        @media (hover: hover) and (pointer: fine) {
+          &:hover:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+            transform: translateY(var(--btn-hover-y));
+            filter: var(--btn-hover-filter);
+            box-shadow: var(--button-shadow-horizontal-offset) var(--btn-shadow-hover-y) var(--btn-shadow-hover-blur) rgba(var(--color-foreground), var(--btn-shadow-hover-opacity));
+            animation: btn-breathe 2.8s var(--motion-ease-default, ease) 0.35s infinite;
+          }
+        }
+        &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+          animation: none;
+          transform: scale(var(--btn-active-scale));
+          filter: var(--btn-active-filter);
         }
         &:disabled, &[aria-disabled='true'] {
           cursor: not-allowed;
           opacity: 0.5;
           pointer-events: none;
         }
+        &[aria-busy='true'] {
+          cursor: wait;
+          opacity: 0.82;
+          pointer-events: none;
+        }
         border-color: rgb(var(--color-primary-button-border));
         background-color: rgb(var(--color-primary-button));
         color: rgb(var(--color-primary-button-text));
-        --btn-hover-filter: brightness(1.1);
+        --btn-hover-filter: brightness(1.08);
+        --btn-active-filter: brightness(0.94);
+        --btn-hover-shadow-opacity: 1.45;
       }
       .product-card__btn-secondary {
         display: inline-flex;
@@ -6369,6 +6504,15 @@ shopify-accelerated-checkout {
         --tw-outline-style: none;
         outline-style: none;
         --btn-hover-filter: none;
+        --btn-active-filter: brightness(0.95);
+        --btn-hover-y: -2px;
+        --btn-active-scale: 0.98;
+        --btn-hover-shadow-opacity: 1.35;
+        --btn-shadow-hover-y: calc(var(--button-shadow-vertical-offset) - 2px);
+        --btn-shadow-hover-blur: calc(var(--button-shadow-blur-radius) * 1.12);
+        --btn-shadow-hover-opacity: calc(
+        var(--button-shadow-opacity) * var(--btn-hover-shadow-opacity)
+    );
         transition: color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), box-shadow var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), filter var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
         padding: var(--button-padding-y) var(--button-padding-x);
         border-radius: var(--button-radius);
@@ -6384,18 +6528,35 @@ shopify-accelerated-checkout {
           outline: var(--focus-ring-width) solid rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
           outline-offset: var(--focus-ring-offset);
         }
-        &:hover:not(:disabled):not([aria-disabled='true']) {
-          filter: var(--btn-hover-filter);
+        @media (hover: hover) and (pointer: fine) {
+          &:hover:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+            transform: translateY(var(--btn-hover-y));
+            filter: var(--btn-hover-filter);
+            box-shadow: var(--button-shadow-horizontal-offset) var(--btn-shadow-hover-y) var(--btn-shadow-hover-blur) rgba(var(--color-foreground), var(--btn-shadow-hover-opacity));
+            animation: btn-breathe 2.8s var(--motion-ease-default, ease) 0.35s infinite;
+          }
+        }
+        &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+          animation: none;
+          transform: scale(var(--btn-active-scale));
+          filter: var(--btn-active-filter);
         }
         &:disabled, &[aria-disabled='true'] {
           cursor: not-allowed;
           opacity: 0.5;
           pointer-events: none;
         }
+        &[aria-busy='true'] {
+          cursor: wait;
+          opacity: 0.82;
+          pointer-events: none;
+        }
         border-color: rgb(var(--color-secondary-button-border));
         background-color: rgb(var(--color-secondary-button));
         color: rgb(var(--color-secondary-button-text));
-        --btn-hover-filter: brightness(0.95);
+        --btn-hover-filter: brightness(0.97);
+        --btn-active-filter: brightness(0.9);
+        --btn-hover-shadow-opacity: 1.28;
       }
       .product-card__btn-secondary.is-disabled {
         border-color: rgba(var(--color-border), 0.2);

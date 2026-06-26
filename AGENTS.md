@@ -100,7 +100,7 @@ Generated/vendor file rules:
 
 - Never edit `vendor-*.min.js` or `vendor-*.min.css`.
 - Never manually edit `assets/tailwind.output.css`.
-- Never manually edit `assets/icon-*.svg`; regenerate from `icons/` with `npm run build:svg`.
+- Never manually edit `assets/icon-*.svg`; regenerate from `icons/` with `npm.cmd run build:svg`.
 - Never paste raw SVG into Liquid; render through the `icons` snippet.
 
 ---
@@ -113,7 +113,12 @@ Read only the matching reference for the current task:
 - Motion policy, choreography, reduced motion, animation ownership, duplication: `docs/references/architecture/motion-architecture.md`
 - Shared abstraction boundaries and whether to extend an existing utility/component: `docs/references/architecture/abstraction-boundaries.md`
 - CSS layer ownership, token/bridge contract, placement audits: `docs/references/style-system/css-architecture.md`
-- CSS layers, Tailwind, typography, color, inline styles, SVG icon pipeline: `docs/references/style-system/css-and-typography.md`
+- CSS accepted-history or deferred CSS API notes: `docs/references/style-system/css-architecture-history.md`
+- Image snippet display behavior and `image.liquid` mode/fit contract: `docs/references/style-system/image-display-contract.md`
+- Style-system index and build commands: `docs/references/style-system/css-and-typography.md`
+- Typography tiers and consumption rules: `docs/references/style-system/typography-reference.md`
+- Color, surface, inline style, z-index, and ownership rules: `docs/references/style-system/color-surface-reference.md`
+- SVG icon pipeline: `docs/references/style-system/svg-icon-pipeline.md`
 - Section lifecycle, Alpine, events, HTTP refresh, cart, Swiper, GSAP, motion transitions, CSS layering, accessibility examples: `docs/references/patterns/`
 - i18n keys, locale structure, schema translation, hardcoded copy review: `docs/references/code-review/i18n-checklist.md`
 - Launch readiness, Lighthouse classification, accessibility details, rule coverage, cleanup safety, repo safety, pre-merge self-check: `docs/references/code-review/launch-gate.md`
@@ -141,19 +146,19 @@ Do not create, install, or approve skills during ordinary theme work. Discuss sk
 
 ## Validation Commands
 
-Use the smallest command that proves the change.
+Use the smallest command that proves the change. In this Windows PowerShell workspace, run scripts through `npm.cmd`.
 
 ```bash
-npm run lint          # i18n, theme architecture, and format checks
-npm run lint:theme    # Liquid, JS architecture, Alpine, HTTP/cart, heading rules
-npm run lint:i18n     # locale keys, translated strings, schema copy, ARIA copy
-npm test              # Shopify Theme Check
-npm run build:tw      # rebuild Tailwind output after Tailwind source changes
-npm run build:svg     # regenerate SVG assets after icons/ changes
-npm run dev           # Shopify theme dev + Tailwind watch
+npm.cmd run lint          # i18n, theme architecture, and format checks
+npm.cmd run lint:theme    # Liquid, JS architecture, Alpine, HTTP/cart, heading rules
+npm.cmd run lint:i18n     # locale keys, translated strings, schema copy, ARIA copy
+npm.cmd test              # Shopify Theme Check
+npm.cmd run build:tw      # rebuild Tailwind output after Tailwind source changes
+npm.cmd run build:svg     # regenerate SVG assets after icons/ changes
+npm.cmd run dev           # Shopify theme dev + Tailwind watch
 ```
 
-Run `npm run lint` and `npm test` after meaningful theme changes. Run `npm run build:tw` only when Tailwind source changed. Run `npm run build:svg` only when `icons/` source changed. Do not run rewriting formatters unless the user asks.
+Run `npm.cmd run lint` and `npm.cmd test` after meaningful theme changes. Run `npm.cmd run build:tw` only when Tailwind source changed. Run `npm.cmd run build:svg` only when `icons/` source changed. Do not run rewriting formatters unless the user asks.
 
 ---
 

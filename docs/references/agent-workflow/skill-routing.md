@@ -32,9 +32,9 @@ Read `docs/references/agent-workflow/collaboration-standard.md` for the definiti
 | Review diff or launch readiness | `code-review` | `code-review/pre-merge.md` or `launch-gate.md` | Review may run targeted checks |
 | Debugging or root-cause investigation | `implement-theme-pattern` | Matching architecture reference | Targeted validation of the fix |
 | Validate current state | `run-shopify-theme` | Command docs in `AGENTS.md` and relevant skill | Smallest proving command |
-| i18n or user-facing copy | `check-i18n` | `code-review/i18n-checklist.md` | `npm run lint:i18n` |
-| Liquid/JS architecture | `check-theme-architecture` | Matching architecture/pattern reference | `npm run lint:theme` |
-| SVG icon pipeline | `build-svg-icons` | Icon rules in style-system reference | `npm run build:svg` when icons changed |
+| i18n or user-facing copy | `check-i18n` | `code-review/i18n-checklist.md` | `npm.cmd run lint:i18n` |
+| Liquid/JS architecture | `check-theme-architecture` | Matching architecture/pattern reference | `npm.cmd run lint:theme` |
+| SVG icon pipeline | `build-svg-icons` | Icon rules in style-system reference | `npm.cmd run build:svg` when icons changed |
 | Collaboration, routing, governance | `agent-router` | `AGENTS.md` and this file | `git diff --check` for docs-only work |
 | Third-party skill evaluation | `agent-router` | `agent-workflow/external-skills.md` (adoption record) | No install unless reviewed and approved |
 

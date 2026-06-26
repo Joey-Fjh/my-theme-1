@@ -75,11 +75,39 @@ link
 button
 ========================================================= */
 
+@keyframes btn-breathe {
+    0%,
+    100% {
+        transform: translateY(var(--btn-hover-y));
+        filter: var(--btn-hover-filter);
+        box-shadow: var(--button-shadow-horizontal-offset) var(--btn-shadow-hover-y)
+            var(--btn-shadow-hover-blur)
+            rgba(var(--color-foreground), var(--btn-shadow-hover-opacity));
+    }
+
+    50% {
+        transform: translateY(calc(var(--btn-hover-y) - 1px));
+        filter: var(--btn-hover-filter);
+        box-shadow: var(--button-shadow-horizontal-offset) calc(var(--btn-shadow-hover-y) - 1px)
+            calc(var(--btn-shadow-hover-blur) * 1.08)
+            rgba(var(--color-foreground), calc(var(--btn-shadow-hover-opacity) * 1.08));
+    }
+}
+
 /* base button */
 @utility btn {
     @apply inline-flex cursor-pointer items-center justify-center gap-2 border font-body outline-none;
 
     --btn-hover-filter: none;
+    --btn-active-filter: brightness(0.95);
+    --btn-hover-y: -2px;
+    --btn-active-scale: 0.98;
+    --btn-hover-shadow-opacity: 1.35;
+    --btn-shadow-hover-y: calc(var(--button-shadow-vertical-offset) - 2px);
+    --btn-shadow-hover-blur: calc(var(--button-shadow-blur-radius) * 1.12);
+    --btn-shadow-hover-opacity: calc(
+        var(--button-shadow-opacity) * var(--btn-hover-shadow-opacity)
+    );
 
     transition:
         color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
@@ -111,8 +139,21 @@ button
         outline-offset: var(--focus-ring-offset);
     }
 
-    &:hover:not(:disabled):not([aria-disabled='true']) {
-        filter: var(--btn-hover-filter);
+    @media (hover: hover) and (pointer: fine) {
+        &:hover:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+            transform: translateY(var(--btn-hover-y));
+            filter: var(--btn-hover-filter);
+            box-shadow: var(--button-shadow-horizontal-offset) var(--btn-shadow-hover-y)
+                var(--btn-shadow-hover-blur)
+                rgba(var(--color-foreground), var(--btn-shadow-hover-opacity));
+            animation: btn-breathe 2.8s var(--motion-ease-default, ease) 0.35s infinite;
+        }
+    }
+
+    &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+        animation: none;
+        transform: scale(var(--btn-active-scale));
+        filter: var(--btn-active-filter);
     }
 
     &:disabled,
@@ -121,20 +162,41 @@ button
         opacity: 0.5;
         pointer-events: none;
     }
+
+    &[aria-busy='true'] {
+        cursor: wait;
+        opacity: 0.82;
+        pointer-events: none;
+    }
 }
 
 /* primary button */
 @utility btn-primary {
     @apply btn border-primary-border bg-primary text-primary-text;
 
-    --btn-hover-filter: brightness(1.1);
+    --btn-hover-filter: brightness(1.08);
+    --btn-active-filter: brightness(0.94);
+    --btn-hover-shadow-opacity: 1.45;
 }
 
 /* secondary button */
 @utility btn-secondary {
     @apply btn border-secondary-border bg-secondary text-secondary-text;
 
-    --btn-hover-filter: brightness(0.95);
+    --btn-hover-filter: brightness(0.97);
+    --btn-active-filter: brightness(0.9);
+    --btn-hover-shadow-opacity: 1.28;
+}
+
+/* Breathing loop kill switch — static hover/active feedback remains */
+body[data-motion-enabled='false'] :is(.btn, .btn-primary, .btn-secondary):hover {
+    animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    :is(.btn, .btn-primary, .btn-secondary):hover {
+        animation: none !important;
+    }
 }
 
 .shopify-payment-button-wrapper,
