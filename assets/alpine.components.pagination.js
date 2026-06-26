@@ -12,7 +12,7 @@
     ComponentGroups.pagination = {
         sectionPagination(sectionId = null, selectors = null) {
             return {
-                ...(window.__Theme__?.AlpineComponentsFactory?.useDisposable?.() || {}),
+                ...AlpineComponentsFactory.useDisposable(),
                 isLoading: false,
                 sectionId: sectionId || null,
                 /** @type {string[]|Object<string,string[]>} per-section map or shared array */

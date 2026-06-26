@@ -83,6 +83,7 @@ Predefined events:
 | `PRODUCT_VARIANT_CHANGED`          | `theme:product:variant:changed`          | Variant selection changed            |
 | `PRODUCT_GALLERY_SLIDE_TO_REQUEST` | `theme:product-gallery:request:slide-to` | Request gallery to slide to an index |
 | `PRODUCT_QUANTITY_CHANGED`         | `theme:product:quantity:changed`         | Quantity input changed               |
+| `PRODUCT_MEDIA_MODAL_ACTIVATE`     | `theme:product-media-modal:activate`   | Request product media modal focus    |
 
 When adding new cross-component events, add them to `ThemeEvents.events` in `events.js`.
 

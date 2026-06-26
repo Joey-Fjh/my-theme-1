@@ -11,6 +11,7 @@
         config: {
             defaultDuration: 3000,
         },
+        _timeouts: new Map(),
         /**
          * Configure toast defaults from theme settings.
          * @param {{ defaultDuration?: number }} options
@@ -34,12 +35,19 @@
             const resolved = duration === 0 ? 0 : duration || this.config.defaultDuration;
 
             if (resolved > 0) {
-                setTimeout(() => {
+                const timeoutId = setTimeout(() => {
+                    this._timeouts.delete(id);
                     this.remove(id);
                 }, resolved);
+                this._timeouts.set(id, timeoutId);
             }
         },
         remove(id) {
+            const timeoutId = this._timeouts.get(id);
+            if (timeoutId != null) {
+                clearTimeout(timeoutId);
+                this._timeouts.delete(id);
+            }
             this.messages = this.messages.filter((msg) => msg.id !== id);
         },
     };

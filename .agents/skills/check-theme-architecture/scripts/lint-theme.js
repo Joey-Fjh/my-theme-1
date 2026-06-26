@@ -957,6 +957,110 @@ function checkMotionBareDuration(file, text) {
     }
 }
 
+async function checkComponentRegistryPairing() {
+    const componentTypeAttrRe = /data-component-type=["']([^"']+)["']/g;
+    const componentsRegisterRe = /Components\.register\s*\(\s*['"]([^'"]+)['"]/g;
+
+    for (const file of await getFiles(SECTION_GLOBS)) {
+        const text = await readText(file);
+
+        const typesInDom = new Set();
+        for (const match of text.matchAll(componentTypeAttrRe)) {
+            typesInDom.add(match[1]);
+        }
+
+        const typesRegistered = new Set();
+        for (const match of text.matchAll(LIQUID_SCRIPT_RE)) {
+            for (const regMatch of match[1].matchAll(componentsRegisterRe)) {
+                typesRegistered.add(regMatch[1]);
+            }
+        }
+
+        for (const match of text.matchAll(componentTypeAttrRe)) {
+            const type = match[1];
+            if (typesRegistered.has(type)) continue;
+
+            report(
+                file,
+                lineAt(text, match.index ?? 0),
+                `data-component-type "${type}" has no matching Components.register() in this file.`,
+            );
+        }
+
+        for (const match of text.matchAll(componentsRegisterRe)) {
+            const type = match[1];
+            if (typesInDom.has(type)) continue;
+
+            report(
+                file,
+                lineAt(text, match.index ?? 0),
+                `Components.register("${type}") has no matching data-component-type in this file.`,
+            );
+        }
+    }
+}
+
+const CUSTOM_EVENT_ALLOWLIST = new Set(['assets/events.js', 'assets/base.js']);
+
+async function checkCustomEventBoundary() {
+    const customEventRe = /\bnew\s+CustomEvent\s*\(/g;
+
+    for (const file of await getFiles(ASSET_JS_GLOBS)) {
+        if (/\/vendor-/.test(file) || /\.min\.js$/.test(file)) continue;
+        if (CUSTOM_EVENT_ALLOWLIST.has(file)) continue;
+
+        const text = await readText(file);
+        const { cleaned, toOriginal } = stripCommentsMapped(text);
+
+        for (const match of cleaned.matchAll(customEventRe)) {
+            const offset = toOriginal(match.index ?? 0);
+            reportWarning(
+                file,
+                lineAt(text, offset),
+                'Cross-component events must use ThemeEvents; new CustomEvent is only allowed in assets/events.js and assets/base.js.',
+            );
+        }
+    }
+}
+
+async function checkAlpineTeardownHeuristics() {
+    const setIntervalRe = /\bsetInterval\s*\(/g;
+    const clearIntervalRe = /\bclearInterval\s*\(/;
+    const setTimeoutRe = /\bsetTimeout\s*\(/g;
+    const clearTimeoutRe = /\bclearTimeout\s*\(/;
+
+    for (const file of await getFiles(ASSET_JS_GLOBS)) {
+        if (/\/vendor-/.test(file) || /\.min\.js$/.test(file)) continue;
+
+        const text = await readText(file);
+        const { cleaned, toOriginal } = stripCommentsMapped(text);
+
+        if (setIntervalRe.test(cleaned) && !clearIntervalRe.test(cleaned)) {
+            setIntervalRe.lastIndex = 0;
+            const match = setIntervalRe.exec(cleaned);
+            const offset = match ? toOriginal(match.index ?? 0) : 0;
+            reportWarning(
+                file,
+                lineAt(text, offset),
+                'setInterval should be cleared in destroy/dispose (clearInterval required in the same file).',
+            );
+        }
+
+        if (!/^assets\/alpine\.store\./.test(file)) continue;
+
+        if (setTimeoutRe.test(cleaned) && !clearTimeoutRe.test(cleaned)) {
+            setTimeoutRe.lastIndex = 0;
+            const match = setTimeoutRe.exec(cleaned);
+            const offset = match ? toOriginal(match.index ?? 0) : 0;
+            reportWarning(
+                file,
+                lineAt(text, offset),
+                'Alpine store timers should be tracked and cleared on remove (clearTimeout required in the same file).',
+            );
+        }
+    }
+}
+
 async function checkCssLayerProtocol() {
     const allowlist = loadCssLayerAllowlist();
 
@@ -989,6 +1093,9 @@ async function main() {
         checkAlpineComponentGroupReferences(),
         checkDomReplacement(),
         checkHttpCartGuard(),
+        checkComponentRegistryPairing(),
+        checkCustomEventBoundary(),
+        checkAlpineTeardownHeuristics(),
         checkCssLayerProtocol(),
     ]);
 

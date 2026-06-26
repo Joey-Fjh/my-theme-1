@@ -42,6 +42,7 @@
         active: null,
         _returnFocusTo: null,
         _trapHandler: null,
+        _openGeneration: 0,
 
         open(id) {
             if (typeof id !== 'string' || !id.trim()) return;
@@ -56,8 +57,15 @@
 
             document.body.style.overflow = 'hidden';
 
+            const generation = ++this._openGeneration;
+
             requestAnimationFrame(() => {
+                if (generation !== this._openGeneration) return;
+
                 requestAnimationFrame(() => {
+                    if (generation !== this._openGeneration) return;
+                    if (this.active !== cleanId) return;
+
                     this._moveFocusIntoDialog();
                     this._attachTrap();
                 });
@@ -66,6 +74,8 @@
 
         close() {
             if (!this.active) return;
+
+            this._openGeneration += 1;
 
             const returnTo = this._returnFocusTo;
 

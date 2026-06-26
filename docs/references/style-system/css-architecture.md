@@ -613,7 +613,7 @@ Allowlist: `.agents/skills/check-theme-architecture/css-layer-allowlist.json`
 
 **Deferred (7B out of scope):** product-card dual BEM ergonomics; product-card / product-info-blocks block split; batch rename. `buy-buttons__quantity` cross-owner reuse was resolved in Phase 8B.
 
-### 7.7 Phase 8A/8B — PDP product component API contract — **Pending review (Phase 8B, 2026-06-25)**
+### 7.7 Phase 8A/8B — PDP product component API contract — **Accepted (Phase 8B, 2026-06-26)**
 
 **Phase 8A (pre-review):** Read-only audit of PDP CSS/API consumption across `product-info-blocks`, `buy-buttons`, `product-purchase-stack`, and quick view. Conclusion: block-driven PDP owner is clear; fix orphan quantity cross-owner, clarify quick-view parallel API, promote title to explicit typography owner. Score ~82/100 for PDP CSS/API.
 
@@ -645,13 +645,15 @@ Allowlist: `.agents/skills/check-theme-architecture/css-layer-allowlist.json`
 | --- | --- | --- |
 | `product-info-blocks__price*` | `snippets/product-info-blocks.liquid` | `product-purchase-stack` dual-class with `product-quick-view__price*` |
 
-**Typography owner:** `product-info-blocks__title` — `heading-h1` on PDP (`h1`); `heading-h2` on featured via `--featured` modifier (`h2`). Desktop PDP title scales `3rem` → `4rem` at `pc:` — **manual QA required**.
+**Typography owner:** `product-info-blocks__title` — `heading-h1` on PDP (`h1`); `heading-h2` on featured via `--featured` modifier (`h2`). Desktop PDP title scales `3rem` → `4rem` at `pc:` — **QA accepted 2026-06-26**.
 
 **Resolved in Phase 8C:** `product-price` component API extraction; `buy-buttons` `layout: 'stack'` dead branch; `context` `'main'` vs `'product'` naming alignment.
 
-**Deferred (8B/8C out of scope):** `--form` / `--featured` modifier audit after visual QA.
+**Manual QA (2026-06-26):** 21/21 Pass across PDP/featured title scale, quantity-only + purchase group, quick view title/price/variant/purchase, button/payment hover, close-button/icon motion, price, sold out/loading/dynamic checkout/pickup smoke.
 
-### 7.8 Phase 8C — Style API hardening — **Pending review (2026-06-25)**
+**Deferred (8B/8C out of scope):** `--form` / `--featured` modifier audit; PDP empty-product placeholder `h2` vs `heading-h1` semantic note (low).
+
+### 7.8 Phase 8C — Style API hardening — **Accepted (2026-06-26)**
 
 **Purpose:** make global style changes predictable. If a shared primitive such as button hover or product price changes, update the primitive owner instead of re-auditing every snippet.
 
@@ -665,7 +667,9 @@ Allowlist: `.agents/skills/check-theme-architecture/css-layer-allowlist.json`
 | Buy buttons | Removed no-consumer `layout: 'stack'` branch; `buy-buttons` now always renders the purchase-row contract |
 | PDP context | `product-info-blocks` default context is `product`; old `main` alias removed from title logic |
 
-**Manual QA required:** all button variants, Shopify unbranded payment button hover, PDP/featured price, quick-view price, PDP purchase group, quick-view buy buttons, close buttons, icon hover/motion.
+**Manual QA (2026-06-26):** btn-primary/secondary hover, Shopify unbranded payment hover contract, close-button/icon motion vars, PDP/featured/quick-view price, sold out/loading/dynamic checkout/pickup smoke — all Pass.
+
+**Validation:** `npm.cmd run lint:theme` passed; `npm.cmd run lint` passed; `npm.cmd test` passed (122 files, 0 offenses).
 
 ---
 
@@ -686,8 +690,8 @@ Allowlist: `.agents/skills/check-theme-architecture/css-layer-allowlist.json`
 | **Phase 5E** | Link underline child-icon composition split | **Accepted** (2026-06-25) |
 | **Phase 6** | Layer-placement lint (`checkCssLayerProtocol`) | **Accepted** (2026-06-24) |
 | **Phase 6B** | Lint precision hardening (multi-line motion, comment masking, selector bans) | **Accepted** (2026-06-24) |
-| **Phase 8B** | PDP API contract: quantity owner, title typography, quick-view boundary docs | **Pending review** (2026-06-25) |
-| **Phase 8C** | Style API hardening: buttons, product-price, buy-buttons layout, PDP context | **Pending review** (2026-06-25) |
+| **Phase 8B** | PDP API contract: quantity owner, title typography, quick-view boundary docs | **Accepted** (2026-06-26) |
+| **Phase 8C** | Style API hardening: buttons, product-price, buy-buttons layout, PDP context | **Accepted** (2026-06-26) |
 
 ### 8.1 Phase 5 candidates (5A–5E accepted)
 

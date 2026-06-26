@@ -149,6 +149,7 @@
                 _previousBodyOverflow: null,
                 _returnFocusTo: null,
                 _trapHandler: null,
+                _lightboxGeneration: 0,
 
                 init() {
                     const ds = this.$el?.dataset;
@@ -169,8 +170,15 @@
                     this.lightboxOpen = true;
                     this._lockBodyScroll();
 
+                    const generation = ++this._lightboxGeneration;
+
                     requestAnimationFrame(() => {
+                        if (generation !== this._lightboxGeneration) return;
+
                         requestAnimationFrame(() => {
+                            if (generation !== this._lightboxGeneration) return;
+                            if (!this.lightboxOpen) return;
+
                             this._moveFocusIntoLightbox();
                             this._attachTrap();
                         });
@@ -178,6 +186,8 @@
                 },
 
                 closeLightbox() {
+                    this._lightboxGeneration += 1;
+
                     const returnTo = this._returnFocusTo;
                     this._detachTrap();
                     this.lightboxOpen = false;
@@ -314,6 +324,7 @@
                 },
 
                 destroy() {
+                    this._lightboxGeneration += 1;
                     this._detachTrap();
                     if (this.lightboxOpen) this.closeLightbox();
                     this.dispose();
@@ -524,6 +535,7 @@
                 ...AlpineComponentsFactory.useDisposable(),
                 position: 0,
                 isDragging: false,
+                _animateFrame: null,
 
                 init() {
                     this.on(document, 'mouseup', () => this.endDrag());
@@ -542,6 +554,11 @@
                 },
 
                 animateToCenter() {
+                    if (this._animateFrame) {
+                        cancelAnimationFrame(this._animateFrame);
+                        this._animateFrame = null;
+                    }
+
                     const start = 0;
                     const end = 50;
                     const duration = 800;
@@ -555,11 +572,13 @@
                         this.position = start + (end - start) * easeOut;
 
                         if (progress < 1) {
-                            requestAnimationFrame(animate);
+                            this._animateFrame = requestAnimationFrame(animate);
+                        } else {
+                            this._animateFrame = null;
                         }
                     };
 
-                    requestAnimationFrame(animate);
+                    this._animateFrame = requestAnimationFrame(animate);
                 },
 
                 startDrag(e) {
@@ -622,6 +641,10 @@
                 },
 
                 destroy() {
+                    if (this._animateFrame) {
+                        cancelAnimationFrame(this._animateFrame);
+                        this._animateFrame = null;
+                    }
                     this.dispose();
                 },
             };

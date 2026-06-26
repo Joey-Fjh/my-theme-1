@@ -306,7 +306,7 @@
 
         relatedProducts() {
             return {
-                ...(AlpineComponentsFactory.useDisposable?.() || {}),
+                ...AlpineComponentsFactory.useDisposable(),
                 url: '',
                 sectionId: '',
                 _observer: null,

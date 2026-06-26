@@ -29,19 +29,30 @@
                 const eventNames = ThemeEvents.events;
                 const unmountEvent = eventNames.COMPONENT_UNMOUNTED;
 
-                if (typeof componentDefinition.dispose !== 'function') {
+                const hasDestroy = typeof componentDefinition.destroy === 'function';
+                const hasDispose = typeof componentDefinition.dispose === 'function';
+
+                if (!hasDestroy && !hasDispose) {
                     return componentDefinition;
                 }
 
                 const originalInit = componentDefinition.init;
 
                 componentDefinition.init = function () {
-                    if (
-                        this.$el &&
-                        typeof this.on === 'function' &&
-                        typeof this.destroy === 'function'
-                    ) {
-                        this.on(this.$el, unmountEvent, this.destroy.bind(this));
+                    if (this.$el && unmountEvent) {
+                        const teardown = () => {
+                            if (typeof this.destroy === 'function') {
+                                this.destroy();
+                            } else if (typeof this.dispose === 'function') {
+                                this.dispose();
+                            }
+                        };
+
+                        if (typeof this.on === 'function') {
+                            this.on(this.$el, unmountEvent, teardown);
+                        } else if (typeof this.$el.addEventListener === 'function') {
+                            this.$el.addEventListener(unmountEvent, teardown);
+                        }
                     }
 
                     if (originalInit) {

@@ -14,7 +14,7 @@
             const Utils = window.__Theme__?.Utils;
 
             return {
-                ...(Utils ? AlpineComponentsFactory.useDisposable() : {}),
+                ...AlpineComponentsFactory.useDisposable(),
                 searchUrl: '',
                 predictiveSearchUrl: '',
                 query: '',
