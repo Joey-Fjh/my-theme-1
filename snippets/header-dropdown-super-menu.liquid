@@ -1,9 +1,19 @@
+{%- liquid
+    assign desktop_menu_trigger = section.settings.desktop_menu_trigger | default: 'hover'
+    unless desktop_menu_trigger == 'click'
+        assign desktop_menu_trigger = 'hover'
+    endunless
+-%}
+
 <nav
     aria-label="{{ 'accessibility.main_menu' | t }}"
     class="header-dropdown-super-menu"
+    data-desktop-menu-trigger="{{ desktop_menu_trigger }}"
     x-data="dropdown"
     @mouseenter="onHeaderEnter()"
-    @mouseleave="onHeaderLeave()"
+    @click.capture="onMenuTriggerClickEvent($event)"
+    @mouseover="openOnHoverEvent($event)"
+    @mouseleave="closeHoverAndDeactivate()"
     @focusin="onHeaderFocusIn()"
     @focusout="onHeaderFocusOut($event)"
     @click.outside="closeAndDeactivate()"
@@ -26,7 +36,6 @@
                             class="dropdown-trigger flex items-center gap-1"
                             id="HeaderSuperMenu-{{ link.handle }}"
                             :aria-expanded="$el.parentElement.open"
-                            @click.stop.prevent="toggle($el.parentElement)"
                         >
                             {% capture link_content %}
                                 <span>{{ link.title | escape }}</span>
@@ -45,98 +54,101 @@
 
                         <div
                             class="
-                                dropdown-panel dropdown-open
+                                dropdown-panel dropdown-open panel-motion panel-motion-layered
                                 fixed inset-x-0 top-[calc(var(--announcement-bar-height)+var(--header-height))]
                                 max-w-none min-w-auto rounded-none px-8 py-5
                                 color-{{ section.settings.menu_color_scheme }}
                                 surface-component
                             "
+                            @mouseenter="cancelHoverClose(); cancelHoverOpen(); onHeaderEnter()"
                         >
-                            {%- liquid
-                                assign super_menu_column_count = link.links.size
-                                if super_menu_column_count < 1
-                                    assign super_menu_column_count = 1
-                                endif
-                            -%}
+                            <div class="panel-motion-shell">
+                                <div class="panel-motion-content">
+                                    {%- liquid
+                                        assign super_menu_column_count = link.links.size
+                                        if super_menu_column_count < 1
+                                            assign super_menu_column_count = 1
+                                        endif
+                                    -%}
 
-                            <div
-                                class="header-super-menu-panel relative"
-                                style="--super-menu-primary-width: {{ section.settings.super_menu_primary_width }}%; --super-menu-secondary-width: {{ 100 | minus: section.settings.super_menu_primary_width }}%; --super-menu-column-count: {{ super_menu_column_count }};"
-                            >
-                                <div class="header-super-menu-layout{% if section.settings.enable_super_menu_series %} header-super-menu-layout--with-series header-super-menu-layout--series-{{ super_menu_series_layout }}{% else %} header-super-menu-layout--full{% endif %}">
-                                    <div class="header-super-menu-main">
-                                        <div class="header-super-menu-columns">
-                                            {%- for childlink in link.links -%}
-                                                <div class="header-super-menu-column">
-                                                    {%- capture child_link_attributes -%}
+                                    <div
+                                        class="header-super-menu-panel relative"
+                                        style="--super-menu-primary-width: {{ section.settings.super_menu_primary_width }}%; --super-menu-secondary-width: {{ 100 | minus: section.settings.super_menu_primary_width }}%; --super-menu-column-count: {{ super_menu_column_count }};"
+                                    >
+                                        <div class="header-super-menu-layout{% if section.settings.enable_super_menu_series %} header-super-menu-layout--with-series header-super-menu-layout--series-{{ super_menu_series_layout }}{% else %} header-super-menu-layout--full{% endif %}">
+                                            <div class="header-super-menu-main">
+                                                <div class="header-super-menu-columns">
+                                                    {%- for childlink in link.links -%}
+                                                        <div class="header-super-menu-column">
+                                                            {%- capture child_link_attributes -%}
                                                         {%- if childlink.current -%}
                                                             aria-current="page"
                                                         {%- endif -%}
                                                     {%- endcapture -%}
 
-                                                    {%- capture child_link_class -%}
+                                                            {%- capture child_link_class -%}
                                                         block header-super-menu-child-link text-theme-text
                                                         {%- if childlink.links != blank -%}
                                                             header-super-menu-child-link--has-children
                                                         {%- endif -%}
                                                     {%- endcapture -%}
 
-                                                    <div class="header-super-menu-child-item">
-                                                        {%- assign super_child_link_text = childlink.title
-                                                            | escape
-                                                        -%}
-                                                        {%- assign super_child_link_class = child_link_class
-                                                            | strip
-                                                        -%}
-                                                        {%- render 'link',
-                                                            text: super_child_link_text,
-                                                            href: childlink.url,
-                                                            variant: 'underline',
-                                                            class: super_child_link_class,
-                                                            attributes: child_link_attributes
-                                                        -%}
-                                                    </div>
-
-                                                    {%- if childlink.links != blank -%}
-                                                        <div class="header-super-menu-grandchildren-links">
-                                                            {%- for grandchild in childlink.links -%}
-                                                                {%- if grandchild.title
-                                                                        == childlink.title
-                                                                    and grandchild.url
-                                                                        == childlink.url
+                                                            <div class="header-super-menu-child-item">
+                                                                {%- assign super_child_link_text = childlink.title
+                                                                    | escape
                                                                 -%}
-                                                                    {%- continue -%}
-                                                                {%- endif -%}
+                                                                {%- assign super_child_link_class = child_link_class
+                                                                    | strip
+                                                                -%}
+                                                                {%- render 'link',
+                                                                    text: super_child_link_text,
+                                                                    href: childlink.url,
+                                                                    variant: 'underline',
+                                                                    class: super_child_link_class,
+                                                                    attributes: child_link_attributes
+                                                                -%}
+                                                            </div>
 
-                                                                {%- capture grand_link_attributes -%}
+                                                            {%- if childlink.links != blank -%}
+                                                                <div class="header-super-menu-grandchildren-links">
+                                                                    {%- for grandchild in childlink.links -%}
+                                                                        {%- if grandchild.title
+                                                                                == childlink.title
+                                                                            and grandchild.url
+                                                                                == childlink.url
+                                                                        -%}
+                                                                            {%- continue -%}
+                                                                        {%- endif -%}
+
+                                                                        {%- capture grand_link_attributes -%}
                                                                     {%- if grandchild.current -%}
                                                                         aria-current="page"
                                                                     {%- endif -%}
                                                                 {%- endcapture -%}
 
-                                                                {%- assign super_grandchild_text = grandchild.title
-                                                                    | escape
-                                                                -%}
-                                                                {%- render 'link',
-                                                                    text: super_grandchild_text,
-                                                                    href: grandchild.url,
-                                                                    variant: 'underline',
-                                                                    class: 'text-theme-text',
-                                                                    attributes: grand_link_attributes
-                                                                -%}
-                                                            {%- endfor -%}
+                                                                        {%- assign super_grandchild_text = grandchild.title
+                                                                            | escape
+                                                                        -%}
+                                                                        {%- render 'link',
+                                                                            text: super_grandchild_text,
+                                                                            href: grandchild.url,
+                                                                            variant: 'underline',
+                                                                            class: 'text-theme-text',
+                                                                            attributes: grand_link_attributes
+                                                                        -%}
+                                                                    {%- endfor -%}
+                                                                </div>
+                                                            {%- endif -%}
                                                         </div>
-                                                    {%- endif -%}
+                                                    {%- endfor -%}
                                                 </div>
-                                            {%- endfor -%}
-                                        </div>
-                                    </div>
+                                            </div>
 
-                                    {%- if section.settings.enable_super_menu_series -%}
-                                        <div
-                                            class="header-super-menu-series color-{{ section.settings.menu_color_scheme }} text-theme-text"
-                                        >
-                                            {%- capture super_tab_header -%}
+                                            {%- if section.settings.enable_super_menu_series -%}
+                                                <div
+                                                    class="header-super-menu-series color-{{ section.settings.menu_color_scheme }} text-theme-text"
+                                                >
+                                                    {%- capture super_tab_header -%}
                                                 {%- for i in (1..3) -%}
                                                     {%- assign collection_key = 'super_collection_' | append: i -%}
                                                     {%- assign collection_item = section.settings[collection_key] -%}
@@ -160,7 +172,7 @@
                                                 {%- endfor -%}
                                             {%- endcapture -%}
 
-                                            {%- capture super_tab_content -%}
+                                                    {%- capture super_tab_content -%}
                                                 {%- for i in (1..3) -%}
                                                     {%- assign collection_key = 'super_collection_' | append: i -%}
                                                     {%- assign collection_item = section.settings[collection_key] -%}
@@ -200,24 +212,26 @@
                                                 {%- endfor -%}
                                             {%- endcapture -%}
 
-                                            {%- if super_tab_header != blank -%}
-                                                {%- render 'tab-control',
-                                                    custom_class: 'header-super-menu-series-tabs',
-                                                    initialTabStrategy: 'first',
-                                                    tab_header: super_tab_header,
-                                                    tab_content: super_tab_content,
-                                                    header_class: 'gap-6'
-                                                -%}
+                                                    {%- if super_tab_header != blank -%}
+                                                        {%- render 'tab-control',
+                                                            custom_class: 'header-super-menu-series-tabs',
+                                                            initialTabStrategy: 'first',
+                                                            tab_header: super_tab_header,
+                                                            tab_content: super_tab_content,
+                                                            header_class: 'gap-6'
+                                                        -%}
+                                                    {%- endif -%}
+                                                </div>
                                             {%- endif -%}
                                         </div>
-                                    {%- endif -%}
-                                </div>
 
-                                {% render 'watermark',
-                                    container_class: 'absolute -bottom-20 w-full overflow-hidden pointer-events-none select-none -z-1',
-                                    text_class: 'opacity-12',
-                                    text: section.settings.super_menu_watermark_text
-                                %}
+                                        {% render 'watermark',
+                                            container_class: 'absolute -bottom-20 w-full overflow-hidden pointer-events-none select-none -z-1',
+                                            text_class: 'opacity-12',
+                                            text: section.settings.super_menu_watermark_text
+                                        %}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </details>

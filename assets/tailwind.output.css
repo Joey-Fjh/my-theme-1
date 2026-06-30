@@ -40,6 +40,7 @@
     --z-layer-dropdown: 20;
     --z-layer-popover: 30;
     --z-layer-sticky: 100;
+    --z-layer-sticky-raised: 101;
     --z-layer-drawer-backdrop: 200;
     --z-layer-drawer: 201;
     --z-layer-modal-backdrop: 300;
@@ -897,6 +898,12 @@
   .inset-x-0 {
     inset-inline: calc(var(--spacing) * 0);
   }
+  .\[inset-inline-start\:0\] {
+    inset-inline-start: 0;
+  }
+  .\[inset-inline-start\:calc\(100\%\+1\.5rem\)\] {
+    inset-inline-start: calc(100% + 1.5rem);
+  }
   .end-0 {
     inset-inline-end: calc(var(--spacing) * 0);
   }
@@ -920,6 +927,9 @@
   }
   .top-20 {
     top: calc(var(--spacing) * 20);
+  }
+  .top-\[calc\(100\%\+1\.5rem\)\] {
+    top: calc(100% + 1.5rem);
   }
   .top-\[calc\(100\%\+1rem\)\] {
     top: calc(100% + 1rem);
@@ -1070,9 +1080,6 @@
   .ms-1\.5 {
     margin-inline-start: calc(var(--spacing) * 1.5);
   }
-  .ms-2 {
-    margin-inline-start: calc(var(--spacing) * 2);
-  }
   .ms-3 {
     margin-inline-start: calc(var(--spacing) * 3);
   }
@@ -1090,6 +1097,9 @@
   }
   .me-1 {
     margin-inline-end: calc(var(--spacing) * 1);
+  }
+  .mt-0 {
+    margin-top: calc(var(--spacing) * 0);
   }
   .mt-0\.5 {
     margin-top: calc(var(--spacing) * 0.5);
@@ -1596,6 +1606,9 @@
   }
   .min-w-0 {
     min-width: calc(var(--spacing) * 0);
+  }
+  .min-w-56 {
+    min-width: calc(var(--spacing) * 56);
   }
   .min-w-\[24rem\] {
     min-width: 24rem;
@@ -5446,26 +5459,25 @@ shopify-accelerated-checkout {
       opacity: 0;
       visibility: hidden;
       pointer-events: none;
+      transition: visibility 0s linear var(--motion-duration-fast);
+    }
+    .dropdown-panel.panel-motion {
+      transition: visibility 0s linear var(--motion-duration-fast);
+    }
+    .dropdown-panel:not(.panel-motion) {
       transform: translateY(-12px) scale(0.98);
       transition: opacity var(--motion-duration-fast) var(--motion-ease-default), transform var(--motion-duration-fast) var(--motion-ease-enter), visibility 0s linear var(--motion-duration-fast);
     }
     .dropdown-open {
-      details[open] > &, [aria-expanded='true'] > &, .is-open > & {
+      details[open] > &, [data-dropdown][open] > &, [aria-expanded='true'] > &, .is-open > & {
         opacity: 1;
         visibility: visible;
         pointer-events: auto;
-        transform: translateY(0) scale(1);
         transition-delay: 0s;
       }
-      @media (hover: hover) and (pointer: fine) {
-        details.dropdown:hover > & {
-          opacity: 1;
-          visibility: visible;
-          pointer-events: auto;
-          transform: translateY(0) scale(1);
-          transition-delay: 0s;
-        }
-      }
+    }
+    .dropdown-panel:not(.panel-motion).dropdown-open, details[open] > .dropdown-panel:not(.panel-motion), [data-dropdown][open] > .dropdown-panel:not(.panel-motion), [aria-expanded='true'] > .dropdown-panel:not(.panel-motion), .is-open > .dropdown-panel:not(.panel-motion) {
+      transform: translateY(0) scale(1);
     }
     .dropdown-icon {
       display: inline-block;
@@ -5485,6 +5497,159 @@ shopify-accelerated-checkout {
     &[open] > summary .dropdown-icon--tilt {
       transform: rotate(-135deg) translateY(2px);
     }
+  }
+}
+@layer components {
+  .panel-motion {
+    transform-origin: top center;
+    transition: box-shadow var(--motion-duration-fast) var(--motion-ease-default), border-color var(--motion-duration-fast) var(--motion-ease-default);
+  }
+  .panel-motion-scale {
+    --panel-motion-dur: var(--panel-motion-duration-scale);
+  }
+  details[open] > .panel-motion-scale, [aria-expanded='true'] > .panel-motion-scale, .is-open > .panel-motion-scale, [data-dropdown][open] > .panel-motion-scale, .localization-toggle[aria-expanded='true'] ~ .panel-motion-scale {
+    animation: panel-motion-scale-in var(--panel-motion-dur) var(--panel-motion-ease-enter) both;
+  }
+  .panel-motion-sheet {
+    --panel-motion-dur: var(--panel-motion-duration-sheet);
+  }
+  details[open] > .panel-motion-sheet, [aria-expanded='true'] > .panel-motion-sheet, .is-open > .panel-motion-sheet, [data-dropdown][open] > .panel-motion-sheet, .localization-toggle[aria-expanded='true'] ~ .panel-motion-sheet {
+    animation: panel-motion-sheet-in var(--panel-motion-dur) var(--panel-motion-ease-soft) both;
+  }
+  .panel-motion-curtain {
+    --panel-motion-dur: var(--panel-motion-duration-curtain);
+  }
+  details[open] > .panel-motion-curtain, [aria-expanded='true'] > .panel-motion-curtain, .is-open > .panel-motion-curtain, [data-dropdown][open] > .panel-motion-curtain, .localization-toggle[aria-expanded='true'] ~ .panel-motion-curtain {
+    animation: panel-motion-curtain-in var(--panel-motion-dur) var(--panel-motion-ease-soft) both;
+  }
+  .panel-motion-layered {
+    --panel-motion-dur: var(--panel-motion-duration-layered);
+    --panel-motion-shell-dur: calc(var(--panel-motion-dur) * 0.85);
+    --panel-motion-layered-shell-scale: 0.45;
+    --panel-motion-layered-content-offset: 12px;
+    padding: 0;
+    overflow: hidden;
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+  }
+  .panel-motion-layered .panel-motion-shell {
+    overflow: hidden;
+    transform: scaleY(1);
+    transform-origin: top center;
+    animation: none;
+  }
+  .panel-motion-layered .panel-motion-content > * {
+    opacity: 1;
+    transform: translateY(0);
+    animation: none;
+  }
+  details:not([open]) > .panel-motion-layered .panel-motion-shell, [data-dropdown]:not([open]) > .panel-motion-layered .panel-motion-shell {
+    transform: scaleY(var(--panel-motion-layered-shell-scale));
+    animation: none;
+  }
+  details:not([open]) .panel-motion-layered .panel-motion-content > *, [data-dropdown]:not([open]) .panel-motion-layered .panel-motion-content > * {
+    animation: none;
+    opacity: 0;
+    transform: translateY(var(--panel-motion-layered-content-offset));
+  }
+  details[open] > .panel-motion-layered[data-panel-motion='enter'] .panel-motion-shell, [data-dropdown][open] > .panel-motion-layered[data-panel-motion='enter'] .panel-motion-shell {
+    animation: panel-motion-layered-shell-in var(--panel-motion-shell-dur) var(--panel-motion-ease-enter) both;
+  }
+  details[open] > .panel-motion-layered[data-panel-motion='enter'], [data-dropdown][open] > .panel-motion-layered[data-panel-motion='enter'] {
+    animation: panel-motion-layered-panel-in var(--panel-motion-dur) var(--panel-motion-ease-enter) both;
+  }
+  details[open] .panel-motion-layered[data-panel-motion='enter'] .panel-motion-content > *, [data-dropdown][open] .panel-motion-layered[data-panel-motion='enter'] .panel-motion-content > * {
+    animation: panel-motion-content-in var(--panel-motion-duration-item) var(--panel-motion-ease-enter) both;
+  }
+  details[open] .panel-motion-layered[data-panel-motion='enter'] .panel-motion-content > *:nth-child(1), [data-dropdown][open] .panel-motion-layered[data-panel-motion='enter'] .panel-motion-content > *:nth-child(1) {
+    animation-delay: var(--panel-motion-content-delay-layered);
+  }
+  details[open] .panel-motion-layered[data-panel-motion='enter'] .panel-motion-content > *:nth-child(2), [data-dropdown][open] .panel-motion-layered[data-panel-motion='enter'] .panel-motion-content > *:nth-child(2) {
+    animation-delay: calc( var(--panel-motion-content-delay-layered) + var(--panel-motion-stagger-step, 32ms) );
+  }
+  details[open] .panel-motion-layered[data-panel-motion='enter'] .panel-motion-content > *:nth-child(3), [data-dropdown][open] .panel-motion-layered[data-panel-motion='enter'] .panel-motion-content > *:nth-child(3) {
+    animation-delay: calc( var(--panel-motion-content-delay-layered) + var(--panel-motion-stagger-step, 32ms) * 2 );
+  }
+  details[open] .panel-motion-layered[data-panel-motion='enter'] .panel-motion-content > *:nth-child(4), [data-dropdown][open] .panel-motion-layered[data-panel-motion='enter'] .panel-motion-content > *:nth-child(4) {
+    animation-delay: calc( var(--panel-motion-content-delay-layered) + var(--panel-motion-stagger-step, 32ms) * 3 );
+  }
+  .panel-motion-compact {
+    --panel-motion-dur: var(--panel-motion-duration-compact);
+    --panel-motion-stagger-step: var(--panel-motion-stagger-step-compact);
+  }
+  :is(.localization-menu, .sort-by-dropdown__panel).panel-motion-compact {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+  details[open] > .panel-motion-compact, [aria-expanded='true'] > .panel-motion-compact, .is-open > .panel-motion-compact, [data-dropdown][open] > .panel-motion-compact, .localization-toggle[aria-expanded='true'] ~ .panel-motion-compact {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    animation: panel-motion-compact-in var(--panel-motion-dur) var(--panel-motion-ease-enter) both;
+  }
+  .panel-motion-flyout {
+    --panel-motion-dur: var(--panel-motion-duration-flyout);
+    transform-origin: top inline-start;
+  }
+  [dir='rtl'] .panel-motion-flyout {
+    transform-origin: top inline-end;
+  }
+  details[open] > .panel-motion-flyout[class*='inset-s-full'], [data-dropdown][open] > .panel-motion-flyout[class*='inset-s-full'] {
+    animation: panel-motion-flyout-in var(--panel-motion-dur) var(--panel-motion-ease-enter) both;
+  }
+  [dir='rtl'] details[open] > .panel-motion-flyout[class*='inset-s-full'], [dir='rtl'] [data-dropdown][open] > .panel-motion-flyout[class*='inset-s-full'] {
+    animation-name: panel-motion-flyout-in-rtl;
+  }
+  details[open] > .panel-motion-flyout:not([class*='inset-s-full']), [aria-expanded='true'] > .panel-motion-flyout:not([class*='inset-s-full']), .is-open > .panel-motion-flyout:not([class*='inset-s-full']), [data-dropdown][open] > .panel-motion-flyout:not([class*='inset-s-full']) {
+    animation: panel-motion-flyout-down-in var(--panel-motion-dur) var(--panel-motion-ease-enter) both;
+    transform-origin: top center;
+  }
+  .panel-motion-disclosure {
+    --panel-motion-dur: var(--panel-motion-duration-disclosure);
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
+  details[open] > .panel-motion-disclosure {
+    max-height: var(--panel-motion-disclosure-max-height);
+    pointer-events: auto;
+    animation: panel-motion-disclosure-in var(--panel-motion-dur) var(--panel-motion-ease-soft) both;
+  }
+  details[open] > :is(.panel-motion-scale, .panel-motion-sheet, .panel-motion-curtain, .panel-motion-compact) > :is(li, [role='option'], .localization-item), [data-dropdown][open] > :is(.panel-motion-scale, .panel-motion-sheet, .panel-motion-curtain, .panel-motion-compact) > [role='option'], .localization-toggle[aria-expanded='true'] ~ :is(.panel-motion-scale, .panel-motion-sheet, .panel-motion-curtain, .panel-motion-compact) > .localization-item {
+    animation: panel-motion-item-in var(--panel-motion-duration-item) var(--panel-motion-ease-enter) both;
+  }
+  details[open] > .panel-motion-flyout > li, [data-dropdown][open] > .panel-motion-flyout > li {
+    animation: panel-motion-item-flyout-in var(--panel-motion-duration-item) var(--panel-motion-ease-enter) both;
+  }
+  [dir='rtl'] details[open] > .panel-motion-flyout > li, [dir='rtl'] [data-dropdown][open] > .panel-motion-flyout > li {
+    animation-name: panel-motion-item-flyout-in-rtl;
+  }
+  :is(.panel-motion-scale, .panel-motion-sheet, .panel-motion-curtain, .panel-motion-compact) > :is(li, [role='option'], .localization-item):nth-child(1) {
+    animation-delay: calc(var(--panel-motion-content-delay, 70ms) + 0ms);
+  }
+  :is(.panel-motion-scale, .panel-motion-sheet, .panel-motion-curtain, .panel-motion-compact) > :is(li, [role='option'], .localization-item):nth-child(2) {
+    animation-delay: calc( var(--panel-motion-content-delay, 70ms) + var(--panel-motion-stagger-step, 32ms) );
+  }
+  :is(.panel-motion-scale, .panel-motion-sheet, .panel-motion-curtain, .panel-motion-compact) > :is(li, [role='option'], .localization-item):nth-child(3) {
+    animation-delay: calc( var(--panel-motion-content-delay, 70ms) + var(--panel-motion-stagger-step, 32ms) * 2 );
+  }
+  :is(.panel-motion-scale, .panel-motion-sheet, .panel-motion-curtain, .panel-motion-compact) > :is(li, [role='option'], .localization-item):nth-child(4) {
+    animation-delay: calc( var(--panel-motion-content-delay, 70ms) + var(--panel-motion-stagger-step, 32ms) * 3 );
+  }
+  :is(.panel-motion-scale, .panel-motion-sheet, .panel-motion-curtain, .panel-motion-compact) > :is(li, [role='option'], .localization-item):nth-child(5) {
+    animation-delay: calc( var(--panel-motion-content-delay, 70ms) + var(--panel-motion-stagger-step, 32ms) * 4 );
+  }
+  :is(.panel-motion-scale, .panel-motion-sheet, .panel-motion-curtain, .panel-motion-compact) > :is(li, [role='option'], .localization-item):nth-child(6) {
+    animation-delay: calc( var(--panel-motion-content-delay, 70ms) + var(--panel-motion-stagger-step, 32ms) * 5 );
+  }
+  :is(.panel-motion-scale, .panel-motion-sheet, .panel-motion-curtain, .panel-motion-compact) > :is(li, [role='option'], .localization-item):nth-child(7) {
+    animation-delay: calc( var(--panel-motion-content-delay, 70ms) + var(--panel-motion-stagger-step, 32ms) * 6 );
+  }
+  :is(.panel-motion-scale, .panel-motion-sheet, .panel-motion-curtain, .panel-motion-compact) > :is(li, [role='option'], .localization-item):nth-child(8) {
+    animation-delay: calc( var(--panel-motion-content-delay, 70ms) + var(--panel-motion-stagger-step, 32ms) * 7 );
   }
 }
 @layer components {
@@ -8324,6 +8489,9 @@ shopify-accelerated-checkout {
   .z-layer-sticky {
     z-index: var(--z-layer-sticky);
   }
+  .z-layer-sticky-raised {
+    z-index: var(--z-layer-sticky-raised);
+  }
   .z-layer-drawer-backdrop {
     z-index: var(--z-layer-drawer-backdrop);
   }
@@ -8428,6 +8596,180 @@ body[data-motion-enabled='false'] .media-interaction .image_img, body[data-motio
     opacity: 1 !important;
     transform: none !important;
     transition: none !important;
+  }
+}
+:root {
+  --panel-motion-duration-compact: 185ms;
+  --panel-motion-duration-scale: 260ms;
+  --panel-motion-duration-sheet: 280ms;
+  --panel-motion-duration-curtain: 260ms;
+  --panel-motion-duration-layered: 280ms;
+  --panel-motion-duration-flyout: 240ms;
+  --panel-motion-duration-disclosure: 260ms;
+  --panel-motion-duration-item: 200ms;
+  --panel-motion-stagger-step: 32ms;
+  --panel-motion-stagger-step-compact: 24ms;
+  --panel-motion-content-delay: 70ms;
+  --panel-motion-content-delay-layered: 120ms;
+  --panel-motion-ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+  --panel-motion-ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --panel-motion-disclosure-max-height: 24rem;
+}
+@keyframes panel-motion-scale-in {
+  from {
+    opacity: 0;
+    transform: translateY(-14px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@keyframes panel-motion-sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.94);
+    box-shadow: 0 2px 8px rgb(0 0 0 / 0.04);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    box-shadow: 0 14px 36px rgb(0 0 0 / 0.14), 0 4px 10px rgb(0 0 0 / 0.08);
+  }
+}
+@keyframes panel-motion-curtain-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+    clip-path: inset(0 0 100% 0 round var(--style-border-radius-inputs, 0.6rem));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    clip-path: inset(0 0 0 0 round var(--style-border-radius-inputs, 0.6rem));
+  }
+}
+@keyframes panel-motion-compact-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@keyframes panel-motion-flyout-in {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes panel-motion-flyout-in-rtl {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes panel-motion-flyout-down-in {
+  from {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@keyframes panel-motion-layered-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes panel-motion-layered-shell-in {
+  from {
+    transform: scaleY(var(--panel-motion-layered-shell-scale, 0.45));
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+@keyframes panel-motion-disclosure-in {
+  from {
+    opacity: 0;
+    clip-path: inset(0 0 100% 0 round var(--style-border-radius-inputs, 0.6rem));
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(0 0 0 0 round var(--style-border-radius-inputs, 0.6rem));
+  }
+}
+@keyframes panel-motion-item-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes panel-motion-item-flyout-in {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes panel-motion-item-flyout-in-rtl {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes panel-motion-content-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  :is( .panel-motion-scale, .panel-motion-sheet, .panel-motion-curtain, .panel-motion-layered, .panel-motion-compact, .panel-motion-flyout, .panel-motion-disclosure, .panel-motion-layered .panel-motion-shell, .panel-motion-layered .panel-motion-content > *, :is(.panel-motion-scale, .panel-motion-sheet, .panel-motion-curtain, .panel-motion-compact, .panel-motion-flyout) > :is(li, [role='option'], .localization-item) ) {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+    clip-path: none !important;
+    max-height: none !important;
+  }
+  details[open] > :is(.panel-motion-scale, .panel-motion-sheet, .panel-motion-curtain, .panel-motion-layered, .panel-motion-compact, .panel-motion-flyout, .panel-motion-disclosure), [data-dropdown][open] > :is(.panel-motion-compact, .panel-motion-scale, .panel-motion-flyout, .panel-motion-layered), .localization-toggle[aria-expanded='true'] ~ .panel-motion-compact, details[open] > .panel-motion-layered, [data-dropdown][open] > .panel-motion-layered, details[open] > .panel-motion-layered .panel-motion-shell, [data-dropdown][open] > .panel-motion-layered .panel-motion-shell, details[open] .panel-motion-layered .panel-motion-content > *, [data-dropdown][open] .panel-motion-layered .panel-motion-content > *, details[open] > :is(.panel-motion-scale, .panel-motion-sheet, .panel-motion-curtain, .panel-motion-compact, .panel-motion-flyout) > :is(li, [role='option'], .localization-item), [data-dropdown][open] > .panel-motion-compact > [role='option'], .localization-toggle[aria-expanded='true'] ~ .panel-motion-compact > .localization-item {
+    opacity: 1 !important;
+  }
+  details[open] > .panel-motion-layered .panel-motion-shell, [data-dropdown][open] > .panel-motion-layered .panel-motion-shell {
+    transform: none !important;
   }
 }
 @property --tw-border-style {

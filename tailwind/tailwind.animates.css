@@ -251,6 +251,280 @@ body[data-motion-enabled='false'] .media-interaction-scope .media-interaction im
     }
 }
 
+/* ================================================================
+   Panel motion — keyframes and tokens (dropdown / disclosure panels)
+
+   Stateful UI micro-motion (same policy boundary as button/icon interactions):
+   - governed by prefers-reduced-motion only
+   - independent from theme scroll/section reveal settings
+   - independent from content/media reveal style tokens
+
+   Open animations run on state selectors (details[open], [data-dropdown][open],
+   aria-expanded sibling) so motion stays visible when panels mount via display
+   toggle (x-show) or <details> open — CSS transitions alone are not enough.
+   ================================================================ */
+:root {
+    --panel-motion-duration-compact: 185ms;
+    --panel-motion-duration-scale: 260ms;
+    --panel-motion-duration-sheet: 280ms;
+    --panel-motion-duration-curtain: 260ms;
+    --panel-motion-duration-layered: 280ms;
+    --panel-motion-duration-flyout: 240ms;
+    --panel-motion-duration-disclosure: 260ms;
+    --panel-motion-duration-item: 200ms;
+    --panel-motion-stagger-step: 32ms;
+    --panel-motion-stagger-step-compact: 24ms;
+    --panel-motion-content-delay: 70ms;
+    --panel-motion-content-delay-layered: 120ms;
+    --panel-motion-ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+    --panel-motion-ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
+    --panel-motion-disclosure-max-height: 24rem;
+}
+
+@keyframes panel-motion-scale-in {
+    from {
+        opacity: 0;
+        transform: translateY(-14px) scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes panel-motion-sheet-in {
+    from {
+        opacity: 0;
+        transform: translateY(-16px) scale(0.94);
+        box-shadow: 0 2px 8px rgb(0 0 0 / 0.04);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        box-shadow:
+            0 14px 36px rgb(0 0 0 / 0.14),
+            0 4px 10px rgb(0 0 0 / 0.08);
+    }
+}
+
+@keyframes panel-motion-curtain-in {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+        clip-path: inset(0 0 100% 0 round var(--style-border-radius-inputs, 0.6rem));
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+        clip-path: inset(0 0 0 0 round var(--style-border-radius-inputs, 0.6rem));
+    }
+}
+
+@keyframes panel-motion-compact-in {
+    from {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.96);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes panel-motion-flyout-in {
+    from {
+        opacity: 0;
+        transform: translateX(-16px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes panel-motion-flyout-in-rtl {
+    from {
+        opacity: 0;
+        transform: translateX(16px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes panel-motion-flyout-down-in {
+    from {
+        opacity: 0;
+        transform: translateY(-12px) scale(0.92);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes panel-motion-layered-panel-in {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes panel-motion-layered-shell-in {
+    from {
+        transform: scaleY(var(--panel-motion-layered-shell-scale, 0.45));
+    }
+
+    to {
+        transform: scaleY(1);
+    }
+}
+
+@keyframes panel-motion-disclosure-in {
+    from {
+        opacity: 0;
+        clip-path: inset(0 0 100% 0 round var(--style-border-radius-inputs, 0.6rem));
+    }
+
+    to {
+        opacity: 1;
+        clip-path: inset(0 0 0 0 round var(--style-border-radius-inputs, 0.6rem));
+    }
+}
+
+@keyframes panel-motion-item-in {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes panel-motion-item-flyout-in {
+    from {
+        opacity: 0;
+        transform: translateX(-12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes panel-motion-item-flyout-in-rtl {
+    from {
+        opacity: 0;
+        transform: translateX(12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes panel-motion-content-in {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Panel motion — prefers-reduced-motion only (see policy note above) */
+@media (prefers-reduced-motion: reduce) {
+    :is(
+        .panel-motion-scale,
+        .panel-motion-sheet,
+        .panel-motion-curtain,
+        .panel-motion-layered,
+        .panel-motion-compact,
+        .panel-motion-flyout,
+        .panel-motion-disclosure,
+        .panel-motion-layered .panel-motion-shell,
+        .panel-motion-layered .panel-motion-content > *,
+        :is(
+                .panel-motion-scale,
+                .panel-motion-sheet,
+                .panel-motion-curtain,
+                .panel-motion-compact,
+                .panel-motion-flyout
+            )
+            > :is(li, [role='option'], .localization-item)
+    ) {
+        animation: none !important;
+        transition: none !important;
+        transform: none !important;
+        clip-path: none !important;
+        max-height: none !important;
+    }
+
+    details[open]
+        > :is(
+            .panel-motion-scale,
+            .panel-motion-sheet,
+            .panel-motion-curtain,
+            .panel-motion-layered,
+            .panel-motion-compact,
+            .panel-motion-flyout,
+            .panel-motion-disclosure
+        ),
+    [data-dropdown][open]
+        > :is(
+            .panel-motion-compact,
+            .panel-motion-scale,
+            .panel-motion-flyout,
+            .panel-motion-layered
+        ),
+    .localization-toggle[aria-expanded='true'] ~ .panel-motion-compact,
+    details[open] > .panel-motion-layered,
+    [data-dropdown][open] > .panel-motion-layered,
+    details[open] > .panel-motion-layered .panel-motion-shell,
+    [data-dropdown][open] > .panel-motion-layered .panel-motion-shell,
+    details[open] .panel-motion-layered .panel-motion-content > *,
+    [data-dropdown][open] .panel-motion-layered .panel-motion-content > *,
+    details[open]
+        > :is(
+            .panel-motion-scale,
+            .panel-motion-sheet,
+            .panel-motion-curtain,
+            .panel-motion-compact,
+            .panel-motion-flyout
+        )
+        > :is(li, [role='option'], .localization-item),
+    [data-dropdown][open] > .panel-motion-compact > [role='option'],
+    .localization-toggle[aria-expanded='true'] ~ .panel-motion-compact > .localization-item {
+        opacity: 1 !important;
+    }
+
+    details[open] > .panel-motion-layered .panel-motion-shell,
+    [data-dropdown][open] > .panel-motion-layered .panel-motion-shell {
+        transform: none !important;
+    }
+}
+
 /*
    No-JS fallback: no rule needed.
    Targets render visible by default in HTML.
