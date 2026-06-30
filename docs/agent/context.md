@@ -23,13 +23,16 @@ Current work is organized around five project-level concerns:
 
 ## Current Focus
 
-Review the global button breathing implementation before expanding hover patterns:
+Button hover/interactions are complete and should be treated as the accepted baseline for the hover/interaction track:
 
 - Owner should remain `tailwind/tailwind.elements.css` for `.btn`, `.btn-primary`, and `.btn-secondary`.
-- Hover should feel like subtle lift/breathing, not color inversion.
+- Hover uses soft reverse breath: scheme-token color mixing plus subtle lift/breathing.
 - Hover animation must be gated to fine pointer; touch should use active/tap feedback.
 - Disabled and loading states must not breathe or accept pointer interaction.
-- Check Shopify dynamic checkout and generated `assets/tailwind.output.css` after Tailwind source changes.
+- Shopify unbranded dynamic checkout is bridged into the same button system.
+- Experimental button lab/reference docs were removed after migration; the durable contract is the implementation itself plus CSS architecture docs.
+
+Next focus: link, icon, card, close-button, and quantity hover/touch states. Image interaction: `snippets/image.liquid` auto-appends `media-interaction` on linked wrappers when `url` is set (`interactive: false` opts out). Overlay promo tiles pair `media-interaction-scope` on the tile wrapper with `pointer-events-none` content shells and `pointer-events-auto` CTAs. External shells still use caller-level `media-interaction` / `media-interaction-subtle`.
 
 ## Deferred Or Follow-Up
 

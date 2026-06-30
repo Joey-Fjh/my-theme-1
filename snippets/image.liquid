@@ -21,8 +21,15 @@
 
   Backward compat: all existing calls without `mode` get `frame` behavior, so visual output is unchanged.
 
+  ## Linked wrapper interaction
+
+  When `url` is provided, the snippet renders an `<a>` wrapper and appends `media-interaction`
+  unless `interactive: false`. Callers must not duplicate `media-interaction` in `wrapper_class`.
+  Use `interactive: false` for logos and other linked images that should not breathe.
+
     @param {image} image - The image to be rendered
     @param {string} [url] - An optional destination URL for the image
+    @param {boolean} [interactive] - When `url` is set, applies `media-interaction` on the linked wrapper by default. Pass `false` for linked images that should stay static (for example logos).
     @param {string} [wrapper] - An optional wrapper element, either 'a' or 'div'. If not provided, it will be 'a' if url is provided, otherwise 'div'.
     @param {string} [wrapper_class] - Optional class added to the image wrapper. Canonical name; `class` is a deprecated alias merged into this.
     @param {string} [class] - Deprecated alias for `wrapper_class`. If both are provided, they are merged.
@@ -140,6 +147,14 @@
     if fetchpriority != blank
         assign extra_attributes = extra_attributes | append: ' fetchpriority="' | append: fetchpriority | append: '"'
     endif
+
+    assign apply_media_interaction = false
+    if url != blank
+        assign apply_media_interaction = true
+        if interactive == false or interactive == 'false'
+            assign apply_media_interaction = false
+        endif
+    endif
 -%}
 
 {% liquid
@@ -182,6 +197,9 @@
     endif
     if legacy_wrapper_class != blank
         assign wrapper_class = wrapper_class | append: ' ' | append: legacy_wrapper_class
+    endif
+    if apply_media_interaction
+        assign wrapper_class = wrapper_class | append: ' media-interaction'
     endif
 %}
 

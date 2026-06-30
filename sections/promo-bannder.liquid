@@ -10,16 +10,26 @@
 >
     <div class="layout container-page">
         {% comment %} Hero Banner {% endcomment %}
-        <div class="relative mb-2 aspect-4/5 overflow-hidden pc:aspect-16/7 fw:aspect-16/6">
+        <div
+            class="
+                relative mb-2 aspect-4/5 overflow-hidden
+                pc:aspect-16/7 fw:aspect-16/6
+                {% if section.settings.hero_link != blank %}media-interaction-scope{% endif %}
+            "
+        >
             {%- assign iamge_alt = section.settings.hero_image.alt
                 | default: section.settings.hero_heading
                 | default: shop.name
                 | escape
             -%}
+            {%- assign hero_image_url = section.settings.hero_link -%}
             {%- render 'image',
+                url: hero_image_url,
+                wrapper_class: 'block h-full w-full',
                 image: section.settings.hero_image,
                 alt: iamge_alt,
                 width: section.settings.hero_image.width,
+                img_class: 'h-full w-full object-cover',
                 loading: 'lazy'
             -%}
 
@@ -35,7 +45,11 @@
             {%- endif -%}
 
             <div
-                class="absolute inset-0 flex flex-col justify-end gap-6 p-6 pc:p-10 fw:p-14"
+                class="
+                    absolute inset-0 z-10 flex flex-col justify-end gap-6 p-6
+                    pc:p-10 fw:p-14
+                    {% if section.settings.hero_link != blank %}pointer-events-none{% endif %}
+                "
                 data-motion-reveal="content"
             >
                 {%- if section.settings.hero_subtitle != blank -%}
@@ -59,7 +73,8 @@
                     {%- render 'link',
                         href: section.settings.hero_link,
                         content: link_content,
-                        variant: 'underline'
+                        variant: 'underline',
+                        class: 'pointer-events-auto relative z-10 w-fit'
                     -%}
                 {%- endif -%}
             </div>
@@ -69,23 +84,33 @@
         <div class="grid grid-cols-1 gap-2 pc:grid-cols-2">
             {%- for block in section.blocks -%}
                 <div
-                    class="pc:aspect-4/3.5 relative aspect-square overflow-hidden"
+                    class="
+                        pc:aspect-4/3.5 relative aspect-square overflow-hidden
+                        {% if block.settings.link != blank %}media-interaction-scope{% endif %}
+                    "
                     {{ block.shopify_attributes }}
                 >
                     {%- assign image_alt = block.settings.image.alt
                         | default: block.settings.heading
                         | escape
                     -%}
+                    {%- assign card_image_url = block.settings.link -%}
                     {%- render 'image',
+                        url: card_image_url,
+                        wrapper_class: 'block h-full w-full',
                         image: block.settings.image,
                         alt: image_alt,
                         width: block.settings.image.width,
                         sizes: '(max-width: 767px) 100vw, 50vw',
+                        img_class: 'h-full w-full object-cover',
                         loading: 'lazy'
                     -%}
 
                     <div
-                        class="absolute inset-0 flex flex-col justify-end gap-6 p-6 pc:p-8"
+                        class="
+                            absolute inset-0 z-10 flex flex-col justify-end gap-6 p-6 pc:p-8
+                            {% if block.settings.link != blank %}pointer-events-none{% endif %}
+                        "
                         data-motion-reveal="content"
                     >
                         {%- if block.settings.subtitle != blank -%}
@@ -109,7 +134,8 @@
                             {%- render 'link',
                                 href: block.settings.link,
                                 content: link_content,
-                                variant: 'underline'
+                                variant: 'underline',
+                                class: 'pointer-events-auto relative z-10 w-fit'
                             -%}
                         {%- endif -%}
                     </div>

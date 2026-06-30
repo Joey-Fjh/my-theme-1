@@ -206,11 +206,81 @@
     height: calc(var(--spacing) * 10);
     width: calc(var(--spacing) * 10);
     flex-shrink: 0;
+    --icon-pop-duration: 360ms;
+    --icon-pop-peak-scale: 1.32;
+    --icon-pop-settle-scale: 1.14;
+    --icon-pop-rest-scale: 1.16;
+    --icon-pop-active-scale: 0.88;
+    & .icons {
+      transform-origin: center;
+      transform: rotate(0deg) scale(1);
+      will-change: transform;
+      transition: color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+    }
+    @media (hover: hover) and (pointer: fine) {
+      &:hover:not(:active):not(:disabled):not([aria-disabled='true']) .icons {
+        animation: icon-pop-turn var(--icon-pop-duration) both;
+        animation-iteration-count: 1;
+      }
+    }
+    &:active:not(:disabled):not([aria-disabled='true']) .icons {
+      animation: none;
+      transform: rotate(0deg) scale(var(--icon-pop-active-scale));
+    }
+    &:disabled .icons, &[aria-disabled='true'] .icons {
+      animation: none;
+      transform: rotate(0deg) scale(1);
+      will-change: auto;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      @media (hover: hover) and (pointer: fine) {
+        &:hover:not(:active):not(:disabled):not([aria-disabled='true']) .icons {
+          animation: none;
+          transform: rotate(0deg) scale(1.14);
+        }
+      }
+    }
     cursor: pointer;
     align-items: center;
     justify-content: center;
     border-radius: 0.25rem;
     transition: color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+    &:focus-visible {
+      outline: var(--focus-ring-width) solid rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+      outline-offset: var(--focus-ring-offset);
+    }
+    &:disabled, &[aria-disabled='true'] {
+      cursor: not-allowed;
+      opacity: 0.5;
+      pointer-events: none;
+    }
+  }
+  .header-icon-button {
+    display: inline-flex;
+    height: calc(var(--spacing) * 10);
+    width: calc(var(--spacing) * 10);
+    flex-shrink: 0;
+    will-change: transform, opacity;
+    @media (hover: hover) and (pointer: fine) {
+      &:hover {
+        animation: var(--animate-icon-breathe);
+        animation-delay: calc(var(--i, 0) * 60ms);
+      }
+    }
+    &:focus-visible {
+      animation: var(--animate-icon-breathe);
+      animation-delay: calc(var(--i, 0) * 60ms);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      &:hover, &:focus-visible {
+        animation: none;
+      }
+    }
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    color: currentcolor;
+    transition: color var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease);
     &:focus-visible {
       outline: var(--focus-ring-width) solid rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
       outline-offset: var(--focus-ring-offset);
@@ -232,17 +302,27 @@
     font-family: var(--font-body-family);
     --tw-outline-style: none;
     outline-style: none;
+    --btn-reverse-fill-pct: 0%;
+    --btn-reverse-text-pct: 0%;
+    --btn-reverse-border-pct: 0%;
+    --btn-reverse-fill-peak: var(--btn-reverse-peak);
+    --btn-reverse-text-peak: var(--btn-reverse-peak);
+    --btn-reverse-border-peak: var(--btn-reverse-peak);
+    --btn-reverse-cycle: 2.5s;
+    --btn-reverse-ease: ease-in-out;
+    --btn-ui-transition-duration: 200ms;
+    --btn-ui-transition-ease: ease;
     --btn-hover-filter: none;
     --btn-active-filter: brightness(0.95);
-    --btn-hover-y: -2px;
+    --btn-hover-y: -1px;
     --btn-active-scale: 0.98;
     --btn-hover-shadow-opacity: 1.35;
-    --btn-shadow-hover-y: calc(var(--button-shadow-vertical-offset) - 2px);
+    --btn-shadow-hover-y: calc(var(--button-shadow-vertical-offset) + var(--btn-reverse-lift-y));
     --btn-shadow-hover-blur: calc(var(--button-shadow-blur-radius) * 1.12);
     --btn-shadow-hover-opacity: calc(
         var(--button-shadow-opacity) * var(--btn-hover-shadow-opacity)
     );
-    transition: color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), box-shadow var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), filter var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+    transition: color var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), background-color var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), border-color var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), box-shadow var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), filter var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), opacity var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), transform var(--btn-ui-transition-duration) var(--btn-ui-transition-ease);
     padding: var(--button-padding-y) var(--button-padding-x);
     border-radius: var(--button-radius);
     border-width: var(--button-border-width);
@@ -257,18 +337,64 @@
       outline: var(--focus-ring-width) solid rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
       outline-offset: var(--focus-ring-offset);
     }
-    @media (hover: hover) and (pointer: fine) {
-      &:hover:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
-        transform: translateY(var(--btn-hover-y));
-        filter: var(--btn-hover-filter);
-        box-shadow: var(--button-shadow-horizontal-offset) var(--btn-shadow-hover-y) var(--btn-shadow-hover-blur) rgba(var(--color-foreground), var(--btn-shadow-hover-opacity));
-        animation: btn-breathe 2.8s var(--motion-ease-default, ease) 0.35s infinite;
+    border-color: rgb(var(--btn-border-rgb));
+    background-color: rgb(var(--btn-bg-rgb));
+    color: rgb(var(--btn-text-rgb));
+    @supports (background-color: color-mix(in srgb, black, white)) {
+      transition: box-shadow var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), opacity var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), filter var(--btn-ui-transition-duration) var(--btn-ui-transition-ease);
+      background-color: rgb(var(--btn-bg-rgb));
+      @supports (color: color-mix(in lab, red, red)) {
+        background-color: color-mix( in srgb, rgb(var(--btn-bg-rgb)) calc(100% - var(--btn-reverse-fill-pct)), rgb(var(--btn-text-rgb)) var(--btn-reverse-fill-pct) );
+      }
+      color: rgb(var(--btn-text-rgb));
+      @supports (color: color-mix(in lab, red, red)) {
+        color: color-mix( in srgb, rgb(var(--btn-text-rgb)) calc(100% - var(--btn-reverse-text-pct)), rgb(var(--btn-bg-rgb)) var(--btn-reverse-text-pct) );
+      }
+      border-color: rgb(var(--btn-border-rgb));
+      @supports (color: color-mix(in lab, red, red)) {
+        border-color: color-mix( in srgb, rgb(var(--btn-border-rgb)) calc(100% - var(--btn-reverse-border-pct)), rgb(var(--btn-text-rgb)) var(--btn-reverse-border-pct) );
+      }
+      @media (hover: hover) and (pointer: fine) {
+        &:hover:not(:active):not(:disabled):not([aria-disabled='true']):not( [aria-busy='true'] ) {
+          animation: btn-soft-reverse-breath var(--btn-reverse-cycle) var(--btn-reverse-ease) infinite;
+          box-shadow: var(--button-shadow-horizontal-offset) var(--btn-shadow-hover-y) var(--btn-shadow-hover-blur) rgba(var(--color-foreground), var(--btn-shadow-hover-opacity));
+        }
+      }
+      &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+        animation: none;
+        transform: scale(var(--btn-active-scale));
+        --btn-reverse-fill-pct: 6%;
+        --btn-reverse-text-pct: 4%;
+        --btn-reverse-border-pct: 5%;
+        filter: var(--btn-active-filter);
+      }
+      @media (prefers-reduced-motion: reduce) {
+        @media (hover: hover) and (pointer: fine) {
+          &:hover:not(:active):not(:disabled):not([aria-disabled='true']):not( [aria-busy='true'] ) {
+            animation: none;
+            --btn-reverse-fill-pct: calc(var(--btn-reverse-peak) * 0.5);
+            --btn-reverse-text-pct: calc(var(--btn-reverse-peak) * 0.5);
+            --btn-reverse-border-pct: calc(var(--btn-reverse-peak) * 0.5);
+            transform: scale(1.008);
+          }
+        }
+        &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+          transform: scale(var(--btn-active-scale));
+        }
       }
     }
-    &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
-      animation: none;
-      transform: scale(var(--btn-active-scale));
-      filter: var(--btn-active-filter);
+    @supports not (background-color: color-mix(in srgb, black, white)) {
+      @media (hover: hover) and (pointer: fine) {
+        &:hover:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+          transform: translateY(var(--btn-hover-y));
+          filter: var(--btn-hover-filter);
+          box-shadow: var(--button-shadow-horizontal-offset) var(--btn-shadow-hover-y) var(--btn-shadow-hover-blur) rgba(var(--color-foreground), var(--btn-shadow-hover-opacity));
+        }
+      }
+      &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+        transform: scale(var(--btn-active-scale));
+        filter: var(--btn-active-filter);
+      }
     }
     &:disabled, &[aria-disabled='true'] {
       cursor: not-allowed;
@@ -280,10 +406,13 @@
       opacity: 0.82;
       pointer-events: none;
     }
-    border-color: rgb(var(--color-primary-button-border));
-    background-color: rgb(var(--color-primary-button));
-    color: rgb(var(--color-primary-button-text));
-    --btn-hover-filter: brightness(1.08);
+    --btn-bg-rgb: var(--color-primary-button);
+    --btn-text-rgb: var(--color-primary-button-text);
+    --btn-border-rgb: var(--color-primary-button-border);
+    --btn-reverse-peak: 100%;
+    --btn-reverse-scale-peak: 1.02;
+    --btn-reverse-lift-y: -2.5px;
+    --btn-hover-filter: brightness(1.06);
     --btn-active-filter: brightness(0.94);
     --btn-hover-shadow-opacity: 1.45;
   }
@@ -298,17 +427,33 @@
     font-family: var(--font-body-family);
     --tw-outline-style: none;
     outline-style: none;
+    --btn-bg-rgb: var(--color-primary-button);
+    --btn-text-rgb: var(--color-primary-button-text);
+    --btn-border-rgb: var(--color-primary-button-border);
+    --btn-reverse-fill-pct: 0%;
+    --btn-reverse-text-pct: 0%;
+    --btn-reverse-border-pct: 0%;
+    --btn-reverse-peak: 100%;
+    --btn-reverse-fill-peak: var(--btn-reverse-peak);
+    --btn-reverse-text-peak: var(--btn-reverse-peak);
+    --btn-reverse-border-peak: var(--btn-reverse-peak);
+    --btn-reverse-scale-peak: 1.02;
+    --btn-reverse-lift-y: -2.5px;
+    --btn-reverse-cycle: 2.5s;
+    --btn-reverse-ease: ease-in-out;
+    --btn-ui-transition-duration: 200ms;
+    --btn-ui-transition-ease: ease;
     --btn-hover-filter: none;
     --btn-active-filter: brightness(0.95);
-    --btn-hover-y: -2px;
+    --btn-hover-y: -1px;
     --btn-active-scale: 0.98;
     --btn-hover-shadow-opacity: 1.35;
-    --btn-shadow-hover-y: calc(var(--button-shadow-vertical-offset) - 2px);
+    --btn-shadow-hover-y: calc(var(--button-shadow-vertical-offset) + var(--btn-reverse-lift-y));
     --btn-shadow-hover-blur: calc(var(--button-shadow-blur-radius) * 1.12);
     --btn-shadow-hover-opacity: calc(
         var(--button-shadow-opacity) * var(--btn-hover-shadow-opacity)
     );
-    transition: color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), box-shadow var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), filter var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+    transition: color var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), background-color var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), border-color var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), box-shadow var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), filter var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), opacity var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), transform var(--btn-ui-transition-duration) var(--btn-ui-transition-ease);
     padding: var(--button-padding-y) var(--button-padding-x);
     border-radius: var(--button-radius);
     border-width: var(--button-border-width);
@@ -323,18 +468,64 @@
       outline: var(--focus-ring-width) solid rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
       outline-offset: var(--focus-ring-offset);
     }
-    @media (hover: hover) and (pointer: fine) {
-      &:hover:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
-        transform: translateY(var(--btn-hover-y));
-        filter: var(--btn-hover-filter);
-        box-shadow: var(--button-shadow-horizontal-offset) var(--btn-shadow-hover-y) var(--btn-shadow-hover-blur) rgba(var(--color-foreground), var(--btn-shadow-hover-opacity));
-        animation: btn-breathe 2.8s var(--motion-ease-default, ease) 0.35s infinite;
+    border-color: rgb(var(--btn-border-rgb));
+    background-color: rgb(var(--btn-bg-rgb));
+    color: rgb(var(--btn-text-rgb));
+    @supports (background-color: color-mix(in srgb, black, white)) {
+      transition: box-shadow var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), opacity var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), filter var(--btn-ui-transition-duration) var(--btn-ui-transition-ease);
+      background-color: rgb(var(--btn-bg-rgb));
+      @supports (color: color-mix(in lab, red, red)) {
+        background-color: color-mix( in srgb, rgb(var(--btn-bg-rgb)) calc(100% - var(--btn-reverse-fill-pct)), rgb(var(--btn-text-rgb)) var(--btn-reverse-fill-pct) );
+      }
+      color: rgb(var(--btn-text-rgb));
+      @supports (color: color-mix(in lab, red, red)) {
+        color: color-mix( in srgb, rgb(var(--btn-text-rgb)) calc(100% - var(--btn-reverse-text-pct)), rgb(var(--btn-bg-rgb)) var(--btn-reverse-text-pct) );
+      }
+      border-color: rgb(var(--btn-border-rgb));
+      @supports (color: color-mix(in lab, red, red)) {
+        border-color: color-mix( in srgb, rgb(var(--btn-border-rgb)) calc(100% - var(--btn-reverse-border-pct)), rgb(var(--btn-text-rgb)) var(--btn-reverse-border-pct) );
+      }
+      @media (hover: hover) and (pointer: fine) {
+        &:hover:not(:active):not(:disabled):not([aria-disabled='true']):not( [aria-busy='true'] ) {
+          animation: btn-soft-reverse-breath var(--btn-reverse-cycle) var(--btn-reverse-ease) infinite;
+          box-shadow: var(--button-shadow-horizontal-offset) var(--btn-shadow-hover-y) var(--btn-shadow-hover-blur) rgba(var(--color-foreground), var(--btn-shadow-hover-opacity));
+        }
+      }
+      &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+        animation: none;
+        transform: scale(var(--btn-active-scale));
+        --btn-reverse-fill-pct: 6%;
+        --btn-reverse-text-pct: 4%;
+        --btn-reverse-border-pct: 5%;
+        filter: var(--btn-active-filter);
+      }
+      @media (prefers-reduced-motion: reduce) {
+        @media (hover: hover) and (pointer: fine) {
+          &:hover:not(:active):not(:disabled):not([aria-disabled='true']):not( [aria-busy='true'] ) {
+            animation: none;
+            --btn-reverse-fill-pct: calc(var(--btn-reverse-peak) * 0.5);
+            --btn-reverse-text-pct: calc(var(--btn-reverse-peak) * 0.5);
+            --btn-reverse-border-pct: calc(var(--btn-reverse-peak) * 0.5);
+            transform: scale(1.008);
+          }
+        }
+        &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+          transform: scale(var(--btn-active-scale));
+        }
       }
     }
-    &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
-      animation: none;
-      transform: scale(var(--btn-active-scale));
-      filter: var(--btn-active-filter);
+    @supports not (background-color: color-mix(in srgb, black, white)) {
+      @media (hover: hover) and (pointer: fine) {
+        &:hover:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+          transform: translateY(var(--btn-hover-y));
+          filter: var(--btn-hover-filter);
+          box-shadow: var(--button-shadow-horizontal-offset) var(--btn-shadow-hover-y) var(--btn-shadow-hover-blur) rgba(var(--color-foreground), var(--btn-shadow-hover-opacity));
+        }
+      }
+      &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+        transform: scale(var(--btn-active-scale));
+        filter: var(--btn-active-filter);
+      }
     }
     &:disabled, &[aria-disabled='true'] {
       cursor: not-allowed;
@@ -346,9 +537,12 @@
       opacity: 0.82;
       pointer-events: none;
     }
-    border-color: rgb(var(--color-secondary-button-border));
-    background-color: rgb(var(--color-secondary-button));
-    color: rgb(var(--color-secondary-button-text));
+    --btn-bg-rgb: var(--color-secondary-button);
+    --btn-text-rgb: var(--color-secondary-button-text);
+    --btn-border-rgb: var(--color-secondary-button-border);
+    --btn-reverse-peak: 80%;
+    --btn-reverse-scale-peak: 1.014;
+    --btn-reverse-lift-y: -1.5px;
     --btn-hover-filter: brightness(0.97);
     --btn-active-filter: brightness(0.9);
     --btn-hover-shadow-opacity: 1.28;
@@ -364,17 +558,33 @@
     font-family: var(--font-body-family);
     --tw-outline-style: none;
     outline-style: none;
+    --btn-bg-rgb: var(--color-primary-button);
+    --btn-text-rgb: var(--color-primary-button-text);
+    --btn-border-rgb: var(--color-primary-button-border);
+    --btn-reverse-fill-pct: 0%;
+    --btn-reverse-text-pct: 0%;
+    --btn-reverse-border-pct: 0%;
+    --btn-reverse-peak: 100%;
+    --btn-reverse-fill-peak: var(--btn-reverse-peak);
+    --btn-reverse-text-peak: var(--btn-reverse-peak);
+    --btn-reverse-border-peak: var(--btn-reverse-peak);
+    --btn-reverse-scale-peak: 1.02;
+    --btn-reverse-lift-y: -2.5px;
+    --btn-reverse-cycle: 2.5s;
+    --btn-reverse-ease: ease-in-out;
+    --btn-ui-transition-duration: 200ms;
+    --btn-ui-transition-ease: ease;
     --btn-hover-filter: none;
     --btn-active-filter: brightness(0.95);
-    --btn-hover-y: -2px;
+    --btn-hover-y: -1px;
     --btn-active-scale: 0.98;
     --btn-hover-shadow-opacity: 1.35;
-    --btn-shadow-hover-y: calc(var(--button-shadow-vertical-offset) - 2px);
+    --btn-shadow-hover-y: calc(var(--button-shadow-vertical-offset) + var(--btn-reverse-lift-y));
     --btn-shadow-hover-blur: calc(var(--button-shadow-blur-radius) * 1.12);
     --btn-shadow-hover-opacity: calc(
         var(--button-shadow-opacity) * var(--btn-hover-shadow-opacity)
     );
-    transition: color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), box-shadow var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), filter var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+    transition: color var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), background-color var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), border-color var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), box-shadow var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), filter var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), opacity var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), transform var(--btn-ui-transition-duration) var(--btn-ui-transition-ease);
     padding: var(--button-padding-y) var(--button-padding-x);
     border-radius: var(--button-radius);
     border-width: var(--button-border-width);
@@ -389,18 +599,64 @@
       outline: var(--focus-ring-width) solid rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
       outline-offset: var(--focus-ring-offset);
     }
-    @media (hover: hover) and (pointer: fine) {
-      &:hover:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
-        transform: translateY(var(--btn-hover-y));
-        filter: var(--btn-hover-filter);
-        box-shadow: var(--button-shadow-horizontal-offset) var(--btn-shadow-hover-y) var(--btn-shadow-hover-blur) rgba(var(--color-foreground), var(--btn-shadow-hover-opacity));
-        animation: btn-breathe 2.8s var(--motion-ease-default, ease) 0.35s infinite;
+    border-color: rgb(var(--btn-border-rgb));
+    background-color: rgb(var(--btn-bg-rgb));
+    color: rgb(var(--btn-text-rgb));
+    @supports (background-color: color-mix(in srgb, black, white)) {
+      transition: box-shadow var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), opacity var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), filter var(--btn-ui-transition-duration) var(--btn-ui-transition-ease);
+      background-color: rgb(var(--btn-bg-rgb));
+      @supports (color: color-mix(in lab, red, red)) {
+        background-color: color-mix( in srgb, rgb(var(--btn-bg-rgb)) calc(100% - var(--btn-reverse-fill-pct)), rgb(var(--btn-text-rgb)) var(--btn-reverse-fill-pct) );
+      }
+      color: rgb(var(--btn-text-rgb));
+      @supports (color: color-mix(in lab, red, red)) {
+        color: color-mix( in srgb, rgb(var(--btn-text-rgb)) calc(100% - var(--btn-reverse-text-pct)), rgb(var(--btn-bg-rgb)) var(--btn-reverse-text-pct) );
+      }
+      border-color: rgb(var(--btn-border-rgb));
+      @supports (color: color-mix(in lab, red, red)) {
+        border-color: color-mix( in srgb, rgb(var(--btn-border-rgb)) calc(100% - var(--btn-reverse-border-pct)), rgb(var(--btn-text-rgb)) var(--btn-reverse-border-pct) );
+      }
+      @media (hover: hover) and (pointer: fine) {
+        &:hover:not(:active):not(:disabled):not([aria-disabled='true']):not( [aria-busy='true'] ) {
+          animation: btn-soft-reverse-breath var(--btn-reverse-cycle) var(--btn-reverse-ease) infinite;
+          box-shadow: var(--button-shadow-horizontal-offset) var(--btn-shadow-hover-y) var(--btn-shadow-hover-blur) rgba(var(--color-foreground), var(--btn-shadow-hover-opacity));
+        }
+      }
+      &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+        animation: none;
+        transform: scale(var(--btn-active-scale));
+        --btn-reverse-fill-pct: 6%;
+        --btn-reverse-text-pct: 4%;
+        --btn-reverse-border-pct: 5%;
+        filter: var(--btn-active-filter);
+      }
+      @media (prefers-reduced-motion: reduce) {
+        @media (hover: hover) and (pointer: fine) {
+          &:hover:not(:active):not(:disabled):not([aria-disabled='true']):not( [aria-busy='true'] ) {
+            animation: none;
+            --btn-reverse-fill-pct: calc(var(--btn-reverse-peak) * 0.5);
+            --btn-reverse-text-pct: calc(var(--btn-reverse-peak) * 0.5);
+            --btn-reverse-border-pct: calc(var(--btn-reverse-peak) * 0.5);
+            transform: scale(1.008);
+          }
+        }
+        &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+          transform: scale(var(--btn-active-scale));
+        }
       }
     }
-    &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
-      animation: none;
-      transform: scale(var(--btn-active-scale));
-      filter: var(--btn-active-filter);
+    @supports not (background-color: color-mix(in srgb, black, white)) {
+      @media (hover: hover) and (pointer: fine) {
+        &:hover:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+          transform: translateY(var(--btn-hover-y));
+          filter: var(--btn-hover-filter);
+          box-shadow: var(--button-shadow-horizontal-offset) var(--btn-shadow-hover-y) var(--btn-shadow-hover-blur) rgba(var(--color-foreground), var(--btn-shadow-hover-opacity));
+        }
+      }
+      &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+        transform: scale(var(--btn-active-scale));
+        filter: var(--btn-active-filter);
+      }
     }
     &:disabled, &[aria-disabled='true'] {
       cursor: not-allowed;
@@ -411,6 +667,119 @@
       cursor: wait;
       opacity: 0.82;
       pointer-events: none;
+    }
+  }
+  .media-interaction-subtle {
+    &:focus-visible {
+      outline: var(--focus-ring-width) solid rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+      outline-offset: var(--focus-ring-offset);
+    }
+    --media-interaction-scale-hover: 1.04;
+    --media-interaction-scale-focus: 1.02;
+    --media-interaction-scale-active: 0.98;
+    --media-interaction-brightness-hover: 1.04;
+    --media-interaction-brightness-focus: 1.02;
+    --media-interaction-brightness-active: 0.97;
+    --media-interaction-duration: var(--motion-duration-fast, 250ms);
+    --media-interaction-ease: var(--motion-ease-default, ease);
+    & .image_img, & img {
+      transform: scale(1);
+      transform-origin: center;
+      transition: transform var(--media-interaction-duration) var(--media-interaction-ease), filter var(--media-interaction-duration) var(--media-interaction-ease);
+    }
+    @media (hover: hover) and (pointer: fine) {
+      &:hover:not(:active):not(:disabled):not([aria-disabled='true']) .image_img, &:hover:not(:active):not(:disabled):not([aria-disabled='true']) img {
+        transform: scale(var(--media-interaction-scale-hover));
+        filter: brightness(var(--media-interaction-brightness-hover));
+      }
+    }
+    &:focus-visible:not(:disabled):not([aria-disabled='true']) .image_img, &:focus-visible:not(:disabled):not([aria-disabled='true']) img {
+      transform: scale(var(--media-interaction-scale-focus));
+      filter: brightness(var(--media-interaction-brightness-focus));
+    }
+    &:active:not(:disabled):not([aria-disabled='true']) .image_img, &:active:not(:disabled):not([aria-disabled='true']) img {
+      transform: scale(var(--media-interaction-scale-active));
+      filter: brightness(var(--media-interaction-brightness-active));
+      transition-duration: calc(var(--media-interaction-duration) * 0.75);
+    }
+    &:disabled, &[aria-disabled='true'] {
+      cursor: not-allowed;
+      pointer-events: none;
+      & .image_img, & img {
+        transform: none;
+        filter: none;
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      @media (hover: hover) and (pointer: fine) {
+        &:hover:not(:active):not(:disabled):not([aria-disabled='true']) .image_img, &:hover:not(:active):not(:disabled):not([aria-disabled='true']) img {
+          transform: scale(1.01);
+          filter: brightness(1.02);
+        }
+      }
+      &:focus-visible:not(:disabled):not([aria-disabled='true']) .image_img, &:focus-visible:not(:disabled):not([aria-disabled='true']) img, &:active:not(:disabled):not([aria-disabled='true']) .image_img, &:active:not(:disabled):not([aria-disabled='true']) img {
+        transform: none;
+        filter: brightness(1.02);
+      }
+    }
+    --media-interaction-scale-hover: 1.02;
+    --media-interaction-scale-focus: 1.01;
+    --media-interaction-scale-active: 0.99;
+    --media-interaction-brightness-hover: 1.02;
+    --media-interaction-brightness-focus: 1.01;
+  }
+  .media-interaction {
+    &:focus-visible {
+      outline: var(--focus-ring-width) solid rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+      outline-offset: var(--focus-ring-offset);
+    }
+    --media-interaction-scale-hover: 1.04;
+    --media-interaction-scale-focus: 1.02;
+    --media-interaction-scale-active: 0.98;
+    --media-interaction-brightness-hover: 1.04;
+    --media-interaction-brightness-focus: 1.02;
+    --media-interaction-brightness-active: 0.97;
+    --media-interaction-duration: var(--motion-duration-fast, 250ms);
+    --media-interaction-ease: var(--motion-ease-default, ease);
+    & .image_img, & img {
+      transform: scale(1);
+      transform-origin: center;
+      transition: transform var(--media-interaction-duration) var(--media-interaction-ease), filter var(--media-interaction-duration) var(--media-interaction-ease);
+    }
+    @media (hover: hover) and (pointer: fine) {
+      &:hover:not(:active):not(:disabled):not([aria-disabled='true']) .image_img, &:hover:not(:active):not(:disabled):not([aria-disabled='true']) img {
+        transform: scale(var(--media-interaction-scale-hover));
+        filter: brightness(var(--media-interaction-brightness-hover));
+      }
+    }
+    &:focus-visible:not(:disabled):not([aria-disabled='true']) .image_img, &:focus-visible:not(:disabled):not([aria-disabled='true']) img {
+      transform: scale(var(--media-interaction-scale-focus));
+      filter: brightness(var(--media-interaction-brightness-focus));
+    }
+    &:active:not(:disabled):not([aria-disabled='true']) .image_img, &:active:not(:disabled):not([aria-disabled='true']) img {
+      transform: scale(var(--media-interaction-scale-active));
+      filter: brightness(var(--media-interaction-brightness-active));
+      transition-duration: calc(var(--media-interaction-duration) * 0.75);
+    }
+    &:disabled, &[aria-disabled='true'] {
+      cursor: not-allowed;
+      pointer-events: none;
+      & .image_img, & img {
+        transform: none;
+        filter: none;
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      @media (hover: hover) and (pointer: fine) {
+        &:hover:not(:active):not(:disabled):not([aria-disabled='true']) .image_img, &:hover:not(:active):not(:disabled):not([aria-disabled='true']) img {
+          transform: scale(1.01);
+          filter: brightness(1.02);
+        }
+      }
+      &:focus-visible:not(:disabled):not([aria-disabled='true']) .image_img, &:focus-visible:not(:disabled):not([aria-disabled='true']) img, &:active:not(:disabled):not([aria-disabled='true']) .image_img, &:active:not(:disabled):not([aria-disabled='true']) img {
+        transform: none;
+        filter: brightness(1.02);
+      }
     }
   }
   .pointer-events-auto {
@@ -1312,6 +1681,43 @@
   .rotate-180 {
     rotate: 180deg;
   }
+  .media-interaction-scope {
+    --media-interaction-scale-hover: 1.04;
+    --media-interaction-scale-focus: 1.02;
+    --media-interaction-scale-active: 0.98;
+    --media-interaction-brightness-hover: 1.04;
+    --media-interaction-brightness-focus: 1.02;
+    --media-interaction-brightness-active: 0.97;
+    --media-interaction-duration: var(--motion-duration-fast, 250ms);
+    --media-interaction-ease: var(--motion-ease-default, ease);
+    @media (hover: hover) and (pointer: fine) {
+      &:hover:has(.media-interaction) .media-interaction:not(:active):not(:disabled):not([aria-disabled='true']) .image_img, &:hover:has(.media-interaction) .media-interaction:not(:active):not(:disabled):not([aria-disabled='true']) img {
+        transform: scale(var(--media-interaction-scale-hover));
+        filter: brightness(var(--media-interaction-brightness-hover));
+      }
+    }
+    &:focus-within:has(.media-interaction) .media-interaction:not(:disabled):not([aria-disabled='true']) .image_img, &:focus-within:has(.media-interaction) .media-interaction:not(:disabled):not([aria-disabled='true']) img {
+      transform: scale(var(--media-interaction-scale-focus));
+      filter: brightness(var(--media-interaction-brightness-focus));
+    }
+    &:has(.media-interaction:active:not(:disabled):not([aria-disabled='true'])) .media-interaction .image_img, &:has(.media-interaction:active:not(:disabled):not([aria-disabled='true'])) .media-interaction img {
+      transform: scale(var(--media-interaction-scale-active));
+      filter: brightness(var(--media-interaction-brightness-active));
+      transition-duration: calc(var(--media-interaction-duration) * 0.75);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      @media (hover: hover) and (pointer: fine) {
+        &:hover:has(.media-interaction) .media-interaction:not(:active):not(:disabled):not([aria-disabled='true']) .image_img, &:hover:has(.media-interaction) .media-interaction:not(:active):not(:disabled):not([aria-disabled='true']) img {
+          transform: scale(1.01);
+          filter: brightness(1.02);
+        }
+      }
+      &:focus-within:has(.media-interaction) .media-interaction:not(:disabled):not([aria-disabled='true']) .image_img, &:focus-within:has(.media-interaction) .media-interaction:not(:disabled):not([aria-disabled='true']) img, &:has(.media-interaction:active:not(:disabled):not([aria-disabled='true'])) .media-interaction .image_img, &:has(.media-interaction:active:not(:disabled):not([aria-disabled='true'])) .media-interaction img {
+        transform: none;
+        filter: brightness(1.02);
+      }
+    }
+  }
   .\[transform\:rotateX\(-90deg\)\] {
     transform: rotateX(-90deg);
   }
@@ -1344,6 +1750,11 @@
     &:focus-visible {
       animation: var(--animate-icon-breathe);
       animation-delay: calc(var(--i, 0) * 60ms);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      &:hover, &:focus-visible {
+        animation: none;
+      }
     }
   }
   .animate-pulse {
@@ -2265,6 +2676,20 @@
   .whitespace-nowrap {
     white-space: nowrap;
   }
+  .close-button-on-overlay {
+    color: color-mix(in srgb, #fff 80%, transparent);
+    @supports (color: color-mix(in lab, red, red)) {
+      color: color-mix(in oklab, var(--color-white) 80%, transparent);
+    }
+    @media (hover: hover) and (pointer: fine) {
+      &:hover:not(:disabled):not([aria-disabled='true']) {
+        color: var(--color-white);
+      }
+    }
+    &:focus-visible:not(:disabled):not([aria-disabled='true']) {
+      color: var(--color-white);
+    }
+  }
   .text-\(--comparison-danger-color\) {
     color: var(--comparison-danger-color);
   }
@@ -2331,12 +2756,6 @@
       color: color-mix(in oklab, var(--color-white) 60%, transparent);
     }
   }
-  .text-white\/80 {
-    color: color-mix(in srgb, #fff 80%, transparent);
-    @supports (color: color-mix(in lab, red, red)) {
-      color: color-mix(in oklab, var(--color-white) 80%, transparent);
-    }
-  }
   .capitalize {
     text-transform: capitalize;
   }
@@ -2366,6 +2785,17 @@
   }
   .underline-offset-4 {
     text-underline-offset: 4px;
+  }
+  .close-button-subtle {
+    opacity: 0.7;
+    @media (hover: hover) and (pointer: fine) {
+      &:hover:not(:disabled):not([aria-disabled='true']) {
+        opacity: 1;
+      }
+    }
+    &:focus-visible:not(:disabled):not([aria-disabled='true']) {
+      opacity: 1;
+    }
   }
   .opacity-0 {
     opacity: 0%;
@@ -2609,13 +3039,6 @@
     &:hover {
       @media (hover: hover) {
         color: rgba(var(--color-foreground), 0.8);
-      }
-    }
-  }
-  .hover\:text-white {
-    &:hover {
-      @media (hover: hover) {
-        color: var(--color-white);
       }
     }
   }
@@ -4578,24 +5001,48 @@
   font-weight: var(--font-weight-normal);
   color: rgba(var(--color-foreground), 0.8);
 }
-@keyframes btn-breathe {
-  0%, 100% {
-    transform: translateY(var(--btn-hover-y));
-    filter: var(--btn-hover-filter);
-    box-shadow: var(--button-shadow-horizontal-offset) var(--btn-shadow-hover-y) var(--btn-shadow-hover-blur) rgba(var(--color-foreground), var(--btn-shadow-hover-opacity));
-  }
-  50% {
-    transform: translateY(calc(var(--btn-hover-y) - 1px));
-    filter: var(--btn-hover-filter);
-    box-shadow: var(--button-shadow-horizontal-offset) calc(var(--btn-shadow-hover-y) - 1px) calc(var(--btn-shadow-hover-blur) * 1.08) rgba(var(--color-foreground), calc(var(--btn-shadow-hover-opacity) * 1.08));
-  }
+@property --btn-reverse-fill-pct {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
 }
-body[data-motion-enabled='false'] :is(.btn, .btn-primary, .btn-secondary):hover {
-  animation: none !important;
+@property --btn-reverse-text-pct {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
 }
-@media (prefers-reduced-motion: reduce) {
-  :is(.btn, .btn-primary, .btn-secondary):hover {
-    animation: none !important;
+@property --btn-reverse-border-pct {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
+}
+@keyframes btn-soft-reverse-breath {
+  0% {
+    --btn-reverse-fill-pct: 4%;
+    --btn-reverse-text-pct: 3%;
+    --btn-reverse-border-pct: 4%;
+    transform: translateY(0) scale(1);
+    animation-timing-function: ease-in;
+  }
+  38% {
+    --btn-reverse-fill-pct: var(--btn-reverse-fill-peak);
+    --btn-reverse-text-pct: var(--btn-reverse-text-peak);
+    --btn-reverse-border-pct: var(--btn-reverse-border-peak);
+    transform: translateY(var(--btn-reverse-lift-y)) scale(var(--btn-reverse-scale-peak));
+    animation-timing-function: linear;
+  }
+  62% {
+    --btn-reverse-fill-pct: var(--btn-reverse-fill-peak);
+    --btn-reverse-text-pct: var(--btn-reverse-text-peak);
+    --btn-reverse-border-pct: var(--btn-reverse-border-peak);
+    transform: translateY(var(--btn-reverse-lift-y)) scale(var(--btn-reverse-scale-peak));
+    animation-timing-function: ease-out;
+  }
+  100% {
+    --btn-reverse-fill-pct: 4%;
+    --btn-reverse-text-pct: 3%;
+    --btn-reverse-border-pct: 4%;
+    transform: translateY(0) scale(1);
   }
 }
 .shopify-payment-button-wrapper, .shopify-payment-button {
@@ -4612,17 +5059,27 @@ button.shopify-payment-button__button--unbranded {
   font-family: var(--font-body-family);
   --tw-outline-style: none;
   outline-style: none;
+  --btn-reverse-fill-pct: 0%;
+  --btn-reverse-text-pct: 0%;
+  --btn-reverse-border-pct: 0%;
+  --btn-reverse-fill-peak: var(--btn-reverse-peak);
+  --btn-reverse-text-peak: var(--btn-reverse-peak);
+  --btn-reverse-border-peak: var(--btn-reverse-peak);
+  --btn-reverse-cycle: 2.5s;
+  --btn-reverse-ease: ease-in-out;
+  --btn-ui-transition-duration: 200ms;
+  --btn-ui-transition-ease: ease;
   --btn-hover-filter: none;
   --btn-active-filter: brightness(0.95);
-  --btn-hover-y: -2px;
+  --btn-hover-y: -1px;
   --btn-active-scale: 0.98;
   --btn-hover-shadow-opacity: 1.35;
-  --btn-shadow-hover-y: calc(var(--button-shadow-vertical-offset) - 2px);
+  --btn-shadow-hover-y: calc(var(--button-shadow-vertical-offset) + var(--btn-reverse-lift-y));
   --btn-shadow-hover-blur: calc(var(--button-shadow-blur-radius) * 1.12);
   --btn-shadow-hover-opacity: calc(
         var(--button-shadow-opacity) * var(--btn-hover-shadow-opacity)
     );
-  transition: color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), box-shadow var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), filter var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+  transition: color var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), background-color var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), border-color var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), box-shadow var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), filter var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), opacity var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), transform var(--btn-ui-transition-duration) var(--btn-ui-transition-ease);
   padding: var(--button-padding-y) var(--button-padding-x);
   border-radius: var(--button-radius);
   border-width: var(--button-border-width);
@@ -4637,18 +5094,64 @@ button.shopify-payment-button__button--unbranded {
     outline: var(--focus-ring-width) solid rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
     outline-offset: var(--focus-ring-offset);
   }
-  @media (hover: hover) and (pointer: fine) {
-    &:hover:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
-      transform: translateY(var(--btn-hover-y));
-      filter: var(--btn-hover-filter);
-      box-shadow: var(--button-shadow-horizontal-offset) var(--btn-shadow-hover-y) var(--btn-shadow-hover-blur) rgba(var(--color-foreground), var(--btn-shadow-hover-opacity));
-      animation: btn-breathe 2.8s var(--motion-ease-default, ease) 0.35s infinite;
+  border-color: rgb(var(--btn-border-rgb));
+  background-color: rgb(var(--btn-bg-rgb));
+  color: rgb(var(--btn-text-rgb));
+  @supports (background-color: color-mix(in srgb, black, white)) {
+    transition: box-shadow var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), opacity var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), filter var(--btn-ui-transition-duration) var(--btn-ui-transition-ease);
+    background-color: rgb(var(--btn-bg-rgb));
+    @supports (color: color-mix(in lab, red, red)) {
+      background-color: color-mix( in srgb, rgb(var(--btn-bg-rgb)) calc(100% - var(--btn-reverse-fill-pct)), rgb(var(--btn-text-rgb)) var(--btn-reverse-fill-pct) );
+    }
+    color: rgb(var(--btn-text-rgb));
+    @supports (color: color-mix(in lab, red, red)) {
+      color: color-mix( in srgb, rgb(var(--btn-text-rgb)) calc(100% - var(--btn-reverse-text-pct)), rgb(var(--btn-bg-rgb)) var(--btn-reverse-text-pct) );
+    }
+    border-color: rgb(var(--btn-border-rgb));
+    @supports (color: color-mix(in lab, red, red)) {
+      border-color: color-mix( in srgb, rgb(var(--btn-border-rgb)) calc(100% - var(--btn-reverse-border-pct)), rgb(var(--btn-text-rgb)) var(--btn-reverse-border-pct) );
+    }
+    @media (hover: hover) and (pointer: fine) {
+      &:hover:not(:active):not(:disabled):not([aria-disabled='true']):not( [aria-busy='true'] ) {
+        animation: btn-soft-reverse-breath var(--btn-reverse-cycle) var(--btn-reverse-ease) infinite;
+        box-shadow: var(--button-shadow-horizontal-offset) var(--btn-shadow-hover-y) var(--btn-shadow-hover-blur) rgba(var(--color-foreground), var(--btn-shadow-hover-opacity));
+      }
+    }
+    &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+      animation: none;
+      transform: scale(var(--btn-active-scale));
+      --btn-reverse-fill-pct: 6%;
+      --btn-reverse-text-pct: 4%;
+      --btn-reverse-border-pct: 5%;
+      filter: var(--btn-active-filter);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      @media (hover: hover) and (pointer: fine) {
+        &:hover:not(:active):not(:disabled):not([aria-disabled='true']):not( [aria-busy='true'] ) {
+          animation: none;
+          --btn-reverse-fill-pct: calc(var(--btn-reverse-peak) * 0.5);
+          --btn-reverse-text-pct: calc(var(--btn-reverse-peak) * 0.5);
+          --btn-reverse-border-pct: calc(var(--btn-reverse-peak) * 0.5);
+          transform: scale(1.008);
+        }
+      }
+      &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+        transform: scale(var(--btn-active-scale));
+      }
     }
   }
-  &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
-    animation: none;
-    transform: scale(var(--btn-active-scale));
-    filter: var(--btn-active-filter);
+  @supports not (background-color: color-mix(in srgb, black, white)) {
+    @media (hover: hover) and (pointer: fine) {
+      &:hover:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+        transform: translateY(var(--btn-hover-y));
+        filter: var(--btn-hover-filter);
+        box-shadow: var(--button-shadow-horizontal-offset) var(--btn-shadow-hover-y) var(--btn-shadow-hover-blur) rgba(var(--color-foreground), var(--btn-shadow-hover-opacity));
+      }
+    }
+    &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+      transform: scale(var(--btn-active-scale));
+      filter: var(--btn-active-filter);
+    }
   }
   &:disabled, &[aria-disabled='true'] {
     cursor: not-allowed;
@@ -4660,16 +5163,37 @@ button.shopify-payment-button__button--unbranded {
     opacity: 0.82;
     pointer-events: none;
   }
-  border-color: rgb(var(--color-primary-button-border));
-  background-color: rgb(var(--color-primary-button));
-  color: rgb(var(--color-primary-button-text));
-  --btn-hover-filter: brightness(1.08);
+  --btn-bg-rgb: var(--color-primary-button);
+  --btn-text-rgb: var(--color-primary-button-text);
+  --btn-border-rgb: var(--color-primary-button-border);
+  --btn-reverse-peak: 100%;
+  --btn-reverse-scale-peak: 1.02;
+  --btn-reverse-lift-y: -2.5px;
+  --btn-hover-filter: brightness(1.06);
   --btn-active-filter: brightness(0.94);
   --btn-hover-shadow-opacity: 1.45;
   width: 100%;
 }
 button.shopify-payment-button__button--unbranded:hover:not([disabled]) {
-  background-color: rgb(var(--color-primary-button));
+  @supports (background-color: color-mix(in srgb, black, white)) {
+    background-color: rgb(var(--btn-bg-rgb));
+    @supports (color: color-mix(in lab, red, red)) {
+      background-color: color-mix( in srgb, rgb(var(--btn-bg-rgb)) calc(100% - var(--btn-reverse-fill-pct)), rgb(var(--btn-text-rgb)) var(--btn-reverse-fill-pct) );
+    }
+    color: rgb(var(--btn-text-rgb));
+    @supports (color: color-mix(in lab, red, red)) {
+      color: color-mix( in srgb, rgb(var(--btn-text-rgb)) calc(100% - var(--btn-reverse-text-pct)), rgb(var(--btn-bg-rgb)) var(--btn-reverse-text-pct) );
+    }
+    border-color: rgb(var(--btn-border-rgb));
+    @supports (color: color-mix(in lab, red, red)) {
+      border-color: color-mix( in srgb, rgb(var(--btn-border-rgb)) calc(100% - var(--btn-reverse-border-pct)), rgb(var(--btn-text-rgb)) var(--btn-reverse-border-pct) );
+    }
+  }
+  @supports not (background-color: color-mix(in srgb, black, white)) {
+    background-color: rgb(var(--color-primary-button));
+    border-color: rgb(var(--color-primary-button-border));
+    color: rgb(var(--color-primary-button-text));
+  }
 }
 shopify-accelerated-checkout {
   --shopify-accelerated-checkout-button-border-radius: var(--button-radius);
@@ -4727,17 +5251,27 @@ shopify-accelerated-checkout {
     font-family: var(--font-body-family);
     --tw-outline-style: none;
     outline-style: none;
+    --btn-reverse-fill-pct: 0%;
+    --btn-reverse-text-pct: 0%;
+    --btn-reverse-border-pct: 0%;
+    --btn-reverse-fill-peak: var(--btn-reverse-peak);
+    --btn-reverse-text-peak: var(--btn-reverse-peak);
+    --btn-reverse-border-peak: var(--btn-reverse-peak);
+    --btn-reverse-cycle: 2.5s;
+    --btn-reverse-ease: ease-in-out;
+    --btn-ui-transition-duration: 200ms;
+    --btn-ui-transition-ease: ease;
     --btn-hover-filter: none;
     --btn-active-filter: brightness(0.95);
-    --btn-hover-y: -2px;
+    --btn-hover-y: -1px;
     --btn-active-scale: 0.98;
     --btn-hover-shadow-opacity: 1.35;
-    --btn-shadow-hover-y: calc(var(--button-shadow-vertical-offset) - 2px);
+    --btn-shadow-hover-y: calc(var(--button-shadow-vertical-offset) + var(--btn-reverse-lift-y));
     --btn-shadow-hover-blur: calc(var(--button-shadow-blur-radius) * 1.12);
     --btn-shadow-hover-opacity: calc(
         var(--button-shadow-opacity) * var(--btn-hover-shadow-opacity)
     );
-    transition: color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), box-shadow var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), filter var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+    transition: color var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), background-color var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), border-color var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), box-shadow var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), filter var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), opacity var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), transform var(--btn-ui-transition-duration) var(--btn-ui-transition-ease);
     padding: var(--button-padding-y) var(--button-padding-x);
     border-radius: var(--button-radius);
     border-width: var(--button-border-width);
@@ -4752,18 +5286,64 @@ shopify-accelerated-checkout {
       outline: var(--focus-ring-width) solid rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
       outline-offset: var(--focus-ring-offset);
     }
-    @media (hover: hover) and (pointer: fine) {
-      &:hover:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
-        transform: translateY(var(--btn-hover-y));
-        filter: var(--btn-hover-filter);
-        box-shadow: var(--button-shadow-horizontal-offset) var(--btn-shadow-hover-y) var(--btn-shadow-hover-blur) rgba(var(--color-foreground), var(--btn-shadow-hover-opacity));
-        animation: btn-breathe 2.8s var(--motion-ease-default, ease) 0.35s infinite;
+    border-color: rgb(var(--btn-border-rgb));
+    background-color: rgb(var(--btn-bg-rgb));
+    color: rgb(var(--btn-text-rgb));
+    @supports (background-color: color-mix(in srgb, black, white)) {
+      transition: box-shadow var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), opacity var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), filter var(--btn-ui-transition-duration) var(--btn-ui-transition-ease);
+      background-color: rgb(var(--btn-bg-rgb));
+      @supports (color: color-mix(in lab, red, red)) {
+        background-color: color-mix( in srgb, rgb(var(--btn-bg-rgb)) calc(100% - var(--btn-reverse-fill-pct)), rgb(var(--btn-text-rgb)) var(--btn-reverse-fill-pct) );
+      }
+      color: rgb(var(--btn-text-rgb));
+      @supports (color: color-mix(in lab, red, red)) {
+        color: color-mix( in srgb, rgb(var(--btn-text-rgb)) calc(100% - var(--btn-reverse-text-pct)), rgb(var(--btn-bg-rgb)) var(--btn-reverse-text-pct) );
+      }
+      border-color: rgb(var(--btn-border-rgb));
+      @supports (color: color-mix(in lab, red, red)) {
+        border-color: color-mix( in srgb, rgb(var(--btn-border-rgb)) calc(100% - var(--btn-reverse-border-pct)), rgb(var(--btn-text-rgb)) var(--btn-reverse-border-pct) );
+      }
+      @media (hover: hover) and (pointer: fine) {
+        &:hover:not(:active):not(:disabled):not([aria-disabled='true']):not( [aria-busy='true'] ) {
+          animation: btn-soft-reverse-breath var(--btn-reverse-cycle) var(--btn-reverse-ease) infinite;
+          box-shadow: var(--button-shadow-horizontal-offset) var(--btn-shadow-hover-y) var(--btn-shadow-hover-blur) rgba(var(--color-foreground), var(--btn-shadow-hover-opacity));
+        }
+      }
+      &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+        animation: none;
+        transform: scale(var(--btn-active-scale));
+        --btn-reverse-fill-pct: 6%;
+        --btn-reverse-text-pct: 4%;
+        --btn-reverse-border-pct: 5%;
+        filter: var(--btn-active-filter);
+      }
+      @media (prefers-reduced-motion: reduce) {
+        @media (hover: hover) and (pointer: fine) {
+          &:hover:not(:active):not(:disabled):not([aria-disabled='true']):not( [aria-busy='true'] ) {
+            animation: none;
+            --btn-reverse-fill-pct: calc(var(--btn-reverse-peak) * 0.5);
+            --btn-reverse-text-pct: calc(var(--btn-reverse-peak) * 0.5);
+            --btn-reverse-border-pct: calc(var(--btn-reverse-peak) * 0.5);
+            transform: scale(1.008);
+          }
+        }
+        &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+          transform: scale(var(--btn-active-scale));
+        }
       }
     }
-    &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
-      animation: none;
-      transform: scale(var(--btn-active-scale));
-      filter: var(--btn-active-filter);
+    @supports not (background-color: color-mix(in srgb, black, white)) {
+      @media (hover: hover) and (pointer: fine) {
+        &:hover:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+          transform: translateY(var(--btn-hover-y));
+          filter: var(--btn-hover-filter);
+          box-shadow: var(--button-shadow-horizontal-offset) var(--btn-shadow-hover-y) var(--btn-shadow-hover-blur) rgba(var(--color-foreground), var(--btn-shadow-hover-opacity));
+        }
+      }
+      &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+        transform: scale(var(--btn-active-scale));
+        filter: var(--btn-active-filter);
+      }
     }
     &:disabled, &[aria-disabled='true'] {
       cursor: not-allowed;
@@ -4775,10 +5355,13 @@ shopify-accelerated-checkout {
       opacity: 0.82;
       pointer-events: none;
     }
-    border-color: rgb(var(--color-primary-button-border));
-    background-color: rgb(var(--color-primary-button));
-    color: rgb(var(--color-primary-button-text));
-    --btn-hover-filter: brightness(1.08);
+    --btn-bg-rgb: var(--color-primary-button);
+    --btn-text-rgb: var(--color-primary-button-text);
+    --btn-border-rgb: var(--color-primary-button-border);
+    --btn-reverse-peak: 100%;
+    --btn-reverse-scale-peak: 1.02;
+    --btn-reverse-lift-y: -2.5px;
+    --btn-hover-filter: brightness(1.06);
     --btn-active-filter: brightness(0.94);
     --btn-hover-shadow-opacity: 1.45;
     flex-shrink: 0;
@@ -5815,6 +6398,11 @@ shopify-accelerated-checkout {
   }
 }
 @layer snippets {
+  .collections-section__card {
+    transition: box-shadow var(--motion-duration-base, 300ms) var(--motion-ease-default, ease);
+  }
+}
+@layer snippets {
   .pickup-availability-inline__retry-action {
     font-family: var(--font-body-family);
     font-style: var(--font-body-style);
@@ -5880,17 +6468,27 @@ shopify-accelerated-checkout {
     font-family: var(--font-body-family);
     --tw-outline-style: none;
     outline-style: none;
+    --btn-reverse-fill-pct: 0%;
+    --btn-reverse-text-pct: 0%;
+    --btn-reverse-border-pct: 0%;
+    --btn-reverse-fill-peak: var(--btn-reverse-peak);
+    --btn-reverse-text-peak: var(--btn-reverse-peak);
+    --btn-reverse-border-peak: var(--btn-reverse-peak);
+    --btn-reverse-cycle: 2.5s;
+    --btn-reverse-ease: ease-in-out;
+    --btn-ui-transition-duration: 200ms;
+    --btn-ui-transition-ease: ease;
     --btn-hover-filter: none;
     --btn-active-filter: brightness(0.95);
-    --btn-hover-y: -2px;
+    --btn-hover-y: -1px;
     --btn-active-scale: 0.98;
     --btn-hover-shadow-opacity: 1.35;
-    --btn-shadow-hover-y: calc(var(--button-shadow-vertical-offset) - 2px);
+    --btn-shadow-hover-y: calc(var(--button-shadow-vertical-offset) + var(--btn-reverse-lift-y));
     --btn-shadow-hover-blur: calc(var(--button-shadow-blur-radius) * 1.12);
     --btn-shadow-hover-opacity: calc(
         var(--button-shadow-opacity) * var(--btn-hover-shadow-opacity)
     );
-    transition: color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), box-shadow var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), filter var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+    transition: color var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), background-color var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), border-color var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), box-shadow var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), filter var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), opacity var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), transform var(--btn-ui-transition-duration) var(--btn-ui-transition-ease);
     padding: var(--button-padding-y) var(--button-padding-x);
     border-radius: var(--button-radius);
     border-width: var(--button-border-width);
@@ -5905,18 +6503,64 @@ shopify-accelerated-checkout {
       outline: var(--focus-ring-width) solid rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
       outline-offset: var(--focus-ring-offset);
     }
-    @media (hover: hover) and (pointer: fine) {
-      &:hover:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
-        transform: translateY(var(--btn-hover-y));
-        filter: var(--btn-hover-filter);
-        box-shadow: var(--button-shadow-horizontal-offset) var(--btn-shadow-hover-y) var(--btn-shadow-hover-blur) rgba(var(--color-foreground), var(--btn-shadow-hover-opacity));
-        animation: btn-breathe 2.8s var(--motion-ease-default, ease) 0.35s infinite;
+    border-color: rgb(var(--btn-border-rgb));
+    background-color: rgb(var(--btn-bg-rgb));
+    color: rgb(var(--btn-text-rgb));
+    @supports (background-color: color-mix(in srgb, black, white)) {
+      transition: box-shadow var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), opacity var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), filter var(--btn-ui-transition-duration) var(--btn-ui-transition-ease);
+      background-color: rgb(var(--btn-bg-rgb));
+      @supports (color: color-mix(in lab, red, red)) {
+        background-color: color-mix( in srgb, rgb(var(--btn-bg-rgb)) calc(100% - var(--btn-reverse-fill-pct)), rgb(var(--btn-text-rgb)) var(--btn-reverse-fill-pct) );
+      }
+      color: rgb(var(--btn-text-rgb));
+      @supports (color: color-mix(in lab, red, red)) {
+        color: color-mix( in srgb, rgb(var(--btn-text-rgb)) calc(100% - var(--btn-reverse-text-pct)), rgb(var(--btn-bg-rgb)) var(--btn-reverse-text-pct) );
+      }
+      border-color: rgb(var(--btn-border-rgb));
+      @supports (color: color-mix(in lab, red, red)) {
+        border-color: color-mix( in srgb, rgb(var(--btn-border-rgb)) calc(100% - var(--btn-reverse-border-pct)), rgb(var(--btn-text-rgb)) var(--btn-reverse-border-pct) );
+      }
+      @media (hover: hover) and (pointer: fine) {
+        &:hover:not(:active):not(:disabled):not([aria-disabled='true']):not( [aria-busy='true'] ) {
+          animation: btn-soft-reverse-breath var(--btn-reverse-cycle) var(--btn-reverse-ease) infinite;
+          box-shadow: var(--button-shadow-horizontal-offset) var(--btn-shadow-hover-y) var(--btn-shadow-hover-blur) rgba(var(--color-foreground), var(--btn-shadow-hover-opacity));
+        }
+      }
+      &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+        animation: none;
+        transform: scale(var(--btn-active-scale));
+        --btn-reverse-fill-pct: 6%;
+        --btn-reverse-text-pct: 4%;
+        --btn-reverse-border-pct: 5%;
+        filter: var(--btn-active-filter);
+      }
+      @media (prefers-reduced-motion: reduce) {
+        @media (hover: hover) and (pointer: fine) {
+          &:hover:not(:active):not(:disabled):not([aria-disabled='true']):not( [aria-busy='true'] ) {
+            animation: none;
+            --btn-reverse-fill-pct: calc(var(--btn-reverse-peak) * 0.5);
+            --btn-reverse-text-pct: calc(var(--btn-reverse-peak) * 0.5);
+            --btn-reverse-border-pct: calc(var(--btn-reverse-peak) * 0.5);
+            transform: scale(1.008);
+          }
+        }
+        &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+          transform: scale(var(--btn-active-scale));
+        }
       }
     }
-    &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
-      animation: none;
-      transform: scale(var(--btn-active-scale));
-      filter: var(--btn-active-filter);
+    @supports not (background-color: color-mix(in srgb, black, white)) {
+      @media (hover: hover) and (pointer: fine) {
+        &:hover:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+          transform: translateY(var(--btn-hover-y));
+          filter: var(--btn-hover-filter);
+          box-shadow: var(--button-shadow-horizontal-offset) var(--btn-shadow-hover-y) var(--btn-shadow-hover-blur) rgba(var(--color-foreground), var(--btn-shadow-hover-opacity));
+        }
+      }
+      &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+        transform: scale(var(--btn-active-scale));
+        filter: var(--btn-active-filter);
+      }
     }
     &:disabled, &[aria-disabled='true'] {
       cursor: not-allowed;
@@ -5928,10 +6572,13 @@ shopify-accelerated-checkout {
       opacity: 0.82;
       pointer-events: none;
     }
-    border-color: rgb(var(--color-primary-button-border));
-    background-color: rgb(var(--color-primary-button));
-    color: rgb(var(--color-primary-button-text));
-    --btn-hover-filter: brightness(1.08);
+    --btn-bg-rgb: var(--color-primary-button);
+    --btn-text-rgb: var(--color-primary-button-text);
+    --btn-border-rgb: var(--color-primary-button-border);
+    --btn-reverse-peak: 100%;
+    --btn-reverse-scale-peak: 1.02;
+    --btn-reverse-lift-y: -2.5px;
+    --btn-hover-filter: brightness(1.06);
     --btn-active-filter: brightness(0.94);
     --btn-hover-shadow-opacity: 1.45;
     width: 100%;
@@ -6354,7 +7001,6 @@ shopify-accelerated-checkout {
       height: 100%;
       width: 100%;
       object-fit: cover;
-      transition: transform var(--motion-duration-fast) var(--motion-ease-default);
     }
     .product-card-shell__info {
       gap: calc(var(--spacing) * 3);
@@ -6399,6 +7045,41 @@ shopify-accelerated-checkout {
       }
     }
     .product-card__image {
+      --media-interaction-scale-hover: 1.04;
+      --media-interaction-scale-focus: 1.02;
+      --media-interaction-scale-active: 0.98;
+      --media-interaction-brightness-hover: 1.04;
+      --media-interaction-brightness-focus: 1.02;
+      --media-interaction-brightness-active: 0.97;
+      --media-interaction-duration: var(--motion-duration-fast, 250ms);
+      --media-interaction-ease: var(--motion-ease-default, ease);
+      @media (hover: hover) and (pointer: fine) {
+        &:hover:has(.media-interaction) .media-interaction:not(:active):not(:disabled):not([aria-disabled='true']) .image_img, &:hover:has(.media-interaction) .media-interaction:not(:active):not(:disabled):not([aria-disabled='true']) img {
+          transform: scale(var(--media-interaction-scale-hover));
+          filter: brightness(var(--media-interaction-brightness-hover));
+        }
+      }
+      &:focus-within:has(.media-interaction) .media-interaction:not(:disabled):not([aria-disabled='true']) .image_img, &:focus-within:has(.media-interaction) .media-interaction:not(:disabled):not([aria-disabled='true']) img {
+        transform: scale(var(--media-interaction-scale-focus));
+        filter: brightness(var(--media-interaction-brightness-focus));
+      }
+      &:has(.media-interaction:active:not(:disabled):not([aria-disabled='true'])) .media-interaction .image_img, &:has(.media-interaction:active:not(:disabled):not([aria-disabled='true'])) .media-interaction img {
+        transform: scale(var(--media-interaction-scale-active));
+        filter: brightness(var(--media-interaction-brightness-active));
+        transition-duration: calc(var(--media-interaction-duration) * 0.75);
+      }
+      @media (prefers-reduced-motion: reduce) {
+        @media (hover: hover) and (pointer: fine) {
+          &:hover:has(.media-interaction) .media-interaction:not(:active):not(:disabled):not([aria-disabled='true']) .image_img, &:hover:has(.media-interaction) .media-interaction:not(:active):not(:disabled):not([aria-disabled='true']) img {
+            transform: scale(1.01);
+            filter: brightness(1.02);
+          }
+        }
+        &:focus-within:has(.media-interaction) .media-interaction:not(:disabled):not([aria-disabled='true']) .image_img, &:focus-within:has(.media-interaction) .media-interaction:not(:disabled):not([aria-disabled='true']) img, &:has(.media-interaction:active:not(:disabled):not([aria-disabled='true'])) .media-interaction .image_img, &:has(.media-interaction:active:not(:disabled):not([aria-disabled='true'])) .media-interaction img {
+          transform: none;
+          filter: brightness(1.02);
+        }
+      }
       .product-card__image-link {
         height: 100%;
         width: 100%;
@@ -6437,17 +7118,27 @@ shopify-accelerated-checkout {
         font-family: var(--font-body-family);
         --tw-outline-style: none;
         outline-style: none;
+        --btn-reverse-fill-pct: 0%;
+        --btn-reverse-text-pct: 0%;
+        --btn-reverse-border-pct: 0%;
+        --btn-reverse-fill-peak: var(--btn-reverse-peak);
+        --btn-reverse-text-peak: var(--btn-reverse-peak);
+        --btn-reverse-border-peak: var(--btn-reverse-peak);
+        --btn-reverse-cycle: 2.5s;
+        --btn-reverse-ease: ease-in-out;
+        --btn-ui-transition-duration: 200ms;
+        --btn-ui-transition-ease: ease;
         --btn-hover-filter: none;
         --btn-active-filter: brightness(0.95);
-        --btn-hover-y: -2px;
+        --btn-hover-y: -1px;
         --btn-active-scale: 0.98;
         --btn-hover-shadow-opacity: 1.35;
-        --btn-shadow-hover-y: calc(var(--button-shadow-vertical-offset) - 2px);
+        --btn-shadow-hover-y: calc(var(--button-shadow-vertical-offset) + var(--btn-reverse-lift-y));
         --btn-shadow-hover-blur: calc(var(--button-shadow-blur-radius) * 1.12);
         --btn-shadow-hover-opacity: calc(
         var(--button-shadow-opacity) * var(--btn-hover-shadow-opacity)
     );
-        transition: color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), box-shadow var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), filter var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+        transition: color var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), background-color var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), border-color var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), box-shadow var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), filter var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), opacity var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), transform var(--btn-ui-transition-duration) var(--btn-ui-transition-ease);
         padding: var(--button-padding-y) var(--button-padding-x);
         border-radius: var(--button-radius);
         border-width: var(--button-border-width);
@@ -6462,18 +7153,64 @@ shopify-accelerated-checkout {
           outline: var(--focus-ring-width) solid rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
           outline-offset: var(--focus-ring-offset);
         }
-        @media (hover: hover) and (pointer: fine) {
-          &:hover:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
-            transform: translateY(var(--btn-hover-y));
-            filter: var(--btn-hover-filter);
-            box-shadow: var(--button-shadow-horizontal-offset) var(--btn-shadow-hover-y) var(--btn-shadow-hover-blur) rgba(var(--color-foreground), var(--btn-shadow-hover-opacity));
-            animation: btn-breathe 2.8s var(--motion-ease-default, ease) 0.35s infinite;
+        border-color: rgb(var(--btn-border-rgb));
+        background-color: rgb(var(--btn-bg-rgb));
+        color: rgb(var(--btn-text-rgb));
+        @supports (background-color: color-mix(in srgb, black, white)) {
+          transition: box-shadow var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), opacity var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), filter var(--btn-ui-transition-duration) var(--btn-ui-transition-ease);
+          background-color: rgb(var(--btn-bg-rgb));
+          @supports (color: color-mix(in lab, red, red)) {
+            background-color: color-mix( in srgb, rgb(var(--btn-bg-rgb)) calc(100% - var(--btn-reverse-fill-pct)), rgb(var(--btn-text-rgb)) var(--btn-reverse-fill-pct) );
+          }
+          color: rgb(var(--btn-text-rgb));
+          @supports (color: color-mix(in lab, red, red)) {
+            color: color-mix( in srgb, rgb(var(--btn-text-rgb)) calc(100% - var(--btn-reverse-text-pct)), rgb(var(--btn-bg-rgb)) var(--btn-reverse-text-pct) );
+          }
+          border-color: rgb(var(--btn-border-rgb));
+          @supports (color: color-mix(in lab, red, red)) {
+            border-color: color-mix( in srgb, rgb(var(--btn-border-rgb)) calc(100% - var(--btn-reverse-border-pct)), rgb(var(--btn-text-rgb)) var(--btn-reverse-border-pct) );
+          }
+          @media (hover: hover) and (pointer: fine) {
+            &:hover:not(:active):not(:disabled):not([aria-disabled='true']):not( [aria-busy='true'] ) {
+              animation: btn-soft-reverse-breath var(--btn-reverse-cycle) var(--btn-reverse-ease) infinite;
+              box-shadow: var(--button-shadow-horizontal-offset) var(--btn-shadow-hover-y) var(--btn-shadow-hover-blur) rgba(var(--color-foreground), var(--btn-shadow-hover-opacity));
+            }
+          }
+          &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+            animation: none;
+            transform: scale(var(--btn-active-scale));
+            --btn-reverse-fill-pct: 6%;
+            --btn-reverse-text-pct: 4%;
+            --btn-reverse-border-pct: 5%;
+            filter: var(--btn-active-filter);
+          }
+          @media (prefers-reduced-motion: reduce) {
+            @media (hover: hover) and (pointer: fine) {
+              &:hover:not(:active):not(:disabled):not([aria-disabled='true']):not( [aria-busy='true'] ) {
+                animation: none;
+                --btn-reverse-fill-pct: calc(var(--btn-reverse-peak) * 0.5);
+                --btn-reverse-text-pct: calc(var(--btn-reverse-peak) * 0.5);
+                --btn-reverse-border-pct: calc(var(--btn-reverse-peak) * 0.5);
+                transform: scale(1.008);
+              }
+            }
+            &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+              transform: scale(var(--btn-active-scale));
+            }
           }
         }
-        &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
-          animation: none;
-          transform: scale(var(--btn-active-scale));
-          filter: var(--btn-active-filter);
+        @supports not (background-color: color-mix(in srgb, black, white)) {
+          @media (hover: hover) and (pointer: fine) {
+            &:hover:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+              transform: translateY(var(--btn-hover-y));
+              filter: var(--btn-hover-filter);
+              box-shadow: var(--button-shadow-horizontal-offset) var(--btn-shadow-hover-y) var(--btn-shadow-hover-blur) rgba(var(--color-foreground), var(--btn-shadow-hover-opacity));
+            }
+          }
+          &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+            transform: scale(var(--btn-active-scale));
+            filter: var(--btn-active-filter);
+          }
         }
         &:disabled, &[aria-disabled='true'] {
           cursor: not-allowed;
@@ -6485,10 +7222,13 @@ shopify-accelerated-checkout {
           opacity: 0.82;
           pointer-events: none;
         }
-        border-color: rgb(var(--color-primary-button-border));
-        background-color: rgb(var(--color-primary-button));
-        color: rgb(var(--color-primary-button-text));
-        --btn-hover-filter: brightness(1.08);
+        --btn-bg-rgb: var(--color-primary-button);
+        --btn-text-rgb: var(--color-primary-button-text);
+        --btn-border-rgb: var(--color-primary-button-border);
+        --btn-reverse-peak: 100%;
+        --btn-reverse-scale-peak: 1.02;
+        --btn-reverse-lift-y: -2.5px;
+        --btn-hover-filter: brightness(1.06);
         --btn-active-filter: brightness(0.94);
         --btn-hover-shadow-opacity: 1.45;
       }
@@ -6503,17 +7243,33 @@ shopify-accelerated-checkout {
         font-family: var(--font-body-family);
         --tw-outline-style: none;
         outline-style: none;
+        --btn-bg-rgb: var(--color-primary-button);
+        --btn-text-rgb: var(--color-primary-button-text);
+        --btn-border-rgb: var(--color-primary-button-border);
+        --btn-reverse-fill-pct: 0%;
+        --btn-reverse-text-pct: 0%;
+        --btn-reverse-border-pct: 0%;
+        --btn-reverse-peak: 100%;
+        --btn-reverse-fill-peak: var(--btn-reverse-peak);
+        --btn-reverse-text-peak: var(--btn-reverse-peak);
+        --btn-reverse-border-peak: var(--btn-reverse-peak);
+        --btn-reverse-scale-peak: 1.02;
+        --btn-reverse-lift-y: -2.5px;
+        --btn-reverse-cycle: 2.5s;
+        --btn-reverse-ease: ease-in-out;
+        --btn-ui-transition-duration: 200ms;
+        --btn-ui-transition-ease: ease;
         --btn-hover-filter: none;
         --btn-active-filter: brightness(0.95);
-        --btn-hover-y: -2px;
+        --btn-hover-y: -1px;
         --btn-active-scale: 0.98;
         --btn-hover-shadow-opacity: 1.35;
-        --btn-shadow-hover-y: calc(var(--button-shadow-vertical-offset) - 2px);
+        --btn-shadow-hover-y: calc(var(--button-shadow-vertical-offset) + var(--btn-reverse-lift-y));
         --btn-shadow-hover-blur: calc(var(--button-shadow-blur-radius) * 1.12);
         --btn-shadow-hover-opacity: calc(
         var(--button-shadow-opacity) * var(--btn-hover-shadow-opacity)
     );
-        transition: color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), box-shadow var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), filter var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+        transition: color var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), background-color var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), border-color var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), box-shadow var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), filter var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), opacity var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), transform var(--btn-ui-transition-duration) var(--btn-ui-transition-ease);
         padding: var(--button-padding-y) var(--button-padding-x);
         border-radius: var(--button-radius);
         border-width: var(--button-border-width);
@@ -6528,18 +7284,64 @@ shopify-accelerated-checkout {
           outline: var(--focus-ring-width) solid rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
           outline-offset: var(--focus-ring-offset);
         }
-        @media (hover: hover) and (pointer: fine) {
-          &:hover:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
-            transform: translateY(var(--btn-hover-y));
-            filter: var(--btn-hover-filter);
-            box-shadow: var(--button-shadow-horizontal-offset) var(--btn-shadow-hover-y) var(--btn-shadow-hover-blur) rgba(var(--color-foreground), var(--btn-shadow-hover-opacity));
-            animation: btn-breathe 2.8s var(--motion-ease-default, ease) 0.35s infinite;
+        border-color: rgb(var(--btn-border-rgb));
+        background-color: rgb(var(--btn-bg-rgb));
+        color: rgb(var(--btn-text-rgb));
+        @supports (background-color: color-mix(in srgb, black, white)) {
+          transition: box-shadow var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), opacity var(--btn-ui-transition-duration) var(--btn-ui-transition-ease), filter var(--btn-ui-transition-duration) var(--btn-ui-transition-ease);
+          background-color: rgb(var(--btn-bg-rgb));
+          @supports (color: color-mix(in lab, red, red)) {
+            background-color: color-mix( in srgb, rgb(var(--btn-bg-rgb)) calc(100% - var(--btn-reverse-fill-pct)), rgb(var(--btn-text-rgb)) var(--btn-reverse-fill-pct) );
+          }
+          color: rgb(var(--btn-text-rgb));
+          @supports (color: color-mix(in lab, red, red)) {
+            color: color-mix( in srgb, rgb(var(--btn-text-rgb)) calc(100% - var(--btn-reverse-text-pct)), rgb(var(--btn-bg-rgb)) var(--btn-reverse-text-pct) );
+          }
+          border-color: rgb(var(--btn-border-rgb));
+          @supports (color: color-mix(in lab, red, red)) {
+            border-color: color-mix( in srgb, rgb(var(--btn-border-rgb)) calc(100% - var(--btn-reverse-border-pct)), rgb(var(--btn-text-rgb)) var(--btn-reverse-border-pct) );
+          }
+          @media (hover: hover) and (pointer: fine) {
+            &:hover:not(:active):not(:disabled):not([aria-disabled='true']):not( [aria-busy='true'] ) {
+              animation: btn-soft-reverse-breath var(--btn-reverse-cycle) var(--btn-reverse-ease) infinite;
+              box-shadow: var(--button-shadow-horizontal-offset) var(--btn-shadow-hover-y) var(--btn-shadow-hover-blur) rgba(var(--color-foreground), var(--btn-shadow-hover-opacity));
+            }
+          }
+          &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+            animation: none;
+            transform: scale(var(--btn-active-scale));
+            --btn-reverse-fill-pct: 6%;
+            --btn-reverse-text-pct: 4%;
+            --btn-reverse-border-pct: 5%;
+            filter: var(--btn-active-filter);
+          }
+          @media (prefers-reduced-motion: reduce) {
+            @media (hover: hover) and (pointer: fine) {
+              &:hover:not(:active):not(:disabled):not([aria-disabled='true']):not( [aria-busy='true'] ) {
+                animation: none;
+                --btn-reverse-fill-pct: calc(var(--btn-reverse-peak) * 0.5);
+                --btn-reverse-text-pct: calc(var(--btn-reverse-peak) * 0.5);
+                --btn-reverse-border-pct: calc(var(--btn-reverse-peak) * 0.5);
+                transform: scale(1.008);
+              }
+            }
+            &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+              transform: scale(var(--btn-active-scale));
+            }
           }
         }
-        &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
-          animation: none;
-          transform: scale(var(--btn-active-scale));
-          filter: var(--btn-active-filter);
+        @supports not (background-color: color-mix(in srgb, black, white)) {
+          @media (hover: hover) and (pointer: fine) {
+            &:hover:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+              transform: translateY(var(--btn-hover-y));
+              filter: var(--btn-hover-filter);
+              box-shadow: var(--button-shadow-horizontal-offset) var(--btn-shadow-hover-y) var(--btn-shadow-hover-blur) rgba(var(--color-foreground), var(--btn-shadow-hover-opacity));
+            }
+          }
+          &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+            transform: scale(var(--btn-active-scale));
+            filter: var(--btn-active-filter);
+          }
         }
         &:disabled, &[aria-disabled='true'] {
           cursor: not-allowed;
@@ -6551,9 +7353,12 @@ shopify-accelerated-checkout {
           opacity: 0.82;
           pointer-events: none;
         }
-        border-color: rgb(var(--color-secondary-button-border));
-        background-color: rgb(var(--color-secondary-button));
-        color: rgb(var(--color-secondary-button-text));
+        --btn-bg-rgb: var(--color-secondary-button);
+        --btn-text-rgb: var(--color-secondary-button-text);
+        --btn-border-rgb: var(--color-secondary-button-border);
+        --btn-reverse-peak: 80%;
+        --btn-reverse-scale-peak: 1.014;
+        --btn-reverse-lift-y: -1.5px;
         --btn-hover-filter: brightness(0.97);
         --btn-active-filter: brightness(0.9);
         --btn-hover-shadow-opacity: 1.28;
@@ -6765,10 +7570,6 @@ shopify-accelerated-checkout {
     border-radius: var(--radius-sm);
     border-style: var(--tw-border-style);
     border-width: 2px;
-    &:focus-visible {
-      outline: var(--focus-ring-width) solid rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
-      outline-offset: var(--focus-ring-offset);
-    }
     border-color: transparent;
     transition: border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
     &:hover {
@@ -7551,6 +8352,22 @@ shopify-accelerated-checkout {
     z-index: var(--z-layer-toast);
   }
 }
+@keyframes icon-pop-turn {
+  0% {
+    transform: rotate(0deg) scale(1);
+    animation-timing-function: linear;
+  }
+  38% {
+    transform: rotate(270deg) scale(var(--icon-pop-peak-scale, 1.32));
+    animation-timing-function: cubic-bezier(0.2, 0.9, 0.2, 1);
+  }
+  72% {
+    transform: rotate(270deg) scale(var(--icon-pop-settle-scale, 1.14));
+  }
+  100% {
+    transform: rotate(270deg) scale(var(--icon-pop-rest-scale, 1.16));
+  }
+}
 body[data-content-reveal-style='fade'] [data-motion-section][data-motion-state='pending'] [data-motion-reveal='content'] {
   opacity: 0;
   transition: opacity var(--motion-duration-base, 400ms) var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1));
@@ -7599,6 +8416,11 @@ body[data-media-reveal-style='zoom'] [data-motion-section][data-motion-state='re
 body[data-motion-enabled='false'] [data-motion-section] [data-motion-reveal] {
   opacity: 1 !important;
   transform: none !important;
+  transition: none !important;
+}
+body[data-motion-enabled='false'] .media-interaction .image_img, body[data-motion-enabled='false'] .media-interaction img, body[data-motion-enabled='false'] .media-interaction-subtle .image_img, body[data-motion-enabled='false'] .media-interaction-subtle img, body[data-motion-enabled='false'] .media-interaction-scope .media-interaction .image_img, body[data-motion-enabled='false'] .media-interaction-scope .media-interaction img {
+  transform: none !important;
+  filter: none !important;
   transition: none !important;
 }
 @media (prefers-reduced-motion: reduce) {
@@ -7950,6 +8772,9 @@ body[data-motion-enabled='false'] [data-motion-section] [data-motion-reveal] {
       --tw-backdrop-sepia: initial;
       --tw-duration: initial;
       --tw-ease: initial;
+      --btn-reverse-fill-pct: 0%;
+      --btn-reverse-text-pct: 0%;
+      --btn-reverse-border-pct: 0%;
       --tw-leading: initial;
       --tw-ordinal: initial;
       --tw-slashed-zero: initial;

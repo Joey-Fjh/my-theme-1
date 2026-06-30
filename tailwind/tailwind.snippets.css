@@ -43,6 +43,22 @@ Layer: snippets — layout delta only (trigger chrome: tab-nav-item* in componen
 }
 
 /* =========================================================
+Owner: sections/collections.liquid
+Consumers: list-collections template grid
+Layer: snippets temporary owner block
+
+Image interaction: composite card <a class="media-interaction"> shell only — no url on
+render 'image' (avoids nested anchors). Do not add image-level scale/brightness on
+img or .theme-image wrappers; media-interaction owns nested .image_img / img feedback.
+Card-level: box-shadow utilities on markup; arrow uses group-hover translate on icon.
+========================================================= */
+@layer snippets {
+    .collections-section__card {
+        transition: box-shadow var(--motion-duration-base, 300ms) var(--motion-ease-default, ease);
+    }
+}
+
+/* =========================================================
 Owner: snippets/pickup-availability-inline.liquid
 Consumers: buy-buttons (PDP context only)
 Layer: snippets — pickup retry owner delta (Phase 5D-2b)
@@ -419,7 +435,6 @@ Shared primitives (valid cross-snippet — not orphans):
 
         .product-card-shell__image {
             @apply h-full w-full object-cover;
-            transition: transform var(--motion-duration-fast) var(--motion-ease-default);
         }
 
         .product-card-shell__info {
@@ -464,6 +479,8 @@ Shared primitives (valid cross-snippet — not orphans):
         }
 
         .product-card__image {
+            @apply media-interaction-scope;
+
             .product-card__image-link {
                 @apply h-full w-full;
             }
@@ -627,7 +644,7 @@ Layer: snippets temporary owner block
 ========================================================= */
 @layer snippets {
     .product-gallery__thumbnail {
-        @apply block shrink-0 cursor-pointer overflow-hidden rounded-sm border-2 focus-ring;
+        @apply block shrink-0 cursor-pointer overflow-hidden rounded-sm border-2;
         border-color: transparent;
         transition:
             border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),

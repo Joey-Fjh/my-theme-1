@@ -14,6 +14,26 @@
     }
 }
 
+@keyframes icon-pop-turn {
+    0% {
+        transform: rotate(0deg) scale(1);
+        animation-timing-function: linear;
+    }
+
+    38% {
+        transform: rotate(270deg) scale(var(--icon-pop-peak-scale, 1.32));
+        animation-timing-function: cubic-bezier(0.2, 0.9, 0.2, 1);
+    }
+
+    72% {
+        transform: rotate(270deg) scale(var(--icon-pop-settle-scale, 1.14));
+    }
+
+    100% {
+        transform: rotate(270deg) scale(var(--icon-pop-rest-scale, 1.16));
+    }
+}
+
 @utility icons-animate-* {
     will-change: transform, opacity;
 
@@ -27,6 +47,59 @@
     &:focus-visible {
         animation: --value(--animate-icon-*);
         animation-delay: calc(var(--i, 0) * 60ms);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        &:hover,
+        &:focus-visible {
+            animation: none;
+        }
+    }
+}
+
+/* Interactive icon pop — 270deg turn + scale on child .icons (no infinite loop). */
+@utility icons-animate-pop {
+    --icon-pop-duration: 360ms;
+    --icon-pop-peak-scale: 1.32;
+    --icon-pop-settle-scale: 1.14;
+    --icon-pop-rest-scale: 1.16;
+    --icon-pop-active-scale: 0.88;
+
+    & .icons {
+        transform-origin: center;
+        transform: rotate(0deg) scale(1);
+        will-change: transform;
+        transition:
+            color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+            opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+        &:hover:not(:active):not(:disabled):not([aria-disabled='true']) .icons {
+            animation: icon-pop-turn var(--icon-pop-duration) both;
+            animation-iteration-count: 1;
+        }
+    }
+
+    &:active:not(:disabled):not([aria-disabled='true']) .icons {
+        animation: none;
+        transform: rotate(0deg) scale(var(--icon-pop-active-scale));
+    }
+
+    &:disabled .icons,
+    &[aria-disabled='true'] .icons {
+        animation: none;
+        transform: rotate(0deg) scale(1);
+        will-change: auto;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        @media (hover: hover) and (pointer: fine) {
+            &:hover:not(:active):not(:disabled):not([aria-disabled='true']) .icons {
+                animation: none;
+                transform: rotate(0deg) scale(1.14);
+            }
+        }
     }
 }
 
@@ -155,6 +228,17 @@ body[data-media-reveal-style='zoom']
 body[data-motion-enabled='false'] [data-motion-section] [data-motion-reveal] {
     opacity: 1 !important;
     transform: none !important;
+    transition: none !important;
+}
+
+body[data-motion-enabled='false'] .media-interaction .image_img,
+body[data-motion-enabled='false'] .media-interaction img,
+body[data-motion-enabled='false'] .media-interaction-subtle .image_img,
+body[data-motion-enabled='false'] .media-interaction-subtle img,
+body[data-motion-enabled='false'] .media-interaction-scope .media-interaction .image_img,
+body[data-motion-enabled='false'] .media-interaction-scope .media-interaction img {
+    transform: none !important;
+    filter: none !important;
     transition: none !important;
 }
 
