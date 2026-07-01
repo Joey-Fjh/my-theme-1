@@ -34,6 +34,16 @@ Ordinary animation is **CSS/Alpine-first**:
 | Ordinary content/media reveal across sections | Alpine component with shared `IntersectionObserver` + CSS rules in `tailwind.animates.css` | GSAP |
 | Complex narrative choreography (parallax, scrub, timeline, split text, coordinated storytelling) | GSAP — only after explicit classification | — |
 
+### Motion Setting Boundary
+
+`motion_enabled` and `body[data-motion-enabled='false']` are the merchant-facing gate for page and brand motion: section reveal, media reveal, scroll motion, and approved narrative choreography.
+
+Do not use `body[data-motion-enabled='false']` as a blanket kill switch for state or micro interactions. Hover/focus feedback, button interactions, dropdown open/close, dialog open/close, drawer open/close, loading states, and other UI state transitions should remain functionally expressive when merchant page motion is disabled.
+
+State and micro interactions must still respect `@media (prefers-reduced-motion: reduce)`. When an interaction uses noticeable translate, scale, parallax, or origin-based FLIP motion, reduced motion should degrade it to opacity-only or immediate state change while preserving visibility, focus, keyboard behavior, and close/open state.
+
+If merchants later need control over micro interactions, introduce a separate policy setting such as `micro_motion_enabled`; do not expand `motion_enabled` beyond page and brand motion.
+
 ### Conflict Rule
 
 Alpine/CSS and GSAP **must not** control `opacity` or `transform` on the same element. Choose one ownership path per element.
@@ -61,7 +71,7 @@ Allowed in `tailwind/tailwind.animates.css`:
 
 Capability utilities SHOULD use semantic data hooks or a clear motion namespace for new code. Do not recreate the removed legacy `motion-*` state transition recipe layer.
 
-`tailwind.animates.css` also owns the global setting selectors that map body-level motion settings to CSS behavior, for example `body[data-content-reveal-style]`, `body[data-media-reveal-style]`, `body[data-motion-enabled]`, and `@media (prefers-reduced-motion: reduce)`.
+`tailwind.animates.css` also owns the global setting selectors that map body-level page and brand motion settings to CSS behavior, for example `body[data-content-reveal-style]`, `body[data-media-reveal-style]`, `body[data-motion-enabled]`, and `@media (prefers-reduced-motion: reduce)`. `body[data-motion-enabled]` should target reveal, media reveal, scroll, and narrative motion only; state and micro interaction recipes should use `@media (prefers-reduced-motion: reduce)` unless a future dedicated micro-motion setting is approved.
 
 `tailwind.animates.css` does not own section business structure or trigger logic. It may style `[data-motion-reveal]` targets, but it must not require section templates to consume long internal utility class combinations for ordinary reveal.
 
@@ -189,6 +199,10 @@ Component-specific values SHOULD stay inside the named recipe until a real reuse
 
 Merchant-facing motion settings SHOULD control policy, not low-level implementation details.
 
+`motion_enabled` is scoped to page and brand motion. It should disable or simplify section reveal, media reveal, scroll motion, and narrative choreography. It should not disable ordinary hover/focus feedback, dropdowns, dialogs, drawers, loading states, or other UI state and micro interactions.
+
+`prefers-reduced-motion` is the baseline accessibility control for both page/brand motion and state/micro interactions. State and micro interaction recipes that use noticeable movement must provide a reduced-motion branch even when they do not read `motion_enabled`.
+
 Allowed future global settings:
 
 - `motion_enabled`
@@ -266,5 +280,6 @@ If any criterion fails, the motion pattern needs better encapsulation even if it
 - Prefer opacity and transform for visual motion; avoid layout-changing animation properties.
 - Critical first-viewport content must render visible without JavaScript or animation completion.
 - Reduced motion and `body[data-motion-enabled='false']` must leave content visible and must not break UI state such as `x-show`.
+- `body[data-motion-enabled='false']` is not a blanket kill rule for state or micro interactions. Hover/focus, dropdown, dialog, drawer, and loading motion should remain governed by their state contract and `prefers-reduced-motion` unless a dedicated micro-motion setting is approved.
 - Shared observers, timers, listeners, or animation runtimes must be cleaned up through the owning component lifecycle.
 - Do not add cookbook examples for inactive runtimes to this file. Add future runtime-specific guidance only when that runtime is approved and active again.

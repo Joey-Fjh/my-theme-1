@@ -105,16 +105,6 @@ Dropdown
             transition: visibility 0s linear var(--motion-duration-fast);
         }
 
-        /* Legacy default motion when no panel-motion variant is applied */
-        .dropdown-panel:not(.panel-motion) {
-            transform: translateY(-12px) scale(0.98);
-
-            transition:
-                opacity var(--motion-duration-fast) var(--motion-ease-default),
-                transform var(--motion-duration-fast) var(--motion-ease-enter),
-                visibility 0s linear var(--motion-duration-fast);
-        }
-
         .dropdown-open {
             details[open] > &,
             [data-dropdown][open] > &,
@@ -125,14 +115,6 @@ Dropdown
                 pointer-events: auto;
                 transition-delay: 0s;
             }
-        }
-
-        .dropdown-panel:not(.panel-motion).dropdown-open,
-        details[open] > .dropdown-panel:not(.panel-motion),
-        [data-dropdown][open] > .dropdown-panel:not(.panel-motion),
-        [aria-expanded='true'] > .dropdown-panel:not(.panel-motion),
-        .is-open > .dropdown-panel:not(.panel-motion) {
-            transform: translateY(0) scale(1);
         }
 
         .dropdown-icon {
@@ -175,6 +157,14 @@ Contract:
 - OPEN motion uses keyframe animations on state selectors (not transition from
   closed styles) so panels are visible when mounting via details[open] or x-show.
 - Child stagger uses keyed item animations on the same open selectors.
+
+Variants:
+- scale — header primary dropdown
+- flyout — header nested horizontal submenu
+- layered — header super / mega menu
+- compact — sort, localization, horizontal filter list panels
+- disclosure — password header and other small details expansions
+- popover — rich attached panels (predictive search)
 ========================================================= */
 @layer components {
     .panel-motion {
@@ -197,30 +187,16 @@ Contract:
         animation: panel-motion-scale-in var(--panel-motion-dur) var(--panel-motion-ease-enter) both;
     }
 
-    /* --- Sheet drop with weight --- */
-    .panel-motion-sheet {
-        --panel-motion-dur: var(--panel-motion-duration-sheet);
+    /* --- Rich attached popover (predictive search) --- */
+    .panel-motion-popover {
+        --panel-motion-dur: var(--panel-motion-duration-popover);
     }
 
-    details[open] > .panel-motion-sheet,
-    [aria-expanded='true'] > .panel-motion-sheet,
-    .is-open > .panel-motion-sheet,
-    [data-dropdown][open] > .panel-motion-sheet,
-    .localization-toggle[aria-expanded='true'] ~ .panel-motion-sheet {
-        animation: panel-motion-sheet-in var(--panel-motion-dur) var(--panel-motion-ease-soft) both;
-    }
-
-    /* --- Curtain unfold (header / mega) --- */
-    .panel-motion-curtain {
-        --panel-motion-dur: var(--panel-motion-duration-curtain);
-    }
-
-    details[open] > .panel-motion-curtain,
-    [aria-expanded='true'] > .panel-motion-curtain,
-    .is-open > .panel-motion-curtain,
-    [data-dropdown][open] > .panel-motion-curtain,
-    .localization-toggle[aria-expanded='true'] ~ .panel-motion-curtain {
-        animation: panel-motion-curtain-in var(--panel-motion-dur) var(--panel-motion-ease-soft)
+    details[open] > .panel-motion-popover,
+    [aria-expanded='true'] > .panel-motion-popover,
+    .is-open > .panel-motion-popover,
+    [data-dropdown][open] > .panel-motion-popover {
+        animation: panel-motion-popover-in var(--panel-motion-dur) var(--panel-motion-ease-soft)
             both;
     }
 
@@ -410,28 +386,11 @@ Contract:
 
     /* --- Child item stagger (open-state keyframe animations) --- */
     details[open]
-        > :is(
-            .panel-motion-scale,
-            .panel-motion-sheet,
-            .panel-motion-curtain,
-            .panel-motion-compact
-        )
+        > :is(.panel-motion-scale, .panel-motion-compact)
         > :is(li, [role='option'], .localization-item),
-    [data-dropdown][open]
-        > :is(
-            .panel-motion-scale,
-            .panel-motion-sheet,
-            .panel-motion-curtain,
-            .panel-motion-compact
-        )
-        > [role='option'],
+    [data-dropdown][open] > :is(.panel-motion-scale, .panel-motion-compact) > [role='option'],
     .localization-toggle[aria-expanded='true']
-        ~ :is(
-            .panel-motion-scale,
-            .panel-motion-sheet,
-            .panel-motion-curtain,
-            .panel-motion-compact
-        )
+        ~ :is(.panel-motion-scale, .panel-motion-compact)
         > .localization-item {
         animation: panel-motion-item-in var(--panel-motion-duration-item)
             var(--panel-motion-ease-enter) both;
@@ -448,54 +407,54 @@ Contract:
         animation-name: panel-motion-item-flyout-in-rtl;
     }
 
-    :is(.panel-motion-scale, .panel-motion-sheet, .panel-motion-curtain, .panel-motion-compact)
+    :is(.panel-motion-scale, .panel-motion-compact)
         > :is(li, [role='option'], .localization-item):nth-child(1) {
         animation-delay: calc(var(--panel-motion-content-delay, 70ms) + 0ms);
     }
 
-    :is(.panel-motion-scale, .panel-motion-sheet, .panel-motion-curtain, .panel-motion-compact)
+    :is(.panel-motion-scale, .panel-motion-compact)
         > :is(li, [role='option'], .localization-item):nth-child(2) {
         animation-delay: calc(
             var(--panel-motion-content-delay, 70ms) + var(--panel-motion-stagger-step, 32ms)
         );
     }
 
-    :is(.panel-motion-scale, .panel-motion-sheet, .panel-motion-curtain, .panel-motion-compact)
+    :is(.panel-motion-scale, .panel-motion-compact)
         > :is(li, [role='option'], .localization-item):nth-child(3) {
         animation-delay: calc(
             var(--panel-motion-content-delay, 70ms) + var(--panel-motion-stagger-step, 32ms) * 2
         );
     }
 
-    :is(.panel-motion-scale, .panel-motion-sheet, .panel-motion-curtain, .panel-motion-compact)
+    :is(.panel-motion-scale, .panel-motion-compact)
         > :is(li, [role='option'], .localization-item):nth-child(4) {
         animation-delay: calc(
             var(--panel-motion-content-delay, 70ms) + var(--panel-motion-stagger-step, 32ms) * 3
         );
     }
 
-    :is(.panel-motion-scale, .panel-motion-sheet, .panel-motion-curtain, .panel-motion-compact)
+    :is(.panel-motion-scale, .panel-motion-compact)
         > :is(li, [role='option'], .localization-item):nth-child(5) {
         animation-delay: calc(
             var(--panel-motion-content-delay, 70ms) + var(--panel-motion-stagger-step, 32ms) * 4
         );
     }
 
-    :is(.panel-motion-scale, .panel-motion-sheet, .panel-motion-curtain, .panel-motion-compact)
+    :is(.panel-motion-scale, .panel-motion-compact)
         > :is(li, [role='option'], .localization-item):nth-child(6) {
         animation-delay: calc(
             var(--panel-motion-content-delay, 70ms) + var(--panel-motion-stagger-step, 32ms) * 5
         );
     }
 
-    :is(.panel-motion-scale, .panel-motion-sheet, .panel-motion-curtain, .panel-motion-compact)
+    :is(.panel-motion-scale, .panel-motion-compact)
         > :is(li, [role='option'], .localization-item):nth-child(7) {
         animation-delay: calc(
             var(--panel-motion-content-delay, 70ms) + var(--panel-motion-stagger-step, 32ms) * 6
         );
     }
 
-    :is(.panel-motion-scale, .panel-motion-sheet, .panel-motion-curtain, .panel-motion-compact)
+    :is(.panel-motion-scale, .panel-motion-compact)
         > :is(li, [role='option'], .localization-item):nth-child(8) {
         animation-delay: calc(
             var(--panel-motion-content-delay, 70ms) + var(--panel-motion-stagger-step, 32ms) * 7
@@ -810,6 +769,11 @@ Dialog
 
     .ui-dialog-drawer-width-default {
         @apply max-w-2/3 pc:max-w-1/3;
+    }
+
+    .ui-dialog-modal-shell--origin {
+        perspective: 1400px;
+        isolation: isolate;
     }
 }
 

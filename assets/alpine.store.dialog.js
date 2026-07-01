@@ -5,6 +5,42 @@
     window.__Theme__.AlpineStoreGroups = window.__Theme__.AlpineStoreGroups || {};
 
     const StoreGroups = window.__Theme__.AlpineStoreGroups;
+    const DialogMotion = () => window.__Theme__.DialogMotion;
+    const DrawerMotion = () => window.__Theme__.DrawerMotion;
+
+    function getDialogMotion(root) {
+        if (!root) return null;
+
+        const drawerMotion = DrawerMotion();
+        if (drawerMotion && drawerMotion.hasMotion(root)) {
+            return drawerMotion;
+        }
+
+        const dialogMotion = DialogMotion();
+        if (dialogMotion && dialogMotion.hasMotion(root)) {
+            return dialogMotion;
+        }
+
+        return null;
+    }
+
+    function lockPageScroll() {
+        const motion = DialogMotion();
+        if (motion && typeof motion.lockScroll === 'function') {
+            motion.lockScroll();
+            return;
+        }
+        document.body.style.overflow = 'hidden';
+    }
+
+    function unlockPageScroll() {
+        const motion = DialogMotion();
+        if (motion && typeof motion.unlockScroll === 'function') {
+            motion.unlockScroll();
+            return;
+        }
+        document.body.style.overflow = '';
+    }
 
     const FOCUSABLE_SELECTOR = [
         'a[href]',
@@ -38,8 +74,16 @@
         return Array.from(container.querySelectorAll(FOCUSABLE_SELECTOR)).filter(isFocusable);
     }
 
+    function getDialogRoot(id) {
+        if (!id) return null;
+        return document.querySelector(
+            '[data-dialog-root][data-dialog-id="' + CSS.escape(id) + '"]',
+        );
+    }
+
     StoreGroups.dialog = {
         active: null,
+        closing: null,
         _returnFocusTo: null,
         _trapHandler: null,
         _openGeneration: 0,
@@ -51,56 +95,73 @@
 
             if (this.active === cleanId) return;
 
+            this.closing = null;
             this._returnFocusTo = document.activeElement;
-
             this.active = cleanId;
 
-            document.body.style.overflow = 'hidden';
-
             const generation = ++this._openGeneration;
+            const root = getDialogRoot(cleanId);
+            const trigger = this._returnFocusTo;
+            const motion = getDialogMotion(root);
 
-            requestAnimationFrame(() => {
+            if (!motion) {
+                lockPageScroll();
+            }
+
+            const playMotion = motion
+                ? motion.playEnter(root, { trigger, lockScroll: true })
+                : Promise.resolve();
+
+            playMotion.then(() => {
                 if (generation !== this._openGeneration) return;
+                if (this.active !== cleanId) return;
 
-                requestAnimationFrame(() => {
-                    if (generation !== this._openGeneration) return;
-                    if (this.active !== cleanId) return;
-
-                    this._moveFocusIntoDialog();
-                    this._attachTrap();
-                });
+                this._moveFocusIntoDialog();
+                this._attachTrap();
             });
         },
 
         close() {
-            if (!this.active) return;
+            if (!this.active || this.closing) return;
 
-            this._openGeneration += 1;
-
+            const cleanId = this.active;
             const returnTo = this._returnFocusTo;
 
+            this.closing = cleanId;
+            this._openGeneration += 1;
             this._detachTrap();
-            this.active = null;
-            this._returnFocusTo = null;
 
-            document.body.style.overflow = '';
+            const root = getDialogRoot(cleanId);
+            const motion = getDialogMotion(root);
 
-            if (
-                returnTo &&
-                returnTo.isConnected &&
-                typeof returnTo.focus === 'function' &&
-                isElementVisible(returnTo)
-            ) {
-                returnTo.focus();
+            const finish = () => {
+                this.active = null;
+                this.closing = null;
+                this._returnFocusTo = null;
+                unlockPageScroll();
+
+                if (
+                    returnTo &&
+                    returnTo.isConnected &&
+                    typeof returnTo.focus === 'function' &&
+                    isElementVisible(returnTo)
+                ) {
+                    returnTo.focus({ preventScroll: true });
+                }
+            };
+
+            if (motion && root && motion.hasMotion(root)) {
+                motion.playExit(root, { trigger: returnTo }).then(finish);
+                return;
             }
+
+            finish();
         },
 
         _getActivePanel() {
-            const id = this.active;
+            const id = this.active || this.closing;
             if (!id) return null;
-            const root = document.querySelector(
-                '[data-dialog-root][data-dialog-id="' + CSS.escape(id) + '"]',
-            );
+            const root = getDialogRoot(id);
             if (!root) return null;
             return root.querySelector('[data-dialog-panel]');
         },
@@ -145,9 +206,9 @@
 
             const focusable = getFocusableElements(panel);
             if (focusable.length > 0) {
-                focusable[0].focus();
+                focusable[0].focus({ preventScroll: true });
             } else {
-                panel.focus();
+                panel.focus({ preventScroll: true });
             }
         },
 

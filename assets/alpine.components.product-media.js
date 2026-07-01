@@ -145,6 +145,7 @@
                 ...AlpineComponentsFactory.useDisposable(),
                 imageCount: Math.max(1, Number(imageCount) || 1),
                 lightboxOpen: false,
+                lightboxClosing: false,
                 lightboxIndex: Math.max(0, Number(initialIndex) || 0),
                 _previousBodyOverflow: null,
                 _returnFocusTo: null,
@@ -165,43 +166,79 @@
                 },
 
                 openLightbox(index = this.lightboxIndex) {
+                    const DialogMotion = window.__Theme__.DialogMotion;
+
                     this._returnFocusTo = document.activeElement;
                     this.lightboxIndex = this._normalizeIndex(index);
                     this.lightboxOpen = true;
-                    this._lockBodyScroll();
+                    this.lightboxClosing = false;
 
                     const generation = ++this._lightboxGeneration;
+                    const root = this.$refs.lightboxDialog;
+                    const usesMotion = DialogMotion && root && DialogMotion.hasMotion(root);
 
-                    requestAnimationFrame(() => {
+                    if (!usesMotion) {
+                        this._lockBodyScroll();
+                    }
+
+                    const playMotion = usesMotion
+                        ? DialogMotion.playEnter(root, {
+                              trigger: this._returnFocusTo,
+                              lockScroll: true,
+                          })
+                        : Promise.resolve();
+
+                    playMotion.then(() => {
                         if (generation !== this._lightboxGeneration) return;
+                        if (!this.lightboxOpen) return;
 
-                        requestAnimationFrame(() => {
-                            if (generation !== this._lightboxGeneration) return;
-                            if (!this.lightboxOpen) return;
-
-                            this._moveFocusIntoLightbox();
-                            this._attachTrap();
-                        });
+                        this._moveFocusIntoLightbox();
+                        this._attachTrap();
                     });
                 },
 
                 closeLightbox() {
+                    if (!this.lightboxOpen || this.lightboxClosing) return;
+
+                    const DialogMotion = window.__Theme__.DialogMotion;
+
+                    this.lightboxClosing = true;
                     this._lightboxGeneration += 1;
 
                     const returnTo = this._returnFocusTo;
+                    const root = this.$refs.lightboxDialog;
                     this._detachTrap();
-                    this.lightboxOpen = false;
-                    this._unlockBodyScroll();
-                    this._returnFocusTo = null;
 
-                    if (
-                        returnTo &&
-                        returnTo.isConnected &&
-                        typeof returnTo.focus === 'function' &&
-                        this._isElementVisible(returnTo)
-                    ) {
-                        returnTo.focus();
+                    const unlock = () => {
+                        if (DialogMotion && typeof DialogMotion.unlockScroll === 'function') {
+                            DialogMotion.unlockScroll();
+                        } else {
+                            this._unlockBodyScroll();
+                        }
+                    };
+
+                    const finish = () => {
+                        this.lightboxOpen = false;
+                        this.lightboxClosing = false;
+                        unlock();
+                        this._returnFocusTo = null;
+
+                        if (
+                            returnTo &&
+                            returnTo.isConnected &&
+                            typeof returnTo.focus === 'function' &&
+                            this._isElementVisible(returnTo)
+                        ) {
+                            returnTo.focus({ preventScroll: true });
+                        }
+                    };
+
+                    if (DialogMotion && root && DialogMotion.hasMotion(root)) {
+                        DialogMotion.playExit(root, { trigger: returnTo }).then(finish);
+                        return;
                     }
+
+                    finish();
                 },
 
                 nextLightbox() {
@@ -270,9 +307,9 @@
 
                     const focusable = this._getFocusableElements(dialog);
                     if (focusable.length > 0) {
-                        focusable[0].focus();
+                        focusable[0].focus({ preventScroll: true });
                     } else {
-                        dialog.focus();
+                        dialog.focus({ preventScroll: true });
                     }
                 },
 

@@ -75,9 +75,11 @@
 <template x-teleport="body">
     <div
         x-ref="lightboxDialog"
-        x-show="lightboxOpen"
+        x-show="lightboxOpen || lightboxClosing"
         x-cloak
-        class="z-layer-lightbox fixed inset-0 flex items-center justify-center"
+        class="ui-dialog-modal-shell--origin z-layer-lightbox fixed inset-0 flex items-center justify-center"
+        data-dialog-root
+        data-dialog-motion-mode="origin"
         @click.self="closeLightbox()"
         role="dialog"
         aria-modal="true"
@@ -88,6 +90,7 @@
             class="pointer-events-none absolute inset-0"
             style="background-color: {{ overlay_color }}; opacity: {{ overlay_opacity | times: 0.01 }};"
             aria-hidden="true"
+            data-dialog-motion-backdrop
         ></div>
 
         <button
@@ -119,7 +122,11 @@
             </button>
         {%- endif -%}
 
-        <div class="relative max-h-[90vh] max-w-[90vw] overflow-hidden">
+        <div
+            class="relative max-h-[90vh] max-w-[90vw] overflow-hidden"
+            data-dialog-motion-target
+            data-dialog-motion-mode="origin"
+        >
             {%- if images != blank -%}
                 {%- for lightbox_image in images -%}
                     {%- assign media_image = lightbox_image.preview_image

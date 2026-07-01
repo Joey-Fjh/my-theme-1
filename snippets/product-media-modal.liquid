@@ -29,21 +29,23 @@
     <div
         data-dialog-root
         data-dialog-id="{{ id }}"
+        data-dialog-motion-mode="origin"
     >
         <div
-            x-show="$store.dialog.active === '{{ id }}'"
+            x-show="$store.dialog.active === '{{ id }}' || $store.dialog.closing === '{{ id }}'"
             x-cloak
-            class="z-layer-lightbox fixed inset-0 flex items-center justify-center"
+            class="ui-dialog-modal-shell--origin z-layer-lightbox fixed inset-0 flex items-center justify-center"
             role="dialog"
             aria-modal="true"
             aria-label="{{ 'accessibility.product_media_viewer' | t }}"
             tabindex="-1"
-            @keydown.escape.window="$store.dialog.active === '{{ id }}' && $store.dialog.close()"
+            @keydown.escape.window="($store.dialog.active === '{{ id }}' || $store.dialog.closing === '{{ id }}') && $store.dialog.close()"
             data-dialog-panel
         >
             <div
                 class="absolute inset-0 bg-black/80"
                 aria-hidden="true"
+                data-dialog-motion-backdrop
                 @click="$store.dialog.close()"
             ></div>
 
@@ -58,6 +60,8 @@
 
             <div
                 class="product-media-modal__content relative z-10 max-h-[90vh] max-w-[90vw] overflow-hidden"
+                data-dialog-motion-target
+                data-dialog-motion-mode="origin"
                 x-data="productMediaModal()"
             >
                 {%- for media_item in media_items -%}

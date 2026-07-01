@@ -280,15 +280,11 @@
 {%- else -%}
     <details
         {% if render_mode == 'horizontal' %}
-            :open="activeFilter === '{{ field_index }}'"
-            @toggle="
-                if ($el.open) {
-                    activeFilter = '{{ field_index }}';
-                } else if (activeFilter === '{{ field_index }}') {
-                    activeFilter = null;
-                }
+            data-filter-dropdown
+            @click.outside="
+                activeFilter = null;
+                $el.open = false;
             "
-            @click.outside="activeFilter = null"
         {% endif %}
         class="group {% if render_mode == 'horizontal' %}relative{% endif %}"
     >
@@ -301,6 +297,16 @@
                     h2
                 {% endif %}
             "
+            {% if render_mode == 'horizontal' %}
+                @click.prevent="
+                    const details = $el.parentElement;
+                    const shouldOpen = !details.open;
+                    activeFilter = shouldOpen ? '{{ field_index }}' : null;
+                    $root.querySelectorAll('[data-filter-dropdown]').forEach((dropdown) => {
+                        dropdown.open = dropdown === details && shouldOpen;
+                    });
+                "
+            {% endif %}
         >
             <span class="inline-flex items-center gap-3">
                 <span>{{ filter.label }}</span>
@@ -317,7 +323,7 @@
             class="
                 mt-3
                 {% if render_mode == 'horizontal' %}
-                    absolute top-full left-0 z-layer-popover rounded-lg border border-theme-border-20 bg-theme-bg p-5
+                    absolute top-full left-0 z-layer-popover panel-motion panel-motion-compact rounded-lg border border-theme-border-20 bg-theme-bg p-5
                     {% if filter.type == 'price_range' %}
                         min-w-[24rem] pc:max-w-[36rem]
                     {% else %}

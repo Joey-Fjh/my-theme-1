@@ -5,6 +5,9 @@
     @param {string} [type]      - 'modal' | 'drawer' (default: 'modal').
     @param {string} [position]  - For drawer only: 'left' | 'right' (default: 'right').
     @param {string} [modal_placement] - For modal only: 'center' | 'bottom-left' | 'bottom-right' (default: 'center').
+    @param {string} [dialog_motion_mode] - Modal motion only: 'origin' | 'edge' | 'none'. Auto: edge for bottom-*, origin for center.
+    @param {string} [drawer_motion_mode] - Drawer motion only: 'slide' | 'none'. Default: slide for type drawer.
+    @param {boolean} [drawer_motion_sheet] - Use bottom sheet motion below pc breakpoint (Cart/Filters mobile).
     @param {string} [layer]     - Semantic z-index layer: 'drawer' | 'modal' | 'modal-focus' (default: 'modal').
     @param {string} [top_class] - Viewport top offset class for overlay/wrapper (default: 'top-0').
     @param {string} [color_scheme] - Optional color scheme id (e.g. 'scheme-1'). Applied as outer scope class `color-{id}`.
@@ -56,13 +59,43 @@
         assign color_scope_class = ''
     endif
 
+    assign modal_placement_value = modal_placement | default: 'center'
     assign modal_placement_classes = 'items-center justify-center'
-    case modal_placement | default: 'center'
+    case modal_placement_value
         when 'bottom-left'
             assign modal_placement_classes = 'items-end justify-start'
         when 'bottom-right'
             assign modal_placement_classes = 'items-end justify-end'
     endcase
+
+    assign dialog_motion_resolved = ''
+    if dialog_type == 'modal'
+        if dialog_motion_mode == 'none'
+            assign dialog_motion_resolved = ''
+        elsif dialog_motion_mode == 'origin' or dialog_motion_mode == 'edge'
+            assign dialog_motion_resolved = dialog_motion_mode
+        elsif modal_placement_value == 'bottom-left' or modal_placement_value == 'bottom-right'
+            assign dialog_motion_resolved = 'edge'
+        else
+            assign dialog_motion_resolved = 'origin'
+        endif
+    endif
+
+    assign drawer_motion_resolved = ''
+    if dialog_type == 'drawer'
+        if drawer_motion_mode == 'none'
+            assign drawer_motion_resolved = ''
+        else
+            assign drawer_motion_resolved = 'slide'
+        endif
+    endif
+
+    assign drawer_motion_sheet_enabled = false
+    if drawer_motion_sheet
+        assign drawer_motion_sheet_enabled = true
+    endif
+
+    assign dialog_visible_expr = "$store.dialog.active === '" | append: id | append: "' || $store.dialog.closing === '" | append: id | append: "'"
 -%}
 
 {%- capture dialog_close_button_markup -%}
@@ -80,16 +113,31 @@
 
 <div
     x-data="{}"
-    x-show="$store.dialog.active === '{{ id | escape }}'"
+    x-show="{{ dialog_visible_expr }}"
     x-cloak
     class="fixed inset-0 {{ backdrop_z_class }} {{ root_classes }}"
     @keydown.escape.window="$store.dialog.close()"
     data-dialog-root
     data-dialog-id="{{ id | escape }}"
+    {% if dialog_motion_resolved != blank %}
+        data-dialog-motion-mode="{{ dialog_motion_resolved }}"
+    {% endif %}
+    {% if drawer_motion_resolved == 'slide' %}
+        data-drawer-motion
+        data-drawer-motion-slide="{{ dialog_position }}"
+        {% if drawer_motion_sheet_enabled %}
+            data-drawer-motion-sheet-below-pc
+        {% endif %}
+    {% endif %}
 >
     {%- if dialog_show_overlay -%}
         <div
             class="fixed inset-x-0 bottom-0 {{ backdrop_z_class }} {{ dialog_top_class }} {{ overlay_bg }}"
+            {% if drawer_motion_resolved == 'slide' %}
+                data-drawer-motion-backdrop
+            {% else %}
+                data-dialog-motion-backdrop
+            {% endif %}
             @click="$store.dialog.close()"
         ></div>
     {%- endif -%}
@@ -111,6 +159,9 @@
             aria-modal="true"
             aria-labelledby="dialog-title-{{ id | escape }}"
             data-dialog-panel
+            {% if drawer_motion_resolved == 'slide' %}
+                data-drawer-motion-target
+            {% endif %}
             tabindex="-1"
             @click.stop
         >
@@ -127,6 +178,7 @@
                 pointer-events-none fixed inset-x-0 bottom-0 {{ panel_z_class }} flex p-4
                 {{ dialog_top_class }}
                 {{ modal_placement_classes }}
+                {% if dialog_motion_resolved == 'origin' %}ui-dialog-modal-shell--origin{% endif %}
                 {{ modal_wrapper_classes }}
             "
             role="dialog"
@@ -137,6 +189,13 @@
         >
             <div
                 class="{{ modal_panel_classes }}{% if color_scheme != blank %} {{ color_scope_class }}{% endif %}"
+                {% if dialog_motion_resolved != blank %}
+                    data-dialog-motion-target
+                    data-dialog-motion-mode="{{ dialog_motion_resolved }}"
+                    {% if dialog_motion_resolved == 'edge' %}
+                        data-dialog-motion-edge="{{ modal_placement_value }}"
+                    {% endif %}
+                {% endif %}
                 @click.stop
             >
                 {{ dialog_close_button_markup }}

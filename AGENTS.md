@@ -91,6 +91,7 @@ Hard implementation rules:
 - Shopify section HTML replacement must use `window.ShopifySectionRefresher.render()`.
 - Storefront cart mutations and cart UI state must go through `$store.cart`.
 - Above-the-fold critical content must render usable and visible without JavaScript or animation completion. Do not hide critical first-viewport content behind GSAP, Alpine, Swiper initialization, delayed transitions, `opacity-0`, `hidden`, `x-show="false"`, off-screen transforms, or callbacks.
+- `motion_enabled` / `body[data-motion-enabled='false']` is the merchant-facing page and brand motion gate for reveal, media reveal, scroll, and narrative motion. Do not use it as a blanket kill switch for hover, focus, dropdown, dialog, drawer, loading, or other state/micro interactions; those interactions must instead respect `prefers-reduced-motion`.
 - Tailwind utility classes first; no ad-hoc `<style>` blocks in Liquid templates.
 - Do not use Tailwind text-size utilities for headings; use project typography tiers.
 - User-visible strings, schema labels, ARIA copy, placeholders, and editor text must use locale keys.
