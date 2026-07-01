@@ -263,6 +263,32 @@
             {%- endfor -%}
         </a>
 
+        {%- if show_hover_actions_enabled and hover_mode == 'actions' -%}
+            <button
+                type="button"
+                class="product-card__touch-actions-trigger"
+                :class="showHoverActions && 'is-active'"
+                @click="toggleTouchActions($event)"
+                :aria-expanded="showHoverActions"
+                :aria-label="
+                                        showHoverActions
+                    ? {{ 'accessibility.product_card_actions_hide' | t: product: product.title | json }}
+                    : {{ 'accessibility.product_card_actions_show' | t: product: product.title | json }}
+                "
+            >
+                <span class="product-card__touch-actions-trigger-icon" x-show="!showHoverActions">
+                    {%- render 'icons', icon: 'icon-plus' -%}
+                </span>
+                <span
+                    class="product-card__touch-actions-trigger-icon"
+                    x-show="showHoverActions"
+                    x-cloak
+                >
+                    {%- render 'icons', icon: 'icon-close' -%}
+                </span>
+            </button>
+        {%- endif -%}
+
         {%- if hover_mode == 'variants' -%}
             <button
                 type="button"
@@ -272,6 +298,15 @@
                 aria-label="{{ 'accessibility.quick_view' | t: product: product.title | escape }}"
             >
                 {% render 'icons', icon: 'icon-eye' %}
+            </button>
+
+            <button
+                type="button"
+                class="product-card__touch-quick-view-trigger"
+                @click.prevent.stop="openQuickView()"
+                aria-label="{{ 'accessibility.quick_view' | t: product: product.title | escape }}"
+            >
+                {%- render 'icons', icon: 'icon-eye' -%}
             </button>
 
             {%- if has_variant_panel -%}
@@ -383,7 +418,7 @@
         layer: 'modal-focus',
         color_scheme: color_scheme,
         modal_wrapper_class: 'items-center justify-center px-3 py-4 pc:px-[8vw] pc:py-[5vh]',
-        modal_panel_class: 'h-full w-full !max-h-full !max-w-full overflow-hidden',
+        modal_panel_class: 'product-quick-view-dialog pc:h-full pc:w-full pc:!max-h-full pc:!max-w-full',
         show_close_button: true,
         close_label: quick_view_close_label,
         content: quick_view_content

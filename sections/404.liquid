@@ -13,12 +13,17 @@
             {%- assign fallback_heading_line2 = '404.heading_line_2' | t -%}
             {%- assign fallback_description = '404.description_html' | t -%}
 
+            {%- assign heading_line1 = section.settings.heading_line1 -%}
+            {%- if heading_line1 == blank -%}
+                {%- assign heading_line1 = '404.title' | t -%}
+            {%- endif -%}
+
             {%- comment -%} Main Content {%- endcomment -%}
             <div class="relative p-3" data-motion-reveal="content">
                 <h1
                     class="heading-3xl pc:heading-4xl"
                 >
-                    {{ section.settings.heading_line1 | default: '404' -}}
+                    {{ heading_line1 -}}
                     <br>
                     {{ section.settings.heading_line2 | default: fallback_heading_line2 }}
                 </h1>
@@ -29,8 +34,14 @@
                 </div>
 
                 {%- if section.settings.show_button -%}
+                    {%- liquid
+                        assign button_label = section.settings.button_text
+                        if button_label == blank
+                            assign button_label = '404.back_to_shopping' | t
+                        endif
+                    -%}
                     {%- capture button_content -%}
-                        {{ section.settings.button_text | default: 'Back to Home' }}
+                        {{ button_label }}
 
                         {% render 'icons',
                             icon: 'icon-arrow2',

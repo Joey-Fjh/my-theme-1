@@ -104,20 +104,36 @@
             const trigger = this._returnFocusTo;
             const motion = getDialogMotion(root);
 
-            if (!motion) {
-                lockPageScroll();
-            }
-
-            const playMotion = motion
-                ? motion.playEnter(root, { trigger, lockScroll: true })
-                : Promise.resolve();
-
-            playMotion.then(() => {
+            const focusDialog = () => {
                 if (generation !== this._openGeneration) return;
                 if (this.active !== cleanId) return;
 
                 this._moveFocusIntoDialog();
-                this._attachTrap();
+            };
+
+            const attachTrapWhenReady = () => {
+                requestAnimationFrame(() => {
+                    if (generation !== this._openGeneration) return;
+                    if (this.active !== cleanId) return;
+
+                    this._attachTrap();
+                });
+            };
+
+            attachTrapWhenReady();
+
+            if (!motion) {
+                lockPageScroll();
+                requestAnimationFrame(() => {
+                    focusDialog();
+                });
+                return;
+            }
+
+            motion.playEnter(root, {
+                trigger,
+                lockScroll: true,
+                onEnterStart: focusDialog,
             });
         },
 

@@ -177,23 +177,32 @@
                     const root = this.$refs.lightboxDialog;
                     const usesMotion = DialogMotion && root && DialogMotion.hasMotion(root);
 
-                    if (!usesMotion) {
-                        this._lockBodyScroll();
-                    }
-
-                    const playMotion = usesMotion
-                        ? DialogMotion.playEnter(root, {
-                              trigger: this._returnFocusTo,
-                              lockScroll: true,
-                          })
-                        : Promise.resolve();
-
-                    playMotion.then(() => {
+                    const focusLightbox = () => {
                         if (generation !== this._lightboxGeneration) return;
                         if (!this.lightboxOpen) return;
 
                         this._moveFocusIntoLightbox();
+                    };
+
+                    requestAnimationFrame(() => {
+                        if (generation !== this._lightboxGeneration) return;
+                        if (!this.lightboxOpen) return;
+
                         this._attachTrap();
+                    });
+
+                    if (!usesMotion) {
+                        this._lockBodyScroll();
+                        requestAnimationFrame(() => {
+                            focusLightbox();
+                        });
+                        return;
+                    }
+
+                    DialogMotion.playEnter(root, {
+                        trigger: this._returnFocusTo,
+                        lockScroll: true,
+                        onEnterStart: focusLightbox,
                     });
                 },
 

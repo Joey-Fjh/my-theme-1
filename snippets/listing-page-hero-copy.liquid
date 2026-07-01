@@ -1,0 +1,34 @@
+{% doc %}
+    Listing page hero copy with shared header and description fallback resolution.
+
+    Resolution order for the heading:
+    1. section setting header
+    2. native Shopify object title (collection.title / blog.title)
+    3. locale fallback key
+
+    Description uses section setting with locale HTML fallback.
+
+    @param {string} setting_header - Section header setting value.
+    @param {string} object_title - Native title from the listing Shopify object.
+    @param {string} header_locale_key - Translation key when header and object title are blank.
+    @param {string} setting_description - Section description setting (HTML).
+    @param {string} description_locale_key - Translation key for description HTML fallback.
+{% enddoc %}
+
+{%- liquid
+    assign resolved_heading = setting_header
+    if resolved_heading == blank
+        assign resolved_heading = object_title
+    endif
+    if resolved_heading == blank
+        assign resolved_heading = header_locale_key | t
+    endif
+
+    assign description_fallback = description_locale_key | t
+    assign resolved_description = setting_description | default: description_fallback
+-%}
+
+<h1 class="mb-10 heading-4xl">
+    {{ resolved_heading }}
+</h1>
+{%- render 'rte-compact-prose', content: resolved_description -%}

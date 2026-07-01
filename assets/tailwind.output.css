@@ -202,6 +202,44 @@
   }
 }
 @layer utilities {
+  .control-dot {
+    position: relative;
+    flex-shrink: 0;
+    cursor: pointer;
+    border-radius: calc(infinity * 1px);
+    width: var(--control-dot-size, 0.75rem);
+    height: var(--control-dot-size, 0.75rem);
+    background-color: currentColor;
+    @supports (color: color-mix(in lab, red, red)) {
+      background-color: color-mix(in srgb, currentColor 20%, transparent);
+    }
+    transition: width var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), height var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+    @media (hover: hover) and (pointer: fine) {
+      &:hover:not(:disabled):not([aria-disabled='true']) {
+        background-color: currentColor;
+        @supports (color: color-mix(in lab, red, red)) {
+          background-color: color-mix(in srgb, currentColor 35%, transparent);
+        }
+      }
+    }
+    &:focus-visible {
+      outline: var(--focus-ring-width) solid rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+      outline-offset: var(--focus-ring-offset);
+    }
+    &:active:not(:disabled):not([aria-disabled='true']) {
+      transform: scale(0.92);
+    }
+    &:disabled, &[aria-disabled='true'] {
+      cursor: not-allowed;
+      opacity: 0.4;
+      pointer-events: none;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      &:active:not(:disabled):not([aria-disabled='true']) {
+        transform: none;
+      }
+    }
+  }
   .close-button {
     display: inline-flex;
     height: calc(var(--spacing) * 10);
@@ -254,6 +292,41 @@
       cursor: not-allowed;
       opacity: 0.5;
       pointer-events: none;
+    }
+  }
+  .control-icon {
+    display: inline-flex;
+    flex-shrink: 0;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.25rem;
+    color: currentcolor;
+    width: var(--control-icon-size, 2.5rem);
+    height: var(--control-icon-size, 2.5rem);
+    transition: color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+    @media (hover: hover) and (pointer: fine) {
+      &:hover:not(:disabled):not([aria-disabled='true']) {
+        background-color: rgb(var(--color-foreground) / 0.08);
+      }
+    }
+    &:focus-visible {
+      outline: var(--focus-ring-width) solid rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+      outline-offset: var(--focus-ring-offset);
+    }
+    &:active:not(:disabled):not([aria-disabled='true']) {
+      transform: scale(0.96);
+      background-color: rgb(var(--color-foreground) / 0.12);
+    }
+    &:disabled, &[aria-disabled='true'] {
+      cursor: not-allowed;
+      opacity: 0.4;
+      pointer-events: none;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      &:active:not(:disabled):not([aria-disabled='true']) {
+        transform: none;
+      }
     }
   }
   .header-icon-button {
@@ -1150,6 +1223,9 @@
   .mt-12 {
     margin-top: calc(var(--spacing) * 12);
   }
+  .mt-14 {
+    margin-top: calc(var(--spacing) * 14);
+  }
   .mt-25 {
     margin-top: calc(var(--spacing) * 25);
   }
@@ -1369,9 +1445,6 @@
   .h-screen {
     height: 100vh;
   }
-  .\!max-h-full {
-    max-height: 100% !important;
-  }
   .max-h-12 {
     max-height: calc(var(--spacing) * 12);
   }
@@ -1583,9 +1656,6 @@
   }
   .w-full {
     width: 100%;
-  }
-  .\!max-w-full {
-    max-width: 100% !important;
   }
   .\!max-w-none {
     max-width: none !important;
@@ -3462,6 +3532,11 @@
       height: 100vh;
     }
   }
+  .pc\:\!max-h-full {
+    @media (width >= 48rem) {
+      max-height: 100% !important;
+    }
+  }
   .pc\:max-h-\(--product-gallery-max-height\) {
     @media (width >= 48rem) {
       max-height: var(--product-gallery-max-height);
@@ -3567,14 +3642,14 @@
       width: 100%;
     }
   }
-  .pc\:\!max-w-\[33vw\] {
-    @media (width >= 48rem) {
-      max-width: 33vw !important;
-    }
-  }
   .pc\:\!max-w-\[40rem\] {
     @media (width >= 48rem) {
       max-width: 40rem !important;
+    }
+  }
+  .pc\:\!max-w-full {
+    @media (width >= 48rem) {
+      max-width: 100% !important;
     }
   }
   .pc\:max-w-1\/2 {
@@ -5630,6 +5705,10 @@ shopify-accelerated-checkout {
     pointer-events: auto;
     animation: panel-motion-disclosure-in var(--panel-motion-dur) var(--panel-motion-ease-soft) both;
   }
+  details[open] > .panel-motion-disclosure--fluid {
+    max-height: none;
+    overflow: visible;
+  }
   details[open] > :is(.panel-motion-scale, .panel-motion-compact) > :is(li, [role='option'], .localization-item), [data-dropdown][open] > :is(.panel-motion-scale, .panel-motion-compact) > [role='option'], .localization-toggle[aria-expanded='true'] ~ :is(.panel-motion-scale, .panel-motion-compact) > .localization-item {
     animation: panel-motion-item-in var(--panel-motion-duration-item) var(--panel-motion-ease-enter) both;
   }
@@ -5671,6 +5750,10 @@ shopify-accelerated-checkout {
     flex-direction: column;
     gap: 2.4rem;
     width: 100%;
+  }
+  .tab-control-default > *, .tab-control-underlined > * {
+    width: 100%;
+    min-width: 0;
   }
   .tab-control-default {
     @media (width >= 48rem) {
@@ -6274,26 +6357,56 @@ shopify-accelerated-checkout {
     gap: 0.5rem;
   }
   .quantity-selector__button {
-    display: flex;
-    height: calc(var(--spacing) * 10);
-    width: calc(var(--spacing) * 10);
+    display: inline-flex;
+    flex-shrink: 0;
     cursor: pointer;
     align-items: center;
     justify-content: center;
+    border-radius: 0.25rem;
     color: currentcolor;
-    transition-property: opacity;
-    transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
-    transition-duration: var(--tw-duration, var(--default-transition-duration));
-    &:hover {
-      @media (hover: hover) {
-        opacity: 70%;
+    width: var(--control-icon-size, 2.5rem);
+    height: var(--control-icon-size, 2.5rem);
+    transition: color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+    @media (hover: hover) and (pointer: fine) {
+      &:hover:not(:disabled):not([aria-disabled='true']) {
+        background-color: rgb(var(--color-foreground) / 0.08);
       }
     }
-    &:disabled {
-      cursor: not-allowed;
+    &:focus-visible {
+      outline: var(--focus-ring-width) solid rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+      outline-offset: var(--focus-ring-offset);
     }
-    &:disabled {
-      opacity: 30%;
+    &:active:not(:disabled):not([aria-disabled='true']) {
+      transform: scale(0.96);
+      background-color: rgb(var(--color-foreground) / 0.12);
+    }
+    &:disabled, &[aria-disabled='true'] {
+      cursor: not-allowed;
+      opacity: 0.4;
+      pointer-events: none;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      &:active:not(:disabled):not([aria-disabled='true']) {
+        transform: none;
+      }
+    }
+    border: 1px solid transparent;
+    transition: color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), box-shadow var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+    @media (hover: hover) and (pointer: fine) {
+      &:hover:not(:disabled):not([aria-disabled='true']) {
+        border-color: rgb(var(--color-foreground) / 0.16);
+        background-color: rgb(var(--color-foreground) / 0.1);
+        box-shadow: inset 0 0 0 1px rgb(var(--color-background) / 0.28);
+      }
+    }
+    &:active:not(:disabled):not([aria-disabled='true']) {
+      border-color: rgb(var(--color-foreground) / 0.22);
+      background-color: rgb(var(--color-foreground) / 0.16);
+    }
+    &:disabled, &[aria-disabled='true'] {
+      border-color: transparent;
+      background-color: transparent;
+      box-shadow: none;
     }
   }
   .quantity-selector__input {
@@ -6413,25 +6526,42 @@ shopify-accelerated-checkout {
     border-radius: 0.25rem;
     padding-inline: calc(var(--spacing) * 2);
     white-space: nowrap;
-    transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to;
-    transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
-    transition-duration: var(--tw-duration, var(--default-transition-duration));
     font-family: inherit;
     font-size: var(--pagination-font-size);
     border-radius: var(--pagination-radius);
+    transition: color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+    &:focus-visible {
+      outline: var(--focus-ring-width) solid rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+      outline-offset: var(--focus-ring-offset);
+    }
+    &:active:not(.pagination__button--disabled) {
+      transform: scale(0.98);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      &:active:not(.pagination__button--disabled) {
+        transform: none;
+      }
+    }
   }
   .pagination__button--disabled {
     pointer-events: none;
     cursor: default;
-    opacity: 40%;
+    opacity: 0.4;
   }
   .pagination__button--hover-default {
-    &:hover {
-      background-color: rgb(var(--color-foreground) / 0.5);
+    @media (hover: hover) and (pointer: fine) {
+      &:hover:not(.pagination__button--disabled) {
+        background-color: rgb(var(--color-foreground) / 0.08);
+      }
     }
   }
   .pagination__button--hover-minimal {
-    &:hover {
+    @media (hover: hover) and (pointer: fine) {
+      &:hover:not(.pagination__button--disabled) {
+        text-decoration: underline;
+      }
+    }
+    &:focus-visible:not(.pagination__button--disabled) {
       text-decoration: underline;
     }
   }
@@ -6444,8 +6574,10 @@ shopify-accelerated-checkout {
     border-style: var(--tw-border-style);
     border-width: 1px;
     border-color: rgba(var(--color-border), 0.2);
-    &:hover {
-      background-color: rgb(var(--color-foreground) / 0.5);
+    @media (hover: hover) and (pointer: fine) {
+      &:hover:not(.pagination__button--disabled) {
+        background-color: rgb(var(--color-foreground) / 0.08);
+      }
     }
   }
   .pagination__page {
@@ -6457,20 +6589,39 @@ shopify-accelerated-checkout {
     justify-content: center;
     border-radius: 0.25rem;
     padding-inline: calc(var(--spacing) * 2);
-    transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to;
-    transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
-    transition-duration: var(--tw-duration, var(--default-transition-duration));
     font-family: inherit;
     font-size: var(--pagination-font-size);
     border-radius: var(--pagination-radius);
+    transition: color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+    &:focus-visible {
+      outline: var(--focus-ring-width) solid rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+      outline-offset: var(--focus-ring-offset);
+    }
+  }
+  a.pagination__page {
+    &:active {
+      transform: scale(0.98);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      &:active {
+        transform: none;
+      }
+    }
   }
   .pagination__page--hover-default {
-    &:hover {
-      background-color: rgb(var(--color-foreground) / 0.5);
+    @media (hover: hover) and (pointer: fine) {
+      &:hover {
+        background-color: rgb(var(--color-foreground) / 0.08);
+      }
     }
   }
   .pagination__page--hover-minimal {
-    &:hover {
+    @media (hover: hover) and (pointer: fine) {
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+    &:focus-visible {
       text-decoration: underline;
     }
   }
@@ -6483,8 +6634,10 @@ shopify-accelerated-checkout {
     border-style: var(--tw-border-style);
     border-width: 1px;
     border-color: rgba(var(--color-border), 0.2);
-    &:hover {
-      background-color: rgb(var(--color-foreground) / 0.5);
+    @media (hover: hover) and (pointer: fine) {
+      &:hover {
+        background-color: rgb(var(--color-foreground) / 0.08);
+      }
     }
   }
   .pagination__page--current--default {
@@ -6567,11 +6720,11 @@ shopify-accelerated-checkout {
 }
 @layer snippets {
   .blog__tab {
-    display: flex;
-    flex-wrap: wrap;
+    display: inline-flex;
+    flex-wrap: nowrap;
     align-items: center;
     column-gap: calc(var(--spacing) * 4);
-    row-gap: calc(var(--spacing) * 2);
+    white-space: nowrap;
     border-bottom: none;
     &.is-active {
       border-bottom: 2px solid currentColor;
@@ -7111,16 +7264,41 @@ shopify-accelerated-checkout {
     }
     .product-card-shell__pagination-dot {
       position: relative;
-      height: calc(var(--spacing) * 3);
-      width: calc(var(--spacing) * 3);
       flex-shrink: 0;
       cursor: pointer;
       border-radius: calc(infinity * 1px);
+      width: var(--control-dot-size, 0.75rem);
+      height: var(--control-dot-size, 0.75rem);
       background-color: currentColor;
       @supports (color: color-mix(in lab, red, red)) {
         background-color: color-mix(in srgb, currentColor 20%, transparent);
       }
-      transition: height var(--motion-duration-fast) var(--motion-ease-default), width var(--motion-duration-fast) var(--motion-ease-default), background-color var(--motion-duration-fast) var(--motion-ease-default), border-color var(--motion-duration-fast) var(--motion-ease-default);
+      transition: width var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), height var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+      @media (hover: hover) and (pointer: fine) {
+        &:hover:not(:disabled):not([aria-disabled='true']) {
+          background-color: currentColor;
+          @supports (color: color-mix(in lab, red, red)) {
+            background-color: color-mix(in srgb, currentColor 35%, transparent);
+          }
+        }
+      }
+      &:focus-visible {
+        outline: var(--focus-ring-width) solid rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+        outline-offset: var(--focus-ring-offset);
+      }
+      &:active:not(:disabled):not([aria-disabled='true']) {
+        transform: scale(0.92);
+      }
+      &:disabled, &[aria-disabled='true'] {
+        cursor: not-allowed;
+        opacity: 0.4;
+        pointer-events: none;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        &:active:not(:disabled):not([aria-disabled='true']) {
+          transform: none;
+        }
+      }
     }
     .product-card-shell__pagination-dot.is-active {
       height: calc(var(--spacing) * 4);
@@ -7147,19 +7325,40 @@ shopify-accelerated-checkout {
       gap: calc(var(--spacing) * 3);
     }
     .product-card-shell__pagination-arrow {
-      display: flex;
+      display: inline-flex;
       flex-shrink: 0;
       cursor: pointer;
       align-items: center;
       justify-content: center;
-      transition-property: opacity;
-      transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
-      transition-duration: var(--tw-duration, var(--default-transition-duration));
-      &:hover {
-        @media (hover: hover) {
-          opacity: 70%;
+      border-radius: 0.25rem;
+      color: currentcolor;
+      width: var(--control-icon-size, 2.5rem);
+      height: var(--control-icon-size, 2.5rem);
+      transition: color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+      @media (hover: hover) and (pointer: fine) {
+        &:hover:not(:disabled):not([aria-disabled='true']) {
+          background-color: rgb(var(--color-foreground) / 0.08);
         }
       }
+      &:focus-visible {
+        outline: var(--focus-ring-width) solid rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+        outline-offset: var(--focus-ring-offset);
+      }
+      &:active:not(:disabled):not([aria-disabled='true']) {
+        transform: scale(0.96);
+        background-color: rgb(var(--color-foreground) / 0.12);
+      }
+      &:disabled, &[aria-disabled='true'] {
+        cursor: not-allowed;
+        opacity: 0.4;
+        pointer-events: none;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        &:active:not(:disabled):not([aria-disabled='true']) {
+          transform: none;
+        }
+      }
+      --control-icon-size: 1.75rem;
     }
     .product-card-shell__pagination-text {
       text-align: center;
@@ -7274,6 +7473,117 @@ shopify-accelerated-checkout {
       .product-card__carousel-slide {
         position: absolute;
         inset: calc(var(--spacing) * 0);
+      }
+    }
+    .product-card__touch-actions-trigger {
+      display: inline-flex;
+      flex-shrink: 0;
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      border-radius: 0.25rem;
+      color: currentcolor;
+      width: var(--control-icon-size, 2.5rem);
+      height: var(--control-icon-size, 2.5rem);
+      transition: color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+      @media (hover: hover) and (pointer: fine) {
+        &:hover:not(:disabled):not([aria-disabled='true']) {
+          background-color: rgb(var(--color-foreground) / 0.08);
+        }
+      }
+      &:focus-visible {
+        outline: var(--focus-ring-width) solid rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+        outline-offset: var(--focus-ring-offset);
+      }
+      &:active:not(:disabled):not([aria-disabled='true']) {
+        transform: scale(0.96);
+        background-color: rgb(var(--color-foreground) / 0.12);
+      }
+      &:disabled, &[aria-disabled='true'] {
+        cursor: not-allowed;
+        opacity: 0.4;
+        pointer-events: none;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        &:active:not(:disabled):not([aria-disabled='true']) {
+          transform: none;
+        }
+      }
+      position: absolute;
+      inset-inline-end: calc(var(--spacing) * 3);
+      top: calc(var(--spacing) * 3);
+      z-index: 20;
+      display: none;
+      border-style: var(--tw-border-style);
+      border-width: 1px;
+      border-color: rgb(var(--color-border));
+      background-color: rgb(var(--color-background));
+      color: rgb(var(--color-foreground));
+      --tw-shadow: 0 1px 3px 0 var(--tw-shadow-color, rgb(0 0 0 / 0.1)), 0 1px 2px -1px var(--tw-shadow-color, rgb(0 0 0 / 0.1));
+      box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+      @media (hover: none), (pointer: coarse) {
+        display: inline-flex;
+      }
+      &.is-active {
+        border-color: rgb(var(--color-border));
+        background-color: rgb(var(--color-background));
+      }
+      .product-card__touch-actions-trigger-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+    }
+    .product-card__touch-quick-view-trigger {
+      display: inline-flex;
+      flex-shrink: 0;
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      border-radius: 0.25rem;
+      color: currentcolor;
+      width: var(--control-icon-size, 2.5rem);
+      height: var(--control-icon-size, 2.5rem);
+      transition: color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+      @media (hover: hover) and (pointer: fine) {
+        &:hover:not(:disabled):not([aria-disabled='true']) {
+          background-color: rgb(var(--color-foreground) / 0.08);
+        }
+      }
+      &:focus-visible {
+        outline: var(--focus-ring-width) solid rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+        outline-offset: var(--focus-ring-offset);
+      }
+      &:active:not(:disabled):not([aria-disabled='true']) {
+        transform: scale(0.96);
+        background-color: rgb(var(--color-foreground) / 0.12);
+      }
+      &:disabled, &[aria-disabled='true'] {
+        cursor: not-allowed;
+        opacity: 0.4;
+        pointer-events: none;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        &:active:not(:disabled):not([aria-disabled='true']) {
+          transform: none;
+        }
+      }
+      position: absolute;
+      inset-inline-end: calc(var(--spacing) * 3);
+      top: calc(var(--spacing) * 3);
+      z-index: 20;
+      display: none;
+      border-style: var(--tw-border-style);
+      border-width: 1px;
+      border-color: rgb(var(--color-border));
+      background-color: rgb(var(--color-background));
+      color: rgb(var(--color-foreground));
+      --tw-shadow: 0 1px 3px 0 var(--tw-shadow-color, rgb(0 0 0 / 0.1)), 0 1px 2px -1px var(--tw-shadow-color, rgb(0 0 0 / 0.1));
+      box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+      @media (hover: none), (pointer: coarse) {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
       }
     }
     .product-card__hover-actions {
@@ -7600,6 +7910,9 @@ shopify-accelerated-checkout {
       opacity: 0;
       pointer-events: none;
       transition: opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+      @media (hover: none), (pointer: coarse) {
+        display: none;
+      }
       &.is-visible {
         opacity: 1;
         pointer-events: auto;
@@ -8113,6 +8426,15 @@ shopify-accelerated-checkout {
   }
 }
 @layer snippets {
+  .product-quick-view-dialog {
+    position: relative;
+    isolation: isolate;
+    width: 100%;
+    overflow: hidden !important;
+  }
+  .product-quick-view-dialog > .close-button-corner {
+    z-index: var(--z-layer-lightbox-controls);
+  }
   .product-quick-view {
     height: 100%;
     background-color: rgb(var(--color-background));
@@ -8292,8 +8614,20 @@ shopify-accelerated-checkout {
     }
   }
   @media (max-width: 47.999rem) {
+    .product-quick-view-dialog {
+      height: auto;
+      max-height: calc(100dvh - 1.5rem);
+    }
+    .product-quick-view-dialog .product-quick-view {
+      height: auto;
+      max-height: calc(100dvh - 1.5rem);
+    }
     .product-quick-view__layout {
+      height: auto;
+      max-height: calc(100dvh - 1.5rem);
       overflow-y: auto;
+      overscroll-behavior: contain;
+      padding-top: calc(var(--spacing) * 14);
       scrollbar-width: none;
       &::-webkit-scrollbar {
         display: none;
@@ -8393,12 +8727,26 @@ shopify-accelerated-checkout {
     border-style: var(--tw-border-style);
     border-width: 1px;
     border-color: rgb(var(--color-border) / 0.2);
-    transition: border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), box-shadow var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
-    &:hover {
-      border-color: rgb(var(--color-foreground));
+    transition: border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), box-shadow var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+    @media (hover: hover) and (pointer: fine) {
+      &:hover {
+        border-color: rgb(var(--color-foreground));
+      }
     }
     &.is-selected {
       box-shadow: 0 0 0 2px rgb(var(--color-background)), 0 0 0 4px rgb(var(--color-foreground));
+    }
+  }
+  .peer:focus-visible + .variant-picker__swatch {
+    outline: var(--focus-ring-width) solid rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+    outline-offset: var(--focus-ring-offset);
+  }
+  .peer:active + .variant-picker__swatch {
+    transform: scale(0.96);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .peer:active + .variant-picker__swatch {
+      transform: none;
     }
   }
   .variant-picker__swatch--circle {
@@ -8429,10 +8777,12 @@ shopify-accelerated-checkout {
     }
     border-color: rgb(var(--color-border) / 0.2);
     color: rgb(var(--color-foreground) / 0.7);
-    transition: border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
-    &:hover {
-      border-color: rgb(var(--color-foreground));
-      color: rgb(var(--color-foreground));
+    transition: border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+    @media (hover: hover) and (pointer: fine) {
+      &:hover {
+        border-color: rgb(var(--color-foreground));
+        color: rgb(var(--color-foreground));
+      }
     }
     &.is-selected {
       border-color: rgb(var(--color-foreground));
@@ -8442,6 +8792,18 @@ shopify-accelerated-checkout {
     &.is-unavailable {
       opacity: 0.4;
       text-decoration: line-through;
+    }
+  }
+  .peer:focus-visible + .variant-picker__pill {
+    outline: var(--focus-ring-width) solid rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+    outline-offset: var(--focus-ring-offset);
+  }
+  .peer:active + .variant-picker__pill:not(.is-unavailable) {
+    transform: scale(0.98);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .peer:active + .variant-picker__pill:not(.is-unavailable) {
+      transform: none;
     }
   }
 }
@@ -8621,11 +8983,6 @@ body[data-media-reveal-style='zoom'] [data-motion-section][data-motion-state='re
 body[data-motion-enabled='false'] [data-motion-section] [data-motion-reveal] {
   opacity: 1 !important;
   transform: none !important;
-  transition: none !important;
-}
-body[data-motion-enabled='false'] .media-interaction .image_img, body[data-motion-enabled='false'] .media-interaction img, body[data-motion-enabled='false'] .media-interaction-subtle .image_img, body[data-motion-enabled='false'] .media-interaction-subtle img, body[data-motion-enabled='false'] .media-interaction-scope .media-interaction .image_img, body[data-motion-enabled='false'] .media-interaction-scope .media-interaction img {
-  transform: none !important;
-  filter: none !important;
   transition: none !important;
 }
 @media (prefers-reduced-motion: reduce) {

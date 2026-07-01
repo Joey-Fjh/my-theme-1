@@ -107,6 +107,59 @@
                         {%- render 'social-icons', type: 'name', class: 'self-end' -%}
                     {%- endif -%}
                 </div>
+
+                {%- if blog.previous_article or blog.next_article or blog.url != blank -%}
+                    <nav
+                        class="article-mobile-nav mt-14 pc:hidden"
+                        aria-label="{{ 'blog.article_navigation' | t }}"
+                    >
+                        {%- if blog.previous_article or blog.next_article -%}
+                            <div class="article-mobile-nav__row">
+                                <div class="article-mobile-nav__slot article-mobile-nav__slot--prev">
+                                    {%- if blog.previous_article -%}
+                                        {%- capture previous_article_content -%}
+                                            {%- render 'icons', icon: 'icon-arrow2', class: 'shrink-0 rotate-180' -%}
+                                            <span class="truncate">{{ 'blog.previous_article' | t }}</span>
+                                        {%- endcapture -%}
+                                        {%- render 'link',
+                                            href: blog.previous_article.url,
+                                            content: previous_article_content,
+                                            variant: 'plain',
+                                            class: 'article-mobile-nav__link interactive-link'
+                                        -%}
+                                    {%- endif -%}
+                                </div>
+
+                                <div class="article-mobile-nav__slot article-mobile-nav__slot--next">
+                                    {%- if blog.next_article -%}
+                                        {%- capture next_article_content -%}
+                                            <span class="truncate">{{ 'blog.next_article' | t }}</span>
+                                            {%- render 'icons', icon: 'icon-arrow2', class: 'shrink-0' -%}
+                                        {%- endcapture -%}
+                                        {%- render 'link',
+                                            href: blog.next_article.url,
+                                            content: next_article_content,
+                                            variant: 'plain',
+                                            class: 'article-mobile-nav__link interactive-link'
+                                        -%}
+                                    {%- endif -%}
+                                </div>
+                            </div>
+                        {%- endif -%}
+
+                        {%- if blog.url != blank -%}
+                            <div class="article-mobile-nav__back">
+                                {%- assign back_to_blog_label = 'blog.back_to_blog' | t -%}
+                                {%- render 'link',
+                                    text: back_to_blog_label,
+                                    href: blog.url,
+                                    variant: 'plain',
+                                    class: 'article-mobile-nav__back-link body-md underline underline-offset-4'
+                                -%}
+                            </div>
+                        {%- endif -%}
+                    </nav>
+                {%- endif -%}
             </article>
         </div>
     </div>
@@ -135,6 +188,54 @@
 
     .article-sidebar__link {
         transition: color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+    }
+
+    .article-mobile-nav__row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 1rem;
+    }
+
+    .article-mobile-nav__slot {
+        min-width: 0;
+    }
+
+    .article-mobile-nav__slot--prev {
+        justify-self: start;
+    }
+
+    .article-mobile-nav__slot--next {
+        justify-self: end;
+        text-align: end;
+    }
+
+    .article-mobile-nav__link {
+        display: inline-flex;
+        max-width: 100%;
+        min-height: 2.5rem;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .article-mobile-nav__slot--next .article-mobile-nav__link {
+        justify-content: flex-end;
+    }
+
+    .article-mobile-nav__back {
+        display: flex;
+        justify-content: center;
+        padding-top: 0.75rem;
+    }
+
+    .article-mobile-nav__back-link {
+        display: inline-flex;
+        min-height: 2.5rem;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .article-mobile-nav:not(:has(.article-mobile-nav__row)) .article-mobile-nav__back {
+        padding-top: 0;
     }
 {%- endstylesheet -%}
 

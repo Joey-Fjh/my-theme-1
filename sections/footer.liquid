@@ -131,14 +131,22 @@
                 class="z-10 grid grid-cols-2 gap-y-8 border-t border-theme-border-50 pt-6 pc:flex pc:flex-row pc:items-center pc:justify-between"
                 data-motion-reveal="content"
             >
+                {%- liquid
+                    assign footer_location = section.settings.location
+                    if footer_location == blank
+                        assign footer_location = 'footer.default_location' | t
+                    endif
+                -%}
                 <span class="col-span-1 pc:order-first">
-                    {{ section.settings.location | default: 'Shibuya, JP' }}
+                    {{ footer_location }}
                 </span>
                 <span class="col-span-1 text-end pc:order-0 pc:text-center">
-                    {%- assign copyright_brand = section.settings.brand_name
-                        | strip_html
-                        | default: 'Eccenova'
-                        | escape
+                    {%- liquid
+                        assign copyright_brand = section.settings.brand_name | strip_html
+                        if copyright_brand == blank
+                            assign copyright_brand = 'footer.default_brand_name' | t
+                        endif
+                        assign copyright_brand = copyright_brand | escape
                     -%}
                     {{ 'now' | date: '%Y' }}
                     {{ copyright_brand }}

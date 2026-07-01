@@ -8,43 +8,37 @@
 {%- assign current_locale = localization.language.iso_code -%}
 {%- assign available_locales = localization.available_languages -%}
 
-<div x-data="{ open: false }" @click.away="open = false" class="localization-switcher">
-    {% form 'localization', id: localPosition %}
-        <button
-            type="button"
-            @click="open = !open"
-            :aria-expanded="open"
-            aria-haspopup="true"
-            aria-controls="language-list-{{ localPosition }}"
-            class="localization-toggle"
-        >
-            {{ localization.language.endonym_name | capitalize }}
-        </button>
+{%- capture localization_content -%}
+    <button
+        type="button"
+        @click="open = !open"
+        :aria-expanded="open"
+        aria-haspopup="true"
+        aria-controls="language-list-{{ localPosition }}"
+        class="localization-toggle"
+    >
+        {{ localization.language.endonym_name | capitalize }}
+    </button>
 
-        <div
-            id="language-list-{{ localPosition }}"
-            x-show="open"
-            x-cloak
-            class="localization-menu panel-motion panel-motion-compact"
-        >
-            {%- for locale in available_locales -%}
-                <div class="localization-item">
-                    <button
-                        name="locale_code"
-                        type="submit"
-                        value="{{ locale.iso_code }}"
-                        class="localization-link w-full"
-                        {%- if locale.iso_code == current_locale %}
-                            aria-current="true"
-                        {%- endif -%}
-                    >
-                        {%- if locale.iso_code == current_locale -%}
-                            <span>✓</span>
-                        {%- endif -%}
-                        <span>{{ locale.endonym_name }}</span>
-                    </button>
-                </div>
-            {%- endfor -%}
-        </div>
-    {% endform %}
-</div>
+    <div
+        id="language-list-{{ localPosition }}"
+        x-show="open"
+        x-cloak
+        class="localization-menu panel-motion panel-motion-compact"
+    >
+        {%- for locale in available_locales -%}
+            {%- assign is_current_locale = false -%}
+            {%- if locale.iso_code == current_locale -%}
+                {%- assign is_current_locale = true -%}
+            {%- endif -%}
+            {%- render 'localization-option',
+                submit_name: 'locale_code',
+                submit_value: locale.iso_code,
+                is_current: is_current_locale,
+                label: locale.endonym_name
+            -%}
+        {%- endfor -%}
+    </div>
+{%- endcapture -%}
+
+{%- render 'localization-switcher', localPosition: localPosition, content: localization_content -%}

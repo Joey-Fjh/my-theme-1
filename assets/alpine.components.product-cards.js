@@ -141,6 +141,7 @@
                 cartUrl,
                 isAddingToCart: false,
                 isTouchDevice: false,
+                actionsPinned: false,
                 _hoverLeaveTimer: null,
 
                 get hasMultipleImages() {
@@ -165,11 +166,13 @@
 
                 get showHoverActions() {
                     if (!this.canShowHoverActions) return false;
+                    if (this.isTouchDevice) return this.actionsPinned;
                     return this.imageHover || this.actionsHover;
                 },
 
                 get showVariantPanel() {
                     if (!this.canShowVariantPanel) return false;
+                    if (this.isTouchDevice) return false;
                     return this.imageHover;
                 },
 
@@ -208,6 +211,12 @@
                     }
                     this.isTouchDevice = this._detectTouch();
                     this._toastAdded = dataset.toastAdded || '';
+
+                    if (this.isTouchDevice) {
+                        this.on(document, 'pointerdown', (event) =>
+                            this._handleTouchOutside(event),
+                        );
+                    }
                 },
 
                 _detectTouch() {
@@ -218,6 +227,8 @@
                 },
 
                 setImageHover(value) {
+                    if (this.isTouchDevice) return;
+
                     if (this._hoverLeaveTimer) {
                         clearTimeout(this._hoverLeaveTimer);
                         this._hoverLeaveTimer = null;
@@ -235,8 +246,30 @@
                 },
 
                 setActionsHover(value) {
+                    if (this.isTouchDevice) return;
                     if (!this.canShowHoverActions) return;
                     this.actionsHover = Boolean(value);
+                },
+
+                toggleTouchActions(event) {
+                    if (!this.isTouchDevice || !this.canShowHoverActions) return;
+                    event.preventDefault();
+                    event.stopPropagation();
+                    this.actionsPinned = !this.actionsPinned;
+                },
+
+                closeTouchActions() {
+                    if (!this.isTouchDevice) return;
+                    this.actionsPinned = false;
+                },
+
+                _handleTouchOutside(event) {
+                    if (!this.actionsPinned) return;
+
+                    const root = this.$el;
+                    if (!root || root.contains(event.target)) return;
+
+                    this.closeTouchActions();
                 },
 
                 openQuickView() {
@@ -299,6 +332,7 @@
                         clearTimeout(this._hoverLeaveTimer);
                         this._hoverLeaveTimer = null;
                     }
+                    this.actionsPinned = false;
                     this.dispose();
                 },
             };

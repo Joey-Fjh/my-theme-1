@@ -824,3 +824,106 @@ Consumers: header menu, search, cart, account entry points.
         pointer-events: none;
     }
 }
+
+/* =========================================================
+control-icon — compact square icon control (quantity, carousel arrows)
+
+Stateful micro-interaction: respects prefers-reduced-motion only;
+independent from body[data-motion-enabled] page/brand motion.
+Consumers: quantity-selector (default size), product-card carousel arrows (`control-icon-compact`).
+========================================================= */
+@utility control-icon {
+    @apply inline-flex shrink-0 cursor-pointer items-center justify-center rounded text-current;
+
+    width: var(--control-icon-size, 2.5rem);
+    height: var(--control-icon-size, 2.5rem);
+
+    transition:
+        color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+        background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+        transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+
+    @media (hover: hover) and (pointer: fine) {
+        &:hover:not(:disabled):not([aria-disabled='true']) {
+            background-color: rgb(var(--color-foreground) / 0.08);
+        }
+    }
+
+    &:focus-visible {
+        outline: var(--focus-ring-width) solid
+            rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+        outline-offset: var(--focus-ring-offset);
+    }
+
+    &:active:not(:disabled):not([aria-disabled='true']) {
+        transform: scale(0.96);
+        background-color: rgb(var(--color-foreground) / 0.12);
+    }
+
+    &:disabled,
+    &[aria-disabled='true'] {
+        cursor: not-allowed;
+        opacity: 0.4;
+        pointer-events: none;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        &:active:not(:disabled):not([aria-disabled='true']) {
+            transform: none;
+        }
+    }
+}
+
+@utility control-icon-compact {
+    @apply control-icon;
+
+    --control-icon-size: 1.75rem;
+}
+
+/* =========================================================
+control-dot — carousel / step indicator dot
+
+Consumers: product-card-shell pagination dots (is-active stays component-owned).
+========================================================= */
+@utility control-dot {
+    @apply relative shrink-0 cursor-pointer rounded-full;
+
+    width: var(--control-dot-size, 0.75rem);
+    height: var(--control-dot-size, 0.75rem);
+    background-color: color-mix(in srgb, currentColor 20%, transparent);
+    transition:
+        width var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+        height var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+        background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+        border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+        transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+
+    @media (hover: hover) and (pointer: fine) {
+        &:hover:not(:disabled):not([aria-disabled='true']) {
+            background-color: color-mix(in srgb, currentColor 35%, transparent);
+        }
+    }
+
+    &:focus-visible {
+        outline: var(--focus-ring-width) solid
+            rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+        outline-offset: var(--focus-ring-offset);
+    }
+
+    &:active:not(:disabled):not([aria-disabled='true']) {
+        transform: scale(0.92);
+    }
+
+    &:disabled,
+    &[aria-disabled='true'] {
+        cursor: not-allowed;
+        opacity: 0.4;
+        pointer-events: none;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        &:active:not(:disabled):not([aria-disabled='true']) {
+            transform: none;
+        }
+    }
+}

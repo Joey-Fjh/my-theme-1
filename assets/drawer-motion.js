@@ -219,6 +219,14 @@
                 beginEnterAnimation(target, backdrop);
                 void target.offsetWidth;
 
+                if (options && typeof options.onEnterStart === 'function') {
+                    try {
+                        options.onEnterStart();
+                    } catch (error) {
+                        console.error('[DrawerMotion] onEnterStart failed', error);
+                    }
+                }
+
                 return waitForAnimation(target, ENTER_ANIMATION_NAMES, getEnterDurationMs());
             })
             .then(function () {

@@ -33,7 +33,7 @@ Layer: snippets — layout delta only (trigger chrome: tab-nav-item* in componen
 ========================================================= */
 @layer snippets {
     .blog__tab {
-        @apply flex flex-wrap items-center gap-x-4 gap-y-2;
+        @apply inline-flex flex-nowrap items-center gap-x-4 whitespace-nowrap;
         border-bottom: none;
 
         &.is-active {
@@ -389,13 +389,7 @@ Shared primitives (valid cross-snippet — not orphans):
         }
 
         .product-card-shell__pagination-dot {
-            @apply relative h-3 w-3 shrink-0 cursor-pointer rounded-full;
-            background-color: color-mix(in srgb, currentColor 20%, transparent);
-            transition:
-                height var(--motion-duration-fast) var(--motion-ease-default),
-                width var(--motion-duration-fast) var(--motion-ease-default),
-                background-color var(--motion-duration-fast) var(--motion-ease-default),
-                border-color var(--motion-duration-fast) var(--motion-ease-default);
+            @apply control-dot;
         }
 
         .product-card-shell__pagination-dot.is-active {
@@ -413,7 +407,7 @@ Shared primitives (valid cross-snippet — not orphans):
         }
 
         .product-card-shell__pagination-arrow {
-            @apply flex shrink-0 cursor-pointer items-center justify-center transition-opacity hover:opacity-70;
+            @apply control-icon-compact;
         }
 
         .product-card-shell__pagination-text {
@@ -490,6 +484,30 @@ Shared primitives (valid cross-snippet — not orphans):
             }
         }
 
+        .product-card__touch-actions-trigger {
+            @apply control-icon absolute end-3 top-3 z-20 hidden border border-theme-border bg-theme-bg text-theme-text shadow-sm;
+
+            @media (hover: none), (pointer: coarse) {
+                @apply inline-flex;
+            }
+
+            &.is-active {
+                @apply border-theme-border bg-theme-bg;
+            }
+
+            .product-card__touch-actions-trigger-icon {
+                @apply inline-flex items-center justify-center;
+            }
+        }
+
+        .product-card__touch-quick-view-trigger {
+            @apply control-icon absolute end-3 top-3 z-20 hidden border border-theme-border bg-theme-bg text-theme-text shadow-sm;
+
+            @media (hover: none), (pointer: coarse) {
+                @apply inline-flex items-center justify-center;
+            }
+        }
+
         .product-card__hover-actions {
             @apply absolute inset-x-0 bottom-0 z-10 m-3 flex flex-col gap-3 bg-theme-bg pt-3;
             opacity: 0;
@@ -521,6 +539,10 @@ Shared primitives (valid cross-snippet — not orphans):
             transition:
                 opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
                 transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+
+            @media (hover: none), (pointer: coarse) {
+                @apply hidden;
+            }
 
             &.is-visible {
                 opacity: 1;
@@ -874,10 +896,18 @@ Shared primitives (valid cross-snippet — not orphans):
 
 /* =========================================================
 Owner: snippets/product-quick-view.liquid
-Consumers: product quick view overlay
+Consumers: product quick view overlay (product-card ui-dialog panel)
 Layer: snippets temporary owner block
 ========================================================= */
 @layer snippets {
+    .product-quick-view-dialog {
+        @apply relative isolate w-full !overflow-hidden;
+    }
+
+    .product-quick-view-dialog > .close-button-corner {
+        z-index: var(--z-layer-lightbox-controls);
+    }
+
     .product-quick-view {
         @apply h-full bg-theme-bg text-theme-text;
     }
@@ -956,8 +986,16 @@ Layer: snippets temporary owner block
     }
 
     @media (max-width: 47.999rem) {
+        .product-quick-view-dialog {
+            @apply h-auto max-h-[calc(100dvh-1.5rem)];
+        }
+
+        .product-quick-view-dialog .product-quick-view {
+            @apply h-auto max-h-[calc(100dvh-1.5rem)];
+        }
+
         .product-quick-view__layout {
-            @apply overflow-y-auto;
+            @apply h-auto max-h-[calc(100dvh-1.5rem)] overflow-y-auto overscroll-contain pt-14;
             scrollbar-width: none;
 
             &::-webkit-scrollbar {
@@ -1050,16 +1088,35 @@ Layer: snippets temporary owner block
         border-color: rgb(var(--color-border) / 0.2);
         transition:
             border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
-            box-shadow var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+            box-shadow var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+            transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
 
-        &:hover {
-            border-color: rgb(var(--color-foreground));
+        @media (hover: hover) and (pointer: fine) {
+            &:hover {
+                border-color: rgb(var(--color-foreground));
+            }
         }
 
         &.is-selected {
             box-shadow:
                 0 0 0 2px rgb(var(--color-background)),
                 0 0 0 4px rgb(var(--color-foreground));
+        }
+    }
+
+    .peer:focus-visible + .variant-picker__swatch {
+        outline: var(--focus-ring-width) solid
+            rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+        outline-offset: var(--focus-ring-offset);
+    }
+
+    .peer:active + .variant-picker__swatch {
+        transform: scale(0.96);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .peer:active + .variant-picker__swatch {
+            transform: none;
         }
     }
 
@@ -1078,11 +1135,14 @@ Layer: snippets temporary owner block
         transition:
             border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
             background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
-            color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+            color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+            transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
 
-        &:hover {
-            border-color: rgb(var(--color-foreground));
-            color: rgb(var(--color-foreground));
+        @media (hover: hover) and (pointer: fine) {
+            &:hover {
+                border-color: rgb(var(--color-foreground));
+                color: rgb(var(--color-foreground));
+            }
         }
 
         &.is-selected {
@@ -1094,6 +1154,22 @@ Layer: snippets temporary owner block
         &.is-unavailable {
             opacity: 0.4;
             text-decoration: line-through;
+        }
+    }
+
+    .peer:focus-visible + .variant-picker__pill {
+        outline: var(--focus-ring-width) solid
+            rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+        outline-offset: var(--focus-ring-offset);
+    }
+
+    .peer:active + .variant-picker__pill:not(.is-unavailable) {
+        transform: scale(0.98);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .peer:active + .variant-picker__pill:not(.is-unavailable) {
+            transform: none;
         }
     }
 }

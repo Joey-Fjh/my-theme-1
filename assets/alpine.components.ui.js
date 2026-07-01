@@ -393,6 +393,7 @@
                 _pointerDown: false,
                 _dragging: false,
                 _startX: 0,
+                _startY: 0,
                 _startScrollLeft: 0,
                 _suppressClickUntil: 0,
                 _initialStrategy: initialStrategy,
@@ -408,20 +409,29 @@
                 init() {
                     this._hydrateFromDataset();
                     this.$nextTick(() => {
-                        const count = this.tabs.length;
-                        if (count === 0) return;
-
-                        this.scroller = this.getHorizontalScrollParent(this.tabs[0]);
-                        if (this.scrollMode === 'always' && this.scroller) {
+                        this.scroller = this.getTabScroller();
+                        if (this.scroller) {
+                            this.on(this.scroller, 'dragstart', this.onDragStart.bind(this));
                             this.on(this.scroller, 'pointerdown', this.onPointerDown.bind(this));
+                            this.on(this.scroller, 'touchstart', this.onTouchStart.bind(this), {
+                                passive: true,
+                            });
                             this.on(window, 'pointermove', this.onPointerMove.bind(this), {
+                                passive: false,
+                            });
+                            this.on(window, 'touchmove', this.onTouchMove.bind(this), {
                                 passive: false,
                             });
                             this.on(window, 'pointerup', this.endDrag.bind(this));
                             this.on(window, 'pointercancel', this.endDrag.bind(this));
+                            this.on(window, 'touchend', this.endDrag.bind(this));
+                            this.on(window, 'touchcancel', this.endDrag.bind(this));
                             this.on(this.scroller, 'click', this.onClickCapture.bind(this), true);
                             this.on(window, 'resize', this.onResize.bind(this));
                         }
+
+                        const count = this.tabs.length;
+                        if (count === 0) return;
 
                         const nextIndex =
                             this._initialStrategy === 'first' ? 0 : Math.floor(count / 2);
@@ -472,11 +482,22 @@
 
                 canDragScroll() {
                     return (
-                        this.scrollMode === 'always' &&
-                        !this.isMobileViewport() &&
                         this.scroller &&
-                        this.scroller.scrollWidth > this.scroller.clientWidth
+                        this.scroller.scrollWidth > this.scroller.clientWidth &&
+                        (this.scrollMode === 'always' ||
+                            this.isMobileViewport() ||
+                            this.isHorizontalScroller(this.scroller))
                     );
+                },
+
+                isHorizontalScroller(scroller) {
+                    const overflowX = window.getComputedStyle(scroller).overflowX;
+                    return overflowX === 'auto' || overflowX === 'scroll';
+                },
+
+                getTabScroller() {
+                    const tablist = this.$el?.querySelector('[role="tablist"]');
+                    return tablist instanceof HTMLElement ? tablist : null;
                 },
 
                 getHorizontalScrollParent(el) {
@@ -532,24 +553,68 @@
                 },
 
                 onPointerDown(event) {
+                    if (event.pointerType === 'touch') return;
                     if (!this.canDragScroll()) return;
                     if (event.pointerType === 'mouse' && event.button !== 0) return;
 
                     this._pointerDown = true;
                     this._dragging = false;
                     this._startX = event.clientX;
+                    this._startY = event.clientY;
                     this._startScrollLeft = this.scroller.scrollLeft;
+                },
+
+                onTouchStart(event) {
+                    if (!this.canDragScroll()) return;
+                    if (event.touches.length !== 1) return;
+
+                    const touch = event.touches[0];
+                    this._pointerDown = true;
+                    this._dragging = false;
+                    this._startX = touch.clientX;
+                    this._startY = touch.clientY;
+                    this._startScrollLeft = this.scroller.scrollLeft;
+                },
+
+                onDragStart(event) {
+                    if (event.target?.closest?.('[role="tab"]')) {
+                        event.preventDefault();
+                    }
                 },
 
                 onPointerMove(event) {
                     if (!this._pointerDown || !this.scroller) return;
 
-                    const deltaX = event.clientX - this._startX;
-                    if (!this._dragging && Math.abs(deltaX) >= 6) {
-                        this._dragging = true;
-                    }
+                    this.updateDrag(event.clientX, event.clientY, event);
+                },
 
-                    if (!this._dragging) return;
+                onTouchMove(event) {
+                    if (!this._pointerDown || !this.scroller) return;
+                    if (event.touches.length !== 1) return;
+
+                    const touch = event.touches[0];
+                    this.updateDrag(touch.clientX, touch.clientY, event);
+                },
+
+                updateDrag(clientX, clientY, event) {
+                    const deltaX = clientX - this._startX;
+                    const deltaY = clientY - this._startY;
+
+                    if (!this._dragging) {
+                        const absX = Math.abs(deltaX);
+                        const absY = Math.abs(deltaY);
+
+                        if (absY >= 6 && absY > absX) {
+                            this._pointerDown = false;
+                            return;
+                        }
+
+                        if (absX >= 6 && absX >= absY) {
+                            this._dragging = true;
+                        } else {
+                            return;
+                        }
+                    }
 
                     this.scroller.scrollLeft = this._startScrollLeft - deltaX;
                     event.preventDefault();

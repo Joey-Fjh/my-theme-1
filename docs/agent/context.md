@@ -34,6 +34,18 @@ Button hover/interactions are complete and should be treated as the accepted bas
 
 Next focus: link, icon, card, close-button, and quantity hover/touch states. Image interaction: `snippets/image.liquid` auto-appends `media-interaction` on linked wrappers when `url` is set (`interactive: false` opts out). Overlay promo tiles pair `media-interaction-scope` on the tile wrapper with `pointer-events-none` content shells and `pointer-events-auto` CTAs. External shells still use caller-level `media-interaction` / `media-interaction-subtle`.
 
+### State interaction boundary (accepted)
+
+- `motion_enabled` / `body[data-motion-enabled='false']` gates **page/brand motion only**: section reveal, media reveal, scroll/narrative choreography.
+- **State/micro interactions** (hover, focus-visible, active, disabled, panel/dialog/drawer open-close, loading) are **not** gated by `motion_enabled`; they respect `@media (prefers-reduced-motion: reduce)` only.
+- Shared control utilities live in `tailwind/tailwind.elements.css`: `control-icon` (quantity, carousel arrows), `control-dot` (carousel dots). Variant picker peer-focus uses `.peer:focus-visible + .variant-picker__*` in `tailwind.snippets.css`.
+- Dialog/drawer `onEnterStart` callbacks are wrapped in try/catch so focus timing failures cannot abort enter animation cleanup.
+
+### Hover/interaction track (incremental)
+
+- Quantity selector, product-card carousel dots/arrows, variant picker swatch/pill, pagination: aligned to control utilities / focus-ring (no scattered opacity hover).
+- Pickup availability `<details>` store list: `panel-motion-disclosure` on native `<details>` child (not Alpine accordion/mobile menu).
+
 ## Deferred Or Follow-Up
 
 - Motion audit items: dense grid reveal, first-viewport media reveal, nested media reveal, and hero-like static media.
