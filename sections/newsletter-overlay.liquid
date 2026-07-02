@@ -17,7 +17,7 @@
 >
     {%- capture dialog_content -%}
     <div
-      class="relative"
+      class="relative h-full"
       data-newsletter-dialog-id="{{ popup_id }}"
       data-newsletter-display-mode="{{ section.settings.display_mode }}"
       data-newsletter-show-in-home="{{ section.settings.show_in_home | json }}"
@@ -40,8 +40,8 @@
         {% render 'icons', icon: 'icon-close' %}
       </button>
 
-      <div class="grid grid-cols-1 pc:min-h-[320px] pc:grid-cols-[36%_minmax(0,1fr)]">
-        <div class="h-52 pc:h-full">
+      <div class="grid h-full min-h-0 grid-cols-1 grid-rows-[minmax(0,3fr)_minmax(0,2fr)] pc:min-h-[320px] pc:grid-cols-[36%_minmax(0,1fr)] pc:grid-rows-1">
+        <div class="min-h-0 overflow-hidden pc:h-full">
           {%- render 'image',
             class: 'w-full h-full',
             img_class: 'w-full h-full object-cover',
@@ -51,7 +51,7 @@
           -%}
         </div>
 
-        <div class="flex w-full flex-col items-stretch justify-around px-5 py-6 pc:px-6 pc:py-10 text-{{ section.settings.alignment }}">
+        <div class="flex min-h-0 w-full flex-col justify-between gap-3 overflow-y-auto px-6 pt-5 pb-5 pc:justify-around pc:gap-0 pc:px-6 pc:py-10 text-{{ section.settings.alignment }}">
         {%- for block in section.blocks -%}
             {%- comment -%} Backward compat: map legacy heading tier values to new names {%- endcomment -%}
             {%- case block.settings.body_text_size -%}
@@ -69,7 +69,7 @@
             {%- case block.type -%}
                 {%- when 'text' -%}
                     <div
-                        class="rte rte--compact mb-2 {{ body_size_class }}"
+                        class="rte rte--compact mb-0 pc:mb-2 {{ body_size_class }}"
                         {{ block.shopify_attributes }}
                     >
                         {{ block.settings.text }}
@@ -78,7 +78,7 @@
                 {%- when 'heading' -%}
                     <h2
                         id="dialog-title-{{ popup_id }}"
-                        class="mb-3 {{ heading_size_class }}"
+                        class="mb-0 pc:mb-3 {{ heading_size_class }}"
                         {{ block.shopify_attributes }}
                     >
                         {{ block.settings.heading }}
@@ -139,8 +139,9 @@
         color_scheme: section.settings.color_scheme,
         modal_placement: section.settings.modal_placement,
         overlay_class: 'bg-black/60',
-        modal_wrapper_class: 'p-4 pc:p-8 fw:p-10',
-        modal_panel_class: 'w-full max-w-full pc:max-w-[600px] fw:max-w-[680px]',
+        mobile_layout: 'inset',
+        modal_wrapper_class: 'pc:p-8 fw:p-10',
+        modal_panel_class: 'h-full w-full max-w-full pc:h-auto pc:max-w-[600px] fw:max-w-[680px]',
         content: dialog_content
     -%}
 </div>

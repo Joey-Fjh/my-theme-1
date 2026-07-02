@@ -13,7 +13,7 @@
     {%- comment -%} Search form: always visible, independent of results {%- endcomment -%}
     <div class="layout container-page overflow-visible!{% unless search.performed %} flex min-h-[50vh] flex-col items-center justify-center{% endunless %}">
         <div
-            class="mx-auto w-full pc:max-w-1/2{% if search.performed %} py-10{% endif %}"
+            class="mx-auto w-full px-4 pc:max-w-1/2 pc:px-0{% if search.performed %} py-10{% endif %}"
             x-data="predictiveSearch"
             data-predictive-search-enabled="{{ settings.predictive_search_enabled }}"
             data-search-url="{{ routes.search_url | escape }}"
@@ -25,12 +25,16 @@
             <h1 class="sr-only">{{ 'search.title' | t }}</h1>
 
             <form
+                action="{{ routes.search_url }}"
+                method="get"
                 @submit.prevent="performSearch()"
                 role="search"
                 class="relative w-full"
                 :class="{ 'is-open': isOpen }"
                 @click.outside="closePanel()"
             >
+                <input type="hidden" name="options[prefix]" value="last">
+                <input type="hidden" name="type" value="product">
                 <div class="mb-1 flex items-center gap-3 border-b border-theme-border pb-3 text-theme-text">
                     {%- render 'icons', icon: 'icon-search', class: 'shrink-0' -%}
 
@@ -52,7 +56,9 @@
                     >
                 </div>
 
-                {% render 'search-predictive-panel' %}
+                {% render 'search-predictive-panel',
+                    mobile_card_columns: section.settings.mobile_card_columns
+                %}
             </form>
         </div>
     </div>
@@ -88,7 +94,8 @@
                 articles_url: articles_url,
                 pages_url: pages_url,
                 param_type: param_type,
-                search_per_page: section.settings.search_per_page
+                search_per_page: section.settings.search_per_page,
+                mobile_card_columns: section.settings.mobile_card_columns
             -%}
         </div>
     {% endif %}
@@ -117,6 +124,22 @@
             "step": 3,
             "default": 12,
             "label": "t:sections.search.settings.search_per_page"
+        },
+        {
+            "type": "select",
+            "id": "mobile_card_columns",
+            "label": "t:sections.search.settings.mobile_product_card_columns",
+            "default": "2",
+            "options": [
+                {
+                    "value": "1",
+                    "label": "t:sections.collection.options.1_column"
+                },
+                {
+                    "value": "2",
+                    "label": "t:sections.collection.options.2_columns"
+                }
+            ]
         },
         {
             "type": "header",

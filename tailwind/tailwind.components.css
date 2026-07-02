@@ -749,14 +749,15 @@ Dialog
                              Consumed by all dialog panel variants via composition in markup.
 .ui-dialog-modal-panel    – Modal structural layout: pointer-events, relative, full-width, overflow-auto.
 .ui-dialog-drawer-panel   – Drawer structural layout: relative, full height/width, overflow-auto.
+.ui-dialog-drawer-shell   – Drawer positioning shell only; no chrome (transparent, clips via inner panel).
 ========================================================= */
 @layer components {
     .ui-dialog-panel {
         @apply border-theme-border bg-theme-bg;
 
-        border-width: var(--dialog-border-width);
+        border-width: var(--dialog-border-width, 0px);
         border-style: solid;
-        border-radius: var(--dialog-radius);
+        border-radius: var(--dialog-radius, 0px);
 
         box-shadow: var(--dialog-shadow-horizontal-offset) var(--dialog-shadow-vertical-offset)
             var(--dialog-shadow-blur-radius)
@@ -767,8 +768,12 @@ Dialog
         @apply pointer-events-auto relative w-full overflow-auto;
     }
 
+    .ui-dialog-drawer-shell {
+        @apply bg-transparent;
+    }
+
     .ui-dialog-drawer-panel {
-        @apply relative h-full w-full overflow-auto;
+        @apply relative h-full min-h-0 w-full;
     }
 
     .ui-dialog-modal-width-default {
@@ -786,6 +791,67 @@ Dialog
     .ui-dialog-modal-shell--origin {
         perspective: 1400px;
         isolation: isolate;
+    }
+
+    /*
+        ui-dialog mobile layout preset: inset shell (below pc only).
+        Panel chrome remains on .ui-dialog-panel; overflow clipping on .ui-dialog-mobile-layout-panel.
+        Desktop drawer width/position: ui-dialog-desktop-drawer at call site.
+    */
+    .ui-dialog-mobile-layout-inset {
+        @media (width < theme(--breakpoint-pc)) {
+            @apply !right-auto !bottom-12 !left-1/2 !w-[calc(100%-2rem)] !max-w-none !-translate-x-1/2 !p-0;
+
+            top: calc(var(--announcement-bar-height, 0px) + 3rem) !important;
+            height: auto !important;
+            max-height: none !important;
+        }
+    }
+
+    .ui-dialog-drawer-shell.ui-dialog-mobile-layout-inset {
+        @media (width < theme(--breakpoint-pc)) {
+            @apply flex flex-col;
+        }
+    }
+
+    .ui-dialog-mobile-layout-inset > .ui-dialog-panel {
+        @media (width < theme(--breakpoint-pc)) {
+            @apply h-full min-h-0 flex-1;
+        }
+    }
+
+    .ui-dialog-desktop-drawer {
+        @media (width >= theme(--breakpoint-pc)) {
+            @apply !right-0 !bottom-0 !left-auto !w-full !max-w-[40rem] !translate-x-0;
+        }
+
+        @media (width >= theme(--breakpoint-pc)) {
+            top: var(--announcement-bar-height, 0px) !important;
+        }
+
+        @media (width >= theme(--breakpoint-fw)) {
+            @apply !max-w-[33vw];
+        }
+    }
+
+    .ui-dialog-mobile-layout-panel {
+        @apply overflow-hidden;
+    }
+
+    .ui-dialog-drawer-panel:not(.ui-dialog-mobile-layout-panel) {
+        @apply overflow-auto;
+    }
+
+    .ui-dialog-overlay-header {
+        @apply flex shrink-0 items-center justify-between gap-4 border-b border-theme-border-20 px-6 py-5;
+    }
+
+    .ui-dialog-overlay-body {
+        @apply min-h-0 flex-1 overflow-y-auto px-6 py-6;
+    }
+
+    .ui-dialog-overlay-footer {
+        @apply shrink-0 border-t border-theme-border-20 px-6 py-5;
     }
 }
 

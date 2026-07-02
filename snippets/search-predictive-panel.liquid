@@ -9,7 +9,18 @@
     - State: `isOpen`, `isLoading`, `query`, `hasSearched`, `hasEmptyState`, `suggestions`, `products`, `articles`, `pages`
     - Methods: `onSuggestionClick`, `highlightSuggestion`, `performSearch`
     - Tab-control bindings exposed in parent scope: `registerTab`, `registerPanel`, `setActive`, `isActive`, `activeTab`
+
+    @param {string} [mobile_card_columns] - Mobile product grid columns (`1` or `2`). Default: `2`.
 {% enddoc %}
+
+{%- liquid
+    assign mobile_card_columns = mobile_card_columns | default: '2'
+    assign mobile_grid_class = 'grid-cols-2'
+
+    if mobile_card_columns == '1'
+        assign mobile_grid_class = 'grid-cols-1'
+    endif
+-%}
 
 <div
     x-cloak
@@ -82,7 +93,6 @@
                             :class="{ 'is-active': isActive(index) }"
                         >
                             {{ 'search.products' | t }}
-                            <sup x-show="products.length" x-text="`(${products.length})`" class="align-super text-[0.75em]"></sup>
                         </button>
 
                         <button
@@ -95,7 +105,6 @@
                             :class="{ 'is-active': isActive(index) }"
                         >
                             {{ 'search.articles' | t }}
-                            <sup x-show="articles.length" x-text="`(${articles.length})`" class="align-super text-[0.75em]"></sup>
                         </button>
 
                         <button
@@ -108,7 +117,6 @@
                             :class="{ 'is-active': isActive(index) }"
                         >
                             {{ 'search.pages' | t }}
-                            <sup x-show="pages.length" x-text="`(${pages.length})`" class="align-super text-[0.75em]"></sup>
                         </button>
                     </div>
                 {% endcapture %}
@@ -120,7 +128,7 @@
                         x-init="index = registerPanel($el)"
                         x-show="activeTab === 'products'"
                     >
-                        <div class="grid grid-cols-2 gap-6 pc:grid-cols-2">
+                        <div class="grid {{ mobile_grid_class }} gap-6 pc:grid-cols-2">
                             <template x-for="product in products" :key="product.id">
                                 {%- render 'predictive-search-product-card' -%}
                             </template>

@@ -15,20 +15,20 @@
             data-toast-search-failed="{{ 'toast.search_failed' | t | escape }}"
             @keydown.escape.window="$store.dialog.close()"
         >
-            <div class="p-6">
-                <div class="mb-5 flex items-center justify-between gap-4">
-                    <h1 id="dialog-title-{{ popup_id }}">{{ 'search.title' | t }}</h1>
-                    
-                    <button
-                        type="button"
-                        class="close-button"
-                        @click="$store.dialog.close()"
-                        aria-label="{{ 'accessibility.close_search_drawer' | t }}"
-                    >
-                        {% render 'icons', icon: 'icon-close' %}
-                    </button>
-                </div>
+            <div class="ui-dialog-overlay-header">
+                <h1 id="dialog-title-{{ popup_id }}">{{ 'search.title' | t }}</h1>
+                
+                <button
+                    type="button"
+                    class="close-button"
+                    @click="$store.dialog.close()"
+                    aria-label="{{ 'accessibility.close_search_drawer' | t }}"
+                >
+                    {% render 'icons', icon: 'icon-close' %}
+                </button>
+            </div>
 
+            <div class="shrink-0 px-6 pt-6">
                 <form @submit.prevent="performSearch()" role="search" class="w-full">
                     <div class="flex items-center gap-2 border-b border-theme-border pb-2">
                         {% render 'icons', icon: 'icon-search', class: 'shrink-0 opacity-80' %}
@@ -68,7 +68,7 @@
                 </template>
             </div>
 
-            <div class="flex min-h-0 flex-1 flex-col px-5 py-4 pc:px-6">
+            <div class="ui-dialog-overlay-body pc:px-6 pc:py-4">
                 <div x-show="!isLoading && hasEmptyState && query" class="py-6 text-center">
                     <p>{{ 'search.no_results_for' | t }} "<span x-text="query"></span>"</p>
                 </div>
@@ -200,11 +200,8 @@
         top_class: 'top-[var(--announcement-bar-height)] pc:top-0',
         color_scheme: section.settings.color_scheme,
         drawer_motion_sheet: true,
-        drawer_wrapper_class: '
-            !left-1/2 !right-auto !-translate-x-1/2 !top-[calc(var(--announcement-bar-height)+3rem)] !bottom-12 !w-[calc(100%-2rem)] !max-w-none
-            pc:!left-auto pc:!right-0 pc:!-translate-x-0 pc:!top-[var(--announcement-bar-height)] pc:!bottom-0 pc:!w-full pc:!max-w-[40rem] fw:!max-w-[33vw]
-        ',
-        drawer_panel_class: 'overflow-hidden',
+        mobile_layout: 'inset',
+        drawer_wrapper_class: 'ui-dialog-desktop-drawer',
         content: drawer_content
     -%}
 </div>

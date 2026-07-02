@@ -10,7 +10,7 @@
     @param {boolean} [drawer_motion_sheet] - Use bottom sheet motion below pc breakpoint (Cart/Filters mobile).
     @param {string} [layer]     - Semantic z-index layer: 'drawer' | 'modal' | 'modal-focus' (default: 'modal').
     @param {string} [top_class] - Viewport top offset class for overlay/wrapper (default: 'top-0').
-    @param {string} [color_scheme] - Optional color scheme id (e.g. 'scheme-1'). Applied as outer scope class `color-{id}`.
+    @param {string} [color_scheme] - Optional color scheme id (e.g. 'scheme-1'). Applied on `.ui-dialog-panel` as `color-{id}`.
     @param {string} [overlay_class] - Tailwind classes for overlay background (default: 'bg-dialog-overlay').
     @param {boolean} [show_overlay] - Whether to render the overlay (default: true).
     @param {string} [root_class] - Extra classes for root wrapper (layout/positioning escape hatch).
@@ -18,6 +18,7 @@
     @param {string} [modal_panel_class] - Classes for modal panel.
     @param {string} [drawer_wrapper_class] - Classes for drawer wrapper, including width/position overrides.
     @param {string} [drawer_panel_class] - Extra classes for drawer panel.
+    @param {string} [mobile_layout] - Mobile viewport shell preset: 'default' | 'inset' (default: 'default').
     @param {string} [content]  - HTML content (use capture in parent and pass as content).
 {% endcomment %}
 
@@ -50,8 +51,22 @@
 {%- endcase -%}
 
 {%- liquid
+    assign mobile_layout_value = mobile_layout | default: 'default'
+    assign mobile_layout_inset_class = ''
+    assign modal_shell_padding_class = 'p-4'
+
+    if mobile_layout_value == 'inset'
+        assign mobile_layout_inset_class = 'ui-dialog-mobile-layout-inset'
+        assign modal_shell_padding_class = 'max-pc:p-4'
+    endif
+
     assign modal_panel_classes = 'ui-dialog-panel ui-dialog-modal-panel ui-dialog-modal-width-default ui-dialog-modal-height-default ' | append: modal_panel_classes | strip
     assign drawer_wrapper_classes = 'ui-dialog-drawer-width-default ' | append: drawer_wrapper_classes | strip
+
+    if mobile_layout_value == 'inset'
+        assign drawer_panel_classes = 'ui-dialog-mobile-layout-panel ' | append: drawer_panel_classes | strip
+        assign modal_panel_classes = 'ui-dialog-mobile-layout-panel ' | append: modal_panel_classes | strip
+    endif
     assign color_scope_class = color_scheme | default: ''
     if color_scope_class != blank
         assign color_scope_class = 'color-' | append: color_scope_class | append: ' surface-component'
@@ -145,14 +160,14 @@
     {%- if dialog_type == 'drawer' -%}
         <div
             class="
-                fixed bottom-0 {{ panel_z_class }} w-full
+                ui-dialog-drawer-shell fixed bottom-0 {{ panel_z_class }} w-full
                 {{ dialog_top_class }}
                 {% if dialog_position == 'left' %}
                     left-0
                 {% else %}
                     right-0
                 {% endif %}
-                {{ color_scope_class }}
+                {{ mobile_layout_inset_class }}
                 {{ drawer_wrapper_classes }}
             "
             role="dialog"
@@ -166,7 +181,7 @@
             @click.stop
         >
             <div
-                class="ui-dialog-panel ui-dialog-drawer-panel {{ drawer_panel_classes }}"
+                class="ui-dialog-panel ui-dialog-drawer-panel {{ drawer_panel_classes }}{% if color_scheme != blank %} {{ color_scope_class }}{% endif %}"
             >
                 {{ dialog_close_button_markup }}
                 {{ content }}
@@ -175,10 +190,11 @@
     {%- else -%}
         <div
             class="
-                pointer-events-none fixed inset-x-0 bottom-0 {{ panel_z_class }} flex p-4
+                pointer-events-none fixed inset-x-0 bottom-0 {{ panel_z_class }} flex {{ modal_shell_padding_class }}
                 {{ dialog_top_class }}
                 {{ modal_placement_classes }}
                 {% if dialog_motion_resolved == 'origin' %}ui-dialog-modal-shell--origin{% endif %}
+                {{ mobile_layout_inset_class }}
                 {{ modal_wrapper_classes }}
             "
             role="dialog"

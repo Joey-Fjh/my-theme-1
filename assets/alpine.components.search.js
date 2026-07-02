@@ -336,11 +336,14 @@
                     this.closePanel();
 
                     const url = new URL(this.searchUrl, window.location.origin);
+                    url.searchParams.set('options[prefix]', 'last');
 
                     if (term) {
                         url.searchParams.set('q', term);
+                        url.searchParams.set('type', 'product');
                     } else {
                         url.searchParams.delete('q');
+                        url.searchParams.delete('type');
                     }
 
                     window.location.assign(url.toString());

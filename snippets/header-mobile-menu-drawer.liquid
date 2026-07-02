@@ -14,7 +14,7 @@
             x-data="mobileMenuDrawer"
             @keydown.escape.window="$store.dialog.close()"
         >
-            <div class="flex items-center justify-between border-b border-theme-border-20 px-6 py-5">
+            <div class="ui-dialog-overlay-header">
                 <h2 id="dialog-title-{{ popup_id }}">
                     {{ 'accessibility.menu' | t }}
                 </h2>
@@ -29,7 +29,7 @@
                 </button>
             </div>
 
-            <div class="min-h-0 flex-1 overflow-y-auto px-6 py-6">
+            <div class="ui-dialog-overlay-body">
                 <template x-if="!thirdLevelLinks.length">
                     <nav aria-label="{{ 'accessibility.mobile_menu' | t }}">
                         <ul x-ref="topMenu" class="space-y-4" role="list">
@@ -156,7 +156,7 @@
                 </template>
             </div>
 
-            <div class="flex items-center gap-9 border-t border-theme-border-20 px-6 py-5">
+            <div class="ui-dialog-overlay-footer flex items-center gap-9">
                 {%- capture search_content -%}
                     {% render 'icons', icon: 'icon-search' %}
                 {%- endcapture -%}
@@ -204,12 +204,13 @@
 
     {%- render 'ui-dialog',
         id: popup_id,
-        type: 'modal',
+        type: 'drawer',
         layer: 'drawer',
-        modal_placement: 'center',
+        position: 'right',
         top_class: 'top-[var(--announcement-bar-height)]',
         color_scheme: color_scheme,
-        modal_panel_class: 'h-[70dvh] overflow-hidden',
+        drawer_motion_sheet: true,
+        mobile_layout: 'inset',
         content: drawer_content
     -%}
 {%- endif -%}
