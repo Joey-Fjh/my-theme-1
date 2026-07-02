@@ -63,13 +63,11 @@ Do not copy rule or skill files into adapter paths. `AGENTS.md` and `.agents\ski
 
 ## Third-Party Libraries
 
-| Library       | Version | File(s)                                         | CDN / Source                                                                                                                           |
-| ------------- | ------- | ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| Alpine.js     | v3.15.3 | `vendor-alpine.min.js`                          | [jsDelivr](https://cdn.jsdelivr.net/npm/alpinejs@3.15.3/dist/cdn.min.js)                                                               |
-| Intersect.js  | v3.x.x  | `vendor-alpine-intersect.min.js`                | [jsDelivr](https://cdn.jsdelivr.net/npm/@alpinejs/intersect@3.x.x/dist/cdn.min.js)                                                     |
-| Swiper        | v12.0.3 | `vendor-swiper.min.js`, `vendor-swiper.min.css` | [CSS](https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.css), [JS](https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.js) |
-| GSAP          | v3.14.1 | `vendor-gsap.min.js`                            | [jsDelivr](https://cdn.jsdelivr.net/npm/gsap@3.14.1/dist/gsap.min.js)                                                                  |
-| ScrollTrigger | v3.14.1 | `vendor-gsap-scrolltrigger.min.js`              | [jsDelivr](https://cdn.jsdelivr.net/npm/gsap@3.14.1/dist/ScrollTrigger.min.js)                                                         |
+| Library      | Version | File(s)                                         | CDN / Source                                                                                                                           |
+| ------------ | ------- | ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Alpine.js    | v3.15.3 | `vendor-alpine.min.js`                          | [jsDelivr](https://cdn.jsdelivr.net/npm/alpinejs@3.15.3/dist/cdn.min.js)                                                               |
+| Intersect.js | v3.x.x  | `vendor-alpine-intersect.min.js`                | [jsDelivr](https://cdn.jsdelivr.net/npm/@alpinejs/intersect@3.x.x/dist/cdn.min.js)                                                     |
+| Swiper       | v12.0.3 | `vendor-swiper.min.js`, `vendor-swiper.min.css` | [CSS](https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.css), [JS](https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.js) |
 
 > Always update this table when replacing or upgrading a library.
 

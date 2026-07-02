@@ -48,6 +48,25 @@
             };
         }
 
+        static prefersReducedMotion() {
+            return window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
+        }
+
+        static getPageScrollBehavior() {
+            if (document.body?.dataset?.motionEnabled === 'false') return 'auto';
+            if (Utils.prefersReducedMotion()) return 'auto';
+            return 'smooth';
+        }
+
+        static getMicroScrollBehavior() {
+            if (Utils.prefersReducedMotion()) return 'auto';
+            return 'smooth';
+        }
+
+        static scrollToTop() {
+            window.scrollTo({ top: 0, behavior: Utils.getPageScrollBehavior() });
+        }
+
         static debounce(func, wait = 300, immediate = false) {
             let timeout;
 

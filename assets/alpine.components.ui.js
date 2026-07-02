@@ -516,6 +516,20 @@
                     return null;
                 },
 
+                getMicroScrollBehavior() {
+                    const Utils = window.__Theme__?.Utils;
+                    if (typeof Utils?.getMicroScrollBehavior === 'function') {
+                        return Utils.getMicroScrollBehavior();
+                    }
+                    if (
+                        typeof window.matchMedia === 'function' &&
+                        window.matchMedia('(prefers-reduced-motion: reduce)').matches
+                    ) {
+                        return 'auto';
+                    }
+                    return 'smooth';
+                },
+
                 scrollActiveTabIntoView(index, options = {}) {
                     if (!this.shouldScrollActiveTabIntoView()) return;
 
@@ -526,7 +540,8 @@
                     if (!scroller) return;
                     this.scroller = scroller;
 
-                    const { centerOnMobile = false, behavior = 'smooth' } = options;
+                    const { centerOnMobile = false, behavior } = options;
+                    const scrollBehavior = behavior ?? this.getMicroScrollBehavior();
                     const isEdgeTab = index === 0 || index === this.tabs.length - 1;
 
                     const tabLeft = tab.offsetLeft;
@@ -538,17 +553,20 @@
                         const centered = tabLeft - (scroller.clientWidth - tab.offsetWidth) / 2;
                         const maxScroll = scroller.scrollWidth - scroller.clientWidth;
                         const nextLeft = Math.min(Math.max(centered, 0), Math.max(maxScroll, 0));
-                        scroller.scrollTo({ left: nextLeft, behavior });
+                        scroller.scrollTo({ left: nextLeft, behavior: scrollBehavior });
                         return;
                     }
 
                     if (tabLeft < visibleLeft) {
-                        scroller.scrollTo({ left: tabLeft, behavior });
+                        scroller.scrollTo({ left: tabLeft, behavior: scrollBehavior });
                         return;
                     }
 
                     if (tabRight > visibleRight) {
-                        scroller.scrollTo({ left: tabRight - scroller.clientWidth, behavior });
+                        scroller.scrollTo({
+                            left: tabRight - scroller.clientWidth,
+                            behavior: scrollBehavior,
+                        });
                     }
                 },
 
