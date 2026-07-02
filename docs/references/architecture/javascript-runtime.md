@@ -208,11 +208,12 @@ Ordinary content/media reveal should be implemented as an Alpine behavior plus C
 Preferred shape:
 
 - Register a reusable Alpine behavior such as `motionRevealSection` in an appropriate `alpine.components.*.js` group.
-- Each `x-data="motionRevealSection()"` instance is independent, but the implementation should use a module-level shared `IntersectionObserver` singleton.
-- Use a registry such as a `WeakMap` to map observed section roots to their Alpine instances.
-- Observe section roots such as `[data-motion-section]`; do not create one observer per reveal target.
+- Each `x-data="motionRevealSection()"` instance is independent on the section root (`data-motion-section`), but the implementation should use a module-level shared `IntersectionObserver` singleton.
+- Use a registry such as a `WeakMap` to map observed reveal targets to their intersection callbacks.
+- Observe each visible `[data-motion-reveal]` target individually; the section root owns lifecycle, not intersection.
 - Mark reveal targets with `data-motion-reveal="content"` or `data-motion-reveal="media"`.
-- The Alpine component only changes state, such as `data-motion-state="pending"` and `data-motion-state="revealed"`, and may set lightweight variables such as `--motion-index`.
+- Optional `data-motion-cascade` on a wrapper auto-assigns `--motion-index` to visible descendant targets.
+- The Alpine component sets per-target `data-motion-state="pending"` / `"revealed"`, handles page-load double-rAF reveal for initially intersecting targets, and reads `body[data-reveal-behavior]` for once vs always.
 - `tailwind/tailwind.animates.css` owns body setting selectors, target styles, keyframes, duration/ease variables, reduced-motion, and motion-disabled behavior.
 - Do not reuse `base.js`'s component lazy-init `IntersectionObserver` for visual reveal; component lifecycle and visual reveal are separate concerns.
 

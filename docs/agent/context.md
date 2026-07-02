@@ -6,52 +6,42 @@ Short cross-session relay. `AGENTS.md` is the rule source; durable contracts liv
 
 - Branch: `feat/ai-test`
 - Validation on this Windows workspace: use `npm.cmd`, not plain `npm run`.
-- CSS architecture: about 94/100; detailed contracts live in `docs/references/style-system/css-architecture.md`.
-- JS architecture: about 93/100; runtime details live in `docs/references/architecture/javascript-runtime.md`.
-- Image system: about 96/100; details live in `docs/references/style-system/image-display-contract.md`.
 - Launch-ready remains REQUEST CHANGES until storefront manual QA is recorded.
+- Recent mobile overlay, Liquid reuse, and animation/interaction cleanup are treated as mainline complete. Future work in those areas should be limited to QA defects or tightly scoped stabilization, not broad reuse/refactor passes.
+- Avoid broad Liquid extraction by default. Agent-driven Liquid reuse is high-risk here; only extend shared snippets when there is clear repeated stable behavior and low merchant/config impact.
 
-## Active Theme Experience Tracks
+## Active Tracks
 
-Current work is organized around five project-level concerns:
+Current remaining project-level work is narrowed to two tracks:
 
-1. Liquid organization: audit section/snippet/block readability and reuse before extracting anything.
-2. Motion/animation: make reveal coverage and rhythm intentional without hiding critical first-viewport content.
-3. Hover/interaction: build a consistent language for buttons, links, cards, disabled, loading, focus, and touch.
-4. Mobile/touch: avoid hover-only paths; test 375px phone and 768px tablet behavior.
-5. Design consistency: compare storefront screenshots against design intent at 375, 768, and 1280 widths.
+1. Global animation setting optimization.
+2. Typography/font refactor.
 
-## Current Focus
+## Track Notes
 
-Button hover/interactions are complete and should be treated as the accepted baseline for the hover/interaction track:
+### Global Animation Setting Optimization
 
-- Owner should remain `tailwind/tailwind.elements.css` for `.btn`, `.btn-primary`, and `.btn-secondary`.
-- Hover uses soft reverse breath: scheme-token color mixing plus subtle lift/breathing.
-- Hover animation must be gated to fine pointer; touch should use active/tap feedback.
-- Disabled and loading states must not breathe or accept pointer interaction.
-- Shopify unbranded dynamic checkout is bridged into the same button system.
-- Experimental button lab/reference docs were removed after migration; the durable contract is the implementation itself plus CSS architecture docs.
+- Preserve the accepted boundary: `motion_enabled` / `body[data-motion-enabled='false']` gates page and brand motion such as reveal, media reveal, scroll, and narrative choreography.
+- Do not use `motion_enabled` as a blanket kill switch for state or micro interactions such as hover, focus, active, loading, dropdown, dialog, drawer, or cart transitions.
+- State and micro interactions should respect `prefers-reduced-motion`.
+- Above-the-fold critical content must remain visible and usable without JavaScript or animation completion.
+- Before changing motion behavior, read `docs/references/architecture/motion-architecture.md`.
 
-Next focus: link, icon, card, close-button, and quantity hover/touch states. Image interaction: `snippets/image.liquid` auto-appends `media-interaction` on linked wrappers when `url` is set (`interactive: false` opts out). Overlay promo tiles pair `media-interaction-scope` on the tile wrapper with `pointer-events-none` content shells and `pointer-events-auto` CTAs. External shells still use caller-level `media-interaction` / `media-interaction-subtle`.
+### Typography/Font Refactor
 
-### State interaction boundary (accepted)
+- Use project typography tiers; do not introduce Tailwind text-size utilities for headings.
+- Keep merchant configurability and Theme Store readiness in view. Do not change merchant-owned settings/data unless explicitly authorized.
+- User-visible strings, schema labels, and editor text must use locale keys.
+- Before changing typography contracts, read `docs/references/style-system/typography-reference.md` and `docs/references/style-system/css-and-typography.md`.
 
-- `motion_enabled` / `body[data-motion-enabled='false']` gates **page/brand motion only**: section reveal, media reveal, scroll/narrative choreography.
-- **State/micro interactions** (hover, focus-visible, active, disabled, panel/dialog/drawer open-close, loading) are **not** gated by `motion_enabled`; they respect `@media (prefers-reduced-motion: reduce)` only.
-- Shared control utilities live in `tailwind/tailwind.elements.css`: `control-icon` (quantity, carousel arrows), `control-dot` (carousel dots). Variant picker peer-focus uses `.peer:focus-visible + .variant-picker__*` in `tailwind.snippets.css`.
-- Dialog/drawer `onEnterStart` callbacks are wrapped in try/catch so focus timing failures cannot abort enter animation cleanup.
+## Validation
 
-### Hover/interaction track (incremental)
+Use the smallest command that proves the change:
 
-- Quantity selector, product-card carousel dots/arrows, variant picker swatch/pill, pagination: aligned to control utilities / focus-ring (no scattered opacity hover).
-- Pickup availability `<details>` store list: `panel-motion-disclosure` on native `<details>` child (not Alpine accordion/mobile menu).
-
-## Deferred Or Follow-Up
-
-- Motion audit items: dense grid reveal, first-viewport media reveal, nested media reveal, and hero-like static media.
-- Link/card hover vocabulary remains fragmented; migrate only when touched or scoped.
-- Product-card touch behavior still needs a focused pass after button review.
-- Liquid extraction should wait for evidence: repeated stable consumers, a11y drift, or style/API drift.
+- `npm.cmd run lint` after meaningful Liquid, JS, CSS, schema, or locale changes.
+- `npm.cmd test` after meaningful theme changes.
+- `npm.cmd run build:tw` after Tailwind source changes.
+- `npm.cmd run lint:i18n` when user-facing strings, schema labels, ARIA copy, placeholders, or locale keys change.
 
 ## Launch Gate
 
@@ -61,24 +51,20 @@ Do not declare launch-ready until manual QA records Pass/Fail for:
 - Featured product and quick view media.
 - Cart drawer/page.
 - Collection filters, pagination, browser back.
-- Predictive search.
+- Predictive search and search results.
 - Mobile menu, header cart badge, newsletter overlay.
 - Z-index stack: toast, lightbox, dialog, drawer, media modal, header.
-- Button hover/touch and motion checks once implemented.
+- Motion setting behavior and reduced-motion behavior.
+- Typography/font behavior across 375, 768, and 1280 widths.
 
 ## Pointers
 
 | Topic | Reference |
 | --- | --- |
-| CSS layers and style contracts | `docs/references/style-system/css-architecture.md` |
-| CSS history and deferred notes | `docs/references/style-system/css-architecture-history.md` |
-| Image display contract | `docs/references/style-system/image-display-contract.md` |
-| Style-system index | `docs/references/style-system/css-and-typography.md` |
-| Typography rules | `docs/references/style-system/typography-reference.md` |
-| Color and surface rules | `docs/references/style-system/color-surface-reference.md` |
-| SVG icon pipeline | `docs/references/style-system/svg-icon-pipeline.md` |
 | Motion policy | `docs/references/architecture/motion-architecture.md` |
+| Typography rules | `docs/references/style-system/typography-reference.md` |
+| Style-system index | `docs/references/style-system/css-and-typography.md` |
+| CSS layers and style contracts | `docs/references/style-system/css-architecture.md` |
 | Abstraction boundaries | `docs/references/architecture/abstraction-boundaries.md` |
 | JS runtime | `docs/references/architecture/javascript-runtime.md` |
 | Launch gate | `docs/references/code-review/launch-gate.md` |
-| Documentation audit | `docs/agent/documentation-audit.md` |

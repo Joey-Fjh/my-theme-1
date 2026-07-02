@@ -40,6 +40,8 @@ Ordinary animation is **CSS/Alpine-first**:
 
 Do not use `body[data-motion-enabled='false']` as a blanket kill switch for state or micro interactions. Hover/focus feedback, button interactions, dropdown open/close, dialog open/close, drawer open/close, loading states, and other UI state transitions should remain functionally expressive when merchant page motion is disabled.
 
+`motion_speed` is scoped to page and brand reveal timing. It should drive reveal-specific tokens such as `--motion-reveal-duration-base`, `--motion-reveal-stagger`, and `--motion-reveal-distance`. Do not wire it to hover, focus, panel, drawer, dialog, loading, or other state/micro interaction timings.
+
 State and micro interactions must still respect `@media (prefers-reduced-motion: reduce)`. When an interaction uses noticeable translate, scale, parallax, or origin-based FLIP motion, reduced motion should degrade it to opacity-only or immediate state change while preserving visibility, focus, keyboard behavior, and close/open state.
 
 If merchants later need control over micro interactions, introduce a separate policy setting such as `micro_motion_enabled`; do not expand `motion_enabled` beyond page and brand motion.
@@ -95,20 +97,71 @@ Recommended DOM contract:
 
 Recommended runtime contract:
 
-- Each `x-data="motionRevealSection()"` creates an independent Alpine instance.
-- The component implementation should use a module-level shared `IntersectionObserver` singleton, with a registry such as a `WeakMap` from element to instance.
-- Each section instance registers its root with the shared observer during `init()` and unregisters during disposal.
-- Default reveal behavior is once-only: when the section enters the viewport, set `data-motion-state="revealed"` and unobserve the section.
-- If motion is disabled, reduced motion is preferred, or reveal should not wait for viewport entry, set `data-motion-state="revealed"` immediately.
-- The component may assign lightweight per-target variables such as `--motion-index` for stagger, but it should not compute animation types or keyframes.
+- Each `x-data="motionRevealSection()"` creates an independent Alpine instance on the section root (`data-motion-section`).
+- The section instance owns lifecycle only: `init()` / `destroy()`, Theme Editor replay, `motion_enabled` / reduced-motion guards, and target registration.
+- The implementation uses a module-level shared `IntersectionObserver` singleton with a `WeakMap` registry from target element to callback.
+- Each visible `[data-motion-reveal]` target is observed individually — not the section root.
+- Default reveal behavior aligns with **Dawn once**: `body[data-reveal-behavior='once']` (default) reveals each target once, then unobserves it.
+- `body[data-reveal-behavior='always']` keeps observing: leaving the viewport resets a target to `pending`; re-entry replays. `motion_enabled=false` and `prefers-reduced-motion` skip replay and show content immediately.
+- If motion is disabled, reduced motion is preferred, or `IntersectionObserver` is unavailable, all eligible targets receive `data-motion-state="revealed"` immediately.
+- Initial target registration runs after Alpine's first DOM update so tab panels can settle their `x-show` / `x-cloak` state before reveal scans. Targets inside `display: none` / `visibility: hidden` ancestors (inactive tab panels) are not observed and are not revealed early; tab clicks within the section trigger a rescan to register newly visible targets.
+- Non-cascade targets default to `--motion-index: 0`. Use `[data-motion-cascade]` on a container to auto-assign `0..n` to visible descendant `[data-motion-reveal]` targets (DOM order). Explicit `data-motion-index` on a target always wins. Hidden cascade children are skipped.
 
 ### Trigger Behavior
 
-- The shared `IntersectionObserver` uses `rootMargin: '0px 0px -50px 0px'` and `threshold: 0`. This triggers slightly before the section fully enters the viewport, matching Dawn's unified trigger strategy.
-- There is **no first-viewport guard**. All eligible sections — including hero and above-the-fold — go through the same `pending → observer → revealed` path. HTML renders visible by default; JS initialization sets `pending` only after Alpine mounts, so no-JS and pre-init states remain safe.
-- Sections already in the viewport when the observer attaches are naturally triggered by the next `IntersectionObserver` callback cycle, producing a near-immediate reveal animation — consistent with Dawn's behavior.
-- Ordinary reveal remains once-only: `revealed` + `unobserve` on first intersection. No replay on scroll-leave.
-- Sections with critical LCP or carousel media may opt media out with `data-motion-media="static"` on the section root while still allowing content reveal. Use this for hero/Swiper media where animating the image itself causes flashing or conflicts with carousel effects.
+- The shared `IntersectionObserver` uses `rootMargin: '0px 0px -15% 0px'` and `threshold: 0.12`. Each target reveals when **it** crosses the inset viewport (Dawn-style per-element trigger), not when the section root intersects.
+- HTML renders visible by default; Alpine sets `data-motion-state="pending"` on each observed target only after init, so no-JS and pre-init states remain safe.
+- **Page-load reveal:** targets already intersecting when registered (hero copy, above-the-fold blocks) are not revealed in the same frame as `pending`. Registration sets `_deferToPageLoadFlush` before `observe()` so synchronous IO callbacks cannot skip the paint frame. After double `requestAnimationFrame`, in-view pending targets reveal with `48ms` base delay plus cascade stagger (`--motion-index × --motion-reveal-stagger`). Scroll-in targets still reveal from `IntersectionObserver` when entering view.
+- Sections with critical LCP or carousel media may opt media out with `data-motion-media="static"` on the section root; JS skips observing those media targets and CSS keeps them static. Pass `motion_reveal: false` on hero images when the section root is static.
+
+### Cascade (`data-motion-cascade`)
+
+- Add `data-motion-cascade` on a visible wrapper (product grid, tab panel product area, card list).
+- `motionRevealSection()` assigns `--motion-index` `0, 1, 2…` to visible `[data-motion-reveal]` descendants in DOM order inside that wrapper.
+- Inactive tab panels (`display: none`) are excluded from indexing and registration until the panel becomes visible.
+- Stagger delay applies at reveal time. Page-load reveal uses each target's `--motion-index`; scroll-in reveal batches targets that enter in the same frame and staggers that batch from `0..n`, using the cascade wrapper's inherited `--motion-reveal-stagger`. Runtime delay is capped so long grids do not become sluggish.
+- Do not nest cascade containers unless intentional. Do not wrap conversion controls.
+
+### Reveal behavior (`reveal_behavior`)
+
+| Value | Behavior | Dawn alignment |
+| --- | --- | --- |
+| `once` (default) | Target reveals once, then `unobserve` | Matches Dawn scroll-trigger default |
+| `always` | Target resets to `pending` when leaving viewport; re-entry replays | Optional merchant setting |
+
+Setting: `config/settings_schema.json` → `body[data-reveal-behavior]` in `layout/theme.liquid`. Do not read merchant `settings_data.json` in theme code beyond Liquid `settings.*`.
+
+### Reveal Speed Tokens (`motion_speed`)
+
+`motion_speed` drives reveal-only CSS variables in `snippets/css-variables.liquid`. It does not affect hover, panel, drawer, dialog, or loading timings.
+
+| Setting | `--motion-reveal-duration-base` | `--motion-reveal-stagger` | `--motion-reveal-distance` |
+| --- | --- | --- | --- |
+| `fast` | 400ms | 60ms | 1.5rem |
+| `normal` (default) | 650ms | 100ms | 2.5rem |
+| `slow` | 950ms | 130ms | 3rem |
+
+`tailwind/tailwind.animates.css` consumes these tokens for content fade/rise and media fade/zoom. Content rise uses opacity + `translate3d` on Y; media zoom scales from `0.88` to `1` with `transform-origin: center`.
+
+### Settings → Consumption Chain
+
+```text
+config/settings_schema.json (motion_enabled, motion_speed, content_reveal_style, media_reveal_style, reveal_behavior)
+  → layout/theme.liquid body[data-motion-enabled], body[data-content-reveal-style], body[data-media-reveal-style], body[data-reveal-behavior]
+  → snippets/css-variables.liquid (--motion-reveal-* tokens from motion_speed)
+  → assets/alpine.components.ui.js motionRevealSection() (per-target IntersectionObserver, target data-motion-state, --motion-index)
+  → tailwind/tailwind.animates.css ([data-motion-reveal][data-motion-state] × body reveal style)
+  → sections/snippets hooks (data-motion-section root, coarse data-motion-reveal targets)
+```
+
+### Consumption Granularity
+
+- Section root: `x-data="motionRevealSection()"` + `data-motion-section` (lifecycle only).
+- Coarse targets: `data-motion-reveal="content"` / `"media"` on headline blocks, grid shells, image columns — not every heading, button, or icon.
+- Stable components (`product-card`, `image.liquid`) may own internal hooks; pass `motion_reveal: false` on nested images when a parent shell already owns media reveal.
+- Skip reveal on conversion controls, tab triggers, slider handles, and embeds such as `google-map` iframe sections.
+- Registration skips targets inside `display: none` / `visibility: hidden` ancestors; tab clicks rescan for newly visible panel targets.
+- Product grids / tab panels: use `data-motion-cascade` on the grid wrapper so `product-card` reveal hooks stagger per card.
 
 ### Theme Editor Preview
 
@@ -121,12 +174,13 @@ Recommended runtime contract:
 Recommended CSS contract:
 
 - HTML should render visible by default without JavaScript.
-- Alpine may set `data-motion-state="pending"` only after initialization, so no-JS content remains visible.
+- Alpine sets `data-motion-state="pending"` on each observed target only after initialization, so no-JS content remains visible.
 - `tailwind.animates.css` owns selectors such as:
-  - `[data-motion-section][data-motion-state='pending'] [data-motion-reveal]`
-  - `[data-motion-section][data-motion-state='revealed'] [data-motion-reveal]`
-  - `body[data-content-reveal-style='...'] [data-motion-reveal='content']`
-  - `body[data-media-reveal-style='...'] [data-motion-reveal='media']`
+  - `[data-motion-reveal='content'][data-motion-state='pending']`
+  - `[data-motion-reveal='content'][data-motion-state='revealed']`
+  - `[data-motion-reveal='media'][data-motion-state='pending']`
+  - `[data-motion-reveal='media'][data-motion-state='revealed']`
+  - `body[data-content-reveal-style='...']` and `body[data-media-reveal-style='...']` for reveal type
 - Global motion setting effects should be expressed in CSS through body data attributes and motion variables, not through per-section GSAP timelines.
 
 `x-intersect` MAY be used for isolated simple cases, but it is not the preferred architecture for ordinary reveal coverage. The preferred architecture is one shared observer behind the Alpine component, rather than many scattered `x-intersect` directives.
@@ -208,6 +262,7 @@ Allowed future global settings:
 - `motion_enabled`
 - `motion_speed`
 - `motion_intensity`
+- `reveal_behavior`
 - `micro_motion_enabled`
 - `scroll_motion_enabled`
 

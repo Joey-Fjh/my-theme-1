@@ -931,8 +931,13 @@
 
             return {
                 ...AlpineComponentsFactory.useDisposable(),
-                _revealed: false,
+                _observedTargets: new Set(),
+                _pageLoadQueue: new Set(),
+                _pageLoadTimers: new Map(),
+                _cascadeQueues: new Map(),
+                _deferToPageLoadFlush: false,
                 _cleanupEditor: null,
+                _onTabClick: null,
 
                 _shouldSkipAnimation() {
                     if (document.body.dataset.motionEnabled === 'false') return true;
@@ -945,71 +950,340 @@
                     return false;
                 },
 
-                /**
-                 * Scan [data-motion-reveal] targets inside this section root
-                 * and set --motion-index CSS variable for stagger.
-                 *
-                 * Explicit data-motion-index attribute takes priority.
-                 * Otherwise uses DOM order index.
-                 */
-                _prepareTargets() {
-                    const targets = this.$el.querySelectorAll('[data-motion-reveal]');
+                _revealBehavior() {
+                    return document.body.dataset.revealBehavior === 'always' ? 'always' : 'once';
+                },
 
-                    targets.forEach((target, domIndex) => {
-                        const explicit = Number(target.dataset.motionIndex);
-                        const index =
-                            Number.isFinite(explicit) && explicit >= 0 ? explicit : domIndex;
-                        target.style.setProperty('--motion-index', index);
+                _isRevealAlways() {
+                    return this._revealBehavior() === 'always';
+                },
+
+                _isRevealTargetVisible(target) {
+                    if (!(target instanceof Element)) return false;
+
+                    let el = target;
+                    while (el && el !== this.$el) {
+                        if (el instanceof HTMLElement) {
+                            const style = window.getComputedStyle(el);
+                            if (style.display === 'none' || style.visibility === 'hidden') {
+                                return false;
+                            }
+                        }
+                        el = el.parentElement;
+                    }
+
+                    return true;
+                },
+
+                _shouldSkipTargetAnimation(target) {
+                    return (
+                        this.$el.dataset.motionMedia === 'static' &&
+                        target.dataset.motionReveal === 'media'
+                    );
+                },
+
+                _getStaggerMs(source = document.documentElement) {
+                    const raw = getComputedStyle(source)
+                        .getPropertyValue('--motion-reveal-stagger')
+                        .trim();
+                    if (!raw) return 100;
+                    if (raw.endsWith('ms')) return parseFloat(raw) || 100;
+                    if (raw.endsWith('s')) return (parseFloat(raw) || 0) * 1000 || 100;
+                    return parseFloat(raw) || 100;
+                },
+
+                _getMotionIndex(target) {
+                    const explicit = Number(target.dataset.motionIndex);
+                    if (Number.isFinite(explicit) && explicit >= 0) return explicit;
+                    const fromStyle = parseFloat(target.style.getPropertyValue('--motion-index'));
+                    if (Number.isFinite(fromStyle) && fromStyle >= 0) return fromStyle;
+                    return 0;
+                },
+
+                _queueCascadeReveal(target) {
+                    const cascade = target.closest('[data-motion-cascade]');
+                    if (!cascade || !this.$el.contains(cascade)) return false;
+
+                    let queue = this._cascadeQueues.get(cascade);
+                    if (!queue) {
+                        queue = { frameId: null, targets: new Set() };
+                        this._cascadeQueues.set(cascade, queue);
+                    }
+
+                    queue.targets.add(target);
+
+                    if (!queue.frameId) {
+                        queue.frameId = requestAnimationFrame(() => {
+                            this._flushCascadeReveal(cascade);
+                        });
+                    }
+
+                    return true;
+                },
+
+                _flushCascadeReveal(cascade) {
+                    const queue = this._cascadeQueues.get(cascade);
+                    if (!queue) return;
+
+                    this._cascadeQueues.delete(cascade);
+
+                    const targets = [...queue.targets]
+                        .filter(
+                            (target) =>
+                                this._isRevealTargetVisible(target) &&
+                                target.getAttribute('data-motion-state') === 'pending',
+                        )
+                        .sort((a, b) => this._getMotionIndex(a) - this._getMotionIndex(b));
+
+                    const staggerMs = this._getStaggerMs(cascade);
+
+                    targets.forEach((target, batchIndex) => {
+                        this._scheduleDelayedReveal(target, Math.min(batchIndex * staggerMs, 900));
                     });
                 },
 
-                _applyRevealed() {
-                    this.$el.setAttribute('data-motion-state', 'revealed');
-                    this._revealed = true;
+                _clearCascadeQueues() {
+                    this._cascadeQueues.forEach((queue) => {
+                        if (queue.frameId) cancelAnimationFrame(queue.frameId);
+                    });
+                    this._cascadeQueues.clear();
                 },
 
-                _applyPending() {
-                    this._revealed = false;
-                    this.$el.setAttribute('data-motion-state', 'pending');
-                },
-
-                /**
-                 * Replay the reveal sequence for this section.
-                 * Respects motion_enabled, prefers-reduced-motion, and
-                 * no-IntersectionObserver skip guards only.
-                 * All eligible sections enter pending → observer → revealed,
-                 * matching Dawn's unified trigger strategy.
-                 */
-                _refresh() {
-                    registry.unobserve(this.$el);
-                    this._revealed = false;
-                    this._prepareTargets();
-
-                    if (this._shouldSkipAnimation()) {
-                        this._applyRevealed();
+                _scheduleDelayedReveal(target, delayMs) {
+                    if (delayMs <= 0) {
+                        this._revealTarget(target);
                         return;
                     }
 
-                    this._applyPending();
+                    const existing = this._pageLoadTimers.get(target);
+                    if (existing) clearTimeout(existing);
+
+                    const timerId = window.setTimeout(() => {
+                        this._pageLoadTimers.delete(target);
+                        if (target.getAttribute('data-motion-state') !== 'pending') return;
+                        this._revealTarget(target);
+                    }, delayMs);
+
+                    this._pageLoadTimers.set(target, timerId);
+                },
+
+                /**
+                 * Assign --motion-index: explicit data-motion-index wins; otherwise
+                 * visible descendants of [data-motion-cascade] receive 0..n; all
+                 * other targets default to 0.
+                 */
+                _prepareTargets() {
+                    const allTargets = this.$el.querySelectorAll('[data-motion-reveal]');
+
+                    allTargets.forEach((target) => {
+                        const explicit = Number(target.dataset.motionIndex);
+                        if (Number.isFinite(explicit) && explicit >= 0) {
+                            target.style.setProperty('--motion-index', String(explicit));
+                        } else {
+                            target.style.removeProperty('--motion-index');
+                        }
+                    });
+
+                    this.$el.querySelectorAll('[data-motion-cascade]').forEach((container) => {
+                        if (!this._isRevealTargetVisible(container)) return;
+
+                        let cascadeIndex = 0;
+                        container.querySelectorAll('[data-motion-reveal]').forEach((target) => {
+                            if (!this._isRevealTargetVisible(target)) return;
+
+                            const explicit = Number(target.dataset.motionIndex);
+                            if (Number.isFinite(explicit) && explicit >= 0) return;
+
+                            target.style.setProperty('--motion-index', String(cascadeIndex));
+                            cascadeIndex += 1;
+                        });
+                    });
+
+                    allTargets.forEach((target) => {
+                        if (!target.style.getPropertyValue('--motion-index')) {
+                            target.style.setProperty('--motion-index', '0');
+                        }
+                    });
+                },
+
+                _isTargetInView(target) {
+                    const rect = target.getBoundingClientRect();
+                    if (rect.width === 0 && rect.height === 0) return false;
+
+                    const viewportHeight =
+                        window.innerHeight || document.documentElement.clientHeight;
+                    const bottomInset = viewportHeight * 0.15;
+                    const visibleTop = 0;
+                    const visibleBottom = viewportHeight - bottomInset;
+                    const visibleHeight =
+                        Math.min(rect.bottom, visibleBottom) - Math.max(rect.top, visibleTop);
+                    const threshold = 0.12;
+
+                    return (
+                        visibleHeight > 0 &&
+                        visibleHeight / (rect.height || 1) >= threshold &&
+                        rect.bottom > visibleTop &&
+                        rect.top < visibleBottom
+                    );
+                },
+
+                _clearPageLoadTimers() {
+                    this._pageLoadTimers.forEach((timerId) => {
+                        clearTimeout(timerId);
+                    });
+                    this._pageLoadTimers.clear();
+                    this._pageLoadQueue.clear();
+                    this._clearCascadeQueues();
+                },
+
+                _applyTargetPending(target) {
+                    target.setAttribute('data-motion-state', 'pending');
+                },
+
+                _revealTarget(target) {
+                    target.setAttribute('data-motion-state', 'revealed');
+                    this._pageLoadQueue.delete(target);
+
+                    const timerId = this._pageLoadTimers.get(target);
+                    if (timerId) {
+                        clearTimeout(timerId);
+                        this._pageLoadTimers.delete(target);
+                    }
+
+                    if (!this._isRevealAlways() && this._observedTargets.has(target)) {
+                        registry.unobserve(target);
+                        this._observedTargets.delete(target);
+                    }
+                },
+
+                _resetTargetForReplay(target) {
+                    if (this._shouldSkipAnimation()) return;
+                    this._applyTargetPending(target);
+                    if (!this._observedTargets.has(target)) {
+                        registry.observe(target, (entry) => {
+                            this._onTargetIntersect(target, entry);
+                        });
+                        this._observedTargets.add(target);
+                    }
+                },
+
+                _unobserveAllTargets() {
+                    this._observedTargets.forEach((target) => {
+                        registry.unobserve(target);
+                    });
+                    this._observedTargets.clear();
+                },
+
+                _schedulePageLoadReveals() {
+                    this._deferToPageLoadFlush = true;
 
                     requestAnimationFrame(() => {
-                        registry.observe(this.$el, this._onIntersect.bind(this));
+                        requestAnimationFrame(() => {
+                            const pendingInView = [
+                                ...this.$el.querySelectorAll(
+                                    '[data-motion-reveal][data-motion-state="pending"]',
+                                ),
+                            ].filter(
+                                (target) =>
+                                    this._isRevealTargetVisible(target) &&
+                                    this._isTargetInView(target),
+                            );
+
+                            pendingInView.forEach((target) => {
+                                this._pageLoadQueue.add(target);
+                                const delay =
+                                    MOTION_REVEAL_PAGE_LOAD_BASE_DELAY_MS +
+                                    this._getMotionIndex(target) * this._getStaggerMs(target);
+                                const timerId = window.setTimeout(() => {
+                                    this._pageLoadTimers.delete(target);
+                                    if (target.getAttribute('data-motion-state') !== 'pending') {
+                                        this._pageLoadQueue.delete(target);
+                                        return;
+                                    }
+                                    this._revealTarget(target);
+                                }, delay);
+                                this._pageLoadTimers.set(target, timerId);
+                            });
+
+                            this._deferToPageLoadFlush = false;
+                        });
+                    });
+                },
+
+                _registerTargets() {
+                    this._clearPageLoadTimers();
+                    this._prepareTargets();
+
+                    const targets = this.$el.querySelectorAll('[data-motion-reveal]');
+
+                    if (this._shouldSkipAnimation()) {
+                        targets.forEach((target) => {
+                            if (!this._isRevealTargetVisible(target)) return;
+                            this._revealTarget(target);
+                        });
+                        return;
+                    }
+
+                    this._deferToPageLoadFlush = true;
+
+                    targets.forEach((target) => {
+                        if (!this._isRevealTargetVisible(target)) return;
+
+                        if (this._shouldSkipTargetAnimation(target)) {
+                            this._revealTarget(target);
+                            return;
+                        }
+
+                        if (
+                            !this._isRevealAlways() &&
+                            target.getAttribute('data-motion-state') === 'revealed'
+                        ) {
+                            return;
+                        }
+
+                        if (this._observedTargets.has(target)) return;
+
+                        this._applyTargetPending(target);
+                        registry.observe(target, (entry) => {
+                            this._onTargetIntersect(target, entry);
+                        });
+                        this._observedTargets.add(target);
+                    });
+
+                    this._schedulePageLoadReveals();
+                },
+
+                _refresh() {
+                    this._clearPageLoadTimers();
+                    this._unobserveAllTargets();
+                    this.$el.querySelectorAll('[data-motion-reveal]').forEach((target) => {
+                        target.removeAttribute('data-motion-state');
+                    });
+                    requestAnimationFrame(() => {
+                        this._registerTargets();
                     });
                 },
 
                 init() {
-                    this._prepareTargets();
+                    this._onTabClick = (event) => {
+                        if (event.target.closest('[role="tab"]')) {
+                            requestAnimationFrame(() => {
+                                requestAnimationFrame(() => {
+                                    this._registerTargets();
+                                });
+                            });
+                        }
+                    };
+                    this.$el.addEventListener('click', this._onTabClick);
 
-                    if (this._shouldSkipAnimation()) {
-                        this._applyRevealed();
-                    } else {
-                        this._applyPending();
-                        registry.observe(this.$el, this._onIntersect.bind(this));
-                    }
+                    this.$nextTick(() => {
+                        requestAnimationFrame(() => {
+                            requestAnimationFrame(() => {
+                                this._registerTargets();
+                            });
+                        });
+                    });
 
-                    // Theme Editor: replay on section select/reorder.
-                    // Only register in designMode to avoid unnecessary listeners
-                    // on the storefront.
                     if (
                         window.Shopify?.designMode &&
                         ThemeEvents &&
@@ -1045,11 +1319,6 @@
                     }
                 },
 
-                /**
-                 * Match a Shopify editor event to this section root.
-                 * Checks event.detail.sectionId against data-section-id,
-                 * then falls back to DOM containment.
-                 */
                 _matchesSection(event, el) {
                     const detail = event.detail;
                     if (detail && detail.sectionId) {
@@ -1062,16 +1331,36 @@
                     return false;
                 },
 
-                _onIntersect(entry) {
-                    if (this._revealed) return;
-                    if (!entry.isIntersecting) return;
+                _onTargetIntersect(target, entry) {
+                    if (!entry.isIntersecting) {
+                        if (
+                            this._isRevealAlways() &&
+                            !this._shouldSkipAnimation() &&
+                            target.getAttribute('data-motion-state') === 'revealed'
+                        ) {
+                            this._resetTargetForReplay(target);
+                        }
+                        return;
+                    }
 
-                    this._applyRevealed();
-                    registry.unobserve(this.$el);
+                    if (target.getAttribute('data-motion-state') === 'revealed') return;
+                    if (this._deferToPageLoadFlush) return;
+                    if (this._pageLoadQueue.has(target)) return;
+
+                    if (this._queueCascadeReveal(target)) {
+                        return;
+                    }
+
+                    this._revealTarget(target);
                 },
 
                 destroy() {
-                    registry.unobserve(this.$el);
+                    this._clearPageLoadTimers();
+                    this._unobserveAllTargets();
+                    if (this._onTabClick) {
+                        this.$el.removeEventListener('click', this._onTabClick);
+                        this._onTabClick = null;
+                    }
                     if (this._cleanupEditor) {
                         this._cleanupEditor();
                         this._cleanupEditor = null;
@@ -1086,6 +1375,8 @@
      * Module-level shared IntersectionObserver for motion reveal.
      * All motionRevealSection instances share one observer.
      */
+    const MOTION_REVEAL_PAGE_LOAD_BASE_DELAY_MS = 48;
+
     const motionRevealSharedRegistry = (() => {
         const callbacks = new WeakMap();
         let observer = null;
@@ -1101,7 +1392,7 @@
                         if (cb) cb(entry);
                     });
                 },
-                { rootMargin: '0px 0px -50px 0px', threshold: 0 },
+                { rootMargin: '0px 0px -15% 0px', threshold: 0.12 },
             );
             return observer;
         }

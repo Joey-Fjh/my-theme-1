@@ -121,99 +121,97 @@
    Controlled by body[data-content-reveal-style] and
    body[data-media-reveal-style] set from theme settings.
 
-   Alpine motionRevealSection sets data-motion-state on the
-   section root [data-motion-section], not on individual targets.
-   Targets are visible by default (no-JS safe). Hiding only
-   activates when root has data-motion-state="pending".
+   Alpine motionRevealSection sets data-motion-state on each
+   [data-motion-reveal] target when that target enters the viewport.
+   Section root [data-motion-section] owns lifecycle only.
 
-   --motion-index is set by JS per target for stagger.
+   Targets are visible by default (no-JS safe). Hiding only
+   activates when a target has data-motion-state="pending".
+
+   --motion-index defaults to 0; set data-motion-index for stagger.
    ================================================================ */
 
 /* Content reveal: fade */
-body[data-content-reveal-style='fade']
-    [data-motion-section][data-motion-state='pending']
-    [data-motion-reveal='content'] {
+body[data-content-reveal-style='fade'] [data-motion-reveal='content'][data-motion-state='pending'] {
     opacity: 0;
-    transition: opacity var(--motion-duration-base, 400ms)
+    will-change: opacity;
+    transition: opacity var(--motion-reveal-duration-base, 650ms)
         var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1));
-    transition-delay: calc(var(--motion-index, 0) * var(--motion-reveal-stagger, 80ms));
+    transition-delay: calc(var(--motion-index, 0) * var(--motion-reveal-stagger, 100ms));
 }
 
 body[data-content-reveal-style='fade']
-    [data-motion-section][data-motion-state='revealed']
-    [data-motion-reveal='content'] {
+    [data-motion-reveal='content'][data-motion-state='revealed'] {
     opacity: 1;
-    transition: opacity var(--motion-duration-base, 400ms)
+    will-change: auto;
+    transition: opacity var(--motion-reveal-duration-base, 650ms)
         var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1));
 }
 
 /* Content reveal: rise */
-body[data-content-reveal-style='rise']
-    [data-motion-section][data-motion-state='pending']
-    [data-motion-reveal='content'] {
+body[data-content-reveal-style='rise'] [data-motion-reveal='content'][data-motion-state='pending'] {
     opacity: 0;
-    transform: translateY(var(--motion-reveal-distance, 1.5rem));
+    transform: translate3d(0, var(--motion-reveal-distance, 2.5rem), 0);
+    will-change: opacity, transform;
     transition:
-        opacity var(--motion-duration-base, 400ms)
+        opacity var(--motion-reveal-duration-base, 650ms)
             var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1)),
-        transform var(--motion-duration-base, 400ms)
+        transform var(--motion-reveal-duration-base, 650ms)
             var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1));
-    transition-delay: calc(var(--motion-index, 0) * var(--motion-reveal-stagger, 80ms));
+    transition-delay: calc(var(--motion-index, 0) * var(--motion-reveal-stagger, 100ms));
 }
 
 body[data-content-reveal-style='rise']
-    [data-motion-section][data-motion-state='revealed']
-    [data-motion-reveal='content'] {
+    [data-motion-reveal='content'][data-motion-state='revealed'] {
     opacity: 1;
-    transform: translateY(0);
+    transform: translate3d(0, 0, 0);
+    will-change: auto;
     transition:
-        opacity var(--motion-duration-base, 400ms)
+        opacity var(--motion-reveal-duration-base, 650ms)
             var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1)),
-        transform var(--motion-duration-base, 400ms)
+        transform var(--motion-reveal-duration-base, 650ms)
             var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1));
 }
 
 /* Media reveal: fade */
-body[data-media-reveal-style='fade']
-    [data-motion-section][data-motion-state='pending']
-    [data-motion-reveal='media'] {
+body[data-media-reveal-style='fade'] [data-motion-reveal='media'][data-motion-state='pending'] {
     opacity: 0;
-    transition: opacity var(--motion-duration-base, 400ms)
+    will-change: opacity;
+    transition: opacity var(--motion-reveal-duration-base, 650ms)
         var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1));
-    transition-delay: calc(var(--motion-index, 0) * var(--motion-reveal-stagger, 80ms));
+    transition-delay: calc(var(--motion-index, 0) * var(--motion-reveal-stagger, 100ms));
 }
 
-body[data-media-reveal-style='fade']
-    [data-motion-section][data-motion-state='revealed']
-    [data-motion-reveal='media'] {
+body[data-media-reveal-style='fade'] [data-motion-reveal='media'][data-motion-state='revealed'] {
     opacity: 1;
-    transition: opacity var(--motion-duration-base, 400ms)
+    will-change: auto;
+    transition: opacity var(--motion-reveal-duration-base, 650ms)
         var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1));
 }
 
 /* Media reveal: zoom */
-body[data-media-reveal-style='zoom']
-    [data-motion-section][data-motion-state='pending']
-    [data-motion-reveal='media'] {
+body[data-media-reveal-style='zoom'] [data-motion-reveal='media'][data-motion-state='pending'] {
     opacity: 0;
-    transform: scale(0.92);
+    transform: scale(0.88);
+    transform-origin: center center;
+    will-change: opacity, transform;
     transition:
-        opacity var(--motion-duration-base, 400ms)
+        opacity var(--motion-reveal-duration-base, 650ms)
             var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1)),
-        transform var(--motion-duration-base, 400ms)
+        transform var(--motion-reveal-duration-base, 650ms)
             var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1));
-    transition-delay: calc(var(--motion-index, 0) * var(--motion-reveal-stagger, 80ms));
+    transition-delay: calc(var(--motion-index, 0) * var(--motion-reveal-stagger, 100ms));
 }
 
-body[data-media-reveal-style='zoom']
-    [data-motion-section][data-motion-state='revealed']
-    [data-motion-reveal='media'] {
+body[data-media-reveal-style='zoom'] [data-motion-reveal='media'][data-motion-state='revealed'] {
     opacity: 1;
     transform: scale(1);
+    transform-origin: center center;
+    will-change: auto;
     transition:
-        opacity var(--motion-duration-base, 400ms)
+        opacity var(--motion-reveal-duration-base, 650ms)
             var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1)),
-        transform var(--motion-duration-base, 400ms)
+        transform var(--motion-reveal-duration-base, 650ms)
             var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1));
 }
 
@@ -225,7 +223,7 @@ body[data-media-reveal-style='zoom']
 }
 
 /* Kill switch: motion disabled */
-body[data-motion-enabled='false'] [data-motion-section] [data-motion-reveal] {
+body[data-motion-enabled='false'] [data-motion-reveal] {
     opacity: 1 !important;
     transform: none !important;
     transition: none !important;
@@ -233,7 +231,7 @@ body[data-motion-enabled='false'] [data-motion-section] [data-motion-reveal] {
 
 /* Kill switch: reduced motion */
 @media (prefers-reduced-motion: reduce) {
-    [data-motion-section] [data-motion-reveal] {
+    [data-motion-reveal] {
         opacity: 1 !important;
         transform: none !important;
         transition: none !important;
@@ -1012,6 +1010,6 @@ body[data-motion-enabled='false'] [data-motion-section] [data-motion-reveal] {
 /*
    No-JS fallback: no rule needed.
    Targets render visible by default in HTML.
-   Hiding only activates via [data-motion-state="pending"]
-   which Alpine sets after init.
+   Hiding only activates via target [data-motion-state="pending"]
+   which motionRevealSection sets after init.
 */

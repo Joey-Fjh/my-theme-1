@@ -51,6 +51,7 @@
     @param {string} [placeholder_aspect_ratio] - Optional fallback aspect ratio when image is nil (defaults to '4/3')
     @param {string} [extra_attributes] - Additional raw HTML attributes applied to the <img> element
     @param {string} [fetchpriority] - Optional fetchpriority attribute for the img tag ('high', 'low', or 'auto')
+    @param {boolean} [motion_reveal] - Optional. Defaults to true. Pass false when a parent component owns the reveal target.
 
     @example
     {% render 'image', image: product.featured_image, url: product.url %}
@@ -87,6 +88,10 @@
     assign img_class = img_class | default: ''
     assign extra_attributes = extra_attributes | default: ''
     assign alt = alt | default: ''
+    assign motion_reveal_enabled = true
+    if motion_reveal == false
+        assign motion_reveal_enabled = false
+    endif
 
     if mode == 'natural'
         assign fit = fit | default: 'contain'
@@ -208,7 +213,9 @@
     {% if url %}
         href="{{ url }}"
     {% endif %}
-    data-motion-reveal="media"
+    {% if motion_reveal_enabled %}
+        data-motion-reveal="media"
+    {% endif %}
     data-image-mode="{{ mode }}"
     {%- if aspect_ratio -%}
         style="--aspect-ratio: {{ aspect_ratio }}; --image-object-position: {{ position }}"
