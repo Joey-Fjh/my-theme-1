@@ -927,6 +927,7 @@
 
         motionRevealSection() {
             const registry = motionRevealSharedRegistry;
+            const cascadeRegistry = motionCascadeBatchRegistry;
             const ThemeEvents = window.__Theme__?.Events;
 
             return {
@@ -934,7 +935,8 @@
                 _observedTargets: new Set(),
                 _pageLoadQueue: new Set(),
                 _pageLoadTimers: new Map(),
-                _cascadeQueues: new Map(),
+                _cascadeBatches: new Map(),
+                _cascadeObservedElements: new Set(),
                 _deferToPageLoadFlush: false,
                 _cleanupEditor: null,
                 _onTabClick: null,
@@ -1000,53 +1002,209 @@
                     return 0;
                 },
 
-                _queueCascadeReveal(target) {
+                _getCascadeContainer(target) {
+                    if (!(target instanceof Element)) return null;
                     const cascade = target.closest('[data-motion-cascade]');
-                    if (!cascade || !this.$el.contains(cascade)) return false;
-
-                    let queue = this._cascadeQueues.get(cascade);
-                    if (!queue) {
-                        queue = { frameId: null, targets: new Set() };
-                        this._cascadeQueues.set(cascade, queue);
-                    }
-
-                    queue.targets.add(target);
-
-                    if (!queue.frameId) {
-                        queue.frameId = requestAnimationFrame(() => {
-                            this._flushCascadeReveal(cascade);
-                        });
-                    }
-
-                    return true;
+                    if (!cascade || !this.$el.contains(cascade)) return null;
+                    return cascade;
                 },
 
-                _flushCascadeReveal(cascade) {
-                    const queue = this._cascadeQueues.get(cascade);
-                    if (!queue) return;
+                _groupCascadeTargetsByRow(targets) {
+                    const tolerance = MOTION_CASCADE_ROW_TOLERANCE_PX;
+                    const entries = targets
+                        .filter((target) => this._isRevealTargetVisible(target))
+                        .map((target) => {
+                            const rect = target.getBoundingClientRect();
+                            return { target, top: rect.top, left: rect.left };
+                        })
+                        .sort((a, b) => {
+                            if (Math.abs(a.top - b.top) > tolerance) return a.top - b.top;
+                            return a.left - b.left;
+                        });
 
-                    this._cascadeQueues.delete(cascade);
+                    const rows = [];
+                    for (const entry of entries) {
+                        let row = rows.find((r) => Math.abs(r.top - entry.top) <= tolerance);
+                        if (!row) {
+                            row = { top: entry.top, targets: [] };
+                            rows.push(row);
+                        }
+                        row.targets.push(entry.target);
+                    }
 
-                    const targets = [...queue.targets]
+                    return rows;
+                },
+
+                _isTargetInInsetViewport(target) {
+                    const rect = target.getBoundingClientRect();
+                    if (rect.width === 0 && rect.height === 0) return false;
+
+                    const viewportHeight =
+                        window.innerHeight || document.documentElement.clientHeight;
+                    const bottomInset = viewportHeight * 0.15;
+                    const visibleBottom = viewportHeight - bottomInset;
+
+                    return rect.bottom > 0 && rect.top < visibleBottom;
+                },
+
+                _isCascadeTriggerInView(trigger) {
+                    return this._isTargetInInsetViewport(trigger);
+                },
+
+                _isCascadeBatchOutOfView(batch) {
+                    return batch.targets.every((target) => {
+                        if (!this._isRevealTargetVisible(target)) return true;
+                        return !this._isTargetInInsetViewport(target);
+                    });
+                },
+
+                _maybeResetCascadeBatch(batch) {
+                    if (!this._isRevealAlways() || this._shouldSkipAnimation()) return;
+                    if (!this._isCascadeBatchOutOfView(batch)) return;
+
+                    batch.targets.forEach((target) => {
+                        if (target.getAttribute('data-motion-state') === 'revealed') {
+                            this._applyTargetPending(target);
+                        }
+                    });
+                },
+
+                _scheduleCascadeBatchReveal(batch, baseDelayMs = 0) {
+                    const pending = batch.targets
                         .filter(
                             (target) =>
                                 this._isRevealTargetVisible(target) &&
+                                !this._shouldSkipTargetAnimation(target) &&
                                 target.getAttribute('data-motion-state') === 'pending',
                         )
                         .sort((a, b) => this._getMotionIndex(a) - this._getMotionIndex(b));
 
-                    const staggerMs = this._getStaggerMs(cascade);
+                    if (!pending.length) return;
 
-                    targets.forEach((target, batchIndex) => {
-                        this._scheduleDelayedReveal(target, Math.min(batchIndex * staggerMs, 900));
+                    const staggerMs = this._getStaggerMs(batch.cascade);
+
+                    pending.forEach((target, batchIndex) => {
+                        const delay = baseDelayMs + Math.min(batchIndex * staggerMs, 900);
+                        this._scheduleDelayedReveal(target, delay);
+                    });
+
+                    if (!this._isRevealAlways()) {
+                        this._unobserveCascadeBatch(batch);
+                    }
+                },
+
+                _unobserveCascadeBatch(batch) {
+                    batch.observed.forEach((element) => {
+                        cascadeRegistry.unobserve(element);
+                        this._cascadeObservedElements.delete(element);
+                    });
+                    batch.observed.length = 0;
+                    this._cascadeBatches.delete(batch.trigger);
+                },
+
+                _observeCascadeBatchElement(batch, element, handler) {
+                    cascadeRegistry.observe(element, handler);
+                    batch.observed.push(element);
+                    this._cascadeObservedElements.add(element);
+                },
+
+                _registerCascadeBatch(cascade, targets) {
+                    const sorted = [...targets].sort(
+                        (a, b) => this._getMotionIndex(a) - this._getMotionIndex(b),
+                    );
+                    const trigger = sorted[0];
+                    if (!trigger) return;
+
+                    if (
+                        !this._isRevealAlways() &&
+                        sorted.every(
+                            (target) => target.getAttribute('data-motion-state') === 'revealed',
+                        )
+                    ) {
+                        return;
+                    }
+
+                    if (this._cascadeBatches.has(trigger)) return;
+
+                    sorted.forEach((target) => {
+                        if (!this._isRevealTargetVisible(target)) return;
+
+                        if (this._shouldSkipTargetAnimation(target)) {
+                            this._revealTarget(target);
+                            return;
+                        }
+
+                        if (
+                            !this._isRevealAlways() &&
+                            target.getAttribute('data-motion-state') === 'revealed'
+                        ) {
+                            return;
+                        }
+
+                        this._applyTargetPending(target);
+                    });
+
+                    const batch = { cascade, targets: sorted, trigger, observed: [] };
+                    this._cascadeBatches.set(trigger, batch);
+
+                    this._observeCascadeBatchElement(batch, trigger, (entry) => {
+                        this._onCascadeBatchTriggerIntersect(batch, entry);
+                    });
+
+                    if (this._isRevealAlways()) {
+                        sorted.forEach((target) => {
+                            if (target === trigger) return;
+                            this._observeCascadeBatchElement(batch, target, (entry) => {
+                                if (!entry.isIntersecting) {
+                                    this._maybeResetCascadeBatch(batch);
+                                }
+                            });
+                        });
+                    }
+                },
+
+                _registerCascadeTargets(cascadeTargets) {
+                    const byContainer = new Map();
+
+                    cascadeTargets.forEach((target) => {
+                        const cascade = this._getCascadeContainer(target);
+                        if (!cascade) return;
+                        if (!byContainer.has(cascade)) byContainer.set(cascade, []);
+                        byContainer.get(cascade).push(target);
+                    });
+
+                    byContainer.forEach((targets, cascade) => {
+                        const rows = this._groupCascadeTargetsByRow(targets);
+                        rows.forEach((row) => {
+                            this._registerCascadeBatch(cascade, row.targets);
+                        });
                     });
                 },
 
-                _clearCascadeQueues() {
-                    this._cascadeQueues.forEach((queue) => {
-                        if (queue.frameId) cancelAnimationFrame(queue.frameId);
+                _onCascadeBatchTriggerIntersect(batch, entry) {
+                    if (!entry.isIntersecting) {
+                        this._maybeResetCascadeBatch(batch);
+                        return;
+                    }
+
+                    if (this._deferToPageLoadFlush) return;
+
+                    const hasPending = batch.targets.some(
+                        (target) =>
+                            this._isRevealTargetVisible(target) &&
+                            target.getAttribute('data-motion-state') === 'pending',
+                    );
+                    if (!hasPending) return;
+
+                    this._scheduleCascadeBatchReveal(batch, 0);
+                },
+
+                _unobserveAllCascadeBatches() {
+                    this._cascadeObservedElements.forEach((element) => {
+                        cascadeRegistry.unobserve(element);
                     });
-                    this._cascadeQueues.clear();
+                    this._cascadeObservedElements.clear();
+                    this._cascadeBatches.clear();
                 },
 
                 _scheduleDelayedReveal(target, delayMs) {
@@ -1107,24 +1265,7 @@
                 },
 
                 _isTargetInView(target) {
-                    const rect = target.getBoundingClientRect();
-                    if (rect.width === 0 && rect.height === 0) return false;
-
-                    const viewportHeight =
-                        window.innerHeight || document.documentElement.clientHeight;
-                    const bottomInset = viewportHeight * 0.15;
-                    const visibleTop = 0;
-                    const visibleBottom = viewportHeight - bottomInset;
-                    const visibleHeight =
-                        Math.min(rect.bottom, visibleBottom) - Math.max(rect.top, visibleTop);
-                    const threshold = 0.12;
-
-                    return (
-                        visibleHeight > 0 &&
-                        visibleHeight / (rect.height || 1) >= threshold &&
-                        rect.bottom > visibleTop &&
-                        rect.top < visibleBottom
-                    );
+                    return this._isTargetInInsetViewport(target);
                 },
 
                 _clearPageLoadTimers() {
@@ -1133,7 +1274,6 @@
                     });
                     this._pageLoadTimers.clear();
                     this._pageLoadQueue.clear();
-                    this._clearCascadeQueues();
                 },
 
                 _applyTargetPending(target) {
@@ -1179,12 +1319,59 @@
 
                     requestAnimationFrame(() => {
                         requestAnimationFrame(() => {
+                            const cascadeTargetSet = new Set();
+
+                            this._cascadeBatches.forEach((batch) => {
+                                batch.targets.forEach((target) => cascadeTargetSet.add(target));
+
+                                if (!this._isCascadeTriggerInView(batch.trigger)) return;
+
+                                const pending = batch.targets.filter(
+                                    (target) =>
+                                        this._isRevealTargetVisible(target) &&
+                                        !this._shouldSkipTargetAnimation(target) &&
+                                        target.getAttribute('data-motion-state') === 'pending',
+                                );
+
+                                pending.forEach((target) => this._pageLoadQueue.add(target));
+
+                                pending
+                                    .sort(
+                                        (a, b) => this._getMotionIndex(a) - this._getMotionIndex(b),
+                                    )
+                                    .forEach((target, batchIndex) => {
+                                        const delay =
+                                            MOTION_REVEAL_PAGE_LOAD_BASE_DELAY_MS +
+                                            Math.min(
+                                                batchIndex * this._getStaggerMs(batch.cascade),
+                                                900,
+                                            );
+                                        const timerId = window.setTimeout(() => {
+                                            this._pageLoadTimers.delete(target);
+                                            this._pageLoadQueue.delete(target);
+                                            if (
+                                                target.getAttribute('data-motion-state') !==
+                                                'pending'
+                                            ) {
+                                                return;
+                                            }
+                                            this._revealTarget(target);
+                                        }, delay);
+                                        this._pageLoadTimers.set(target, timerId);
+                                    });
+
+                                if (!this._isRevealAlways() && pending.length > 0) {
+                                    this._unobserveCascadeBatch(batch);
+                                }
+                            });
+
                             const pendingInView = [
                                 ...this.$el.querySelectorAll(
                                     '[data-motion-reveal][data-motion-state="pending"]',
                                 ),
                             ].filter(
                                 (target) =>
+                                    !cascadeTargetSet.has(target) &&
                                     this._isRevealTargetVisible(target) &&
                                     this._isTargetInView(target),
                             );
@@ -1212,9 +1399,10 @@
 
                 _registerTargets() {
                     this._clearPageLoadTimers();
+                    this._unobserveAllCascadeBatches();
                     this._prepareTargets();
 
-                    const targets = this.$el.querySelectorAll('[data-motion-reveal]');
+                    const targets = [...this.$el.querySelectorAll('[data-motion-reveal]')];
 
                     if (this._shouldSkipAnimation()) {
                         targets.forEach((target) => {
@@ -1224,11 +1412,21 @@
                         return;
                     }
 
-                    this._deferToPageLoadFlush = true;
+                    const cascadeTargets = [];
+                    const ordinaryTargets = [];
 
                     targets.forEach((target) => {
                         if (!this._isRevealTargetVisible(target)) return;
+                        if (this._getCascadeContainer(target)) {
+                            cascadeTargets.push(target);
+                        } else {
+                            ordinaryTargets.push(target);
+                        }
+                    });
 
+                    this._deferToPageLoadFlush = true;
+
+                    ordinaryTargets.forEach((target) => {
                         if (this._shouldSkipTargetAnimation(target)) {
                             this._revealTarget(target);
                             return;
@@ -1250,12 +1448,15 @@
                         this._observedTargets.add(target);
                     });
 
+                    this._registerCascadeTargets(cascadeTargets);
+
                     this._schedulePageLoadReveals();
                 },
 
                 _refresh() {
                     this._clearPageLoadTimers();
                     this._unobserveAllTargets();
+                    this._unobserveAllCascadeBatches();
                     this.$el.querySelectorAll('[data-motion-reveal]').forEach((target) => {
                         target.removeAttribute('data-motion-state');
                     });
@@ -1347,16 +1548,13 @@
                     if (this._deferToPageLoadFlush) return;
                     if (this._pageLoadQueue.has(target)) return;
 
-                    if (this._queueCascadeReveal(target)) {
-                        return;
-                    }
-
                     this._revealTarget(target);
                 },
 
                 destroy() {
                     this._clearPageLoadTimers();
                     this._unobserveAllTargets();
+                    this._unobserveAllCascadeBatches();
                     if (this._onTabClick) {
                         this.$el.removeEventListener('click', this._onTabClick);
                         this._onTabClick = null;
@@ -1376,6 +1574,7 @@
      * All motionRevealSection instances share one observer.
      */
     const MOTION_REVEAL_PAGE_LOAD_BASE_DELAY_MS = 48;
+    const MOTION_CASCADE_ROW_TOLERANCE_PX = 8;
 
     const motionRevealSharedRegistry = (() => {
         const callbacks = new WeakMap();
@@ -1392,7 +1591,49 @@
                         if (cb) cb(entry);
                     });
                 },
-                { rootMargin: '0px 0px -15% 0px', threshold: 0.12 },
+                { rootMargin: '0px 0px -15% 0px', threshold: 0 },
+            );
+            return observer;
+        }
+
+        return {
+            observe(el, cb) {
+                const obs = getObserver();
+                if (!obs) {
+                    cb({ isIntersecting: true });
+                    return;
+                }
+                callbacks.set(el, cb);
+                obs.observe(el);
+            },
+
+            unobserve(el) {
+                if (observer) observer.unobserve(el);
+                callbacks.delete(el);
+            },
+        };
+    })();
+
+    /**
+     * Cascade row/batch observer: low threshold so a row representative can
+     * trigger the whole batch without requiring tall cards to self-intersect at 12%.
+     */
+    const motionCascadeBatchRegistry = (() => {
+        const callbacks = new WeakMap();
+        let observer = null;
+
+        function getObserver() {
+            if (observer) return observer;
+            if (!('IntersectionObserver' in window)) return null;
+
+            observer = new IntersectionObserver(
+                (entries) => {
+                    entries.forEach((entry) => {
+                        const cb = callbacks.get(entry.target);
+                        if (cb) cb(entry);
+                    });
+                },
+                { rootMargin: '0px 0px -15% 0px', threshold: 0 },
             );
             return observer;
         }

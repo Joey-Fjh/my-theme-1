@@ -109,7 +109,7 @@ Recommended runtime contract:
 
 ### Trigger Behavior
 
-- The shared `IntersectionObserver` uses `rootMargin: '0px 0px -15% 0px'` and `threshold: 0.12`. Each target reveals when **it** crosses the inset viewport (Dawn-style per-element trigger), not when the section root intersects.
+- The shared non-cascade `IntersectionObserver` uses `rootMargin: '0px 0px -15% 0px'` and `threshold: 0`. Each **non-cascade** target reveals when its top/bottom edge crosses the inset viewport trigger line (bottom inset remains `15%` of viewport height), not when a fraction of the target's own height is visible and not when the section root intersects.
 - HTML renders visible by default; Alpine sets `data-motion-state="pending"` on each observed target only after init, so no-JS and pre-init states remain safe.
 - **Page-load reveal:** targets already intersecting when registered (hero copy, above-the-fold blocks) are not revealed in the same frame as `pending`. Registration sets `_deferToPageLoadFlush` before `observe()` so synchronous IO callbacks cannot skip the paint frame. After double `requestAnimationFrame`, in-view pending targets reveal with `48ms` base delay plus cascade stagger (`--motion-index × --motion-reveal-stagger`). Scroll-in targets still reveal from `IntersectionObserver` when entering view.
 - Sections with critical LCP or carousel media may opt media out with `data-motion-media="static"` on the section root; JS skips observing those media targets and CSS keeps them static. Pass `motion_reveal: false` on hero images when the section root is static.
@@ -119,7 +119,10 @@ Recommended runtime contract:
 - Add `data-motion-cascade` on a visible wrapper (product grid, tab panel product area, card list).
 - `motionRevealSection()` assigns `--motion-index` `0, 1, 2…` to visible `[data-motion-reveal]` descendants in DOM order inside that wrapper.
 - Inactive tab panels (`display: none`) are excluded from indexing and registration until the panel becomes visible.
-- Stagger delay applies at reveal time. Page-load reveal uses each target's `--motion-index`; scroll-in reveal batches targets that enter in the same frame and staggers that batch from `0..n`, using the cascade wrapper's inherited `--motion-reveal-stagger`. Runtime delay is capped so long grids do not become sluggish.
+- **Row/batch trigger:** cascade children are **not** observed individually with the ordinary per-target observer. Visible targets inside each cascade container are grouped into visual rows (`getBoundingClientRect().top`, `8px` tolerance). Each row picks a representative target (lowest `--motion-index` in that row). A dedicated cascade observer (`threshold: 0`, same `rootMargin`) watches only the representative. When the row representative enters the inset viewport, **all** pending targets in that row reveal together, preserving DOM-order stagger (`0..n` within the row, `--motion-reveal-stagger`, `900ms` cap). This prevents tall cards in the same row from staying `pending` because their own visible height ratio never reaches `12%`.
+- Ordinary (non-cascade) `[data-motion-reveal]` targets keep the shared per-target observer (`threshold: 0`, same bottom `15%` inset). Page-load in-view checks use the same inset trigger-line rule (`rect.top < visibleBottom && rect.bottom > 0`).
+- Stagger delay applies at reveal time. Page-load reveal uses each row batch: in-view row representatives schedule their row with `48ms` base delay plus within-row stagger. Scroll-in rows reveal from the cascade batch observer when the representative enters view.
+- `reveal_behavior='always'`: cascade row replay resets only when `_isCascadeBatchOutOfView(batch)` is true (every visible target in the row has left the inset viewport). The row representative alone leaving does not reset taller siblings still on screen. In `always` mode, all row targets are observed for exit checks; only the representative triggers reveal on enter.
 - Do not nest cascade containers unless intentional. Do not wrap conversion controls.
 
 ### Reveal behavior (`reveal_behavior`)
@@ -127,7 +130,7 @@ Recommended runtime contract:
 | Value | Behavior | Dawn alignment |
 | --- | --- | --- |
 | `once` (default) | Target reveals once, then `unobserve` | Matches Dawn scroll-trigger default |
-| `always` | Target resets to `pending` when leaving viewport; re-entry replays | Optional merchant setting |
+| `always` | Target resets to `pending` when leaving viewport; re-entry replays. Cascade rows reset only after **every** target in the row batch has left the inset viewport (not when the row representative alone leaves). | Optional merchant setting |
 
 Setting: `config/settings_schema.json` → `body[data-reveal-behavior]` in `layout/theme.liquid`. Do not read merchant `settings_data.json` in theme code beyond Liquid `settings.*`.
 
@@ -149,7 +152,7 @@ Setting: `config/settings_schema.json` → `body[data-reveal-behavior]` in `layo
 config/settings_schema.json (motion_enabled, motion_speed, content_reveal_style, media_reveal_style, reveal_behavior)
   → layout/theme.liquid body[data-motion-enabled], body[data-content-reveal-style], body[data-media-reveal-style], body[data-reveal-behavior]
   → snippets/css-variables.liquid (--motion-reveal-* tokens from motion_speed)
-  → assets/alpine.components.ui.js motionRevealSection() (per-target IntersectionObserver, target data-motion-state, --motion-index)
+  → assets/alpine.components.ui.js motionRevealSection() (per-target IntersectionObserver for ordinary targets; row/batch cascade observer for [data-motion-cascade] children; target data-motion-state, --motion-index)
   → tailwind/tailwind.animates.css ([data-motion-reveal][data-motion-state] × body reveal style)
   → sections/snippets hooks (data-motion-section root, coarse data-motion-reveal targets)
 ```
