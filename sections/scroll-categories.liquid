@@ -9,7 +9,13 @@
     data-motion-section
 >
     <div class="layout container-page color-{{ section.settings.color_scheme }}">
-        {%- assign selected_collection = section.settings.collection -%}
+        {%- liquid
+            assign selected_collection = section.settings.collection
+            assign scroll_categories_heading_class = section.settings.heading_size | default: 'heading-2xl'
+            assign scroll_categories_collection_heading_class = section.settings.collection_heading_size | default: 'heading-3xl'
+            assign scroll_categories_subtitle_size = section.settings.subtitle_size | default: 'body-xl'
+            assign scroll_categories_subtitle_class = 'typo-subtitle text-theme-text ' | append: scroll_categories_subtitle_size
+        -%}
 
         <div class="flex flex-col gap-16">
             <div
@@ -18,7 +24,7 @@
                 data-motion-index="0"
             >
                 {%- capture link_content -%}
-                    <h1 class="heading-2xl">
+                    <h1 class="{{ scroll_categories_heading_class }}">
                         {%- if section.settings.heading != blank -%}
                             {{ section.settings.heading }}
                         {%- else -%}
@@ -37,7 +43,9 @@
                     variant: 'underline'
                 -%}
 
-                <div class="rte rte--compact">{{ section.settings.description }}</div>
+                <div class="rte rte--compact {{ scroll_categories_subtitle_class }}">
+                    {{ section.settings.description }}
+                </div>
             </div>
 
             <div data-motion-reveal="content" data-motion-index="1">
@@ -46,7 +54,7 @@
                 {% # theme-check-disable-next-line LiquidHTMLSyntaxError %}
                 {%- for product in selected_collection.products limit: max_items -%}
                     <a
-                        class="scroll-categories__item flex flex-col gap-3 py-8 pc:flex-row pc:items-center pc:justify-between pc:p-8"
+                        class="scroll-categories__item flex flex-col gap-3 py-8 text-theme-text/80 pc:flex-row pc:items-center pc:justify-between pc:p-8"
                         href="{{ product.url }}"
                         title="{{ product.title | escape }}"
                         x-data="{hover:false}"
@@ -56,7 +64,7 @@
                         @blur="hover = false"
                         :class="{ 'is-hovered': hover }"
                     >
-                        <span class="shrink-0">
+                        <span class="scroll-categories__item-side shrink-0 body-lg text-theme-text">
                             {%- if product.type != blank -%}
                                 {{ product.type }}
                             {%- else -%}
@@ -65,9 +73,9 @@
                         </span>
 
                         <div class="relative flex min-w-0 items-center gap-4 pc:pe-44">
-                            <p class="min-w-0 truncate heading-2xl">
+                            <h2 class="scroll-categories__product-title min-w-0 truncate {{ scroll_categories_collection_heading_class }}">
                                 {{ product.title }}
-                            </p>
+                            </h2>
 
                             <div
                                 class="
@@ -115,7 +123,7 @@
                             </div>
                         </div>
 
-                        <span class="shrink-0">
+                        <span class="scroll-categories__item-side shrink-0 body-lg text-theme-text">
                             {{ product.price | money }}
                         </span>
                     </a>
@@ -143,8 +151,9 @@
         color: rgb(var(--color-background));
     }
 
-    /* Heading tiers set explicit foreground; inherit only on row hover invert */
-    .scroll-categories__item.is-hovered :where(.heading-2xl) {
+    /* Explicit foreground on title and side meta; inherit only on row hover invert */
+    .scroll-categories__item.is-hovered .scroll-categories__product-title,
+    .scroll-categories__item.is-hovered .scroll-categories__item-side {
         color: inherit;
     }
 
@@ -169,6 +178,154 @@
             "id": "color_scheme",
             "label": "t:sections.scroll-categories.settings.color_scheme",
             "default": "scheme-1"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.slides-show.content.font"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.scroll-categories.content.section_heading"
+        },
+        {
+            "type": "select",
+            "id": "heading_size",
+            "label": "t:sections.slides-show.settings.heading_size",
+            "options": [
+                {
+                    "value": "heading-4xl",
+                    "label": "t:sections.slides-show.options.heading_4xl"
+                },
+                {
+                    "value": "heading-3xl",
+                    "label": "t:sections.slides-show.options.heading_3xl"
+                },
+                {
+                    "value": "heading-2xl",
+                    "label": "t:sections.slides-show.options.heading_2xl"
+                },
+                {
+                    "value": "heading-xl",
+                    "label": "t:sections.slides-show.options.heading_xl"
+                },
+                {
+                    "value": "heading-h1",
+                    "label": "t:sections.slides-show.options.heading_h1"
+                },
+                {
+                    "value": "heading-h2",
+                    "label": "t:sections.slides-show.options.heading_h2"
+                },
+                {
+                    "value": "heading-h3",
+                    "label": "t:sections.slides-show.options.heading_h3"
+                },
+                {
+                    "value": "heading-h4",
+                    "label": "t:sections.slides-show.options.heading_h4"
+                },
+                {
+                    "value": "heading-h5",
+                    "label": "t:sections.slides-show.options.heading_h5"
+                },
+                {
+                    "value": "heading-h6",
+                    "label": "t:sections.slides-show.options.heading_h6"
+                }
+            ],
+            "default": "heading-2xl"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.scroll-categories.content.subtitle"
+        },
+        {
+            "type": "select",
+            "id": "subtitle_size",
+            "label": "t:sections.scroll-categories.settings.subtitle_size",
+            "options": [
+                {
+                    "value": "body-3xl",
+                    "label": "t:sections.scroll-categories.options.body_3xl"
+                },
+                {
+                    "value": "body-2xl",
+                    "label": "t:sections.scroll-categories.options.body_2xl"
+                },
+                {
+                    "value": "body-xl",
+                    "label": "t:sections.scroll-categories.options.body_xl"
+                },
+                {
+                    "value": "body-lg",
+                    "label": "t:sections.scroll-categories.options.body_lg"
+                },
+                {
+                    "value": "body-md",
+                    "label": "t:sections.scroll-categories.options.body_md"
+                },
+                {
+                    "value": "body-sm",
+                    "label": "t:sections.scroll-categories.options.body_sm"
+                },
+                {
+                    "value": "body-xs",
+                    "label": "t:sections.scroll-categories.options.body_xs"
+                }
+            ],
+            "default": "body-xl"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.scroll-categories.content.collection_title_heading"
+        },
+        {
+            "type": "select",
+            "id": "collection_heading_size",
+            "label": "t:sections.slides-show.settings.heading_size",
+            "options": [
+                {
+                    "value": "heading-4xl",
+                    "label": "t:sections.slides-show.options.heading_4xl"
+                },
+                {
+                    "value": "heading-3xl",
+                    "label": "t:sections.slides-show.options.heading_3xl"
+                },
+                {
+                    "value": "heading-2xl",
+                    "label": "t:sections.slides-show.options.heading_2xl"
+                },
+                {
+                    "value": "heading-xl",
+                    "label": "t:sections.slides-show.options.heading_xl"
+                },
+                {
+                    "value": "heading-h1",
+                    "label": "t:sections.slides-show.options.heading_h1"
+                },
+                {
+                    "value": "heading-h2",
+                    "label": "t:sections.slides-show.options.heading_h2"
+                },
+                {
+                    "value": "heading-h3",
+                    "label": "t:sections.slides-show.options.heading_h3"
+                },
+                {
+                    "value": "heading-h4",
+                    "label": "t:sections.slides-show.options.heading_h4"
+                },
+                {
+                    "value": "heading-h5",
+                    "label": "t:sections.slides-show.options.heading_h5"
+                },
+                {
+                    "value": "heading-h6",
+                    "label": "t:sections.slides-show.options.heading_h6"
+                }
+            ],
+            "default": "heading-3xl"
         },
         {
             "type": "range",

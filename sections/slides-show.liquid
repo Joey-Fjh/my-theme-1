@@ -28,6 +28,10 @@
         if section.blocks.size > 1
             assign slides_show_multi_slide = true
         endif
+
+        assign slides_show_heading_class = section.settings.heading_size | default: 'heading-3xl'
+        assign slides_show_subtitle_size = section.settings.subtitle_size | default: 'body-3xl'
+        assign slides_show_subtitle_class = 'typo-subtitle ' | append: slides_show_subtitle_size
     -%}
     <div
         class="swiper h-full w-full"
@@ -72,20 +76,20 @@
                     -%}
 
                     <div class="layout layout-safe-top container-page absolute inset-0">
-                        <div class="grid grid-cols-1 grid-rows-3 pc:grid-cols-3">
+                        <div class="slides-show__content-grid grid h-full min-h-0 grid-cols-1 grid-rows-3 text-theme-text/80 pc:grid-cols-3">
                             <div
-                                class="{{ block.settings.caption_position }} flex flex-col justify-around pc:h-full pc:w-full"
+                                class="slides-show__caption-content {{ block.settings.caption_position }} flex h-full min-h-0 w-full flex-col justify-around gap-4"
                                 {% if forloop.first %}
                                     data-motion-reveal="content"
                                     data-motion-hero-copy
                                     data-motion-index="0"
                                 {% endif %}
                             >
-                                <p>
+                                <p class="body-3xl">
                                     {{ block.settings.year }}
                                 </p>
 
-                                <div class="rte rte--compact mt-2">
+                                <div class="rte rte--compact mt-2 {{ slides_show_subtitle_class }}">
                                     {{ block.settings.description }}
                                 </div>
 
@@ -108,6 +112,7 @@
                                         {%- render 'link',
                                             href: block.settings.cta_link,
                                             variant: 'underline',
+                                            class: 'body-2xl text-theme-text',
                                             content: link_content
                                         -%}
                                     {%- endif -%}
@@ -115,7 +120,7 @@
                             </div>
 
                             <div
-                                class="{{ block.settings.heading_position }} flex items-center pc:h-full pc:w-full"
+                                class="slides-show__headline-content {{ block.settings.heading_position }} flex h-full min-h-0 w-full items-center"
                                 {% if forloop.first %}
                                     data-motion-reveal="content"
                                     data-motion-hero-copy
@@ -123,18 +128,18 @@
                                 {% endif %}
                             >
                                 {%- if slides_show_multi_slide -%}
-                                    <p class="heading-3xl">
+                                    <h2 class="{{ slides_show_heading_class }}">
                                         {{ block.settings.headline }}
-                                    </p>
+                                    </h2>
                                 {%- else -%}
-                                    <h1 class="heading-3xl">
+                                    <h1 class="{{ slides_show_heading_class }}">
                                         {{ block.settings.headline }}
                                     </h1>
                                 {%- endif -%}
                             </div>
 
                             <div
-                                class="{{ block.settings.meta_position }} flex flex-col justify-around pc:h-full pc:w-full pc:items-center"
+                                class="slides-show__meta-content {{ block.settings.meta_position }} flex h-full min-h-0 w-full flex-col justify-around pc:items-center"
                                 {% if forloop.first %}
                                     data-motion-reveal="content"
                                     data-motion-hero-copy
@@ -306,6 +311,133 @@
 {% endjavascript %}
 
 {% stylesheet %}
+    .slides-show-section .slides-show__content-grid {
+        grid-template-rows: repeat(3, minmax(0, 1fr));
+        row-gap: 1rem;
+    }
+
+    .slides-show-section .place-top-left,
+    .slides-show-section .place-top-center,
+    .slides-show-section .place-top-right {
+        grid-column: 1 / -1;
+        grid-row-start: 1;
+        align-self: start;
+        justify-self: stretch;
+    }
+
+    .slides-show-section .place-center-left,
+    .slides-show-section .place-center,
+    .slides-show-section .place-center-right {
+        grid-column: 1 / -1;
+        grid-row-start: 2;
+        align-self: center;
+        justify-self: stretch;
+    }
+
+    .slides-show-section .place-bottom-left,
+    .slides-show-section .place-bottom-center,
+    .slides-show-section .place-bottom-right {
+        grid-column: 1 / -1;
+        grid-row-start: 3;
+        align-self: end;
+        justify-self: stretch;
+    }
+
+    .slides-show-section .slides-show__caption-content {
+        grid-column: 1 / -1;
+        grid-row-start: 1;
+        align-self: stretch;
+        justify-self: stretch;
+    }
+
+    .slides-show-section .slides-show__headline-content {
+        grid-column: 1 / -1;
+        grid-row-start: 2;
+        align-self: stretch;
+        justify-self: stretch;
+    }
+
+    .slides-show-section .slides-show__meta-content {
+        grid-column: 1 / -1;
+        grid-row-start: 3;
+        align-self: stretch;
+        justify-self: stretch;
+    }
+
+    @media (width >= 48rem) {
+        .slides-show-section .place-top-left {
+            grid-column: auto;
+            grid-column-start: 1;
+            grid-row-start: 1;
+            align-self: start;
+            justify-self: start;
+        }
+
+        .slides-show-section .place-top-center {
+            grid-column: auto;
+            grid-column-start: 2;
+            grid-row-start: 1;
+            align-self: start;
+            justify-self: center;
+        }
+
+        .slides-show-section .place-top-right {
+            grid-column: auto;
+            grid-column-start: 3;
+            grid-row-start: 1;
+            align-self: start;
+            justify-self: end;
+        }
+
+        .slides-show-section .place-center-left {
+            grid-column: auto;
+            grid-column-start: 1;
+            grid-row-start: 2;
+            align-self: center;
+            justify-self: start;
+        }
+
+        .slides-show-section .place-center {
+            grid-column: auto;
+            grid-column-start: 2;
+            grid-row-start: 2;
+            align-self: center;
+            justify-self: center;
+        }
+
+        .slides-show-section .place-center-right {
+            grid-column: auto;
+            grid-column-start: 3;
+            grid-row-start: 2;
+            align-self: center;
+            justify-self: end;
+        }
+
+        .slides-show-section .place-bottom-left {
+            grid-column: auto;
+            grid-column-start: 1;
+            grid-row-start: 3;
+            align-self: end;
+            justify-self: start;
+        }
+
+        .slides-show-section .place-bottom-center {
+            grid-column: auto;
+            grid-column-start: 2;
+            grid-row-start: 3;
+            align-self: end;
+            justify-self: center;
+        }
+
+        .slides-show-section .place-bottom-right {
+            grid-column: auto;
+            grid-column-start: 3;
+            grid-row-start: 3;
+            align-self: end;
+            justify-self: end;
+        }
+    }
+
     .slides-show-section {
         [data-motion-hero-copy][data-motion-reveal][data-motion-state='pending'] {
             opacity: 0;
@@ -391,6 +523,98 @@
             "id": "color_scheme",
             "label": "t:sections.slides-show.settings.color_scheme",
             "default": "scheme-1"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.slides-show.content.font"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.slides-show.content.heading"
+        },
+        {
+            "type": "select",
+            "id": "heading_size",
+            "label": "t:sections.slides-show.settings.heading_size",
+            "options": [
+                {
+                    "value": "heading-4xl",
+                    "label": "t:sections.slides-show.options.heading_4xl"
+                },
+                {
+                    "value": "heading-3xl",
+                    "label": "t:sections.slides-show.options.heading_3xl"
+                },
+                {
+                    "value": "heading-2xl",
+                    "label": "t:sections.slides-show.options.heading_2xl"
+                },
+                {
+                    "value": "heading-xl",
+                    "label": "t:sections.slides-show.options.heading_xl"
+                },
+                {
+                    "value": "heading-h1",
+                    "label": "t:sections.slides-show.options.heading_h1"
+                },
+                {
+                    "value": "heading-h2",
+                    "label": "t:sections.slides-show.options.heading_h2"
+                },
+                {
+                    "value": "heading-h3",
+                    "label": "t:sections.slides-show.options.heading_h3"
+                },
+                {
+                    "value": "heading-h4",
+                    "label": "t:sections.slides-show.options.heading_h4"
+                },
+                {
+                    "value": "heading-h5",
+                    "label": "t:sections.slides-show.options.heading_h5"
+                },
+                {
+                    "value": "heading-h6",
+                    "label": "t:sections.slides-show.options.heading_h6"
+                }
+            ],
+            "default": "heading-3xl"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.scroll-categories.content.subtitle"
+        },
+        {
+            "type": "select",
+            "id": "subtitle_size",
+            "label": "t:sections.scroll-categories.settings.subtitle_size",
+            "options": [
+                {
+                    "value": "body-3xl",
+                    "label": "t:sections.scroll-categories.options.body_3xl"
+                },
+                {
+                    "value": "body-2xl",
+                    "label": "t:sections.scroll-categories.options.body_2xl"
+                },
+                {
+                    "value": "body-xl",
+                    "label": "t:sections.scroll-categories.options.body_xl"
+                },
+                {
+                    "value": "body-lg",
+                    "label": "t:sections.scroll-categories.options.body_lg"
+                },
+                {
+                    "value": "body-md",
+                    "label": "t:sections.scroll-categories.options.body_md"
+                },
+                {
+                    "value": "body-sm",
+                    "label": "t:sections.scroll-categories.options.body_sm"
+                }
+            ],
+            "default": "body-3xl"
         },
         {
             "type": "header",

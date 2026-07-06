@@ -88,7 +88,7 @@ Layer: snippets — layout delta only (trigger chrome: tab-nav-item* in componen
 /* =========================================================
 Owner: sections/featured-products.liquid
 Consumers: featured products section tabs
-Layer: snippets — tab layout delta; tab title uses heading-2xl in markup
+Layer: snippets — tab layout delta; tab title uses section heading_size tier in markup
 ========================================================= */
 @layer snippets {
     .featured-products__tab-header {
@@ -178,54 +178,74 @@ Layer: snippets temporary owner block
 }
 
 /* =========================================================
-Owner: snippets/flip-digit.liquid
-Consumers: sections/promotion-countdown
+Owner: snippets/flip-digit.liquid, sections/promotion-countdown.liquid
+Consumers: promotion countdown flip timer
 Layer: snippets temporary owner block
 ========================================================= */
 @layer snippets {
-    .flip-digit__value {
-        @apply body-base font-bold text-theme-bg;
-        font-size: calc(var(--font-body-scale) * 2.4rem);
-
-        @media (width >= theme(--breakpoint-pc)) {
-            font-size: calc(var(--font-body-scale) * 3.6rem);
-        }
-    }
-}
-
-/* =========================================================
-Owner: sections/promotion-countdown.liquid
-Consumers: promotion countdown timer row
-Layer: snippets temporary owner block
-========================================================= */
-@layer snippets {
+    /*
+     * Digit scale: body-size-custom only on __digits so labels keep normal body size.
+     * Row gaps use --promotion-countdown-size; tile geometry uses em inside __digits.
+     */
     .promotion-countdown-section__timer {
-        @apply items-start;
-        gap: 0;
+        --body-size-custom: 36px;
+        --body-size-custom-pc: 120px;
+        --promotion-countdown-size: var(--body-size-custom);
+        --promotion-countdown-digit-width-ratio: 0.72;
+        --promotion-countdown-tile-scale: 1.14;
+        --promotion-countdown-digit-font-ratio: 0.8;
+
+        @apply flex max-w-full items-start justify-center;
+        margin-top: calc(var(--spacing) * 25);
+        margin-bottom: calc(var(--spacing) * 16);
+        gap: calc(var(--promotion-countdown-size) * 0.22);
 
         @media (width >= theme(--breakpoint-pc)) {
-            gap: calc(var(--spacing) * 6);
+            --promotion-countdown-size: var(--body-size-custom-pc);
+            gap: calc(var(--promotion-countdown-size) * 0.28);
+            margin-bottom: calc(var(--spacing) * 20);
         }
     }
 
     .promotion-countdown-section__digits {
-        @apply flex h-24 items-center justify-center;
-        gap: calc(var(--spacing) * 1.5);
+        --promotion-countdown-digit-gap: 0.08em;
+
+        @apply flex items-center justify-center body-size-custom;
+        min-height: calc(1em * var(--promotion-countdown-tile-scale));
+        gap: var(--promotion-countdown-digit-gap);
 
         @media (width >= theme(--breakpoint-pc)) {
-            @apply h-36;
-            gap: calc(var(--spacing) * 2);
+            --promotion-countdown-digit-gap: 0.1em;
+        }
+
+        .flip-digit {
+            height: calc(1em * var(--promotion-countdown-tile-scale));
+            width: calc(
+                1em * var(--promotion-countdown-tile-scale) *
+                    var(--promotion-countdown-digit-width-ratio)
+            );
+            font-size: inherit;
+        }
+
+        .flip-digit__value {
+            @apply leading-none font-bold text-theme-bg;
+            font-size: calc(1em * var(--promotion-countdown-digit-font-ratio));
         }
     }
 
     .promotion-countdown-section__separator {
-        @apply flex h-24 shrink-0 items-center justify-center body-base leading-none;
-        padding-inline: 3px;
+        @apply flex shrink-0 items-center justify-center leading-none text-theme-text/80;
+        height: calc(
+            var(--promotion-countdown-size) * var(--font-body-scale) *
+                var(--promotion-countdown-tile-scale)
+        );
+        font-size: calc(var(--promotion-countdown-size) * 0.22 * var(--font-body-scale));
+        padding-inline: calc(var(--promotion-countdown-size) * 0.02);
+    }
 
-        @media (width >= theme(--breakpoint-pc)) {
-            @apply h-36 body-xl;
-            padding-inline: 0;
-        }
+    .promotion-countdown-section__label {
+        @apply block body-md whitespace-nowrap text-theme-text/80;
+        margin-top: calc(var(--spacing) * 3);
     }
 }
 
@@ -354,7 +374,7 @@ Shared primitives (valid cross-snippet — not orphans):
         }
 
         .product-card-shell__meta {
-            @apply gap-3;
+            @apply gap-3 text-theme-text/80;
         }
 
         .product-card-shell__brand {
@@ -398,7 +418,7 @@ Shared primitives (valid cross-snippet — not orphans):
         }
 
         .product-card-shell__pagination-text {
-            @apply text-center font-medium;
+            @apply text-center;
         }
 
         .product-card-shell__media {
@@ -423,11 +443,11 @@ Shared primitives (valid cross-snippet — not orphans):
         }
 
         .product-card-shell__title {
-            @apply min-w-0 flex-1 truncate font-medium text-theme-text hover:underline;
+            @apply min-w-0 flex-1 truncate body-xl font-medium text-theme-text hover:underline;
         }
 
         .product-card-shell__price {
-            @apply shrink-0 font-medium text-theme-text;
+            @apply shrink-0 body-xl font-medium text-theme-text;
         }
     }
 
@@ -441,11 +461,11 @@ Shared primitives (valid cross-snippet — not orphans):
 
         .product-card__info {
             .product-card__info-title {
-                @apply text-theme-text;
+                @apply body-xl font-medium text-theme-text;
             }
 
             .product-card__info-price {
-                @apply text-theme-text;
+                @apply body-xl font-medium text-theme-text;
             }
         }
 
@@ -497,11 +517,11 @@ Shared primitives (valid cross-snippet — not orphans):
             }
 
             .product-card__btn-primary {
-                @apply btn-primary;
+                @apply btn-primary body-2xl font-medium;
             }
 
             .product-card__btn-secondary {
-                @apply btn-secondary;
+                @apply btn-secondary body-2xl font-medium;
             }
 
             .product-card__btn-secondary.is-disabled {
@@ -684,7 +704,7 @@ Parallel scene API (not product-info-blocks consumers):
 Shared primitives (valid cross-snippet — not orphans):
 - product-price* — components primitive consumed by product-info-blocks and quick view
 - product-info-blocks__price* — scene/API hooks; quick view dual-classes only for price primitive compatibility
-- product-info-blocks__title — typography owner: heading-h1 (PDP); heading-h2 via --featured modifier
+- product-info-blocks__title — layout hook; heading tier from title block heading_size in markup (PDP h1, featured h2)
 ========================================================= */
 @layer snippets {
     .product-info-blocks {
@@ -706,28 +726,36 @@ Shared primitives (valid cross-snippet — not orphans):
     }
 
     .product-info-blocks__title {
-        @apply heading-h1;
-    }
-
-    .product-info-blocks--featured .product-info-blocks__title {
-        @apply heading-h2;
+        @apply min-w-0 text-theme-text/80;
     }
 
     .product-info-blocks__vendor {
-        @apply body-md tracking-[0.04em] text-theme-text/70;
+        @apply tracking-[0.04em];
+    }
+
+    .product-info-blocks--product .product-info-blocks__vendor {
+        @apply body-lg text-theme-text;
+    }
+
+    .product-info-blocks--featured .product-info-blocks__vendor {
+        @apply body-lg text-theme-text;
     }
 
     .product-info-blocks__custom-liquid {
-        @apply body-md text-theme-text;
+        @apply body-md;
     }
 
     .product-info-blocks__description {
-        @apply max-w-none overscroll-contain pr-1 opacity-80 pc:overflow-y-auto;
+        @apply max-w-none overscroll-contain pr-1 text-theme-text/80 pc:overflow-y-auto;
         scrollbar-width: none;
 
         &::-webkit-scrollbar {
             display: none;
         }
+    }
+
+    .product-info-blocks__description.rte :is(h1, h2, h3, h4, h5, h6) {
+        @apply text-theme-text/80;
     }
 
     .product-info-blocks__description-block {
@@ -748,7 +776,7 @@ Shared primitives (valid cross-snippet — not orphans):
     }
 
     .product-info-blocks__inventory-notice {
-        @apply flex items-center gap-2 body-md text-theme-text/75;
+        @apply flex items-center gap-2 body-md;
     }
 
     .product-info-blocks__inventory-dot {
@@ -787,7 +815,7 @@ Shared primitives (valid cross-snippet — not orphans):
     }
 
     .product-info-blocks__icon-with-text-group {
-        @apply grid grid-cols-3 items-start gap-3 px-3 py-4 text-theme-text;
+        @apply grid grid-cols-3 items-start gap-3 px-3 py-4;
     }
 
     .product-info-blocks__icon-with-text-item {
@@ -825,7 +853,7 @@ Shared primitives (valid cross-snippet — not orphans):
     }
 
     .product-info-blocks__collapsible-toggle {
-        @apply flex h-6 w-6 shrink-0 items-center justify-center text-theme-text;
+        @apply flex h-6 w-6 shrink-0 items-center justify-center text-theme-text/80;
         transition: transform var(--motion-duration-fast) var(--motion-ease-default);
     }
 
@@ -838,7 +866,11 @@ Shared primitives (valid cross-snippet — not orphans):
     }
 
     .product-info-blocks__collapsible-rte {
-        @apply max-w-none opacity-100;
+        @apply max-w-none;
+    }
+
+    .product-info-blocks__collapsible-rte :is(h1, h2, h3, h4, h5, h6) {
+        @apply text-theme-text/80;
     }
 
     .product-info-blocks__collapsible-image {
@@ -852,8 +884,18 @@ Shared primitives (valid cross-snippet — not orphans):
         }
 
         .product-info-blocks__description {
+            @apply body-md;
             max-width: 46ch;
         }
+    }
+
+    .product-info-blocks--featured .product-info-blocks__price-main,
+    .product-info-blocks--featured .product-info-blocks__price-compare {
+        @apply body-3xl text-theme-text;
+    }
+
+    .product-info-blocks--featured .product-info-blocks__description {
+        @apply body-md;
     }
 
     .product-info-blocks--gallery {
@@ -1106,9 +1148,8 @@ Layer: snippets temporary owner block
     }
 
     .variant-picker__pill {
-        @apply block cursor-pointer rounded-sm border px-4 py-2 body-md;
+        @apply block cursor-pointer rounded-sm border px-4 py-2 body-md text-theme-text/80;
         border-color: rgb(var(--color-border) / 0.2);
-        color: rgb(var(--color-foreground) / 0.7);
         transition:
             border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
             background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),

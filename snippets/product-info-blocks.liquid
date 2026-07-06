@@ -76,19 +76,29 @@
                 {%- endif -%}
 
             {%- when 'title' -%}
+                {%- liquid
+                    assign product_title_heading_class = block.settings.heading_size
+                    if product_title_heading_class == blank
+                        if context == 'product'
+                            assign product_title_heading_class = 'heading-h1'
+                        else
+                            assign product_title_heading_class = 'heading-h2'
+                        endif
+                    endif
+                -%}
                 <div {{ block.shopify_attributes }}>
                     {%- if product_data != blank -%}
                         {%- if context == 'product' -%}
-                            <h1 class="product-info-blocks__title">
+                            <h1 class="product-info-blocks__title {{ product_title_heading_class }}">
                                 {{ product_data.title }}
                             </h1>
                         {%- else -%}
-                            <h2 class="product-info-blocks__title">
+                            <h2 class="product-info-blocks__title {{ product_title_heading_class }}">
                                 {{ product_data.title }}
                             </h2>
                         {%- endif -%}
                     {%- else -%}
-                        <h2 class="product-info-blocks__title">
+                        <h2 class="product-info-blocks__title {{ product_title_heading_class }}">
                             {{ 'products.product.example_title' | t }}
                         </h2>
                     {%- endif -%}
@@ -107,13 +117,13 @@
                             x-data="ProductPrice()"
                         >
                             <span
-                                class="product-price__main product-info-blocks__price-main body-lg"
+                                class="product-price__main product-info-blocks__price-main{% if context == 'product' or context == 'featured' %} body-3xl text-theme-text{% else %} body-lg{% endif %}"
                                 x-text="formattedPrice"
                             >
                                 {{- current_variant.price | money -}}
                             </span>
                             <s
-                                class="product-price__compare product-info-blocks__price-compare"
+                                class="product-price__compare product-info-blocks__price-compare{% if context == 'product' or context == 'featured' %} body-3xl{% endif %}"
                                 x-show="hasComparePrice"
                                 x-text="formattedComparePrice"
                             >
@@ -123,7 +133,7 @@
                             </s>
                         </div>
                     {%- else -%}
-                        <p class="product-price__main product-info-blocks__price-main body-lg">
+                        <p class="product-price__main product-info-blocks__price-main{% if context == 'featured' %} body-3xl text-theme-text{% else %} body-lg{% endif %}">
                             {{ 'products.product.example_price' | t }}
                         </p>
                     {%- endif -%}
@@ -372,7 +382,7 @@
                                 color: block.settings.icon_color,
                                 class: 'text-theme-text/80'
                             -%}
-                            <span class="min-w-0 font-medium text-theme-text">
+                            <span class="min-w-0">
                                 {{ tab_heading }}
                             </span>
                         </span>

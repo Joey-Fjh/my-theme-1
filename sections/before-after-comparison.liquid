@@ -9,6 +9,10 @@
             assign aspect_ratio = '16/9'
         endif
     endif
+
+    assign before_after_heading_class = section.settings.heading_size | default: 'heading-2xl'
+    assign before_after_subtitle_size = section.settings.subtitle_size | default: 'body-3xl'
+    assign before_after_subtitle_class = 'typo-subtitle ' | append: before_after_subtitle_size
 -%}
 
 <div
@@ -23,12 +27,12 @@
 >
     <div class="layout container-page">
         <div class="flex flex-col gap-6 text-center" data-motion-reveal="content">
-            <p class="sub-heading">
+            <p class="{{ before_after_subtitle_class }}">
                 {{ section.settings.sub_heading }}
             </p>
-            <h1 class="pc:heading-2xl">
+            <h2 class="{{ before_after_heading_class }}">
                 {{ section.settings.heading }}
-            </h1>
+            </h2>
         </div>
 
         {% comment %} Mobile Layout (Stacked) {% endcomment %}
@@ -45,7 +49,7 @@
                     aspect_ratio: aspect_ratio,
                     motion_reveal: false
                 -%}
-                <div class="absolute bottom-4 left-4 z-10 rounded border-2 border-theme-text px-3 py-2 backdrop-blur-sm">
+                <div class="absolute bottom-4 left-4 z-10 rounded border-2 border-theme-text px-3 py-2 body-xl backdrop-blur-sm">
                     {{ section.settings.before_label }}
                 </div>
             </div>
@@ -62,7 +66,7 @@
                     aspect_ratio: aspect_ratio,
                     motion_reveal: false
                 -%}
-                <div class="absolute right-4 bottom-4 z-10 rounded border-2 border-theme-text px-3 py-2 backdrop-blur-sm">
+                <div class="absolute right-4 bottom-4 z-10 rounded border-2 border-theme-text px-3 py-2 body-xl backdrop-blur-sm">
                     {{ section.settings.after_label }}
                 </div>
             </div>
@@ -148,12 +152,12 @@
                 </div>
 
                 {% comment %} Before Label {% endcomment %}
-                <div class="absolute bottom-10 left-10 z-10 rounded border-2 border-theme-text p-4 body-lg  backdrop-blur-sm">
+                <div class="absolute bottom-10 left-10 z-10 rounded border-2 border-theme-text p-4 body-xl backdrop-blur-sm">
                     {{ section.settings.before_label }}
                 </div>
 
                 {% comment %} After Label {% endcomment %}
-                <div class="absolute right-10 bottom-10 z-10 rounded border-2 border-theme-text p-4 body-lg backdrop-blur-sm">
+                <div class="absolute right-10 bottom-10 z-10 rounded border-2 border-theme-text p-4 body-xl backdrop-blur-sm">
                     {{ section.settings.after_label }}
                 </div>
             </div>
@@ -177,16 +181,108 @@
             "default": "scheme-1"
         },
         {
-            "type": "inline_richtext",
-            "id": "sub_heading",
-            "label": "t:sections.before-after-comparison.settings.sub_heading",
-            "default": "t:sections.before-after-comparison.defaults.sub_heading"
+            "type": "header",
+            "content": "t:sections.slides-show.content.font"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.slides-show.content.heading"
+        },
+        {
+            "type": "select",
+            "id": "heading_size",
+            "label": "t:sections.slides-show.settings.heading_size",
+            "options": [
+                {
+                    "value": "heading-4xl",
+                    "label": "t:sections.slides-show.options.heading_4xl"
+                },
+                {
+                    "value": "heading-3xl",
+                    "label": "t:sections.slides-show.options.heading_3xl"
+                },
+                {
+                    "value": "heading-2xl",
+                    "label": "t:sections.slides-show.options.heading_2xl"
+                },
+                {
+                    "value": "heading-xl",
+                    "label": "t:sections.slides-show.options.heading_xl"
+                },
+                {
+                    "value": "heading-h1",
+                    "label": "t:sections.slides-show.options.heading_h1"
+                },
+                {
+                    "value": "heading-h2",
+                    "label": "t:sections.slides-show.options.heading_h2"
+                },
+                {
+                    "value": "heading-h3",
+                    "label": "t:sections.slides-show.options.heading_h3"
+                },
+                {
+                    "value": "heading-h4",
+                    "label": "t:sections.slides-show.options.heading_h4"
+                },
+                {
+                    "value": "heading-h5",
+                    "label": "t:sections.slides-show.options.heading_h5"
+                },
+                {
+                    "value": "heading-h6",
+                    "label": "t:sections.slides-show.options.heading_h6"
+                }
+            ],
+            "default": "heading-2xl"
         },
         {
             "type": "inline_richtext",
             "id": "heading",
             "label": "t:sections.before-after-comparison.settings.heading",
             "default": "t:sections.before-after-comparison.defaults.heading"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.scroll-categories.content.subtitle"
+        },
+        {
+            "type": "select",
+            "id": "subtitle_size",
+            "label": "t:sections.scroll-categories.settings.subtitle_size",
+            "options": [
+                {
+                    "value": "body-3xl",
+                    "label": "t:sections.scroll-categories.options.body_3xl"
+                },
+                {
+                    "value": "body-2xl",
+                    "label": "t:sections.scroll-categories.options.body_2xl"
+                },
+                {
+                    "value": "body-xl",
+                    "label": "t:sections.scroll-categories.options.body_xl"
+                },
+                {
+                    "value": "body-lg",
+                    "label": "t:sections.scroll-categories.options.body_lg"
+                },
+                {
+                    "value": "body-md",
+                    "label": "t:sections.scroll-categories.options.body_md"
+                },
+                {
+                    "value": "body-sm",
+                    "label": "t:sections.scroll-categories.options.body_sm"
+                }
+            ],
+            "default": "body-3xl"
+        },
+        {
+            "type": "inline_richtext",
+            "id": "sub_heading",
+            "label": "t:sections.before-after-comparison.settings.sub_heading",
+            "default": "t:sections.before-after-comparison.defaults.sub_heading"
         },
         {
             "type": "select",

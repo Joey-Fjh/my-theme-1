@@ -958,6 +958,8 @@
                 _deferToPageLoadFlush: false,
                 _cleanupEditor: null,
                 _onTabClick: null,
+                _editorReplayTimers: new Set(),
+                _editorViewportFlushFrame: null,
 
                 _shouldSkipAnimation() {
                     if (document.body.dataset.motionEnabled === 'false') return true;
@@ -1294,6 +1296,17 @@
                     this._pageLoadQueue.clear();
                 },
 
+                _clearEditorReplayTimers() {
+                    this._editorReplayTimers.forEach((timerId) => {
+                        clearTimeout(timerId);
+                    });
+                    this._editorReplayTimers.clear();
+                    if (this._editorViewportFlushFrame) {
+                        cancelAnimationFrame(this._editorViewportFlushFrame);
+                        this._editorViewportFlushFrame = null;
+                    }
+                },
+
                 _applyTargetPending(target) {
                     target.setAttribute('data-motion-state', 'pending');
                 },
@@ -1337,81 +1350,47 @@
 
                     requestAnimationFrame(() => {
                         requestAnimationFrame(() => {
-                            const cascadeTargetSet = new Set();
-
-                            this._cascadeBatches.forEach((batch) => {
-                                batch.targets.forEach((target) => cascadeTargetSet.add(target));
-
-                                if (!this._isCascadeTriggerInView(batch.trigger)) return;
-
-                                const pending = batch.targets.filter(
-                                    (target) =>
-                                        this._isRevealTargetVisible(target) &&
-                                        !this._shouldSkipTargetAnimation(target) &&
-                                        target.getAttribute('data-motion-state') === 'pending',
-                                );
-
-                                pending.forEach((target) => this._pageLoadQueue.add(target));
-
-                                pending
-                                    .sort(
-                                        (a, b) => this._getMotionIndex(a) - this._getMotionIndex(b),
-                                    )
-                                    .forEach((target, batchIndex) => {
-                                        const delay =
-                                            MOTION_REVEAL_PAGE_LOAD_BASE_DELAY_MS +
-                                            Math.min(
-                                                batchIndex * this._getStaggerMs(batch.cascade),
-                                                900,
-                                            );
-                                        const timerId = window.setTimeout(() => {
-                                            this._pageLoadTimers.delete(target);
-                                            this._pageLoadQueue.delete(target);
-                                            if (
-                                                target.getAttribute('data-motion-state') !==
-                                                'pending'
-                                            ) {
-                                                return;
-                                            }
-                                            this._revealTarget(target);
-                                        }, delay);
-                                        this._pageLoadTimers.set(target, timerId);
-                                    });
-
-                                if (!this._isRevealAlways() && pending.length > 0) {
-                                    this._unobserveCascadeBatch(batch);
-                                }
-                            });
-
-                            const pendingInView = [
-                                ...this.$el.querySelectorAll(
-                                    '[data-motion-reveal][data-motion-state="pending"]',
-                                ),
-                            ].filter(
-                                (target) =>
-                                    !cascadeTargetSet.has(target) &&
-                                    this._isRevealTargetVisible(target) &&
-                                    this._isTargetInView(target),
-                            );
-
-                            pendingInView.forEach((target) => {
-                                this._pageLoadQueue.add(target);
-                                const delay =
-                                    MOTION_REVEAL_PAGE_LOAD_BASE_DELAY_MS +
-                                    this._getMotionIndex(target) * this._getStaggerMs(target);
-                                const timerId = window.setTimeout(() => {
-                                    this._pageLoadTimers.delete(target);
-                                    if (target.getAttribute('data-motion-state') !== 'pending') {
-                                        this._pageLoadQueue.delete(target);
-                                        return;
-                                    }
-                                    this._revealTarget(target);
-                                }, delay);
-                                this._pageLoadTimers.set(target, timerId);
-                            });
-
+                            this._flushPendingInView(MOTION_REVEAL_PAGE_LOAD_BASE_DELAY_MS);
                             this._deferToPageLoadFlush = false;
                         });
+                    });
+                },
+
+                _flushPendingInView(baseDelayMs = 0) {
+                    const cascadeTargetSet = new Set();
+
+                    this._cascadeBatches.forEach((batch) => {
+                        batch.targets.forEach((target) => cascadeTargetSet.add(target));
+
+                        if (!this._isCascadeTriggerInView(batch.trigger)) return;
+
+                        const pending = batch.targets.filter(
+                            (target) =>
+                                this._isRevealTargetVisible(target) &&
+                                !this._shouldSkipTargetAnimation(target) &&
+                                target.getAttribute('data-motion-state') === 'pending',
+                        );
+
+                        pending.forEach((target) => this._pageLoadQueue.add(target));
+                        this._scheduleCascadeBatchReveal(batch, baseDelayMs);
+                    });
+
+                    const pendingInView = [
+                        ...this.$el.querySelectorAll(
+                            '[data-motion-reveal][data-motion-state="pending"]',
+                        ),
+                    ].filter(
+                        (target) =>
+                            !cascadeTargetSet.has(target) &&
+                            this._isRevealTargetVisible(target) &&
+                            this._isTargetInView(target),
+                    );
+
+                    pendingInView.forEach((target) => {
+                        this._pageLoadQueue.add(target);
+                        const delay =
+                            baseDelayMs + this._getMotionIndex(target) * this._getStaggerMs(target);
+                        this._scheduleDelayedReveal(target, delay);
                     });
                 },
 
@@ -1472,6 +1451,7 @@
                 },
 
                 _refresh() {
+                    this._clearEditorReplayTimers();
                     this._clearPageLoadTimers();
                     this._unobserveAllTargets();
                     this._unobserveAllCascadeBatches();
@@ -1480,6 +1460,27 @@
                     });
                     requestAnimationFrame(() => {
                         this._registerTargets();
+                    });
+                },
+
+                _refreshForThemeEditorSelect() {
+                    this._refresh();
+                    [120, 320, 640, 1000, 1600].forEach((delayMs) => {
+                        const timerId = window.setTimeout(() => {
+                            this._editorReplayTimers.delete(timerId);
+                            this._scheduleThemeEditorViewportFlush();
+                        }, delayMs);
+                        this._editorReplayTimers.add(timerId);
+                    });
+                },
+
+                _scheduleThemeEditorViewportFlush() {
+                    if (this._editorViewportFlushFrame) return;
+
+                    this._editorViewportFlushFrame = requestAnimationFrame(() => {
+                        this._editorViewportFlushFrame = null;
+                        this._registerTargets();
+                        this._flushPendingInView();
                     });
                 },
 
@@ -1515,7 +1516,7 @@
                             'shopify:section:select',
                             function (e) {
                                 if (self._matchesSection(e, el)) {
-                                    self._refresh();
+                                    self._refreshForThemeEditorSelect();
                                 }
                             },
                             { target: document },
@@ -1525,7 +1526,7 @@
                             'shopify:section:reorder',
                             function (e) {
                                 if (self._matchesSection(e, el)) {
-                                    self._refresh();
+                                    self._refreshForThemeEditorSelect();
                                 }
                             },
                             { target: document },
@@ -1535,6 +1536,19 @@
                             offSelect();
                             offReorder();
                         };
+
+                        this.on(
+                            window,
+                            'scroll',
+                            this._scheduleThemeEditorViewportFlush.bind(this),
+                            { passive: true },
+                        );
+                        this.on(
+                            window,
+                            'resize',
+                            this._scheduleThemeEditorViewportFlush.bind(this),
+                            { passive: true },
+                        );
                     }
                 },
 
@@ -1570,6 +1584,7 @@
                 },
 
                 destroy() {
+                    this._clearEditorReplayTimers();
                     this._clearPageLoadTimers();
                     this._unobserveAllTargets();
                     this._unobserveAllCascadeBatches();

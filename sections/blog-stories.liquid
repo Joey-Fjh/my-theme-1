@@ -1,3 +1,11 @@
+{%- liquid
+    assign blog_stories_heading_class = section.settings.heading_size | default: 'heading-2xl'
+    assign blog_stories_subtitle_size = section.settings.subtitle_size | default: 'body-lg'
+    assign blog_stories_subtitle_class = 'typo-subtitle ' | append: blog_stories_subtitle_size
+    assign blog_stories_card_title_class = 'heading-h2'
+    assign blog_stories_card_subtitle_class = 'typo-subtitle body-lg'
+-%}
+
 <div
     data-section-id="{{ section.id }}"
     class="blog-stories-section full-width color-{{ section.settings.color_scheme }} surface-section"
@@ -14,12 +22,12 @@
             class="mb-12 flex flex-col justify-between gap-8 pc:flex-row pc:items-start"
             data-motion-reveal="content"
         >
-            <h1 class="pc:w-1/2">
+            <h2 class="pc:w-1/2 {{ blog_stories_heading_class }}">
                 {{ section.settings.heading }}
-            </h1>
+            </h2>
 
             <div class="flex items-start gap-4 pc:w-1/3">
-                <div class="rte rte--compact">
+                <div class="rte rte--compact {{ blog_stories_subtitle_class }}">
                     {{ section.settings.description }}
                 </div>
                 <span class="mt-2 h-3 w-3 shrink-0 rounded-full bg-theme-text"></span>
@@ -46,10 +54,13 @@
                             -%}
                         </div>
 
-                        <p class="mb-3">
+                        <p class="mb-3 {{ blog_stories_card_subtitle_class }}">
                             {{ article.tags | first }}
                         </p>
-                        <h3 class="mb-3 line-clamp-1 min-w-0" title="{{ article.title | escape }}">
+                        <h3
+                            class="mb-3 line-clamp-1 min-w-0 {{ blog_stories_card_title_class }}"
+                            title="{{ article.title | escape }}"
+                        >
                             {{ article.title }}
                         </h3>
 
@@ -79,6 +90,11 @@
                 {%- endfor -%}
             {%- else -%}
                 {%- for block in section.blocks -%}
+                    {%- liquid
+                        assign block_subtitle_size = block.settings.card_subtitle_size | default: 'body-lg'
+                        assign block_subtitle_class = 'typo-subtitle ' | append: block_subtitle_size
+                        assign block_title_class = block.settings.card_title_size | default: 'heading-h2'
+                    -%}
                     <article
                         class="group"
                         {{ block.shopify_attributes }}
@@ -99,12 +115,12 @@
                             -%}
                         </div>
 
-                        <p class="mb-3">
+                        <p class="mb-3 {{ block_subtitle_class }}">
                             {{ block.settings.subtitle }}
                         </p>
 
                         <h3
-                            class="mb-3 line-clamp-1 min-w-0"
+                            class="mb-3 line-clamp-1 min-w-0 {{ block_title_class }}"
                             title="{{ block.settings.title | strip_html | strip | escape }}"
                         >
                             {{ block.settings.title }}
@@ -160,6 +176,110 @@
             "default": "scheme-1"
         },
         {
+            "type": "header",
+            "content": "t:sections.slides-show.content.font"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.slides-show.content.heading"
+        },
+        {
+            "type": "select",
+            "id": "heading_size",
+            "label": "t:sections.slides-show.settings.heading_size",
+            "options": [
+                {
+                    "value": "heading-4xl",
+                    "label": "t:sections.slides-show.options.heading_4xl"
+                },
+                {
+                    "value": "heading-3xl",
+                    "label": "t:sections.slides-show.options.heading_3xl"
+                },
+                {
+                    "value": "heading-2xl",
+                    "label": "t:sections.slides-show.options.heading_2xl"
+                },
+                {
+                    "value": "heading-xl",
+                    "label": "t:sections.slides-show.options.heading_xl"
+                },
+                {
+                    "value": "heading-h1",
+                    "label": "t:sections.slides-show.options.heading_h1"
+                },
+                {
+                    "value": "heading-h2",
+                    "label": "t:sections.slides-show.options.heading_h2"
+                },
+                {
+                    "value": "heading-h3",
+                    "label": "t:sections.slides-show.options.heading_h3"
+                },
+                {
+                    "value": "heading-h4",
+                    "label": "t:sections.slides-show.options.heading_h4"
+                },
+                {
+                    "value": "heading-h5",
+                    "label": "t:sections.slides-show.options.heading_h5"
+                },
+                {
+                    "value": "heading-h6",
+                    "label": "t:sections.slides-show.options.heading_h6"
+                }
+            ],
+            "default": "heading-2xl"
+        },
+        {
+            "type": "inline_richtext",
+            "id": "heading",
+            "label": "t:sections.blog-stories.settings.heading",
+            "default": "t:sections.blog-stories.defaults.heading"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.scroll-categories.content.subtitle"
+        },
+        {
+            "type": "select",
+            "id": "subtitle_size",
+            "label": "t:sections.scroll-categories.settings.subtitle_size",
+            "options": [
+                {
+                    "value": "body-3xl",
+                    "label": "t:sections.scroll-categories.options.body_3xl"
+                },
+                {
+                    "value": "body-2xl",
+                    "label": "t:sections.scroll-categories.options.body_2xl"
+                },
+                {
+                    "value": "body-xl",
+                    "label": "t:sections.scroll-categories.options.body_xl"
+                },
+                {
+                    "value": "body-lg",
+                    "label": "t:sections.scroll-categories.options.body_lg"
+                },
+                {
+                    "value": "body-md",
+                    "label": "t:sections.scroll-categories.options.body_md"
+                },
+                {
+                    "value": "body-sm",
+                    "label": "t:sections.scroll-categories.options.body_sm"
+                }
+            ],
+            "default": "body-lg"
+        },
+        {
+            "type": "richtext",
+            "id": "description",
+            "label": "t:sections.blog-stories.settings.description",
+            "default": "t:sections.blog-stories.defaults.description"
+        },
+        {
             "type": "blog",
             "id": "blog",
             "label": "t:sections.blog-stories.settings.blog"
@@ -180,18 +300,6 @@
             "label": "t:sections.blog-stories.settings.link_text",
             "default": "t:sections.blog-stories.defaults.link_text",
             "visible_if": "{{ section.settings.blog }}"
-        },
-        {
-            "type": "inline_richtext",
-            "id": "heading",
-            "label": "t:sections.blog-stories.settings.heading",
-            "default": "t:sections.blog-stories.defaults.heading"
-        },
-        {
-            "type": "richtext",
-            "id": "description",
-            "label": "t:sections.blog-stories.settings.description",
-            "default": "t:sections.blog-stories.defaults.description"
         },
         {
             "type": "header",
@@ -223,6 +331,82 @@
             "type": "article",
             "name": "t:sections.blog-stories.blocks.article",
             "settings": [
+                {
+                    "type": "header",
+                    "content": "t:sections.slides-show.content.font"
+                },
+                {
+                    "type": "header",
+                    "content": "t:sections.blog-stories.content.card_title"
+                },
+                {
+                    "type": "select",
+                    "id": "card_title_size",
+                    "label": "t:sections.slides-show.settings.heading_size",
+                    "options": [
+                        {
+                            "value": "heading-h1",
+                            "label": "t:sections.slides-show.options.heading_h1"
+                        },
+                        {
+                            "value": "heading-h2",
+                            "label": "t:sections.slides-show.options.heading_h2"
+                        },
+                        {
+                            "value": "heading-h3",
+                            "label": "t:sections.slides-show.options.heading_h3"
+                        },
+                        {
+                            "value": "heading-h4",
+                            "label": "t:sections.slides-show.options.heading_h4"
+                        },
+                        {
+                            "value": "heading-h5",
+                            "label": "t:sections.slides-show.options.heading_h5"
+                        },
+                        {
+                            "value": "heading-h6",
+                            "label": "t:sections.slides-show.options.heading_h6"
+                        }
+                    ],
+                    "default": "heading-h2"
+                },
+                {
+                    "type": "header",
+                    "content": "t:sections.blog-stories.content.card_subtitle"
+                },
+                {
+                    "type": "select",
+                    "id": "card_subtitle_size",
+                    "label": "t:sections.scroll-categories.settings.subtitle_size",
+                    "options": [
+                        {
+                            "value": "body-3xl",
+                            "label": "t:sections.scroll-categories.options.body_3xl"
+                        },
+                        {
+                            "value": "body-2xl",
+                            "label": "t:sections.scroll-categories.options.body_2xl"
+                        },
+                        {
+                            "value": "body-xl",
+                            "label": "t:sections.scroll-categories.options.body_xl"
+                        },
+                        {
+                            "value": "body-lg",
+                            "label": "t:sections.scroll-categories.options.body_lg"
+                        },
+                        {
+                            "value": "body-md",
+                            "label": "t:sections.scroll-categories.options.body_md"
+                        },
+                        {
+                            "value": "body-sm",
+                            "label": "t:sections.scroll-categories.options.body_sm"
+                        }
+                    ],
+                    "default": "body-lg"
+                },
                 {
                     "type": "image_picker",
                     "id": "image",

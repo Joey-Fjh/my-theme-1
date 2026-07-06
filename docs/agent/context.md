@@ -22,8 +22,8 @@ The refactor should make the default storefront typography predictable:
 
 1. Heading size system: semantic heading tags plus approved `heading-*` tiers controlled by heading settings and `heading_scale`.
 2. Subtitle font setting layer: `subtitle-base` consumes subtitle family/style/weight/spacing/transform settings, but subtitle size comes from the heading/body tier selected by the consumer. There is no subtitle scale.
-3. Body size system: default body settings, body size settings, and approved `body-*` tiers for section/block overrides. No broad `typo-body`, `typo-lead`, `typo-action`, nav, price, or button role pass.
-4. Local override when a section truly needs a different approved system tier.
+3. Body size system: default body settings plus approved `body-*` ratio tiers for body-semantic emphasis and microcopy. No section/block body text-size settings and no broad `typo-body`, `typo-lead`, `typo-action`, nav, price, or button role pass.
+4. Local heading/subtitle override when a section truly needs a different approved visual tier.
 
 ### Architecture Decision
 
@@ -51,7 +51,8 @@ Global typography settings in `config/settings_schema.json` control the merchant
 - `tailwind/tailwind.typography.css` is the typography source of truth.
 - **Base stacks:** `heading-base`, `subtitle-base`, `body-base` - font family/style/weight/line-height/letter-spacing/text-transform/color only; no independent role font-size.
 - **Subtitle role:** `typo-subtitle` (alias of `subtitle-base`) - family from `subtitle_font_source` (heading or body) plus subtitle weight/line-height/letter-spacing/text-transform; **no font-size**. Compose with `heading-*` or `body-*` at the consumer.
-- **Tier primitives** (`heading-h1`, `heading-xl`, `heading-2xl`, `body-lg`, `body-md`, `body-sm`, etc.) remain unchanged. They are the approved size vocabulary for default section choices and local custom typography override dropdowns.
+- **Body tiers:** `body-3xl` through `body-xs` derive from the effective global body size (`body_font_size * body_scale`) through fixed mobile/PC ratios. They are not fixed rem sizes and not ordinary paragraph text-size settings.
+- **Tier primitives** (`heading-h1`, `heading-xl`, `heading-2xl`, `body-lg`, `body-md`, `body-sm`, etc.) remain available. They are the approved size vocabulary for default section choices and local custom typography override dropdowns.
 - Do not remove existing tier primitives during this refactor.
 
 ### Consumption Chain
@@ -71,7 +72,7 @@ Default consumers should compose semantic markup, font setting layers, and appro
 <p>Ordinary body copy inherits body defaults.</p>
 ```
 
-Local overrides should switch to an allowed `heading-*` / `body-*` tier only when a section/block setting explicitly opts into custom typography. Opacity is local styling (`text-theme-text/80`, etc.), not a typography setting.
+Local heading/subtitle overrides should switch to an allowed `heading-*` / `body-*` tier only when a section/block setting explicitly opts into custom typography. Ordinary body copy should inherit global body sizing. Opacity is local styling (`text-theme-text/80`, etc.), not a typography setting.
 
 ### Title And Subtitle Rules
 
@@ -83,6 +84,7 @@ Local overrides should switch to an allowed `heading-*` / `body-*` tier only whe
 ### Body Rules
 
 - Normal body copy should inherit body defaults from document/body and merchant body settings - no `typo-body`, `typo-lead`, or `typo-action`.
+- Do not add section/block body text-size settings for ordinary paragraphs. If body-semantic text needs emphasis, use the approved `body-*` ratio tiers so it still follows global body controls and custom body font settings.
 - Existing `body-md` that only repeats default body sizing should be removed during the body cleanup pass.
 - Existing `body-lg`, `body-sm`, `body-xl`, or custom body sizing should not be mechanically removed. First classify whether it is intentional emphasis, component microcopy, or section text that should become a configurable custom override.
 - If non-default body sizing is part of section-level content, prefer a section or block custom typography setting that chooses from approved `heading-*` / `body-*` tiers.
@@ -98,7 +100,7 @@ Local overrides should switch to an allowed `heading-*` / `body-*` tier only whe
 ### Custom Override Rules
 
 - Custom does not mean free-form arbitrary font sizes.
-- Custom means selecting from approved `heading-*` / `body-*` tier primitives (which may still respect `heading_scale` / `--font-body-scale`).
+- Custom means selecting from approved `heading-*` / `body-*` tier primitives for heading and subtitle surfaces (which may still respect `heading_scale` / effective global body sizing).
 - A section should default to a documented heading tier, `subtitle-base` plus a documented size tier when it has subtitle copy, and inherited body as appropriate.
 - Only when custom is enabled should the section consume tiers such as `heading-2xl`, `heading-xl`, `heading-h2`, `body-lg`, or `body-sm` directly.
 - Custom override changes visual class only; it must not change semantic heading tag choice.
@@ -124,6 +126,10 @@ Local overrides should switch to an allowed `heading-*` / `body-*` tier only whe
 - Migrate section/snippet markup from ad-hoc tiers and local sizing to documented heading/body tiers plus `subtitle-base` where subtitle settings are needed.
 - Add section/block custom typography override schema that selects from `heading-*` / `body-*` tiers.
 - Body cleanup pass (`body-md` deduplication, classify non-default body tiers).
+
+### Collaboration (font phase)
+
+- When markup semantics, color alpha, tier choice, or section vs global ownership is ambiguous, ask the merchant/developer before adding classes, schema settings, or component contract changes. Prefer atomic utilities (e.g. `font-medium`) over broad component defaults when global body controls were intentionally narrowed.
 
 ## Validation
 
