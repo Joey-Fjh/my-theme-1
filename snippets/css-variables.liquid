@@ -111,11 +111,14 @@
             --font-body-family: {{ settings.type_body_font.family }}, {{ settings.type_body_font.fallback_families }};
             --font-body-style: {{ settings.type_body_font.style }};
         {% endif %}
-        --font-body-weight: {{ settings.body_weight }};
+        {%- liquid
+            assign theme_body_font_size = settings.body_font_size | default: 16
+        -%}
+        --font-body-size: {{ theme_body_font_size }}px;
         --font-body-line-height: {{ settings.body_line_height }};
         --font-body-letter-spacing: {{ settings.body_letter_spacing }};
         --font-body-text-transform: {{ settings.body_text_transform }};
-        --font-body-scale: {{ settings.body_scale | divided_by: 100.0 }};
+        --font-body-scale: {{ settings.body_scale | default: 100 | divided_by: 100.0 }};
 
         {% if settings.use_custom_heading_font and settings.custom_heading_font_url != blank %}
             --font-heading-family: {{ settings.custom_heading_font_family | json }}, {{ settings.type_header_font.fallback_families }};
