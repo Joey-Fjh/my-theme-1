@@ -34,6 +34,7 @@
 
     @param {number} search_per_page - Pagination size.
     @param {string} [mobile_card_columns] - Mobile product grid columns (`1` or `2`).
+    @param {string} [color_scheme] - Color scheme id passed to product cards.
 
     Dependencies: - Expects global `search` object and `sectionPagination` Alpine component to be
     available.
@@ -41,15 +42,11 @@
 
 {%- liquid
     assign mobile_card_columns = mobile_card_columns | default: '2'
-    assign mobile_grid_class = 'grid-cols-2'
-
-    if mobile_card_columns == '1'
-        assign mobile_grid_class = 'grid-cols-1'
-    endif
 -%}
 
 <div
-    class="w-full"
+    class="search-results-tabs w-full"
+    style="--body-size-custom: 24px; --body-size-custom-pc: 32px;"
     data-pagination-section-id="{{ section_id }}"
     data-pagination-selectors='["[role=tablist]","[data-search-tabs-panel]"]'
     x-data="sectionPagination()"
@@ -139,11 +136,13 @@
                     {%- case param_type -%}
                         {%- when 'product' -%}
                             <div
-                                class="grid {{ mobile_grid_class }} gap-6 pc:grid-cols-2 fw:grid-cols-4"
+                                class="product-grid"
                                 x-data="motionRevealSection()"
                                 data-motion-section
                                 data-motion-cascade
                                 style="
+                                    --product-grid-columns: 4;
+                                    --product-grid-columns-mobile: {{ mobile_card_columns }};
                                     --motion-reveal-stagger: 150ms;
                                     --motion-reveal-distance: 3rem;
                                 "
@@ -152,7 +151,11 @@
                                     {%- if item.object_type == 'product' -%}
                                         {% render 'product-card',
                                             product: item,
-                                            mobile_items: mobile_card_columns | plus: 0
+                                            mobile_items: mobile_card_columns | plus: 0,
+                                            pc_items: 4,
+                                            class: 'h-full',
+                                            scope_id: section_id,
+                                            color_scheme: color_scheme
                                         %}
                                     {%- endif -%}
                                 {%- endfor -%}
@@ -202,7 +205,7 @@
         type: 'underlined',
         initialTabStrategy: 'first',
         header_outer_class: 'w-full',
-        header_class: 'mx-auto max-w-3xl flex-wrap items-center justify-center gap-8 border-none tracking-[0.16em] text-theme-text uppercase',
+        header_class: 'body-size-custom mx-auto max-w-3xl flex-wrap items-center justify-center gap-8 border-none tracking-[0.16em] text-theme-text uppercase',
         tab_header: results_tab_header,
         tab_content: results_tab_content
     -%}

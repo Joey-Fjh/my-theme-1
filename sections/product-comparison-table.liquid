@@ -14,6 +14,12 @@
     x-data="motionRevealSection()"
     data-motion-section
 >
+    {%- liquid
+        assign comparison_heading_class = section.settings.heading_size | default: 'heading-2xl'
+        if comparison_heading_class == 'heading-size-custom'
+            assign comparison_heading_class = 'heading-xl'
+        endif
+    -%}
     <div
         class="layout container-page mx-auto pb-8"
         style="
@@ -22,7 +28,10 @@
         "
     >
         {% if section.settings.heading != blank %}
-            <h1 class="mb-10 text-center pc:mb-16" data-motion-reveal="content">
+            <h1
+                class="mb-10 text-center pc:mb-16 {{ comparison_heading_class }}"
+                data-motion-reveal="content"
+            >
                 {{ section.settings.heading }}
             </h1>
         {% endif %}
@@ -53,6 +62,7 @@
                                         border border-theme-border/20 bg-theme-bg
                                         px-4 py-5 align-middle whitespace-normal shadow-[2px_0_6px_-2px_rgba(0,0,0,0.06)]
                                         pc:px-6 pc:py-7
+                                        {% unless block.type == 'metafield_text' %}body-lg{% endunless %}
                                     "
                                 >
                                     {% case block.type %}
@@ -84,6 +94,7 @@
                                             comparison-table__product-cell
                                             border border-theme-border/20 p-3 align-middle pc:p-6
                                             {% if is_highlight %}bg-(--comparison-column-bg-color){% else %}bg-transparent{% endif %}
+                                            {% if block.type != 'header' and block.type != 'metafield_text' %}body-lg{% endif %}
                                         "
                                     >
                                         {% case block.type %}
@@ -108,7 +119,7 @@
                                                             -%}
                                                         </div>
                                                     </div>
-                                                    <span class="block w-full text-center">
+                                                    <span class="block w-full text-center body-xl">
                                                         {{- item.title -}}
                                                     </span>
                                                 </a>
@@ -443,6 +454,58 @@
             "id": "heading",
             "label": "t:sections.product-comparison-table.settings.section_heading",
             "default": "t:sections.product-comparison-table.defaults.heading"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.slides-show.content.heading"
+        },
+        {
+            "type": "select",
+            "id": "heading_size",
+            "label": "t:sections.slides-show.settings.heading_size",
+            "options": [
+                {
+                    "value": "heading-4xl",
+                    "label": "t:sections.slides-show.options.heading_4xl"
+                },
+                {
+                    "value": "heading-3xl",
+                    "label": "t:sections.slides-show.options.heading_3xl"
+                },
+                {
+                    "value": "heading-2xl",
+                    "label": "t:sections.slides-show.options.heading_2xl"
+                },
+                {
+                    "value": "heading-xl",
+                    "label": "t:sections.slides-show.options.heading_xl"
+                },
+                {
+                    "value": "heading-h1",
+                    "label": "t:sections.slides-show.options.heading_h1"
+                },
+                {
+                    "value": "heading-h2",
+                    "label": "t:sections.slides-show.options.heading_h2"
+                },
+                {
+                    "value": "heading-h3",
+                    "label": "t:sections.slides-show.options.heading_h3"
+                },
+                {
+                    "value": "heading-h4",
+                    "label": "t:sections.slides-show.options.heading_h4"
+                },
+                {
+                    "value": "heading-h5",
+                    "label": "t:sections.slides-show.options.heading_h5"
+                },
+                {
+                    "value": "heading-h6",
+                    "label": "t:sections.slides-show.options.heading_h6"
+                }
+            ],
+            "default": "heading-2xl"
         },
         {
             "type": "color",

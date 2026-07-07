@@ -8,11 +8,14 @@
     x-data="{}"
     :class="{ 'opacity-50 pointer-events-none': $store.cart.loading }"
 >
+    {%- liquid
+        assign cart_heading_class = section.settings.heading_size | default: 'heading-3xl'
+    -%}
     <div class="layout container-page">
         <div class="grid grid-cols-1 gap-10 pc:grid-cols-[minmax(0,1fr)_auto]">
             {%- comment -%} Left: Cart list (Liquid-rendered for SRA) {%- endcomment -%}
             <div class="flex flex-col gap-10 pc:gap-30">
-                <h1 class="heading-4xl">{{ 'cart.title' | t }}</h1>
+                <h1 class="{{ cart_heading_class }}">{{ 'cart.title' | t }}</h1>
 
                 <ul class="flex flex-col">
                     {%- for item in cart.items -%}
@@ -37,18 +40,18 @@
                             </div>
 
                             <div class="flex min-w-0 flex-col py-1">
-                                <p class="body-sm uppercase">
+                                <p class="uppercase">
                                     {{ item.vendor | default: ' ' }}
                                 </p>
                                 <a
                                     href="{{ item.url }}"
-                                    class="cart__product-link mt-3 block interactive-link pc:mt-5 pc:body-lg"
+                                    class="cart__product-link mt-3 block body-xl interactive-link pc:mt-5"
                                 >
                                     {{ item.product.title }}
                                 </a>
 
                                 {%- if item.selling_plan_allocation -%}
-                                    <p class="mt-1 body-xs text-theme-text/80">
+                                    <p class="mt-1 text-theme-text/80">
                                         {{ 'cart.selling_plan_label' | t }}:
                                         {{ item.selling_plan_allocation.selling_plan.name }}
                                     </p>
@@ -56,7 +59,7 @@
 
                                 {%- if item.original_line_price > item.final_line_price -%}
                                     <div class="mt-auto pt-2 pc:pt-4">
-                                        <p class="body-sm pc:body-md">
+                                        <p class="body-lg">
                                             <span class="text-theme-text/80 line-through">
                                                 {{- item.original_line_price | money -}}
                                             </span>
@@ -70,7 +73,7 @@
                                                 aria-label="{{ 'cart.discounts' | t }}"
                                             >
                                                 {%- for allocation in item.line_level_discount_allocations -%}
-                                                    <li class="body-xs text-theme-text/80">
+                                                    <li class="text-theme-text/80">
                                                         {{ allocation.discount_application.title }}
                                                         (-{{ allocation.amount | money }})
                                                     </li>
@@ -79,7 +82,7 @@
                                         {%- endif -%}
                                     </div>
                                 {%- else -%}
-                                    <p class="mt-auto pt-2 body-sm pc:pt-4 pc:body-md">
+                                    <p class="mt-auto pt-2 body-lg pc:pt-4">
                                         {{ item.final_line_price | money }}
                                     </p>
                                 {%- endif -%}
@@ -125,7 +128,8 @@
                     {%- render 'link',
                         text: link_text,
                         href: routes.root_url,
-                        variant: 'underline'
+                        variant: 'underline',
+                        class: 'body-xl'
                     -%}
                 </div>
             </div>
@@ -139,7 +143,7 @@
                     {%- capture note_html -%}
                         <textarea
                             name="note"
-                            class="min-h-20 field resize-y body-sm"
+                            class="min-h-20 field resize-y"
                             placeholder="{{ 'cart.note_placeholder' | t }}"
                             @change="$store.cart.update({ note: $event.target.value })"
                         >
@@ -177,7 +181,7 @@
 
                             <button
                                 type="button"
-                                class="btn-secondary w-full"
+                                class="btn-secondary w-full body-xl"
                             >
                                 {{ 'cart.get_estimate' | t }}
                             </button>
@@ -203,7 +207,7 @@
                         contents: accordion_contents,
                         icon_type: 'plus',
                         item_class: 'pt-6 border-t border-theme-border/20 first:border-t-0',
-                        title_class: 'heading-h3',
+                        title_class: 'body-xl',
                         title_active_class: 'text-current',
                         title_inactive_class: 'text-current/80',
                         content_class: 'pb-6 pe-0 text-current/80'
@@ -212,10 +216,10 @@
                     <div class="mt-10 border-t border-theme-border/20 pt-10">
                         {%- if cart.cart_level_discount_applications.size > 0 -%}
                             <div class="mb-4">
-                                <p class="body-sm font-medium">{{ 'cart.discounts' | t }}</p>
+                                <p class="font-medium">{{ 'cart.discounts' | t }}</p>
                                 <ul class="mt-2 space-y-1" aria-label="{{ 'cart.discounts' | t }}">
                                     {%- for discount_application in cart.cart_level_discount_applications -%}
-                                        <li class="flex items-baseline justify-between gap-4 body-sm text-theme-text/80">
+                                        <li class="flex items-baseline justify-between gap-4 text-theme-text/80">
                                             <span>{{ discount_application.title }}</span>
                                             <span
                                                 >-
@@ -231,7 +235,7 @@
                         {%- endif -%}
 
                         {%- if cart.total_discount > 0 -%}
-                            <div class="mb-4 flex items-baseline justify-between gap-4 body-sm">
+                            <div class="mb-4 flex items-baseline justify-between gap-4">
                                 <span>{{ 'cart.you_saved' | t }}</span>
                                 <span class="text-theme-text/80"
                                     >-{{ cart.total_discount | money -}}
@@ -239,7 +243,7 @@
                             </div>
                         {%- endif -%}
 
-                        <div class="flex items-baseline justify-between gap-4">
+                        <div class="flex items-baseline justify-between gap-4 body-lg">
                             <span>
                                 {{- 'cart.estimate_total' | t -}}
                             </span>
@@ -256,7 +260,7 @@
                         <button
                             type="submit"
                             name="checkout"
-                            class="btn-primary w-full"
+                            class="btn-primary w-full body-xl"
                         >
                             {{ 'cart.checkout' | t }}
                             <sup class="sup-badge">( {{ cart.item_count | default: 0 }} )</sup>
@@ -288,6 +292,58 @@
             "id": "color_scheme",
             "label": "t:sections.cart.settings.color_scheme",
             "default": "scheme-1"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.slides-show.content.heading"
+        },
+        {
+            "type": "select",
+            "id": "heading_size",
+            "label": "t:sections.slides-show.settings.heading_size",
+            "options": [
+                {
+                    "value": "heading-4xl",
+                    "label": "t:sections.slides-show.options.heading_4xl"
+                },
+                {
+                    "value": "heading-3xl",
+                    "label": "t:sections.slides-show.options.heading_3xl"
+                },
+                {
+                    "value": "heading-2xl",
+                    "label": "t:sections.slides-show.options.heading_2xl"
+                },
+                {
+                    "value": "heading-xl",
+                    "label": "t:sections.slides-show.options.heading_xl"
+                },
+                {
+                    "value": "heading-h1",
+                    "label": "t:sections.slides-show.options.heading_h1"
+                },
+                {
+                    "value": "heading-h2",
+                    "label": "t:sections.slides-show.options.heading_h2"
+                },
+                {
+                    "value": "heading-h3",
+                    "label": "t:sections.slides-show.options.heading_h3"
+                },
+                {
+                    "value": "heading-h4",
+                    "label": "t:sections.slides-show.options.heading_h4"
+                },
+                {
+                    "value": "heading-h5",
+                    "label": "t:sections.slides-show.options.heading_h5"
+                },
+                {
+                    "value": "heading-h6",
+                    "label": "t:sections.slides-show.options.heading_h6"
+                }
+            ],
+            "default": "heading-3xl"
         },
         {
             "type": "header",

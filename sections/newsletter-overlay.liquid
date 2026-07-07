@@ -53,32 +53,43 @@
 
         <div class="flex min-h-0 w-full flex-col justify-between gap-3 overflow-y-auto px-6 pt-5 pb-5 pc:justify-around pc:gap-0 pc:px-6 pc:py-10 text-{{ section.settings.alignment }}">
         {%- for block in section.blocks -%}
-            {%- comment -%} Backward compat: map legacy heading tier values to new names {%- endcomment -%}
-            {%- case block.settings.body_text_size -%}
-                {%- when 'h5' -%}{%- assign body_size_class = 'body-sm' -%}
-                {%- when 'h4' -%}{%- assign body_size_class = 'body-md' -%}
-                {%- when 'h3' -%}{%- assign body_size_class = 'body-lg' -%}
-                {%- else -%}{%- assign body_size_class = block.settings.body_text_size -%}
-            {%- endcase -%}
-            {%- case block.settings.heading_text_size -%}
-                {%- when 'h3' -%}{%- assign heading_size_class = 'heading-h3' -%}
-                {%- when 'h2' -%}{%- assign heading_size_class = 'heading-h2' -%}
-                {%- when 'h1' -%}{%- assign heading_size_class = 'heading-h1' -%}
-                {%- else -%}{%- assign heading_size_class = block.settings.heading_text_size -%}
-                {%- endcase -%}
             {%- case block.type -%}
                 {%- when 'text' -%}
+                    {%- liquid
+                        assign overlay_text_size = block.settings.body_text_size | default: 'body-lg'
+                        case overlay_text_size
+                            when 'h5'
+                                assign overlay_text_size = 'body-sm'
+                            when 'h4'
+                                assign overlay_text_size = 'body-md'
+                            when 'h3'
+                                assign overlay_text_size = 'body-lg'
+                        endcase
+                    -%}
                     <div
-                        class="rte rte--compact mb-0 pc:mb-2 {{ body_size_class }}"
+                        class="rte rte--compact mb-0 pc:mb-2 {{ overlay_text_size }}"
                         {{ block.shopify_attributes }}
                     >
                         {{ block.settings.text }}
                     </div>
 
                 {%- when 'heading' -%}
+                    {%- liquid
+                        assign overlay_heading_size = block.settings.heading_text_size | default: 'heading-h2'
+                        case overlay_heading_size
+                            when 'h3'
+                                assign overlay_heading_size = 'heading-h3'
+                            when 'h2'
+                                assign overlay_heading_size = 'heading-h2'
+                            when 'h1'
+                                assign overlay_heading_size = 'heading-h1'
+                            when 'heading-size-custom'
+                                assign overlay_heading_size = 'heading-h2'
+                        endcase
+                    -%}
                     <h2
                         id="dialog-title-{{ popup_id }}"
-                        class="mb-0 pc:mb-3 {{ heading_size_class }}"
+                        class="mb-0 pc:mb-3 {{ overlay_heading_size }}"
                         {{ block.shopify_attributes }}
                     >
                         {{ block.settings.heading }}
@@ -106,7 +117,7 @@
                                 id="newsletter-email-{{ section.id }}"
                                 type="email"
                                 name="contact[email]"
-                                class="inline-submit-field__input body-sm"
+                                class="inline-submit-field__input"
                                 placeholder="{{ section.settings.placeholder }}"
                                 required
                             >
@@ -286,19 +297,35 @@
                     "label": "t:sections.newsletter-overlay.block_settings.text_size",
                     "options": [
                         {
-                            "value": "body-sm",
-                            "label": "t:sections.newsletter-overlay.options.small"
+                            "value": "body-3xl",
+                            "label": "t:sections.scroll-categories.options.body_3xl"
                         },
                         {
-                            "value": "body-md",
-                            "label": "t:sections.newsletter-overlay.options.medium"
+                            "value": "body-2xl",
+                            "label": "t:sections.scroll-categories.options.body_2xl"
+                        },
+                        {
+                            "value": "body-xl",
+                            "label": "t:sections.scroll-categories.options.body_xl"
                         },
                         {
                             "value": "body-lg",
-                            "label": "t:sections.newsletter-overlay.options.large"
+                            "label": "t:sections.scroll-categories.options.body_lg"
+                        },
+                        {
+                            "value": "body-md",
+                            "label": "t:sections.scroll-categories.options.body_md"
+                        },
+                        {
+                            "value": "body-sm",
+                            "label": "t:sections.scroll-categories.options.body_sm"
+                        },
+                        {
+                            "value": "body-xs",
+                            "label": "t:sections.scroll-categories.options.body_xs"
                         }
                     ],
-                    "default": "body-sm"
+                    "default": "body-lg"
                 }
             ]
         },
@@ -315,19 +342,47 @@
                 {
                     "type": "select",
                     "id": "heading_text_size",
-                    "label": "t:sections.newsletter-overlay.block_settings.text_size",
+                    "label": "t:sections.slides-show.settings.heading_size",
                     "options": [
                         {
-                            "value": "heading-h3",
-                            "label": "t:sections.newsletter-overlay.options.small"
+                            "value": "heading-4xl",
+                            "label": "t:sections.slides-show.options.heading_4xl"
                         },
                         {
-                            "value": "heading-h2",
-                            "label": "t:sections.newsletter-overlay.options.medium"
+                            "value": "heading-3xl",
+                            "label": "t:sections.slides-show.options.heading_3xl"
+                        },
+                        {
+                            "value": "heading-2xl",
+                            "label": "t:sections.slides-show.options.heading_2xl"
+                        },
+                        {
+                            "value": "heading-xl",
+                            "label": "t:sections.slides-show.options.heading_xl"
                         },
                         {
                             "value": "heading-h1",
-                            "label": "t:sections.newsletter-overlay.options.large"
+                            "label": "t:sections.slides-show.options.heading_h1"
+                        },
+                        {
+                            "value": "heading-h2",
+                            "label": "t:sections.slides-show.options.heading_h2"
+                        },
+                        {
+                            "value": "heading-h3",
+                            "label": "t:sections.slides-show.options.heading_h3"
+                        },
+                        {
+                            "value": "heading-h4",
+                            "label": "t:sections.slides-show.options.heading_h4"
+                        },
+                        {
+                            "value": "heading-h5",
+                            "label": "t:sections.slides-show.options.heading_h5"
+                        },
+                        {
+                            "value": "heading-h6",
+                            "label": "t:sections.slides-show.options.heading_h6"
                         }
                     ],
                     "default": "heading-h2"

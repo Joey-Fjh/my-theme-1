@@ -9,6 +9,10 @@
     data-pagination-selectors='["[role=&quot;tabpanel&quot;]",".sup-badge"]'
     x-data="sectionPagination()"
 >
+    {%- liquid
+        assign blog_heading_class = section.settings.heading_size | default: 'heading-3xl'
+        assign blog_subtitle_class = section.settings.subtitle_size | default: 'body-xl'
+    -%}
     <div
         class="
             layout layout-no-pb container-page
@@ -28,7 +32,9 @@
                         object_title: blog.title,
                         header_locale_key: 'blog.title',
                         setting_description: section.settings.description,
-                        description_locale_key: 'blog.description_html'
+                        description_locale_key: 'blog.description_html',
+                        heading_class: blog_heading_class,
+                        description_class: blog_subtitle_class
                     -%}
                 </div>
 
@@ -57,6 +63,7 @@
             color-{{ section.settings.color_scheme }} surface-section
             pt-6 pc:pt-8
         "
+        style="--body-size-custom: 24px; --body-size-custom-pc: 32px;"
     >
         <div class="relative flex items-center justify-between">
             {%- comment -%} Tab Header (Router Trigger) + Tab Content (fetch replace) {%- endcomment -%}
@@ -156,11 +163,11 @@
                                         </div>
 
                                         <div data-motion-reveal="content">
-                                            <p class="sub-heading my-6">
+                                            <p class="my-6">
                                                 {{ article.tags | first }}
                                             </p>
 
-                                            <h2 class="my-6">
+                                            <h2 class="my-6 heading-h2">
                                                 <a href="{{ article.url }}">{{ article.title }}</a>
                                             </h2>
 
@@ -170,7 +177,12 @@
                                                     {% render 'icons', icon: 'icon-arrow2', class: 'ms-3' %}
                                                 {%- endcapture -%}
 
-                                                {%- render 'link', href: article.url, content: link_content, variant: "underline"-%}
+                                                {%- render 'link',
+                                                    href: article.url,
+                                                    content: link_content,
+                                                    variant: 'underline',
+                                                    class: 'body-xl'
+                                                -%}
                                             {%- endif -%}
                                         </div>
                                     </article>
@@ -196,7 +208,7 @@
                 {%- render 'tab-control',
                     custom_class: 'items-start',
                     tab_header: tab_header,
-                    header_class: 'body-lg gap-9',
+                    header_class: 'body-size-custom gap-9',
                     tab_content: tab_content
                 -%}
             </div>
@@ -220,10 +232,56 @@
             "default": "scheme-1"
         },
         {
-            "type": "color_scheme",
-            "id": "color_scheme",
-            "label": "t:sections.blog.settings.tab_control_color_scheme",
-            "default": "scheme-1"
+            "type": "header",
+            "content": "t:sections.slides-show.content.heading"
+        },
+        {
+            "type": "select",
+            "id": "heading_size",
+            "label": "t:sections.slides-show.settings.heading_size",
+            "options": [
+                {
+                    "value": "heading-4xl",
+                    "label": "t:sections.slides-show.options.heading_4xl"
+                },
+                {
+                    "value": "heading-3xl",
+                    "label": "t:sections.slides-show.options.heading_3xl"
+                },
+                {
+                    "value": "heading-2xl",
+                    "label": "t:sections.slides-show.options.heading_2xl"
+                },
+                {
+                    "value": "heading-xl",
+                    "label": "t:sections.slides-show.options.heading_xl"
+                },
+                {
+                    "value": "heading-h1",
+                    "label": "t:sections.slides-show.options.heading_h1"
+                },
+                {
+                    "value": "heading-h2",
+                    "label": "t:sections.slides-show.options.heading_h2"
+                },
+                {
+                    "value": "heading-h3",
+                    "label": "t:sections.slides-show.options.heading_h3"
+                },
+                {
+                    "value": "heading-h4",
+                    "label": "t:sections.slides-show.options.heading_h4"
+                },
+                {
+                    "value": "heading-h5",
+                    "label": "t:sections.slides-show.options.heading_h5"
+                },
+                {
+                    "value": "heading-h6",
+                    "label": "t:sections.slides-show.options.heading_h6"
+                }
+            ],
+            "default": "heading-3xl"
         },
         {
             "type": "inline_richtext",
@@ -236,6 +294,52 @@
             "id": "description",
             "default": "t:sections.blog.defaults.description",
             "label": "t:sections.blog.settings.description"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.scroll-categories.content.subtitle"
+        },
+        {
+            "type": "select",
+            "id": "subtitle_size",
+            "label": "t:sections.scroll-categories.settings.subtitle_size",
+            "options": [
+                {
+                    "value": "body-3xl",
+                    "label": "t:sections.scroll-categories.options.body_3xl"
+                },
+                {
+                    "value": "body-2xl",
+                    "label": "t:sections.scroll-categories.options.body_2xl"
+                },
+                {
+                    "value": "body-xl",
+                    "label": "t:sections.scroll-categories.options.body_xl"
+                },
+                {
+                    "value": "body-lg",
+                    "label": "t:sections.scroll-categories.options.body_lg"
+                },
+                {
+                    "value": "body-md",
+                    "label": "t:sections.scroll-categories.options.body_md"
+                },
+                {
+                    "value": "body-sm",
+                    "label": "t:sections.scroll-categories.options.body_sm"
+                },
+                {
+                    "value": "body-xs",
+                    "label": "t:sections.scroll-categories.options.body_xs"
+                }
+            ],
+            "default": "body-xl"
+        },
+        {
+            "type": "color_scheme",
+            "id": "color_scheme",
+            "label": "t:sections.blog.settings.tab_control_color_scheme",
+            "default": "scheme-1"
         },
         {
             "type": "text",

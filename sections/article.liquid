@@ -8,6 +8,14 @@
     x-data="motionRevealSection()"
     data-motion-section
 >
+    {%- liquid
+        assign article_heading_class = section.settings.heading_size | default: 'heading-2xl'
+        assign article_subtitle_class = section.settings.subtitle_size | default: 'body-xl'
+        assign article_heading = section.settings.heading
+        if article_heading == blank
+            assign article_heading = article.title
+        endif
+    -%}
     <div class="article-hero relative overflow-hidden pc:max-h-200">
         {%- capture sizes -%}
             (min-width: 80rem) 100vw, (min-width: 48rem) 1280px, 768px
@@ -39,16 +47,16 @@
                 data-motion-reveal="content"
             >
                 {%- if section.settings.eyebrow != blank -%}
-                    <p class="sub-heading">
+                    <p class="{{ article_subtitle_class }}">
                         {{ section.settings.eyebrow }}
                     </p>
                 {%- endif -%}
 
                 <h1
-                    class="line-clamp-3 max-w-full min-w-0 pc:heading-2xl"
-                    title="{{ article.title | escape }}"
+                    class="{{ article_heading_class }} line-clamp-3 max-w-full min-w-0"
+                    title="{{ article_heading | strip_html | escape }}"
                 >
-                    {{ article.title }}
+                    {{ article_heading }}
                 </h1>
             </div>
         </div>
@@ -58,7 +66,7 @@
         <div class="flex flex-col gap-16 pc:flex-row pc:gap-24 fw:gap-32">
             {% comment %} Aside Bar {% endcomment %}
             <aside
-                class="shrink-0 body-lg max-pc:hidden pc:w-72 fw:w-80"
+                class="shrink-0 body-xl max-pc:hidden pc:w-72 fw:w-80"
                 data-motion-reveal="content"
             >
                 <nav class="pc:sticky">
@@ -93,7 +101,7 @@
                 class="article-content min-w-0 flex-1"
                 data-motion-reveal="content"
             >
-                <div class="flex items-center justify-end border-b border-theme-border/20 pb-3">
+                <div class="flex items-center justify-end border-b border-theme-border/20 pb-3 body-xl">
                     {%- assign date = article.published_at | time_tag: format: 'date' -%}
                     <p>
                         {{ 'blog.article_metadata_html' | t: date: date, author: article.author }}
@@ -104,7 +112,7 @@
                 </div>
                 <div class="flex flex-col gap-3 border-t border-theme-border/20 pt-3">
                     {%- if section.settings.show_social -%}
-                        {%- render 'social-icons', type: 'name', class: 'self-end' -%}
+                        {%- render 'social-icons', type: 'name', class: 'body-xl self-end' -%}
                     {%- endif -%}
                 </div>
 
@@ -266,10 +274,107 @@
             "label": "t:sections.article.settings.image_alt_text"
         },
         {
+            "type": "header",
+            "content": "t:sections.slides-show.content.heading"
+        },
+        {
+            "type": "inline_richtext",
+            "id": "heading",
+            "label": "t:sections.article.settings.heading"
+        },
+        {
+            "type": "select",
+            "id": "heading_size",
+            "label": "t:sections.slides-show.settings.heading_size",
+            "options": [
+                {
+                    "value": "heading-4xl",
+                    "label": "t:sections.slides-show.options.heading_4xl"
+                },
+                {
+                    "value": "heading-3xl",
+                    "label": "t:sections.slides-show.options.heading_3xl"
+                },
+                {
+                    "value": "heading-2xl",
+                    "label": "t:sections.slides-show.options.heading_2xl"
+                },
+                {
+                    "value": "heading-xl",
+                    "label": "t:sections.slides-show.options.heading_xl"
+                },
+                {
+                    "value": "heading-h1",
+                    "label": "t:sections.slides-show.options.heading_h1"
+                },
+                {
+                    "value": "heading-h2",
+                    "label": "t:sections.slides-show.options.heading_h2"
+                },
+                {
+                    "value": "heading-h3",
+                    "label": "t:sections.slides-show.options.heading_h3"
+                },
+                {
+                    "value": "heading-h4",
+                    "label": "t:sections.slides-show.options.heading_h4"
+                },
+                {
+                    "value": "heading-h5",
+                    "label": "t:sections.slides-show.options.heading_h5"
+                },
+                {
+                    "value": "heading-h6",
+                    "label": "t:sections.slides-show.options.heading_h6"
+                }
+            ],
+            "default": "heading-2xl"
+        },
+        {
             "type": "inline_richtext",
             "id": "eyebrow",
             "default": "categories",
             "label": "t:sections.article.settings.eyebrow_text"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.scroll-categories.content.subtitle"
+        },
+        {
+            "type": "select",
+            "id": "subtitle_size",
+            "label": "t:sections.scroll-categories.settings.subtitle_size",
+            "options": [
+                {
+                    "value": "body-3xl",
+                    "label": "t:sections.scroll-categories.options.body_3xl"
+                },
+                {
+                    "value": "body-2xl",
+                    "label": "t:sections.scroll-categories.options.body_2xl"
+                },
+                {
+                    "value": "body-xl",
+                    "label": "t:sections.scroll-categories.options.body_xl"
+                },
+                {
+                    "value": "body-lg",
+                    "label": "t:sections.scroll-categories.options.body_lg"
+                },
+                {
+                    "value": "body-md",
+                    "label": "t:sections.scroll-categories.options.body_md"
+                },
+                {
+                    "value": "body-sm",
+                    "label": "t:sections.scroll-categories.options.body_sm"
+                },
+                {
+                    "value": "body-xs",
+                    "label": "t:sections.scroll-categories.options.body_xs"
+                }
+            ],
+            "default": "body-xl"
         },
         {
             "type": "range",

@@ -13,6 +13,8 @@
     @param {string} header_locale_key - Translation key when header and object title are blank.
     @param {string} setting_description - Section description setting (HTML).
     @param {string} description_locale_key - Translation key for description HTML fallback.
+    @param {string} [heading_class] - Optional heading tier class for the page title.
+    @param {string} [description_class] - Optional body tier class for the description wrapper.
 {% enddoc %}
 
 {%- liquid
@@ -26,9 +28,12 @@
 
     assign description_fallback = description_locale_key | t
     assign resolved_description = setting_description | default: description_fallback
+    assign hero_heading_class = heading_class | default: 'heading-4xl'
 -%}
 
-<h1 class="mb-10 heading-4xl">
+<h1 class="mb-10 {{ hero_heading_class }}">
     {{ resolved_heading }}
 </h1>
-{%- render 'rte-compact-prose', content: resolved_description -%}
+<div class="rte rte--compact max-w-3xl{% if description_class != blank %} {{ description_class }}{% endif %}">
+    {{ resolved_description }}
+</div>

@@ -49,7 +49,7 @@ Global typography settings in `config/settings_schema.json` control the merchant
 
 - `assets/base.css` native `h1`-`h6` styles are fallback defaults for headings without explicit visual tiers. Default body copy comes from document/body defaults and body settings - do not add `typo-body`.
 - `tailwind/tailwind.typography.css` is the typography source of truth.
-- **Base stacks:** `heading-base`, `subtitle-base`, `body-base` - font family/style/weight/line-height/letter-spacing/text-transform/color only; no independent role font-size.
+- **Base stacks:** `heading-base`, `subtitle-base`, `body-base` - font family/style/weight/line-height/letter-spacing/text-transform; `heading-base` also sets foreground color at 100%. `body-base` does not set color (inherit from `body`, parent, or component). No independent role font-size on base stacks.
 - **Subtitle role:** `typo-subtitle` (alias of `subtitle-base`) - family from `subtitle_font_source` (heading or body) plus subtitle weight/line-height/letter-spacing/text-transform; **no font-size**. Compose with `heading-*` or `body-*` at the consumer.
 - **Body tiers:** `body-3xl` through `body-xs` derive from the effective global body size (`body_font_size * body_scale`) through fixed mobile/PC ratios. They are not fixed rem sizes and not ordinary paragraph text-size settings.
 - **Tier primitives** (`heading-h1`, `heading-xl`, `heading-2xl`, `body-lg`, `body-md`, `body-sm`, etc.) remain available. They are the approved size vocabulary for default section choices and local custom typography override dropdowns.

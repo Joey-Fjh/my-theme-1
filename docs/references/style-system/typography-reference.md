@@ -68,7 +68,7 @@ Default section typography should consume semantic markup, approved size tiers, 
 - Subtitle size must be composed separately, such as `typo-subtitle heading-2xl` or `typo-subtitle body-lg`.
 - Title and ordinary body copy use `heading-*` / `body-*` tiers or default body inheritance - no title/body role utilities.
 - Default body copy uses body settings. Explicit `body-*` tiers remain available as global-body-derived emphasis tiers.
-- Opacity is local styling (`text-theme-text/80`, etc.), not a typography setting or role.
+- Opacity and muted copy use local styling (`text-theme-text/80`, etc.), not `body-*` tiers. Default body copy color comes from `body` in `assets/base.css` (80% foreground).
 
 Do not add new role utilities for title, body, action, price, nav, or component text unless a future scoped API is explicitly designed.
 
@@ -84,6 +84,8 @@ Component text defaults to body inheritance unless the component intentionally o
 ## Rules
 
 - Prefer semantic headings first; add visual tier classes only when native scale is not correct.
+- Semantic heading level (`h1`–`h6`) and visual `heading-*` tier are chosen independently: pick the tier that matches the design px target, not the tag name. Example: `<h3 class="heading-h2">` when the outline needs `h3` but the visual target is 24px desktop.
+- `body-*` tiers are for non-heading body semantics only. Do not put `body-*` on `h1`–`h6`.
 - Do not put heading tier classes on non-heading elements unless a reviewed exception exists.
 - Use `typo-subtitle` on non-heading subtitle/support text when it should consume subtitle global font settings; compose its size separately with `heading-*` or `body-*`.
 - Do not add `body-md` merely to restate default body text.
