@@ -796,7 +796,11 @@ Dialog
     /*
         ui-dialog mobile layout preset: inset shell (below pc only).
         Panel chrome remains on .ui-dialog-panel; overflow clipping on .ui-dialog-mobile-layout-panel.
-        Desktop drawer width/position: ui-dialog-desktop-drawer at call site.
+
+        Desktop overlay drawer preset (cart/search/filter on pc+):
+        - base: .ui-dialog-desktop-drawer (width, top, height anchor)
+        - anchor: .ui-dialog-desktop-drawer--left | --right (from ui-dialog `position`)
+        Enable via drawer_desktop_layout: true in ui-dialog call sites.
     */
     .ui-dialog-mobile-layout-inset {
         @media (width < theme(--breakpoint-pc)) {
@@ -822,7 +826,7 @@ Dialog
 
     .ui-dialog-desktop-drawer {
         @media (width >= theme(--breakpoint-pc)) {
-            @apply !right-0 !bottom-0 !left-auto !w-full !max-w-[40rem] !translate-x-0;
+            @apply !bottom-0 !w-full !max-w-[40rem] !translate-x-0;
         }
 
         @media (width >= theme(--breakpoint-pc)) {
@@ -831,6 +835,18 @@ Dialog
 
         @media (width >= theme(--breakpoint-fw)) {
             @apply !max-w-[33vw];
+        }
+    }
+
+    .ui-dialog-desktop-drawer--left {
+        @media (width >= theme(--breakpoint-pc)) {
+            @apply !right-auto !left-0;
+        }
+    }
+
+    .ui-dialog-desktop-drawer--right {
+        @media (width >= theme(--breakpoint-pc)) {
+            @apply !right-0 !left-auto;
         }
     }
 

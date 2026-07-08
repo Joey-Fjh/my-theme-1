@@ -17,7 +17,7 @@ This file stores historical CSS architecture decisions and deferred cleanup note
 | --- | --- |
 | Motion token chain | Primary interactive paths use motion vars; remaining gaps are low-priority governance or drive-by cleanup |
 | Section override cleanup | Section-root selectors do not belong in `components.css` |
-| Typography drift | `sub-heading`/eyebrow tier belongs in typography |
+| Typography drift | Legacy `.sub-heading` retired; subtitle consumers use `typo-subtitle` + explicit size tier |
 | Tab trigger chrome | Shared trigger chrome consolidated under reusable tab-nav API |
 | Accordion | Accordion CSS promoted to components; snippet remains render/API owner |
 | Link micro-pattern | Shared focus/underline behavior belongs in elements utility or existing link primitive |

@@ -28,12 +28,17 @@
 
     assign description_fallback = description_locale_key | t
     assign resolved_description = setting_description | default: description_fallback
-    assign hero_heading_class = heading_class | default: 'heading-4xl'
+    assign hero_heading_class = heading_class | default: 'heading-h1'
+    assign hero_description_class = 'typo-subtitle'
+    if description_class != blank
+        assign hero_description_class = hero_description_class | append: ' ' | append: description_class
+    endif
 -%}
 
 <h1 class="mb-10 {{ hero_heading_class }}">
     {{ resolved_heading }}
 </h1>
-<div class="rte rte--compact max-w-3xl{% if description_class != blank %} {{ description_class }}{% endif %}">
-    {{ resolved_description }}
-</div>
+{%- render 'rte-compact-prose',
+    content: resolved_description,
+    content_class: hero_description_class
+-%}

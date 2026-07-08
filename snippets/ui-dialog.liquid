@@ -8,6 +8,7 @@
     @param {string} [dialog_motion_mode] - Modal motion only: 'origin' | 'edge' | 'none'. Auto: edge for bottom-*, origin for center.
     @param {string} [drawer_motion_mode] - Drawer motion only: 'slide' | 'none'. Default: slide for type drawer.
     @param {boolean} [drawer_motion_sheet] - Use bottom sheet motion below pc breakpoint (Cart/Filters mobile).
+    @param {boolean} [drawer_desktop_layout] - Apply the shared desktop drawer shell preset (width + top). Horizontal anchor follows `position`.
     @param {string} [layer]     - Semantic z-index layer: 'drawer' | 'modal' | 'modal-focus' (default: 'modal').
     @param {string} [top_class] - Viewport top offset class for overlay/wrapper (default: 'top-0').
     @param {string} [color_scheme] - Optional color scheme id (e.g. 'scheme-1'). Applied on `.ui-dialog-panel` as `color-{id}`.
@@ -61,7 +62,14 @@
     endif
 
     assign modal_panel_classes = 'ui-dialog-panel ui-dialog-modal-panel ui-dialog-modal-width-default ui-dialog-modal-height-default ' | append: modal_panel_classes | strip
-    assign drawer_wrapper_classes = 'ui-dialog-drawer-width-default ' | append: drawer_wrapper_classes | strip
+
+    assign drawer_desktop_layout_enabled = drawer_desktop_layout | default: false
+    assign drawer_desktop_shell_classes = ''
+    if drawer_desktop_layout_enabled
+        assign drawer_desktop_shell_classes = 'ui-dialog-desktop-drawer ui-dialog-desktop-drawer--' | append: dialog_position
+    endif
+
+    assign drawer_wrapper_classes = 'ui-dialog-drawer-width-default ' | append: drawer_desktop_shell_classes | append: ' ' | append: drawer_wrapper_classes | strip
 
     if mobile_layout_value == 'inset'
         assign drawer_panel_classes = 'ui-dialog-mobile-layout-panel ' | append: drawer_panel_classes | strip

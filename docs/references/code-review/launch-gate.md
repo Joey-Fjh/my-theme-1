@@ -135,11 +135,10 @@ Warnings should be staged after launch unless they affect Lighthouse, accessibil
 
 Known follow-ups:
 
-1. Align the `body` default and `body-md` semantics before removing redundant default body classes.
-2. Add a typography lint for redundant default body classes only after that alignment is complete.
-3. Add a lint for redundant matching heading classes such as `<h2 class="heading-h2">` only if review misses it repeatedly.
-4. Add a lint for mismatched heading classes such as `<h2 class="heading-h1">` only if review misses it repeatedly. Mismatches are semantic/visual decisions, not auto-fixable.
-5. Add focused accessibility automation only after the checklist stabilizes and manual review proves unreliable.
+1. Evaluate whether a typography lint for redundant default body classes is worth adding now that default body/body-md alignment is documented.
+2. Add a lint for redundant matching heading classes such as `<h2 class="heading-h2">` only if review misses it repeatedly.
+3. Add a lint for mismatched heading classes such as `<h2 class="heading-h1">` only if review misses it repeatedly. Mismatches are semantic/visual decisions, not auto-fixable.
+4. Add focused accessibility automation only after the checklist stabilizes and manual review proves unreliable.
 
 ## Legacy Cleanup Safety
 

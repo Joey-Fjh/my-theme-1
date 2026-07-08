@@ -9,6 +9,10 @@
     data-pagination-selectors='["[data-collection-dynamic-content]","[data-collection-drawer-shell]"]'
     x-data="collectionFilters()"
 >
+    {%- liquid
+        assign collection_heading_class = section.settings.heading_size | default: 'heading-4xl'
+        assign collection_subtitle_class = section.settings.subtitle_size | default: 'body-xl'
+    -%}
     <div class="layout layout-no-pb container-page pb-0">
         {%- comment -%} Hero {%- endcomment -%}
         <div
@@ -23,7 +27,9 @@
                         object_title: collection.title,
                         header_locale_key: 'collections.products',
                         setting_description: section.settings.description,
-                        description_locale_key: 'collections.description_html'
+                        description_locale_key: 'collections.description_html',
+                        heading_class: collection_heading_class,
+                        description_class: collection_subtitle_class
                     -%}
                 </div>
 
@@ -84,7 +90,7 @@
                         <button
                             type="button"
                             @click="$store.dialog.open('collection-filters')"
-                            class="flex shrink-0 cursor-pointer items-center gap-3"
+                            class="collection-toolbar__action flex shrink-0 cursor-pointer items-center gap-3"
                         >
                             {% render 'icons', icon: 'icon-filter' %}
                             <span>{{ 'collections.filter' | t }}</span>
@@ -191,7 +197,7 @@
                                 <button
                                     type="button"
                                     @click="$store.dialog.open('collection-filters')"
-                                    class="flex shrink-0 cursor-pointer items-center gap-2.5"
+                                    class="collection-toolbar__action flex shrink-0 cursor-pointer items-center gap-2.5"
                                 >
                                     {% render 'icons', icon: 'icon-filter' %}
                                     <span>{{ 'collections.filter' | t }}</span>
@@ -338,7 +344,7 @@
                     {%- comment -%} Tab strip chrome: full-width bottom border on desktop when filter_type is not Horizontal (horizontal filters live in their own row); horizontal mode removes pc border from the tab row. {%- endcomment -%}
                     {%- liquid
                         assign header_outer_class_value = 'w-full pc:grid pc:grid-cols-[max-content_minmax(0,1fr)_max-content] pc:items-end pc:gap-12'
-                        assign header_class_value = 'body-lg gap-6 pc:gap-12 max-pc:border-b max-pc:border-theme-border/20'
+                        assign header_class_value = 'body-3xl gap-6 pc:gap-12 max-pc:border-b max-pc:border-theme-border/20'
                         if is_horizontal_filter == false
                             assign header_outer_class_value = header_outer_class_value | append: ' pc:border-b pc:border-theme-border/20'
                         else
@@ -377,9 +383,11 @@
                 type: 'drawer',
                 layer: 'drawer',
                 position: 'left',
-                top_class: 'top-0',
+                top_class: 'top-[var(--announcement-bar-height)] pc:top-0',
+                color_scheme: section.settings.color_scheme,
                 drawer_motion_sheet: true,
-                drawer_wrapper_class: 'max-pc:w-4/5 max-pc:max-w-none max-pc:top-3 max-pc:bottom-3 max-pc:left-1/2 max-pc:right-auto max-pc:-translate-x-1/2',
+                mobile_layout: 'inset',
+                drawer_desktop_layout: true,
                 show_close_button: false,
                 close_label: close_label,
                 content: drawer_content
@@ -455,6 +463,58 @@
             "default": "scheme-1"
         },
         {
+            "type": "header",
+            "content": "t:sections.slides-show.content.font"
+        },
+        {
+            "type": "select",
+            "id": "heading_size",
+            "label": "t:sections.slides-show.settings.heading_size",
+            "options": [
+                {
+                    "value": "heading-4xl",
+                    "label": "t:sections.slides-show.options.heading_4xl"
+                },
+                {
+                    "value": "heading-3xl",
+                    "label": "t:sections.slides-show.options.heading_3xl"
+                },
+                {
+                    "value": "heading-2xl",
+                    "label": "t:sections.slides-show.options.heading_2xl"
+                },
+                {
+                    "value": "heading-xl",
+                    "label": "t:sections.slides-show.options.heading_xl"
+                },
+                {
+                    "value": "heading-h1",
+                    "label": "t:sections.slides-show.options.heading_h1"
+                },
+                {
+                    "value": "heading-h2",
+                    "label": "t:sections.slides-show.options.heading_h2"
+                },
+                {
+                    "value": "heading-h3",
+                    "label": "t:sections.slides-show.options.heading_h3"
+                },
+                {
+                    "value": "heading-h4",
+                    "label": "t:sections.slides-show.options.heading_h4"
+                },
+                {
+                    "value": "heading-h5",
+                    "label": "t:sections.slides-show.options.heading_h5"
+                },
+                {
+                    "value": "heading-h6",
+                    "label": "t:sections.slides-show.options.heading_h6"
+                }
+            ],
+            "default": "heading-4xl"
+        },
+        {
             "type": "inline_richtext",
             "id": "header",
             "default": "t:sections.collection.defaults.header",
@@ -465,6 +525,46 @@
             "id": "description",
             "default": "t:sections.collection.defaults.description",
             "label": "t:sections.collection.settings.description"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.scroll-categories.content.subtitle"
+        },
+        {
+            "type": "select",
+            "id": "subtitle_size",
+            "label": "t:sections.scroll-categories.settings.subtitle_size",
+            "options": [
+                {
+                    "value": "body-3xl",
+                    "label": "t:sections.scroll-categories.options.body_3xl"
+                },
+                {
+                    "value": "body-2xl",
+                    "label": "t:sections.scroll-categories.options.body_2xl"
+                },
+                {
+                    "value": "body-xl",
+                    "label": "t:sections.scroll-categories.options.body_xl"
+                },
+                {
+                    "value": "body-lg",
+                    "label": "t:sections.scroll-categories.options.body_lg"
+                },
+                {
+                    "value": "body-md",
+                    "label": "t:sections.scroll-categories.options.body_md"
+                },
+                {
+                    "value": "body-sm",
+                    "label": "t:sections.scroll-categories.options.body_sm"
+                },
+                {
+                    "value": "body-xs",
+                    "label": "t:sections.scroll-categories.options.body_xs"
+                }
+            ],
+            "default": "body-xl"
         },
         {
             "type": "text",

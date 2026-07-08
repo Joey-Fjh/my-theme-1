@@ -6,6 +6,7 @@
     @param {section} section - Section object (for section.id and settings).
     @param {recommendations} recommendations - Shopify recommendations object from the product recommendations section context.
     @param {string} [heading] - Section heading text. Defaults to locale-based recommendation type label.
+    @param {string} [description] - Section description rich text.
     @param {string} [heading_class] - Heading tier class for the section title. Default: heading-xl.
     @param {string} [description_class] - Body tier class for the section description. Default: body-xl.
     @param {number} [limit] - Number of recommended products. Default: 4.
@@ -28,6 +29,7 @@
     assign intent = intent | default: 'related'
     assign recommendations_heading_class = heading_class | default: 'heading-2xl'
     assign recommendations_description_class = description_class | default: 'body-xl'
+    assign recommendations_description_class = 'typo-subtitle ' | append: recommendations_description_class
 
     assign empty_text = empty_text | default: ''
     if empty_text == blank
@@ -82,9 +84,10 @@
                     >
                         <h2 class="{{ recommendations_heading_class }}">{{ heading }}</h2>
                         {%- if description != blank -%}
-                            <div class="rte rte--compact max-w-3xl {{ recommendations_description_class }}">
-                                {{ description }}
-                            </div>
+                            {%- render 'rte-compact-prose',
+                                content: description,
+                                content_class: recommendations_description_class
+                            -%}
                         {%- endif -%}
                     </div>
 
@@ -113,9 +116,10 @@
                     >
                         <h2 class="{{ recommendations_heading_class }}">{{ heading }}</h2>
                         {%- if description != blank -%}
-                            <div class="rte rte--compact max-w-3xl {{ recommendations_description_class }}">
-                                {{ description }}
-                            </div>
+                            {%- render 'rte-compact-prose',
+                                content: description,
+                                content_class: recommendations_description_class
+                            -%}
                         {%- endif -%}
                     </div>
                     <p class="mt-8" role="status" aria-live="polite">
@@ -129,9 +133,10 @@
                 >
                     <h2 class="{{ recommendations_heading_class }}">{{ heading }}</h2>
                     {%- if description != blank -%}
-                        <div class="rte rte--compact max-w-3xl {{ recommendations_description_class }}">
-                            {{ description }}
-                        </div>
+                        {%- render 'rte-compact-prose',
+                            content: description,
+                            content_class: recommendations_description_class
+                        -%}
                     {%- endif -%}
                 </div>
 
@@ -172,7 +177,7 @@
                     x-show="uiState == 'timeout'"
                     x-cloak
                 >
-                    <p class="body-md" role="status" aria-live="polite">
+                    <p role="status" aria-live="polite">
                         {{ timeout_text }}
                     </p>
                     <button
@@ -189,7 +194,7 @@
                     x-show="uiState == 'error'"
                     x-cloak
                 >
-                    <p class="body-md" role="status" aria-live="polite">
+                    <p role="status" aria-live="polite">
                         {{ error_text }}
                     </p>
                     <button

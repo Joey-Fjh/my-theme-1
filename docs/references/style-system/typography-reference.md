@@ -103,6 +103,6 @@ Component text defaults to body inheritance unless the component intentionally o
 
 ## Deferred Notes
 
-- Broad `body-md` deduplication should be a dedicated cleanup pass.
+- Continue scoped review for component-owned `body-*` overrides; remove only usages that restate inherited default body text.
 - Semantic/visual heading mismatches should be fixed only when the owning page or component is scoped.
 - Display heading consistency belongs with visual/design work, not drive-by refactors.

@@ -115,17 +115,19 @@ Local heading/subtitle overrides should switch to an allowed `heading-*` / `body
 - Do not delete `heading-*` or `body-*` tier primitives.
 - Do not continue broad global cleanup after this phase finishes.
 
-### Completed (global + roles)
+### Font Phase Snapshot
 
-- Subtitle global settings (`subtitle_font_source`, style controls) and `--font-subtitle-*` variables.
-- `typo-subtitle` / `subtitle-base` as the retained subtitle font setting layer (`subtitle_font_source` + subtitle style props).
-- `subtitle_scale` removed by decision; subtitle size uses the normal heading/body size system selected by the consumer.
+Completed:
 
-### Remaining
+- Global typography model is stabilized: heading/body scales plus subtitle font controls (`subtitle_font_source` and `--font-subtitle-*`).
+- `typo-subtitle` (alias of `subtitle-base`) is the single subtitle role utility; subtitle size composes through approved `heading-*` / `body-*` tiers.
+- Legacy subtitle role drift is cleaned: `.sub-heading` is retired and subtitle consumers use the documented role+tier pattern.
+- Redundant default-body restatements were cleaned in scoped Liquid/snippet usage; intentional non-default component tiers remain.
 
-- Migrate section/snippet markup from ad-hoc tiers and local sizing to documented heading/body tiers plus `subtitle-base` where subtitle settings are needed.
-- Add section/block custom typography override schema that selects from `heading-*` / `body-*` tiers.
-- Body cleanup pass (`body-md` deduplication, classify non-default body tiers).
+Remaining (scoped only):
+
+- Continue component-level review for `body-*` overrides; remove only usages that duplicate inherited default body text.
+- Add section/block typography override schema (`heading-*` / `body-*` selectors) only when a new scoped customization task requires it.
 
 ### Collaboration (font phase)
 
