@@ -109,7 +109,7 @@ Layer: snippets — layout delta only (trigger chrome: tab-nav-item* in componen
 
 /* =========================================================
 Owner: sections/featured-products.liquid
-Consumers: featured products section tabs
+Consumers: featured products section tabs + brand watermark sizing
 Layer: snippets — tab layout delta; tab title uses section heading_size tier in markup
 ========================================================= */
 @layer snippets {
@@ -123,6 +123,52 @@ Layer: snippets — tab layout delta; tab title uses section heading_size tier i
         padding-block: 0.12em;
         /* Parent row is body (16px); default sup-badge 0.75em → 12px beside heading-2xl tab title */
         --sup-badge-font-size: 1em;
+    }
+
+    .featured-products__brand-watermark {
+        --wm-font-size: clamp(2.75rem, 14vw, 5.5rem);
+        --wm-bounce: 0.18em;
+        --wm-gap: clamp(1.5rem, 5vw, 6rem);
+        --wm-marquee-duration: 48s;
+        --wm-bounce-duration: 2.4s;
+        margin-block: 0.5rem 0;
+        height: clamp(12rem, 38vw, 17rem);
+
+        @media (width >= theme(--breakpoint-pc)) {
+            --wm-font-size: clamp(4.5rem, 9vw, 8rem);
+            --wm-bounce: 0.22em;
+            --wm-gap: clamp(2.5rem, 6vw, 8rem);
+            margin-block: 0.75rem 0;
+            height: clamp(18rem, 26vw, 24rem);
+        }
+    }
+}
+
+/* =========================================================
+Owner: snippets/watermark.liquid
+Consumers: featured-products marquee watermark (and future marquee callers)
+Layer: snippets — marquee track structure/typography (motion keyframes in animates)
+========================================================= */
+@layer snippets {
+    .watermark-marquee {
+        @apply pointer-events-none relative flex w-full items-center overflow-hidden select-none;
+        height: 100%;
+    }
+
+    .watermark-marquee__track {
+        @apply flex h-full w-max items-center;
+        gap: var(--wm-gap, clamp(2rem, 6vw, 8rem));
+        will-change: transform;
+    }
+
+    .watermark-marquee__item {
+        @apply flex-none font-heading leading-none whitespace-nowrap text-current opacity-20;
+        font-size: var(--wm-font-size, clamp(3rem, 12vw, 7.5rem));
+    }
+
+    .watermark-marquee__item-inner {
+        @apply inline-block;
+        will-change: transform;
     }
 }
 

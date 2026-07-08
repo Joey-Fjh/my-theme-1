@@ -1038,3 +1038,46 @@ body[data-motion-enabled='false'] [data-motion-reveal] {
    Hiding only activates via target [data-motion-state="pending"]
    which motionRevealSection sets after init.
 */
+
+/* ================================================================
+   Watermark marquee — decorative local loop
+   - Independent from motion_enabled / section reveal
+   - Governed by prefers-reduced-motion only
+   ================================================================ */
+@keyframes watermark-marquee-x {
+    from {
+        transform: translate3d(0, 0, 0);
+    }
+
+    to {
+        transform: translate3d(-50%, 0, 0);
+    }
+}
+
+@keyframes watermark-marquee-bounce {
+    0%,
+    100% {
+        transform: translate3d(0, var(--wm-bounce, 0.18em), 0);
+    }
+
+    50% {
+        transform: translate3d(0, calc(-1 * var(--wm-bounce, 0.18em)), 0);
+    }
+}
+
+.watermark-marquee__track {
+    animation: watermark-marquee-x var(--wm-marquee-duration, 48s) linear infinite;
+}
+
+.watermark-marquee__item-inner {
+    animation: watermark-marquee-bounce var(--wm-bounce-duration, 2.4s) linear infinite;
+    animation-delay: calc(var(--wm-phase, 0) * var(--wm-bounce-duration, 2.4s) / -4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .watermark-marquee__track,
+    .watermark-marquee__item-inner {
+        animation: none !important;
+        transform: none !important;
+    }
+}
