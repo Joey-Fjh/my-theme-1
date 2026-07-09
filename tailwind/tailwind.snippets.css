@@ -126,21 +126,244 @@ Layer: snippets — tab layout delta; tab title uses section heading_size tier i
     }
 
     .featured-products__brand-watermark {
-        --wm-font-size: clamp(2.75rem, 14vw, 5.5rem);
-        --wm-bounce: 0.18em;
-        --wm-gap: clamp(1.5rem, 5vw, 6rem);
-        --wm-marquee-duration: 48s;
         --wm-bounce-duration: 2.4s;
+        --wm-bounce: 0.18em;
+        --wm-font-size: clamp(2.75rem, 14vw, 5.5rem);
         margin-block: 0.5rem 0;
         height: clamp(12rem, 38vw, 17rem);
 
         @media (width >= theme(--breakpoint-pc)) {
-            --wm-font-size: clamp(4.5rem, 9vw, 8rem);
             --wm-bounce: 0.22em;
-            --wm-gap: clamp(2.5rem, 6vw, 8rem);
+            --wm-font-size: calc(var(--wm-height, 380px) * 0.33);
             margin-block: 0.75rem 0;
-            height: clamp(18rem, 26vw, 24rem);
+            height: var(--wm-height, 380px);
         }
+    }
+}
+
+/* =========================================================
+Owner: sections/scrolling-icon-with-text.liquid
+Consumers: scrolling promotional icon+text marquee
+Layer: snippets — structure and layout (motion keyframes in animates)
+========================================================= */
+@layer snippets {
+    .scrolling-icon-with-text-section {
+        @apply w-full min-w-0 overflow-hidden;
+        --scrolling-icon-title-size: clamp(
+            14px,
+            calc(
+                var(--scrolling-icon-height, 120px) * var(--scrolling-content-scale-pct, 100) *
+                    0.17 / 100
+            ),
+            calc(var(--scrolling-icon-height, 120px) * 0.22)
+        );
+    }
+
+    .scrolling-icon-with-text__divider {
+        @apply mb-4 border-b border-theme-border/20;
+    }
+
+    .scrolling-icon-with-text__marquee {
+        @apply w-full min-w-0;
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+        .scrolling-icon-with-text__marquee[data-scrolling-pause-on-hover='true'] {
+            pointer-events: auto;
+        }
+    }
+
+    .scrolling-icon-with-text__viewport {
+        @apply relative w-full overflow-hidden;
+        height: var(--scrolling-icon-height, 120px);
+    }
+
+    .scrolling-icon-with-text__track {
+        @apply flex h-full w-max items-center;
+        gap: var(--scrolling-icon-gap, 40px);
+        will-change: transform;
+    }
+
+    .scrolling-icon-with-text__item {
+        @apply flex shrink-0 items-center;
+    }
+
+    .scrolling-icon-with-text__icon-item {
+        @apply shrink-0;
+        --icon-with-text-icon-size: var(--scrolling-icon-media-size, 48px);
+        --icon-with-text-icon-size-mobile: var(--scrolling-icon-media-size, 48px);
+    }
+
+    .scrolling-icon-with-text__icon-item .icon-with-text-item__image {
+        width: var(--scrolling-icon-media-size, 48px);
+        height: var(--scrolling-icon-media-size, 48px);
+    }
+
+    .scrolling-icon-with-text__icon-item .product-block-icon {
+        width: var(--scrolling-icon-media-size, 48px);
+        height: var(--scrolling-icon-media-size, 48px);
+    }
+
+    .scrolling-icon-with-text__icon-item .product-block-icon .icons {
+        @apply size-full! max-h-full max-w-full;
+    }
+
+    .scrolling-icon-with-text__title {
+        font-size: var(--scrolling-icon-title-size);
+        line-height: 1.2;
+    }
+}
+
+/* =========================================================
+Owner: snippets/grid-feature-card.liquid, sections/category-grid.liquid
+Consumers: category grid cards
+Layer: snippets — card layout, image shapes, frame styles
+========================================================= */
+@layer snippets {
+    .category-grid__header {
+        @apply mb-12 pc:mb-16;
+    }
+
+    .category-grid__header-copy {
+        @apply flex w-full flex-col items-start text-start;
+        gap: var(--category-grid-heading-gap, 1.5rem);
+    }
+
+    .category-grid__header-meta {
+        @apply flex w-full flex-col items-start gap-4;
+    }
+
+    .category-grid__header--center .category-grid__header-copy {
+        @apply items-center text-center;
+    }
+
+    .category-grid__header--center .category-grid__header-meta {
+        @apply items-center text-center;
+    }
+
+    .category-grid__header--right .category-grid__header-copy {
+        @apply items-end text-end;
+    }
+
+    .category-grid__header--right .category-grid__header-meta {
+        @apply items-end text-end;
+    }
+
+    .category-grid__subheading {
+        @apply max-w-3xl min-w-0 text-start;
+    }
+
+    .category-grid__header--center .category-grid__subheading {
+        @apply text-center;
+    }
+
+    .category-grid__header--right .category-grid__subheading {
+        @apply text-end;
+    }
+
+    .category-grid__view-all-wrap {
+        @apply shrink-0;
+    }
+
+    .category-grid__view-all {
+        @apply inline-flex items-center;
+    }
+
+    .category-grid__grid {
+        display: grid;
+        grid-template-columns: repeat(var(--category-grid-columns-mobile, 2), minmax(0, 1fr));
+        gap: var(--category-grid-gap, 0);
+        justify-items: center;
+    }
+
+    @media (width >= theme(--breakpoint-pc)) {
+        .category-grid__grid {
+            grid-template-columns: repeat(var(--category-grid-columns, 4), minmax(0, 1fr));
+        }
+    }
+
+    .category-grid__item {
+        @apply max-w-full min-w-0;
+    }
+
+    .grid-feature-card {
+        @apply flex w-full max-w-full min-w-0 flex-col items-center text-center text-theme-text;
+        gap: var(--category-grid-card-gap, 0.75rem);
+    }
+
+    .grid-feature-card--link {
+        @apply no-underline transition-opacity hover:opacity-80;
+    }
+
+    .grid-feature-card--link:focus-visible {
+        outline: var(--focus-ring-width) solid
+            rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+        outline-offset: var(--focus-ring-offset);
+    }
+
+    .grid-feature-card__media {
+        @apply relative w-full max-w-full shrink-0 overflow-hidden;
+        aspect-ratio: var(--category-grid-media-aspect-ratio, 1);
+    }
+
+    .grid-feature-card[data-image-shape='arch'] .grid-feature-card__media {
+        aspect-ratio: var(--category-grid-media-aspect-ratio, 4 / 5);
+    }
+
+    .grid-feature-card__media .theme-image {
+        aspect-ratio: unset;
+        height: 100%;
+        width: 100%;
+    }
+
+    .grid-feature-card[data-image-shape='circle'] .grid-feature-card__media {
+        border-radius: 9999px;
+    }
+
+    .grid-feature-card[data-image-shape='square'] .grid-feature-card__media {
+        border-radius: 0;
+    }
+
+    .grid-feature-card[data-image-shape='rounded'] .grid-feature-card__media {
+        border-radius: var(--style-border-radius-inputs, 0.75rem);
+    }
+
+    .grid-feature-card[data-image-shape='arch'] .grid-feature-card__media {
+        border-radius: 999px 999px 0 0;
+    }
+
+    .grid-feature-card[data-frame-style='soft'] .grid-feature-card__media {
+        background-color: rgb(var(--color-foreground) / 0.06);
+        box-shadow: 0 8px 24px rgb(0 0 0 / 0.06);
+    }
+
+    .grid-feature-card[data-frame-style='border'] .grid-feature-card__media {
+        border: 1px solid rgb(var(--color-foreground) / 0.12);
+    }
+
+    .grid-feature-card[data-frame-style='none'] .grid-feature-card__media {
+        background-color: transparent;
+        box-shadow: none;
+    }
+
+    .grid-feature-card__image-wrap {
+        @apply block h-full w-full;
+    }
+
+    .grid-feature-card__body {
+        @apply flex w-full min-w-0 items-center justify-center gap-2;
+    }
+
+    .grid-feature-card__title {
+        @apply min-w-0 leading-tight;
+    }
+
+    .grid-feature-card__arrow {
+        @apply inline-flex shrink-0 items-center justify-center text-current;
+    }
+
+    .grid-feature-card__arrow .icons {
+        @apply h-4 w-4;
     }
 }
 
@@ -153,6 +376,10 @@ Layer: snippets — marquee track structure/typography (motion keyframes in anim
     .watermark-marquee {
         @apply pointer-events-none relative flex w-full items-center overflow-hidden select-none;
         height: 100%;
+    }
+
+    [data-marquee-pause-on-hover='true'].watermark-marquee {
+        pointer-events: auto;
     }
 
     .watermark-marquee__track {

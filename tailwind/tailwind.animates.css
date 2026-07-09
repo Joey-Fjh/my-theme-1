@@ -1069,9 +1069,32 @@ body[data-motion-enabled='false'] [data-motion-reveal] {
     animation: watermark-marquee-x var(--wm-marquee-duration, 48s) linear infinite;
 }
 
+.watermark-marquee[data-marquee-speed='slow'] {
+    --wm-marquee-duration: 64s;
+}
+
+.watermark-marquee[data-marquee-speed='normal'] {
+    --wm-marquee-duration: 48s;
+}
+
+.watermark-marquee[data-marquee-speed='fast'] {
+    --wm-marquee-duration: 32s;
+}
+
+[data-marquee-direction='left_to_right'] .watermark-marquee__track {
+    animation-direction: reverse;
+}
+
 .watermark-marquee__item-inner {
     animation: watermark-marquee-bounce var(--wm-bounce-duration, 2.4s) linear infinite;
     animation-delay: calc(var(--wm-phase, 0) * var(--wm-bounce-duration, 2.4s) / -4);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    [data-marquee-pause-on-hover='true']:hover .watermark-marquee__track,
+    [data-marquee-pause-on-hover='true']:hover .watermark-marquee__item-inner {
+        animation-play-state: paused;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1079,5 +1102,58 @@ body[data-motion-enabled='false'] [data-motion-reveal] {
     .watermark-marquee__item-inner {
         animation: none !important;
         transform: none !important;
+    }
+}
+
+/* ================================================================
+   Scrolling icon with text — promotional marquee loop
+   - Independent from motion_enabled / section reveal
+   - Governed by prefers-reduced-motion only
+   - Reuses watermark-marquee-x keyframes (no duplicate keyframes)
+   ================================================================ */
+.scrolling-icon-with-text__track {
+    animation: watermark-marquee-x var(--scrolling-icon-duration, 40s) linear infinite;
+}
+
+.scrolling-icon-with-text__marquee[data-scrolling-speed='slow'] {
+    --scrolling-icon-duration: 64s;
+}
+
+.scrolling-icon-with-text__marquee[data-scrolling-speed='normal'] {
+    --scrolling-icon-duration: 40s;
+}
+
+.scrolling-icon-with-text__marquee[data-scrolling-speed='fast'] {
+    --scrolling-icon-duration: 24s;
+}
+
+.scrolling-icon-with-text__marquee[data-scrolling-direction='left_to_right']
+    .scrolling-icon-with-text__track {
+    animation-direction: reverse;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .scrolling-icon-with-text__marquee[data-scrolling-pause-on-hover='true']:hover
+        .scrolling-icon-with-text__track {
+        animation-play-state: paused;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .scrolling-icon-with-text__viewport {
+        height: auto;
+        overflow: visible;
+    }
+
+    .scrolling-icon-with-text__track {
+        animation: none !important;
+        transform: none !important;
+        flex-wrap: wrap;
+        width: 100%;
+        justify-content: center;
+    }
+
+    .scrolling-icon-with-text__item[aria-hidden='true'] {
+        display: none;
     }
 }

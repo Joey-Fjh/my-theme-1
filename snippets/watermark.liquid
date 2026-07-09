@@ -19,6 +19,11 @@
     @param {string} [length_adjust] - SVG length adjust mode. Defaults to spacing.
     @param {string} [preserve_aspect_ratio] - SVG preserveAspectRatio value. Defaults to xMinYMid meet.
     @param {number} [repeat_count] - Marquee item count per loop half. Defaults to 8.
+    @param {string} [marquee_direction] - Marquee scroll direction: 'right_to_left' (default) or 'left_to_right'.
+    @param {boolean} [marquee_pause_on_hover] - Pause marquee animation on hover-capable devices. Defaults to true.
+    @param {string} [marquee_speed] - Marquee scroll speed: 'slow', 'normal' (default), or 'fast'.
+    @param {number} [marquee_gap] - Horizontal gap between repeated items in px (outputs --wm-gap). Defaults to 64.
+    @param {number} [marquee_height] - Container band height in px (outputs --wm-height; font scales via CSS). Marquee variant only.
 
     @example
     {% render 'watermark',
@@ -61,6 +66,42 @@
         assign watermark_text_markup = watermark_text_markup | replace: '[[WATERMARK_EM_OPEN]]', '<span class="italic">'
         assign watermark_text_markup = watermark_text_markup | replace: '[[WATERMARK_EM_CLOSE]]', '</span>'
         assign watermark_repeat_count = repeat_count | default: 8
+
+        assign watermark_marquee_direction = marquee_direction | default: 'right_to_left'
+        unless watermark_marquee_direction == 'right_to_left' or watermark_marquee_direction == 'left_to_right'
+            assign watermark_marquee_direction = 'right_to_left'
+        endunless
+
+        assign watermark_marquee_pause_on_hover = true
+        if marquee_pause_on_hover == false
+            assign watermark_marquee_pause_on_hover = false
+        endif
+
+        if watermark_marquee_pause_on_hover
+            assign watermark_marquee_pause_on_hover_attr = 'true'
+        else
+            assign watermark_marquee_pause_on_hover_attr = 'false'
+        endif
+
+        assign watermark_marquee_speed = marquee_speed | default: 'normal'
+        unless watermark_marquee_speed == 'slow' or watermark_marquee_speed == 'normal' or watermark_marquee_speed == 'fast'
+            assign watermark_marquee_speed = 'normal'
+        endunless
+
+        if marquee_gap == blank
+            assign watermark_marquee_gap = 64
+        else
+            assign watermark_marquee_gap = marquee_gap
+        endif
+
+        assign watermark_marquee_style = ''
+        if marquee_height != blank
+            assign watermark_marquee_style = '--wm-height: ' | append: marquee_height | append: 'px;'
+        endif
+        if watermark_marquee_gap != blank
+            assign watermark_marquee_style = watermark_marquee_style | append: ' --wm-gap: ' | append: watermark_marquee_gap | append: 'px;'
+        endif
+        assign watermark_marquee_style = watermark_marquee_style | strip
     else
         assign watermark_text_markup = watermark_text_markup | replace: '[[WATERMARK_STRONG_OPEN]]', '<tspan font-weight="700">'
         assign watermark_text_markup = watermark_text_markup | replace: '[[WATERMARK_STRONG_CLOSE]]', '</tspan>'
@@ -96,7 +137,13 @@
 {%- if watermark_variant == 'marquee' -%}
     <div
         class="watermark-marquee {{ container_class }}"
+        data-marquee-direction="{{ watermark_marquee_direction }}"
+        data-marquee-pause-on-hover="{{ watermark_marquee_pause_on_hover_attr }}"
+        data-marquee-speed="{{ watermark_marquee_speed }}"
         aria-hidden="true"
+        {% if watermark_marquee_style != blank %}
+            style="{{ watermark_marquee_style }}"
+        {% endif %}
         {% if html_attr != blank %}
             {{- html_attr -}}
         {% endif %}

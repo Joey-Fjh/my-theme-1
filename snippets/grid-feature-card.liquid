@@ -1,0 +1,95 @@
+{% doc %}
+    Renders a vertical image-over-title feature card for category grids.
+
+    @param {string} title - Visible card title. Card is hidden when blank.
+    @param {image} [image] - Optional card image.
+    @param {string} [link] - Optional destination URL.
+    @param {string} [image_shape] - Image frame shape: circle, square, rounded, or arch. Defaults to circle.
+    @param {string} [frame_style] - Media frame style: soft, border, or none. Defaults to soft.
+    @param {boolean} [show_arrow] - Show trailing arrow icon. Defaults to true.
+    @param {string} [class] - Optional extra classes on the root element.
+{% enddoc %}
+
+{%- liquid
+    assign card_title = title
+    assign card_image = image
+    assign card_link = link
+    assign card_shape = image_shape | default: 'circle'
+    unless card_shape == 'circle' or card_shape == 'square' or card_shape == 'rounded' or card_shape == 'arch'
+        assign card_shape = 'circle'
+    endunless
+    assign card_frame = frame_style | default: 'soft'
+    unless card_frame == 'soft' or card_frame == 'border' or card_frame == 'none'
+        assign card_frame = 'soft'
+    endunless
+    assign card_show_arrow = show_arrow
+    if card_show_arrow == false
+        assign card_show_arrow = false
+    else
+        assign card_show_arrow = true
+    endif
+    assign extra_class = class | default: ''
+    assign card_image_alt = ''
+
+    assign card_media_aspect_ratio = '1/1'
+    if card_shape == 'arch'
+        assign card_media_aspect_ratio = '4/5'
+    endif
+-%}
+
+{%- if card_title != blank -%}
+    {%- capture card_media -%}
+        <div class="grid-feature-card__media">
+            {%- render 'image',
+                image: card_image,
+                alt: card_image_alt,
+                width: 600,
+                aspect_ratio: card_media_aspect_ratio,
+                sizes: '(max-width: 767px) calc((100vw - 2rem) / var(--category-grid-columns-mobile, 2)), calc((min(100vw, var(--page-width, 1440px)) - 4rem) / var(--category-grid-columns, 4))',
+                widths: '165,360,535,750,1100',
+                loading: 'lazy',
+                mode: 'frame',
+                fit: 'cover',
+                placeholder_key: 'image',
+                wrapper_class: 'grid-feature-card__image-wrap h-full w-full',
+                motion_reveal: false
+            -%}
+        </div>
+    {%- endcapture -%}
+
+    {%- capture card_body -%}
+        <div class="grid-feature-card__body">
+            <span class="grid-feature-card__title body-lg font-medium">
+                {{ card_title }}
+            </span>
+            {%- if card_show_arrow -%}
+                <span class="grid-feature-card__arrow" aria-hidden="true">
+                    {%- render 'icons', icon: 'icon-arrow2' -%}
+                </span>
+            {%- endif -%}
+        </div>
+    {%- endcapture -%}
+
+    {%- if card_link != blank -%}
+        <a
+            href="{{ card_link }}"
+            class="grid-feature-card grid-feature-card--link {{ extra_class }}"
+            data-image-shape="{{ card_shape }}"
+            data-frame-style="{{ card_frame }}"
+            data-motion-reveal="content"
+        >
+            {{ card_media }}
+            {{ card_body }}
+        </a>
+    {%- else -%}
+        <div
+            class="grid-feature-card {{ extra_class }}"
+            data-image-shape="{{ card_shape }}"
+            data-frame-style="{{ card_frame }}"
+            data-motion-reveal="content"
+        >
+            {{ card_media }}
+            {{ card_body }}
+        </div>
+    {%- endif -%}
+{%- endif -%}
