@@ -1,7 +1,7 @@
 {%- comment -%}
     Video banner section — Shopify-hosted video or YouTube/Vimeo embed with
-    optional text overlay. Consumes snippets/media-video.liquid for hosted video.
-    Product media video remains handled by product-media / product gallery snippets.
+    optional content above the video frame. Consumes snippets/media-video.liquid
+    for hosted video. Product media video remains handled by product-media snippets.
 {%- endcomment -%}
 
 {%- liquid
@@ -16,13 +16,11 @@
     endif
 
     assign has_external_video = false
-    if external_video_url != blank
-        assign has_external_video = true
-    endif
-
-    assign has_media = false
-    if has_hosted_video or has_external_video
-        assign has_media = true
+    if external_video_url != blank and external_video_url.id != blank
+        assign external_video_type_check = external_video_url.type
+        if external_video_type_check == 'youtube' or external_video_type_check == 'vimeo'
+            assign has_external_video = true
+        endif
     endif
 
     assign autoplay = section.settings.autoplay
@@ -33,12 +31,42 @@
 
     assign aspect_ratio = section.settings.aspect_ratio | default: '16/9'
     assign container_width = section.settings.container_width | default: 'page'
-    assign content_position_class = section.settings.content_position | default: 'place-end-left'
     assign text_alignment = section.settings.text_alignment | default: 'center'
 
-    assign has_overlay = false
+    assign has_content = false
     if section.settings.subheading != blank or section.settings.heading != blank or section.settings.text != blank
-        assign has_overlay = true
+        assign has_content = true
+    endif
+
+    assign content_alignment_class = 'mx-auto text-center'
+    case text_alignment
+        when 'left'
+            assign content_alignment_class = 'me-auto text-left'
+        when 'right'
+            assign content_alignment_class = 'ms-auto text-right'
+    endcase
+
+    assign external_video_type = ''
+    assign external_video_id = ''
+    assign external_embed_src = ''
+    assign external_autoplay_src = ''
+    assign external_video_title_value = section.settings.heading | strip_html
+
+    if has_external_video
+        assign external_video_type = external_video_url.type
+        assign external_video_id = external_video_url.id
+
+        if external_video_type == 'youtube'
+            assign external_embed_src = 'https://www.youtube.com/embed/' | append: external_video_id | append: '?playsinline=1&rel=0'
+            assign external_autoplay_src = external_embed_src | append: '&autoplay=1'
+        elsif external_video_type == 'vimeo'
+            assign external_embed_src = 'https://player.vimeo.com/video/' | append: external_video_id
+            assign external_autoplay_src = external_embed_src | append: '?autoplay=1'
+        endif
+    endif
+
+    if external_video_title_value == blank
+        assign external_video_title_value = 'sections.video-banner.external_video_title' | t
     endif
 -%}
 
@@ -53,118 +81,108 @@
     data-motion-section
 >
     <div class="layout {% if container_width == 'page' %}container-page{% endif %}">
-        {%- if has_media -%}
-            <div class="video-banner__frame" style="aspect-ratio: {{ aspect_ratio }};">
-                {%- if has_hosted_video -%}
-                    {%- comment -%} Shopify-hosted video {%- endcomment -%}
-                    {%- render 'media-video',
-                        video: hosted_video,
-                        video_mobile: hosted_video_mobile,
-                        poster: poster_image,
-                        autoplay: autoplay,
-                        loop: section.settings.loop,
-                        muted: muted,
-                        controls: section.settings.controls,
-                        show_play_button: section.settings.show_play_button,
-                        show_mute_button: section.settings.show_mute_button,
-                        aspect_ratio: aspect_ratio,
-                        class: 'h-full'
-                    -%}
-                {%- else -%}
-                    {%- comment -%} External video (YouTube/Vimeo) with click-to-play {%- endcomment -%}
-                    <div
-                        x-data="{ playing: false }"
-                        class="video-banner__external relative h-full w-full bg-theme-bg/20"
-                    >
-                        <div x-show="!playing" class="absolute inset-0 z-10">
-                            {%- if poster_image != blank -%}
-                                {%- render 'image',
-                                    image: poster_image,
-                                    width: 1600,
-                                    img_class: 'w-full h-full object-cover',
-                                    alt: '',
-                                    sizes: '100vw',
-                                    loading: 'lazy'
-                                -%}
-                            {%- else -%}
-                                <div class="video-banner__poster-placeholder h-full w-full"></div>
-                            {%- endif -%}
-
-                            <button
-                                type="button"
-                                class="video-banner__play-button"
-                                @click="playing = true"
-                                aria-label="{{ 'accessibility.play_video' | t }}"
-                            >
-                                <span class="video-banner__play-icon">
-                                    {%- render 'icons',
-                                        icon: 'icon-play',
-                                        class: 'ms-1.5 h-8 w-8 pc:h-10 pc:w-10'
-                                    -%}
-                                </span>
-                            </button>
-                        </div>
-
-                        <template x-if="playing">
-                            <div class="h-full w-full">
-                                {{
-                                    external_video_url
-                                    | external_video_url:
-                                        autoplay: 1,
-                                        loop: section.settings.loop,
-                                        muted: muted,
-                                        playsinline: 1
-                                    | external_video_tag: class: 'w-full h-full'
-                                }}
-                            </div>
-                        </template>
-                    </div>
-                {%- endif -%}
-
-                {%- if has_overlay -%}
-                    <div
-                        class="{{ content_position_class }} pointer-events-none absolute inset-0 z-20 p-6 pc:p-10 text-{{ text_alignment }}"
-                        data-motion-reveal="content"
-                    >
-                        {%- if section.settings.subheading != blank -%}
-                            <p class="typo-subtitle text-theme-text/80">
-                                {{ section.settings.subheading }}
-                            </p>
-                        {%- endif -%}
-
-                        {%- if section.settings.heading != blank -%}
-                            <h2 class="mt-2">
-                                {{ section.settings.heading }}
-                            </h2>
-                        {%- endif -%}
-
-                        {%- if section.settings.text != blank -%}
-                            <div class="rte rte--compact mt-4">
-                                {{ section.settings.text }}
-                            </div>
-                        {%- endif -%}
-                    </div>
-                {%- endif -%}
-            </div>
-        {%- else -%}
-            {%- comment -%} Empty state {%- endcomment -%}
+        {%- if has_content -%}
             <div
-                class="video-banner__frame video-banner__empty"
-                style="aspect-ratio: {{ aspect_ratio }};"
+                class="video-banner__content mb-6 max-w-4xl pc:mb-8 {{ content_alignment_class }}"
+                data-motion-reveal="content"
             >
-                <div class="text-center" data-motion-reveal="content">
-                    <span class="video-banner__empty-icon">
-                        {%- render 'icons',
-                            icon: 'icon-play',
-                            class: 'h-10 w-10 pc:h-14 pc:w-14'
-                        -%}
-                    </span>
-                    <p class="mt-4">
-                        {{ 'sections.video-banner.empty_state' | t }}
+                {%- if section.settings.subheading != blank -%}
+                    <p class="typo-subtitle text-theme-text/80">
+                        {{ section.settings.subheading }}
                     </p>
-                </div>
+                {%- endif -%}
+
+                {%- if section.settings.heading != blank -%}
+                    <h2 class="mt-2">
+                        {{ section.settings.heading }}
+                    </h2>
+                {%- endif -%}
+
+                {%- if section.settings.text != blank -%}
+                    <div class="rte rte--compact mt-4">
+                        {{ section.settings.text }}
+                    </div>
+                {%- endif -%}
             </div>
         {%- endif -%}
+
+        <div class="video-banner__frame" style="aspect-ratio: {{ aspect_ratio }};">
+            {%- if has_hosted_video -%}
+                {%- render 'media-video',
+                    video: hosted_video,
+                    video_mobile: hosted_video_mobile,
+                    poster: poster_image,
+                    autoplay: autoplay,
+                    loop: section.settings.loop,
+                    muted: muted,
+                    controls: section.settings.controls,
+                    show_play_button: section.settings.show_play_button,
+                    show_mute_button: section.settings.show_mute_button,
+                    aspect_ratio: aspect_ratio,
+                    class: 'h-full'
+                -%}
+            {%- elsif has_external_video -%}
+                {%- comment -%} External video (YouTube/Vimeo) with click-to-play. {%- endcomment -%}
+                <div
+                    x-data="{ playing: false }"
+                    class="video-banner__external relative h-full w-full bg-theme-bg/20"
+                >
+                    <div x-show="!playing" class="absolute inset-0 z-10">
+                        {%- render 'image',
+                            image: poster_image,
+                            width: 1600,
+                            aspect_ratio: aspect_ratio,
+                            mode: 'frame',
+                            fit: 'cover',
+                            sizes: '100vw',
+                            loading: 'lazy',
+                            motion_reveal: false,
+                            placeholder_key: 'image',
+                            wrapper_class: 'h-full w-full',
+                            alt: ''
+                        -%}
+
+                        <button
+                            type="button"
+                            class="video-banner__play-button"
+                            @click="playing = true"
+                            aria-label="{{ 'accessibility.play_video' | t }}"
+                        >
+                            <span class="video-banner__play-icon">
+                                {%- render 'icons',
+                                    icon: 'icon-play',
+                                    class: 'ms-1.5 h-8 w-8 pc:h-10 pc:w-10'
+                                -%}
+                            </span>
+                        </button>
+                    </div>
+
+                    <template x-if="playing">
+                        <iframe
+                            src="{{ external_autoplay_src | escape }}"
+                            class="h-full w-full"
+                            allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen
+                            title="{{ external_video_title_value | escape }}"
+                        ></iframe>
+                    </template>
+                </div>
+            {%- else -%}
+                {%- render 'image',
+                    image: poster_image,
+                    width: 1600,
+                    aspect_ratio: aspect_ratio,
+                    mode: 'frame',
+                    fit: 'cover',
+                    sizes: '100vw',
+                    loading: 'lazy',
+                    motion_reveal: false,
+                    placeholder_key: 'image',
+                    wrapper_class: 'h-full w-full',
+                    alt: ''
+                -%}
+            {%- endif -%}
+        </div>
     </div>
 </div>
 
@@ -175,31 +193,6 @@
         overflow: hidden;
         border-radius: var(--container-radius, 0.75rem);
         background: rgb(var(--color-background) / 0.15);
-    }
-
-    .video-banner__empty {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: rgb(var(--color-background) / 0.08);
-    }
-
-    .video-banner__empty-icon {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 5rem;
-        height: 5rem;
-        border-radius: 9999px;
-        background: rgb(var(--color-foreground) / 0.12);
-        color: rgb(var(--color-foreground) / 0.35);
-    }
-
-    @media (min-width: 48rem) {
-        .video-banner__empty-icon {
-            width: 7rem;
-            height: 7rem;
-        }
     }
 
     .video-banner__play-button {
@@ -222,15 +215,12 @@
         width: 5rem;
         height: 5rem;
         border-radius: 9999px;
-        background: rgb(var(--color-background) / 0.85);
+        background: rgb(var(--color-background));
         color: rgb(var(--color-foreground));
-        box-shadow: 0 4px 24px rgb(0 0 0 / 0.18);
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
+        box-shadow: 0 4px 16px rgb(0 0 0 / 0.12);
         transition:
             transform var(--motion-duration-fast) var(--motion-ease-default),
-            box-shadow var(--motion-duration-fast) var(--motion-ease-default),
-            background var(--motion-duration-fast) var(--motion-ease-default);
+            box-shadow var(--motion-duration-fast) var(--motion-ease-default);
     }
 
     @media (min-width: 48rem) {
@@ -242,17 +232,12 @@
 
     .video-banner__play-button:hover .video-banner__play-icon {
         transform: scale(1.08);
-        background: rgb(var(--color-background) / 0.95);
-        box-shadow: 0 6px 32px rgb(0 0 0 / 0.24);
+        box-shadow: 0 6px 24px rgb(0 0 0 / 0.18);
     }
 
     .video-banner__play-button:focus-visible .video-banner__play-icon {
         outline: 2px solid rgb(var(--color-focus-ring));
         outline-offset: 3px;
-    }
-
-    .video-banner__poster-placeholder {
-        background: rgb(var(--color-foreground) / 0.06);
     }
 
     .video-banner__external iframe {
@@ -276,7 +261,7 @@
             "type": "color_scheme",
             "id": "color_scheme",
             "label": "t:sections.video-banner.settings.color_scheme",
-            "default": "scheme-1"
+            "default": "scheme-2"
         },
         {
             "type": "header",
@@ -298,6 +283,7 @@
             "id": "external_video_url",
             "label": "t:sections.video-banner.settings.external_video_url",
             "accept": ["youtube", "vimeo"],
+            "default": "https://www.youtube.com/watch?v=_9VUPq3SxOc",
             "info": "t:sections.video-banner.info.external_video_url"
         },
         {
@@ -402,34 +388,6 @@
             "label": "t:sections.video-banner.settings.text"
         },
         {
-            "type": "select",
-            "id": "content_position",
-            "label": "t:sections.video-banner.settings.content_position",
-            "options": [
-                {
-                    "value": "place-center-center",
-                    "label": "t:sections.video-banner.options.center"
-                },
-                {
-                    "value": "place-center-left",
-                    "label": "t:sections.video-banner.options.center_left"
-                },
-                {
-                    "value": "place-center-right",
-                    "label": "t:sections.video-banner.options.center_right"
-                },
-                {
-                    "value": "place-end-left",
-                    "label": "t:sections.video-banner.options.bottom_left"
-                },
-                {
-                    "value": "place-end-right",
-                    "label": "t:sections.video-banner.options.bottom_right"
-                }
-            ],
-            "default": "place-end-left"
-        },
-        {
             "type": "text_alignment",
             "id": "text_alignment",
             "label": "t:sections.video-banner.settings.text_alignment",
@@ -447,7 +405,7 @@
             "step": 4,
             "unit": "px",
             "label": "t:sections.video-banner.settings.padding_top",
-            "default": 0
+            "default": 32
         },
         {
             "type": "range",
@@ -457,13 +415,15 @@
             "step": 4,
             "unit": "px",
             "label": "t:sections.video-banner.settings.padding_bottom",
-            "default": 0
+            "default": 32
         }
     ],
     "presets": [
         {
             "name": "t:sections.video-banner.presets.video_banner",
-            "settings": {}
+            "settings": {
+                "external_video_url": "https://www.youtube.com/watch?v=_9VUPq3SxOc"
+            }
         }
     ]
 }
