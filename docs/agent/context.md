@@ -17,6 +17,30 @@ This document is the complete cross-session record for the current Shopify Theme
 - Merchant-owned boundary: `config/settings_data.json` and `templates/*.json` must not be changed without explicit user authorization, even when a Theme Store blocker is located there.
 - Windows command rule: use `npm.cmd`, not plain `npm run`.
 
+### 1.1 Current Batch Working Policy (2026-07-17)
+
+This policy governs the next BLK implementation batch and overrides the older package execution order in this document. It does not change the original audit findings or Shopify requirements.
+
+- Human storefront review is a hard pre-commit gate. Static validation, Theme Check, or an agent review cannot replace the user's visual and functional approval.
+- BLKs are grouped by rollback domain rather than committed mechanically one ID at a time. One approved package should be reversible without removing unrelated functionality.
+- The implementation scope is limited to the numbered findings in this document and the Shopify requirements cited by the audit. Do not add optional improvements, broad refactors, visual redesigns, or unrelated cleanup.
+- Preserve existing layout, styling, content composition, and interaction behavior unless the named finding requires a change or the user separately authorizes a design change.
+- If implementation reveals an issue outside the active package, report and classify it. Do not fix it automatically unless it directly blocks the package and is already covered by the documented requirement.
+- Agents implement packages without committing by default. After static validation, provide a focused manual test matrix and wait for the user's explicit approval.
+- Do not begin the next package until the active package is approved and committed, reverted, or otherwise closed by the user. Start each package from a clean worktree unless the user explicitly authorizes an exception.
+- Any package touching `config/settings_data.json`, `templates/*.json`, color schemes, merchant content, navigation, or uploaded media still requires explicit authorization for those exact fields.
+- Do not declare a BLK resolved, a package complete, or the theme ready to submit from static evidence alone. Record implementation as `implementation in review` until the required manual evidence passes.
+
+Required package lifecycle:
+
+1. Confirm the documented Shopify requirement and repository evidence.
+2. Define the combined package boundary, allowed files, prohibited files, regression risks, and manual test matrix before implementation.
+3. Implement only that package and leave the changes uncommitted.
+4. Run the smallest relevant checks plus `npm.cmd run lint` and `npm.cmd test` for meaningful theme changes. Build generated assets only when their source changed.
+5. Report the actual diff, validation results, protected-file status, and remaining runtime checks.
+6. The user previews and tests the affected storefront and Theme Editor surfaces.
+7. Commit the package only after the user explicitly approves it. If approval is withheld, revise or revert the package before continuing.
+
 ## 2. Official Review Model And Hard Thresholds
 
 Shopify reviews a new theme in five stages:
@@ -1119,128 +1143,128 @@ Prepare and verify:
 - Confirm code is original apart from the allowed Shopify Skeleton base and approved libraries.
 - Demonstrate architecture-level differentiation rather than cosmetic changes to Skeleton.
 
-## 11. Recommended Work Packages And Order
+## 11. Current Combined Work Packages And Order
 
-Do not combine all work into one change set.
+Use one commit per approved rollback domain. Do not combine all blockers into one change set, and do not split a coherent domain into mechanical one-BLK commits unless runtime review shows that separation is safer.
 
-### Package 1 — Mandatory Commerce And Page Compliance
+### Package A — Commerce Pricing And Payment Disclosure
 
-Scope:
+Scope: BLK-01, BLK-02, BLK-03, and BLK-05.
 
-- BLK-01 through BLK-11.
-- Unit pricing, price variations, Shop Pay terms, gift-card recipient form, tax notices, cart completeness, search facets, blog excerpts, comments, collection featured image, and focal points.
+- Unit pricing on required product, listing, and cart surfaces.
+- Variable-price representation on product cards and listings.
+- Shopify payment terms in the correct product form and variant context.
+- Tax-inclusive messaging driven by `cart.taxes_included`.
 
-Skills/docs route:
+Why combined: these findings share price presentation, variant state, product forms, cart price surfaces, and locale copy. They should be reviewed and reverted as one pricing-disclosure capability.
 
-- `agent-router`.
-- `implement-theme-pattern`.
-- Shopify Dev MCP for Liquid/theme behavior.
-- Matching runtime, cart, accessibility, image, and pattern references.
-- `check-i18n` and `check-theme-architecture` as applicable.
+Manual gate: products with and without unit pricing, mixed variant prices, sale/compare-at prices, eligible payment terms, variant switching, tax-inclusive and non-inclusive stores, product/featured/quick-view/card/cart surfaces, and mobile layout.
 
-Validation:
+### Package B — Gift Card Recipient Purchase Flow
 
-- Targeted manual tests after each feature.
-- `npm.cmd run lint`.
-- `npm.cmd test`.
-- Browser/runtime tests for affected flows.
+Scope: BLK-04 only.
 
-### Package 2 — Theme Store Schema And Identity
+Why separate: gift-card recipient data, validation, accelerated-checkout restrictions, native form submission, JavaScript enhancement, and no-JavaScript behavior form a distinct high-risk purchase flow.
 
-Scope:
+Manual gate: gift card and regular products, recipient enabled/disabled, successful submission, required and invalid email, date limits, server errors, keyboard/accessibility behavior, and JavaScript-disabled submission.
 
-- BLK-12 through BLK-15.
-- Remove Theme Store-ineligible custom fonts while preserving typography tiers.
-- Final theme metadata.
-- Menu schema defaults.
-- Complete terminology/spelling/default-value audit.
+### Package C — Cart Completeness And Progressive Enhancement
 
-Required user decisions:
+Scope: BLK-06 only. BLK-01 unit-price markup may be consumed here, but this package must not redesign the cart.
 
-- Final theme name.
-- Author/Partner identity.
-- Version.
-- Documentation URL.
-- Support form URL.
-- Whether any non-Theme-Store private build should retain custom fonts.
+Why separate: cart page and drawer layout, line-item semantics, empty state, quantity/remove/update behavior, checkout, and no-JavaScript fallback have a large regression surface and need an independent rollback boundary.
 
-Validation:
+Manual gate: empty and populated carts, variant options, properties, selling plans, discounts, per-unit/final/line prices, quantity and remove, page/drawer synchronization, checkout, accelerated checkout, mobile layout, and JavaScript-disabled form actions.
 
-- `npm.cmd run build:tw` if Tailwind source changes.
-- `npm.cmd run lint:i18n`.
-- `npm.cmd run lint`.
-- `npm.cmd test`.
-- Theme editor review.
+### Package D — Search Facets
 
-### Package 3 — Install State, Preset, And Positioning
+Scope: BLK-07 only.
 
-Scope:
+Why separate: product facets, sorting, pagination, tabs, URL history, clear-all behavior, mobile drawer accessibility, and section refresh belong to one independent search controller domain.
 
-- BLK-16 and design-positioning risk.
-- Authentic content, placeholders, preset identity, coherent industry, demo parity.
+Manual gate: OR/AND facets, price filters, sorting, pagination, empty filtered results, product/article/page tabs, Back/Forward, hard refresh, rapid requests, mobile drawer, and collection-filter regression smoke tests if shared code changes.
 
-Required authorization:
+### Package E — Blog And Article Compliance
 
-- Explicit permission to edit `templates/*.json`.
-- Explicit business/design choice for target industry and preset.
-- Approval for any color scheme or merchant-owned setting changes.
+Scope: BLK-08 and BLK-09.
 
-Validation:
+- Blog-card `excerpt_or_content` behavior.
+- Article comments, pagination, form success/error/moderation, and title behavior required by the audit.
 
-- Fresh theme install on a clean test store.
-- Screenshot comparison against demo.
-- Every required template inspected with no store-specific uploaded asset dependency.
-- Search for Lorem Ipsum, placeholder URLs, and generic filler.
+Why combined: both findings belong to the editorial content domain and can be previewed across blog and article templates without affecting commerce code.
 
-### Package 4 — Runtime QA, Accessibility, Performance, Browser
+Manual gate: manual excerpt and content fallback, long/empty content, article titles, comments enabled/disabled, direct publish/moderation, validation errors, successful posting, comment pagination, keyboard, and screen-reader status/error behavior.
 
-Scope:
+### Package F — Collection And Image Display Contract
 
-- BLK-18 and sections 7–8.
-- Do not refactor first; measure, classify, then fix scoped findings.
+Scope: BLK-10 and BLK-11.
 
-Validation:
+- Use `collection.featured_image` and preserve compliant placeholder behavior.
+- Respect Shopify focal points with a documented precedence for explicit merchant positioning.
 
-- Dated QA matrix.
-- Lighthouse CI/benchmark.
-- Keyboard and screen-reader smoke testing.
-- Browser/webview matrix.
-- No-JS testing.
-- Repeat after every relevant fix.
+Why combined: both findings share the image rendering contract and collection/image visual QA. Revert them together if shared image behavior regresses.
 
-### Package 5 — Submission Operations And IP
+Manual gate: collection image, first-product fallback, nil placeholder, focal-point crops, explicit-position override, natural/contain modes, mixed aspect ratios, and representative desktop/mobile image-picker sections.
 
-Scope:
+### Package G — Theme Editor And Schema Compliance
 
-- BLK-17 and sections 9–10.
-- Documentation, support system, licenses, demo stores, listing, release notes, reviewer notes, exclusivity, and naming.
+Scope: BLK-12, BLK-14, and BLK-15.
 
-Required user/business input:
+- Remove Theme Store-ineligible custom font URL paths while preserving Shopify font pickers and typography behavior.
+- Add required header/footer menu defaults.
+- Correct documented merchant-facing schema terminology, spelling, and invalid defaults only.
 
-- Partner account details.
-- Support ownership/SLA.
-- Public documentation hosting.
-- Demo store credentials.
-- Asset licenses and brand permissions.
+Why combined: these are Theme Editor/schema compliance changes and can be reviewed together through a fresh editor and install-state smoke test.
 
-Validation:
+Manual gate: typography styles and font variants, fresh header/footer menu bindings, Theme Editor labels/defaults, live setting updates, and no missing/invalid settings.
 
-- Public link checks.
-- License ledger review.
-- Demo store admin/storefront review.
-- Final Theme Store requirement checklist signed off.
+### Package H — Theme Identity And Support Metadata
+
+Scope: BLK-13 only. Status: blocked on business input until the user supplies the final theme name, author/Partner identity, version, documentation URL, and support URL.
+
+Do not invent or temporarily substitute these values.
+
+### Package I — Default Install State And Preset Content
+
+Scope: BLK-16 only, plus only the install-state findings explicitly recorded by the audit.
+
+Required authorization: exact `templates/*.json` fields, preset content, uploaded media references, resource handles, disabled states, and any color-scheme changes must be approved before editing.
+
+Manual gate: fresh install on a clean store, all required templates, placeholders, Theme Editor integrity, demo parity, mobile/desktop presentation, and proof that structure and unrelated merchant configuration did not change.
+
+### Package J — Route And Shopify-Link Compliance
+
+Scope: RISK-06 and RISK-07 only where the audit and current Shopify guidance prove a rendered-link defect.
+
+Why combined: both are low-risk navigation/link compliance checks. Do not mechanically modify resource loads, schema Markdown, admin routes, or non-anchor Shopify URLs.
+
+Manual gate: locale-aware storefront navigation, 404 recovery, intentional owner/admin entry, and rendered-link inspection.
+
+### External And Evidence Gates
+
+- BLK-17: public documentation, support form, support policy, and operating readiness.
+- BLK-18: complete runtime, accessibility, performance, browser, webview, no-JavaScript, demo, and fresh-install evidence.
+- RISK-05: asset and dependency provenance/business ownership decisions.
+
+These are not ordinary theme-code packages and must not be marked resolved by static implementation commits.
+
+### Evidence-First Risks Outside The Code Packages
+
+RISK-01, RISK-02, RISK-03, RISK-04, and RISK-08 remain audit findings. Do not code-fix them speculatively. Measure or obtain the required business/design decision first, then create a separately approved package only if the documented Theme Store requirement proves a necessary change.
 
 ## 12. Prompt Generation Rules
 
 When the user asks for implementation prompts:
 
-- Generate one prompt per work package; do not create a single uncontrolled “fix everything” prompt.
+- Generate one prompt per current combined package above; do not create a single uncontrolled “fix everything” prompt and do not mechanically generate one prompt per BLK ID.
 - Include purpose, exact scope, repository evidence, allowed files, prohibited files, merchant-owned authorization, acceptance criteria, and validation commands.
 - Require agents to inspect discoverable repository facts before asking questions.
 - Require Shopify Dev MCP for current Liquid/theme behavior.
 - Preserve schema IDs, block types, section types, preset names, and storefront behavior unless the named blocker requires an explicitly approved change.
 - Do not allow redesign, broad Liquid extraction, dependency additions, framework changes, or generated/vendor file edits.
-- Require fresh runtime evidence before claiming completion.
+- Require a focused manual preview matrix before implementation and fresh runtime evidence afterward.
+- Require implementation to remain uncommitted until the user explicitly approves the package after storefront/Theme Editor review.
+- Prohibit starting the next package while the current package is unapproved or the worktree contains unresolved package changes.
 - Require a remaining-risk report after each package.
 - If a prompt touches `templates/*.json`, color schemes, preset content, demo copy, or uploaded media, explicitly state whether merchant-owned changes are authorized.
 
