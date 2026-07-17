@@ -33,7 +33,7 @@
     x-data="motionRevealSection()"
     data-motion-section
 >
-    <div class="layout container-page">
+    <div class="layout{% if section.settings.section_width != 'full' %} container-page{% endif %}">
         {%- if section.settings.heading != blank
             or section.settings.subheading != blank
             or section.settings.view_all_label != blank
@@ -158,6 +158,11 @@
             <div
                 class="category-grid__grid"
                 data-motion-cascade
+                {% if section.settings.show_grid_borders %}
+                    data-grid-borders="true"
+                {% endif %}
+                data-mobile-columns="{{ mobile_columns }}"
+                data-desktop-columns="{{ desktop_columns }}"
                 style="
                     --motion-reveal-stagger: 120ms;
                     --motion-reveal-distance: 2.5rem;
@@ -293,6 +298,26 @@
         },
         {
             "type": "header",
+            "content": "t:sections.category-grid.content.layout"
+        },
+        {
+            "type": "select",
+            "id": "section_width",
+            "label": "t:sections.category-grid.settings.section_width",
+            "options": [
+                {
+                    "value": "full",
+                    "label": "t:sections.category-grid.options.full_width"
+                },
+                {
+                    "value": "fixed",
+                    "label": "t:sections.category-grid.options.fixed_width"
+                }
+            ],
+            "default": "fixed"
+        },
+        {
+            "type": "header",
             "content": "t:sections.category-grid.content.grid"
         },
         {
@@ -337,7 +362,14 @@
             "step": 4,
             "unit": "px",
             "label": "t:sections.category-grid.settings.gap",
+            "info": "t:sections.category-grid.info.gap",
             "default": 8
+        },
+        {
+            "type": "checkbox",
+            "id": "show_grid_borders",
+            "label": "t:sections.category-grid.settings.show_grid_borders",
+            "default": true
         },
         {
             "type": "header",

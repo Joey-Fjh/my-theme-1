@@ -14,7 +14,6 @@
     --container-lg: 32rem;
     --container-2xl: 42rem;
     --container-3xl: 48rem;
-    --container-4xl: 56rem;
     --font-weight-medium: 500;
     --font-weight-semibold: 600;
     --font-weight-bold: 700;
@@ -26,7 +25,6 @@
     --radius-lg: 0.5rem;
     --ease-in: cubic-bezier(0.4, 0, 1, 1);
     --ease-out: cubic-bezier(0, 0, 0.2, 1);
-    --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
     --animate-spin: spin 1s linear infinite;
     --animate-pulse: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
     --blur-sm: 8px;
@@ -1106,9 +1104,6 @@
   .me-1 {
     margin-inline-end: calc(var(--spacing) * 1);
   }
-  .me-auto {
-    margin-inline-end: auto;
-  }
   .mt-0 {
     margin-top: calc(var(--spacing) * 0);
   }
@@ -1566,9 +1561,6 @@
   }
   .max-w-3xl {
     max-width: var(--container-3xl);
-  }
-  .max-w-4xl {
-    max-width: var(--container-4xl);
   }
   .max-w-\[76\%\] {
     max-width: 76%;
@@ -2365,12 +2357,6 @@
   }
   .text-end {
     text-align: end;
-  }
-  .text-left {
-    text-align: left;
-  }
-  .text-right {
-    text-align: right;
   }
   .text-start {
     text-align: start;
@@ -3333,11 +3319,6 @@
       margin-bottom: calc(var(--spacing) * 6);
     }
   }
-  .pc\:mb-8 {
-    @media (width >= 48rem) {
-      margin-bottom: calc(var(--spacing) * 8);
-    }
-  }
   .pc\:mb-10 {
     @media (width >= 48rem) {
       margin-bottom: calc(var(--spacing) * 10);
@@ -3401,11 +3382,6 @@
   .pc\:h-10 {
     @media (width >= 48rem) {
       height: calc(var(--spacing) * 10);
-    }
-  }
-  .pc\:h-14 {
-    @media (width >= 48rem) {
-      height: calc(var(--spacing) * 14);
     }
   }
   .pc\:h-\[260px\] {
@@ -3486,11 +3462,6 @@
   .pc\:w-10 {
     @media (width >= 48rem) {
       width: calc(var(--spacing) * 10);
-    }
-  }
-  .pc\:w-14 {
-    @media (width >= 48rem) {
-      width: calc(var(--spacing) * 14);
     }
   }
   .pc\:w-62\.5 {
@@ -6776,13 +6747,18 @@ shopify-accelerated-checkout {
         );
   }
   .scrolling-icon-with-text__divider {
-    margin-bottom: calc(var(--spacing) * 4);
     border-bottom-style: var(--tw-border-style);
     border-bottom-width: 1px;
     border-color: rgb(var(--color-border));
     @supports (color: color-mix(in lab, red, red)) {
       border-color: color-mix(in oklab, rgb(var(--color-border)) 20%, transparent);
     }
+  }
+  .scrolling-icon-with-text__divider--top {
+    margin-bottom: calc(var(--spacing) * 4);
+  }
+  .scrolling-icon-with-text__divider--bottom {
+    margin-top: calc(var(--spacing) * 4);
   }
   .scrolling-icon-with-text__marquee {
     width: 100%;
@@ -6901,6 +6877,87 @@ shopify-accelerated-checkout {
   @media (width >= 48rem) {
     .category-grid__grid {
       grid-template-columns: repeat(var(--category-grid-columns, 4), minmax(0, 1fr));
+    }
+  }
+  .category-grid__grid[data-grid-borders='true'] {
+    --category-grid-border-color: rgb(var(--color-border));
+    @supports (color: color-mix(in lab, red, red)) {
+      --category-grid-border-color: color-mix(
+            in oklab,
+            rgb(var(--color-border)) 25%,
+            transparent
+        );
+    }
+    --category-grid-radius: var(--product-card-radius, 0.75rem);
+    gap: 0;
+    justify-items: stretch;
+    align-items: stretch;
+  }
+  .category-grid__grid[data-grid-borders='true'] .category-grid__item {
+    width: 100%;
+    height: 100%;
+    padding: var(--category-grid-gap, 0);
+    background-color: rgb(var(--color-background));
+    border: 1px solid var(--category-grid-border-color);
+    border-radius: 0;
+  }
+  .category-grid__grid[data-grid-borders='true'] .category-grid__item:first-child {
+    border-start-start-radius: var(--category-grid-radius);
+  }
+  .category-grid__grid[data-grid-borders='true'] .category-grid__item:last-child {
+    border-inline-end: 1px solid var(--category-grid-border-color);
+    border-end-end-radius: var(--category-grid-radius);
+  }
+  @media (width < 48rem) {
+    .category-grid__grid[data-grid-borders='true'][data-mobile-columns='1'] .category-grid__item:nth-child(n + 2) {
+      border-block-start: 0;
+    }
+    .category-grid__grid[data-grid-borders='true'][data-mobile-columns='1'] .category-grid__item:first-child {
+      border-start-end-radius: var(--category-grid-radius);
+    }
+    .category-grid__grid[data-grid-borders='true'][data-mobile-columns='1'] .category-grid__item:last-child {
+      border-end-start-radius: var(--category-grid-radius);
+    }
+    .category-grid__grid[data-grid-borders='true'][data-mobile-columns='1'] .category-grid__item:first-child:last-child {
+      border-radius: var(--category-grid-radius);
+    }
+    .category-grid__grid[data-grid-borders='true'][data-mobile-columns='2'] .category-grid__item:nth-child(2n) {
+      border-inline-start: 0;
+    }
+    .category-grid__grid[data-grid-borders='true'][data-mobile-columns='2'] .category-grid__item:nth-child(n + 3) {
+      border-block-start: 0;
+    }
+    .category-grid__grid[data-grid-borders='true'][data-mobile-columns='2'] .category-grid__item:nth-child(2), .category-grid__grid[data-grid-borders='true'][data-mobile-columns='2'] .category-grid__item:last-child:nth-child(-n + 2) {
+      border-start-end-radius: var(--category-grid-radius);
+    }
+    .category-grid__grid[data-grid-borders='true'][data-mobile-columns='2'] .category-grid__item:nth-child(2n + 1):nth-last-child(-n + 2) {
+      border-end-start-radius: var(--category-grid-radius);
+    }
+  }
+  @media (width >= 48rem) {
+    .category-grid__grid[data-grid-borders='true'] .category-grid__item:first-child {
+      border-start-start-radius: var(--category-grid-radius);
+    }
+    .category-grid__grid[data-grid-borders='true'] .category-grid__item:last-child {
+      border-end-end-radius: var(--category-grid-radius);
+    }
+    .category-grid__grid[data-grid-borders='true'][data-desktop-columns='2'] .category-grid__item:nth-child(2n) {
+      border-inline-start: 0;
+    }
+    .category-grid__grid[data-grid-borders='true'][data-desktop-columns='3'] .category-grid__item:nth-child(3n + 2), .category-grid__grid[data-grid-borders='true'][data-desktop-columns='3'] .category-grid__item:nth-child(3n), .category-grid__grid[data-grid-borders='true'][data-desktop-columns='4'] .category-grid__item:nth-child(4n + 2), .category-grid__grid[data-grid-borders='true'][data-desktop-columns='4'] .category-grid__item:nth-child(4n + 3), .category-grid__grid[data-grid-borders='true'][data-desktop-columns='4'] .category-grid__item:nth-child(4n), .category-grid__grid[data-grid-borders='true'][data-desktop-columns='5'] .category-grid__item:nth-child(5n + 2), .category-grid__grid[data-grid-borders='true'][data-desktop-columns='5'] .category-grid__item:nth-child(5n + 3), .category-grid__grid[data-grid-borders='true'][data-desktop-columns='5'] .category-grid__item:nth-child(5n + 4), .category-grid__grid[data-grid-borders='true'][data-desktop-columns='5'] .category-grid__item:nth-child(5n), .category-grid__grid[data-grid-borders='true'][data-desktop-columns='6'] .category-grid__item:nth-child(6n + 2), .category-grid__grid[data-grid-borders='true'][data-desktop-columns='6'] .category-grid__item:nth-child(6n + 3), .category-grid__grid[data-grid-borders='true'][data-desktop-columns='6'] .category-grid__item:nth-child(6n + 4), .category-grid__grid[data-grid-borders='true'][data-desktop-columns='6'] .category-grid__item:nth-child(6n + 5), .category-grid__grid[data-grid-borders='true'][data-desktop-columns='6'] .category-grid__item:nth-child(6n) {
+      border-inline-start: 0;
+    }
+    .category-grid__grid[data-grid-borders='true'][data-desktop-columns='2'] .category-grid__item:nth-child(n + 3), .category-grid__grid[data-grid-borders='true'][data-desktop-columns='3'] .category-grid__item:nth-child(n + 4), .category-grid__grid[data-grid-borders='true'][data-desktop-columns='4'] .category-grid__item:nth-child(n + 5), .category-grid__grid[data-grid-borders='true'][data-desktop-columns='5'] .category-grid__item:nth-child(n + 6), .category-grid__grid[data-grid-borders='true'][data-desktop-columns='6'] .category-grid__item:nth-child(n + 7) {
+      border-block-start: 0;
+    }
+    .category-grid__grid[data-grid-borders='true'][data-desktop-columns='2'] .category-grid__item:nth-child(2), .category-grid__grid[data-grid-borders='true'][data-desktop-columns='2'] .category-grid__item:last-child:nth-child(-n + 2), .category-grid__grid[data-grid-borders='true'][data-desktop-columns='3'] .category-grid__item:nth-child(3), .category-grid__grid[data-grid-borders='true'][data-desktop-columns='3'] .category-grid__item:last-child:nth-child(-n + 3), .category-grid__grid[data-grid-borders='true'][data-desktop-columns='4'] .category-grid__item:nth-child(4), .category-grid__grid[data-grid-borders='true'][data-desktop-columns='4'] .category-grid__item:last-child:nth-child(-n + 4), .category-grid__grid[data-grid-borders='true'][data-desktop-columns='5'] .category-grid__item:nth-child(5), .category-grid__grid[data-grid-borders='true'][data-desktop-columns='5'] .category-grid__item:last-child:nth-child(-n + 5), .category-grid__grid[data-grid-borders='true'][data-desktop-columns='6'] .category-grid__item:nth-child(6), .category-grid__grid[data-grid-borders='true'][data-desktop-columns='6'] .category-grid__item:last-child:nth-child(-n + 6) {
+      border-start-end-radius: var(--category-grid-radius);
+    }
+    .category-grid__grid[data-grid-borders='true'][data-desktop-columns='2'] .category-grid__item:nth-child(2n + 1):nth-last-child(-n + 2), .category-grid__grid[data-grid-borders='true'][data-desktop-columns='3'] .category-grid__item:nth-child(3n + 1):nth-last-child(-n + 3), .category-grid__grid[data-grid-borders='true'][data-desktop-columns='4'] .category-grid__item:nth-child(4n + 1):nth-last-child(-n + 4), .category-grid__grid[data-grid-borders='true'][data-desktop-columns='5'] .category-grid__item:nth-child(5n + 1):nth-last-child(-n + 5), .category-grid__grid[data-grid-borders='true'][data-desktop-columns='6'] .category-grid__item:nth-child(6n + 1):nth-last-child(-n + 6) {
+      border-end-start-radius: var(--category-grid-radius);
+    }
+    .category-grid__grid[data-grid-borders='true'] .category-grid__item:first-child:last-child {
+      border-radius: var(--category-grid-radius);
     }
   }
   .category-grid__item {

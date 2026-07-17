@@ -69,12 +69,15 @@
         --scrolling-icon-media-size: {{ scrolling_icon_size }}px;
     "
 >
-    <div class="layout container-page">
-        {%- if section.settings.show_divider -%}
-            <div class="scrolling-icon-with-text__divider" aria-hidden="true"></div>
-        {%- endif -%}
-
+    <div class="layout{% if section.settings.section_width == 'fixed' %} container-page{% endif %}">
         {%- if scrolling_item_count > 0 -%}
+            {%- if section.settings.show_divider -%}
+                <div
+                    class="scrolling-icon-with-text__divider scrolling-icon-with-text__divider--top"
+                    aria-hidden="true"
+                ></div>
+            {%- endif -%}
+
             <div
                 class="scrolling-icon-with-text__marquee"
                 data-scrolling-direction="{{ scrolling_direction }}"
@@ -131,6 +134,13 @@
                     </div>
                 </div>
             </div>
+
+            {%- if section.settings.show_divider -%}
+                <div
+                    class="scrolling-icon-with-text__divider scrolling-icon-with-text__divider--bottom"
+                    aria-hidden="true"
+                ></div>
+            {%- endif -%}
         {%- endif -%}
     </div>
 </div>
@@ -232,6 +242,22 @@
         {
             "type": "header",
             "content": "t:sections.scrolling-icon-with-text.content.layout"
+        },
+        {
+            "type": "select",
+            "id": "section_width",
+            "label": "t:sections.scrolling-icon-with-text.settings.section_width",
+            "options": [
+                {
+                    "value": "full",
+                    "label": "t:sections.scrolling-icon-with-text.options.full_width"
+                },
+                {
+                    "value": "fixed",
+                    "label": "t:sections.scrolling-icon-with-text.options.fixed_width"
+                }
+            ],
+            "default": "fixed"
         },
         {
             "type": "checkbox",

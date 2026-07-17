@@ -1,7 +1,7 @@
 {%- comment -%}
-    Video banner section — Shopify-hosted video or YouTube/Vimeo embed with
-    optional content above the video frame. Consumes snippets/media-video.liquid
-    for hosted video. Product media video remains handled by product-media snippets.
+    Video banner section — Shopify-hosted video or YouTube/Vimeo embed.
+    Consumes snippets/media-video.liquid for hosted video. Product media video
+    remains handled by product-media snippets.
 {%- endcomment -%}
 
 {%- liquid
@@ -31,26 +31,12 @@
 
     assign aspect_ratio = section.settings.aspect_ratio | default: '16/9'
     assign container_width = section.settings.container_width | default: 'page'
-    assign text_alignment = section.settings.text_alignment | default: 'center'
-
-    assign has_content = false
-    if section.settings.subheading != blank or section.settings.heading != blank or section.settings.text != blank
-        assign has_content = true
-    endif
-
-    assign content_alignment_class = 'mx-auto text-center'
-    case text_alignment
-        when 'left'
-            assign content_alignment_class = 'me-auto text-left'
-        when 'right'
-            assign content_alignment_class = 'ms-auto text-right'
-    endcase
 
     assign external_video_type = ''
     assign external_video_id = ''
     assign external_embed_src = ''
     assign external_autoplay_src = ''
-    assign external_video_title_value = section.settings.heading | strip_html
+    assign external_video_title_value = 'sections.video-banner.external_video_title' | t
 
     if has_external_video
         assign external_video_type = external_video_url.type
@@ -63,10 +49,6 @@
             assign external_embed_src = 'https://player.vimeo.com/video/' | append: external_video_id
             assign external_autoplay_src = external_embed_src | append: '?autoplay=1'
         endif
-    endif
-
-    if external_video_title_value == blank
-        assign external_video_title_value = 'sections.video-banner.external_video_title' | t
     endif
 -%}
 
@@ -81,31 +63,6 @@
     data-motion-section
 >
     <div class="layout {% if container_width == 'page' %}container-page{% endif %}">
-        {%- if has_content -%}
-            <div
-                class="video-banner__content mb-6 max-w-4xl pc:mb-8 {{ content_alignment_class }}"
-                data-motion-reveal="content"
-            >
-                {%- if section.settings.subheading != blank -%}
-                    <p class="typo-subtitle text-theme-text/80">
-                        {{ section.settings.subheading }}
-                    </p>
-                {%- endif -%}
-
-                {%- if section.settings.heading != blank -%}
-                    <h2 class="mt-2">
-                        {{ section.settings.heading }}
-                    </h2>
-                {%- endif -%}
-
-                {%- if section.settings.text != blank -%}
-                    <div class="rte rte--compact mt-4">
-                        {{ section.settings.text }}
-                    </div>
-                {%- endif -%}
-            </div>
-        {%- endif -%}
-
         <div class="video-banner__frame" style="aspect-ratio: {{ aspect_ratio }};">
             {%- if has_hosted_video -%}
                 {%- render 'media-video',
@@ -367,31 +324,6 @@
             "id": "show_mute_button",
             "label": "t:sections.video-banner.settings.show_mute_button",
             "default": false
-        },
-        {
-            "type": "header",
-            "content": "t:sections.video-banner.content.content"
-        },
-        {
-            "type": "inline_richtext",
-            "id": "subheading",
-            "label": "t:sections.video-banner.settings.subheading"
-        },
-        {
-            "type": "inline_richtext",
-            "id": "heading",
-            "label": "t:sections.video-banner.settings.heading"
-        },
-        {
-            "type": "richtext",
-            "id": "text",
-            "label": "t:sections.video-banner.settings.text"
-        },
-        {
-            "type": "text_alignment",
-            "id": "text_alignment",
-            "label": "t:sections.video-banner.settings.text_alignment",
-            "default": "center"
         },
         {
             "type": "header",
