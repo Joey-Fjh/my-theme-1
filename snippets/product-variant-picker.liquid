@@ -18,6 +18,9 @@
 {%- unless product.has_only_default_variant -%}
     {%- assign product_form_id = product_form_id | default: 'product-form-' | append: section_id -%}
 
+    {%- capture variants_quantity_meta_json -%}
+        {%- render 'product-variants-quantity-json', product: product -%}
+    {%- endcapture -%}
     <div
         id="VariantPicker-{{ section_id }}"
         class="flex flex-col gap-4 pc:gap-5"
@@ -25,6 +28,7 @@
         data-product-id="{{ product.id }}"
         data-product-form-id="{{ product_form_id }}"
         data-variants="{{ product.variants | json | escape }}"
+        data-variants-quantity-meta="{{ variants_quantity_meta_json | strip | escape }}"
         x-data="VariantPicker()"
         {% if block %}
             {{- block.shopify_attributes -}}

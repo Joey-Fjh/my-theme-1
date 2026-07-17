@@ -1,0 +1,36 @@
+{% doc %}
+    Static product listing price for cards and similar surfaces.
+
+    Uses product.price (Shopify lowest price). When variant prices vary, prefixes
+    with a localized "From" string. Optionally renders unit price for the
+    selected-or-first-available variant.
+
+    @param {product} product - Product to price
+    @param {string} [class] - Optional extra CSS classes on the price wrapper
+    @param {boolean} [show_unit_price] - Defaults to true
+{% enddoc %}
+
+{%- liquid
+    assign show_unit_price_enabled = true
+    if show_unit_price == false or show_unit_price == 'false'
+        assign show_unit_price_enabled = false
+    endif
+
+    assign price_money = product.price | money
+    assign card_variant = product.selected_or_first_available_variant
+-%}
+
+<span class="product-card-price{% if class != blank %} {{ class }}{% endif %}">
+    {%- if product.price_varies -%}
+        {{- 'products.product.from_price' | t: price: price_money -}}
+    {%- else -%}
+        {{- price_money -}}
+    {%- endif -%}
+</span>
+
+{%- if show_unit_price_enabled -%}
+    {%- render 'unit-price',
+        target: card_variant,
+        class: 'product-card-price__unit block body-sm text-theme-text/80'
+    -%}
+{%- endif -%}

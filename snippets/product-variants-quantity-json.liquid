@@ -1,0 +1,19 @@
+{% doc %}
+    Emits a variant-id-keyed map of inventory and quantity_rule metadata.
+    Used alongside `product.variants | json` so VariantPicker can merge quantity
+    fields without replacing the known-working variant payload.
+
+    Keys must be JSON strings (variant IDs coerced with append: ''), never bare numbers.
+
+    @param {product} product - Product object (required).
+{% enddoc %}
+{
+{%- for variant in product.variants -%}
+    {%- assign variant_id_key = variant.id | append: '' -%}
+    {{ variant_id_key | json }}:{ "inventory_management":{{ variant.inventory_management | json }},
+    "inventory_policy":{{ variant.inventory_policy | json }}, "inventory_quantity":
+    {{- variant.inventory_quantity | json -}}
+    , "quantity_rule":{{ variant.quantity_rule | json }} }
+    {%- unless forloop.last -%},{%- endunless -%}
+{%- endfor -%}
+}

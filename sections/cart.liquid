@@ -67,6 +67,10 @@
                                                 {{- item.final_line_price | money -}}
                                             </span>
                                         </p>
+                                        {%- render 'unit-price',
+                                            target: item,
+                                            class: 'mt-1 block body-sm text-theme-text/80'
+                                        -%}
                                         {%- if item.line_level_discount_allocations.size > 0 -%}
                                             <ul
                                                 class="mt-1"
@@ -82,9 +86,15 @@
                                         {%- endif -%}
                                     </div>
                                 {%- else -%}
-                                    <p class="mt-auto pt-2 body-lg pc:pt-4">
-                                        {{ item.final_line_price | money }}
-                                    </p>
+                                    <div class="mt-auto pt-2 pc:pt-4">
+                                        <p class="body-lg">
+                                            {{ item.final_line_price | money }}
+                                        </p>
+                                        {%- render 'unit-price',
+                                            target: item,
+                                            class: 'mt-1 block body-sm text-theme-text/80'
+                                        -%}
+                                    </div>
                                 {%- endif -%}
                             </div>
 
@@ -103,18 +113,11 @@
                                     aria-hidden="true"
                                 ></span>
 
-                                {% assign max_qty = null %}
-                                {% if item.variant.inventory_management != null
-                                    and item.variant.inventory_policy == 'deny'
-                                %}
-                                    {% assign max_qty = item.variant.inventory_quantity %}
-                                {% endif %}
-
                                 <div @quantity:change="$store.cart.change('{{ item.key }}', $event.detail.value, ['{{ section.id }}'])">
                                     {%- render 'quantity-selector',
+                                        variant: item.variant,
+                                        surface: 'cart',
                                         value: item.quantity,
-                                        min: 1,
-                                        max: max_qty,
                                         label: item.product.title
                                     -%}
                                 </div>
@@ -251,9 +254,7 @@
                                 {{- cart.total_price | money -}}
                             </span>
                         </div>
-                        <p class="mt-10 text-theme-text/80">
-                            {{ 'cart.taxes_note' | t }}
-                        </p>
+                        {%- render 'product-tax-note', class: 'mt-10 text-theme-text/80' -%}
                     </div>
 
                     <form action="{{ routes.cart_url }}" method="post" class="mt-5">

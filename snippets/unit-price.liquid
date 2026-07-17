@@ -1,0 +1,15 @@
+{% doc %}
+    Renders a Liquid-formatted unit price when the target has a unit price measurement.
+
+    Does not invent measurement copy in JavaScript — callers that need variant sync
+    must pass a server-formatted map separately.
+
+    @param {object} target - Variant or line item with unit_price / unit_price_measurement
+    @param {string} [class] - Optional extra CSS classes on the unit-price element
+{% enddoc %}
+
+{%- if target != blank and target.unit_price_measurement -%}
+    <span class="unit-price{% if class != blank %} {{ class }}{% endif %}">
+        {{- target.unit_price | unit_price_with_measurement: target.unit_price_measurement -}}
+    </span>
+{%- endif -%}

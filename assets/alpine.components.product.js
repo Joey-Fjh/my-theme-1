@@ -17,13 +17,22 @@
                 price,
                 comparePrice,
                 currency,
+                unitPriceText: '',
+                unitPrices: {},
                 _eventScope: null,
 
                 _formatPrice(value) {
-                    return new Intl.NumberFormat(undefined, {
+                    const cents = Number(value || 0);
+                    if (typeof window.Shopify?.formatMoney === 'function') {
+                        return window.Shopify.formatMoney(cents);
+                    }
+                    const locale = document.documentElement.lang || undefined;
+                    const currency = window.Shopify?.currency?.active || this.currency || 'USD';
+                    return new Intl.NumberFormat(locale, {
                         style: 'currency',
-                        currency: this.currency,
-                    }).format(value / 100);
+                        currency,
+                        currencyDisplay: 'narrowSymbol',
+                    }).format(cents / 100);
                 },
 
                 get formattedPrice() {
@@ -35,6 +44,31 @@
                 get hasComparePrice() {
                     return this.comparePrice > this.price;
                 },
+                get hasUnitPrice() {
+                    return Boolean(this.unitPriceText);
+                },
+
+                _parseUnitPrices(raw) {
+                    if (!raw) {
+                        this.unitPrices = {};
+                        return;
+                    }
+                    try {
+                        const parsed = JSON.parse(raw);
+                        this.unitPrices =
+                            parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+                                ? parsed
+                                : {};
+                    } catch (_) {
+                        this.unitPrices = {};
+                    }
+                },
+
+                _lookupUnitPrice(variantId) {
+                    if (variantId == null || variantId === '') return '';
+                    const value = this.unitPrices[String(variantId)];
+                    return typeof value === 'string' && value.trim() ? value : '';
+                },
 
                 init() {
                     const dataset = this.$el?.dataset || {};
@@ -42,6 +76,8 @@
                     this.price = Number(dataset.price ?? this.price ?? 0);
                     this.comparePrice = Number(dataset.comparePrice ?? this.comparePrice ?? 0);
                     this.currency = dataset.currency || this.currency || 'USD';
+                    this._parseUnitPrices(dataset.unitPrices);
+                    this.unitPriceText = this._lookupUnitPrice(dataset.variantId);
 
                     const Events = window.__Theme__.Events;
                     const events = Events.events;
@@ -50,8 +86,17 @@
                     const onVariantChange = (e) => {
                         if (e.detail?.sectionId !== this.sectionId) return;
                         const v = e.detail.variant;
-                        this.price = v?.price || 0;
-                        this.comparePrice = v?.compare_at_price || 0;
+                        if (!v) {
+                            this.unitPriceText = '';
+                            return;
+                        }
+                        if (typeof v.price === 'number') {
+                            this.price = v.price;
+                        }
+                        if (v.compare_at_price == null || typeof v.compare_at_price === 'number') {
+                            this.comparePrice = Number(v.compare_at_price || 0);
+                        }
+                        this.unitPriceText = this._lookupUnitPrice(v.id);
                     };
 
                     this._eventScope.on(events.PRODUCT_VARIANT_CHANGED, onVariantChange);
@@ -60,6 +105,58 @@
                 destroy() {
                     this._eventScope?.dispose?.();
                     this._eventScope = null;
+                    this.dispose();
+                },
+            };
+        },
+
+        ProductPaymentTerms() {
+            return {
+                ...AlpineComponentsFactory.useDisposable(),
+                sectionId: '',
+                _eventScope: null,
+                _idInput: null,
+
+                init() {
+                    const dataset = this.$el?.dataset || {};
+                    this.sectionId = dataset.sectionId || '';
+                    this._idInput = this.$el.querySelector('input[name="id"]');
+
+                    const Events = window.__Theme__.Events;
+                    const events = Events.events;
+                    this._eventScope = Events.createScope();
+
+                    const onVariantChange = (e) => {
+                        if (e.detail?.sectionId !== this.sectionId) return;
+                        this._syncVariantId(e.detail?.variant?.id ?? null);
+                    };
+
+                    this._eventScope.on(events.PRODUCT_VARIANT_CHANGED, onVariantChange);
+                },
+
+                _setTermsAvailable(available) {
+                    if (!this.$el) return;
+                    this.$el.hidden = !available;
+                },
+
+                _syncVariantId(variantId) {
+                    if (!this._idInput) return;
+
+                    const next = variantId == null || variantId === '' ? '' : String(variantId);
+
+                    if (this._idInput.value !== next) {
+                        this._idInput.value = next;
+                        this._idInput.dispatchEvent(new Event('input', { bubbles: true }));
+                        this._idInput.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+
+                    this._setTermsAvailable(Boolean(next));
+                },
+
+                destroy() {
+                    this._eventScope?.dispose?.();
+                    this._eventScope = null;
+                    this._idInput = null;
                     this.dispose();
                 },
             };
@@ -83,13 +180,30 @@
                     this.productId = Number(dataset.productId || this.productId || 0) || null;
                     this.productFormId = dataset.productFormId || this.productFormId || '';
 
+                    let variants = [];
                     if (dataset.variants) {
                         try {
-                            this.variants = JSON.parse(dataset.variants);
+                            const parsed = JSON.parse(dataset.variants);
+                            variants = Array.isArray(parsed) ? parsed : [];
                         } catch (_) {
-                            /* noop */
+                            variants = [];
                         }
                     }
+
+                    let quantityMeta = {};
+                    if (dataset.variantsQuantityMeta) {
+                        try {
+                            const parsed = JSON.parse(dataset.variantsQuantityMeta);
+                            quantityMeta =
+                                parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+                                    ? parsed
+                                    : {};
+                        } catch (_) {
+                            quantityMeta = {};
+                        }
+                    }
+
+                    this.variants = this._mergeQuantityMeta(variants, quantityMeta);
 
                     const Events = window.__Theme__.Events;
                     const events = Events.events;
@@ -111,6 +225,22 @@
                     };
 
                     this._eventScope.on(events.PRODUCT_VARIANT_SET_REQUEST, onVariantSetRequest);
+                },
+
+                _mergeQuantityMeta(variants, quantityMeta) {
+                    return (variants || []).map((variant) => {
+                        if (!variant || typeof variant !== 'object') return variant;
+                        const meta =
+                            quantityMeta?.[String(variant.id)] || quantityMeta?.[variant.id];
+                        if (!meta || typeof meta !== 'object') return { ...variant };
+                        return {
+                            ...variant,
+                            inventory_management: meta.inventory_management,
+                            inventory_policy: meta.inventory_policy,
+                            inventory_quantity: meta.inventory_quantity,
+                            quantity_rule: meta.quantity_rule,
+                        };
+                    });
                 },
 
                 _optionNames: [],
@@ -213,62 +343,194 @@
 
         QuantitySelector({ value = 1, min = 1, max = null, step = 1, sectionId = null } = {}) {
             return {
-                ...(sectionId ? AlpineComponentsFactory.useDisposable() : {}),
+                ...AlpineComponentsFactory.useDisposable(),
                 qty: value,
                 min,
                 max,
                 step,
+                canPurchase: true,
+                surface: 'product',
+                variantId: null,
+                cartQuantity: 0,
                 _eventScope: null,
                 _sectionId: sectionId,
+                _variant: null,
+                _cartUnwatch: null,
 
                 get canDecrement() {
-                    return this.qty > this.min;
+                    return this.canPurchase && this.qty > this.min;
                 },
                 get canIncrement() {
-                    return this.max === null || this.qty < this.max;
+                    if (!this.canPurchase) return false;
+                    if (this.max === null) return true;
+                    return this.qty + this.step <= this.max;
+                },
+
+                _constraintsApi() {
+                    return window.__Theme__?.QuantityConstraints;
+                },
+
+                _cartItems() {
+                    return window.Alpine?.store?.('cart')?.items || [];
+                },
+
+                _parseConstraintsJson(raw) {
+                    if (!raw) return null;
+                    try {
+                        const parsed = JSON.parse(raw);
+                        return parsed && typeof parsed === 'object' ? parsed : null;
+                    } catch (_) {
+                        return null;
+                    }
+                },
+
+                _applyResolved(resolved, { resetQty = false } = {}) {
+                    if (!resolved) return;
+                    this.min = resolved.min;
+                    this.max = resolved.max;
+                    this.step = resolved.step;
+                    this.canPurchase = resolved.canPurchase !== false;
+                    this.cartQuantity = resolved.cartQuantity || 0;
+
+                    if (!this.canPurchase) {
+                        this.qty = this.max != null ? this.max : 0;
+                    } else if (resetQty || this.qty < this.min) {
+                        this.qty = this.min;
+                    } else if (this.max !== null && this.qty > this.max) {
+                        this.qty = this.max;
+                    }
+
+                    if (this.$el) {
+                        this.$el.dataset.qtyCanPurchase = this.canPurchase ? 'true' : 'false';
+                    }
+                },
+
+                _resolveFromVariant(variant, { resetQty = false } = {}) {
+                    const api = this._constraintsApi();
+                    if (!api || !variant) return;
+
+                    let cartQuantity = this.cartQuantity;
+                    if (this.surface === 'product') {
+                        cartQuantity = api.cartQuantityForVariant(variant.id, this._cartItems());
+                    }
+
+                    const resolved = api.fromVariant(variant, {
+                        surface: this.surface,
+                        cartQuantity,
+                    });
+                    this._variant = variant;
+                    this.variantId = variant.id || null;
+                    this._applyResolved(resolved, { resetQty });
                 },
 
                 _hydrateFromDataset() {
                     const ds = this.$el?.dataset;
                     if (!ds) return;
-                    if (ds.qtyValue) this.qty = Number(ds.qtyValue) || 1;
-                    if (ds.qtyMin) this.min = Number(ds.qtyMin) || 1;
-                    if (ds.qtyMax && ds.qtyMax !== 'null') this.max = Number(ds.qtyMax);
-                    if (ds.qtyStep) this.step = Number(ds.qtyStep) || 1;
+
+                    this.surface = ds.qtySurface === 'cart' ? 'cart' : 'product';
                     if (ds.qtySectionId) this._sectionId = ds.qtySectionId;
+                    if (ds.qtyVariantId) this.variantId = Number(ds.qtyVariantId) || null;
                     if (ds.qtyMsgMax) this._msgMax = ds.qtyMsgMax;
                     if (ds.qtyMsgMin) this._msgMin = ds.qtyMsgMin;
                     if (ds.qtyMsgBelowMin) this._msgBelowMin = ds.qtyMsgBelowMin;
                     if (ds.qtyMsgAboveMax) this._msgAboveMax = ds.qtyMsgAboveMax;
+
+                    const parsed = this._parseConstraintsJson(ds.qtyConstraints);
+                    if (parsed) {
+                        this._applyResolved(
+                            {
+                                min: Number(parsed.min) || 1,
+                                max: parsed.max == null ? null : Number(parsed.max),
+                                step: Number(parsed.step) || 1,
+                                cartQuantity: Number(parsed.cart_quantity) || 0,
+                                canPurchase: parsed.can_purchase !== false,
+                            },
+                            { resetQty: true },
+                        );
+                        this.qty = Number(parsed.value);
+                        if (!Number.isFinite(this.qty)) this.qty = this.min;
+                        if (parsed.id || parsed.quantity_rule) {
+                            this._variant = {
+                                id: parsed.id || this.variantId,
+                                quantity_rule: parsed.quantity_rule,
+                                inventory_management: parsed.inventory_management,
+                                inventory_policy: parsed.inventory_policy,
+                                inventory_quantity: parsed.inventory_quantity,
+                            };
+                            this.variantId = this._variant.id || this.variantId;
+                        }
+                        return;
+                    }
+
+                    if (ds.qtyValue) this.qty = Number(ds.qtyValue) || 1;
+                    if (ds.qtyMin) this.min = Number(ds.qtyMin) || 1;
+                    if (ds.qtyMax && ds.qtyMax !== 'null') this.max = Number(ds.qtyMax);
+                    else this.max = null;
+                    if (ds.qtyStep) this.step = Number(ds.qtyStep) || 1;
+                    this.canPurchase = ds.qtyCanPurchase !== 'false';
+                    this.cartQuantity = Number(ds.qtyCartQuantity) || 0;
+                },
+
+                _syncFromCart() {
+                    if (this.surface !== 'product' || !this._variant) return;
+                    this._resolveFromVariant(this._variant, { resetQty: false });
+                    this._notify();
                 },
 
                 init() {
                     this._hydrateFromDataset();
-                    const sectionId = this._sectionId;
-                    if (!sectionId) return;
+
                     const Events = window.__Theme__.Events;
                     const events = Events.events;
                     this._eventScope = Events.createScope();
 
-                    const onVariantChange = (e) => {
-                        if (e.detail?.sectionId !== sectionId) return;
-                        const variant = e.detail.variant;
-                        if (!variant) return;
-                        if (
-                            variant.inventory_policy === 'continue' ||
-                            variant.inventory_quantity == null
-                        ) {
-                            this.max = null;
-                        } else {
-                            this.max = Math.max(this.min, variant.inventory_quantity);
-                        }
-                        if (this.max !== null && this.qty > this.max) {
-                            this.qty = this.max;
+                    const sectionId = this._sectionId;
+                    if (sectionId) {
+                        const onVariantChange = (e) => {
+                            if (e.detail?.sectionId !== sectionId) return;
+                            const variant = e.detail.variant;
+                            if (!variant) return;
+                            this._resolveFromVariant(variant, { resetQty: true });
                             this._notify();
-                        }
-                    };
+                        };
+                        this._eventScope.on(events.PRODUCT_VARIANT_CHANGED, onVariantChange);
+                    }
 
-                    this._eventScope.on(events.PRODUCT_VARIANT_CHANGED, onVariantChange);
+                    if (this.surface === 'product') {
+                        this.$nextTick(() => {
+                            const cart = window.Alpine?.store?.('cart');
+                            if (!cart || typeof this.$watch !== 'function') return;
+                            this._cartUnwatch = this.$watch(
+                                () => {
+                                    const current = window.Alpine.store('cart');
+                                    return `${current?.item_count || 0}:${(current?.items || [])
+                                        .map(
+                                            (item) =>
+                                                `${item.variant_id || item.id}:${item.quantity}`,
+                                        )
+                                        .join(',')}`;
+                                },
+                                () => this._syncFromCart(),
+                            );
+                        });
+                    }
+                },
+
+                _snapToStep(raw) {
+                    const min = this.min;
+                    const step = this.step || 1;
+                    let next = raw;
+                    if (this.max !== null && next > this.max) next = this.max;
+                    if (next < min) next = min;
+                    const offset = next - min;
+                    const snapped = min + Math.round(offset / step) * step;
+                    next = snapped;
+                    if (this.max !== null && next > this.max) {
+                        const floored = min + Math.floor((this.max - min) / step) * step;
+                        next = Math.max(min, floored);
+                    }
+                    if (next < min) next = min;
+                    return next;
                 },
 
                 increment() {
@@ -276,10 +538,7 @@
                         this._toast(this._msgMax, '%%MAX%%', this.max);
                         return;
                     }
-                    this.qty =
-                        this.max !== null
-                            ? Math.min(this.max, this.qty + this.step)
-                            : this.qty + this.step;
+                    this.qty = this.qty + this.step;
                     this._notify();
                 },
 
@@ -293,7 +552,7 @@
                 },
 
                 onInput() {
-                    const raw = parseInt(this.qty);
+                    const raw = parseInt(this.qty, 10);
                     if (isNaN(raw) || raw < this.min) {
                         this._toast(this._msgBelowMin, '%%MIN%%', this.min);
                         this.qty = this.min;
@@ -306,14 +565,21 @@
                         this._notify();
                         return;
                     }
-                    this.qty = raw;
+                    this.qty = this._snapToStep(raw);
                     this._notify();
                 },
 
                 _notify() {
                     const Events = window.__Theme__.Events;
                     const events = Events.events;
-                    const detail = { value: this.qty };
+                    const detail = {
+                        value: this.qty,
+                        min: this.min,
+                        max: this.max,
+                        step: this.step,
+                        canPurchase: this.canPurchase,
+                        variantId: this.variantId,
+                    };
                     Events.emit(events.PRODUCT_QUANTITY_CHANGED, detail, {
                         target: this.$el,
                         bubbles: true,
@@ -326,9 +592,12 @@
                 },
 
                 destroy() {
+                    if (typeof this._cartUnwatch === 'function') this._cartUnwatch();
+                    this._cartUnwatch = null;
                     this._eventScope?.dispose?.();
                     this._eventScope = null;
-                    if (sectionId) this.dispose();
+                    this._variant = null;
+                    this.dispose();
                 },
             };
         },
@@ -360,6 +629,7 @@
                 cartType,
                 cartUrl,
                 isLoading: false,
+                canPurchaseQuantity: true,
                 _eventScope: null,
                 _buttonTextFallback: '',
 
@@ -368,6 +638,8 @@
                     const fallback = this._buttonTextFallback || '';
                     if (!this.variantId) return dataset.unavailableText || fallback;
                     if (!this.available) return dataset.soldOutText || fallback;
+                    if (!this.canPurchaseQuantity)
+                        return dataset.maximumInCartText || dataset.addToCartText || fallback;
                     return dataset.addToCartText || fallback;
                 },
 
@@ -429,9 +701,53 @@
                         const variant = e.detail.variant;
                         this.variantId = variant?.id || null;
                         this.available = variant?.available || false;
+                        this._syncQuantityPurchaseState(variant);
+                    };
+
+                    const onQuantityChange = (e) => {
+                        const root = e.target?.closest?.('.quantity-selector') || e.target;
+                        const rootSection = root?.dataset?.qtySectionId;
+                        if (rootSection && rootSection !== String(this.sectionId)) return;
+                        if (!rootSection && !this.$el?.contains?.(e.target)) return;
+                        if (typeof e.detail?.canPurchase === 'boolean') {
+                            this.canPurchaseQuantity = e.detail.canPurchase;
+                        }
                     };
 
                     this._eventScope.on(events.PRODUCT_VARIANT_CHANGED, onVariantChange);
+                    this._eventScope.on(events.PRODUCT_QUANTITY_CHANGED, onQuantityChange);
+                    this.$nextTick(() => this._syncQuantityPurchaseState());
+                },
+
+                _quantityRoot() {
+                    return (
+                        this.$el?.querySelector?.('.quantity-selector') ||
+                        document.querySelector(
+                            `.quantity-selector[data-qty-section-id="${CSS.escape(this.sectionId || '')}"]`,
+                        )
+                    );
+                },
+
+                _syncQuantityPurchaseState(variant) {
+                    const root = this._quantityRoot();
+                    if (root?.dataset?.qtyCanPurchase === 'false') {
+                        this.canPurchaseQuantity = false;
+                        return;
+                    }
+
+                    const api = window.__Theme__?.QuantityConstraints;
+                    if (!api || !variant) {
+                        this.canPurchaseQuantity = root?.dataset?.qtyCanPurchase !== 'false';
+                        return;
+                    }
+
+                    const cartItems = window.Alpine?.store?.('cart')?.items || [];
+                    const cartQuantity = api.cartQuantityForVariant(variant.id, cartItems);
+                    const resolved = api.fromVariant(variant, {
+                        surface: 'product',
+                        cartQuantity,
+                    });
+                    this.canPurchaseQuantity = resolved.canPurchase !== false;
                 },
 
                 _getQuantity() {
@@ -441,7 +757,22 @@
                         document.querySelector(
                             `input[name="quantity"][form="${this.productFormId}"]`,
                         );
-                    return qtyInput ? parseInt(qtyInput.value) || 1 : 1;
+                    return qtyInput ? parseInt(qtyInput.value, 10) || 1 : 1;
+                },
+
+                _quantityAllowsSubmit() {
+                    if (!this.canPurchaseQuantity) return false;
+                    const root = this._quantityRoot();
+                    if (!root) return true;
+                    if (root.dataset?.qtyCanPurchase === 'false') return false;
+                    const input = root.querySelector('input[name="quantity"]');
+                    if (!input) return true;
+                    const qty = parseInt(input.value, 10);
+                    const min = input.min !== '' ? Number(input.min) : 1;
+                    const max = input.max !== '' ? Number(input.max) : null;
+                    if (!Number.isFinite(qty) || qty < min) return false;
+                    if (Number.isFinite(max) && qty > max) return false;
+                    return true;
                 },
 
                 _getSections() {
@@ -458,7 +789,13 @@
                 },
 
                 addToCart() {
-                    if (!this.available || !this.variantId || this.isLoading) return;
+                    if (
+                        !this.available ||
+                        !this.variantId ||
+                        this.isLoading ||
+                        !this._quantityAllowsSubmit()
+                    )
+                        return;
 
                     this.isLoading = true;
                     const cart = window.Alpine?.store('cart');
@@ -501,7 +838,13 @@
                 },
 
                 buyNow() {
-                    if (!this.available || !this.variantId || this.isLoading) return;
+                    if (
+                        !this.available ||
+                        !this.variantId ||
+                        this.isLoading ||
+                        !this._quantityAllowsSubmit()
+                    )
+                        return;
 
                     this.isLoading = true;
                     const cart = window.Alpine?.store('cart');

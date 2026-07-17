@@ -218,9 +218,13 @@
             return {
                 sections: Array.isArray(sections) ? sections : [],
                 dialogId: '',
+                sectionId: '',
                 pending: {},
+                unitPriceMap: {},
+                quantityConstraintsMap: {},
                 _syncPromise: null,
                 _lastSyncedAt: 0,
+                _unitPriceRefreshPromise: null,
 
                 get cart() {
                     return (
@@ -268,6 +272,7 @@
 
                 init() {
                     this.dialogId = this.$el?.dataset?.dialogId || '';
+                    this.sectionId = this.$el?.dataset?.sectionId || '';
 
                     if (this.sections.length === 0) {
                         const ds = this.$el?.dataset;
@@ -279,15 +284,125 @@
                         }
                     }
 
+                    if (!this.sectionId && this.sections.length > 0) {
+                        this.sectionId = this.sections[0];
+                    }
+
+                    this._readUnitPriceMap();
+                    this._readQuantityConstraintsMap();
+
                     this.$watch('isOpen', (isOpen) => {
                         if (isOpen) {
-                            this.syncCart({ force: true }).catch(() => {});
+                            this.syncCart({ force: true })
+                                .catch(() => {})
+                                .finally(() => {
+                                    this.refreshUnitPriceMap().catch(() => {});
+                                });
                         }
                     });
                 },
 
                 get isOpen() {
                     return Boolean(this.dialogId && this.$store?.dialog?.active === this.dialogId);
+                },
+
+                _sectionRoot() {
+                    return this.$el?.closest?.('.cart-overlay-section') || null;
+                },
+
+                _mapHost() {
+                    return (
+                        this._sectionRoot()?.querySelector?.('[data-cart-unit-price-map]') || null
+                    );
+                },
+
+                _quantityConstraintsHost() {
+                    return (
+                        this._sectionRoot()?.querySelector?.(
+                            '[data-cart-quantity-constraints-map]',
+                        ) || null
+                    );
+                },
+
+                _readUnitPriceMap() {
+                    const host = this._mapHost();
+                    const raw = host?.dataset?.map || '';
+                    if (!raw) {
+                        this.unitPriceMap = {};
+                        return;
+                    }
+                    try {
+                        const parsed = JSON.parse(raw);
+                        this.unitPriceMap =
+                            parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+                                ? parsed
+                                : {};
+                    } catch (_) {
+                        this.unitPriceMap = {};
+                    }
+                },
+
+                _readQuantityConstraintsMap() {
+                    const host = this._quantityConstraintsHost();
+                    const raw = host?.dataset?.map || '';
+                    if (!raw) {
+                        this.quantityConstraintsMap = {};
+                        return;
+                    }
+                    try {
+                        const parsed = JSON.parse(raw);
+                        this.quantityConstraintsMap =
+                            parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+                                ? parsed
+                                : {};
+                    } catch (_) {
+                        this.quantityConstraintsMap = {};
+                    }
+                },
+
+                unitPriceText(item) {
+                    if (!item?.key) return '';
+                    const value = this.unitPriceMap[item.key];
+                    return typeof value === 'string' && value.trim() ? value : '';
+                },
+
+                refreshUnitPriceMap() {
+                    const sectionId = this.sectionId || this.sections[0];
+                    const Http = window.ShopifyHttp;
+                    const SectionRefresher = window.ShopifySectionRefresher;
+                    if (!sectionId || !Http?.request || !SectionRefresher?.render) {
+                        return Promise.resolve();
+                    }
+                    if (this._unitPriceRefreshPromise) return this._unitPriceRefreshPromise;
+
+                    this._unitPriceRefreshPromise = Http.request(window.location.href, {
+                        method: 'GET',
+                        params: { section_id: sectionId },
+                        headers: { Accept: 'text/html' },
+                        credentials: 'same-origin',
+                    })
+                        .then((res) => res.text())
+                        .then((html) => {
+                            SectionRefresher.render(
+                                { [sectionId]: html },
+                                {
+                                    [sectionId]: {
+                                        targetSelector: `#shopify-section-${sectionId}`,
+                                        innerSelectors: [
+                                            '[data-cart-unit-price-map]',
+                                            '[data-cart-quantity-constraints-map]',
+                                        ],
+                                    },
+                                },
+                            );
+                            this._readUnitPriceMap();
+                            this._readQuantityConstraintsMap();
+                        })
+                        .finally(() => {
+                            this._unitPriceRefreshPromise = null;
+                        });
+
+                    return this._unitPriceRefreshPromise;
                 },
 
                 syncCart({ force = false } = {}) {
@@ -327,10 +442,12 @@
                     if (window.Shopify?.formatMoney) {
                         return window.Shopify.formatMoney(value);
                     }
+                    const locale = document.documentElement.lang || undefined;
                     const currency = window.Shopify?.currency?.active || 'USD';
-                    return new Intl.NumberFormat(undefined, {
+                    return new Intl.NumberFormat(locale, {
                         style: 'currency',
                         currency,
+                        currencyDisplay: 'narrowSymbol',
                     }).format(value / 100);
                 },
 
@@ -343,11 +460,29 @@
                     return this.formatMoney(line);
                 },
 
+                lineConstraints(item) {
+                    const api = window.__Theme__?.QuantityConstraints;
+                    if (!api) {
+                        return { min: 1, max: null, step: 1, canPurchase: true };
+                    }
+                    return api.fromCartItem(item, this.quantityConstraintsMap, this.items);
+                },
+
                 maxQty(item) {
-                    if (!item?.variant) return null;
-                    if (item.variant.inventory_policy === 'continue') return null;
-                    const qty = Number(item.variant.inventory_quantity);
-                    return Number.isFinite(qty) && qty > 0 ? qty : null;
+                    const max = this.lineConstraints(item).max;
+                    return max == null ? null : max;
+                },
+
+                canDecrement(item) {
+                    const { min } = this.lineConstraints(item);
+                    return Number(item?.quantity || 0) > min;
+                },
+
+                canIncrement(item) {
+                    const { max, step } = this.lineConstraints(item);
+                    const qty = Number(item?.quantity || 0);
+                    if (max === null) return true;
+                    return qty + step <= max;
                 },
 
                 onQtyChange(item, qty) {
@@ -365,14 +500,15 @@
                 },
 
                 decrement(item) {
-                    if (!item) return;
-                    this.onQtyChange(item, Math.max(0, Number(item.quantity || 0) - 1));
+                    if (!item || !this.canDecrement(item)) return;
+                    const { min, step } = this.lineConstraints(item);
+                    this.onQtyChange(item, Math.max(min, Number(item.quantity || 0) - step));
                 },
 
                 increment(item) {
-                    if (!item) return;
-                    const max = this.maxQty(item);
-                    const next = Number(item.quantity || 0) + 1;
+                    if (!item || !this.canIncrement(item)) return;
+                    const { max, step } = this.lineConstraints(item);
+                    const next = Number(item.quantity || 0) + step;
                     this.onQtyChange(item, max === null ? next : Math.min(max, next));
                 },
 

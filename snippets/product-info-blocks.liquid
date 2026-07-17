@@ -108,12 +108,26 @@
                 <div {{ block.shopify_attributes }}>
                     {%- if product_data != blank -%}
                         {%- assign current_variant = product_data.selected_or_first_available_variant -%}
+                        {%- capture unit_prices_json -%}
+                            {
+                            {%- assign unit_price_map_first = true -%}
+                            {%- for variant in product_data.variants -%}
+                                {%- if variant.unit_price_measurement -%}
+                                    {%- unless unit_price_map_first -%},{%- endunless -%}
+                                    "{{ variant.id }}":{{ variant.unit_price | unit_price_with_measurement: variant.unit_price_measurement | json }}
+                                    {%- assign unit_price_map_first = false -%}
+                                {%- endif -%}
+                            {%- endfor -%}
+                            }
+                        {%- endcapture -%}
                         <div
                             class="product-price product-info-blocks__price"
                             data-section-id="{{ section.id }}"
+                            data-variant-id="{{ current_variant.id }}"
                             data-price="{{ current_variant.price | default: 0 }}"
                             data-compare-price="{{ current_variant.compare_at_price | default: 0 }}"
-                            data-currency="{{ shop.currency }}"
+                            data-currency="{{ cart.currency.iso_code }}"
+                            data-unit-prices="{{ unit_prices_json | strip | escape }}"
                             x-data="ProductPrice()"
                         >
                             <span
@@ -131,7 +145,39 @@
                                     {{- current_variant.compare_at_price | money -}}
                                 {%- endif -%}
                             </s>
+                            <span
+                                class="product-price__unit product-info-blocks__price-unit block body-sm text-theme-text/80"
+                                x-show="hasUnitPrice"
+                                x-text="unitPriceText"
+                            >
+                                {%- if current_variant.unit_price_measurement -%}
+                                    {{-
+                                        current_variant.unit_price
+                                        | unit_price_with_measurement: current_variant.unit_price_measurement
+                                    -}}
+                                {%- endif -%}
+                            </span>
                         </div>
+                        {%- assign payment_terms_form_id = 'product-payment-terms-'
+                            | append: section.id
+                            | append: '-'
+                            | append: block.id
+                        -%}
+                        {%- form 'product', product_data, id: payment_terms_form_id -%}
+                            <div
+                                class="product-payment-terms product-info-blocks__payment-terms"
+                                data-section-id="{{ section.id }}"
+                                x-data="ProductPaymentTerms()"
+                            >
+                                <input
+                                    type="hidden"
+                                    name="id"
+                                    value="{{ current_variant.id }}"
+                                >
+                                {{ form | payment_terms }}
+                            </div>
+                        {%- endform -%}
+                        {%- render 'product-tax-note', class: 'mt-2 body-sm text-theme-text/80' -%}
                     {%- else -%}
                         <p class="product-price__main product-info-blocks__price-main{% if context == 'featured' %} body-3xl text-theme-text{% else %} body-lg{% endif %}">
                             {{ 'products.product.example_price' | t }}
@@ -456,8 +502,8 @@
                                 {{ block.shopify_attributes }}
                             >
                                 {%- render 'quantity-selector',
-                                    value: 1,
-                                    min: 1,
+                                    variant: product_data.selected_or_first_available_variant,
+                                    surface: 'product',
                                     product_form_id: product_form_id,
                                     section_id: section.id
                                 -%}

@@ -507,6 +507,7 @@
                         Factory.register?.(Comps.PROGRESSIVELIST, Comps.progressiveList);
                         Factory.register?.(Comps.PRODUCTGALLERY, Comps.productGallery);
                         Factory.register?.(Comps.PRODUCTPRICE, Comps.ProductPrice);
+                        Factory.register?.(Comps.PRODUCTPAYMENTTERMS, Comps.ProductPaymentTerms);
                         Factory.register?.(Comps.VARIANTPICKER, Comps.VariantPicker);
                         Factory.register?.(Comps.QUANTITYSELECTOR, Comps.QuantitySelector);
                         Factory.register?.(Comps.BUYBUTTONS, Comps.BuyButtons);

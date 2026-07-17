@@ -1147,7 +1147,24 @@ Prepare and verify:
 
 Use one commit per approved rollback domain. Do not combine all blockers into one change set, and do not split a coherent domain into mechanical one-BLK commits unless runtime review shows that separation is safer.
 
-### Package A — Commerce Pricing And Payment Disclosure
+### QUANTITY-01 — Unified Quantity Constraints (2026-07-20)
+
+Status: **implementation in review**. Uncommitted. Scoped to quantity min/max/step only; does not reopen Package A money formatting.
+
+Contract:
+
+- Absolute max = `min(quantity_rule.max, inventory_quantity)` when inventory is managed and `inventory_policy == deny`; otherwise inventory does not cap.
+- `quantity_rule.max == null` => no rule cap.
+- `inventory_policy == continue` or unmanaged inventory => no inventory cap.
+- Product / Featured / Quick view max = absolute max minus `cart | item_count_for_variant` (additional units only).
+- Cart page / drawer max = absolute max (line edits total quantity; do not subtract this line).
+- Matching variant lines: `item_count_for_variant` / JS `cartQuantityForVariant` sums every cart line with that `variant_id`.
+
+Surfaces: `quantity-selector` via buy-buttons and product-info quantity block (PDP/Featured/QV), `sections/cart.liquid`, `sections/cart-overlay.liquid` drawer controls.
+
+Shared math: `assets/quantity-constraints.js` + `snippets/quantity-constraints.liquid`. Variant picker uses `product-variants-quantity-json` so inventory/quantity_rule survive client variant switches.
+
+
 
 Scope: BLK-01, BLK-02, BLK-03, and BLK-05.
 
@@ -1159,6 +1176,16 @@ Scope: BLK-01, BLK-02, BLK-03, and BLK-05.
 Why combined: these findings share price presentation, variant state, product forms, cart price surfaces, and locale copy. They should be reviewed and reverted as one pricing-disclosure capability.
 
 Manual gate: products with and without unit pricing, mixed variant prices, sale/compare-at prices, eligible payment terms, variant switching, tax-inclusive and non-inclusive stores, product/featured/quick-view/card/cart surfaces, and mobile layout.
+
+Implementation notes (static evidence only; not acceptance):
+
+- Liquid filter `unit_price_with_measurement` used; no JS measurement string assembly.
+- Customer order templates: N/A (`templates/customers/**` absent).
+- Client money display alignment (2026-07-20, scoped fix, still in review): JS Intl fallbacks in `ProductPrice._formatPrice`, `cartOverlay.formatMoney`, and predictive search now use `document.documentElement.lang || undefined` and `currencyDisplay: 'narrowSymbol'` so zh locale + USD matches Liquid `| money` (`$` not `US$`). `Shopify.formatMoney` remains preferred when present. No shared money abstraction; Liquid `money` / `money_with_currency` unchanged; unit-price, payment terms, and tax notice untouched.
+- QUANTITY-01 review fixes (2026-07-20, still in review): variant payload restored to `product.variants | json` with separate `data-variants-quantity-meta` map merged in VariantPicker; ProductPrice ignores null/non-numeric price events instead of writing `$0.00`; product increments require `qty + step <= max` and reject invalid remainders; cart line max = absoluteMax − other same-variant lines; no-JS ATC submit disabled when `can_purchase` is false; cart-limit CTA uses `products.product.maximum_in_cart` (not Sold out). Validated through repository lint, Theme Check, and owner runtime review; the owner intentionally removed the temporary targeted Node test file.
+- Cart drawer: server-formatted unit-price map + minimal SectionRefresher refresh of `[data-cart-unit-price-map]`; no drawer tax notice.
+- Payment terms: separate product form near price; scoped `ProductPaymentTerms` on `PRODUCT_VARIANT_CHANGED`.
+- Tax notice: `cart.taxes_included_note` vs preserved `cart.taxes_note` on product purchase surfaces and cart page.
 
 ### Package B — Gift Card Recipient Purchase Flow
 

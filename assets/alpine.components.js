@@ -110,6 +110,7 @@
         PROGRESSIVELIST: 'progressiveList',
         PRODUCTGALLERY: 'productGallery',
         PRODUCTPRICE: 'ProductPrice',
+        PRODUCTPAYMENTTERMS: 'ProductPaymentTerms',
         VARIANTPICKER: 'VariantPicker',
         QUANTITYSELECTOR: 'QuantitySelector',
         BUYBUTTONS: 'BuyButtons',

@@ -217,14 +217,18 @@
                     request
                         .then((data) => {
                             const results = data?.resources?.results || {};
-                            const currency =
-                                window.Shopify?.currency?.active ||
-                                (window.Shopify && window.Shopify.currency) ||
-                                'USD';
-                            const fmt = new Intl.NumberFormat(undefined, {
-                                style: 'currency',
-                                currency,
-                            });
+                            const locale = document.documentElement.lang || undefined;
+                            const currency = window.Shopify?.currency?.active || 'USD';
+                            const formatPrice = (cents) => {
+                                if (typeof window.Shopify?.formatMoney === 'function') {
+                                    return window.Shopify.formatMoney(cents);
+                                }
+                                return new Intl.NumberFormat(locale, {
+                                    style: 'currency',
+                                    currency,
+                                    currencyDisplay: 'narrowSymbol',
+                                }).format(cents / 100);
+                            };
 
                             this.suggestions = (results.queries || [])
                                 .map((q) => ({
@@ -236,7 +240,7 @@
                             this.products = (results.products || []).map((p) => {
                                 let finalPrice = p.price;
                                 if (typeof p.price === 'number') {
-                                    finalPrice = fmt.format(p.price / 100);
+                                    finalPrice = formatPrice(p.price);
                                 }
 
                                 const imageCandidates = [];

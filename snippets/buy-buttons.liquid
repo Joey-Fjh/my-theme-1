@@ -48,6 +48,20 @@
         | default: block.settings.show_dynamic_checkout
         | default: false
     -%}
+    {%- assign native_qty_blocked = false -%}
+    {%- if current_variant != blank -%}
+        {%- capture native_can_purchase -%}
+            {%- render 'quantity-constraints',
+                variant: current_variant,
+                surface: 'product',
+                output: 'can_purchase'
+            -%}
+        {%- endcapture -%}
+        {%- assign native_can_purchase = native_can_purchase | strip -%}
+        {%- if native_can_purchase == 'false' -%}
+            {%- assign native_qty_blocked = true -%}
+        {%- endif -%}
+    {%- endif -%}
 
     {%- assign use_secondary_add_button = false -%}
     {%- if context == 'product' -%}
@@ -76,6 +90,7 @@
         data-show-buy-now="{{ show_buy_now | json | escape }}"
         data-add-to-cart-text="{{ 'products.product.add_to_cart' | t | escape }}"
         data-sold-out-text="{{ 'products.product.sold_out' | t | escape }}"
+        data-maximum-in-cart-text="{{ 'products.product.maximum_in_cart' | t | escape }}"
         data-unavailable-text="{{ 'products.product.unavailable' | t | escape }}"
         data-request-sections="{% if request_sections == false or request_sections == 'false' %}{% else %}{{ request_sections | join: ',' | escape }}{% endif %}"
         x-data="BuyButtons()"
@@ -110,8 +125,8 @@
                             {% endif %}
                         >
                             {%- render 'quantity-selector',
-                                value: 1,
-                                min: 1,
+                                variant: current_variant,
+                                surface: 'product',
                                 product_form_id: product_form_id,
                                 section_id: section_id,
                                 wrapper_class: quantity_wrapper_class,
@@ -126,11 +141,14 @@
                         name="add"
                         class="btn relative w-full"
                         :class="
-                            available
+                            available && canPurchaseQuantity
                             ? '{{ available_classes }}'
                             : '{{ unavailable_classes }}'
                         "
-                        :disabled="!available || isLoading"
+                        {% if current_variant.available == false or native_qty_blocked %}
+                            disabled
+                        {% endif %}
+                        :disabled="!available || !canPurchaseQuantity || isLoading"
                         :aria-busy="isLoading"
                         @click.prevent="addToCart()"
                     >
@@ -140,10 +158,12 @@
                             x-text="buttonText"
                             data-add-to-cart-label
                         >
-                            {%- if current_variant.available -%}
-                                {{ 'products.product.add_to_cart' | t }}
-                            {%- else -%}
+                            {%- if current_variant.available == false -%}
                                 {{ 'products.product.sold_out' | t }}
+                            {%- elsif native_qty_blocked -%}
+                                {{ 'products.product.maximum_in_cart' | t }}
+                            {%- else -%}
+                                {{ 'products.product.add_to_cart' | t }}
                             {%- endif -%}
                         </span>
                         <span
@@ -163,10 +183,10 @@
                     <button
                         type="button"
                         class="btn-primary relative w-full"
-                        :disabled="!available || isLoading"
+                        :disabled="!available || !canPurchaseQuantity || isLoading"
                         :aria-busy="isLoading"
                         @click.prevent="buyNow()"
-                        x-show="available"
+                        x-show="available && canPurchaseQuantity"
                         x-cloak
                     >
                         {{ 'products.product.buy_it_now' | t }}
@@ -174,7 +194,13 @@
                 {%- endif -%}
 
                 {%- if show_dynamic_checkout -%}
-                    <div class="shopify-payment-button-wrapper" :class="{ 'hidden': !available }">
+                    <div
+                        class="shopify-payment-button-wrapper"
+                        {% if native_qty_blocked %}
+                            hidden
+                        {% endif %}
+                        :class="{ 'hidden': !available || !canPurchaseQuantity }"
+                    >
                         {{ form | payment_button }}
                     </div>
                 {%- endif -%}

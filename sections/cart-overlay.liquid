@@ -1,14 +1,45 @@
 {%- assign popup_id = 'cart-overlay-drawer' -%}
+{%- capture cart_unit_prices_json -%}
+    {
+    {%- assign cart_unit_price_map_first = true -%}
+    {%- for item in cart.items -%}
+        {%- if item.unit_price_measurement -%}
+            {%- unless cart_unit_price_map_first -%},{%- endunless -%}
+            {{ item.key | json }}:{{ item.unit_price | unit_price_with_measurement: item.unit_price_measurement | json }}
+            {%- assign cart_unit_price_map_first = false -%}
+        {%- endif -%}
+    {%- endfor -%}
+    }
+{%- endcapture -%}
+{%- capture cart_quantity_constraints_json -%}
+    {
+    {%- for item in cart.items -%}
+        {%- unless forloop.first -%},{%- endunless -%}
+        {{ item.key | json }}:{%- render 'quantity-constraints', variant: item.variant, surface: 'cart', value: item.quantity -%}
+    {%- endfor -%}
+    }
+{%- endcapture -%}
 
 <div
     data-section-id="{{ section.id }}"
     class="cart-overlay-section"
 >
+    <div
+        data-cart-unit-price-map
+        hidden
+        data-map="{{ cart_unit_prices_json | strip | escape }}"
+    ></div>
+    <div
+        data-cart-quantity-constraints-map
+        hidden
+        data-map="{{ cart_quantity_constraints_json | strip | escape }}"
+    ></div>
     {%- capture drawer_content -%}
         <div
             data-dialog-id="{{ popup_id }}"
             class="flex h-full flex-col"
             data-cart-sections='["{{ section.id }}"]'
+            data-section-id="{{ section.id }}"
             x-data="cartOverlay()"
             @keydown.escape.window="$store.dialog.close()"
             :class="{ 'opacity-80': $store.cart.loading && showItems }"
@@ -82,6 +113,9 @@
                                             <span class="text-theme-text/80 line-through" x-text="formatMoney(item.original_line_price)"></span>
                                             <span class="ms-1" x-text="formatMoney(item.final_line_price)"></span>
                                         </p>
+                                        <template x-if="unitPriceText(item)">
+                                            <p class="mt-1 body-xs text-theme-text/80" x-text="unitPriceText(item)"></p>
+                                        </template>
                                         <template x-if="item.line_level_discount_allocations && item.line_level_discount_allocations.length > 0">
                                             <ul class="mt-1">
                                                 <template x-for="alloc in item.line_level_discount_allocations" :key="alloc.discount_application.title">
@@ -92,7 +126,12 @@
                                     </div>
                                 </template>
                                 <template x-if="!(item.original_line_price > item.final_line_price)">
-                                    <p class="mt-auto pt-4" x-text="linePrice(item)"></p>
+                                    <div class="mt-auto pt-4">
+                                        <p x-text="linePrice(item)"></p>
+                                        <template x-if="unitPriceText(item)">
+                                            <p class="mt-1 body-xs text-theme-text/80" x-text="unitPriceText(item)"></p>
+                                        </template>
+                                    </div>
                                 </template>
                             </div>
 
@@ -112,7 +151,7 @@
                                         type="button"
                                         class="quantity-selector__button"
                                         @click="decrement(item)"
-                                        :disabled="Number(item.quantity || 0) <= 1"
+                                        :disabled="!canDecrement(item)"
                                         aria-label="{{ 'accessibility.decrease_quantity' | t }}"
                                     >
                                         {% render 'icons', icon: 'icon-minus' %}
@@ -128,7 +167,7 @@
                                         type="button"
                                         class="quantity-selector__button"
                                         @click="increment(item)"
-                                        :disabled="maxQty(item) !== null && Number(item.quantity || 0) >= maxQty(item)"
+                                        :disabled="!canIncrement(item)"
                                         aria-label="{{ 'accessibility.increase_quantity' | t }}"
                                     >
                                         {% render 'icons', icon: 'icon-plus' %}

@@ -8,10 +8,11 @@ All theme runtime objects live under `window.__Theme__`:
 
 | Property                            | Module                 | Purpose                         |
 | ----------------------------------- | ---------------------- | ------------------------------- |
-| `__Theme__.Events`                  | `events.js`            | Typed event bus (`ThemeEvents`) |
-| `__Theme__.Components`              | `base.js`              | Section/block lifecycle engine  |
-| `__Theme__.ThemePerformance`        | `performance.js`       | Debug-only CWV monitoring       |
-| `__Theme__.AlpineComponentsFactory` | `alpine.components.js` | Alpine component registry       |
+| `__Theme__.Events`                  | `events.js`                 | Typed event bus (`ThemeEvents`) |
+| `__Theme__.Components`              | `base.js`                   | Section/block lifecycle engine  |
+| `__Theme__.ThemePerformance`        | `performance.js`            | Debug-only CWV monitoring       |
+| `__Theme__.AlpineComponentsFactory` | `alpine.components.js`      | Alpine component registry       |
+| `__Theme__.QuantityConstraints`     | `quantity-constraints.js`   | Pure quantity min/max/step math |
 
 Additional globals:
 
@@ -26,28 +27,29 @@ Additional globals:
 ```text
  1.  vendor-swiper.min.js
  2.  utils.js
- 3.  events.js
- 4.  alpine.components.js
- 5.  alpine.components.ui.js
- 6.  alpine.components.header.js
- 7.  alpine.components.pagination.js
- 8.  alpine.components.filters.js
- 9.  alpine.components.product.js
-10.  alpine.components.product-media.js
-11.  alpine.components.product-cards.js
-12.  alpine.components.search.js
-13.  alpine.components.overlays.js
-14.  alpine.components.registry.js      <- merges groups into window.__Theme__.AlpineComponents
-15.  performance.js
-16.  https.js
-17.  base.js
-18.  alpine.store.js
-19.  alpine.store.toast.js
-20.  alpine.store.dialog.js
-21.  alpine.store.cart.js
-22.  alpine.store.registry.js           <- merges/registers stores
-23.  vendor-alpine-intersect.min.js
-24.  vendor-alpine.min.js               <- MUST be last
+ 3.  quantity-constraints.js
+ 4.  events.js
+ 5.  alpine.components.js
+ 6.  alpine.components.ui.js
+ 7.  alpine.components.header.js
+ 8.  alpine.components.pagination.js
+ 9.  alpine.components.filters.js
+10.  alpine.components.product.js
+11.  alpine.components.product-media.js
+12.  alpine.components.product-cards.js
+13.  alpine.components.search.js
+14.  alpine.components.overlays.js
+15.  alpine.components.registry.js      <- merges groups into window.__Theme__.AlpineComponents
+16.  performance.js
+17.  https.js
+18.  base.js
+19.  alpine.store.js
+20.  alpine.store.toast.js
+21.  alpine.store.dialog.js
+22.  alpine.store.cart.js
+23.  alpine.store.registry.js           <- merges/registers stores
+24.  vendor-alpine-intersect.min.js
+25.  vendor-alpine.min.js               <- MUST be last
 ```
 
 Constraints:
