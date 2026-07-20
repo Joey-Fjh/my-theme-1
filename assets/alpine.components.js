@@ -114,6 +114,7 @@
         VARIANTPICKER: 'VariantPicker',
         QUANTITYSELECTOR: 'QuantitySelector',
         BUYBUTTONS: 'BuyButtons',
+        GIFTCARDRECIPIENT: 'GiftCardRecipient',
         PICKUPAVAILABILITY: 'PickupAvailability',
         PREDICTIVESEARCH: 'predictiveSearch',
         RELATEDPRODUCTS: 'relatedProducts',

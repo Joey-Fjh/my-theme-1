@@ -48,6 +48,16 @@
         | default: block.settings.show_dynamic_checkout
         | default: false
     -%}
+    {%- comment -%}
+        Gift card recipient validation does not support accelerated checkout.
+        Hide Shopify payment buttons and custom Buy now whenever the recipient
+        form is present so those paths cannot bypass recipient properties.
+        See: https://shopify.dev/docs/storefronts/themes/product-merchandising/gift-cards
+    {%- endcomment -%}
+    {%- if product.gift_card? -%}
+        {%- assign show_dynamic_checkout = false -%}
+        {%- assign show_buy_now = false -%}
+    {%- endif -%}
     {%- assign native_qty_blocked = false -%}
     {%- if current_variant != blank -%}
         {%- capture native_can_purchase -%}
@@ -109,6 +119,15 @@
                 :value="variantId"
                 :disabled="!available"
             >
+
+            {%- if product.gift_card? -%}
+                {%- render 'gift-card-recipient-form',
+                    product: product,
+                    form: form,
+                    section_id: section_id,
+                    product_form_id: product_form_id
+                -%}
+            {%- endif -%}
 
             <div
                 class="

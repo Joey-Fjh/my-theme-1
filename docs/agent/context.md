@@ -1191,11 +1191,28 @@ Shared math: `assets/quantity-constraints.js` + `snippets/quantity-constraints.l
 
 ### Package B — Gift Card Recipient Purchase Flow
 
+Status: **owner-reviewed and accepted** (2026-07-21). Package B implementation and this acceptance record belong in the same commit. Do not start Package C until that commit is complete. This acceptance closes the Package B review gate only and does not declare the whole theme ready for Theme Store submission.
+
 Scope: BLK-04 only.
 
 Why separate: gift-card recipient data, validation, accelerated-checkout restrictions, native form submission, JavaScript enhancement, and no-JavaScript behavior form a distinct high-risk purchase flow.
 
-Manual gate: gift card and regular products, recipient enabled/disabled, successful submission, required and invalid email, date limits, server errors, keyboard/accessibility behavior, and JavaScript-disabled submission.
+Owner acceptance: the owner explicitly approved Package B after storefront and Playwright review. No remaining Package B issue was reported for the gift-card recipient purchase flow, responsive presentation, shared product layout, regular-product regression, or the required manual gate.
+
+Implementation and acceptance notes:
+
+- Recipient form snippet `snippets/gift-card-recipient-form.liquid` rendered inside `snippets/buy-buttons.liquid` when `product.gift_card?`.
+- Shopify line item property contract: `Recipient email`, `Recipient name`, `Message`, `Send on`, `__shopify_send_gift_card_to_recipient`, `__shopify_offset`.
+- AJAX add-to-cart serializes enabled form `properties[*]` into `$store.cart.add()`; no-JS uses native product form + `if_present` control.
+- Accelerated checkout (`payment_button`) and custom Buy now are suppressed for all gift card products while the recipient form is present (Shopify: recipient validation does not support accelerated checkout).
+- Surfaces covered by shared buy-buttons: PDP, Featured Product, Quick View.
+- `GiftCardRecipient` is registered in the `assets/base.js` Alpine factory chain.
+- No-JS error summary maps `form.errors` key `send_on` to `#Recipient-send-on-*`; `clearErrors()` removes only dynamic error IDs from `aria-describedby` and preserves Message help IDs.
+- Visual/a11y refinement: opt-in and field labels inherit the default body size; help/errors use `body-sm`; the opt-in uses `size-8`, `min-h-11`, and focus styling; the recipient root uses `gap-5` and `mb-10` above the purchase group.
+- Shared layout follow-up: `productLayout` no longer writes `align-self: start` to sticky targets. Recipient expansion can switch `stickySide` from info to media without shrinking the flex-column media panel; measured media, main image, thumbnail, and gallery-block positions remained unchanged across repeated toggles, with no ResizeObserver warning.
+- Final validation passed: Shopify MCP `validate_theme`, `npm.cmd run lint:i18n`, `npm.cmd run lint:theme`, `npm.cmd run lint`, `npm.cmd test` (136 files, 0 offenses), and `git diff --check`.
+
+Manual gate: **passed by owner** (2026-07-21), covering the Package B gift-card and regular-product storefront matrix, recipient states and validation, submission/properties behavior, responsive and keyboard/accessibility behavior, JavaScript-disabled fallback, and the product-layout regression found during review.
 
 ### Package C — Cart Completeness And Progressive Enhancement
 
