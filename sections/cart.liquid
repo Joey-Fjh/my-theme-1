@@ -6,6 +6,12 @@
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
     "
     x-data="cartPage()"
+    data-shipping-msg-calculating="{{ 'cart.shipping_calculating' | t | escape }}"
+    data-shipping-msg-rates="{{ 'cart.shipping_rates' | t | escape }}"
+    data-shipping-msg-empty="{{ 'cart.shipping_no_rates' | t | escape }}"
+    data-shipping-msg-error="{{ 'cart.shipping_error' | t | escape }}"
+    data-shipping-msg-timeout="{{ 'cart.shipping_timeout' | t | escape }}"
+    data-shipping-msg-country-required="{{ 'cart.shipping_country_required' | t | escape }}"
     :class="{ 'opacity-50 pointer-events-none': $store.cart.loading }"
 >
     {%- liquid
@@ -287,40 +293,102 @@
                     {%- endcapture -%}
 
                     {%- capture shipping_html -%}
-                        <div class="space-y-6">
+                        <form
+                            class="space-y-6"
+                            data-shipping-estimate-form
+                            @submit.prevent="estimateShipping($event)"
+                            :aria-busy="shippingStatus === 'loading'"
+                        >
                             <div class="grid grid-cols-2 gap-6">
-                                <input
-                                    type="text"
-                                    name="attributes[Country]"
-                                    class="field"
-                                    placeholder="{{ 'cart.country_placeholder' | t }}"
-                                    value="{{ cart.attributes.Country | default: 'China' }}"
-                                    @change="$store.cart.update({ attributes: { Country: $event.target.value } })"
+                                <div>
+                                    <label
+                                        class="sr-only"
+                                        for="cart-shipping-country-{{ section.id }}"
+                                    >
+                                        {{- 'cart.country_placeholder' | t -}}
+                                    </label>
+                                    <input
+                                        id="cart-shipping-country-{{ section.id }}"
+                                        type="text"
+                                        name="attributes[Country]"
+                                        class="field"
+                                        placeholder="{{ 'cart.country_placeholder' | t }}"
+                                        value="{{ cart.attributes.Country | default: localization.country.name | escape }}"
+                                        required
+                                        autocomplete="country-name"
+                                    >
+                                </div>
+                                <div>
+                                    <label
+                                        class="sr-only"
+                                        for="cart-shipping-province-{{ section.id }}"
+                                    >
+                                        {{- 'cart.province_placeholder' | t -}}
+                                    </label>
+                                    <input
+                                        id="cart-shipping-province-{{ section.id }}"
+                                        type="text"
+                                        name="attributes[Province]"
+                                        class="field"
+                                        placeholder="{{ 'cart.province_placeholder' | t }}"
+                                        value="{{ cart.attributes.Province | escape }}"
+                                        autocomplete="address-level1"
+                                    >
+                                </div>
+                            </div>
+
+                            <div>
+                                <label
+                                    class="sr-only"
+                                    for="cart-shipping-zip-{{ section.id }}"
                                 >
+                                    {{- 'cart.pincode_placeholder' | t -}}
+                                </label>
                                 <input
+                                    id="cart-shipping-zip-{{ section.id }}"
                                     type="text"
-                                    name="attributes[Province]"
+                                    name="shipping_zip"
                                     class="field"
-                                    placeholder="{{ 'cart.province_placeholder' | t }}"
-                                    value="{{ cart.attributes.Province | default: 'Anhui' }}"
-                                    @change="$store.cart.update({ attributes: { Province: $event.target.value } })"
+                                    placeholder="{{ 'cart.pincode_placeholder' | t }}"
+                                    autocomplete="postal-code"
                                 >
                             </div>
 
-                            <input
-                                type="text"
-                                name="attributes[Pincode]"
-                                class="field"
-                                placeholder="{{ 'cart.pincode_placeholder' | t }}"
-                            >
-
                             <button
-                                type="button"
+                                type="submit"
                                 class="btn-secondary w-full body-xl"
+                                data-shipping-estimate-submit
+                                :disabled="shippingStatus === 'loading'"
                             >
                                 {{ 'cart.get_estimate' | t }}
                             </button>
-                        </div>
+
+                            <div class="space-y-3" data-shipping-result>
+                                <p
+                                    class="body-sm"
+                                    role="status"
+                                    aria-live="polite"
+                                    aria-atomic="true"
+                                    x-show="shippingMessage"
+                                    x-text="shippingMessage"
+                                ></p>
+                                <ul
+                                    class="space-y-3"
+                                    aria-label="{{ 'cart.shipping_rates' | t | escape }}"
+                                    x-show="shippingStatus === 'success' && shippingRates.length > 0"
+                                >
+                                    <template
+                                        x-for="(rate, index) in shippingRates"
+                                        :key="(rate.code || rate.name || 'rate') + '-' + index"
+                                    >
+                                        <li class="flex items-baseline justify-between gap-4 body-sm">
+                                            <span x-text="shippingRateLabel(rate)"></span>
+                                            <span x-text="formatShippingPrice(rate.price)"></span>
+                                        </li>
+                                    </template>
+                                </ul>
+                            </div>
+                        </form>
                     {%- endcapture -%}
 
                     {%- assign accordion_contents = note_html
