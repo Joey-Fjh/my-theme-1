@@ -120,6 +120,7 @@
         RELATEDPRODUCTS: 'relatedProducts',
         NEWSLETTERBANNER: 'newsletterBanner',
         NEWSLETTEROVERLAY: 'newsletterOverlay',
+        CARTPAGE: 'cartPage',
         CARTOVERLAY: 'cartOverlay',
         CARDGALLERY: 'cardGallery',
         PRODUCTCARD: 'productCard',

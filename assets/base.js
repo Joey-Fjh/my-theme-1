@@ -477,8 +477,8 @@
                             } catch (_) {
                                 /* ignore parse errors */
                             }
-                            Stores.cart.init(initialCartData);
                             window.Alpine.store('cart', Stores.cart);
+                            window.Alpine.store('cart').hydrate(initialCartData);
                         }
                     }
 
@@ -517,6 +517,7 @@
                         Factory.register?.(Comps.RELATEDPRODUCTS, Comps.relatedProducts);
                         Factory.register?.(Comps.NEWSLETTERBANNER, Comps.newsletterBanner);
                         Factory.register?.(Comps.NEWSLETTEROVERLAY, Comps.newsletterOverlay);
+                        Factory.register?.(Comps.CARTPAGE, Comps.cartPage);
                         Factory.register?.(Comps.CARTOVERLAY, Comps.cartOverlay);
                         Factory.register?.(Comps.CARDGALLERY, Comps.cardGallery);
                         Factory.register?.(Comps.PRODUCTCARD, Comps.productCard);

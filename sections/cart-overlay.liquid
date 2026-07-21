@@ -104,35 +104,96 @@
                                     x-text="item.product_title || item.title"
                                 >
                                 </a>
+                                <template x-if="normalizedOptions(item).length > 0">
+                                    <ul class="mt-1 body-xs text-theme-text/80">
+                                        <template
+                                            x-for="option in normalizedOptions(item)"
+                                            :key="option.key"
+                                        >
+                                            <li
+                                                x-text="option.name ? (option.name + ': ' + option.value) : option.value"
+                                            ></li>
+                                        </template>
+                                    </ul>
+                                </template>
                                 <template x-if="item.selling_plan_allocation && item.selling_plan_allocation.selling_plan">
                                     <p class="mt-1 body-xs text-theme-text/80" x-text="'{{ 'cart.selling_plan_label' | t | escape }}: ' + item.selling_plan_allocation.selling_plan.name"></p>
                                 </template>
-                                <template x-if="item.original_line_price > item.final_line_price">
-                                    <div class="mt-auto pt-4">
-                                        <p>
-                                            <span class="text-theme-text/80 line-through" x-text="formatMoney(item.original_line_price)"></span>
-                                            <span class="ms-1" x-text="formatMoney(item.final_line_price)"></span>
-                                        </p>
-                                        <template x-if="unitPriceText(item)">
-                                            <p class="mt-1 body-xs text-theme-text/80" x-text="unitPriceText(item)"></p>
-                                        </template>
-                                        <template x-if="item.line_level_discount_allocations && item.line_level_discount_allocations.length > 0">
-                                            <ul class="mt-1">
-                                                <template x-for="alloc in item.line_level_discount_allocations" :key="alloc.discount_application.title">
-                                                    <li class="body-xs text-theme-text/80" x-text="alloc.discount_application.title + ' (-' + formatMoney(alloc.amount) + ')'"></li>
+                                <template x-if="publicProperties(item).length > 0">
+                                    <ul class="mt-1 body-xs text-theme-text/80">
+                                        <template
+                                            x-for="property in publicProperties(item)"
+                                            :key="property.key"
+                                        >
+                                            <li>
+                                                <span x-text="property.label + ':'"></span>
+                                                <template x-if="property.uploadUrl">
+                                                    <a
+                                                        class="ms-1 interactive-link"
+                                                        :href="property.uploadUrl"
+                                                        x-text="property.fileName || property.value"
+                                                    ></a>
                                                 </template>
-                                            </ul>
+                                                <template x-if="!property.uploadUrl">
+                                                    <span class="ms-1" x-text="property.value"></span>
+                                                </template>
+                                            </li>
                                         </template>
-                                    </div>
+                                    </ul>
                                 </template>
-                                <template x-if="!(item.original_line_price > item.final_line_price)">
-                                    <div class="mt-auto pt-4">
+                                <div class="mt-auto pt-4">
+                                    <p class="body-xs text-theme-text/80">
+                                        <template x-if="Number(item.original_price || 0) > Number(item.final_price || 0)">
+                                            <span>
+                                                <span
+                                                    class="line-through"
+                                                    x-text="formatMoney(item.original_price)"
+                                                ></span>
+                                                <span
+                                                    class="ms-1"
+                                                    x-text="formatMoney(item.final_price)"
+                                                ></span>
+                                            </span>
+                                        </template>
+                                        <template x-if="!(Number(item.original_price || 0) > Number(item.final_price || 0))">
+                                            <span x-text="perUnitPrice(item)"></span>
+                                        </template>
+                                    </p>
+                                    <template x-if="item.original_line_price > item.final_line_price">
+                                        <p>
+                                            <span
+                                                class="text-theme-text/80 line-through"
+                                                x-text="formatMoney(item.original_line_price)"
+                                            ></span>
+                                            <span
+                                                class="ms-1"
+                                                x-text="formatMoney(item.final_line_price)"
+                                            ></span>
+                                        </p>
+                                    </template>
+                                    <template x-if="!(item.original_line_price > item.final_line_price)">
                                         <p x-text="linePrice(item)"></p>
-                                        <template x-if="unitPriceText(item)">
-                                            <p class="mt-1 body-xs text-theme-text/80" x-text="unitPriceText(item)"></p>
-                                        </template>
-                                    </div>
-                                </template>
+                                    </template>
+                                    <template x-if="unitPriceText(item)">
+                                        <p
+                                            class="mt-1 body-xs text-theme-text/80"
+                                            x-text="unitPriceText(item)"
+                                        ></p>
+                                    </template>
+                                    <template x-if="item.line_level_discount_allocations && item.line_level_discount_allocations.length > 0">
+                                        <ul class="mt-1">
+                                            <template
+                                                x-for="alloc in item.line_level_discount_allocations"
+                                                :key="alloc.discount_application.title"
+                                            >
+                                                <li
+                                                    class="body-xs text-theme-text/80"
+                                                    x-text="alloc.discount_application.title + ' (-' + formatMoney(alloc.amount) + ')'"
+                                                ></li>
+                                            </template>
+                                        </ul>
+                                    </template>
+                                </div>
                             </div>
 
                             <div class="flex shrink-0 flex-col items-end justify-between py-1">
@@ -140,6 +201,7 @@
                                     type="button"
                                     class="cart-overlay__remove-button"
                                     @click="remove(item)"
+                                    :disabled="$store.cart.loading || pending[item.key]"
                                     data-remove-item-label="{{ 'accessibility.remove_item' | t: item: '__ITEM__' | escape }}"
                                     :aria-label="$el.dataset.removeItemLabel.replace('__ITEM__', item.product_title || item.title || $el.closest('li').dataset.cartItemFallback)"
                                 >
@@ -151,7 +213,7 @@
                                         type="button"
                                         class="quantity-selector__button"
                                         @click="decrement(item)"
-                                        :disabled="!canDecrement(item)"
+                                        :disabled="$store.cart.loading || pending[item.key] || !canDecrement(item)"
                                         aria-label="{{ 'accessibility.decrease_quantity' | t }}"
                                     >
                                         {% render 'icons', icon: 'icon-minus' %}
@@ -167,7 +229,7 @@
                                         type="button"
                                         class="quantity-selector__button"
                                         @click="increment(item)"
-                                        :disabled="!canIncrement(item)"
+                                        :disabled="$store.cart.loading || pending[item.key] || !canIncrement(item)"
                                         aria-label="{{ 'accessibility.increase_quantity' | t }}"
                                     >
                                         {% render 'icons', icon: 'icon-plus' %}

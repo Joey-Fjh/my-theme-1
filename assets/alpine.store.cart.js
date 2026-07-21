@@ -15,6 +15,7 @@
         loading: false,
         hasFetched: false,
         fetchError: null,
+        _registeredSectionIds: [],
 
         _errorMessages: {
             generic: '',
@@ -34,11 +35,13 @@
             return window.ShopifyHttp;
         },
 
+        init() {},
+
         /**
          * Hydrate store from initial payload (pure function, no DOM coupling).
          * @param {Object} data - Initial cart state
          */
-        init(data = {}) {
+        hydrate(data = {}) {
             if (!data || typeof data !== 'object') return;
 
             this.items = Array.isArray(data.items) ? data.items : [];
@@ -55,6 +58,28 @@
                 typeof data.item_count === 'number' ||
                 typeof data.total_price === 'number';
             this.fetchError = null;
+        },
+
+        registerSection(sectionId) {
+            const normalized = typeof sectionId === 'string' ? sectionId.trim() : '';
+            if (!normalized) return () => {};
+
+            if (!this._registeredSectionIds.includes(normalized)) {
+                this._registeredSectionIds.push(normalized);
+            }
+
+            return () => {
+                this._registeredSectionIds = this._registeredSectionIds.filter(
+                    (id) => id !== normalized,
+                );
+            };
+        },
+
+        _resolveSections(sections = []) {
+            const requested = Array.isArray(sections) ? sections : [];
+            return [...new Set([...requested, ...this._registeredSectionIds])].filter(
+                (sectionId) => typeof sectionId === 'string' && sectionId.trim(),
+            );
         },
 
         /**
@@ -114,8 +139,9 @@
             this.loading = true;
             const body = { items };
 
-            if (Array.isArray(sections) && sections.length > 0) {
-                body.sections = sections.join(',');
+            const resolvedSections = this._resolveSections(sections);
+            if (resolvedSections.length > 0) {
+                body.sections = resolvedSections.join(',');
             }
 
             return Http.postJSON('/cart/add.js', body, {
@@ -150,8 +176,9 @@
             } else {
                 bodyData.line = Number(lineOrId);
             }
-            if (Array.isArray(sections) && sections.length > 0) {
-                bodyData.sections = sections.join(',');
+            const resolvedSections = this._resolveSections(sections);
+            if (resolvedSections.length > 0) {
+                bodyData.sections = resolvedSections.join(',');
             }
             return Http.postJSON('/cart/change.js', bodyData, {
                 credentials: 'same-origin',
@@ -197,8 +224,9 @@
             if (!Http?.postJSON) return this._handleError(new Error('Http client unavailable'));
             this.loading = true;
             const bodyData = {};
-            if (Array.isArray(sections) && sections.length > 0) {
-                bodyData.sections = sections.join(',');
+            const resolvedSections = this._resolveSections(sections);
+            if (resolvedSections.length > 0) {
+                bodyData.sections = resolvedSections.join(',');
             }
             return Http.postJSON('/cart/clear.js', bodyData, {
                 credentials: 'same-origin',

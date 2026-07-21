@@ -298,6 +298,8 @@ Ownership:
 
 ### BLK-06 — Cart Page Is Missing Required Line-Item And Empty-State Behavior
 
+Status: **owner-reviewed and resolved in Package C** (2026-07-21). The separate `CART-SHIPPING-01` follow-up below covers the pre-existing non-functional shipping estimator and does not reopen the BLK-06 line-item acceptance.
+
 Official expectation:
 
 - Cart must display line-item title, unit price, image, final price, quantity, and option values.
@@ -1216,11 +1218,43 @@ Manual gate: **passed by owner** (2026-07-21), covering the Package B gift-card 
 
 ### Package C — Cart Completeness And Progressive Enhancement
 
+Status: **owner-reviewed and accepted for local commit** (2026-07-21). This closes the Package C review gate only and does not declare the whole theme ready for Theme Store submission.
+
 Scope: BLK-06 only. BLK-01 unit-price markup may be consumed here, but this package must not redesign the cart.
 
 Why separate: cart page and drawer layout, line-item semantics, empty state, quantity/remove/update behavior, checkout, and no-JavaScript fallback have a large regression surface and need an independent rollback boundary.
 
-Manual gate: empty and populated carts, variant options, properties, selling plans, discounts, per-unit/final/line prices, quantity and remove, page/drawer synchronization, checkout, accelerated checkout, mobile layout, and JavaScript-disabled form actions.
+Implementation and acceptance notes:
+
+- Cart page keeps the existing linked product title, renders non-default variant options separately, displays localized `cart.empty`, and preserves Order Summary plus the existing Shop More action.
+- Cart page and drawer render per-unit `final_price`, conditional `original_price`, existing final/original line totals, selling plans, discounts, and Package A measurement unit pricing without combining unit and line totals.
+- Both surfaces render non-blank public line-item properties, hide every private key beginning with `_`, escape labels and values, and link only conservatively validated `/uploads/` values.
+- The cart page remains Liquid-rendered; the drawer remains Alpine-rendered from `/cart.js`. No cross-runtime Liquid abstraction was introduced.
+- `$store.cart` remains the authoritative mutation/state layer. Registered cart section IDs ensure page and drawer quantity/remove mutations refresh both surfaces and the header count without requiring the drawer to be opened first.
+- Owner storefront review found no remaining Package C line-item or synchronization issue. The pre-existing Estimate Shipping control was confirmed non-functional and is tracked separately as `CART-SHIPPING-01`.
+- Final validation passed: Shopify MCP `validate_theme`, `npm.cmd run lint:i18n`, `npm.cmd run lint:theme`, `npm.cmd run lint`, `npm.cmd test`, and `git diff --check`.
+
+Manual gate: **passed by owner for the implemented Package C scope** (2026-07-21), including empty/populated cart presentation, variant options, line-item properties, prices, and page/drawer/header synchronization. Store fixtures unavailable during review remain part of the final launch evidence gate.
+
+#### Follow-up — CART-SHIPPING-01 Cart Shipping Rate Estimator
+
+Status: **approved for implementation** (2026-07-21). Keep this as a separate rollback domain from Package C.
+
+Repository evidence:
+
+- `sections/cart.liquid` renders Country, Province, Pincode, and Get Estimate controls.
+- Country and Province currently write cart attributes; Pincode is not persisted.
+- Get Estimate has no click/submit behavior and no Shopify shipping-rates request.
+- Estimate Total currently displays `cart.total_price`, not a total derived from a shipping-rate response.
+
+Required outcome:
+
+- Replace the inert control with a functional Shopify shipping-rate estimate flow using the existing runtime architecture.
+- Validate destination input, expose loading/success/empty/error states accessibly, and render localized rate names and prices without implying that a rate is selected or added to the cart total.
+- Preserve cart note, cart mutations, checkout, cart page/drawer synchronization, and JavaScript-disabled checkout reachability.
+- Do not modify merchant-owned configuration, `templates/*.json`, or redesign the cart.
+
+Manual gate: valid and invalid destinations, no-rate and API-error responses, repeated submissions, keyboard/status announcements, mobile widths, cart mutations before/after estimation, note persistence, checkout, and JavaScript-disabled fallback.
 
 ### Package D — Search Facets
 
