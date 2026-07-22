@@ -1218,7 +1218,7 @@ Manual gate: **passed by owner** (2026-07-21), covering the Package B gift-card 
 
 ### Package C — Cart Completeness And Progressive Enhancement
 
-Status: **owner-reviewed and accepted for local commit** (2026-07-21). This closes the Package C review gate only and does not declare the whole theme ready for Theme Store submission.
+Status: **owner-reviewed and committed** (2026-07-21). Commit: `931fbf1`. This closes the Package C review gate only and does not declare the whole theme ready for Theme Store submission.
 
 Scope: BLK-06 only. BLK-01 unit-price markup may be consumed here, but this package must not redesign the cart.
 
@@ -1238,23 +1238,22 @@ Manual gate: **passed by owner for the implemented Package C scope** (2026-07-21
 
 #### Follow-up — CART-SHIPPING-01 Cart Shipping Rate Estimator
 
-Status: **approved for implementation** (2026-07-21). Keep this as a separate rollback domain from Package C.
+Status: **owner-reviewed and committed** (2026-07-22). Implementation commit: `843fbf6`. Render-boundary regression fix: `47b1de4`. Keep this as a separate rollback domain from Package C.
 
-Repository evidence:
+Implementation and acceptance notes:
 
-- `sections/cart.liquid` renders Country, Province, Pincode, and Get Estimate controls.
-- Country and Province currently write cart attributes; Pincode is not persisted.
-- Get Estimate has no click/submit behavior and no Shopify shipping-rates request.
-- Estimate Total currently displays `cart.total_price`, not a total derived from a shipping-rate response.
+- The existing cart layout and Estimate Total semantics are preserved. Estimate Total remains `cart.total_price`; returned rates are informational and are not presented as selected or added to the cart total.
+- Country, province, and postal code remain local form values until Get Estimate is submitted. Editing the fields does not mutate cart attributes or issue cart requests.
+- Submit uses `ShopifyHttp` to POST `cart/prepare_shipping_rates.json`, then polls `cart/async_shipping_rates.json` with bounded attempts, abort handling, stale-request protection, and cleanup on Alpine component destruction.
+- The estimator exposes declarative Alpine `idle`, `loading`, `success`, `empty`, and `error` states. Localized status messages use a polite live region; returned rate labels and formatted prices render through `x-text`, never `x-html`.
+- Cart note, cart quantity/remove synchronization, header count, drawer state, checkout, and JavaScript-disabled checkout reachability remain unchanged.
+- Review found a render-boundary regression in the original implementation: cart accordion HTML was serialized through a pipe-delimited Liquid string while the shipping `x-for` key contained JavaScript `||`. Liquid `split: '|'` truncated the `<template>` output, causing the browser and Theme Editor to lose the normal footer DOM.
+- Commit `47b1de4` replaces that cart-only delimiter contract with `snippets/cart-summary-accordion.liquid`. Note and shipping HTML are passed as separate named Liquid arguments while the existing accordion classes, Alpine state, panel indexes, default-open state, icons, ARIA, and visual layout are preserved. The shared `accordion` snippet API was not extended.
+- Rendered regression proof after the fix: 37 opening and 37 closing `<template>` tags, the complete shipping key expression is present, and `</main>` closes before the footer section group.
+- Final validation passed: Shopify MCP `validate_theme`, `npm.cmd run lint`, `npm.cmd test` (137 files, 0 offenses), `node --check assets/alpine.components.overlays.js`, and `git diff --check`.
+- No merchant-owned configuration, `templates/*.json`, footer implementation, generated/vendor asset, or visual redesign was included in either commit.
 
-Required outcome:
-
-- Replace the inert control with a functional Shopify shipping-rate estimate flow using the existing runtime architecture.
-- Validate destination input, expose loading/success/empty/error states accessibly, and render localized rate names and prices without implying that a rate is selected or added to the cart total.
-- Preserve cart note, cart mutations, checkout, cart page/drawer synchronization, and JavaScript-disabled checkout reachability.
-- Do not modify merchant-owned configuration, `templates/*.json`, or redesign the cart.
-
-Manual gate: valid and invalid destinations, no-rate and API-error responses, repeated submissions, keyboard/status announcements, mobile widths, cart mutations before/after estimation, note persistence, checkout, and JavaScript-disabled fallback.
+Manual gate: owner storefront review passed for local-only address editing, Get Estimate submission/no-rate behavior, preserved cart interactions and layout, and footer/Theme Editor recovery after the delimiter fix. Carrier-rate success, invalid-destination/API-error timing, repeated-submit races, screen-reader announcements, full responsive coverage, and JavaScript-disabled smoke testing remain part of the final launch evidence gate where the required store/network fixtures were unavailable.
 
 ### Package D — Search Facets
 
