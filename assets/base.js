@@ -500,6 +500,7 @@
                         Factory.register?.(Comps.COUNTDOWNTIMER, Comps.countdownTimer);
                         Factory.register?.(Comps.SECTIONPAGINATION, Comps.sectionPagination);
                         Factory.register?.(Comps.COLLECTIONFILTERS, Comps.collectionFilters);
+                        Factory.register?.(Comps.SEARCHFILTERS, Comps.searchFilters);
                         Factory.register?.(
                             Comps.COLLECTIONFILTERFIELD,
                             Comps.collectionFilterField,

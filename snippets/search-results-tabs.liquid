@@ -3,211 +3,302 @@
 
     Purpose:
     - Keep `sections/search.liquid` focused on orchestration and query params.
-    - Render tab header, panel, and pagination for server-side search results.
+    - Render tab header, product filter controls, panel, and pagination.
+    - Product results reuse shared storefront filtering (facets + drawer). Search Sort is out of scope.
 
-    Parameters:
-    -
+    Refresh boundaries (owned by `searchFilters`):
+    - Product facet/pagination: `[data-search-results-content]` + `[data-search-drawer-body]`
+      (tabs and filter trigger stay mounted so focus return remains valid).
+    - Result-type changes: `[data-search-type-shell]` + `[data-search-drawer-shell]` so the
+      complete `tabControl()` Alpine instance is recreated with fresh tab/panel registrations.
 
-    @param {string} section_id - Current section id, used by `sectionPagination(...)`.
-
-    -
-
-    @param {number} active_tab_index - Initial active tab index derived from `request.params.type`.
-
-    -
-
+    @param {string} section_id - Current section id, used by `searchFilters(...)`.
+    @param {number} active_tab_index - Initial active tab index derived from `search.types`.
     @param {string} products_url - Search URL targeting product type.
-
-    -
-
     @param {string} articles_url - Search URL targeting article type.
-
-    -
-
     @param {string} pages_url - Search URL targeting page type.
-
-    -
-
-    @param {string} param_type - Active result type (`product`, `article`, `page`) for rendering result list.
-
-    -
-
+    @param {string} param_type - Active result type (`product`, `article`, `page`) from `search.types`.
     @param {number} search_per_page - Pagination size.
     @param {string} [mobile_card_columns] - Mobile product grid columns (`1` or `2`).
     @param {string} [color_scheme] - Color scheme id passed to product cards.
 
-    Dependencies: - Expects global `search` object and `sectionPagination` Alpine component to be
+    Dependencies: - Expects global `search` object and `searchFilters` Alpine component to be
     available.
 {% enddoc %}
 
 {%- liquid
     assign mobile_card_columns = mobile_card_columns | default: '2'
+    assign is_product_results = false
+    assign show_product_filters = false
+
+    if param_type == 'product'
+        assign is_product_results = true
+        if search.filters.size > 0
+            assign show_product_filters = true
+        endif
+    endif
 -%}
 
 <div
     class="search-results-tabs w-full"
-    style="--body-size-custom: 24px; --body-size-custom-pc: 32px;"
     data-pagination-section-id="{{ section_id }}"
-    data-pagination-selectors='["[role=tablist]","[data-search-tabs-panel]"]'
-    x-data="sectionPagination()"
+    data-pagination-selectors='["[data-search-type-shell]","[data-search-drawer-shell]"]'
+    data-search-result-type="{{ param_type | escape }}"
+    x-data="searchFilters()"
 >
-    {% capture results_tab_header %}
-        <span class="hidden" x-init="$nextTick(() => { setActive({{ active_tab_index }}) })"></span>
+    <div
+        class="sr-only"
+        aria-live="polite"
+        aria-atomic="true"
+        data-search-results-live
+    ></div>
 
-        <a
-            href="{{ products_url }}"
-            role="tab"
-            x-data="{ index: null }"
-            x-init="index = registerTab($el);"
-            :id="`tab-${index}`"
-            aria-controls="search-results-panel"
-            @click.prevent="loadUrl($el.href); setActive(index)"
-            @popstate.window="isUrlMatch($el.href) && setActive(index)"
-            :tabindex="isActive(index) ? 0 : -1"
-            :aria-selected="isActive(index)"
-            class="search-results-tabs__tab tab-nav-item tab-nav-item--search whitespace-nowrap"
-            :class="{ 'is-active': isActive(index) }"
-        >
-            {{ 'search.products' | t }}
-        </a>
+    <div
+        class="tab-control-underlined w-full"
+        data-search-type-shell
+        data-tab-initial-strategy="first"
+        data-tab-scroll-mode="always"
+        x-data="tabControl()"
+    >
+        <div class="w-full">
+            <div
+                role="tablist"
+                aria-label="{{ 'accessibility.tab_control' | t }}"
+                class="tab-header-underlined mx-auto flex max-w-3xl flex-nowrap items-center justify-center gap-4 border-none body-lg text-theme-text uppercase pc:flex-nowrap pc:gap-6 pc:overflow-x-auto"
+            >
+                <span
+                    class="hidden"
+                    x-init="$nextTick(() => { setActive({{ active_tab_index }}) })"
+                ></span>
 
-        <a
-            href="{{ articles_url }}"
-            role="tab"
-            x-data="{ index: null }"
-            x-init="index = registerTab($el);"
-            :id="`tab-${index}`"
-            aria-controls="search-results-panel"
-            @click.prevent="loadUrl($el.href); setActive(index)"
-            @popstate.window="isUrlMatch($el.href) && setActive(index)"
-            :tabindex="isActive(index) ? 0 : -1"
-            :aria-selected="isActive(index)"
-            class="search-results-tabs__tab tab-nav-item tab-nav-item--search whitespace-nowrap"
-            :class="{ 'is-active': isActive(index) }"
-        >
-            {{ 'search.articles' | t }}
-        </a>
+                <a
+                    href="{{ products_url }}"
+                    role="tab"
+                    x-data="{ index: null }"
+                    x-init="index = registerTab($el);"
+                    :id="`tab-${index}`"
+                    aria-controls="search-results-panel"
+                    @click.prevent="loadUrl($el.href); setActive(index)"
+                    @popstate.window="isUrlMatch($el.href) && setActive(index)"
+                    :tabindex="isActive(index) ? 0 : -1"
+                    :aria-selected="isActive(index)"
+                    class="search-results-tabs__tab tab-nav-item tab-nav-item--search whitespace-nowrap"
+                    :class="{ 'is-active': isActive(index) }"
+                >
+                    {{ 'search.products' | t }}
+                </a>
 
-        <a
-            href="{{ pages_url }}"
-            role="tab"
-            x-data="{ index: null }"
-            x-init="index = registerTab($el);"
-            :id="`tab-${index}`"
-            aria-controls="search-results-panel"
-            @click.prevent="loadUrl($el.href); setActive(index)"
-            @popstate.window="isUrlMatch($el.href) && setActive(index)"
-            :tabindex="isActive(index) ? 0 : -1"
-            :aria-selected="isActive(index)"
-            class="search-results-tabs__tab tab-nav-item tab-nav-item--search whitespace-nowrap"
-            :class="{ 'is-active': isActive(index) }"
-        >
-            {{ 'search.pages' | t }}
-        </a>
-    {% endcapture %}
+                <a
+                    href="{{ articles_url }}"
+                    role="tab"
+                    x-data="{ index: null }"
+                    x-init="index = registerTab($el);"
+                    :id="`tab-${index}`"
+                    aria-controls="search-results-panel"
+                    @click.prevent="loadUrl($el.href); setActive(index)"
+                    @popstate.window="isUrlMatch($el.href) && setActive(index)"
+                    :tabindex="isActive(index) ? 0 : -1"
+                    :aria-selected="isActive(index)"
+                    class="search-results-tabs__tab tab-nav-item tab-nav-item--search whitespace-nowrap"
+                    :class="{ 'is-active': isActive(index) }"
+                >
+                    {{ 'search.articles' | t }}
+                </a>
 
-    {% capture results_tab_content %}
-        <div
-            role="tabpanel"
-            id="search-results-panel"
-            x-data="{ index: null }"
-            x-init="index = registerPanel($el)"
-            class="relative mt-6 w-full"
-            data-search-tabs-panel
-        >
-            {% render 'loading', overlay: true, size: 'large' %}
-
-            {% unless search.results_count == 0 %}
-                <div class="mb-6 text-theme-text">
-                    <p class="body-sm tracking-[0.16em] uppercase">
-                        <span>
-                            {{ 'search.search_for' | t }} <span class="truncate body-sm">"{{ search.terms | escape }}"</span> : {{ search.results_count }}
-                        </span>
-                    </p>
-                </div>
-            {% endunless %}
-
-            {% paginate search.results by search_per_page %}
-                {%- if search.results_count == 0 -%}
-                    <div class="py-16 text-center text-theme-text">
-                        <p>{{ 'search.no_results_for' | t }} "{{ search.terms | escape }}"</p>
-                    </div>
-                {%- else -%}
-                    {%- case param_type -%}
-                        {%- when 'product' -%}
-                            <div
-                                class="product-grid"
-                                x-data="motionRevealSection()"
-                                data-motion-section
-                                data-motion-cascade
-                                style="
-                                    --product-grid-columns: 4;
-                                    --product-grid-columns-mobile: {{ mobile_card_columns }};
-                                    --motion-reveal-stagger: 150ms;
-                                    --motion-reveal-distance: 3rem;
-                                "
-                            >
-                                {%- for item in search.results -%}
-                                    {%- if item.object_type == 'product' -%}
-                                        {%- assign mobile_items = mobile_card_columns | plus: 0 -%}
-                                        {% render 'product-card',
-                                            product: item,
-                                            mobile_items: mobile_items,
-                                            pc_items: 4,
-                                            class: 'h-full',
-                                            scope_id: section_id,
-                                            color_scheme: color_scheme
-                                        %}
-                                    {%- endif -%}
-                                {%- endfor -%}
-                            </div>
-
-                        {%- when 'article' -%}
-                            <ul class="space-y-4">
-                                {%- for item in search.results -%}
-                                    {%- if item.object_type == 'article' -%}
-                                        <li class="border-b border-theme-border/20 pb-3">
-                                            <a class="search-results-tabs__result-link interactive-link" href="{{ item.url }}">{{ item.title }}</a>
-                                        </li>
-                                    {%- endif -%}
-                                {%- endfor -%}
-                            </ul>
-
-                        {%- when 'page' -%}
-                            <ul class="space-y-4">
-                                {%- for item in search.results -%}
-                                    {%- if item.object_type == 'page' -%}
-                                        <li class="border-b border-theme-border/20 pb-3">
-                                            <a class="search-results-tabs__result-link interactive-link" href="{{ item.url }}">{{ item.title }}</a>
-                                        </li>
-                                    {%- endif -%}
-                                {%- endfor -%}
-                            </ul>
-                    {%- endcase -%}
-
-                    <div
-                        class="mt-10"
-                        @click="
-                            let link = $event.target.closest('[data-pagination-nav] a');
-                            if (link) {
-                                $event.preventDefault();
-                                loadUrl(link.href);
-                            }
-                        "
-                    >
-                        {% render 'pagination', paginate_obj: paginate %}
-                    </div>
-                {%- endif -%}
-            {% endpaginate %}
+                <a
+                    href="{{ pages_url }}"
+                    role="tab"
+                    x-data="{ index: null }"
+                    x-init="index = registerTab($el);"
+                    :id="`tab-${index}`"
+                    aria-controls="search-results-panel"
+                    @click.prevent="loadUrl($el.href); setActive(index)"
+                    @popstate.window="isUrlMatch($el.href) && setActive(index)"
+                    :tabindex="isActive(index) ? 0 : -1"
+                    :aria-selected="isActive(index)"
+                    class="search-results-tabs__tab tab-nav-item tab-nav-item--search whitespace-nowrap"
+                    :class="{ 'is-active': isActive(index) }"
+                >
+                    {{ 'search.pages' | t }}
+                </a>
+            </div>
         </div>
-    {% endcapture %}
 
-    {%- render 'tab-control',
-        type: 'underlined',
-        initialTabStrategy: 'first',
-        header_outer_class: 'w-full',
-        header_class: 'body-size-custom mx-auto max-w-3xl flex-wrap items-center justify-center gap-8 border-none tracking-[0.16em] text-theme-text uppercase',
-        tab_header: results_tab_header,
-        tab_content: results_tab_content
-    -%}
+        <div data-search-chrome class="w-full">
+            {%- if is_product_results and show_product_filters -%}
+                <form id="CollectionFiltersForm" class="hidden" @change="onChange()">
+                    <input type="hidden" name="q" value="{{ search.terms | escape }}">
+                    <input type="hidden" name="type" value="product">
+                    <input type="hidden" name="options[prefix]" value="last">
+                </form>
+
+                <div class="mt-6 flex items-center justify-start gap-4">
+                    <button
+                        type="button"
+                        data-search-filter-trigger
+                        aria-haspopup="dialog"
+                        @click="$store.dialog.open('collection-filters')"
+                        class="collection-toolbar__action flex shrink-0 cursor-pointer items-center gap-3"
+                    >
+                        {% render 'icons', icon: 'icon-filter' %}
+                        <span>{{ 'collections.filter' | t }}</span>
+                    </button>
+                </div>
+            {%- endif -%}
+        </div>
+
+        <div data-search-results-content class="tab-content-underlined w-full">
+            <div
+                class="sr-only"
+                data-search-results-status
+            >
+                {%- if search.results_count == 0 -%}
+                    {{ 'search.no_results_html' | t: terms: search.terms }}
+                {%- else -%}
+                    {{
+                        'search.results_for_html'
+                        | t: count: search.results_count, terms: search.terms
+                    }}
+                {%- endif -%}
+            </div>
+
+            <div
+                role="tabpanel"
+                id="search-results-panel"
+                x-data="{ index: null }"
+                x-init="index = registerPanel($el)"
+                class="relative mt-6 w-full"
+                data-search-tabs-panel
+            >
+                {% render 'loading', overlay: true, size: 'large' %}
+
+                {% unless search.results_count == 0 %}
+                    <div class="mb-6 text-theme-text">
+                        <p class="body-sm tracking-[0.16em] uppercase">
+                            <span>
+                                {{ 'search.search_for' | t }}
+                                <span class="truncate body-sm">"{{ search.terms | escape }}"</span>
+                                : {{ search.results_count }}
+                            </span>
+                        </p>
+                    </div>
+                {% endunless %}
+
+                {% paginate search.results by search_per_page %}
+                    {%- if search.results_count == 0 -%}
+                        <div class="py-16 text-center text-theme-text">
+                            <p>{{ 'search.no_results_for' | t }} "{{ search.terms | escape }}"</p>
+                        </div>
+                    {%- else -%}
+                        {%- case param_type -%}
+                            {%- when 'product' -%}
+                                <div
+                                    class="product-grid"
+                                    x-data="motionRevealSection()"
+                                    data-motion-section
+                                    data-motion-cascade
+                                    style="
+                                        --product-grid-columns: 4;
+                                        --product-grid-columns-mobile: {{ mobile_card_columns }};
+                                        --motion-reveal-stagger: 150ms;
+                                        --motion-reveal-distance: 3rem;
+                                    "
+                                >
+                                    {%- for item in search.results -%}
+                                        {%- if item.object_type == 'product' -%}
+                                            {%- assign mobile_items = mobile_card_columns
+                                                | plus: 0
+                                            -%}
+                                            <div class="group">
+                                                {% render 'product-card',
+                                                    product: item,
+                                                    mobile_items: mobile_items,
+                                                    pc_items: 4,
+                                                    scope_id: section_id,
+                                                    color_scheme: color_scheme
+                                                %}
+                                            </div>
+                                        {%- endif -%}
+                                    {%- endfor -%}
+                                </div>
+
+                            {%- when 'article' -%}
+                                <ul class="space-y-4">
+                                    {%- for item in search.results -%}
+                                        {%- if item.object_type == 'article' -%}
+                                            <li class="border-b border-theme-border/20 pb-3">
+                                                <a
+                                                    class="search-results-tabs__result-link interactive-link"
+                                                    href="{{ item.url }}"
+                                                >
+                                                    {{- item.title -}}
+                                                </a>
+                                            </li>
+                                        {%- endif -%}
+                                    {%- endfor -%}
+                                </ul>
+
+                            {%- when 'page' -%}
+                                <ul class="space-y-4">
+                                    {%- for item in search.results -%}
+                                        {%- if item.object_type == 'page' -%}
+                                            <li class="border-b border-theme-border/20 pb-3">
+                                                <a
+                                                    class="search-results-tabs__result-link interactive-link"
+                                                    href="{{ item.url }}"
+                                                >
+                                                    {{- item.title -}}
+                                                </a>
+                                            </li>
+                                        {%- endif -%}
+                                    {%- endfor -%}
+                                </ul>
+                        {%- endcase -%}
+
+                        <div
+                            class="mt-10"
+                            @click="
+                                let link = $event.target.closest('[data-pagination-nav] a');
+                                if (link) {
+                                    $event.preventDefault();
+                                    loadUrl(link.href);
+                                }
+                            "
+                        >
+                            {% render 'pagination', paginate_obj: paginate %}
+                        </div>
+                    {%- endif -%}
+                {% endpaginate %}
+            </div>
+        </div>
+    </div>
+
+    <div data-search-drawer-shell>
+        {%- if show_product_filters -%}
+            {%- capture drawer_content -%}
+                <div data-search-drawer-body class="h-full min-h-0">
+                    {%- render 'filters-drawer',
+                        filter_source: search,
+                        scope_id: section_id
+                    -%}
+                </div>
+            {%- endcapture -%}
+
+            {%- assign close_label = 'accessibility.close_filters_drawer' | t -%}
+            {%- render 'ui-dialog',
+                id: 'collection-filters',
+                type: 'drawer',
+                layer: 'drawer',
+                position: 'left',
+                top_class: 'top-[var(--announcement-bar-height)] pc:top-0',
+                color_scheme: color_scheme,
+                drawer_motion_sheet: true,
+                mobile_layout: 'inset',
+                drawer_desktop_layout: true,
+                show_close_button: false,
+                close_label: close_label,
+                content: drawer_content
+            -%}
+        {%- endif -%}
+    </div>
 </div>

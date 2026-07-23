@@ -68,11 +68,17 @@
         <div class="layout container-page overflow-visible!">
             {%- liquid
                 assign q = search.terms | default: '' | strip | url_encode
-                assign param_type = request.params.type | default: '' | downcase | strip
 
-                if param_type != 'product' and param_type != 'article' and param_type != 'page'
-                    assign param_type = 'product'
-                endif
+                # Current result type comes from search.types (driven by the type query param),
+                # not request.params.type, which is unreliable after Section Rendering refreshes.
+                assign param_type = 'product'
+                for search_type in search.types
+                    assign type_candidate = search_type | downcase | strip
+                    if type_candidate == 'product' or type_candidate == 'article' or type_candidate == 'page'
+                        assign param_type = type_candidate
+                        break
+                    endif
+                endfor
 
                 assign active_tab_index = 0
                 if param_type == 'article'

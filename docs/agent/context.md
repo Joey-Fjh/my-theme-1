@@ -340,6 +340,8 @@ Ownership:
 
 ### BLK-07 — Faceted Filtering Is Missing From Search
 
+Status: **owner-reviewed and resolved in Package D** (2026-07-23). The implementation and this acceptance record are intended to land together in the same owner commit. The separate `PRODUCT-CARD-RATIO-01` follow-up below covers pre-existing Product card layout consistency outside Search and does not reopen BLK-07.
+
 Official expectation:
 
 - Faceted filtering must work on both collection and search pages.
@@ -1257,11 +1259,45 @@ Manual gate: owner storefront review passed for local-only address editing, Get 
 
 ### Package D — Search Facets
 
+Status: **owner-reviewed and accepted** (2026-07-23). The Package D implementation and this acceptance record belong in the same owner commit. Do not start Package E before the separate `PRODUCT-CARD-RATIO-01` follow-up is handled.
+
 Scope: BLK-07 only.
 
 Why separate: product facets, sorting, pagination, tabs, URL history, clear-all behavior, mobile drawer accessibility, and section refresh belong to one independent search controller domain.
 
-Manual gate: OR/AND facets, price filters, sorting, pagination, empty filtered results, product/article/page tabs, Back/Forward, hard refresh, rapid requests, mobile drawer, and collection-filter regression smoke tests if shared code changes.
+Implementation and acceptance notes:
+
+- Product search results expose Shopify facets through the shared filter drawer; Article and Page results do not render Product filter controls.
+- Search Sort was removed because it is not required by BLK-07. Existing inbound `sort_by` context is preserved across Product filter, clear, and pagination actions without exposing a Search Sort control or changing Collection sorting.
+- The server-rendered active result type comes from `search.types`. Product/Article/Page switching, Back/Forward, hard refresh, and repeated type changes keep content, URL, visual activation, `aria-selected`, and roving `tabindex` aligned.
+- Product facet refreshes replace only Search results and drawer body. Result-type changes recreate the complete Search `tabControl()` shell and drawer shell through `ShopifySectionRefresher`, preventing stale Alpine tab registrations.
+- The Search adapter preserves query/type/prefix/filter/page context, aborts stale requests, announces result changes, and coordinates drawer focus through public dialog store APIs.
+- The Product results toolbar contains Filter only. Search result tabs use compact typography and remain a single horizontally safe row at reviewed desktop/tablet/mobile widths.
+- Search Product cards no longer use `h-full` and now use the same intermediate Grid wrapper as Collection cards, so the global Product card image-ratio setting remains visually effective.
+- No merchant-owned configuration, `templates/*.json`, locale copy, Collection implementation, vendor/generated asset, or global Product card setting was changed.
+- Final validation passed: Shopify MCP `validate_theme`, `node --check` for modified JavaScript, `npm.cmd run lint`, `npm.cmd test` (137 files, 0 offenses), and `git diff --check`.
+
+Manual gate: **passed by owner** (2026-07-23), covering Product-only facets, Article/Page separation, result-type activation and history restoration, pagination and URL context, clear/empty states, rapid requests, mobile drawer focus/keyboard behavior, responsive tab layout, Search Product card image-ratio presentation, and Collection filter/sort regression checks.
+
+#### Follow-up — PRODUCT-CARD-RATIO-01 Product Card Global Ratio Consistency
+
+Status: **documented, not implemented** (2026-07-23). Handle as a separate rollback domain immediately after the Package D owner commit and before Package E. This is a pre-existing cross-surface visual consistency issue, not part of BLK-07.
+
+Repository evidence:
+
+- `sections/featured-products.liquid` passes `class: 'h-full'` to Product cards in both Grid and Swiper paths.
+- `snippets/product-recommendations-section.liquid` renders Product cards as direct CSS Grid children.
+- `snippets/header-dropdown-super-menu.liquid` renders fixed-width Product cards as direct children of a stretching Flex row.
+- All three consumers still read the shared `settings.product_card_image_ratio`; the risk is parent/card stretching that can visually override `adapt` when mixed source-image ratios share a row.
+- Collection Product cards are protected by an intermediate wrapper. Search adopted the same boundary in Package D.
+
+Acceptance criteria:
+
+- Featured Products Grid/Swiper, Product Recommendations, and Header Super Menu visibly honor all global Product card image-ratio modes: `adapt`, `square`, `portrait`, and `landscape`.
+- Mixed portrait/landscape source images do not cause sibling Product card media frames to grow beyond their resolved ratio.
+- Equal-height slide/card behavior is retained only where it does not override the merchant-selected image ratio.
+- Do not change merchant-owned global settings, uploaded images, shared image fit semantics, Collection behavior, or Search behavior.
+- Run focused desktop/mobile visual checks plus Shopify validation, `npm.cmd run lint`, `npm.cmd test`, and `git diff --check` before approval.
 
 ### Package E — Blog And Article Compliance
 

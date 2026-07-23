@@ -106,6 +106,7 @@
         COUNTDOWNTIMER: 'countdownTimer',
         SECTIONPAGINATION: 'sectionPagination',
         COLLECTIONFILTERS: 'collectionFilters',
+        SEARCHFILTERS: 'searchFilters',
         COLLECTIONFILTERFIELD: 'collectionFilterField',
         PROGRESSIVELIST: 'progressiveList',
         PRODUCTGALLERY: 'productGallery',
