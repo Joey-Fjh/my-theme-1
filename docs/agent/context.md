@@ -1281,7 +1281,7 @@ Manual gate: **passed by owner** (2026-07-23), covering Product-only facets, Art
 
 #### Follow-up — PRODUCT-CARD-RATIO-01 Product Card Global Ratio Consistency
 
-Status: **documented, not implemented** (2026-07-23). Handle as a separate rollback domain immediately after the Package D owner commit and before Package E. This is a pre-existing cross-surface visual consistency issue, not part of BLK-07.
+Status: **owner-reviewed and accepted** (2026-07-23). The implementation and this acceptance record belong in the same owner commit. Complete that commit before starting Package E. This was a pre-existing cross-surface visual consistency issue, not part of BLK-07.
 
 Repository evidence:
 
@@ -1291,6 +1291,15 @@ Repository evidence:
 - All three consumers still read the shared `settings.product_card_image_ratio`; the risk is parent/card stretching that can visually override `adapt` when mixed source-image ratios share a row.
 - Collection Product cards are protected by an intermediate wrapper. Search adopted the same boundary in Package D.
 
+Implementation and acceptance notes:
+
+- Featured Products now always places each Product card inside a layout wrapper. The Grid path uses the established intermediate `group` boundary; the Swiper path preserves `swiper-slide h-auto`; the Product card itself no longer receives `h-full`.
+- Product Recommendations now uses the same intermediate Grid wrapper, preventing the Product card Flex shell and media region from stretching to a sibling card's row height.
+- Header Super Menu product rows use `items-start`, preventing direct Flex children from stretching across the cross axis while preserving fixed card width, horizontal overflow, and drag scrolling.
+- Shared `product-card`, `image.liquid`, global `product_card_image_ratio`, Collection, Search, merchant-owned configuration, and uploaded images were not changed.
+- Tailwind output was regenerated through `npm.cmd run build:tw`; no generated file was edited manually.
+- Final static validation passed: Shopify MCP `validate_theme`, `npm.cmd run lint`, `npm.cmd test` (137 files, 0 offenses), and `git diff --check`.
+
 Acceptance criteria:
 
 - Featured Products Grid/Swiper, Product Recommendations, and Header Super Menu visibly honor all global Product card image-ratio modes: `adapt`, `square`, `portrait`, and `landscape`.
@@ -1298,6 +1307,8 @@ Acceptance criteria:
 - Equal-height slide/card behavior is retained only where it does not override the merchant-selected image ratio.
 - Do not change merchant-owned global settings, uploaded images, shared image fit semantics, Collection behavior, or Search behavior.
 - Run focused desktop/mobile visual checks plus Shopify validation, `npm.cmd run lint`, `npm.cmd test`, and `git diff --check` before approval.
+
+Manual gate: **passed by owner** (2026-07-23), covering Featured Products Grid/Swiper, Product Recommendations, Header Super Menu, global Product card ratio presentation, responsive layouts, and the affected hover/navigation/drag interactions. No remaining issue was reported.
 
 ### Package E — Blog And Article Compliance
 
