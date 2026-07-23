@@ -378,6 +378,8 @@ Ownership:
 
 ### BLK-08 — Blog Listing Omits Required Excerpt/Content
 
+Status: **resolved by owner-accepted Package E** (2026-07-23).
+
 Official expectation:
 
 - Blog article cards must output `article.title`, `article.image`, and `article.excerpt_or_content`, with pagination or lazy loading.
@@ -405,6 +407,8 @@ Ownership:
 - Theme code.
 
 ### BLK-09 — Article Comments Workflow Is Missing
+
+Status: **resolved by owner-accepted Package E** (2026-07-23).
 
 Official expectation:
 
@@ -1312,14 +1316,22 @@ Manual gate: **passed by owner** (2026-07-23), covering Featured Products Grid/S
 
 ### Package E — Blog And Article Compliance
 
+Status: **owner-reviewed and accepted** (2026-07-23). The Package E implementation and this acceptance record belong in the same owner commit. Package F is the next implementation package.
+
 Scope: BLK-08 and BLK-09.
 
-- Blog-card `excerpt_or_content` behavior.
-- Article comments, pagination, form success/error/moderation, and title behavior required by the audit.
+- Blog cards render a non-empty `article.excerpt_or_content` preview after stripping HTML and whitespace, truncating to 30 words, and using `escape_once`; existing tag tabs, images, links, reveal behavior, and pagination remain unchanged.
+- Article H1 output is always `article.title`. The existing optional section heading setting remains schema-compatible and renders only as supplementary non-H1 copy when it differs from the article title.
+- Comments render only when `blog.comments_enabled?`, paginate five at a time through the shared pagination snippet, and use semantic list/article markup.
+- The native `new_comment` form preserves submitted values safely, exposes linked field errors plus a focusable error summary, and distinguishes direct-publish success from moderated pending status through localized live messages.
+- Owner-requested presentation refinements remove the redundant top divider, present each comment as a color-scheme-aware card with comment content followed by clear `By author · date` metadata, and use the theme `btn-primary` submit-button treatment.
+- No JavaScript, merchant-owned configuration, `templates/*.json`, schema IDs, blog/article content, vendor assets, or shared pagination behavior changed. Tailwind output was regenerated through `npm.cmd run build:tw`; it was not edited manually.
 
 Why combined: both findings belong to the editorial content domain and can be previewed across blog and article templates without affecting commerce code.
 
-Manual gate: manual excerpt and content fallback, long/empty content, article titles, comments enabled/disabled, direct publish/moderation, validation errors, successful posting, comment pagination, keyboard, and screen-reader status/error behavior.
+Final static validation passed: `npm.cmd run lint`, `npm.cmd test` (137 files, 0 offenses), and `git diff --check`.
+
+Manual gate: **passed by owner** (2026-07-23), covering Blog excerpt presentation, Article title presentation, enabled-comment layout and metadata clarity, comment form layout, and submit-button treatment. Comment-disabled, moderation, validation-error, successful-post, pagination-over-five, and screen-reader announcement fixtures remain part of the final launch evidence gate where they were not exercised during this review.
 
 ### Package F — Collection And Image Display Contract
 
