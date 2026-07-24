@@ -439,6 +439,8 @@ Ownership:
 
 ### BLK-10 — Collection List Uses The Wrong Image Object
 
+Status: **resolved by owner-accepted Package F** (2026-07-24).
+
 Official expectation:
 
 - Collection list must use `collection.featured_image`, which can fall back to the first product’s featured image.
@@ -462,6 +464,8 @@ Ownership:
 - Theme code.
 
 ### BLK-11 — Image Focal Points Are Not Systematically Supported
+
+Status: **resolved by owner-accepted Package F** (2026-07-24).
 
 Official expectation:
 
@@ -1335,14 +1339,23 @@ Manual gate: **passed by owner** (2026-07-23), covering Blog excerpt presentatio
 
 ### Package F — Collection And Image Display Contract
 
+Status: **owner-reviewed and accepted** (2026-07-24). The Package F implementation and this acceptance record belong in the same owner commit. Package G is the next implementation package.
+
 Scope: BLK-10 and BLK-11.
 
-- Use `collection.featured_image` and preserve compliant placeholder behavior.
-- Respect Shopify focal points with a documented precedence for explicit merchant positioning.
+- List Collections cards use one `collection.featured_image` object consistently for image rendering, width, and alt text. Shopify owns the collection-image to first-product-image fallback; a nil result continues through the existing placeholder path.
+- The shared image primitive records whether the caller supplied `position` before applying defaults. A valid explicit whitelist position is marked on the wrapper and overrides `image_tag` focal output only for that image.
+- When callers omit `position`, Shopify `image_tag` retains ownership of focal-point `object-position`; images without a focal point fall back to `center` through snippet CSS.
+- Invalid explicit position values safely fall back to `center`. Focal-point percentages never enter the fixed position whitelist.
+- Existing `frame` / `natural`, cover / contain, aspect ratio, placeholder, responsive image, linked-image, and motion contracts remain unchanged. Newsletter Banner already passes its explicit merchant position and required no consumer change.
+- `docs/references/style-system/image-display-contract.md` now records the precedence as explicit valid position, then Shopify focal point, then center.
+- No JavaScript, schema, locales, merchant-owned configuration, `templates/*.json`, consumer-wide rewrite, Tailwind source, vendor asset, or generated asset belongs to Package F.
 
 Why combined: both findings share the image rendering contract and collection/image visual QA. Revert them together if shared image behavior regresses.
 
-Manual gate: collection image, first-product fallback, nil placeholder, focal-point crops, explicit-position override, natural/contain modes, mixed aspect ratios, and representative desktop/mobile image-picker sections.
+Final static validation passed: Shopify MCP `validate_theme` for all three Package F files, `npm.cmd run lint`, `npm.cmd test` (137 files, 0 offenses), and `git diff --check`.
+
+Manual gate: **passed by owner** (2026-07-24), covering the Package F image-source and focal-point precedence behavior. Collection fallback fixtures, nil placeholder, off-center focal crops, explicit-position rendering, natural/contain presentation, mixed ratios, and representative responsive image-picker surfaces remain part of the final launch evidence gate where they were not all exercised during this review.
 
 ### Package G — Theme Editor And Schema Compliance
 

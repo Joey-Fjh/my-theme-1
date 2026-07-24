@@ -17,9 +17,15 @@
   - `natural`: the image displays at its intrinsic ratio without forced fill. Wrapper gets `height: auto`; img defaults to `object-contain`.
 
   `fit` overrides the mode-derived default: `cover` | `contain` | `fill` | `none` | `scale-down`.
-  `position` sets `object-position` on the img element.
 
-  Backward compat: all existing calls without `mode` get `frame` behavior, so visual output is unchanged.
+  Object-position precedence on the final img:
+  1. Caller-provided valid `position` (whitelist only) — overrides Shopify focal point
+  2. `image_tag` automatic focal-point `object-position` (X% Y%) when present
+  3. `center`
+
+  Do not default `position` before recording whether the caller passed it; a silent
+  `center` default would incorrectly override every image focal point.
+  Focal-point percentage strings must never enter the fixed `position` whitelist.
 
   ## Linked wrapper interaction
 
@@ -36,7 +42,7 @@
     @param {string} [img_class] - Optional class to be added to the img tag. `image_img` is always applied.
     @param {string} [mode] - Display mode: 'frame' (default) or 'natural'. Controls wrapper height and default object-fit.
     @param {string} [fit] - Object-fit override: 'cover' | 'contain' | 'fill' | 'none' | 'scale-down'. Default derived from mode: 'cover' for frame, 'contain' for natural.
-    @param {string} [position] - Object-position value for the img element. Defaults to 'center'. Supports 'top', 'bottom', 'left', 'right', and compound values like 'top left'.
+    @param {string} [position] - Explicit object-position whitelist value (`center`, `top`, `bottom`, `left`, `right`, or compounds like `top left`). When provided and valid, overrides `image_tag` focal point. When omitted, Shopify focal point is preserved; otherwise falls back to `center`.
     @param {number} [width] - The highest resolution width of the image to be rendered
     @param {number} [height] - The highest resolution height of the image to be rendered
     @param {string} [crop] - The crop position of the image
@@ -99,7 +105,10 @@
         assign fit = fit | default: 'cover'
     endif
 
-    assign position = position | default: 'center'
+    assign position_explicit = false
+    if position != blank
+        assign position_explicit = true
+    endif
 
     assign valid_modes = 'frame,natural'
     assign valid_fits = 'cover,contain,fill,none,scale-down'
@@ -135,7 +144,7 @@
         endunless
     endif
 
-    if position != blank
+    if position_explicit
         assign position_allowed = false
         assign position_tokens = valid_positions | split: ','
         for p in position_tokens
@@ -147,6 +156,8 @@
         unless position_allowed
             assign position = 'center'
         endunless
+    else
+        assign position = blank
     endif
 
     if fetchpriority != blank
@@ -217,9 +228,14 @@
         data-motion-reveal="media"
     {% endif %}
     data-image-mode="{{ mode }}"
-    {%- if aspect_ratio -%}
+    {%- if position_explicit -%}
+        data-image-position="explicit"
+    {%- endif -%}
+    {%- if aspect_ratio and position_explicit -%}
         style="--aspect-ratio: {{ aspect_ratio }}; --image-object-position: {{ position }}"
-    {%- else -%}
+    {%- elsif aspect_ratio -%}
+        style="--aspect-ratio: {{ aspect_ratio }}"
+    {%- elsif position_explicit -%}
         style="--image-object-position: {{ position }}"
     {%- endif -%}
 >
@@ -269,7 +285,11 @@
         width: 100%;
         height: 100%;
         display: block;
-        object-position: var(--image-object-position, center);
+        object-position: center;
+    }
+
+    .theme-image[data-image-position='explicit'] > .image_img {
+        object-position: var(--image-object-position) !important;
     }
 
     .svg-placeholder {
