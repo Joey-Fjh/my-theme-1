@@ -497,6 +497,8 @@ Ownership:
 
 ### BLK-12 — Custom Font URL Feature Is Not Theme Store Eligible
 
+Status: **resolved by owner-accepted Package G** (2026-07-24).
+
 Official expectation:
 
 - Theme fonts must use Shopify `font_picker`.
@@ -571,6 +573,8 @@ Ownership:
 
 ### BLK-14 — Header/Footer Menu Settings Lack Required Defaults
 
+Status: **resolved by owner-accepted Package G** (2026-07-24).
+
 Official expectation:
 
 - Header `link_list` settings must default to `main-menu`.
@@ -599,6 +603,8 @@ Ownership:
 - Do not change current merchant-selected menu handles without authorization.
 
 ### BLK-15 — Merchant-Facing Schema Terminology And Spelling Need Full Review
+
+Status: **deferred by owner** (2026-07-24). This finding was explicitly removed from the reduced Package G scope and remains unresolved. Its code-owned schema/locale work is planned for Package G2; merchant-owned template defaults belong to Package I only after explicit authorization.
 
 Official expectation:
 
@@ -660,6 +666,9 @@ Repository evidence:
   - “PRODUCT GUARANTEE NATURAL”.
   - Mixed cosmetics, fashion, AI, and generic promotional messaging.
 - Template section names include `NewSletter Banner`.
+- The shared image primitive accepts `placeholder_key` but defaults every omitted value to the single generic `image` placeholder:
+  - `snippets/image.liquid:206`.
+- Current callers that pass `placeholder_key` also pass only `image`; product, collection, and editorial empty states do not yet use Shopify's context-specific placeholder families.
 
 Risk:
 
@@ -672,6 +681,10 @@ Acceptance criteria:
 - User explicitly authorizes edits to `templates/*.json` before implementation.
 - All Lorem Ipsum and filler copy are replaced with authentic, industry-specific, support-safe defaults.
 - Uploaded-image references are replaced with compliant placeholder behavior or the approved preset submission structure.
+- Empty product, collection, editorial, hero, and generic image-picker states use appropriate Shopify-provided placeholders instead of repeating one generic illustration.
+- Placeholder variation is deterministic by stable resource ID or rendered index, never random between page loads; real merchant images always take precedence.
+- Product contexts use `product-1` through `product-6`, collection contexts use `collection-1` through `collection-6`, editorial contexts use `lifestyle-1` / `lifestyle-2`, and generic image-picker or hero surfaces retain `image` unless an approved industry preset justifies a different official family.
+- Placeholder output preserves the shared image aspect-ratio, fit, crop, responsive layout, and accessibility contracts.
 - Fresh-install screenshots match demo expectations without relying on store-specific uploads.
 - 404, blog, article, contact, collection, product, password, search, and home templates are reviewed.
 - Demo content rights are documented.
@@ -1359,15 +1372,31 @@ Manual gate: **passed by owner** (2026-07-24), covering the Package F image-sour
 
 ### Package G — Theme Editor And Schema Compliance
 
-Scope: BLK-12, BLK-14, and BLK-15.
+Status: **owner-reviewed and accepted** (2026-07-24). The reduced Package G implementation and this acceptance record belong in the same owner commit. BLK-15 remains deferred and unresolved.
 
-- Remove Theme Store-ineligible custom font URL paths while preserving Shopify font pickers and typography behavior.
-- Add required header/footer menu defaults.
-- Correct documented merchant-facing schema terminology, spelling, and invalid defaults only.
+Scope: BLK-12 and BLK-14 only.
 
-Why combined: these are Theme Editor/schema compliance changes and can be reviewed together through a fresh editor and install-state smoke test.
+- Removed the Theme Store-ineligible custom font URL settings, placeholder URLs, locale keys, runtime branches, and stale Tailwind guidance while preserving the heading, body, and subtitle typography tiers.
+- Heading and body fonts now load from Shopify `font_picker` objects. Base, bold, italic, and bold-italic faces are generated through `font_modify` / `font_face` when the variants exist.
+- Header `menu` now defaults to `main-menu`; a new Footer Link Column `menu` defaults to `footer`. Existing merchant-selected menus remain unchanged.
+- The required Tailwind rebuild generated `assets/tailwind.output.css`; the additional removed utilities had no direct storefront or JavaScript consumers in the repository scan.
+- No `config/settings_data.json`, `templates/*.json`, Header/Footer group JSON, merchant menu, vendor asset, or unrelated schema copy was changed.
 
-Manual gate: typography styles and font variants, fresh header/footer menu bindings, Theme Editor labels/defaults, live setting updates, and no missing/invalid settings.
+Why combined: both accepted findings belong to Theme Editor install-state compliance and share the same editor smoke-test boundary. BLK-15 was removed before implementation to prevent an uncontrolled schema-copy rewrite.
+
+Final static validation passed: Shopify MCP `validate_theme` for all seven changed files, `npm.cmd run build:tw`, `npm.cmd run lint`, `npm.cmd test` (137 files, 0 offenses), and `git diff --check`.
+
+Manual gate: **passed by owner** (2026-07-24), covering the Shopify Heading/Body font pickers, storefront typography application, removal of custom font URL controls, Header Main menu default, new Footer Link Column Footer menu default, and preservation of existing merchant menu selections. Broader typography fixtures, fresh-install preset resolution, and representative 375 / 768 / 1280 regression coverage remain part of the final launch evidence gate where they were not separately exercised during this review.
+
+### Package G2 — Schema Copy Compliance
+
+Scope: the code-owned portion of BLK-15 only. Status: planned; do not start until Package G is committed and the worktree is clean.
+
+- Audit and correct merchant-facing English labels, setting info, section/block names, terminology, spelling, sentence case, active voice, action labels, ampersands, and broken schema help text in theme schema and schema locale sources.
+- Preserve schema IDs, block types, section types, presets, storefront rendering, and merchant configuration.
+- Do not modify `templates/*.json`, `config/settings_data.json`, demo content, uploaded media references, color schemes, or the merchant-owned/default-content portion of BLK-15; those belong to Package I after explicit authorization.
+
+Manual gate: Theme Editor review of the affected settings for grouping, clarity, terminology, live updates, and absence of missing translation keys. This package is editorial/schema compliance, not a visual redesign.
 
 ### Package H — Theme Identity And Support Metadata
 
@@ -1377,11 +1406,18 @@ Do not invent or temporarily substitute these values.
 
 ### Package I — Default Install State And Preset Content
 
-Scope: BLK-16 only, plus only the install-state findings explicitly recorded by the audit.
+Scope: BLK-16, the merchant-owned template/default-content portion of BLK-15, and `PLACEHOLDER-VARIETY-01`.
+
+- Replace prohibited filler and incoherent defaults with an approved, authentic preset content direction.
+- Remove or replace store-specific uploaded-image dependencies so a fresh install remains complete without the current shop's files.
+- Add context-aware variation using Shopify's existing `placeholder_svg_tag` families through the shared `placeholder_key` contract; do not add custom placeholder image assets or random runtime selection.
+- Product/card contexts cycle deterministically through `product-1` to `product-6`; collection contexts through `collection-1` to `collection-6`; editorial contexts use `lifestyle-1` / `lifestyle-2`; generic image-picker and hero fallbacks retain `image` unless an approved industry preset requires another official family.
+- Real images always win. Placeholder changes must preserve the global image ratio, fit, crop, focal-point, responsive image, and card-layout contracts.
+- Shopify's apparel-specific color placeholders remain out of scope until the final preset industry direction explicitly calls for them.
 
 Required authorization: exact `templates/*.json` fields, preset content, uploaded media references, resource handles, disabled states, and any color-scheme changes must be approved before editing.
 
-Manual gate: fresh install on a clean store, all required templates, placeholders, Theme Editor integrity, demo parity, mobile/desktop presentation, and proof that structure and unrelated merchant configuration did not change.
+Manual gate: fresh install on a clean store; all required templates; empty product, collection, blog/article, hero, and generic image-picker states; deterministic placeholder variation across reloads; real-image precedence; Theme Editor integrity; demo parity; 375 / 768 / 1280 presentation; and proof that structure and unrelated merchant configuration did not change.
 
 ### Package J — Route And Shopify-Link Compliance
 
