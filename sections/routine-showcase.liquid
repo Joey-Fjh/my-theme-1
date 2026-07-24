@@ -144,17 +144,25 @@
                             </div>
                         </div>
 
-                        {%- capture link_content -%}
-                            <span>{{ section.settings.cta_text }}</span>
-                            {% render 'icons', icon: 'icon-arrow2', class: 'ms-3' %}
-                        {%- endcapture -%}
-
-                        {%- render 'link',
-                            href: section.settings.cta_link,
-                            variant: 'underline',
-                            class: 'body-xl text-theme-text',
-                            content: link_content
+                        {%- liquid
+                            assign cta_href = section.settings.cta_link
+                            if cta_href == '/collections'
+                                assign cta_href = routes.collections_url
+                            endif
                         -%}
+                        {%- if section.settings.cta_text != blank and cta_href != blank -%}
+                            {%- capture link_content -%}
+                                <span>{{ section.settings.cta_text }}</span>
+                                {% render 'icons', icon: 'icon-arrow2', class: 'ms-3' %}
+                            {%- endcapture -%}
+
+                            {%- render 'link',
+                                href: cta_href,
+                                variant: 'underline',
+                                class: 'body-xl text-theme-text',
+                                content: link_content
+                            -%}
+                        {%- endif -%}
                     </div>
 
                     <div class="{{ badge_position }} flex h-full w-full items-center justify-center max-pc:hidden">

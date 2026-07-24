@@ -48,7 +48,12 @@
                         %}
                     {%- endcapture -%}
 
-                    {%- assign link_href = section.settings.button_link | default: '/' -%}
+                    {%- liquid
+                        assign link_href = section.settings.button_link
+                        if link_href == blank or link_href == '/'
+                            assign link_href = routes.root_url
+                        endif
+                    -%}
                     {% render 'link',
                         href: link_href,
                         class: 'mt-8 btn-primary body-xl',

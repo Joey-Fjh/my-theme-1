@@ -852,6 +852,8 @@ Acceptance direction:
 
 ### RISK-06 — Routes Object Consistency
 
+Status: **resolved by owner-accepted Package J** (2026-07-24).
+
 Evidence:
 
 - Most navigation correctly uses `routes.*`.
@@ -869,6 +871,8 @@ Acceptance direction:
 - Keep or change admin route only after confirming Shopify guidance and intended behavior.
 
 ### RISK-07 — Shopify-Domain Links And `nofollow`
+
+Status: **resolved by owner-accepted Package J** (2026-07-24) for the confirmed rendered-link defects. Resource loads, intentional admin routes, and business-owned theme identity/support URLs remain outside this risk's code fix.
 
 Evidence:
 
@@ -1421,11 +1425,31 @@ Manual gate: fresh install on a clean store; all required templates; empty produ
 
 ### Package J — Route And Shopify-Link Compliance
 
-Scope: RISK-06 and RISK-07 only where the audit and current Shopify guidance prove a rendered-link defect.
+Status: **owner-reviewed and accepted** (2026-07-24). The Package J implementation and this acceptance record belong in the same owner commit.
 
-Why combined: both are low-risk navigation/link compliance checks. Do not mechanically modify resource loads, schema Markdown, admin routes, or non-anchor Shopify URLs.
+Scope: RISK-06 and RISK-07 only where the audit and current Shopify guidance proved a rendered-link defect.
 
-Manual gate: locale-aware storefront navigation, 404 recovery, intentional owner/admin entry, and rendered-link inspection.
+- The 404 recovery link maps a blank setting or the schema/template literal `/` to `routes.root_url`; every other configured URL remains unchanged.
+- Slides Show and Routine Showcase map only the literal `/collections` default to `routes.collections_url`; custom internal, external, query, and Shopify resource URLs remain unchanged.
+- Routine Showcase renders its CTA only when both CTA text and the normalized destination are present, preventing an empty `href` anchor.
+- The two confirmed Shopify-domain Markdown help links in Collection filtering and Custom Liquid schema copy were replaced with plain explanatory text because schema Markdown cannot reliably attach `rel="nofollow"`.
+- The intentional Password Footer `/admin` owner entry, Shopify-generated `powered_by_link`, CDN preconnect, HTTP/cart URL construction, business-owned theme documentation/support URLs, and merchant-owned templates/configuration were not changed.
+- No JavaScript, CSS, generated/vendor assets, `config/settings_data.json`, or `templates/*.json` changed.
+
+Why combined: both findings were low-risk navigation/link compliance checks with one shared rendered-link verification boundary.
+
+Final validation passed: Shopify MCP `validate_theme` for all four Package J files, `npm.cmd run lint`, `npm.cmd test` (137 files, 0 offenses), and `git diff --check`.
+
+Runtime verification passed against the Shopify development storefront on 2026-07-24 by inspecting the server-rendered HTML directly:
+
+- English 404 recovery rendered `href="/"`.
+- Traditional Chinese 404 recovery rendered `href="/zh"`.
+- Traditional Chinese Slides Show and Routine Showcase collection CTAs rendered locale-aware `href="/zh/collections"` anchors.
+- The storefront CTAs were native anchors and did not depend on JavaScript for navigation.
+- The exact-match normalization and Routine Showcase render guard prove custom URLs remain untouched and incomplete CTAs do not render.
+- Both changed schema locale values parsed as plain text without Markdown links.
+
+Verification gate: **passed**. No additional Package J storefront QA is required before the owner commit.
 
 ### External And Evidence Gates
 

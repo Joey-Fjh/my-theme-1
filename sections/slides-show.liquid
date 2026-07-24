@@ -96,6 +96,12 @@
                                 {%- if block.settings.cta_text != blank
                                     and block.settings.cta_link != blank
                                 -%}
+                                    {%- liquid
+                                        assign cta_href = block.settings.cta_link
+                                        if cta_href == '/collections'
+                                            assign cta_href = routes.collections_url
+                                        endif
+                                    -%}
                                     {%- capture link_content -%}
                                         <span>{{ block.settings.cta_text }}</span>
                                         {% render 'icons', icon: 'icon-arrow2', class: 'ms-3' %}
@@ -103,14 +109,14 @@
 
                                     {%- if block.settings.cta_style == 'button' -%}
                                         {%- render 'link',
-                                            href: block.settings.cta_link,
+                                            href: cta_href,
                                             variant: 'plain',
                                             class: 'btn-primary w-fit max-w-full',
                                             content: link_content
                                         -%}
                                     {%- else -%}
                                         {%- render 'link',
-                                            href: block.settings.cta_link,
+                                            href: cta_href,
                                             variant: 'underline',
                                             class: 'body-2xl text-theme-text',
                                             content: link_content
