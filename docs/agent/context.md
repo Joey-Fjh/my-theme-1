@@ -1451,6 +1451,107 @@ Runtime verification passed against the Shopify development storefront on 2026-0
 
 Verification gate: **passed**. No additional Package J storefront QA is required before the owner commit.
 
+### Package K — Global Scroll Reveal Reliability
+
+Status: **planned from owner-observed storefront behavior** (2026-07-27). This is the next confirmed storefront code package. Define and review its implementation boundary before changing motion code; do not combine it with Package G2, H, or I.
+
+Purpose: repair the shared global scroll-reveal behavior without redesigning individual sections or migrating ordinary reveal animation to GSAP.
+
+Owner-observed problems:
+
+- On Home → Featured Products, scrolling through a multi-row product grid can cause an earlier row to cascade or flash again while a lower row enters.
+- In long sections, an oversized reveal target can trigger when its top enters the viewport, allowing lower content to complete its animation before the customer can see it.
+- Both `once` and `always` remain valid merchant choices; the defect is target/trigger ownership and replay stability, not the existence of the two modes.
+
+Confirmed architecture direction:
+
+- Ordinary scroll reveal remains Alpine/shared `IntersectionObserver` plus CSS state styling. `gsap.from()` is visually analogous to the existing pending-to-revealed transition but does not solve trigger granularity; GSAP timelines remain reserved for approved multi-element narrative choreography, parallax, scrub, or precisely coordinated hero sequences.
+- A node whose geometry is changed by reveal `transform` must not also be the unstable boundary used to decide replay. Use one minimal shared semantic data-hook contract to separate a stable observation trigger from the animated target where necessary.
+- Extend the existing `data-motion-*` vocabulary only when the repository-wide audit proves it is needed. Do not add section-specific observer implementations, duplicate listeners, per-section mode flags, or wrapper markup that exists only to compensate for an unclear abstraction.
+- Section roots own lifecycle only. They must not cause every lower region in a tall section to reveal at once.
+- Preserve existing natural layout wrappers and document semantics. Do not invent a generic semantic group that combines headings, descriptions, and buttons merely for animation. Split a target only when one existing visual/layout region spans materially different viewport entry times.
+- Product/card cascades trigger independently by current visual row. Cards in an entering row reveal left to right; lower rows remain pending until their own stable trigger enters; responsive reflow must produce the correct current rows.
+- `once`: each eligible target reveals once and remains visible.
+- `always`: after a target has fully left a buffered observation region, it resets without a visible reverse/hide animation and may replay when re-entering from either scroll direction. Transform changes must not create observer boundary oscillation or flashing.
+- First-viewport text may perform its page-load reveal once. LCP/hero/carousel media remains immediately visible and does not wait for scroll reveal.
+- Hidden tabs, inactive panels, Swiper content, and dynamically refreshed content register only when visible and must not complete reveal off-screen.
+- Motion disabled, `prefers-reduced-motion`, missing `IntersectionObserver`, and no-JavaScript paths keep content immediately visible and usable.
+- Preserve the existing merchant controls and meanings for `motion_enabled`, content/media reveal style, motion speed, and reveal behavior. Do not modify merchant-owned `config/settings_data.json` to hide the defect or force `once`.
+
+Expected implementation scope after the audit:
+
+- Shared reveal lifecycle/observer logic in `assets/alpine.components.ui.js` and its existing registration path only if required.
+- Reveal capability and replay/reset styling in `tailwind/tailwind.animates.css`, followed by the generated Tailwind build when that source changes.
+- Focused section/snippet hook corrections where existing targets are too broad or an animated card needs a stable trigger; do not perform a visual redesign or repository-wide markup rewrite without evidence.
+- Update `docs/references/architecture/motion-architecture.md` if the final stable-trigger/animated-target contract changes.
+
+Prohibited scope:
+
+- No ordinary-reveal migration to GSAP/ScrollTrigger, new dependency, per-section timeline, or duplicate observer.
+- No changes to dialog, drawer, hover, focus, loading, carousel-control, or other state/micro-interaction motion unless a direct regression is proven.
+- No new merchant setting, animation preset expansion, visual restyling, typography/layout change, or unrelated section cleanup.
+- No edits to `config/settings_data.json`, `templates/*.json`, merchant content, uploaded media, color schemes, vendor assets, or generated CSS by hand.
+
+Acceptance matrix:
+
+- Featured Products with at least two visual rows at 375 / 768 / 1280: each row cascades independently; slow/fast scrolling down and up produces no earlier-row flash, replay loop, or cross-row trigger.
+- Repeat the Featured Products test in both `once` and `always`; `always` replays only after complete buffered exit and re-entry from either direction, without a visible reverse reset.
+- Representative long sections: lower visual regions do not animate before their own viewport entry, while naturally compact content blocks remain coherent.
+- Featured Products tabs, Collection/Search product grids, Product Recommendations, and Swiper-backed card surfaces register only currently visible targets and remain correct after tab/section refresh and responsive reflow.
+- First viewport: critical media is visible immediately; allowed text reveal does not create an LCP blank state or pre-init flash.
+- Theme Editor select/reorder previews only the relevant section without multiplying observers or listeners.
+- Motion disabled, reduced motion, no `IntersectionObserver`, and JavaScript-disabled storefronts show all critical content; keyboard, focus, links, forms, and controls remain unaffected.
+- Verify observer/listener cleanup and absence of duplicate callbacks after section reloads.
+
+Required validation: targeted runtime instrumentation or rendered-state evidence for trigger/replay behavior, `node --check` for modified JavaScript, `npm.cmd run build:tw` when Tailwind source changes, Shopify MCP `validate_theme`, `npm.cmd run lint`, `npm.cmd test`, and `git diff --check`. Leave implementation uncommitted until owner storefront approval.
+
+### Package L — Global Code Risk And Optimization Audit
+
+Status: **planned as review-only** (2026-07-27). Run after Package K and the remaining approved code-bearing work are settled on a clean baseline, before the final BLK-18 evidence gate. This package audits and classifies; it does not implement a repository-wide cleanup.
+
+Purpose: perform a fresh post-remediation scan for confirmed storefront risks, fragile behavior, architecture drift, unnecessary runtime cost, and narrowly supportable optimization opportunities that the original launch audit or later packages may not cover.
+
+Required audit coverage:
+
+- JavaScript lifecycle: component registration, Alpine ownership, observers, event listeners, timers, abort behavior, stale async responses, section replacement, Theme Editor reload/select/reorder, dialog/drawer cleanup, and duplicate initialization.
+- Runtime architecture: `ThemeEvents`, `ShopifyHttp`, `ShopifySectionRefresher`, cart store ownership, public/private API boundaries, and flat-asset/no-bundler constraints.
+- Liquid and HTML: nil/blank handling, invalid empty links/forms, pagination, routes/localization, product/variant context, responsive image use, semantic headings, accessible names, focus order, keyboard fallback, and no-JavaScript behavior.
+- CSS and layout: source/generated ownership, conflicting opacity/transform ownership, brittle selectors, hidden critical content, responsive overflow, stacking/focus risks, repeated one-off recipes, and utilities with real consumers versus stale output.
+- Performance: duplicated work, avoidable DOM/listener/observer volume, oversized Liquid loops or rendering, image loading/decoding/sizes behavior, LCP ownership, third-party payloads, and network hints. Measure or obtain runtime evidence before recommending a performance fix.
+- Explicitly re-audit RISK-01 and RISK-02: `performance.js` is currently requested globally even though its runtime work is limited to debug/design contexts; Swiper, the Alpine Intersect plugin, every Alpine component group, and multiple page-specific stores/utilities are also declared globally from `layout/theme.liquid`.
+- For each globally loaded script or third-party library, record actual storefront consumers by template/section, request/transfer/parse/execute cost, cache behavior, initialization ownership, and Theme Editor dynamic-section requirements. Classify it as required core, safely conditionally loadable, potentially removable, or not worth changing based on measured benefit.
+- Evaluate conditional/on-demand loading only as an evidence-backed follow-up architecture decision. Any proposal must preserve the flat asset/no-bundler runtime, `defer` ordering, Alpine/store registration, Section Rendering and Theme Editor lifecycle, no-JavaScript behavior, and failure fallback; do not introduce scattered per-section loaders or trade one global request for duplicate/racy loading.
+- Maintainability: duplicated implementations that should share an existing abstraction, abstractions that have accumulated divergent flags, dead registrations/assets/code with proof of no consumers, and documentation that no longer matches runtime behavior.
+- Representative surfaces: Home, Product, Collection, Search, Cart, Blog, Article, List collections, Pages, Contact, Password, Gift card, Header/Footer groups, drawers/dialogs, Theme Editor, mobile layouts, and localization paths.
+
+Audit method and evidence standard:
+
+- Start from a clean committed baseline and record the exact commit.
+- Run repository inventories and existing deterministic checks first; inspect discoverable facts before raising questions.
+- Use targeted storefront/browser/runtime checks only where static evidence cannot prove behavior.
+- Classify every finding by severity (`blocker`, `warning`, or `suggestion`), ownership (`code`, `merchant configuration/content`, `business`, `Shopify/vendor`, or `measurement`), affected surfaces, reproduction/evidence, and smallest safe remediation boundary.
+- Separate confirmed defects from optimization candidates and from items needing measurement. Do not present preference, speculative micro-optimization, or visual taste as a defect.
+- For duplication, prefer the smallest existing shared contract. Do not propose abstraction merely because two snippets look similar; require shared semantics and lifecycle.
+- For dead code or assets, prove the absence of Liquid, JavaScript, CSS, schema, template, runtime, and build-pipeline consumers before recommending removal.
+- Re-check current Shopify guidance through Shopify Dev MCP only for requirements whose interpretation or currency matters.
+
+Required deliverable:
+
+- A concise audit report with confirmed findings ordered by severity, exact file evidence, runtime evidence where needed, regression risk, and recommended next action.
+- A separate list of disproven/safe areas so future agents do not repeat the same investigation.
+- A ranked optimization backlog showing expected benefit, evidence strength, effort, and rollback domain.
+- Each accepted code fix becomes its own focused follow-up package or prompt. Do not turn Package L itself into a mixed implementation batch.
+- Update this context only after the owner reviews the audit conclusions.
+
+Prohibited scope:
+
+- No automatic refactor, formatting sweep, dead-code deletion, dependency change, framework change, visual redesign, or broad abstraction rewrite.
+- No edits to `config/settings_data.json`, `templates/*.json`, merchant content, uploaded media, navigation, color schemes, theme identity, or business-owned documentation/support data without separate explicit authorization.
+- No manual edits to generated or vendor assets, and no speculative Lighthouse code fixes.
+- Do not mix Package K motion implementation, Package G2 copy, Package H metadata, or Package I preset/default-content work into this audit.
+
+Completion gate: Package L is complete when the evidence-backed report and ranked follow-up list are owner-reviewed. A clean lint/Theme Check result is baseline evidence only; it does not prove the audit found no runtime, accessibility, performance, lifecycle, or fresh-install risks.
+
 ### External And Evidence Gates
 
 - BLK-17: public documentation, support form, support policy, and operating readiness.
