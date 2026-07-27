@@ -20,6 +20,7 @@
     @param {number} [preview_height] - Optional fixed preview height in pixels
     @param {number} [preview_max_width] - Maximum preview width in pixels
     @param {number} [preview_gap] - Gap between image and preview in pixels
+    @param {boolean} [motion_reveal] - Allow the rendered image to own ordinary media reveal (default: true)
 {% enddoc %}
 
 {%- liquid
@@ -35,6 +36,7 @@
     assign preview_max_width = preview_max_width | default: 560
     assign preview_gap = preview_gap | default: 12
     assign alt = alt | default: ''
+    assign magnifier_motion_reveal = motion_reveal | default: true, allow_false: true
     assign zoom_image_url = image | image_url: width: zoom_width
 -%}
 
@@ -63,7 +65,8 @@
         widths: widths,
         loading: loading,
         fetchpriority: fetchpriority,
-        aspect_ratio: aspect_ratio
+        aspect_ratio: aspect_ratio,
+        motion_reveal: magnifier_motion_reveal
     -%}
 
     <template x-teleport="body">

@@ -4,10 +4,6 @@
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
-        --slides-show-hero-reveal-distance: 3.25rem;
-        --slides-show-hero-reveal-duration: 780ms;
-        --slides-show-hero-reveal-stagger: 140ms;
-        --slides-show-hero-reveal-base-delay: 180ms;
     "
     data-component-kind="section"
     data-component-type="slides-show"
@@ -208,10 +204,20 @@
 
                     const autoSlide = el.getAttribute('data-auto-slide') === 'true';
                     const slideDelay = parseInt(el.getAttribute('data-slide-delay'), 10) || 5;
+                    const Utils = window.__Theme__?.Utils;
+                    const prefersReducedMotion =
+                        typeof Utils?.prefersReducedMotion === 'function'
+                            ? Utils.prefersReducedMotion()
+                            : window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ===
+                              true;
+                    const autoplayAllowed =
+                        autoSlide &&
+                        document.body?.dataset?.motionEnabled !== 'false' &&
+                        !prefersReducedMotion;
 
                     const swiper = new Swiper(swiperContainer, {
                         loop: slides.length > 1,
-                        autoplay: autoSlide
+                        autoplay: autoplayAllowed
                             ? {
                                   delay: slideDelay * 1000,
                                   disableOnInteraction: false,
@@ -269,7 +275,11 @@
                     }
 
                     const pauseBtn = el.querySelector('.slides-show__pause-toggle');
-                    if (pauseBtn && swiper.autoplay) {
+                    if (pauseBtn && !autoplayAllowed) {
+                        pauseBtn.hidden = true;
+                    }
+
+                    if (pauseBtn && autoplayAllowed && swiper.autoplay) {
                         const pauseLabel = pauseBtn.getAttribute('aria-label');
                         const playLabel = pauseBtn.getAttribute('data-play-label');
 
@@ -288,6 +298,7 @@
                             updatePauseButton();
                         }
 
+                        updatePauseButton();
                         pauseBtn.addEventListener('click', onTogglePause);
                         cleanups.push(function () {
                             pauseBtn.removeEventListener('click', onTogglePause);
@@ -445,35 +456,9 @@
     }
 
     .slides-show-section {
-        [data-motion-hero-copy][data-motion-reveal][data-motion-state='pending'] {
-            opacity: 0;
-            transform: translate3d(0, var(--slides-show-hero-reveal-distance, 3.25rem), 0);
-            will-change: opacity, transform;
-            transition:
-                opacity var(--slides-show-hero-reveal-duration, 780ms)
-                    var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1)),
-                transform var(--slides-show-hero-reveal-duration, 780ms)
-                    var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1));
-            transition-delay: calc(
-                var(--slides-show-hero-reveal-base-delay, 180ms) + var(--motion-index, 0) *
-                    var(--slides-show-hero-reveal-stagger, 140ms)
-            );
-        }
-
-        [data-motion-hero-copy][data-motion-reveal][data-motion-state='revealed'] {
-            opacity: 1;
-            transform: translate3d(0, 0, 0);
-            will-change: auto;
-            transition:
-                opacity var(--slides-show-hero-reveal-duration, 780ms)
-                    var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1)),
-                transform var(--slides-show-hero-reveal-duration, 780ms)
-                    var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1));
-            transition-delay: calc(
-                var(--slides-show-hero-reveal-base-delay, 180ms) + var(--motion-index, 0) *
-                    var(--slides-show-hero-reveal-stagger, 140ms)
-            );
-        }
+        --motion-reveal-base-delay: 180ms;
+        --motion-reveal-rise-distance: clamp(48px, 6vw, 80px);
+        --motion-slide-content-distance-y: clamp(36px, 5vw, 64px);
     }
 
     .slides-show__nav-button {

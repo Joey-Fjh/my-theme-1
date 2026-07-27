@@ -944,30 +944,81 @@
         },
 
         motionRevealSection() {
-            const registry = motionRevealSharedRegistry;
-            const cascadeRegistry = motionCascadeBatchRegistry;
+            const enterRegistry = motionRevealEnterRegistry;
+            const cascadeEnterRegistry = motionCascadeEnterRegistry;
+            const exitRegistry = motionRevealExitRegistry;
             const ThemeEvents = window.__Theme__?.Events;
 
             return {
                 ...AlpineComponentsFactory.useDisposable(),
-                _observedTargets: new Set(),
+                _observedBounds: new Map(),
+                _exitObservedBounds: new Map(),
                 _pageLoadQueue: new Set(),
                 _pageLoadTimers: new Map(),
                 _cascadeBatches: new Map(),
-                _cascadeObservedElements: new Set(),
+                _cascadeEnterObserved: new Set(),
+                _cascadeExitObserved: new Set(),
+                _armedRevealTargets: new Set(),
+                _motionFrames: new Set(),
                 _deferToPageLoadFlush: false,
                 _cleanupEditor: null,
                 _onTabClick: null,
+                _onSwiperRelayout: null,
+                _relayoutTimer: null,
                 _editorReplayTimers: new Set(),
                 _editorViewportFlushFrame: null,
+                _relayoutBound: false,
+                _scrollSettleBound: false,
+                _registrationGeneration: 0,
+                _criticalViewportPrepared: false,
+                _destroyed: false,
+
+                _motionDebug(event, detail) {
+                    if (!motionRevealDebugEnabled()) return;
+                    console.debug('[motion-reveal]', event, detail || {});
+                },
+
+                _requestMotionFrame(callback, generation = this._registrationGeneration) {
+                    if (this._destroyed) return null;
+
+                    const frameId = requestAnimationFrame(() => {
+                        this._motionFrames.delete(frameId);
+                        if (this._destroyed || generation !== this._registrationGeneration) {
+                            return;
+                        }
+                        callback();
+                    });
+                    this._motionFrames.add(frameId);
+                    return frameId;
+                },
+
+                _cancelMotionFrame(frameId) {
+                    if (!frameId) return;
+                    cancelAnimationFrame(frameId);
+                    this._motionFrames.delete(frameId);
+                },
+
+                _cancelMotionFrames() {
+                    this._motionFrames.forEach((frameId) => cancelAnimationFrame(frameId));
+                    this._motionFrames.clear();
+                    this._editorViewportFlushFrame = null;
+                },
+
+                _invalidateRegistrationWork() {
+                    this._registrationGeneration += 1;
+                    this._cancelMotionFrames();
+                    this._armedRevealTargets.clear();
+                    return this._registrationGeneration;
+                },
 
                 _shouldSkipAnimation() {
                     if (document.body.dataset.motionEnabled === 'false') return true;
                     if (
                         typeof window.matchMedia === 'function' &&
                         window.matchMedia('(prefers-reduced-motion: reduce)').matches
-                    )
+                    ) {
                         return true;
+                    }
                     if (!('IntersectionObserver' in window)) return true;
                     return false;
                 },
@@ -980,11 +1031,47 @@
                     return this._revealBehavior() === 'always';
                 },
 
+                _ownsElement(el) {
+                    if (!(el instanceof Element) || !this.$el.contains(el)) return false;
+                    return el.closest('[data-motion-section]') === this.$el;
+                },
+
+                _queryOwnedRevealTargets() {
+                    return [...this.$el.querySelectorAll(MOTION_REVEAL_TARGET_SELECTOR)].filter(
+                        (target) => this._ownsElement(target),
+                    );
+                },
+
+                _queryOwnedCascadeContainers() {
+                    const containers = [];
+                    if (this.$el.matches('[data-motion-cascade]')) {
+                        containers.push(this.$el);
+                    }
+                    containers.push(...this.$el.querySelectorAll('[data-motion-cascade]'));
+                    return containers.filter((container) => this._ownsElement(container));
+                },
+
+                _queryOwnedSequenceContainers() {
+                    const containers = [];
+                    if (this.$el.matches('[data-motion-sequence]')) {
+                        containers.push(this.$el);
+                    }
+                    containers.push(...this.$el.querySelectorAll('[data-motion-sequence]'));
+                    return containers.filter((container) => this._ownsElement(container));
+                },
+
+                _getSequenceContainer(target) {
+                    if (!(target instanceof Element)) return null;
+                    const sequence = target.closest('[data-motion-sequence]');
+                    if (!sequence || !this._ownsElement(sequence)) return null;
+                    return sequence;
+                },
+
                 _isRevealTargetVisible(target) {
                     if (!(target instanceof Element)) return false;
 
                     let el = target;
-                    while (el && el !== this.$el) {
+                    while (el && el !== document.documentElement) {
                         if (el instanceof HTMLElement) {
                             const style = window.getComputedStyle(el);
                             if (style.display === 'none' || style.visibility === 'hidden') {
@@ -998,20 +1085,96 @@
                 },
 
                 _shouldSkipTargetAnimation(target) {
-                    return (
-                        this.$el.dataset.motionMedia === 'static' &&
-                        target.dataset.motionReveal === 'media'
-                    );
+                    const revealType = target.hasAttribute('data-motion-copy')
+                        ? 'content'
+                        : target.dataset.motionReveal;
+
+                    if (revealType === 'content') {
+                        return !document.body.dataset.contentRevealStyle;
+                    }
+
+                    if (revealType === 'media') {
+                        return (
+                            this.$el.dataset.motionMedia === 'static' ||
+                            !document.body.dataset.mediaRevealStyle
+                        );
+                    }
+
+                    return false;
+                },
+
+                /**
+                 * Stable observation / row-geometry node.
+                 * Prefer the nearest owned [data-motion-bound]; otherwise the reveal target.
+                 * Unbound rise/zoom targets stay transform-stable during always reset via
+                 * data-motion-resetting (transform:none) until enter is confirmed.
+                 */
+                _getMotionBound(target) {
+                    if (!(target instanceof Element)) return null;
+
+                    if (target.hasAttribute('data-motion-copy')) {
+                        const copyBound = target.closest('[data-motion-copy-bound]');
+                        if (copyBound && this._ownsElement(copyBound)) return copyBound;
+                        return target;
+                    }
+
+                    const bound = target.closest('[data-motion-bound]');
+                    if (bound && this._ownsElement(bound)) return bound;
+                    return target;
+                },
+
+                _isClipVisible(el) {
+                    if (!(el instanceof Element)) return false;
+                    const rect = el.getBoundingClientRect();
+                    if (rect.width === 0 && rect.height === 0) return false;
+
+                    let parent = el.parentElement;
+                    while (parent && parent !== document.documentElement) {
+                        const style = window.getComputedStyle(parent);
+                        const overflowX = style.overflowX;
+                        const overflowY = style.overflowY;
+                        const clipsX =
+                            overflowX === 'hidden' ||
+                            overflowX === 'scroll' ||
+                            overflowX === 'auto' ||
+                            overflowX === 'clip';
+                        const clipsY =
+                            overflowY === 'hidden' ||
+                            overflowY === 'scroll' ||
+                            overflowY === 'auto' ||
+                            overflowY === 'clip';
+
+                        if (clipsX || clipsY) {
+                            const parentRect = parent.getBoundingClientRect();
+                            if (clipsX) {
+                                const overlapX =
+                                    Math.min(rect.right, parentRect.right) -
+                                    Math.max(rect.left, parentRect.left);
+                                if (overlapX <= 1) return false;
+                            }
+                            if (clipsY) {
+                                const overlapY =
+                                    Math.min(rect.bottom, parentRect.bottom) -
+                                    Math.max(rect.top, parentRect.top);
+                                if (overlapY <= 1) return false;
+                            }
+                        }
+
+                        if (parent === this.$el) break;
+                        parent = parent.parentElement;
+                    }
+
+                    return true;
                 },
 
                 _getStaggerMs(source = document.documentElement) {
                     const raw = getComputedStyle(source)
                         .getPropertyValue('--motion-reveal-stagger')
                         .trim();
-                    if (!raw) return 100;
-                    if (raw.endsWith('ms')) return parseFloat(raw) || 100;
-                    if (raw.endsWith('s')) return (parseFloat(raw) || 0) * 1000 || 100;
-                    return parseFloat(raw) || 100;
+                    if (!raw) return 170;
+                    if (raw.endsWith('ms')) return parseFloat(raw) || 170;
+                    if (raw.endsWith('s')) return (parseFloat(raw) || 0) * 1000 || 170;
+                    return parseFloat(raw) || 170;
                 },
 
                 _getMotionIndex(target) {
@@ -1025,8 +1188,35 @@
                 _getCascadeContainer(target) {
                     if (!(target instanceof Element)) return null;
                     const cascade = target.closest('[data-motion-cascade]');
-                    if (!cascade || !this.$el.contains(cascade)) return null;
+                    if (!cascade || !this._ownsElement(cascade)) return null;
                     return cascade;
+                },
+
+                _getLayoutRect(el) {
+                    if (!(el instanceof Element)) {
+                        return { top: 0, left: 0, bottom: 0, right: 0, width: 0, height: 0 };
+                    }
+
+                    const hadTransform = el.style.transform;
+                    const computedTransform = window.getComputedStyle(el).transform;
+                    const needsNeutralize =
+                        computedTransform && computedTransform !== 'none' && !hadTransform;
+
+                    if (needsNeutralize) {
+                        el.style.transform = 'none';
+                    }
+
+                    const rect = el.getBoundingClientRect();
+
+                    if (needsNeutralize) {
+                        if (hadTransform) {
+                            el.style.transform = hadTransform;
+                        } else {
+                            el.style.removeProperty('transform');
+                        }
+                    }
+
+                    return rect;
                 },
 
                 _groupCascadeTargetsByRow(targets) {
@@ -1034,8 +1224,9 @@
                     const entries = targets
                         .filter((target) => this._isRevealTargetVisible(target))
                         .map((target) => {
-                            const rect = target.getBoundingClientRect();
-                            return { target, top: rect.top, left: rect.left };
+                            const bound = this._getMotionBound(target);
+                            const rect = this._getLayoutRect(bound);
+                            return { target, bound, top: rect.top, left: rect.left };
                         })
                         .sort((a, b) => {
                             if (Math.abs(a.top - b.top) > tolerance) return a.top - b.top;
@@ -1046,17 +1237,18 @@
                     for (const entry of entries) {
                         let row = rows.find((r) => Math.abs(r.top - entry.top) <= tolerance);
                         if (!row) {
-                            row = { top: entry.top, targets: [] };
+                            row = { top: entry.top, targets: [], bounds: [] };
                             rows.push(row);
                         }
                         row.targets.push(entry.target);
+                        row.bounds.push(entry.bound);
                     }
 
                     return rows;
                 },
 
-                _isTargetInInsetViewport(target) {
-                    const rect = target.getBoundingClientRect();
+                _isBoundInInsetViewport(bound) {
+                    const rect = bound.getBoundingClientRect();
                     if (rect.width === 0 && rect.height === 0) return false;
 
                     const viewportHeight =
@@ -1067,15 +1259,62 @@
                     return rect.bottom > 0 && rect.top < visibleBottom;
                 },
 
-                _isCascadeTriggerInView(trigger) {
-                    return this._isTargetInInsetViewport(trigger);
+                _isBoundInViewport(bound) {
+                    const rect = bound.getBoundingClientRect();
+                    if (rect.width === 0 && rect.height === 0) return false;
+
+                    const viewportHeight =
+                        window.innerHeight || document.documentElement.clientHeight;
+                    const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+
+                    return (
+                        rect.bottom > 0 &&
+                        rect.top < viewportHeight &&
+                        rect.right > 0 &&
+                        rect.left < viewportWidth
+                    );
+                },
+
+                _isDocumentAtEnd() {
+                    const viewportHeight =
+                        window.innerHeight || document.documentElement.clientHeight;
+                    const scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
+                    const documentHeight = Math.max(
+                        document.documentElement.scrollHeight,
+                        document.body?.scrollHeight || 0,
+                    );
+
+                    return scrollTop + viewportHeight >= documentHeight - 2;
+                },
+
+                _isBoundFullyOutside(bound) {
+                    const rect = bound.getBoundingClientRect();
+                    const viewportHeight =
+                        window.innerHeight || document.documentElement.clientHeight;
+                    const buffer = MOTION_REVEAL_EXIT_BUFFER_PX;
+                    return rect.bottom <= -buffer || rect.top >= viewportHeight + buffer;
                 },
 
                 _isCascadeBatchOutOfView(batch) {
                     return batch.targets.every((target) => {
                         if (!this._isRevealTargetVisible(target)) return true;
-                        return !this._isTargetInInsetViewport(target);
+                        const bound =
+                            batch.boundByTarget.get(target) || this._getMotionBound(target);
+                        return this._isBoundFullyOutside(bound);
                     });
+                },
+
+                _releasePageLoadQueue(target) {
+                    this._pageLoadQueue.delete(target);
+                },
+
+                _silentResetTarget(target) {
+                    this._armedRevealTargets.delete(target);
+                    target.removeAttribute('data-motion-staging');
+                    target.setAttribute('data-motion-resetting', '');
+                    target.setAttribute('data-motion-state', 'pending');
+                    this._releasePageLoadQueue(target);
+                    this._motionDebug('silent-reset', { target });
                 },
 
                 _maybeResetCascadeBatch(batch) {
@@ -1083,57 +1322,163 @@
                     if (!this._isCascadeBatchOutOfView(batch)) return;
 
                     batch.targets.forEach((target) => {
-                        if (target.getAttribute('data-motion-state') === 'revealed') {
-                            this._applyTargetPending(target);
+                        if (
+                            target.getAttribute('data-motion-state') === 'revealed' ||
+                            this._armedRevealTargets.has(target)
+                        ) {
+                            this._silentResetTarget(target);
                         }
                     });
                 },
 
-                _scheduleCascadeBatchReveal(batch, baseDelayMs = 0) {
+                _canRevealTargetNow(target) {
+                    if (!this._ownsElement(target)) return false;
+                    if (!this._isRevealTargetVisible(target)) return false;
+                    if (this._shouldSkipTargetAnimation(target)) return false;
+                    if (target.getAttribute('data-motion-state') !== 'pending') return false;
+
+                    const bound = this._getMotionBound(target);
+                    if (!this._isClipVisible(bound)) return false;
+                    if (!this._isBoundInInsetViewport(bound)) return false;
+                    return true;
+                },
+
+                /**
+                 * Enter was confirmed on a transform-stable bound (resetting or separate bound).
+                 * After clearing data-motion-resetting, do not re-check inset against the
+                 * pending transform box — that would let transform drive the decision.
+                 */
+                _beginReveal(target) {
+                    if (target.hasAttribute('data-motion-resetting')) {
+                        // Re-arm the pending transform without animating from the silent
+                        // reset's transform:none. The next frame can then animate the
+                        // complete pending -> revealed distance in always mode.
+                        target.setAttribute('data-motion-staging', '');
+                        this._armedRevealTargets.add(target);
+                        target.removeAttribute('data-motion-resetting');
+                        void target.offsetWidth;
+                        target.removeAttribute('data-motion-staging');
+                        const generation = this._registrationGeneration;
+                        this._requestMotionFrame(() => {
+                            this._armedRevealTargets.delete(target);
+                            if (!this._ownsElement(target)) return;
+                            if (target.getAttribute('data-motion-state') !== 'pending') return;
+                            if (target.hasAttribute('data-motion-resetting')) return;
+                            if (!this._isRevealTargetVisible(target)) return;
+                            const bound = this._getMotionBound(target);
+                            if (this._isBoundFullyOutside(bound)) {
+                                this._silentResetTarget(target);
+                                return;
+                            }
+                            this._revealTarget(target);
+                        }, generation);
+                        return;
+                    }
+
+                    this._revealTarget(target);
+                },
+
+                _findCascadeBatchForTarget(target) {
+                    for (const batch of this._cascadeBatches.values()) {
+                        if (batch.targets.includes(target)) return batch;
+                    }
+                    return null;
+                },
+
+                _batchHasPendingRevealWork(batch) {
+                    return batch.targets.some(
+                        (target) =>
+                            this._isRevealTargetVisible(target) &&
+                            !this._shouldSkipTargetAnimation(target) &&
+                            target.getAttribute('data-motion-state') === 'pending',
+                    );
+                },
+
+                _maybeCompleteCascadeBatch(batch) {
+                    if (this._isRevealAlways()) return;
+                    if (this._batchHasPendingRevealWork(batch)) return;
+                    this._unobserveCascadeBatch(batch);
+                    this._motionDebug('cascade-batch-complete', {
+                        triggerBound: batch.triggerBound,
+                    });
+                },
+
+                _scheduleCascadeBatchReveal(batch, baseDelayMs = 0, allowViewportEdge = false) {
                     const pending = batch.targets
                         .filter(
                             (target) =>
                                 this._isRevealTargetVisible(target) &&
+                                this._isClipVisible(
+                                    batch.boundByTarget.get(target) || this._getMotionBound(target),
+                                ) &&
                                 !this._shouldSkipTargetAnimation(target) &&
                                 target.getAttribute('data-motion-state') === 'pending',
                         )
                         .sort((a, b) => this._getMotionIndex(a) - this._getMotionIndex(b));
 
-                    if (!pending.length) return;
+                    if (!pending.length) {
+                        this._maybeCompleteCascadeBatch(batch);
+                        return;
+                    }
 
                     const staggerMs = this._getStaggerMs(batch.cascade);
+                    const effectiveStaggerMs =
+                        pending.length > 1
+                            ? Math.min(
+                                  staggerMs,
+                                  MOTION_CASCADE_MAX_STAGGER_WINDOW_MS / (pending.length - 1),
+                              )
+                            : 0;
 
                     pending.forEach((target, batchIndex) => {
-                        const delay = baseDelayMs + Math.min(batchIndex * staggerMs, 900);
-                        this._scheduleDelayedReveal(target, delay);
+                        const delay = baseDelayMs + batchIndex * effectiveStaggerMs;
+                        this._scheduleDelayedReveal(target, delay, batch, allowViewportEdge);
                     });
 
-                    if (!this._isRevealAlways()) {
-                        this._unobserveCascadeBatch(batch);
-                    }
+                    // once: keep observing until every pending target successfully reveals
+                    // or a later enter re-schedules after a skipped timer check.
                 },
 
                 _unobserveCascadeBatch(batch) {
-                    batch.observed.forEach((element) => {
-                        cascadeRegistry.unobserve(element);
-                        this._cascadeObservedElements.delete(element);
+                    batch.enterObserved.forEach((element) => {
+                        cascadeEnterRegistry.unobserve(element);
+                        this._cascadeEnterObserved.delete(element);
                     });
-                    batch.observed.length = 0;
-                    this._cascadeBatches.delete(batch.trigger);
+                    batch.exitObserved.forEach((element) => {
+                        exitRegistry.unobserve(element);
+                        this._cascadeExitObserved.delete(element);
+                    });
+                    batch.enterObserved.length = 0;
+                    batch.exitObserved.length = 0;
+                    this._cascadeBatches.delete(batch.triggerBound);
                 },
 
-                _observeCascadeBatchElement(batch, element, handler) {
-                    cascadeRegistry.observe(element, handler);
-                    batch.observed.push(element);
-                    this._cascadeObservedElements.add(element);
+                _observeCascadeEnter(batch, element, handler) {
+                    cascadeEnterRegistry.observe(element, handler);
+                    batch.enterObserved.push(element);
+                    this._cascadeEnterObserved.add(element);
+                },
+
+                _observeCascadeExit(batch, element, handler) {
+                    exitRegistry.observe(element, handler);
+                    batch.exitObserved.push(element);
+                    this._cascadeExitObserved.add(element);
                 },
 
                 _registerCascadeBatch(cascade, targets) {
+                    const boundByTarget = new Map();
+                    targets.forEach((target) => {
+                        boundByTarget.set(target, this._getMotionBound(target));
+                    });
+
                     const sorted = [...targets].sort(
                         (a, b) => this._getMotionIndex(a) - this._getMotionIndex(b),
                     );
-                    const trigger = sorted[0];
-                    if (!trigger) return;
+                    const triggerTarget = sorted[0];
+                    if (!triggerTarget) return;
+
+                    const triggerBound = boundByTarget.get(triggerTarget);
+                    if (!triggerBound) return;
 
                     if (
                         !this._isRevealAlways() &&
@@ -1144,7 +1489,7 @@
                         return;
                     }
 
-                    if (this._cascadeBatches.has(trigger)) return;
+                    if (this._cascadeBatches.has(triggerBound)) return;
 
                     sorted.forEach((target) => {
                         if (!this._isRevealTargetVisible(target)) return;
@@ -1154,33 +1499,41 @@
                             return;
                         }
 
-                        if (
-                            !this._isRevealAlways() &&
-                            target.getAttribute('data-motion-state') === 'revealed'
-                        ) {
+                        if (target.getAttribute('data-motion-state') === 'revealed') {
                             return;
                         }
 
                         this._applyTargetPending(target);
                     });
 
-                    const batch = { cascade, targets: sorted, trigger, observed: [] };
-                    this._cascadeBatches.set(trigger, batch);
+                    const batch = {
+                        cascade,
+                        targets: sorted,
+                        boundByTarget,
+                        triggerBound,
+                        enterObserved: [],
+                        exitObserved: [],
+                    };
+                    this._cascadeBatches.set(triggerBound, batch);
 
-                    this._observeCascadeBatchElement(batch, trigger, (entry) => {
+                    this._observeCascadeEnter(batch, triggerBound, (entry) => {
                         this._onCascadeBatchTriggerIntersect(batch, entry);
                     });
 
                     if (this._isRevealAlways()) {
-                        sorted.forEach((target) => {
-                            if (target === trigger) return;
-                            this._observeCascadeBatchElement(batch, target, (entry) => {
-                                if (!entry.isIntersecting) {
-                                    this._maybeResetCascadeBatch(batch);
-                                }
+                        const uniqueBounds = new Set(boundByTarget.values());
+                        uniqueBounds.forEach((bound) => {
+                            this._observeCascadeExit(batch, bound, (entry) => {
+                                if (entry.isIntersecting) return;
+                                this._maybeResetCascadeBatch(batch);
                             });
                         });
                     }
+
+                    this._motionDebug('cascade-batch-register', {
+                        count: sorted.length,
+                        triggerBound,
+                    });
                 },
 
                 _registerCascadeTargets(cascadeTargets) {
@@ -1189,6 +1542,8 @@
                     cascadeTargets.forEach((target) => {
                         const cascade = this._getCascadeContainer(target);
                         if (!cascade) return;
+                        const bound = this._getMotionBound(target);
+                        if (!this._isClipVisible(bound)) return;
                         if (!byContainer.has(cascade)) byContainer.set(cascade, []);
                         byContainer.get(cascade).push(target);
                     });
@@ -1202,34 +1557,90 @@
                 },
 
                 _onCascadeBatchTriggerIntersect(batch, entry) {
-                    if (!entry.isIntersecting) {
-                        this._maybeResetCascadeBatch(batch);
-                        return;
-                    }
+                    // Enter observer only — exit/reset is owned by exitRegistry.
+                    if (!entry.isIntersecting) return;
 
                     if (this._deferToPageLoadFlush) return;
+                    if (!this._isClipVisible(batch.triggerBound)) return;
+                    if (!this._isBoundInInsetViewport(batch.triggerBound)) return;
 
-                    const hasPending = batch.targets.some(
-                        (target) =>
-                            this._isRevealTargetVisible(target) &&
-                            target.getAttribute('data-motion-state') === 'pending',
-                    );
-                    if (!hasPending) return;
+                    if (!this._batchHasPendingRevealWork(batch)) {
+                        this._maybeCompleteCascadeBatch(batch);
+                        return;
+                    }
 
                     this._scheduleCascadeBatchReveal(batch, 0);
                 },
 
                 _unobserveAllCascadeBatches() {
-                    this._cascadeObservedElements.forEach((element) => {
-                        cascadeRegistry.unobserve(element);
+                    this._cascadeEnterObserved.forEach((element) => {
+                        cascadeEnterRegistry.unobserve(element);
                     });
-                    this._cascadeObservedElements.clear();
+                    this._cascadeExitObserved.forEach((element) => {
+                        exitRegistry.unobserve(element);
+                    });
+                    this._cascadeEnterObserved.clear();
+                    this._cascadeExitObserved.clear();
                     this._cascadeBatches.clear();
                 },
 
-                _scheduleDelayedReveal(target, delayMs) {
+                _scheduleDelayedReveal(
+                    target,
+                    delayMs,
+                    cascadeBatch = null,
+                    allowViewportEdge = false,
+                ) {
+                    const run = () => {
+                        try {
+                            if (!this._ownsElement(target)) {
+                                this._motionDebug('delayed-reveal-skip', {
+                                    target,
+                                    reason: 'ownership',
+                                });
+                                return;
+                            }
+                            if (target.getAttribute('data-motion-state') !== 'pending') return;
+                            if (!this._isRevealTargetVisible(target)) {
+                                this._motionDebug('delayed-reveal-skip', {
+                                    target,
+                                    reason: 'hidden',
+                                });
+                                return;
+                            }
+                            if (this._shouldSkipTargetAnimation(target)) {
+                                this._revealTarget(target);
+                                return;
+                            }
+                            const bound = this._getMotionBound(target);
+                            if (!this._isClipVisible(bound)) {
+                                this._motionDebug('delayed-reveal-skip', {
+                                    target,
+                                    reason: 'clip',
+                                });
+                                return;
+                            }
+                            const isInRevealViewport = allowViewportEdge
+                                ? this._isBoundInViewport(bound)
+                                : this._isBoundInInsetViewport(bound);
+                            if (!isInRevealViewport) {
+                                this._motionDebug('delayed-reveal-skip', {
+                                    target,
+                                    reason: allowViewportEdge ? 'viewport' : 'inset',
+                                });
+                                return;
+                            }
+                            this._beginReveal(target);
+                        } finally {
+                            // Always drop the queue lock so a later enter can reveal.
+                            this._releasePageLoadQueue(target);
+                            if (cascadeBatch) {
+                                this._maybeCompleteCascadeBatch(cascadeBatch);
+                            }
+                        }
+                    };
+
                     if (delayMs <= 0) {
-                        this._revealTarget(target);
+                        run();
                         return;
                     }
 
@@ -1238,20 +1649,34 @@
 
                     const timerId = window.setTimeout(() => {
                         this._pageLoadTimers.delete(target);
-                        if (target.getAttribute('data-motion-state') !== 'pending') return;
-                        this._revealTarget(target);
+                        run();
                     }, delayMs);
 
                     this._pageLoadTimers.set(target, timerId);
                 },
 
                 /**
-                 * Assign --motion-index: explicit data-motion-index wins; otherwise
-                 * visible descendants of [data-motion-cascade] receive 0..n; all
-                 * other targets default to 0.
+                 * Assign --motion-index: explicit data-motion-index wins; compact
+                 * sequences receive DOM-order indices; cascade children receive 0..n
+                 * within each current visual row; other ordinary targets remain 0.
                  */
                 _prepareTargets() {
-                    const allTargets = this.$el.querySelectorAll('[data-motion-reveal]');
+                    const allTargets = this._queryOwnedRevealTargets();
+
+                    if (!this._criticalViewportPrepared) {
+                        let criticalCount = 0;
+                        allTargets.forEach((target) => {
+                            if (!this._isRevealTargetVisible(target)) return;
+                            const bound = this._getMotionBound(target);
+                            if (!this._isClipVisible(bound) || !this._isBoundInViewport(bound)) {
+                                return;
+                            }
+                            target.setAttribute('data-motion-critical-runtime', '');
+                            criticalCount += 1;
+                        });
+                        this._criticalViewportPrepared = true;
+                        this._motionDebug('critical-viewport', { count: criticalCount });
+                    }
 
                     allTargets.forEach((target) => {
                         const explicit = Number(target.dataset.motionIndex);
@@ -1262,18 +1687,45 @@
                         }
                     });
 
-                    this.$el.querySelectorAll('[data-motion-cascade]').forEach((container) => {
+                    this._queryOwnedSequenceContainers().forEach((container) => {
                         if (!this._isRevealTargetVisible(container)) return;
 
-                        let cascadeIndex = 0;
-                        container.querySelectorAll('[data-motion-reveal]').forEach((target) => {
-                            if (!this._isRevealTargetVisible(target)) return;
+                        const sequenceTargets = [
+                            ...container.querySelectorAll(MOTION_REVEAL_TARGET_SELECTOR),
+                        ].filter((target) => {
+                            if (!this._ownsElement(target)) return false;
+                            if (!this._isRevealTargetVisible(target)) return false;
+                            if (this._getSequenceContainer(target) !== container) return false;
+                            return !this._getCascadeContainer(target);
+                        });
 
+                        sequenceTargets.forEach((target, sequenceIndex) => {
                             const explicit = Number(target.dataset.motionIndex);
                             if (Number.isFinite(explicit) && explicit >= 0) return;
+                            target.style.setProperty('--motion-index', String(sequenceIndex));
+                        });
+                    });
 
-                            target.style.setProperty('--motion-index', String(cascadeIndex));
-                            cascadeIndex += 1;
+                    this._queryOwnedCascadeContainers().forEach((container) => {
+                        if (!this._isRevealTargetVisible(container)) return;
+
+                        const cascadeTargets = [
+                            ...container.querySelectorAll(MOTION_REVEAL_TARGET_SELECTOR),
+                        ].filter((target) => {
+                            if (!this._ownsElement(target)) return false;
+                            if (!this._isRevealTargetVisible(target)) return false;
+                            return this._isClipVisible(this._getMotionBound(target));
+                        });
+
+                        const rows = this._groupCascadeTargetsByRow(cascadeTargets);
+                        rows.forEach((row) => {
+                            let cascadeIndex = 0;
+                            row.targets.forEach((target) => {
+                                const explicit = Number(target.dataset.motionIndex);
+                                if (Number.isFinite(explicit) && explicit >= 0) return;
+                                target.style.setProperty('--motion-index', String(cascadeIndex));
+                                cascadeIndex += 1;
+                            });
                         });
                     });
 
@@ -1282,10 +1734,6 @@
                             target.style.setProperty('--motion-index', '0');
                         }
                     });
-                },
-
-                _isTargetInView(target) {
-                    return this._isTargetInInsetViewport(target);
                 },
 
                 _clearPageLoadTimers() {
@@ -1302,18 +1750,31 @@
                     });
                     this._editorReplayTimers.clear();
                     if (this._editorViewportFlushFrame) {
-                        cancelAnimationFrame(this._editorViewportFlushFrame);
+                        this._cancelMotionFrame(this._editorViewportFlushFrame);
                         this._editorViewportFlushFrame = null;
                     }
                 },
 
+                _clearRelayoutTimer() {
+                    if (this._relayoutTimer) {
+                        clearTimeout(this._relayoutTimer);
+                        this._relayoutTimer = null;
+                    }
+                },
+
                 _applyTargetPending(target) {
+                    this._armedRevealTargets.delete(target);
+                    target.removeAttribute('data-motion-resetting');
+                    target.removeAttribute('data-motion-staging');
                     target.setAttribute('data-motion-state', 'pending');
                 },
 
                 _revealTarget(target) {
+                    this._armedRevealTargets.delete(target);
+                    target.removeAttribute('data-motion-resetting');
+                    target.removeAttribute('data-motion-staging');
                     target.setAttribute('data-motion-state', 'revealed');
-                    this._pageLoadQueue.delete(target);
+                    this._releasePageLoadQueue(target);
 
                     const timerId = this._pageLoadTimers.get(target);
                     if (timerId) {
@@ -1321,52 +1782,112 @@
                         this._pageLoadTimers.delete(target);
                     }
 
-                    if (!this._isRevealAlways() && this._observedTargets.has(target)) {
-                        registry.unobserve(target);
-                        this._observedTargets.delete(target);
+                    if (!this._isRevealAlways()) {
+                        const bound = this._getMotionBound(target);
+                        this._releaseOrdinaryTarget(bound, target);
                     }
+
+                    const cascadeBatch = this._findCascadeBatchForTarget(target);
+                    if (cascadeBatch) {
+                        this._maybeCompleteCascadeBatch(cascadeBatch);
+                    }
+
+                    this._motionDebug('reveal', { target });
                 },
 
-                _resetTargetForReplay(target) {
-                    if (this._shouldSkipAnimation()) return;
-                    this._applyTargetPending(target);
-                    if (!this._observedTargets.has(target)) {
-                        registry.observe(target, (entry) => {
-                            this._onTargetIntersect(target, entry);
-                        });
-                        this._observedTargets.add(target);
-                    }
-                },
-
-                _unobserveAllTargets() {
-                    this._observedTargets.forEach((target) => {
-                        registry.unobserve(target);
+                _unobserveAllBounds() {
+                    this._observedBounds.forEach((_meta, bound) => {
+                        enterRegistry.unobserve(bound);
                     });
-                    this._observedTargets.clear();
+                    this._observedBounds.clear();
+
+                    this._exitObservedBounds.forEach((_meta, bound) => {
+                        exitRegistry.unobserve(bound);
+                    });
+                    this._exitObservedBounds.clear();
                 },
 
-                _schedulePageLoadReveals() {
+                _releaseOrdinaryTarget(bound, target) {
+                    const enterMeta = this._observedBounds.get(bound);
+                    if (enterMeta) {
+                        enterMeta.targets.delete(target);
+                        if (enterMeta.targets.size === 0) {
+                            enterRegistry.unobserve(bound);
+                            this._observedBounds.delete(bound);
+                        }
+                    }
+
+                    const exitMeta = this._exitObservedBounds.get(bound);
+                    if (exitMeta) {
+                        exitMeta.targets.delete(target);
+                        if (exitMeta.targets.size === 0) {
+                            exitRegistry.unobserve(bound);
+                            this._exitObservedBounds.delete(bound);
+                        }
+                    }
+                },
+
+                _observeOrdinaryTarget(target) {
+                    const bound = this._getMotionBound(target);
+                    let enterMeta = this._observedBounds.get(bound);
+
+                    if (!enterMeta) {
+                        const targets = new Set();
+                        const enterHandler = (entry) => {
+                            [...targets].forEach((observedTarget) => {
+                                this._onOrdinaryEnter(bound, observedTarget, entry);
+                            });
+                        };
+                        enterMeta = { targets, handler: enterHandler };
+                        this._observedBounds.set(bound, enterMeta);
+                        enterRegistry.observe(bound, enterHandler);
+                    }
+                    enterMeta.targets.add(target);
+
+                    if (!this._isRevealAlways()) return;
+
+                    let exitMeta = this._exitObservedBounds.get(bound);
+                    if (!exitMeta) {
+                        const targets = new Set();
+                        const exitHandler = (entry) => {
+                            [...targets].forEach((observedTarget) => {
+                                this._onOrdinaryExit(bound, observedTarget, entry);
+                            });
+                        };
+                        exitMeta = { targets, handler: exitHandler };
+                        this._exitObservedBounds.set(bound, exitMeta);
+                        exitRegistry.observe(bound, exitHandler);
+                    }
+                    exitMeta.targets.add(target);
+                },
+
+                _schedulePageLoadReveals(generation = this._registrationGeneration) {
                     this._deferToPageLoadFlush = true;
 
-                    requestAnimationFrame(() => {
-                        requestAnimationFrame(() => {
+                    this._requestMotionFrame(() => {
+                        this._requestMotionFrame(() => {
                             this._flushPendingInView(MOTION_REVEAL_PAGE_LOAD_BASE_DELAY_MS);
                             this._deferToPageLoadFlush = false;
-                        });
-                    });
+                        }, generation);
+                    }, generation);
                 },
 
                 _flushPendingInView(baseDelayMs = 0) {
+                    if (this._destroyed) return;
                     const cascadeTargetSet = new Set();
 
                     this._cascadeBatches.forEach((batch) => {
                         batch.targets.forEach((target) => cascadeTargetSet.add(target));
 
-                        if (!this._isCascadeTriggerInView(batch.trigger)) return;
+                        if (!this._isClipVisible(batch.triggerBound)) return;
+                        if (!this._isBoundInInsetViewport(batch.triggerBound)) return;
 
                         const pending = batch.targets.filter(
                             (target) =>
                                 this._isRevealTargetVisible(target) &&
+                                this._isClipVisible(
+                                    batch.boundByTarget.get(target) || this._getMotionBound(target),
+                                ) &&
                                 !this._shouldSkipTargetAnimation(target) &&
                                 target.getAttribute('data-motion-state') === 'pending',
                         );
@@ -1375,31 +1896,88 @@
                         this._scheduleCascadeBatchReveal(batch, baseDelayMs);
                     });
 
-                    const pendingInView = [
-                        ...this.$el.querySelectorAll(
-                            '[data-motion-reveal][data-motion-state="pending"]',
-                        ),
-                    ].filter(
+                    const pendingInView = this._queryOwnedRevealTargets().filter(
                         (target) =>
                             !cascadeTargetSet.has(target) &&
+                            target.getAttribute('data-motion-state') === 'pending' &&
                             this._isRevealTargetVisible(target) &&
-                            this._isTargetInView(target),
+                            this._isClipVisible(this._getMotionBound(target)) &&
+                            this._isBoundInInsetViewport(this._getMotionBound(target)),
                     );
 
                     pendingInView.forEach((target) => {
                         this._pageLoadQueue.add(target);
-                        const delay =
-                            baseDelayMs + this._getMotionIndex(target) * this._getStaggerMs(target);
-                        this._scheduleDelayedReveal(target, delay);
+                        // CSS owns ordinary stagger via --motion-index on revealed transition.
+                        this._scheduleDelayedReveal(target, baseDelayMs);
                     });
                 },
 
+                /**
+                 * Recovery path for fast scrolls and the document end, where a target can
+                 * be visibly inside the viewport without ever crossing the 15% enter line.
+                 * The shared scroll-settle listener calls this only after scrolling pauses,
+                 * preserving the normal observer trigger while preventing stuck content.
+                 */
+                _flushPendingInViewport() {
+                    if (
+                        this._destroyed ||
+                        this._deferToPageLoadFlush ||
+                        this._shouldSkipAnimation()
+                    ) {
+                        return;
+                    }
+
+                    const cascadeTargetSet = new Set();
+                    const allowViewportEdge = this._isDocumentAtEnd();
+                    let scheduled = 0;
+
+                    this._cascadeBatches.forEach((batch) => {
+                        batch.targets.forEach((target) => cascadeTargetSet.add(target));
+
+                        if (!this._isClipVisible(batch.triggerBound)) return;
+                        const triggerIsReachable = allowViewportEdge
+                            ? this._isBoundInViewport(batch.triggerBound)
+                            : this._isBoundInInsetViewport(batch.triggerBound);
+                        if (!triggerIsReachable) return;
+                        if (!this._batchHasPendingRevealWork(batch)) return;
+
+                        this._scheduleCascadeBatchReveal(batch, 0, allowViewportEdge);
+                        scheduled += 1;
+                    });
+
+                    this._queryOwnedRevealTargets().forEach((target) => {
+                        if (cascadeTargetSet.has(target)) return;
+                        if (this._pageLoadQueue.has(target)) return;
+                        if (target.getAttribute('data-motion-state') !== 'pending') return;
+                        if (!this._isRevealTargetVisible(target)) return;
+                        if (this._shouldSkipTargetAnimation(target)) return;
+
+                        const bound = this._getMotionBound(target);
+                        if (!this._isClipVisible(bound)) return;
+                        const boundIsReachable = allowViewportEdge
+                            ? this._isBoundInViewport(bound)
+                            : this._isBoundInInsetViewport(bound);
+                        if (!boundIsReachable) return;
+
+                        this._scheduleDelayedReveal(target, 0, null, allowViewportEdge);
+                        scheduled += 1;
+                    });
+
+                    if (scheduled > 0) {
+                        this._motionDebug('viewport-fallback-flush', { scheduled });
+                    }
+                },
+
                 _registerTargets() {
+                    if (this._destroyed) return;
+                    const generation = this._invalidateRegistrationWork();
+                    this._deferToPageLoadFlush = false;
                     this._clearPageLoadTimers();
                     this._unobserveAllCascadeBatches();
+                    this._unobserveAllBounds();
                     this._prepareTargets();
 
-                    const targets = [...this.$el.querySelectorAll('[data-motion-reveal]')];
+                    const targets = this._queryOwnedRevealTargets();
 
                     if (this._shouldSkipAnimation()) {
                         targets.forEach((target) => {
@@ -1414,6 +1992,10 @@
 
                     targets.forEach((target) => {
                         if (!this._isRevealTargetVisible(target)) return;
+                        if (this._shouldSkipTargetAnimation(target)) {
+                            this._revealTarget(target);
+                            return;
+                        }
                         if (this._getCascadeContainer(target)) {
                             cascadeTargets.push(target);
                         } else {
@@ -1436,31 +2018,53 @@
                             return;
                         }
 
-                        if (this._observedTargets.has(target)) return;
+                        if (target.getAttribute('data-motion-state') !== 'revealed') {
+                            this._applyTargetPending(target);
+                        }
 
-                        this._applyTargetPending(target);
-                        registry.observe(target, (entry) => {
-                            this._onTargetIntersect(target, entry);
-                        });
-                        this._observedTargets.add(target);
+                        this._observeOrdinaryTarget(target);
                     });
 
                     this._registerCascadeTargets(cascadeTargets);
 
-                    this._schedulePageLoadReveals();
+                    this._motionDebug('register', {
+                        ordinary: ordinaryTargets.length,
+                        cascade: cascadeTargets.length,
+                        batches: this._cascadeBatches.size,
+                        enterBounds: this._observedBounds.size,
+                        exitBounds: this._exitObservedBounds.size,
+                        relayoutListeners: motionRevealRelayoutRegistry.size(),
+                        scrollSettleInstances: motionRevealScrollSettleRegistry.size(),
+                        scrollSettleListening: motionRevealScrollSettleRegistry.isListening(),
+                    });
+
+                    this._schedulePageLoadReveals(generation);
+                },
+
+                _scheduleRelayout() {
+                    this._clearRelayoutTimer();
+                    this._relayoutTimer = window.setTimeout(() => {
+                        this._relayoutTimer = null;
+                        this._registerTargets();
+                    }, MOTION_RELAYOUT_DEBOUNCE_MS);
                 },
 
                 _refresh() {
+                    if (this._destroyed) return;
+                    const generation = this._invalidateRegistrationWork();
                     this._clearEditorReplayTimers();
                     this._clearPageLoadTimers();
-                    this._unobserveAllTargets();
+                    this._clearRelayoutTimer();
+                    this._unobserveAllBounds();
                     this._unobserveAllCascadeBatches();
-                    this.$el.querySelectorAll('[data-motion-reveal]').forEach((target) => {
+                    this._queryOwnedRevealTargets().forEach((target) => {
                         target.removeAttribute('data-motion-state');
+                        target.removeAttribute('data-motion-resetting');
+                        target.removeAttribute('data-motion-staging');
                     });
-                    requestAnimationFrame(() => {
+                    this._requestMotionFrame(() => {
                         this._registerTargets();
-                    });
+                    }, generation);
                 },
 
                 _refreshForThemeEditorSelect() {
@@ -1475,33 +2079,58 @@
                 },
 
                 _scheduleThemeEditorViewportFlush() {
-                    if (this._editorViewportFlushFrame) return;
+                    if (this._destroyed || this._editorViewportFlushFrame) return;
 
-                    this._editorViewportFlushFrame = requestAnimationFrame(() => {
+                    const generation = this._registrationGeneration;
+                    this._editorViewportFlushFrame = this._requestMotionFrame(() => {
                         this._editorViewportFlushFrame = null;
                         this._registerTargets();
-                        this._flushPendingInView();
-                    });
+                    }, generation);
                 },
 
                 init() {
+                    this._destroyed = false;
                     this._onTabClick = (event) => {
                         if (event.target.closest('[role="tab"]')) {
-                            requestAnimationFrame(() => {
-                                requestAnimationFrame(() => {
+                            const generation = this._registrationGeneration;
+                            this._requestMotionFrame(() => {
+                                this._requestMotionFrame(() => {
                                     this._registerTargets();
-                                });
-                            });
+                                }, generation);
+                            }, generation);
                         }
                     };
                     this.$el.addEventListener('click', this._onTabClick);
 
+                    this._onSwiperRelayout = (event) => {
+                        const target = event.target;
+                        if (!(target instanceof Element)) return;
+                        if (
+                            target.closest(
+                                '.swiper-button-next, .swiper-button-prev, .swiper-pagination',
+                            ) ||
+                            (event.type === 'transitionend' &&
+                                target.classList.contains('swiper-wrapper'))
+                        ) {
+                            this._scheduleRelayout();
+                        }
+                    };
+                    this.$el.addEventListener('click', this._onSwiperRelayout);
+                    this.$el.addEventListener('transitionend', this._onSwiperRelayout);
+
+                    motionRevealRelayoutRegistry.add(this);
+                    this._relayoutBound = true;
+                    motionRevealScrollSettleRegistry.add(this);
+                    this._scrollSettleBound = true;
+
                     this.$nextTick(() => {
-                        requestAnimationFrame(() => {
-                            requestAnimationFrame(() => {
+                        if (this._destroyed) return;
+                        const generation = this._registrationGeneration;
+                        this._requestMotionFrame(() => {
+                            this._requestMotionFrame(() => {
                                 this._registerTargets();
-                            });
-                        });
+                            }, generation);
+                        }, generation);
                     });
 
                     if (
@@ -1543,12 +2172,6 @@
                             this._scheduleThemeEditorViewportFlush.bind(this),
                             { passive: true },
                         );
-                        this.on(
-                            window,
-                            'resize',
-                            this._scheduleThemeEditorViewportFlush.bind(this),
-                            { passive: true },
-                        );
                     }
                 },
 
@@ -1564,33 +2187,69 @@
                     return false;
                 },
 
-                _onTargetIntersect(target, entry) {
-                    if (!entry.isIntersecting) {
-                        if (
-                            this._isRevealAlways() &&
-                            !this._shouldSkipAnimation() &&
-                            target.getAttribute('data-motion-state') === 'revealed'
-                        ) {
-                            this._resetTargetForReplay(target);
-                        }
+                _onOrdinaryEnter(bound, target, entry) {
+                    if (!this._ownsElement(target)) {
+                        this._releaseOrdinaryTarget(bound, target);
                         return;
                     }
+
+                    if (!entry.isIntersecting) return;
 
                     if (target.getAttribute('data-motion-state') === 'revealed') return;
                     if (this._deferToPageLoadFlush) return;
                     if (this._pageLoadQueue.has(target)) return;
+                    if (!this._isRevealTargetVisible(target)) return;
+                    if (!this._isClipVisible(bound)) return;
+                    if (!this._isBoundInInsetViewport(bound)) return;
 
-                    this._revealTarget(target);
+                    this._beginReveal(target);
+                },
+
+                _onOrdinaryExit(bound, target, entry) {
+                    if (!this._ownsElement(target)) {
+                        this._releaseOrdinaryTarget(bound, target);
+                        return;
+                    }
+
+                    // Exit observer rootMargin expands by ±64px; non-intersecting means
+                    // the bound has fully left the buffered region.
+                    if (entry.isIntersecting) return;
+                    if (!this._isRevealAlways() || this._shouldSkipAnimation()) return;
+                    if (
+                        target.getAttribute('data-motion-state') !== 'revealed' &&
+                        !this._armedRevealTargets.has(target)
+                    ) {
+                        return;
+                    }
+
+                    this._silentResetTarget(target);
                 },
 
                 destroy() {
+                    this._destroyed = true;
+                    this._invalidateRegistrationWork();
+                    this._deferToPageLoadFlush = false;
                     this._clearEditorReplayTimers();
                     this._clearPageLoadTimers();
-                    this._unobserveAllTargets();
+                    this._clearRelayoutTimer();
+                    this._unobserveAllBounds();
                     this._unobserveAllCascadeBatches();
+                    if (this._relayoutBound) {
+                        motionRevealRelayoutRegistry.remove(this);
+                        this._relayoutBound = false;
+                    }
+                    if (this._scrollSettleBound) {
+                        motionRevealScrollSettleRegistry.remove(this);
+                        this._scrollSettleBound = false;
+                    }
                     if (this._onTabClick) {
                         this.$el.removeEventListener('click', this._onTabClick);
                         this._onTabClick = null;
+                    }
+                    if (this._onSwiperRelayout) {
+                        this.$el.removeEventListener('click', this._onSwiperRelayout);
+                        this.$el.removeEventListener('transitionend', this._onSwiperRelayout);
+                        this._onSwiperRelayout = null;
                     }
                     if (this._cleanupEditor) {
                         this._cleanupEditor();
@@ -1603,13 +2262,39 @@
     };
 
     /**
-     * Module-level shared IntersectionObserver for motion reveal.
-     * All motionRevealSection instances share one observer.
+     * Module-level shared observers for motion reveal.
+     *
+     * Contract:
+     * - [data-motion-section] owns lifecycle; nearest section owns each target
+     * - [data-motion-reveal] is an ordinary content/media animated node
+     * - [data-motion-copy] is an independently observed card-copy animated node
+     * - [data-motion-copy-bound] optionally stabilizes copy observation geometry
+     * - [data-motion-bound] is the stable observation / row-geometry node when present
+     * - [data-motion-sequence] assigns ordinary descendant targets a DOM-order stagger
+     * - Enter observer: rootMargin bottom -15% (reveal trigger line)
+     * - Scroll-settle fallback: reveals pending targets already visible at viewport edges
+     * - Exit observer: rootMargin ±EXIT_BUFFER_PX (always silent-reset only after full leave)
+     * - cascade stagger timing is owned by JS; ordinary stagger delay is owned by CSS
      */
     const MOTION_REVEAL_PAGE_LOAD_BASE_DELAY_MS = 48;
+    const MOTION_REVEAL_TARGET_SELECTOR = '[data-motion-reveal], [data-motion-copy]';
     const MOTION_CASCADE_ROW_TOLERANCE_PX = 8;
+    const MOTION_CASCADE_MAX_STAGGER_WINDOW_MS = 500;
+    const MOTION_REVEAL_EXIT_BUFFER_PX = 64;
+    const MOTION_RELAYOUT_DEBOUNCE_MS = 150;
+    const MOTION_SCROLL_SETTLE_MS = 160;
 
-    const motionRevealSharedRegistry = (() => {
+    function motionRevealDebugEnabled() {
+        if (typeof window === 'undefined') return false;
+        if (document.body?.dataset?.debugMotion === 'true') return true;
+        try {
+            return /(?:\?|&)debug=motion(?:&|$)/.test(window.location.search);
+        } catch (_error) {
+            return false;
+        }
+    }
+
+    function createMotionObserverRegistry(rootMargin) {
         const callbacks = new WeakMap();
         let observer = null;
 
@@ -1624,7 +2309,7 @@
                         if (cb) cb(entry);
                     });
                 },
-                { rootMargin: '0px 0px -15% 0px', threshold: 0 },
+                { rootMargin, threshold: 0 },
             );
             return observer;
         }
@@ -1645,46 +2330,115 @@
                 callbacks.delete(el);
             },
         };
-    })();
+    }
+
+    const motionRevealEnterRegistry = createMotionObserverRegistry('0px 0px -15% 0px');
+    const motionCascadeEnterRegistry = createMotionObserverRegistry('0px 0px -15% 0px');
+    const motionRevealExitRegistry = createMotionObserverRegistry(
+        `${MOTION_REVEAL_EXIT_BUFFER_PX}px 0px ${MOTION_REVEAL_EXIT_BUFFER_PX}px 0px`,
+    );
 
     /**
-     * Cascade row/batch observer: low threshold so a row representative can
-     * trigger the whole batch without requiring tall cards to self-intersect at 12%.
+     * One shared window.resize listener for all motionRevealSection instances.
+     * First add() attaches; last remove() detaches.
      */
-    const motionCascadeBatchRegistry = (() => {
-        const callbacks = new WeakMap();
-        let observer = null;
+    const motionRevealRelayoutRegistry = (() => {
+        const instances = new Set();
+        let listening = false;
+        let timerId = null;
 
-        function getObserver() {
-            if (observer) return observer;
-            if (!('IntersectionObserver' in window)) return null;
-
-            observer = new IntersectionObserver(
-                (entries) => {
-                    entries.forEach((entry) => {
-                        const cb = callbacks.get(entry.target);
-                        if (cb) cb(entry);
-                    });
-                },
-                { rootMargin: '0px 0px -15% 0px', threshold: 0 },
-            );
-            return observer;
+        function onResize() {
+            if (timerId) clearTimeout(timerId);
+            timerId = window.setTimeout(() => {
+                timerId = null;
+                instances.forEach((instance) => {
+                    if (instance && typeof instance._registerTargets === 'function') {
+                        instance._registerTargets();
+                    }
+                });
+            }, MOTION_RELAYOUT_DEBOUNCE_MS);
         }
 
         return {
-            observe(el, cb) {
-                const obs = getObserver();
-                if (!obs) {
-                    cb({ isIntersecting: true });
-                    return;
+            add(instance) {
+                instances.add(instance);
+                if (!listening && typeof window !== 'undefined') {
+                    window.addEventListener('resize', onResize, { passive: true });
+                    listening = true;
                 }
-                callbacks.set(el, cb);
-                obs.observe(el);
             },
 
-            unobserve(el) {
-                if (observer) observer.unobserve(el);
-                callbacks.delete(el);
+            remove(instance) {
+                instances.delete(instance);
+                if (instances.size === 0 && listening && typeof window !== 'undefined') {
+                    window.removeEventListener('resize', onResize);
+                    listening = false;
+                    if (timerId) {
+                        clearTimeout(timerId);
+                        timerId = null;
+                    }
+                }
+            },
+
+            size() {
+                return instances.size;
+            },
+
+            isListening() {
+                return listening;
+            },
+        };
+    })();
+
+    /**
+     * One shared passive scroll listener for all motionRevealSection instances.
+     * It runs only after scrolling settles and recovers visible pending targets that
+     * fast scrolling or the document boundary prevented from crossing the inset line.
+     */
+    const motionRevealScrollSettleRegistry = (() => {
+        const instances = new Set();
+        let listening = false;
+        let timerId = null;
+
+        function onScroll() {
+            if (timerId) clearTimeout(timerId);
+            timerId = window.setTimeout(() => {
+                timerId = null;
+                instances.forEach((instance) => {
+                    if (instance && typeof instance._flushPendingInViewport === 'function') {
+                        instance._flushPendingInViewport();
+                    }
+                });
+            }, MOTION_SCROLL_SETTLE_MS);
+        }
+
+        return {
+            add(instance) {
+                instances.add(instance);
+                if (!listening && typeof window !== 'undefined') {
+                    window.addEventListener('scroll', onScroll, { passive: true });
+                    listening = true;
+                }
+            },
+
+            remove(instance) {
+                instances.delete(instance);
+                if (instances.size === 0 && listening && typeof window !== 'undefined') {
+                    window.removeEventListener('scroll', onScroll);
+                    listening = false;
+                    if (timerId) {
+                        clearTimeout(timerId);
+                        timerId = null;
+                    }
+                }
+            },
+
+            size() {
+                return instances.size;
+            },
+
+            isListening() {
+                return listening;
             },
         };
     })();

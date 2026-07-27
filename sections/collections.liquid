@@ -25,6 +25,7 @@
         <div
             class="relative mb-8 pt-14 text-center pc:mb-10 pc:pt-25"
             data-motion-reveal="content"
+            data-motion-critical
         >
             <div class="mx-auto flex flex-col gap-3 pc:gap-6">
                 <h1 class="{{ collections_heading_class }}">
@@ -58,10 +59,6 @@
                     class="grid grid-cols-2 gap-1.5 pb-8 pc:grid-cols-3 pc:gap-2 pc:pb-10 fw:grid-cols-4"
                     data-collection-grid
                     data-motion-cascade
-                    style="
-                        --motion-reveal-stagger: 150ms;
-                        --motion-reveal-distance: 3rem;
-                    "
                 >
                     {%- for collection in collections -%}
                         <a
@@ -72,50 +69,57 @@
                                 hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)]
                                 max-pc:shadow-[0_8px_30px_rgba(0,0,0,0.08)]
                             "
-                            data-motion-reveal="content"
+                            data-motion-bound
                         >
-                            {%- comment -%} Image {%- endcomment -%}
-                            <div class="relative aspect-square overflow-hidden bg-theme-bg">
-                                {%- capture sizes -%}
-                                    (max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw
-                                {%- endcapture -%}
+                            <div data-motion-reveal="content">
+                                {%- comment -%} Image {%- endcomment -%}
+                                <div class="relative aspect-square overflow-hidden bg-theme-bg">
+                                    {%- capture sizes -%}
+                                        (max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw
+                                    {%- endcapture -%}
 
-                                {%- capture widths -%}
-                                    300,450,600
-                                {%- endcapture -%}
+                                    {%- capture widths -%}
+                                        300,450,600
+                                    {%- endcapture -%}
 
-                                {%- assign image_loading = 'lazy' -%}
-                                {%- if forloop.index <= 4 -%}
-                                    {%- assign image_loading = 'eager' -%}
-                                {%- endif -%}
+                                    {%- assign image_loading = 'lazy' -%}
+                                    {%- if forloop.index <= 4 -%}
+                                        {%- assign image_loading = 'eager' -%}
+                                    {%- endif -%}
 
-                                {%- assign collection_card_image = collection.featured_image -%}
-                                {%- assign image_alt = collection_card_image.alt
-                                    | default: collection.title
-                                    | escape
-                                -%}
-                                {%- render 'image',
-                                    image: collection_card_image,
-                                    alt: image_alt,
-                                    width: collection_card_image.width,
-                                    sizes: sizes,
-                                    widths: widths,
-                                    loading: image_loading,
-                                    wrapper_class: 'h-full w-full',
-                                    motion_reveal: false
-                                -%}
-                            </div>
+                                    {%- assign collection_card_image = collection.featured_image -%}
+                                    {%- assign image_alt = collection_card_image.alt
+                                        | default: collection.title
+                                        | escape
+                                    -%}
+                                    {%- render 'image',
+                                        image: collection_card_image,
+                                        alt: image_alt,
+                                        width: collection_card_image.width,
+                                        sizes: sizes,
+                                        widths: widths,
+                                        loading: image_loading,
+                                        wrapper_class: 'h-full w-full',
+                                        motion_reveal: false
+                                    -%}
+                                </div>
 
-                            {%- comment -%} Info {%- endcomment -%}
-                            <div class="flex items-center justify-between gap-2 px-2 py-1.5 pc:px-3 pc:py-2">
-                                <span class="line-clamp-1 body-lg">
-                                    {{- collection.title -}}
-                                </span>
+                                {%- comment -%} Info {%- endcomment -%}
+                                <div data-motion-copy-bound>
+                                    <div
+                                        class="flex items-center justify-between gap-2 px-2 py-1.5 pc:px-3 pc:py-2"
+                                        data-motion-copy
+                                    >
+                                        <span class="line-clamp-1 body-lg">
+                                            {{- collection.title -}}
+                                        </span>
 
-                                {% render 'icons',
-                                    icon: 'icon-arrow2',
-                                    class: 'transition-transform duration-300 group-hover:translate-x-1'
-                                %}
+                                        {% render 'icons',
+                                            icon: 'icon-arrow2',
+                                            class: 'transition-transform duration-300 group-hover:translate-x-1'
+                                        %}
+                                    </div>
+                                </div>
                             </div>
                         </a>
                     {%- endfor -%}

@@ -211,11 +211,14 @@ Preferred shape:
 
 - Register a reusable Alpine behavior such as `motionRevealSection` in an appropriate `alpine.components.*.js` group.
 - Each `x-data="motionRevealSection()"` instance is independent on the section root (`data-motion-section`), but the implementation should use a module-level shared `IntersectionObserver` singleton.
-- Use a registry such as a `WeakMap` to map observed reveal targets to their intersection callbacks.
-- Observe each visible `[data-motion-reveal]` target individually; the section root owns lifecycle, not intersection.
-- Mark reveal targets with `data-motion-reveal="content"` or `data-motion-reveal="media"`.
-- Optional `data-motion-cascade` on a wrapper auto-assigns `--motion-index` to visible descendant targets.
-- The Alpine component sets per-target `data-motion-state="pending"` / `"revealed"`, handles page-load double-rAF reveal for initially intersecting targets, and reads `body[data-reveal-behavior]` for once vs always.
+- Use shared registries such as `WeakMap` instances to map observed stable bounds to their ordinary/cascade enter and `always` exit callbacks. If several ordinary targets share one bound, aggregate them behind that bound's single registry callback; never overwrite an existing callback with the last target registered.
+- The section root owns lifecycle only. Each visible `[data-motion-reveal]` or `[data-motion-copy]` target is owned by its nearest `[data-motion-section]` and is registered independently unless it belongs to a cascade row batch.
+- Mark ordinary targets with `data-motion-reveal="content"` / `"media"`. Use `data-motion-copy` only when copy after tall media must wait for its own viewport position; give it a tight transform-free `data-motion-copy-bound` when needed.
+- `data-motion-bound` separates stable observation/row geometry from a transforming target. Putting bound and reveal on the same node does not create a stable boundary.
+- Optional `data-motion-cascade` groups visible targets by current visual row and assigns row-local `--motion-index`; `data-motion-sequence` assigns compact ordinary copy targets DOM-order indices.
+- The Alpine component sets per-target `data-motion-state="pending"` / `"revealed"`, uses `data-motion-resetting` / `data-motion-staging` for silent `always` replay, handles page-load double-rAF registration, and reads `body[data-reveal-behavior]` for once vs always.
+- On the first registration, actual viewport-visible and clip-visible targets receive `data-motion-critical-runtime`. CSS must keep them opaque and unclipped while allowing the selected transform entrance; fixed critical heroes may use explicit `data-motion-critical`. Do not infer criticality from DOM order or the first section selector.
+- Scroll-settle recovery keeps the normal bottom inset except at the true document end, where it may use the full viewport so Footer targets cannot remain pending without further scroll distance.
 - `tailwind/tailwind.animates.css` owns body setting selectors, target styles, keyframes, duration/ease variables, reduced-motion, and motion-disabled behavior.
 - Do not reuse `base.js`'s component lazy-init `IntersectionObserver` for visual reveal; component lifecycle and visual reveal are separate concerns.
 

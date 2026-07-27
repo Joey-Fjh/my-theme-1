@@ -26,48 +26,58 @@
     data-motion-section
 >
     <div class="layout container-page">
-        <div class="flex flex-col gap-6 text-center" data-motion-reveal="content">
-            <p class="{{ before_after_subtitle_class }}">
+        <div class="flex flex-col gap-6 text-center" data-motion-sequence>
+            <p
+                class="{{ before_after_subtitle_class }}"
+                data-motion-reveal="content"
+            >
                 {{ section.settings.sub_heading }}
             </p>
-            <h2 class="{{ before_after_heading_class }}">
+            <h2
+                class="{{ before_after_heading_class }}"
+                data-motion-reveal="content"
+            >
                 {{ section.settings.heading }}
             </h2>
         </div>
 
         {% comment %} Mobile Layout (Stacked) {% endcomment %}
-        <div class="mt-10 flex flex-col gap-6 pc:hidden" data-motion-reveal="media">
-            <div class="relative overflow-hidden rounded-lg">
-                {%- assign image_alt = section.settings.before_img.alt
-                    | default: section.settings.before_label
-                    | escape
-                -%}
-                {%- render 'image',
-                    image: section.settings.before_img,
-                    alt: image_alt,
-                    width: section.settings.before_img.width,
-                    aspect_ratio: aspect_ratio,
-                    motion_reveal: false
-                -%}
-                <div class="absolute bottom-4 left-4 z-10 rounded border-2 border-theme-text px-3 py-2 body-xl backdrop-blur-sm">
-                    {{ section.settings.before_label }}
+        <div class="mt-10 flex flex-col gap-6 pc:hidden">
+            <div data-motion-bound>
+                <div class="relative overflow-hidden rounded-lg" data-motion-reveal="media">
+                    {%- assign image_alt = section.settings.before_img.alt
+                        | default: section.settings.before_label
+                        | escape
+                    -%}
+                    {%- render 'image',
+                        image: section.settings.before_img,
+                        alt: image_alt,
+                        width: section.settings.before_img.width,
+                        aspect_ratio: aspect_ratio,
+                        motion_reveal: false
+                    -%}
+                    <div class="absolute bottom-4 left-4 z-10 rounded border-2 border-theme-text px-3 py-2 body-xl backdrop-blur-sm">
+                        {{ section.settings.before_label }}
+                    </div>
                 </div>
             </div>
 
-            <div class="relative overflow-hidden rounded-lg">
-                {%- assign image_alt = section.settings.after_img.alt
-                    | default: section.settings.after_label
-                    | escape
-                -%}
-                {%- render 'image',
-                    image: section.settings.after_img,
-                    alt: image_alt,
-                    width: section.settings.after_img.width,
-                    aspect_ratio: aspect_ratio,
-                    motion_reveal: false
-                -%}
-                <div class="absolute right-4 bottom-4 z-10 rounded border-2 border-theme-text px-3 py-2 body-xl backdrop-blur-sm">
-                    {{ section.settings.after_label }}
+            <div data-motion-bound>
+                <div class="relative overflow-hidden rounded-lg" data-motion-reveal="media">
+                    {%- assign image_alt = section.settings.after_img.alt
+                        | default: section.settings.after_label
+                        | escape
+                    -%}
+                    {%- render 'image',
+                        image: section.settings.after_img,
+                        alt: image_alt,
+                        width: section.settings.after_img.width,
+                        aspect_ratio: aspect_ratio,
+                        motion_reveal: false
+                    -%}
+                    <div class="absolute right-4 bottom-4 z-10 rounded border-2 border-theme-text px-3 py-2 body-xl backdrop-blur-sm">
+                        {{ section.settings.after_label }}
+                    </div>
                 </div>
             </div>
         </div>
@@ -76,7 +86,6 @@
         <div
             class="mt-25 hidden pc:block"
             x-data="beforeAfterComparison()"
-            data-motion-reveal="media"
         >
             <div
                 class="relative cursor-ew-resize overflow-hidden rounded-lg select-none"
@@ -109,6 +118,7 @@
                 {% comment %} Before Image (Clipped) {% endcomment %}
                 <div
                     class="absolute inset-0 h-full w-full"
+                    style="clip-path: inset(0 50% 0 0);"
                     :style="`clip-path: inset(0 ${100 - position}% 0 0)`"
                 >
                     {%- assign image_alt = section.settings.before_img.alt
@@ -127,6 +137,7 @@
                 {% comment %} Silder Line {% endcomment %}
                 <div
                     class="absolute top-0 bottom-0 z-10 w-2 -translate-x-1/2 bg-theme-bg/80 transition-[left] duration-75 ease-out"
+                    style="left: 50%;"
                     :class="{'transition-none' : isDragging }"
                     :style="`left: ${position}%`"
                 >

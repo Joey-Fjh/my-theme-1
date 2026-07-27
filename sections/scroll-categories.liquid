@@ -20,8 +20,7 @@
         <div class="flex flex-col gap-16">
             <div
                 class="flex flex-col gap-3 pc:flex-row pc:items-center pc:justify-between"
-                data-motion-reveal="content"
-                data-motion-index="0"
+                data-motion-sequence
             >
                 {%- capture link_content -%}
                     <h1 class="{{ scroll_categories_heading_class }}">
@@ -37,26 +36,32 @@
                     </h1>
                 {%- endcapture -%}
 
-                {%- render 'link',
-                    href: selected_collection.url,
-                    content: link_content,
-                    variant: 'underline'
-                -%}
+                <div data-motion-reveal="content">
+                    {%- render 'link',
+                        href: selected_collection.url,
+                        content: link_content,
+                        variant: 'underline'
+                    -%}
+                </div>
 
-                <div class="rte rte--compact {{ scroll_categories_subtitle_class }}">
+                <div
+                    class="rte rte--compact {{ scroll_categories_subtitle_class }}"
+                    data-motion-reveal="content"
+                >
                     {{ section.settings.description }}
                 </div>
             </div>
 
-            <div data-motion-reveal="content" data-motion-index="1">
+            <div data-motion-cascade>
                 {%- assign max_items = section.settings.max_items -%}
 
                 {% # theme-check-disable-next-line LiquidHTMLSyntaxError %}
                 {%- for product in selected_collection.products limit: max_items -%}
                     <a
-                        class="scroll-categories__item flex flex-col gap-3 py-8 text-theme-text/80 pc:flex-row pc:items-center pc:justify-between pc:p-8"
+                        class="scroll-categories__item block py-8 text-theme-text/80 pc:p-8"
                         href="{{ product.url }}"
                         title="{{ product.title | escape }}"
+                        data-motion-bound
                         x-data="{hover:false}"
                         @mouseenter="hover = true"
                         @mouseleave="hover = false"
@@ -64,73 +69,83 @@
                         @blur="hover = false"
                         :class="{ 'is-hovered': hover }"
                     >
-                        <span class="scroll-categories__item-side shrink-0 body-lg text-theme-text">
-                            {%- if product.type != blank -%}
-                                {{ product.type }}
-                            {%- else -%}
-                                {{ 'products.product.fallback_vendor' | t }}
-                            {%- endif -%}
-                        </span>
-
-                        <div class="relative flex min-w-0 items-center gap-4 pc:pe-44">
-                            <h2 class="scroll-categories__product-title min-w-0 truncate {{ scroll_categories_collection_heading_class }}">
-                                {{ product.title }}
-                            </h2>
-
-                            <div
-                                class="
-                                    scroll-categories__preview
-                                    absolute
-                                    end-0
-                                    top-1/2
-                                    hidden
-                                    aspect-100/72 h-30
-                                    -translate-y-1/2 scale-95
-                                    opacity-0
-                                    pc:block
-                                "
-                                :class="hover ? 'opacity-100 scale-100' : ''"
-                            >
-                                {%- if product.featured_image != blank -%}
-                                    {%- assign alt = product.featured_image.alt
-                                        | default: product.title
-                                        | escape
-                                    -%}
-                                    {%- render 'image-magnifier',
-                                        class: 'h-full w-full',
-                                        image: product.featured_image,
-                                        alt: alt,
-                                        width: 220,
-                                        sizes: '220px',
-                                        zoom_width: 1200,
-                                        preview_mode: 'contain',
-                                        preview_width: 280,
-                                        preview_height: 200
-                                    -%}
+                        <div
+                            class="flex w-full flex-col gap-3 pc:flex-row pc:items-center pc:justify-between"
+                            data-motion-reveal="content"
+                        >
+                            <span class="scroll-categories__item-side shrink-0 body-lg text-theme-text">
+                                {%- if product.type != blank -%}
+                                    {{ product.type }}
                                 {%- else -%}
-                                    {%- assign image_alt = product.featured_image.alt
-                                        | default: product.title
-                                        | escape
-                                    -%}
-                                    {%- render 'image',
-                                        class: 'h-full w-full',
-                                        image: product.featured_image,
-                                        alt: image_alt,
-                                        width: 220,
-                                        sizes: '220px'
-                                    -%}
+                                    {{ 'products.product.fallback_vendor' | t }}
                                 {%- endif -%}
-                            </div>
-                        </div>
+                            </span>
 
-                        <span class="scroll-categories__item-side shrink-0 body-lg text-theme-text">
-                            {%- render 'product-card-price', product: product -%}
-                        </span>
+                            <div class="relative flex min-w-0 items-center gap-4 pc:pe-44">
+                                <h2 class="scroll-categories__product-title min-w-0 truncate {{ scroll_categories_collection_heading_class }}">
+                                    {{ product.title }}
+                                </h2>
+
+                                <div
+                                    class="
+                                        scroll-categories__preview
+                                        absolute
+                                        end-0
+                                        top-1/2
+                                        hidden
+                                        aspect-100/72 h-30
+                                        -translate-y-1/2 scale-95
+                                        opacity-0
+                                        pc:block
+                                    "
+                                    :class="hover ? 'opacity-100 scale-100' : ''"
+                                >
+                                    {%- if product.featured_image != blank -%}
+                                        {%- assign alt = product.featured_image.alt
+                                            | default: product.title
+                                            | escape
+                                        -%}
+                                        {%- render 'image-magnifier',
+                                            class: 'h-full w-full',
+                                            image: product.featured_image,
+                                            alt: alt,
+                                            width: 220,
+                                            sizes: '220px',
+                                            zoom_width: 1200,
+                                            preview_mode: 'contain',
+                                            preview_width: 280,
+                                            preview_height: 200,
+                                            motion_reveal: false
+                                        -%}
+                                    {%- else -%}
+                                        {%- assign image_alt = product.featured_image.alt
+                                            | default: product.title
+                                            | escape
+                                        -%}
+                                        {%- render 'image',
+                                            class: 'h-full w-full',
+                                            image: product.featured_image,
+                                            alt: image_alt,
+                                            width: 220,
+                                            sizes: '220px',
+                                            motion_reveal: false
+                                        -%}
+                                    {%- endif -%}
+                                </div>
+                            </div>
+
+                            <span class="scroll-categories__item-side shrink-0 body-lg text-theme-text">
+                                {%- render 'product-card-price', product: product -%}
+                            </span>
+                        </div>
                     </a>
                 {%- endfor -%}
             </div>
 
-            <div class="rte rte--compact flex flex-col items-center justify-center self-center text-center">
+            <div
+                class="rte rte--compact flex flex-col items-center justify-center self-center text-center"
+                data-motion-reveal="content"
+            >
                 {% render 'icons', icon: 'icon-eyeglasses' %}
 
                 {{ section.settings.caption }}

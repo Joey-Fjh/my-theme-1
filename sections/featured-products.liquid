@@ -71,7 +71,9 @@
                     {{ block.shopify_attributes }}
                 >
                     {%- if block.settings.collection_content != blank -%}
-                        <p>{{ block.settings.collection_content }}</p>
+                        <p data-motion-reveal="content">
+                            {{ block.settings.collection_content }}
+                        </p>
                     {%- endif -%}
                     
                     {%- liquid
@@ -89,8 +91,6 @@
                         style="
                             --product-grid-columns: {{ section.settings.pc_items }};
                             --product-grid-columns-mobile: {{ section.settings.mobile_items }};
-                            --motion-reveal-stagger: 150ms;
-                            --motion-reveal-distance: 3rem;
                         "
                     >
                         {% if use_slider %}
@@ -105,8 +105,11 @@
                                 <div class="swiper-wrapper">
                         {% endif %}
                                     {%- for product in products limit: max_items -%}
-                                        <div class="{% if use_slider %}swiper-slide h-auto{% else %}group{% endif %}">
-                                            {%- render 'product-card', 
+                                        <div
+                                            class="{% if use_slider %}swiper-slide h-auto{% else %}group{% endif %}"
+                                            data-motion-bound
+                                        >
+                                            {%- render 'product-card',
                                                 product: product,
                                                 pc_items: section.settings.pc_items,
                                                 mobile_items: section.settings.mobile_items,

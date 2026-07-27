@@ -1453,7 +1453,15 @@ Verification gate: **passed**. No additional Package J storefront QA is required
 
 ### Package K — Global Scroll Reveal Reliability
 
-Status: **planned from owner-observed storefront behavior** (2026-07-27). This is the next confirmed storefront code package. Define and review its implementation boundary before changing motion code; do not combine it with Package G2, H, or I.
+Status: **owner-reviewed and accepted** (2026-07-28). The owner reported no remaining Package K storefront motion issue after the final reveal coverage, easing, and speed-tier tuning. The implementation and this acceptance record belong in the same owner commit. Package G2 is the next actionable code package after that commit leaves a clean worktree; Package L remains a later review-only audit after the remaining approved code packages settle.
+
+Owner-approved visual scope expansion (2026-07-27): Package K now also owns the ordinary reveal presentation language. Content options are `none` / `fade` / `rise` / `slide`; media options are `none` / `fade` / `zoom` / `slide`, with `zoom` as the new-install default. Do not add an intensity setting or media `rise`. `motion_speed` controls duration/stagger only; each style owns fixed amplitude. Slide defaults to upward content reveal and left-to-right media reveal, with internal CSS-variable override points rather than another merchant control. Cascade is generic repeated-layout choreography and uses one coarse reveal target per visual item; it is not a product-card-only style. Hero copy may keep a base delay/amplitude refinement but must respect the selected content style and global reveal speed.
+
+Storefront visual refinement (2026-07-28, uncommitted): earlier browser inspection at 1280x900 and 375x812 confirmed that the original Rise recipe resolved to only about 27.5px / 18.75px and that tall composite content targets completed before lower copy entered the viewport. The final recipe uses a responsive 40px..64px Rise, separate opacity/transform timing, stronger but restrained cascade/media scale, and the shared `data-motion-sequence` contract for compact copy rhythm. Ordinary reveal remains CSS/Alpine; trigger granularity and presentation did not justify a global GSAP runtime.
+
+Storefront bug refinement (2026-07-28, uncommitted): keep the `-15%` enter line, but use one lifecycle-managed shared scroll-settle recovery to reveal eligible pending targets that are already visibly inside the viewport after a fast scroll or at the document boundary. Browser measurements proved that parent-state copy delays still finish off-screen in tall Promo, Blog, and Product cards. `[data-motion-copy]` is therefore an independently observed content target using its own geometry (optionally stabilized by `[data-motion-copy-bound]`) while remaining inside the same shared runtime and selected content recipe. Motion-disabled and reduced-motion paths must keep that copy visible.
+
+Copy-trigger QA (2026-07-28, uncommitted): Promo Banner, Blog Stories, Blog, and Product Card copy now use the independent copy target. Product title/price requires a tight stable copy bound because its pending translate would otherwise place it beyond the card's `overflow: hidden` box and fail clip visibility. `always` re-entry uses an internal no-transition staging frame so both opacity and the full Rise distance replay after silent reset. Browser verification passed at 1640x900 and 375x812 for initial entry, `once`, `always` reset/replay, motion off, and reduced motion.
 
 Purpose: repair the shared global scroll-reveal behavior without redesigning individual sections or migrating ordinary reveal animation to GSAP.
 
@@ -1489,7 +1497,7 @@ Prohibited scope:
 
 - No ordinary-reveal migration to GSAP/ScrollTrigger, new dependency, per-section timeline, or duplicate observer.
 - No changes to dialog, drawer, hover, focus, loading, carousel-control, or other state/micro-interaction motion unless a direct regression is proven.
-- No new merchant setting, animation preset expansion, visual restyling, typography/layout change, or unrelated section cleanup.
+- No motion settings beyond the owner-approved Slide options and media default change above; no intensity control, media Rise, typography/layout change, or unrelated section cleanup.
 - No edits to `config/settings_data.json`, `templates/*.json`, merchant content, uploaded media, color schemes, vendor assets, or generated CSS by hand.
 
 Acceptance matrix:
@@ -1503,7 +1511,19 @@ Acceptance matrix:
 - Motion disabled, reduced motion, no `IntersectionObserver`, and JavaScript-disabled storefronts show all critical content; keyboard, focus, links, forms, and controls remain unaffected.
 - Verify observer/listener cleanup and absence of duplicate callbacks after section reloads.
 
-Required validation: targeted runtime instrumentation or rendered-state evidence for trigger/replay behavior, `node --check` for modified JavaScript, `npm.cmd run build:tw` when Tailwind source changes, Shopify MCP `validate_theme`, `npm.cmd run lint`, `npm.cmd test`, and `git diff --check`. Leave implementation uncommitted until owner storefront approval.
+Completion validation included targeted runtime instrumentation and rendered-state evidence for trigger/replay behavior, `node --check` for modified JavaScript, `npm.cmd run build:tw`, Shopify MCP `validate_theme`, `npm.cmd run lint`, `npm.cmd test`, and `git diff --check`. Owner storefront approval was recorded on 2026-07-28; keep the implementation and this acceptance record together in the owner commit.
+
+Global coverage closure (2026-07-28, uncommitted): all Package K review blockers were implemented. The five merchant settings reach eligible ordinary reveal/copy targets; content below tall media now observes its own position across product, blog, promo, category, collection, philosophy, testimonial, Footer, and comparable layouts. Featured Products collection copy is connected, card rows use current visual rows, and Section Rendering/tab/Swiper/resize relayout remains inside the shared lifecycle.
+
+Control and stability closure: purchase controls, forms, tab/filter/pagination triggers, accordion/slider/carousel controls, thumbnails, zoom/navigation controls, arbitrary long RTE bodies, and explicit conversion/static surfaces are outside ordinary reveal ownership. No final node combines `data-motion-bound` with an animated reveal/copy hook, and no form/control is nested below an ordinary reveal/copy target. Parent/child image reveal stacking was removed.
+
+Runtime closure: ordinary targets sharing one stable bound are aggregated behind one callback; nearest-section ownership, current-row cascade, buffered `always` reset, page-load queue release, stale-rAF invalidation, hidden/clip-visible registration, and document-end Footer recovery are implemented. The first registration marks only actual viewport-visible/clip-visible targets as runtime critical so they never start transparent or clipped; fixed critical heroes may opt in explicitly. Rotating Badge, Before/After automatic movement, marquees, carousel autoplay, and Flip Digit now follow the applicable page-motion/reduced-motion policy.
+
+Review result: runtime and Liquid/CSS architecture reviews report no Package K blockers. Static topology checks pass with zero same-node bound/reveal combinations and zero form/control elements under ordinary reveal/copy ancestors. Shopify MCP validation of all modified theme artifacts passed. Final validation after documentation closure also passed: Tailwind build, JavaScript syntax checks, `npm.cmd run lint`, `npm.cmd test` (`137` files, `0` offenses), targeted Prettier, and `git diff --check`.
+
+Final parameter tune (2026-07-28, uncommitted): speed tiers shifted up after storefront review found previous Slow matched the expected Normal feel. Final timing: Fast `820 / 480 / 130`, Normal (default) `1080 / 620 / 170`, Slow `1340 / 760 / 210` (step `+260 / +140 / +40`). Easing unchanged: `--motion-reveal-ease: cubic-bezier(0.25, 0.4, 0.4, 1)`. CSS fallbacks use Normal `1080ms / 620ms / 170ms`; JS cascade stagger fallback is `170`. Docs table in `motion-architecture.md` matches. Timing only — no reveal logic, observers, hooks, or amplitude changes. The owner accepted the final storefront feel and reported no remaining Package K issue.
+
+The detailed coverage matrix and stable exceptions live in `docs/references/architecture/motion-architecture.md`; `docs/references/architecture/javascript-runtime.md` records the shared-bound, runtime-critical, and document-end recovery rules. Package K's owner review gate is closed. The broader desktop/mobile, browser, reduced-motion, no-JavaScript, no-IntersectionObserver, Theme Editor, and duplicate-listener matrix remains part of the final BLK-18 launch evidence and does not reopen Package K unless it exposes a regression.
 
 ### Package L — Global Code Risk And Optimization Audit
 

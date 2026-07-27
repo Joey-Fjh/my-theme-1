@@ -26,9 +26,9 @@
                     assign has_both_images = true
                 endif
             -%}
-            <div class="relative w-full shrink-0" data-motion-reveal="media">
+            <div class="relative w-full shrink-0">
                 {%- if has_both_images -%}
-                    <div class="w-full pc:hidden">
+                    <div class="w-full pc:hidden" data-motion-reveal="media">
                         <div class="aspect-square overflow-hidden">
                             {%- render 'image',
                                 image: primary_image,
@@ -79,7 +79,10 @@
                         </button>
                     </div>
                 {%- else -%}
-                    <div class="aspect-square w-full overflow-hidden pc:hidden">
+                    <div
+                        class="aspect-square w-full overflow-hidden pc:hidden"
+                        data-motion-reveal="media"
+                    >
                         {%- render 'image',
                             image: display_image,
                             alt: display_image.alt,
@@ -88,7 +91,10 @@
                             motion_reveal: false
                         -%}
                     </div>
-                    <div class="hidden aspect-square w-full overflow-hidden pc:block">
+                    <div
+                        class="hidden aspect-square w-full overflow-hidden pc:block"
+                        data-motion-reveal="media"
+                    >
                         {%- render 'image',
                             image: display_image,
                             alt: display_image.alt,
@@ -103,15 +109,16 @@
             {% comment %} Content {% endcomment %}
             <div
                 class="flex flex-1 flex-col gap-12 pc:h-full pc:justify-between pc:gap-16"
-                data-motion-reveal="content"
+                data-motion-sequence
             >
-                <p class="body-3xl">
+                <p class="body-3xl" data-motion-reveal="content">
                     {{ section.settings.year }}
                 </p>
 
                 <div
                     class="rte rte--compact body-size-custom"
                     style="--body-size-custom: 24px; --body-size-custom-pc: 40px;"
+                    data-motion-reveal="content"
                 >
                     {{ section.settings.description }}
                 </div>
@@ -122,16 +129,21 @@
                         {% render 'icons', icon: 'icon-arrow2', class: 'ms-3' %}
                     {%- endcapture -%}
 
-                    {%- render 'link',
-                        href: section.settings.link,
-                        content: link_content,
-                        variant: 'underline',
-                        class: 'body-xl'
-                    -%}
+                    <div class="w-fit" data-motion-reveal="content">
+                        {%- render 'link',
+                            href: section.settings.link,
+                            content: link_content,
+                            variant: 'underline',
+                            class: 'body-xl'
+                        -%}
+                    </div>
                 {%- endif -%}
 
                 {% comment %} Stats {% endcomment %}
-                <div class="flex gap-12 pc:gap-16 fw:gap-24">
+                <div
+                    class="flex gap-12 pc:gap-16 fw:gap-24"
+                    data-motion-reveal="content"
+                >
                     {%- for block in section.blocks -%}
                         <div
                             class="mt-25"
@@ -149,7 +161,10 @@
             </div>
 
             {%- if has_both_images -%}
-                <div class="aspect-square w-full overflow-hidden pc:hidden">
+                <div
+                    class="aspect-square w-full overflow-hidden pc:hidden"
+                    data-motion-reveal="media"
+                >
                     {%- render 'image',
                         image: secondary_image,
                         alt: secondary_image.alt,

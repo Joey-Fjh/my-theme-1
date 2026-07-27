@@ -56,16 +56,22 @@
                     pc:p-10 fw:p-14
                     {% if section.settings.hero_link != blank %}pointer-events-none{% endif %}
                 "
-                data-motion-reveal="content"
+                data-motion-sequence
             >
                 {%- if section.settings.hero_subtitle != blank -%}
-                    <p class="{{ promo_banner_subtitle_class }}">
+                    <p
+                        class="{{ promo_banner_subtitle_class }}"
+                        data-motion-reveal="content"
+                    >
                         {{ section.settings.hero_subtitle }}
                     </p>
                 {%- endif -%}
 
                 {%- if section.settings.hero_heading != blank -%}
-                    <h2 class="{{ promo_banner_heading_class }}">
+                    <h2
+                        class="{{ promo_banner_heading_class }}"
+                        data-motion-reveal="content"
+                    >
                         {{ section.settings.hero_heading }}
                     </h2>
                 {%- endif -%}
@@ -76,24 +82,30 @@
                         {% render 'icons', icon: 'icon-arrow2', class: 'ms-3' %}
                     {%- endcapture -%}
 
-                    {%- render 'link',
-                        href: section.settings.hero_link,
-                        content: link_content,
-                        variant: 'underline',
-                        class: 'body-xl pointer-events-auto relative z-10 w-fit'
-                    -%}
+                    <div
+                        class="pointer-events-auto relative z-10 w-fit"
+                        data-motion-reveal="content"
+                    >
+                        {%- render 'link',
+                            href: section.settings.hero_link,
+                            content: link_content,
+                            variant: 'underline',
+                            class: 'body-xl'
+                        -%}
+                    </div>
                 {%- endif -%}
             </div>
         </div>
 
         {% comment %} Two Column Cards {% endcomment %}
-        <div class="grid grid-cols-1 gap-2 pc:grid-cols-2">
+        <div class="grid grid-cols-1 gap-2 pc:grid-cols-2" data-motion-cascade>
             {%- for block in section.blocks -%}
                 <div
                     class="
                         pc:aspect-4/3.5 relative aspect-square overflow-hidden
                         {% if block.settings.link != blank %}media-interaction-scope{% endif %}
                     "
+                    data-motion-reveal="content"
                     {{ block.shopify_attributes }}
                 >
                     {%- assign image_alt = block.settings.image.alt
@@ -109,41 +121,45 @@
                         width: block.settings.image.width,
                         sizes: '(max-width: 767px) 100vw, 50vw',
                         img_class: 'h-full w-full object-cover',
-                        loading: 'lazy'
+                        loading: 'lazy',
+                        motion_reveal: false
                     -%}
 
                     <div
                         class="
-                            absolute inset-0 z-10 flex flex-col justify-end gap-6 p-6 pc:p-8
+                            absolute inset-0 z-10 flex flex-col justify-end p-6 pc:p-8
                             {% if block.settings.link != blank %}pointer-events-none{% endif %}
                         "
-                        data-motion-reveal="content"
                     >
-                        {%- if block.settings.subtitle != blank -%}
-                            <p class="{{ promo_banner_subtitle_class }} mb-1">
-                                {{ block.settings.subtitle }}
-                            </p>
-                        {%- endif -%}
+                        <div data-motion-copy-bound>
+                            <div class="flex flex-col gap-6" data-motion-copy>
+                                {%- if block.settings.subtitle != blank -%}
+                                    <p class="{{ promo_banner_subtitle_class }} mb-1">
+                                        {{ block.settings.subtitle }}
+                                    </p>
+                                {%- endif -%}
 
-                        {%- if block.settings.heading != blank -%}
-                            <h2 class="{{ promo_banner_heading_class }}">
-                                {{ block.settings.heading }}
-                            </h2>
-                        {%- endif -%}
+                                {%- if block.settings.heading != blank -%}
+                                    <h2 class="{{ promo_banner_heading_class }}">
+                                        {{ block.settings.heading }}
+                                    </h2>
+                                {%- endif -%}
 
-                        {%- if block.settings.link != blank -%}
-                            {%- capture link_content -%}
-                                <span>{{ block.settings.link_text }}</span>
-                                {% render 'icons', icon: 'icon-arrow2', class: 'ms-3' %}
-                            {%- endcapture -%}
+                                {%- if block.settings.link != blank -%}
+                                    {%- capture link_content -%}
+                                        <span>{{ block.settings.link_text }}</span>
+                                        {% render 'icons', icon: 'icon-arrow2', class: 'ms-3' %}
+                                    {%- endcapture -%}
 
-                            {%- render 'link',
-                                href: block.settings.link,
-                                content: link_content,
-                                variant: 'underline',
-                                class: 'body-xl pointer-events-auto relative z-10 w-fit'
-                            -%}
-                        {%- endif -%}
+                                    {%- render 'link',
+                                        href: block.settings.link,
+                                        content: link_content,
+                                        variant: 'underline',
+                                        class: 'body-xl pointer-events-auto relative z-10 w-fit'
+                                    -%}
+                                {%- endif -%}
+                            </div>
+                        </div>
                     </div>
                 </div>
             {%- endfor -%}

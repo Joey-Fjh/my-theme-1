@@ -16,37 +16,44 @@
     <div class="layout container-page pc:h-full">
         <div class="flex flex-col gap-12 pc:h-screen pc:flex-row pc:gap-0">
             {% comment %} Left - Testimonial {% endcomment %}
-            <div class="swiper w-full flex-1 pc:h-full pc:w-1/2" data-motion-reveal="content">
+            <div class="swiper w-full flex-1 pc:h-full pc:w-1/2">
                 <div class="swiper-wrapper">
                     {% for block in section.blocks %}
                         <div class="swiper-slide h-auto pc:h-full" {{ block.shopify_attributes }}>
                             <div
                                 class="
                                     flex flex-1 flex-col items-center justify-center
-                                    gap-10 py-16 text-center pc:h-full pc:gap-24 pc:py-0
+                                    py-16 text-center pc:h-full pc:py-0
                                 "
                             >
-                                {% render 'starts', rating: block.settings.rating, size: 'lg' %}
-
-                                <blockquote
-                                    class="rte rte--compact max-w-[90%] body-3xl pc:max-w-[60%]"
+                                <div
+                                    class="flex w-full flex-col items-center gap-10 pc:gap-24"
+                                    {% if forloop.first %}
+                                        data-motion-reveal="content"
+                                    {% endif %}
                                 >
-                                    {{ block.settings.quote }}
-                                </blockquote>
+                                    {% render 'starts', rating: block.settings.rating, size: 'lg' %}
 
-                                <div class="flex flex-col gap-3">
-                                    <p class="body-3xl font-bold">
-                                        {{
-                                            block.settings.author_name
-                                            | default: 'Alexandria Maria'
-                                        }}
-                                    </p>
-                                    <p>
-                                        {{
-                                            block.settings.author_title
-                                            | default: 'Beauty Influencer'
-                                        }}
-                                    </p>
+                                    <blockquote
+                                        class="rte rte--compact max-w-[90%] body-3xl pc:max-w-[60%]"
+                                    >
+                                        {{ block.settings.quote }}
+                                    </blockquote>
+
+                                    <div class="flex flex-col gap-3">
+                                        <p class="body-3xl font-bold">
+                                            {{
+                                                block.settings.author_name
+                                                | default: 'Alexandria Maria'
+                                            }}
+                                        </p>
+                                        <p>
+                                            {{
+                                                block.settings.author_title
+                                                | default: 'Beauty Influencer'
+                                            }}
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -55,28 +62,30 @@
             </div>
 
             {% comment %} Right - Image  {% endcomment %}
-            <div class="relative flex-1 pc:w-1/2" data-motion-reveal="media">
+            <div class="relative flex-1 pc:w-1/2" data-motion-bound>
                 {% render 'image',
                     class: 'h-full w-full',
                     image: section.settings.image,
                     alt: section.settings.image.alt,
                     width: section.settings.image.width,
                     mode: 'frame',
-                    fit: 'cover',
-                    motion_reveal: false
+                    fit: 'cover'
                 %}
 
                 {% comment %} Floating Card {% endcomment %}
                 {% if section.settings.show_floating_card %}
                     <div
-                        class="absolute bottom-8 w-[90%] justify-self-center bg-theme-bg p-6 italic"
+                        class="absolute inset-x-0 bottom-8 mx-auto w-[90%]"
+                        data-motion-copy-bound
                     >
-                        <p class="mb-3">
-                            {{ section.settings.card_label }}
-                        </p>
-                        <p class="body-3xl font-bold">
-                            {{ section.settings.card_title }}
-                        </p>
+                        <div class="w-full bg-theme-bg p-6 italic" data-motion-copy>
+                            <p class="mb-3">
+                                {{ section.settings.card_label }}
+                            </p>
+                            <p class="body-3xl font-bold">
+                                {{ section.settings.card_title }}
+                            </p>
+                        </div>
                     </div>
                 {% endif %}
             </div>
@@ -96,6 +105,16 @@
                     const slides = el.querySelectorAll('.swiper-slide');
                     const autoSlide = el.getAttribute('data-auto-slide') === 'true';
                     const slideDelay = parseInt(el.getAttribute('data-slide-delay'), 10) || 5;
+                    const Utils = window.__Theme__?.Utils;
+                    const prefersReducedMotion =
+                        typeof Utils?.prefersReducedMotion === 'function'
+                            ? Utils.prefersReducedMotion()
+                            : window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ===
+                              true;
+                    const autoplayAllowed =
+                        autoSlide &&
+                        document.body?.dataset?.motionEnabled !== 'false' &&
+                        !prefersReducedMotion;
 
                     const swiperContainer = el.querySelector('.swiper');
 
@@ -104,7 +123,7 @@
                     const swiper = new Swiper(swiperContainer, {
                         loop: slides.length > 1,
                         autoHeight: true,
-                        autoplay: autoSlide
+                        autoplay: autoplayAllowed
                             ? {
                                   delay: slideDelay * 1000,
                                   disableOnInteraction: false,

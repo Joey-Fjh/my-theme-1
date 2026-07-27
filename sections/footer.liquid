@@ -16,61 +16,74 @@
     <div class="container-page">
         <div class="relative overflow-hidden p-12">
             {% comment %} Top Content Area {% endcomment %}
-            <div
-                class="z-10 flex flex-col gap-12 pc:mb-24 pc:flex-row pc:justify-between"
-                data-motion-reveal="content"
-            >
+            <div class="z-10 flex flex-col gap-12 pc:mb-24 pc:flex-row pc:justify-between">
                 {%- comment -%} Navigation Link Columns {%- endcomment -%}
-                <div class="grid grid-cols-3 gap-x-4 gap-y-10 pc:flex pc:gap-20 fw:gap-28">
-                    {% for block in section.blocks %}
-                        {% if block.type == 'link_column' %}
-                            <div {{ block.shopify_attributes }}>
-                                <h2 class="mb-6 heading-h2 pc:mb-10">
-                                    {{ block.settings.heading }}
-                                </h2>
-                                <ul class="flex flex-col gap-3">
-                                    {% assign links_menu = block.settings.menu %}
-                                    {% if links_menu != blank %}
-                                        {% for link in linklists[links_menu].links %}
-                                            <li>
-                                                {% render 'link',
-                                                    text: link.title,
-                                                    variant: 'underline',
-                                                    href: link.url
-                                                %}
-                                            </li>
-                                        {% endfor %}
-                                    {% else %}
-                                        {% assign fallback_links = block.settings.heading
-                                            | downcase
-                                        %}
-                                        {% for i in (1..4) %}
-                                            <li>
-                                                {%- assign link_text = 'Link ' | append: i -%}
-                                                {% render 'link',
-                                                    text: link_text,
-                                                    variant: 'underline',
-                                                    href: '#'
-                                                %}
-                                            </li>
-                                        {% endfor %}
-                                    {% endif %}
-                                </ul>
-                            </div>
-                        {% endif %}
-                    {% endfor %}
+                <div data-motion-bound>
+                    <div
+                        class="grid grid-cols-3 gap-x-4 gap-y-10 pc:flex pc:gap-20 fw:gap-28"
+                        data-motion-reveal="content"
+                    >
+                        {% for block in section.blocks %}
+                            {% if block.type == 'link_column' %}
+                                <div {{ block.shopify_attributes }}>
+                                    <h2 class="mb-6 heading-h2 pc:mb-10">
+                                        {{ block.settings.heading }}
+                                    </h2>
+                                    <ul class="flex flex-col gap-3">
+                                        {% assign links_menu = block.settings.menu %}
+                                        {% if links_menu != blank %}
+                                            {% for link in linklists[links_menu].links %}
+                                                <li>
+                                                    {% render 'link',
+                                                        text: link.title,
+                                                        variant: 'underline',
+                                                        href: link.url
+                                                    %}
+                                                </li>
+                                            {% endfor %}
+                                        {% else %}
+                                            {% assign fallback_links = block.settings.heading
+                                                | downcase
+                                            %}
+                                            {% for i in (1..4) %}
+                                                <li>
+                                                    {%- assign link_text = 'Link ' | append: i -%}
+                                                    {% render 'link',
+                                                        text: link_text,
+                                                        variant: 'underline',
+                                                        href: '#'
+                                                    %}
+                                                </li>
+                                            {% endfor %}
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
                 </div>
 
                 {%- comment -%} Right Content Block {%- endcomment -%}
                 <div class="flex max-w-3xl flex-col gap-8 pc:gap-12">
-                    {% if section.settings.content_heading != blank %}
-                        <h3 class="heading-h2">
-                            {{ section.settings.content_heading }}
-                        </h3>
-                    {% endif %}
-                    {% if section.settings.content_text != blank %}
-                        <div class="rte rte--compact body-3xl">
-                            {{ section.settings.content_text }}
+                    {% if section.settings.content_heading != blank
+                        or section.settings.content_text != blank
+                    %}
+                        <div data-motion-copy-bound>
+                            <div
+                                class="flex flex-col gap-8 pc:gap-12"
+                                data-motion-copy
+                            >
+                                {% if section.settings.content_heading != blank %}
+                                    <h3 class="heading-h2">
+                                        {{ section.settings.content_heading }}
+                                    </h3>
+                                {% endif %}
+                                {% if section.settings.content_text != blank %}
+                                    <div class="rte rte--compact body-3xl">
+                                        {{ section.settings.content_text }}
+                                    </div>
+                                {% endif %}
+                            </div>
                         </div>
                     {% endif %}
                     {% if section.settings.content_link != blank %}
@@ -113,7 +126,8 @@
                             alt: section.settings.brush_image.alt,
                             width: section.settings.brush_image.width,
                             mode: 'natural',
-                            fit: 'contain'
+                            fit: 'contain',
+                            motion_reveal: false
                         %}
                     </div>
 

@@ -40,7 +40,8 @@
                         width: section.settings.image.width,
                         sizes: sizes,
                         widths: widths,
-                        loading: 'eager'
+                        loading: 'eager',
+                        motion_reveal: false
                     %}
 
                     {%- comment -%} hCaptcha Notice {%- endcomment -%}
@@ -76,17 +77,31 @@
                 <div
                     class="flex flex-col justify-center bg-(--contact-form-bg) px-6 py-8 text-(--contact-form-text) pc:px-10 pc:py-10 fw:px-12"
                     style="--contact-form-bg: {{ form_bg }}; --contact-form-text: {{ form_text }};"
-                    data-motion-reveal="content"
                 >
                     {%- assign heading_fallback = 'sections.main-page-contact.defaults.heading'
                         | t
                     -%}
-                    <h1 class="{{ contact_heading_class }} text-center text-(--contact-form-text)">
-                        {{ section.settings.heading | default: heading_fallback }}
-                    </h1>
-                    <div class="rte rte--compact mt-3 text-center">
-                        {%- assign contact_description_fallback = 'contact.description_html' | t -%}
-                        {{ section.settings.description | default: contact_description_fallback }}
+                    <div data-motion-sequence>
+                        <h1
+                            class="{{ contact_heading_class }} text-center text-(--contact-form-text)"
+                            data-motion-reveal="content"
+                            data-motion-critical
+                        >
+                            {{ section.settings.heading | default: heading_fallback }}
+                        </h1>
+                        <div
+                            class="rte rte--compact mt-3 text-center"
+                            data-motion-reveal="content"
+                            data-motion-critical
+                        >
+                            {%- assign contact_description_fallback = 'contact.description_html'
+                                | t
+                            -%}
+                            {{
+                                section.settings.description
+                                | default: contact_description_fallback
+                            }}
+                        </div>
                     </div>
 
                     {%- form 'contact', class: 'mt-6 flex flex-col gap-5 pc:mt-8 pc:gap-6' -%}

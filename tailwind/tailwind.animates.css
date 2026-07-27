@@ -107,6 +107,19 @@
     animation: spin 12s linear infinite;
 }
 
+/* Rotating Badge is page/brand motion rather than functional feedback. */
+body[data-motion-enabled='false'] [data-rotating-badge-motion] {
+    animation: none !important;
+    transform: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    [data-rotating-badge-motion] {
+        animation: none !important;
+        transform: none !important;
+    }
+}
+
 @utility is-paused {
     animation-play-state: paused !important;
 }
@@ -131,76 +144,110 @@
    --motion-index defaults to 0; set data-motion-index for stagger.
    ================================================================ */
 
+/*
+   Ordinary stagger: CSS owns transition/animation delay on the revealed state
+   via --motion-index. Cascade layouts force CSS delay to 0 because JS owns row
+   stagger timing through delayed state flips.
+
+   Silent always-reset: [data-motion-resetting] kills transition/transform so
+   reverse hide never plays and observation geometry stays stable.
+*/
+
+:is([data-motion-reveal], [data-motion-copy])[data-motion-state='pending'][data-motion-resetting] {
+    opacity: 0 !important;
+    transform: none !important;
+    clip-path: none !important;
+    transition: none !important;
+    animation: none !important;
+}
+
+/* Always replay staging: apply the pending pose without a transition after a
+   silent reset, then let the following revealed flip play the full distance. */
+:is([data-motion-reveal], [data-motion-copy])[data-motion-staging] {
+    transition: none !important;
+    animation: none !important;
+}
+
 /* Content reveal: fade */
-body[data-content-reveal-style='fade'] [data-motion-reveal='content'][data-motion-state='pending'] {
+body[data-content-reveal-style='fade']
+    :is([data-motion-reveal='content'], [data-motion-copy])[data-motion-state='pending'] {
     opacity: 0;
     will-change: opacity;
-    transition: opacity var(--motion-reveal-duration-base, 650ms)
-        var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1));
-    transition-delay: calc(var(--motion-index, 0) * var(--motion-reveal-stagger, 100ms));
+    transition: opacity var(--motion-reveal-opacity-duration, 620ms)
+        var(--motion-reveal-ease, cubic-bezier(0.25, 0.4, 0.4, 1));
 }
 
 body[data-content-reveal-style='fade']
-    [data-motion-reveal='content'][data-motion-state='revealed'] {
+    :is([data-motion-reveal='content'], [data-motion-copy])[data-motion-state='revealed'] {
     opacity: 1;
     will-change: auto;
-    transition: opacity var(--motion-reveal-duration-base, 650ms)
-        var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1));
+    transition: opacity var(--motion-reveal-opacity-duration, 620ms)
+        var(--motion-reveal-ease, cubic-bezier(0.25, 0.4, 0.4, 1));
+    transition-delay: calc(
+        var(--motion-reveal-base-delay, 0ms) + var(--motion-index, 0) *
+            var(--motion-reveal-stagger, 170ms)
+    );
 }
 
 /* Content reveal: rise */
-body[data-content-reveal-style='rise'] [data-motion-reveal='content'][data-motion-state='pending'] {
+body[data-content-reveal-style='rise']
+    :is([data-motion-reveal='content'], [data-motion-copy])[data-motion-state='pending'] {
     opacity: 0;
-    transform: translate3d(0, var(--motion-reveal-distance, 2.5rem), 0);
+    transform: translate3d(0, var(--motion-reveal-rise-distance, 64px), 0);
     will-change: opacity, transform;
     transition:
-        opacity var(--motion-reveal-duration-base, 650ms)
-            var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1)),
-        transform var(--motion-reveal-duration-base, 650ms)
-            var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1));
-    transition-delay: calc(var(--motion-index, 0) * var(--motion-reveal-stagger, 100ms));
+        opacity var(--motion-reveal-opacity-duration, 620ms)
+            var(--motion-reveal-ease, cubic-bezier(0.25, 0.4, 0.4, 1)),
+        transform var(--motion-reveal-duration-base, 1080ms)
+            var(--motion-reveal-ease, cubic-bezier(0.25, 0.4, 0.4, 1));
 }
 
 body[data-content-reveal-style='rise']
-    [data-motion-reveal='content'][data-motion-state='revealed'] {
+    :is([data-motion-reveal='content'], [data-motion-copy])[data-motion-state='revealed'] {
     opacity: 1;
     transform: translate3d(0, 0, 0);
     will-change: auto;
     transition:
-        opacity var(--motion-reveal-duration-base, 650ms)
-            var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1)),
-        transform var(--motion-reveal-duration-base, 650ms)
-            var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1));
+        opacity var(--motion-reveal-opacity-duration, 620ms)
+            var(--motion-reveal-ease, cubic-bezier(0.25, 0.4, 0.4, 1)),
+        transform var(--motion-reveal-duration-base, 1080ms)
+            var(--motion-reveal-ease, cubic-bezier(0.25, 0.4, 0.4, 1));
+    transition-delay: calc(
+        var(--motion-reveal-base-delay, 0ms) + var(--motion-index, 0) *
+            var(--motion-reveal-stagger, 170ms)
+    );
 }
 
 /* Media reveal: fade */
 body[data-media-reveal-style='fade'] [data-motion-reveal='media'][data-motion-state='pending'] {
     opacity: 0;
     will-change: opacity;
-    transition: opacity var(--motion-reveal-duration-base, 650ms)
-        var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1));
-    transition-delay: calc(var(--motion-index, 0) * var(--motion-reveal-stagger, 100ms));
+    transition: opacity var(--motion-reveal-opacity-duration, 620ms)
+        var(--motion-reveal-ease, cubic-bezier(0.25, 0.4, 0.4, 1));
 }
 
 body[data-media-reveal-style='fade'] [data-motion-reveal='media'][data-motion-state='revealed'] {
     opacity: 1;
     will-change: auto;
-    transition: opacity var(--motion-reveal-duration-base, 650ms)
-        var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1));
+    transition: opacity var(--motion-reveal-opacity-duration, 620ms)
+        var(--motion-reveal-ease, cubic-bezier(0.25, 0.4, 0.4, 1));
+    transition-delay: calc(
+        var(--motion-reveal-base-delay, 0ms) + var(--motion-index, 0) *
+            var(--motion-reveal-stagger, 170ms)
+    );
 }
 
 /* Media reveal: zoom */
 body[data-media-reveal-style='zoom'] [data-motion-reveal='media'][data-motion-state='pending'] {
     opacity: 0;
-    transform: scale(0.88);
+    transform: scale(var(--motion-reveal-zoom-scale, 0.92));
     transform-origin: center center;
     will-change: opacity, transform;
     transition:
-        opacity var(--motion-reveal-duration-base, 650ms)
-            var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1)),
-        transform var(--motion-reveal-duration-base, 650ms)
-            var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1));
-    transition-delay: calc(var(--motion-index, 0) * var(--motion-reveal-stagger, 100ms));
+        opacity var(--motion-reveal-opacity-duration, 620ms)
+            var(--motion-reveal-ease, cubic-bezier(0.25, 0.4, 0.4, 1)),
+        transform var(--motion-reveal-duration-base, 1080ms)
+            var(--motion-reveal-ease, cubic-bezier(0.25, 0.4, 0.4, 1));
 }
 
 body[data-media-reveal-style='zoom'] [data-motion-reveal='media'][data-motion-state='revealed'] {
@@ -209,49 +256,213 @@ body[data-media-reveal-style='zoom'] [data-motion-reveal='media'][data-motion-st
     transform-origin: center center;
     will-change: auto;
     transition:
-        opacity var(--motion-reveal-duration-base, 650ms)
-            var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1)),
-        transform var(--motion-reveal-duration-base, 650ms)
-            var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1));
+        opacity var(--motion-reveal-opacity-duration, 620ms)
+            var(--motion-reveal-ease, cubic-bezier(0.25, 0.4, 0.4, 1)),
+        transform var(--motion-reveal-duration-base, 1080ms)
+            var(--motion-reveal-ease, cubic-bezier(0.25, 0.4, 0.4, 1));
+    transition-delay: calc(
+        var(--motion-reveal-base-delay, 0ms) + var(--motion-index, 0) *
+            var(--motion-reveal-stagger, 170ms)
+    );
 }
 
-/* Product-card cascade: staggered card entrance in product grids. */
-[data-motion-cascade] .product-card[data-motion-reveal='content'][data-motion-state='pending'] {
+/* Slide reveal: the animated target owns a temporary clip during playback only.
+   Direction stays overridable through the --motion-slide-*-clip-from/distance tokens. */
+@keyframes motion-slide-reveal-in {
+    from {
+        opacity: 0;
+        clip-path: var(--motion-slide-clip-from, inset(100% 0 0 0));
+        transform: translate3d(
+                var(--motion-slide-distance-x, 0),
+                var(--motion-slide-distance-y, 0),
+                0
+            )
+            scale(var(--motion-slide-scale, 1));
+    }
+
+    to {
+        opacity: 1;
+        clip-path: inset(0);
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+}
+
+body[data-content-reveal-style='slide'] :is([data-motion-reveal='content'], [data-motion-copy]) {
+    --motion-slide-clip-from: var(--motion-slide-content-clip-from, inset(100% 0 0 0));
+    --motion-slide-distance-x: var(--motion-slide-content-distance-x, 0rem);
+    --motion-slide-distance-y: var(--motion-slide-content-distance-y, 52px);
+    --motion-slide-scale: 1;
+}
+
+body[data-media-reveal-style='slide'] [data-motion-reveal='media'] {
+    --motion-slide-clip-from: var(--motion-slide-media-clip-from, inset(0 100% 0 0));
+    --motion-slide-distance-x: var(--motion-slide-media-distance-x, 80px);
+    --motion-slide-distance-y: var(--motion-slide-media-distance-y, 0rem);
+    --motion-slide-scale: var(--motion-slide-media-scale, 1.035);
+}
+
+body[data-content-reveal-style='slide']
+    :is([data-motion-reveal='content'], [data-motion-copy])[data-motion-state='pending'],
+body[data-media-reveal-style='slide'] [data-motion-reveal='media'][data-motion-state='pending'] {
     opacity: 0;
-    transform: translate3d(0, var(--motion-reveal-distance, 3rem), 0) scale(0.98);
-    transform-origin: center center;
-    will-change: opacity, transform;
-    transition:
-        opacity var(--motion-reveal-duration-base, 650ms)
-            var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1)),
-        transform var(--motion-reveal-duration-base, 650ms)
-            var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1));
+    clip-path: var(--motion-slide-clip-from);
+    transform: translate3d(var(--motion-slide-distance-x), var(--motion-slide-distance-y), 0)
+        scale(var(--motion-slide-scale));
+    animation: none;
+    will-change: opacity, transform, clip-path;
 }
 
-[data-motion-cascade] .product-card[data-motion-reveal='content'][data-motion-state='revealed'] {
+body[data-content-reveal-style='slide']
+    :is([data-motion-reveal='content'], [data-motion-copy])[data-motion-state='revealed'],
+body[data-media-reveal-style='slide'] [data-motion-reveal='media'][data-motion-state='revealed'] {
     opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
-    transform-origin: center center;
+    clip-path: none;
+    transform: none;
+    animation-name: motion-slide-reveal-in;
+    animation-duration: var(--motion-reveal-duration-base, 1080ms);
+    animation-timing-function: var(--motion-reveal-ease, cubic-bezier(0.25, 0.4, 0.4, 1));
+    animation-delay: calc(
+        var(--motion-reveal-base-delay, 0ms) + var(--motion-index, 0) *
+            var(--motion-reveal-stagger, 170ms)
+    );
+    animation-fill-mode: backwards;
     will-change: auto;
-    transition:
-        opacity var(--motion-reveal-duration-base, 650ms)
-            var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1)),
-        transform var(--motion-reveal-duration-base, 650ms)
-            var(--motion-ease-enter, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+/* Cascade is layout choreography, not a product-card style. JS owns its row
+   stagger timing, while the selected content/media style owns presentation. */
+[data-motion-cascade] :is([data-motion-reveal], [data-motion-copy])[data-motion-state='pending'],
+[data-motion-cascade] :is([data-motion-reveal], [data-motion-copy])[data-motion-state='revealed'] {
+    transition-delay: 0s;
+    animation-delay: 0s;
+}
+
+body[data-content-reveal-style]
+    [data-motion-cascade]
+    :is([data-motion-reveal], [data-motion-copy])[data-motion-state='revealed'],
+body[data-media-reveal-style]
+    [data-motion-cascade]
+    :is([data-motion-reveal], [data-motion-copy])[data-motion-state='revealed'] {
+    transition-delay: 0s;
+    animation-delay: 0s;
+}
+
+body[data-content-reveal-style='rise']
+    [data-motion-cascade]
+    [data-motion-reveal='content'][data-motion-state='pending'] {
+    transform: translate3d(0, var(--motion-reveal-rise-distance, 64px), 0)
+        scale(var(--motion-reveal-cascade-scale, 0.97));
+}
+
+body[data-content-reveal-style='rise']
+    [data-motion-cascade]
+    [data-motion-reveal='content'][data-motion-state='revealed'] {
+    transform: translate3d(0, 0, 0) scale(1);
+}
+
+body[data-content-reveal-style='slide'] [data-motion-cascade] [data-motion-reveal='content'] {
+    --motion-slide-scale: var(--motion-reveal-cascade-scale, 0.97);
+}
+
+/* Card copy is an independent observer target so tall media cannot finish the
+   text animation before the text itself reaches the reveal line. */
+[data-motion-copy] {
+    --motion-reveal-rise-distance: var(--motion-copy-rise-distance, clamp(32px, 4vw, 48px));
+    --motion-slide-content-distance-y: var(--motion-copy-rise-distance, clamp(32px, 4vw, 48px));
+}
+
+/* Critical first-viewport targets never enter a transparent or clipped state.
+   Rise/Zoom/Slide keep a transform-only entrance so the page can still feel
+   animated without hiding LCP-adjacent content during initialization. */
+:is([data-motion-critical], [data-motion-critical-runtime])[data-motion-state] {
+    opacity: 1 !important;
+    clip-path: none !important;
+}
+
+:is([data-motion-critical], [data-motion-critical-runtime])[data-motion-state='pending'] {
+    transition: none !important;
+    animation: none !important;
+}
+
+body[data-content-reveal-style='slide']
+    :is([data-motion-reveal='content'], [data-motion-copy]):is(
+        [data-motion-critical],
+        [data-motion-critical-runtime]
+    )[data-motion-state],
+body[data-media-reveal-style='slide']
+    [data-motion-reveal='media']:is(
+        [data-motion-critical],
+        [data-motion-critical-runtime]
+    )[data-motion-state] {
+    animation: none !important;
+    transition: transform var(--motion-reveal-duration-base, 1080ms)
+        var(--motion-reveal-ease, cubic-bezier(0.25, 0.4, 0.4, 1));
+}
+
+body[data-content-reveal-style='slide']
+    :is([data-motion-reveal='content'], [data-motion-copy]):is(
+        [data-motion-critical],
+        [data-motion-critical-runtime]
+    )[data-motion-state='revealed'],
+body[data-media-reveal-style='slide']
+    [data-motion-reveal='media']:is(
+        [data-motion-critical],
+        [data-motion-critical-runtime]
+    )[data-motion-state='revealed'] {
+    transition-delay: calc(
+        var(--motion-reveal-base-delay, 0ms) + var(--motion-index, 0) *
+            var(--motion-reveal-stagger, 170ms)
+    );
+}
+
+body[data-content-reveal-style='slide']
+    [data-motion-cascade]
+    :is([data-motion-reveal='content'], [data-motion-copy]):is(
+        [data-motion-critical],
+        [data-motion-critical-runtime]
+    )[data-motion-state='revealed'],
+body[data-media-reveal-style='slide']
+    [data-motion-cascade]
+    [data-motion-reveal='media']:is(
+        [data-motion-critical],
+        [data-motion-critical-runtime]
+    )[data-motion-state='revealed'] {
+    transition-delay: 0s;
 }
 
 /* Critical media opt-out: keeps LCP/Swiper hero images static while content can reveal. */
 [data-motion-section][data-motion-media='static'] [data-motion-reveal='media'] {
     opacity: 1 !important;
     transform: none !important;
+    clip-path: none !important;
     transition: none !important;
+    animation: none !important;
 }
 
 /* Kill switch: motion disabled */
 body[data-motion-enabled='false'] [data-motion-reveal] {
     opacity: 1 !important;
     transform: none !important;
+    clip-path: none !important;
     transition: none !important;
+    animation: none !important;
+}
+
+body[data-motion-enabled='false'] [data-motion-copy] {
+    opacity: 1 !important;
+    transform: none !important;
+    clip-path: none !important;
+    transition: none !important;
+    animation: none !important;
+}
+
+body[data-motion-enabled='false']
+    :is([data-motion-reveal], [data-motion-copy])[data-motion-resetting] {
+    opacity: 1 !important;
+    transform: none !important;
+    clip-path: none !important;
+    transition: none !important;
+    animation: none !important;
 }
 
 /* Kill switch: reduced motion */
@@ -259,6 +470,34 @@ body[data-motion-enabled='false'] [data-motion-reveal] {
     [data-motion-reveal] {
         opacity: 1 !important;
         transform: none !important;
+        clip-path: none !important;
+        transition: none !important;
+        animation: none !important;
+    }
+
+    [data-motion-copy] {
+        opacity: 1 !important;
+        transform: none !important;
+        clip-path: none !important;
+        transition: none !important;
+        animation: none !important;
+    }
+
+    :is([data-motion-reveal], [data-motion-copy])[data-motion-state][data-motion-resetting] {
+        opacity: 1 !important;
+        transform: none !important;
+        clip-path: none !important;
+        transition: none !important;
+        animation: none !important;
+    }
+
+    /* Countdown remains current and readable without the 3D state transition. */
+    [data-flip-digit-motion-layer='top'] {
+        display: none !important;
+    }
+
+    [data-flip-digit-motion-layer='bottom'] {
+        transform: rotateX(0deg) !important;
         transition: none !important;
     }
 }
@@ -1041,8 +1280,8 @@ body[data-motion-enabled='false'] [data-motion-reveal] {
 
 /* ================================================================
    Watermark marquee — decorative local loop
-   - Independent from motion_enabled / section reveal
-   - Governed by prefers-reduced-motion only
+   - Governed by motion_enabled and prefers-reduced-motion
+   - Independent from ordinary section reveal timing/styles
    ================================================================ */
 @keyframes watermark-marquee-x {
     from {
@@ -1090,6 +1329,12 @@ body[data-motion-enabled='false'] [data-motion-reveal] {
     animation-delay: calc(var(--wm-phase, 0) * var(--wm-bounce-duration, 2.4s) / -4);
 }
 
+body[data-motion-enabled='false'] .watermark-marquee__track,
+body[data-motion-enabled='false'] .watermark-marquee__item-inner {
+    animation: none !important;
+    transform: none !important;
+}
+
 @media (hover: hover) and (pointer: fine) {
     [data-marquee-pause-on-hover='true']:hover .watermark-marquee__track,
     [data-marquee-pause-on-hover='true']:hover .watermark-marquee__item-inner {
@@ -1107,8 +1352,8 @@ body[data-motion-enabled='false'] [data-motion-reveal] {
 
 /* ================================================================
    Scrolling icon with text — promotional marquee loop
-   - Independent from motion_enabled / section reveal
-   - Governed by prefers-reduced-motion only
+   - Governed by motion_enabled and prefers-reduced-motion
+   - Independent from ordinary section reveal timing/styles
    - Reuses watermark-marquee-x keyframes (no duplicate keyframes)
    ================================================================ */
 .scrolling-icon-with-text__track {
@@ -1130,6 +1375,23 @@ body[data-motion-enabled='false'] [data-motion-reveal] {
 .scrolling-icon-with-text__marquee[data-scrolling-direction='left_to_right']
     .scrolling-icon-with-text__track {
     animation-direction: reverse;
+}
+
+body[data-motion-enabled='false'] .scrolling-icon-with-text__viewport {
+    height: auto;
+    overflow: visible;
+}
+
+body[data-motion-enabled='false'] .scrolling-icon-with-text__track {
+    animation: none !important;
+    transform: none !important;
+    flex-wrap: wrap;
+    width: 100%;
+    justify-content: center;
+}
+
+body[data-motion-enabled='false'] .scrolling-icon-with-text__item[aria-hidden='true'] {
+    display: none;
 }
 
 @media (hover: hover) and (pointer: fine) {

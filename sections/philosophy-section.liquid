@@ -15,7 +15,7 @@
     -%}
     <div class="layout container-page">
         {%- comment -%} Header {%- endcomment -%}
-        <div class="mx-auto mb-12 text-center pc:mb-20">
+        <div class="mx-auto mb-12 text-center pc:mb-20" data-motion-sequence>
             <p
                 data-motion-reveal="content"
                 class="{{ philosophy_subtitle_class }}"
@@ -37,63 +37,73 @@
         </div>
 
         {%- comment -%} Cards / link blocks {%- endcomment -%}
-        <div class="grid grid-cols-1 gap-6 pc:grid-cols-3 pc:gap-8">
+        <div class="grid grid-cols-1 gap-6 pc:grid-cols-3 pc:gap-8" data-motion-cascade>
             {%- for block in section.blocks -%}
                 {%- case block.type -%}
                     {%- when 'card' -%}
-                        <div {{ block.shopify_attributes }}>
+                        <div
+                            data-motion-bound
+                            {{ block.shopify_attributes }}
+                        >
                             {%- liquid
                                 assign card_link = block.settings.link
                                 assign card_title_class = block.settings.title_size | default: 'heading-h2'
                             -%}
 
-                            {%- capture philosophy_card_media -%}
-                                <div class="group aspect-4/3 overflow-hidden rounded-sm">
-                                    {%- assign image_alt = block.settings.image.alt | default: block.settings.title | escape -%}
-                                    {%- render 'image',
-                                        wrapper: 'div',
-                                        image: block.settings.image,
-                                        alt: image_alt,
-                                        width: block.settings.image.width
-                                    -%}
-                                </div>
-                            {%- endcapture -%}
-
-                            {%- if card_link != blank -%}
-                                {%- render 'link',
-                                    href: card_link,
-                                    variant: 'plain',
-                                    class: 'media-interaction block rounded-sm',
-                                    content: philosophy_card_media,
-                                    aria_label: block.settings.title
-                                -%}
-                            {%- else -%}
-                                {{ philosophy_card_media }}
-                            {%- endif -%}
-
                             <div data-motion-reveal="content">
-                                <h3 class="{{ card_title_class }} mt-5">
-                                    {{ block.settings.title }}
-                                </h3>
-
-                                <div class="rte rte--compact mt-2">
-                                    {{ block.settings.text }}
-                                </div>
-
-                                {%- if card_link != blank and block.settings.link_text != blank -%}
-                                    <div class="mt-4">
-                                        {%- capture card_cta_content -%}
-                                            <span>{{ block.settings.link_text }}</span>
-                                            {% render 'icons', icon: 'icon-arrow2', class: 'ms-3' %}
-                                        {%- endcapture -%}
-
-                                        {%- render 'link',
-                                            href: card_link,
-                                            content: card_cta_content,
-                                            variant: 'underline'
+                                {%- capture philosophy_card_media -%}
+                                    <div class="group aspect-4/3 overflow-hidden rounded-sm">
+                                        {%- assign image_alt = block.settings.image.alt | default: block.settings.title | escape -%}
+                                        {%- render 'image',
+                                            wrapper: 'div',
+                                            image: block.settings.image,
+                                            alt: image_alt,
+                                            width: block.settings.image.width,
+                                            motion_reveal: false
                                         -%}
                                     </div>
+                                {%- endcapture -%}
+
+                                {%- if card_link != blank -%}
+                                    {%- render 'link',
+                                        href: card_link,
+                                        variant: 'plain',
+                                        class: 'media-interaction block rounded-sm',
+                                        content: philosophy_card_media,
+                                        aria_label: block.settings.title
+                                    -%}
+                                {%- else -%}
+                                    {{ philosophy_card_media }}
                                 {%- endif -%}
+
+                                <div data-motion-copy-bound>
+                                    <div data-motion-copy>
+                                        <h3 class="{{ card_title_class }} mt-5">
+                                            {{ block.settings.title }}
+                                        </h3>
+
+                                        <div class="rte rte--compact mt-2">
+                                            {{ block.settings.text }}
+                                        </div>
+
+                                        {%- if card_link != blank
+                                            and block.settings.link_text != blank
+                                        -%}
+                                            <div class="mt-4">
+                                                {%- capture card_cta_content -%}
+                                                    <span>{{ block.settings.link_text }}</span>
+                                                    {% render 'icons', icon: 'icon-arrow2', class: 'ms-3' %}
+                                                {%- endcapture -%}
+
+                                                {%- render 'link',
+                                                    href: card_link,
+                                                    content: card_cta_content,
+                                                    variant: 'underline'
+                                                -%}
+                                            </div>
+                                        {%- endif -%}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                 {%- endcase -%}

@@ -584,6 +584,10 @@
                 _animateFrame: null,
 
                 init() {
+                    if (!this._shouldAnimateSweep()) {
+                        this.position = 50;
+                    }
+
                     this.on(document, 'mouseup', () => this.endDrag());
                     this.on(document, 'touchend', () => this.endDrag());
                     this.on(document, 'mousemove', (e) => {
@@ -599,16 +603,43 @@
                     );
                 },
 
+                _prefersReducedMotion() {
+                    const Utils = window.__Theme__?.Utils;
+                    if (typeof Utils?.prefersReducedMotion === 'function') {
+                        return Utils.prefersReducedMotion();
+                    }
+                    return (
+                        typeof window.matchMedia === 'function' &&
+                        window.matchMedia('(prefers-reduced-motion: reduce)').matches
+                    );
+                },
+
+                _shouldAnimateSweep() {
+                    return (
+                        document.body?.dataset?.motionEnabled !== 'false' &&
+                        !this._prefersReducedMotion()
+                    );
+                },
+
+                _cancelSweep() {
+                    if (!this._animateFrame) return;
+                    cancelAnimationFrame(this._animateFrame);
+                    this._animateFrame = null;
+                },
+
                 animateToCenter() {
-                    if (this._animateFrame) {
-                        cancelAnimationFrame(this._animateFrame);
-                        this._animateFrame = null;
+                    this._cancelSweep();
+
+                    if (!this._shouldAnimateSweep()) {
+                        this.position = 50;
+                        return;
                     }
 
                     const start = 0;
                     const end = 50;
                     const duration = 800;
                     const startTime = performance.now();
+                    this.position = start;
 
                     const animate = (currentTime) => {
                         const elapsed = currentTime - startTime;
@@ -628,6 +659,7 @@
                 },
 
                 startDrag(e) {
+                    this._cancelSweep();
                     this.isDragging = true;
                     this.updatePosition(e);
                 },
@@ -642,6 +674,7 @@
                 },
 
                 handleKeydown(e) {
+                    this._cancelSweep();
                     const step = 5;
                     let handled = true;
 
@@ -687,10 +720,7 @@
                 },
 
                 destroy() {
-                    if (this._animateFrame) {
-                        cancelAnimationFrame(this._animateFrame);
-                        this._animateFrame = null;
-                    }
+                    this._cancelSweep();
                     this.dispose();
                 },
             };

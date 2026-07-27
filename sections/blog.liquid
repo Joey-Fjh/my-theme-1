@@ -26,7 +26,7 @@
             data-motion-section
         >
             <div class="flex items-start justify-between">
-                <div data-motion-reveal="content">
+                <div data-motion-reveal="content" data-motion-critical>
                     {%- render 'listing-page-hero-copy',
                         setting_header: section.settings.header,
                         object_title: blog.title,
@@ -138,7 +138,10 @@
                                 data-motion-cascade
                             >
                                 {% for article in blog.articles %}
-                                    <article class="group">
+                                    <article
+                                        class="group"
+                                        data-motion-reveal="content"
+                                    >
                                         <div class="mb-4 block aspect-4/3 overflow-hidden rounded-sm">
                                             {% comment %} Image {% endcomment %}
                                             {%- capture sizes -%}
@@ -162,37 +165,39 @@
                                             -%}
                                         </div>
 
-                                        <div data-motion-reveal="content">
-                                            <p class="my-6">
-                                                {{ article.tags | first }}
-                                            </p>
-
-                                            <h2 class="my-6 heading-h2">
-                                                <a href="{{ article.url }}">{{ article.title }}</a>
-                                            </h2>
-
-                                            {%- liquid
-                                                assign article_excerpt = article.excerpt_or_content | strip_html | strip | truncatewords: 30
-                                            -%}
-                                            {%- if article_excerpt != blank -%}
-                                                <p class="my-6 body-lg text-theme-text/80">
-                                                    {{- article_excerpt | escape_once -}}
+                                        <div data-motion-copy-bound>
+                                            <div data-motion-copy>
+                                                <p class="my-6">
+                                                    {{ article.tags | first }}
                                                 </p>
-                                            {%- endif -%}
 
-                                            {%- if article.url !=blank -%}
-                                                {%- capture link_content -%}
-                                                    <span>{{ section.settings.link_text }}</span>
-                                                    {% render 'icons', icon: 'icon-arrow2', class: 'ms-3' %}
-                                                {%- endcapture -%}
+                                                <h2 class="my-6 heading-h2">
+                                                    <a href="{{ article.url }}">{{ article.title }}</a>
+                                                </h2>
 
-                                                {%- render 'link',
-                                                    href: article.url,
-                                                    content: link_content,
-                                                    variant: 'underline',
-                                                    class: 'body-xl'
+                                                {%- liquid
+                                                    assign article_excerpt = article.excerpt_or_content | strip_html | strip | truncatewords: 30
                                                 -%}
-                                            {%- endif -%}
+                                                {%- if article_excerpt != blank -%}
+                                                    <p class="my-6 body-lg text-theme-text/80">
+                                                        {{- article_excerpt | escape_once -}}
+                                                    </p>
+                                                {%- endif -%}
+
+                                                {%- if article.url !=blank -%}
+                                                    {%- capture link_content -%}
+                                                        <span>{{ section.settings.link_text }}</span>
+                                                        {% render 'icons', icon: 'icon-arrow2', class: 'ms-3' %}
+                                                    {%- endcapture -%}
+
+                                                    {%- render 'link',
+                                                        href: article.url,
+                                                        content: link_content,
+                                                        variant: 'underline',
+                                                        class: 'body-xl'
+                                                    -%}
+                                                {%- endif -%}
+                                            </div>
                                         </div>
                                     </article>
                                 {% endfor %}
