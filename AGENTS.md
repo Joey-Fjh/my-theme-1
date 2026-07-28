@@ -32,6 +32,8 @@ Runtime constraints:
 
 - `AGENTS.md` is the source entry file. `CLAUDE.md` is a symlink adapter to `AGENTS.md`.
 - `.agents/skills/` is the single source of truth for project skills. `.claude/skills/` is a symlink adapter to `../.agents/skills`.
+- `.agents/roles/` and `.agents/contracts/` are the vendor-neutral sources for multi-agent roles and structured handoffs.
+- Tool-specific agent definitions such as `.codex/agents/*.toml` are thin adapters to the canonical `.agents/` role files.
 - Tool-specific entry points may use relative symlinks to source files or directories. Do not copy rule or skill files into adapter paths.
 - Tool-specific configuration, including MCP, permissions, local settings, and hooks, belongs in tool-owned directories such as `.claude/` or `.codex/`; it does not change the project skill source.
 - `docs/` is the agent-readable knowledge layer. Read referenced docs only when the task needs them.
@@ -40,6 +42,8 @@ Runtime constraints:
 Important paths:
 
 - `.agents/skills/`: project skills
+- `.agents/roles/`: portable multi-agent role contracts
+- `.agents/contracts/`: task and result schemas
 - `docs/references/`: long references, examples, checklists
 - `docs/agent/`: agent context, next-session template
 - `sections/`, `snippets/`, `assets/`, `tailwind/`, `locales/`: theme implementation
@@ -74,6 +78,9 @@ Agent behavior rules:
 
 - Use Context7 MCP for Tailwind CSS documentation queries. Use Shopify Dev MCP for Shopify API, Liquid, and theme architecture queries. Do not guess framework behavior when MCP is available.
 - Users do not need to manually specify skills. For non-trivial tasks, use `agent-router` first to choose skills, docs, and validation.
+- Use `orchestrate-agents` only after `agent-router` selects it or the user explicitly requests delegation. Parallelize independent read-only work, keep one writer per shared worktree, and keep the primary agent responsible for decisions and user communication.
+- Delegated agents receive bounded task capsules and return structured evidence. They must not receive full conversation history by default, approve their own work, or create more agents; nested delegation is not supported by the initial contract.
+- Where the active client supports lifecycle hooks, validate delegated results against `.agents/contracts/result.schema.json` before accepting them. Permit one format-only correction attempt, then report the delegated task as blocked if its result remains invalid.
 - For complex, risky, cross-session, or broad cleanup work, classify purpose, ownership, risk, and allowed action before editing.
 - If the user asks for review, orientation, or a prompt, do not refactor or implement unless they explicitly ask for implementation.
 - Facts discoverable from the repository must be inspected before asking the user. Ask before editing when the unknown is merchant-owned configuration, product/design preference, architecture direction, or launch-risk tradeoff.
@@ -126,6 +133,7 @@ Read only the matching reference for the current task:
 - General pre-merge review checklist: `docs/references/code-review/pre-merge.md`
 - Daily collaboration standard, non-trivial task definition, user overrides, and complex task framing: `docs/references/agent-workflow/collaboration-standard.md`
 - Skill/docs routing: `docs/references/agent-workflow/skill-routing.md`. Third-party adoption history: `docs/references/agent-workflow/external-skills.md`
+- Multi-agent context isolation, role boundaries, task/result contracts, concurrency, and vendor adapters: `docs/references/agent-workflow/multi-agent-architecture.md`
 
 Use `agent-router` for broad, ambiguous, multi-step, cleanup, Lighthouse, architecture, rule-setting, third-party skill, governance, or cross-session work.
 
@@ -136,6 +144,7 @@ Use `agent-router` for broad, ambiguous, multi-step, cleanup, Lighthouse, archit
 Project skills live in `.agents/skills/`.
 
 - Use `agent-router` first for non-trivial tasks, broad requests, cross-session continuation, third-party skill evaluation, or when multiple skills/docs might apply.
+- Use `orchestrate-agents` after routing when independent delegation materially improves context isolation, verification, or latency.
 - User skill names are optional overrides. If the user states intent without naming a skill, `agent-router` chooses the route.
 - Use the routed project skill for implementation, review, validation, i18n, architecture, or icon work.
 - If automatic skill triggering is unavailable, follow `docs/references/agent-workflow/skill-routing.md` and manually open only the routed skill.
@@ -150,7 +159,9 @@ Do not create, install, or approve skills during ordinary theme work. Discuss sk
 Use the smallest command that proves the change. In this Windows PowerShell workspace, run scripts through `npm.cmd`.
 
 ```bash
-npm.cmd run lint          # i18n, theme architecture, and format checks
+npm.cmd run lint          # i18n, theme architecture, agent orchestration, and format checks
+npm.cmd run lint:agents   # multi-agent skills, roles, contracts, and Codex adapters
+npm.cmd run test:agent-hooks # runtime result-schema hook acceptance and rejection cases
 npm.cmd run lint:theme    # Liquid, JS architecture, Alpine, HTTP/cart, heading rules
 npm.cmd run lint:i18n     # locale keys, translated strings, schema copy, ARIA copy
 npm.cmd test              # Shopify Theme Check

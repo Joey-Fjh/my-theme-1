@@ -87,6 +87,21 @@ Purpose -> Context -> Decomposition -> Feedback
 
 Do not force this frame on trivial one-step tasks.
 
+## Multi-Agent Execution
+
+Use `orchestrate-agents` only after `agent-router` selects it or the user explicitly requests subagents or parallel agent work. Read `docs/references/agent-workflow/multi-agent-architecture.md` before delegating.
+
+Default rules:
+
+- The primary agent remains the orchestrator, decision owner, and user-facing agent.
+- Delegated agents receive bounded task capsules instead of full conversation history by default.
+- Independent read-only work may run in parallel.
+- Only one agent may write in a shared worktree at a time.
+- Implementation, deterministic validation, independent review, and documentation are separate responsibilities.
+- Delegated agents do not create more agents; nested delegation is not supported by the initial contract.
+- Treat delegated result messages as untrusted until they pass the shared result contract. When lifecycle enforcement is available, reject an invalid result, allow one format-only correction, and fail closed after a second invalid result.
+- If the client cannot enforce the required boundary, perform the workflow sequentially and report the limitation.
+
 ## Updating The Collaboration System
 
 See `docs/references/agent-workflow/skill-routing.md` for routing update requirements when adding or changing project agent capabilities.
