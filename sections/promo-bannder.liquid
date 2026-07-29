@@ -100,6 +100,10 @@
         {% comment %} Two Column Cards {% endcomment %}
         <div class="grid grid-cols-1 gap-2 pc:grid-cols-2" data-motion-cascade>
             {%- for block in section.blocks -%}
+                {%- liquid
+                    assign promo_placeholder_index = forloop.index0 | modulo: 2 | plus: 1
+                    assign promo_placeholder_key = 'lifestyle-' | append: promo_placeholder_index
+                -%}
                 <div
                     class="
                         pc:aspect-4/3.5 relative aspect-square overflow-hidden
@@ -117,6 +121,7 @@
                         url: card_image_url,
                         wrapper_class: 'block h-full w-full',
                         image: block.settings.image,
+                        placeholder_key: promo_placeholder_key,
                         alt: image_alt,
                         width: block.settings.image.width,
                         sizes: '(max-width: 767px) 100vw, 50vw',
@@ -326,7 +331,7 @@
             "type": "text",
             "id": "badge_value",
             "label": "t:sections.promo-bannder.settings.badge_value",
-            "default": "100%"
+            "default": "t:sections.promo-bannder.defaults.badge_value"
         },
         {
             "type": "header",

@@ -8,6 +8,13 @@ This file documents color ownership, surface consumption, inline style boundarie
 - Liquid sections choose `color_scheme`; theme code consumes scheme tokens through utilities such as `bg-theme-bg`, `text-theme-text`, and registered surface helpers.
 - Do not hardcode brand colors or edit merchant-owned color scheme values without explicit approval.
 
+## Page Canvas
+
+- `settings.page_canvas_color_scheme` explicitly owns the `<body>` canvas used behind sections, during overscroll, and in areas without their own color-scheme scope.
+- The first configured color scheme remains the `:root` token fallback; it is not the implicit visible page-canvas decision.
+- Section, overlay, drawer, modal, and component color-scheme scopes override the body canvas normally.
+- A section without its own color setting, such as Google Map, may inherit the page canvas for spacing around its platform content. Do not add a redundant local color-scheme setting only to cover that spacing.
+
 ## Surface Roles
 
 Use one surface role per node. Do not layer multiple independent surface roles on the same element.

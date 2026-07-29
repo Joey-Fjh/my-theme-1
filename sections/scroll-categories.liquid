@@ -37,11 +37,15 @@
                 {%- endcapture -%}
 
                 <div data-motion-reveal="content">
-                    {%- render 'link',
-                        href: selected_collection.url,
-                        content: link_content,
-                        variant: 'underline'
-                    -%}
+                    {%- if selected_collection != blank -%}
+                        {%- render 'link',
+                            href: selected_collection.url,
+                            content: link_content,
+                            variant: 'underline'
+                        -%}
+                    {%- else -%}
+                        {{- link_content -}}
+                    {%- endif -%}
                 </div>
 
                 <div
@@ -139,6 +143,74 @@
                             </span>
                         </div>
                     </a>
+                {%- else -%}
+                    {%- for placeholder_index in (1..max_items) -%}
+                        {%- liquid
+                            assign product_placeholder_index = placeholder_index | minus: 1 | modulo: 6 | plus: 1
+                            assign product_placeholder_key = 'product-' | append: product_placeholder_index
+                        -%}
+                        <div
+                            class="scroll-categories__item block py-8 text-theme-text/80 pc:p-8"
+                            data-motion-bound
+                            x-data="{hover:false}"
+                            @mouseenter="hover = true"
+                            @mouseleave="hover = false"
+                            :class="{ 'is-hovered': hover }"
+                        >
+                            <div
+                                class="flex w-full flex-col gap-3 pc:flex-row pc:items-center pc:justify-between"
+                                data-motion-reveal="content"
+                            >
+                                <span class="scroll-categories__item-side shrink-0 body-lg text-theme-text">
+                                    {{- 'products.product.fallback_vendor' | t -}}
+                                </span>
+
+                                <div class="relative flex min-w-0 items-center gap-4 pc:pe-44">
+                                    <h2 class="scroll-categories__product-title min-w-0 truncate {{ scroll_categories_collection_heading_class }}">
+                                        {{-
+                                            'products.product.example_title_numbered'
+                                            | t: index: placeholder_index
+                                        -}}
+                                    </h2>
+
+                                    <div
+                                        class="
+                                            scroll-categories__preview
+                                            absolute
+                                            end-0
+                                            top-1/2
+                                            hidden
+                                            aspect-100/72 h-30
+                                            -translate-y-1/2 scale-95
+                                            opacity-0
+                                            pc:block
+                                        "
+                                        :class="hover ? 'opacity-100 scale-100' : ''"
+                                    >
+                                        {%- render 'image-magnifier',
+                                            class: 'h-full w-full',
+                                            image: blank,
+                                            placeholder_key: product_placeholder_key,
+                                            aspect_ratio: '100/72',
+                                            fit: 'contain',
+                                            image_wrapper_class: 'h-full w-full',
+                                            width: 220,
+                                            sizes: '220px',
+                                            zoom_width: 1200,
+                                            preview_mode: 'contain',
+                                            preview_width: 280,
+                                            preview_height: 200,
+                                            motion_reveal: false
+                                        -%}
+                                    </div>
+                                </div>
+
+                                <span class="scroll-categories__item-side shrink-0 body-lg text-theme-text">
+                                    {{- 1999 | money -}}
+                                </span>
+                            </div>
+                        </div>
+                    {%- endfor -%}
                 {%- endfor -%}
             </div>
 

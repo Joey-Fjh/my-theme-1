@@ -88,12 +88,20 @@
                                     {%- endif -%}
 
                                     {%- assign collection_card_image = collection.featured_image -%}
+                                    {%- assign collection_placeholder_index = forloop.index0
+                                        | modulo: 6
+                                        | plus: 1
+                                    -%}
+                                    {%- assign collection_placeholder_key = 'collection-'
+                                        | append: collection_placeholder_index
+                                    -%}
                                     {%- assign image_alt = collection_card_image.alt
                                         | default: collection.title
                                         | escape
                                     -%}
                                     {%- render 'image',
                                         image: collection_card_image,
+                                        placeholder_key: collection_placeholder_key,
                                         alt: image_alt,
                                         width: collection_card_image.width,
                                         sizes: sizes,
@@ -280,7 +288,7 @@
             "type": "text",
             "id": "badge_value",
             "label": "t:sections.collections.settings.badge_value",
-            "default": "100%"
+            "default": "t:sections.collections.defaults.badge_value"
         },
         {
             "type": "header",

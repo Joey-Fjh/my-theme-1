@@ -207,7 +207,6 @@
                         <div
                             class="product-info-blocks__description"
                             data-product-description
-                            x-data="dragScroll({ axis: 'y' })"
                         >
                             {{ 'products.product.example_description' | t }}
                         </div>
@@ -473,13 +472,15 @@
                 </details>
 
             {%- when 'variant_picker' -%}
-                {%- render 'product-variant-picker',
-                    product: product_data,
-                    block: block,
-                    product_form_id: product_form_id,
-                    section_id: section.id,
-                    context: context
-                -%}
+                {%- if product_data != blank -%}
+                    {%- render 'product-variant-picker',
+                        product: product_data,
+                        block: block,
+                        product_form_id: product_form_id,
+                        section_id: section.id,
+                        context: context
+                    -%}
+                {%- endif -%}
 
             {%- when 'quantity_selector' -%}
                 {%- if purchase_anchor_type == 'quantity_selector' -%}
@@ -501,12 +502,16 @@
                                 class="product-info-blocks__quantity"
                                 {{ block.shopify_attributes }}
                             >
-                                {%- render 'quantity-selector',
-                                    variant: product_data.selected_or_first_available_variant,
-                                    surface: 'product',
-                                    product_form_id: product_form_id,
-                                    section_id: section.id
-                                -%}
+                                {%- if product_data != blank -%}
+                                    {%- render 'quantity-selector',
+                                        variant: product_data.selected_or_first_available_variant,
+                                        surface: 'product',
+                                        product_form_id: product_form_id,
+                                        section_id: section.id
+                                    -%}
+                                {%- else -%}
+                                    {%- render 'quantity-selector', interactive: false -%}
+                                {%- endif -%}
                             </div>
                         </div>
                     {%- endif -%}

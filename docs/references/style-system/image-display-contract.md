@@ -11,6 +11,8 @@ This file documents `snippets/image.liquid` display behavior. CSS layer/token co
 
 Calls without an explicit mode default to `frame` for backward compatibility.
 
+Nil images default to the shared `framed` placeholder surface so adjacent empty media remains visually distinct. The shared frame uses an opaque token-mixed surface so underlying section or root colors cannot bleed through SVG transparency. Pass `placeholder_style: 'plain'` only when the media is intentionally unframed, such as the Slideshow background, or when a composite caller applies the shared frame to its complete empty-state surface to avoid a nested double border. The caller still owns the placeholder family, aspect ratio, and outer layout.
+
 ## Parameters
 
 | Parameter | Meaning |
@@ -19,6 +21,7 @@ Calls without an explicit mode default to `frame` for backward compatibility.
 | `mode` | `frame` or `natural`; defaults to `frame` |
 | `fit` | explicit object-fit intent such as `cover` or `contain` |
 | `position` | optional explicit object-position whitelist value; see Object-position precedence |
+| `placeholder_style` | nil-image surface: `framed` (default) or `plain`; `plain` delegates visible boundary ownership to the caller and framing never affects a real image |
 | `class` / `wrapper_class` | wrapper classes; `wrapper_class` is preferred |
 | `img_class` | image element classes |
 | `sizes`, `widths`, `loading`, `fetchpriority`, `alt` | rendering and performance metadata |

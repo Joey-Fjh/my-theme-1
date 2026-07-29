@@ -37,6 +37,10 @@
     {%- assign success_message = 'toast.added_to_cart' | t -%}
 {%- endif -%}
 {%- assign show_buy_now = show_buy_now | default: false -%}
+{%- assign show_dynamic_checkout = show_dynamic_checkout
+    | default: block.settings.show_dynamic_checkout
+    | default: false
+-%}
 {%- assign show_quantity_control = false -%}
 {%- if quantity_block != blank or show_quantity == true or show_quantity == 'true' -%}
     {%- assign show_quantity_control = true -%}
@@ -44,10 +48,6 @@
 
 {%- if product != blank -%}
     {%- assign current_variant = product.selected_or_first_available_variant -%}
-    {%- assign show_dynamic_checkout = show_dynamic_checkout
-        | default: block.settings.show_dynamic_checkout
-        | default: false
-    -%}
     {%- comment -%}
         Gift card recipient validation does not support accelerated checkout.
         Hide Shopify payment buttons and custom Buy now whenever the recipient
@@ -234,13 +234,38 @@
         {%- endif -%}
     </div>
 
+{%- elsif context == 'featured' -%}
+    <div {{ block.shopify_attributes }}>
+        <span class="sr-only">{{ 'products.product.unavailable' | t }}</span>
+        <div class="buy-buttons__actions--purchase-group{% if show_quantity_control %} buy-buttons__actions--with-quantity{% endif %}">
+            <div class="buy-buttons__primary-row">
+                {%- if show_quantity_control -%}
+                    <div class="buy-buttons__quantity">
+                        {%- render 'quantity-selector', interactive: false -%}
+                    </div>
+                {%- endif -%}
+
+                <span
+                    class="{% if show_dynamic_checkout or show_buy_now == true or show_buy_now == 'true' %}btn-secondary{% else %}btn-primary{% endif %} pointer-events-none relative w-full cursor-default"
+                    aria-hidden="true"
+                >
+                    {{ 'products.product.add_to_cart' | t }}
+                </span>
+            </div>
+
+            {%- if show_dynamic_checkout or show_buy_now == true or show_buy_now == 'true' -%}
+                <span
+                    class="btn-primary pointer-events-none relative w-full cursor-default"
+                    aria-hidden="true"
+                >
+                    {{ 'products.product.buy_it_now' | t }}
+                </span>
+            {%- endif -%}
+        </div>
+    </div>
 {%- else -%}
     <div {{ block.shopify_attributes }}>
-        <button
-            type="button"
-            class="btn-secondary relative w-full"
-            disabled
-        >
+        <button type="button" class="btn-secondary relative w-full" disabled>
             {{ 'products.product.unavailable' | t }}
         </button>
     </div>

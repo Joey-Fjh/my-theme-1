@@ -53,6 +53,7 @@
     @param {string} [alt] - Alt text for the image (defaults to empty string for decorative images)
     @param {string} [aspect_ratio] - Optional aspect ratio for the image (e.g. '16:9')
     @param {string} [placeholder_key] - Optional placeholder key for nil image
+    @param {string} [placeholder_style] - Placeholder surface style: 'framed' (default) or 'plain'. Framing is applied only when image is blank.
     @param {string} [placeholder_class] - Optional extra class for the placeholder svg
     @param {string} [placeholder_aspect_ratio] - Optional fallback aspect ratio when image is nil (defaults to '4/3')
     @param {string} [extra_attributes] - Additional raw HTML attributes applied to the <img> element
@@ -204,6 +205,10 @@
     endif
 
     assign placeholder_key = placeholder_key | default: 'image'
+    assign placeholder_style = placeholder_style | default: 'framed'
+    unless placeholder_style == 'framed' or placeholder_style == 'plain'
+        assign placeholder_style = 'framed'
+    endunless
     assign placeholder_class = 'svg-placeholder ' | append: placeholder_class
     assign placeholder_class = placeholder_class | strip
 
@@ -216,6 +221,9 @@
     endif
     if apply_media_interaction
         assign wrapper_class = wrapper_class | append: ' media-interaction'
+    endif
+    if image == blank and placeholder_style == 'framed'
+        assign wrapper_class = wrapper_class | append: ' media-placeholder-frame'
     endif
 %}
 

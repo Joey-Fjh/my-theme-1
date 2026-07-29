@@ -1,7 +1,9 @@
 {%- liquid
     assign banner_aspect_mobile = '9/16'
     assign banner_aspect_desktop = '16/9'
+    assign newsletter_banner_has_background = false
     if section.settings.background_image != blank
+        assign newsletter_banner_has_background = true
         if section.settings.background_image.width != blank and section.settings.background_image.height != blank
             assign banner_aspect_desktop = section.settings.background_image.width | append: '/' | append: section.settings.background_image.height
         endif
@@ -23,33 +25,45 @@
 >
     <div class="layout container-page">
         <div
-            class="newsletter-banner__media relative overflow-hidden"
+            class="newsletter-banner__media relative overflow-hidden{% unless newsletter_banner_has_background %} media-placeholder-frame{% endunless %}"
             style="
                 --newsletter-banner-aspect-mobile: {{ banner_aspect_mobile }};
                 --newsletter-banner-aspect-desktop: {{ banner_aspect_desktop }};
             "
         >
             {% comment %} Background Image {% endcomment %}
-            {%- assign image_alt = section.settings.background_image.alt
-                | default: section.settings.heading
-                | escape
-            -%}
-            {%- render 'image',
-                class: '!absolute inset-0',
-                image: section.settings.background_image,
-                alt: image_alt,
-                width: section.settings.background_image.width,
-                mode: 'frame',
-                fit: section.settings.background_image_fit,
-                position: section.settings.background_image_position
-            -%}
+            {%- if newsletter_banner_has_background -%}
+                {%- assign image_alt = section.settings.background_image.alt
+                    | default: section.settings.heading
+                    | escape
+                -%}
+                {%- render 'image',
+                    class: '!absolute inset-0',
+                    image: section.settings.background_image,
+                    alt: image_alt,
+                    width: section.settings.background_image.width,
+                    mode: 'frame',
+                    fit: section.settings.background_image_fit,
+                    position: section.settings.background_image_position
+                -%}
+            {%- else -%}
+                <div class="pointer-events-none absolute inset-0" aria-hidden="true">
+                    {%- render 'image',
+                        image: blank,
+                        placeholder_key: 'image',
+                        placeholder_style: 'plain',
+                        wrapper_class: '!absolute top-1/2 left-1/2 h-[76%] w-[54%] -translate-x-1/2 -translate-y-1/2 opacity-50 max-pc:h-[48%] max-pc:w-[105%]',
+                        motion_reveal: false
+                    -%}
+                </div>
+            {%- endif -%}
 
             {% comment %} Frosted glass center overlay {% endcomment %}
             {%- assign blur_enabled = section.settings.enable_blur_overlay
                 | default: true, allow_false: true
             -%}
             {%- assign blur_r = section.settings.blur_radius | default: 12 -%}
-            {%- if blur_enabled and blur_r > 0 -%}
+            {%- if newsletter_banner_has_background and blur_enabled and blur_r > 0 -%}
                 <div
                     class="absolute inset-0"
                     style="

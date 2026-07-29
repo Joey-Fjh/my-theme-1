@@ -17,9 +17,15 @@
     @param {string} [button_class] - Escape hatch button classes
     @param {string} [input_class] - Escape hatch input classes
     @param {string} [label] - Accessible label
+    @param {boolean} [interactive] - Set false for a static visual state without form or Alpine behavior
 {% enddoc %}
 
 {%- liquid
+    assign qty_interactive = true
+    if interactive == false or interactive == 'false'
+        assign qty_interactive = false
+    endif
+
     assign qty_surface = surface | default: 'product'
     assign qty_min = min | default: 1
     assign qty_step = step | default: 1
@@ -111,6 +117,9 @@
 -%}
 
 <div
+    {% unless qty_interactive %}
+        aria-hidden="true"
+    {% endunless %}
     data-qty-constraints="{{ qty_constraints_json | strip | escape }}"
     data-qty-surface="{{ qty_surface | escape }}"
     data-qty-can-purchase="{% if qty_can_purchase %}true{% else %}false{% endif %}"
@@ -124,15 +133,22 @@
     data-qty-msg-min="{{ 'toast.min_quantity' | t: min: '%%MIN%%' | escape }}"
     data-qty-msg-below-min="{{ 'toast.quantity_below_min' | t: min: '%%MIN%%' | escape }}"
     data-qty-msg-above-max="{{ 'toast.quantity_above_max' | t: max: '%%MAX%%' | escape }}"
-    x-data="QuantitySelector()"
-    class="quantity-selector {{ wrapper_class }}"
+    {% if qty_interactive %}
+        x-data="QuantitySelector()"
+    {% endif %}
+    class="quantity-selector{% unless qty_interactive %} quantity-selector--static{% endunless %} {{ wrapper_class }}"
 >
     <button
         type="button"
         class="quantity-selector__button {{ button_class }}"
-        aria-label="{{ 'accessibility.decrease_quantity' | t }}"
-        @click="decrement()"
-        :disabled="!canDecrement"
+        {% if qty_interactive %}
+            aria-label="{{ 'accessibility.decrease_quantity' | t }}"
+            @click="decrement()"
+            :disabled="!canDecrement"
+        {% else %}
+            disabled
+            tabindex="-1"
+        {% endif %}
     >
         {%- render 'icons', icon: 'icon-minus' -%}
     </button>
@@ -150,28 +166,38 @@
             max="{{ qty_max }}"
         {% endif %}
         step="{{ qty_step }}"
-        x-model.number="qty"
-        :min="min"
-        :max="max === null ? undefined : max"
-        :step="step"
         {% if product_form_id %}
             form="{{ product_form_id }}"
         {% endif %}
-        {% unless qty_can_purchase %}
-            readonly
-        {% endunless %}
-        @change="onInput()"
-        :readonly="!canPurchase"
-        :aria-invalid="(!canPurchase).toString()"
-        aria-label="{{ label | default: 'accessibility.quantity' | t }}"
+        {% if qty_interactive %}
+            x-model.number="qty"
+            :min="min"
+            :max="max === null ? undefined : max"
+            :step="step"
+            {% unless qty_can_purchase %}
+                readonly
+            {% endunless %}
+            @change="onInput()"
+            :readonly="!canPurchase"
+            :aria-invalid="(!canPurchase).toString()"
+            aria-label="{{ label | default: 'accessibility.quantity' | t }}"
+        {% else %}
+            disabled
+            tabindex="-1"
+        {% endif %}
     >
 
     <button
         type="button"
         class="quantity-selector__button {{ button_class }}"
-        aria-label="{{ 'accessibility.increase_quantity' | t }}"
-        @click="increment()"
-        :disabled="!canIncrement"
+        {% if qty_interactive %}
+            aria-label="{{ 'accessibility.increase_quantity' | t }}"
+            @click="increment()"
+            :disabled="!canIncrement"
+        {% else %}
+            disabled
+            tabindex="-1"
+        {% endif %}
     >
         {%- render 'icons', icon: 'icon-plus' -%}
     </button>

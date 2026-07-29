@@ -8,8 +8,6 @@
     data-component-kind="section"
     data-component-type="slides-show"
     data-component-id="{{ section.id }}"
-    data-auto-slide="{{ section.settings.is_auto_slide }}"
-    data-slide-delay="{{ section.settings.slide_delay }}"
     x-data="motionRevealSection()"
     data-motion-section
     data-motion-media="static"
@@ -30,10 +28,14 @@
         assign slides_show_subtitle_class = 'typo-subtitle ' | append: slides_show_subtitle_size
     -%}
     <div
-        class="swiper h-full w-full"
+        class="swiper h-full w-full focus-ring"
         role="region"
         aria-label="{{ 'accessibility.hero_slides' | t }}"
         aria-roledescription="{{ 'accessibility.carousel' | t }}"
+        {% if slides_show_multi_slide %}
+            tabindex="0"
+            aria-keyshortcuts="ArrowLeft ArrowRight"
+        {% endif %}
     >
         {%- if slides_show_multi_slide -%}
             <h1 class="sr-only">{{ slides_show_sr_only_title }}</h1>
@@ -68,6 +70,7 @@
                         widths: widths,
                         loading: image_loading,
                         fetchpriority: image_fetchpriority,
+                        placeholder_style: 'plain',
                         motion_reveal: false
                     -%}
 
@@ -155,33 +158,6 @@
                 </div>
             {%- endfor -%}
         </div>
-        {%- if section.blocks.size > 1 -%}
-            <div class="slides-show__controls absolute right-6 bottom-6 z-10 flex items-center gap-3 pc:right-10 pc:bottom-10">
-                <button
-                    type="button"
-                    class="slides-show__nav-button slides-show__nav-prev"
-                    aria-label="{{ 'accessibility.previous_slide' | t }}"
-                >
-                    {%- render 'icons', icon: 'icon-arrow2', class: 'scale-x-[-1]' -%}
-                </button>
-                <button
-                    type="button"
-                    class="slides-show__nav-button slides-show__nav-next"
-                    aria-label="{{ 'accessibility.next_slide' | t }}"
-                >
-                    {%- render 'icons', icon: 'icon-arrow2' -%}
-                </button>
-                {%- if section.settings.is_auto_slide -%}
-                    <button
-                        type="button"
-                        class="slides-show__nav-button slides-show__pause-toggle"
-                        aria-label="{{ 'accessibility.pause_slideshow' | t }}"
-                        aria-pressed="false"
-                        data-play-label="{{ 'accessibility.play_slideshow' | t }}"
-                    ></button>
-                {%- endif -%}
-            </div>
-        {%- endif -%}
     </div>
 </div>
 
@@ -202,27 +178,9 @@
                         return { swiper: null, cleanups };
                     }
 
-                    const autoSlide = el.getAttribute('data-auto-slide') === 'true';
-                    const slideDelay = parseInt(el.getAttribute('data-slide-delay'), 10) || 5;
-                    const Utils = window.__Theme__?.Utils;
-                    const prefersReducedMotion =
-                        typeof Utils?.prefersReducedMotion === 'function'
-                            ? Utils.prefersReducedMotion()
-                            : window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ===
-                              true;
-                    const autoplayAllowed =
-                        autoSlide &&
-                        document.body?.dataset?.motionEnabled !== 'false' &&
-                        !prefersReducedMotion;
-
                     const swiper = new Swiper(swiperContainer, {
                         loop: slides.length > 1,
-                        autoplay: autoplayAllowed
-                            ? {
-                                  delay: slideDelay * 1000,
-                                  disableOnInteraction: false,
-                              }
-                            : false,
+                        autoplay: false,
                         slidesPerView: 1,
                         effect: 'fade',
                         fadeEffect: {
@@ -234,10 +192,13 @@
 
                     function syncSlideAriaHidden() {
                         swiperContainer.querySelectorAll('.swiper-slide').forEach(function (slide) {
-                            slide.setAttribute(
-                                'aria-hidden',
-                                slide.classList.contains('swiper-slide-active') ? 'false' : 'true',
-                            );
+                            const isActive = slide.classList.contains('swiper-slide-active');
+                            slide.setAttribute('aria-hidden', isActive ? 'false' : 'true');
+                            if (isActive) {
+                                slide.removeAttribute('inert');
+                            } else {
+                                slide.setAttribute('inert', '');
+                            }
                         });
                     }
 
@@ -251,64 +212,32 @@
                         swiper.off('slideChange', onSlideChange);
                     });
 
-                    const prevBtn = el.querySelector('.slides-show__nav-prev');
-                    const nextBtn = el.querySelector('.slides-show__nav-next');
+                    function onKeydown(event) {
+                        if (
+                            event.target !== swiperContainer ||
+                            (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight')
+                        ) {
+                            return;
+                        }
 
-                    if (prevBtn) {
-                        function onPrev() {
+                        event.preventDefault();
+                        const moveNext =
+                            event.key === (swiper.rtlTranslate ? 'ArrowLeft' : 'ArrowRight');
+                        if (moveNext) {
+                            swiper.slideNext();
+                        } else {
                             swiper.slidePrev();
                         }
-                        prevBtn.addEventListener('click', onPrev);
-                        cleanups.push(function () {
-                            prevBtn.removeEventListener('click', onPrev);
-                        });
                     }
-
-                    if (nextBtn) {
-                        function onNext() {
-                            swiper.slideNext();
-                        }
-                        nextBtn.addEventListener('click', onNext);
-                        cleanups.push(function () {
-                            nextBtn.removeEventListener('click', onNext);
-                        });
-                    }
-
-                    const pauseBtn = el.querySelector('.slides-show__pause-toggle');
-                    if (pauseBtn && !autoplayAllowed) {
-                        pauseBtn.hidden = true;
-                    }
-
-                    if (pauseBtn && autoplayAllowed && swiper.autoplay) {
-                        const pauseLabel = pauseBtn.getAttribute('aria-label');
-                        const playLabel = pauseBtn.getAttribute('data-play-label');
-
-                        function updatePauseButton() {
-                            const isRunning = swiper.autoplay.running;
-                            pauseBtn.setAttribute('aria-label', isRunning ? pauseLabel : playLabel);
-                            pauseBtn.setAttribute('aria-pressed', String(!isRunning));
-                        }
-
-                        function onTogglePause() {
-                            if (swiper.autoplay.running) {
-                                swiper.autoplay.stop();
-                            } else {
-                                swiper.autoplay.start();
-                            }
-                            updatePauseButton();
-                        }
-
-                        updatePauseButton();
-                        pauseBtn.addEventListener('click', onTogglePause);
-                        cleanups.push(function () {
-                            pauseBtn.removeEventListener('click', onTogglePause);
-                        });
-                    }
+                    swiperContainer.addEventListener('keydown', onKeydown);
+                    cleanups.push(function () {
+                        swiperContainer.removeEventListener('keydown', onKeydown);
+                    });
 
                     return { swiper, cleanups };
                 },
 
-                destroy(el, state) {
+                destroy(_el, state) {
                     if (!state) return;
 
                     if (Array.isArray(state.cleanups)) {
@@ -460,44 +389,6 @@
         --motion-reveal-rise-distance: clamp(48px, 6vw, 80px);
         --motion-slide-content-distance-y: clamp(36px, 5vw, 64px);
     }
-
-    .slides-show__nav-button {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 9999px;
-        background-color: rgb(var(--color-background) / 0.5);
-        color: rgb(var(--color-foreground));
-        backdrop-filter: blur(8px);
-        transition:
-            background-color var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease),
-            color var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease);
-    }
-
-    .slides-show__nav-button:hover {
-        background-color: rgb(var(--color-background) / 0.8);
-    }
-
-    .slides-show__nav-button:focus-visible {
-        outline: var(--focus-ring-width) solid
-            rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
-        outline-offset: var(--focus-ring-offset);
-    }
-
-    .slides-show__pause-toggle {
-        width: 5rem;
-        height: 5rem;
-    }
-
-    .slides-show__pause-toggle::before {
-        content: '\23F8';
-        font-size: 0.75rem;
-        line-height: 1;
-    }
-
-    .slides-show__pause-toggle[aria-pressed='true']::before {
-        content: '\25B6';
-    }
 {% endstylesheet %}
 
 {% schema %}
@@ -606,26 +497,6 @@
                 }
             ],
             "default": "body-3xl"
-        },
-        {
-            "type": "header",
-            "content": "t:sections.slides-show.content.slide_setting"
-        },
-        {
-            "type": "checkbox",
-            "id": "is_auto_slide",
-            "label": "t:sections.slides-show.settings.auto_slide",
-            "default": true
-        },
-        {
-            "type": "range",
-            "id": "slide_delay",
-            "min": 3,
-            "max": 10,
-            "step": 1,
-            "unit": "s",
-            "label": "t:sections.slides-show.settings.slide_delay",
-            "default": 5
         },
         {
             "type": "header",

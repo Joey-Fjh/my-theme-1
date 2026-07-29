@@ -1172,6 +1172,32 @@ Used to style backend rich-text HTML output:
 }
 
 /* =========================================================
+Media Placeholder Frame
+
+Shared framed empty-state media surface. The consuming section owns
+placeholder family, placeholder selection, aspect ratio, and outer layout.
+========================================================= */
+@layer components {
+    .media-placeholder-frame {
+        @apply overflow-hidden rounded-md border border-theme-border/20;
+
+        background-color: rgb(var(--color-background));
+
+        @supports (background-color: color-mix(in oklab, white, black)) {
+            background-color: color-mix(
+                in oklab,
+                rgb(var(--color-background)) 95%,
+                rgb(var(--color-foreground)) 5%
+            );
+        }
+    }
+
+    .media-placeholder-frame .svg-placeholder {
+        @apply text-theme-text/20;
+    }
+}
+
+/* =========================================================
 Product Price
 
 Shared price primitive used by PDP/featured product-info-blocks and quick view.
@@ -1240,9 +1266,13 @@ Consumed via snippets/quantity-selector.liquid and inline in cart sections.
         font: inherit;
     }
 
-    .quantity-selector__value {
-        @apply min-w-9 border-b border-current px-2 pb-1 text-center text-current tabular-nums;
-        font: inherit;
+    .quantity-selector--static .quantity-selector__button {
+        @apply pointer-events-none cursor-default;
+    }
+
+    .quantity-selector--static .quantity-selector__input {
+        @apply pointer-events-none cursor-default opacity-100;
+        -webkit-text-fill-color: currentColor;
     }
 }
 

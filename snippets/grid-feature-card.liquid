@@ -3,6 +3,7 @@
 
     @param {string} title - Visible card title. Card is hidden when blank.
     @param {image} [image] - Optional card image.
+    @param {string} [placeholder_key] - Official Shopify placeholder key used when image is blank.
     @param {string} [link] - Optional destination URL.
     @param {string} [image_shape] - Image frame shape: circle, square, rounded, or arch. Defaults to circle.
     @param {string} [frame_style] - Media frame style: soft, border, or none. Defaults to soft.
@@ -13,6 +14,7 @@
 {%- liquid
     assign card_title = title
     assign card_image = image
+    assign card_placeholder_key = placeholder_key | default: 'image'
     assign card_link = link
     assign card_shape = image_shape | default: 'circle'
     unless card_shape == 'circle' or card_shape == 'square' or card_shape == 'rounded' or card_shape == 'arch'
@@ -50,7 +52,7 @@
                 loading: 'lazy',
                 mode: 'frame',
                 fit: 'cover',
-                placeholder_key: 'image',
+                placeholder_key: card_placeholder_key,
                 wrapper_class: 'grid-feature-card__image-wrap h-full w-full',
                 motion_reveal: false
             -%}

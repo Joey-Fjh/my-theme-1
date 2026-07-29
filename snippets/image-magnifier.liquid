@@ -13,6 +13,9 @@
     @param {string} [fetchpriority] - Optional fetchpriority attribute ('high', 'low', or 'auto')
     @param {string} [alt] - Image alt text
     @param {string} [aspect_ratio] - Optional image aspect ratio
+    @param {string} [placeholder_key] - Shopify placeholder key used when image is blank
+    @param {string} [image_wrapper_class] - Optional class for the nested image wrapper
+    @param {string} [fit] - Nested image fit: cover | contain | fill | none | scale-down
     @param {number} [zoom_width] - Source width for the magnified preview image
     @param {number} [zoom_scale] - Background scale multiplier
     @param {string} [preview_mode] - Preview mode: 'magnify' follows pointer, 'contain' shows the full image
@@ -36,13 +39,23 @@
     assign preview_max_width = preview_max_width | default: 560
     assign preview_gap = preview_gap | default: 12
     assign alt = alt | default: ''
+    assign placeholder_key = placeholder_key | default: 'image'
+    assign image_wrapper_class = image_wrapper_class | default: ''
     assign magnifier_motion_reveal = motion_reveal | default: true, allow_false: true
-    assign zoom_image_url = image | image_url: width: zoom_width
+    if image != blank
+        assign zoom_image_url = image | image_url: width: zoom_width
+    else
+        capture placeholder_svg
+            echo placeholder_key | placeholder_svg_tag
+        endcapture
+        assign placeholder_svg_encoded = placeholder_svg | strip | url_encode | replace: '+', '%20'
+        assign zoom_image_url = 'data:image/svg+xml,' | append: placeholder_svg_encoded
+    endif
 -%}
 
 <div
     x-data="imageMagnifier()"
-    data-zoom-image="{{ zoom_image_url }}"
+    data-zoom-image="{{ zoom_image_url | escape }}"
     data-zoom-scale="{{ zoom_scale }}"
     data-preview-mode="{{ preview_mode }}"
     data-preview-width="{{ preview_width }}"
@@ -56,6 +69,7 @@
 >
     {%- render 'image',
         image: image,
+        placeholder_key: placeholder_key,
         width: width,
         height: height,
         crop: crop,
@@ -66,6 +80,8 @@
         loading: loading,
         fetchpriority: fetchpriority,
         aspect_ratio: aspect_ratio,
+        wrapper_class: image_wrapper_class,
+        fit: fit,
         motion_reveal: magnifier_motion_reveal
     -%}
 

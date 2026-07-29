@@ -1,5 +1,6 @@
 {% assign desktop_media_width = section.settings.desktop_media_width | default: 60 | plus: 0 %}
 {% assign desktop_info_width = 100 | minus: desktop_media_width %}
+{% assign featured_product = section.settings.product %}
 
 <div
     data-section-id="{{ section.id }}"
@@ -12,8 +13,10 @@
 >
     <div
         class="layout container-page overflow-visible!"
-        x-data="motionRevealSection()"
-        data-motion-section
+        {% if featured_product != blank %}
+            x-data="motionRevealSection()"
+            data-motion-section
+        {% endif %}
     >
         <div
             class="grid w-full min-w-0 grid-cols-1 items-start gap-8 pc:grid-cols-[minmax(0,var(--product-media-fr))_minmax(0,var(--product-info-fr))] pc:items-stretch pc:gap-10 fw:gap-12"
@@ -25,7 +28,9 @@
             <div
                 class="flex min-w-0 flex-col gap-8"
                 data-product-media-column
-                data-motion-bound
+                {% if featured_product != blank %}
+                    data-motion-bound
+                {% endif %}
             >
                 <div
                     class="min-w-0 overflow-hidden"
@@ -34,22 +39,33 @@
                 >
                     {% assign thumb_position = section.settings.thumb_position | default: 'left' %}
                     {%- assign gallery_id = 'product-gallery-featured-' | append: section.id -%}
-                    {%- render 'product-gallery',
-                        media: section.settings.product.media,
-                        id: gallery_id,
-                        layout: 'thumbnails',
-                        thumb_position: thumb_position,
-                        thumbnail_visible_count: section.settings.thumbnail_visible_count,
-                        aspect_ratio: '3/4',
-                        motion_reveal: true
-                    -%}
+                    {%- if featured_product != blank -%}
+                        {%- render 'product-gallery',
+                            media: featured_product.media,
+                            id: gallery_id,
+                            layout: 'thumbnails',
+                            thumb_position: thumb_position,
+                            thumbnail_visible_count: section.settings.thumbnail_visible_count,
+                            aspect_ratio: '3/4',
+                            motion_reveal: true
+                        -%}
+                    {%- else -%}
+                        {%- render 'image',
+                            image: blank,
+                            placeholder_key: 'product-1',
+                            aspect_ratio: '3/4',
+                            mode: 'frame',
+                            fit: 'contain',
+                            motion_reveal: false
+                        -%}
+                    {%- endif -%}
                 </div>
             </div>
 
             <div class="min-w-0" data-product-info-panel>
                 <div class="self-start" data-product-info-sticky-target>
                     {%- render 'product-info-blocks',
-                        product: section.settings.product,
+                        product: featured_product,
                         section: section,
                         context: 'featured',
                         render_column: 'form',

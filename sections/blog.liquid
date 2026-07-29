@@ -138,6 +138,10 @@
                                 data-motion-cascade
                             >
                                 {% for article in blog.articles %}
+                                    {%- liquid
+                                        assign editorial_placeholder_index = forloop.index0 | modulo: 2 | plus: 1
+                                        assign editorial_placeholder_key = 'lifestyle-' | append: editorial_placeholder_index
+                                    -%}
                                     <article
                                         class="group"
                                         data-motion-reveal="content"
@@ -157,6 +161,7 @@
                                                 wrapper_class: 'block h-full w-full',
                                                 img_class: 'h-full w-full object-cover',
                                                 image: article.image,
+                                                placeholder_key: editorial_placeholder_key,
                                                 alt: article.title,
                                                 width: article.image.width,
                                                 sizes: sizes,
@@ -365,7 +370,7 @@
             "type": "text",
             "id": "rotate_badge_percent",
             "label": "t:sections.blog.settings.rotate_badge_percent",
-            "default": "100%"
+            "default": "t:sections.blog.defaults.rotate_badge_percent"
         },
         {
             "type": "range",

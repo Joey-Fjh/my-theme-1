@@ -103,6 +103,8 @@
                     assign card_title = blank
                     assign card_image = blank
                     assign card_link = blank
+                    assign card_placeholder_index = rendered_count | modulo: 6 | plus: 1
+                    assign card_placeholder_key = 'collection-' | append: card_placeholder_index
 
                     if source_type == 'collection'
                         if block.settings.collection != blank
@@ -122,6 +124,7 @@
                             assign card_link = block.settings.custom_link
                         endif
                     elsif source_type == 'product'
+                        assign card_placeholder_key = 'product-' | append: card_placeholder_index
                         if block.settings.product != blank
                             if block.settings.product.title != blank
                                 assign card_title = block.settings.product.title
@@ -150,6 +153,7 @@
                         {%- render 'grid-feature-card',
                             title: card_title,
                             image: card_image,
+                            placeholder_key: card_placeholder_key,
                             link: card_link,
                             image_shape: section.settings.image_shape,
                             frame_style: section.settings.image_frame_style,

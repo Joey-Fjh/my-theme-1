@@ -10,6 +10,11 @@
 {%- if request.page_type == 'index' -%}
     {%- assign is_homepage = true -%}
 {%- endif -%}
+{%- assign header_menu = section.settings.menu -%}
+{%- assign has_header_menu = false -%}
+{%- if header_menu != blank and header_menu.links != blank -%}
+    {%- assign has_header_menu = true -%}
+{%- endif -%}
 
 <header
     data-section-id="{{ section.id }}"
@@ -31,20 +36,22 @@
     <div class="container-page">
         <div class="header__cols header__cols-{{ logo_position }} grid py-5">
             <div class="flex items-center pc:hidden" style="grid-area: mobile-menu">
-                {%- render 'header-mobile-menu-drawer',
-                    popup_id: mobile_menu_popup_id,
-                    menu_handle: section.settings.menu.handle,
-                    color_scheme: section.settings.mobile_menu_color_scheme
-                -%}
+                {%- if has_header_menu -%}
+                    {%- render 'header-mobile-menu-drawer',
+                        popup_id: mobile_menu_popup_id,
+                        menu_handle: header_menu.handle,
+                        color_scheme: section.settings.mobile_menu_color_scheme
+                    -%}
 
-                <button
-                    type="button"
-                    class="header-icon-button"
-                    @click="$store.dialog.open('{{ mobile_menu_popup_id }}')"
-                    aria-label="{{ 'accessibility.mobile_menu' | t }}"
-                >
-                    {%- render 'icons', icon: 'icon-menu', class: 'ms-3' -%}
-                </button>
+                    <button
+                        type="button"
+                        class="header-icon-button"
+                        @click="$store.dialog.open('{{ mobile_menu_popup_id }}')"
+                        aria-label="{{ 'accessibility.mobile_menu' | t }}"
+                    >
+                        {%- render 'icons', icon: 'icon-menu', class: 'ms-3' -%}
+                    </button>
+                {%- endif -%}
             </div>
 
             <div class="header-search hidden items-center justify-start" style="grid-area: search">
@@ -99,10 +106,12 @@
                 class="header-menu flex items-center justify-center max-pc:hidden"
                 style="grid-area: menu"
             >
-                {%- if section.settings.menu_type == 'super' -%}
-                    {%- render 'header-dropdown-super-menu' -%}
-                {%- else -%}
-                    {%- render 'header-dropdown-menu' -%}
+                {%- if has_header_menu -%}
+                    {%- if section.settings.menu_type == 'super' -%}
+                        {%- render 'header-dropdown-super-menu' -%}
+                    {%- else -%}
+                        {%- render 'header-dropdown-menu' -%}
+                    {%- endif -%}
                 {%- endif -%}
             </div>
 

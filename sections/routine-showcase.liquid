@@ -13,11 +13,24 @@
     assign badge_position = section.settings.badge_position | default: 'place-bottom-right'
 
     assign routine_showcase_heading_class = section.settings.heading_size | default: 'heading-h4'
+
+    assign routine_products = section.settings.collection.products
+
+    assign routine_background_surface_class = ''
+    assign routine_content_surface_class = ''
+    if section.settings.bg_img == blank
+        assign routine_background_surface_class = 'media-placeholder-frame'
+        assign routine_content_surface_class = 'media-placeholder-frame'
+    endif
 -%}
 
 <div
     data-section-id="{{ section.id }}"
     class="routine-showcase-section full-width"
+    style="
+        --section-padding-top: {{ section.settings.padding_top }}px;
+        --section-padding-bottom: {{ section.settings.padding_bottom }}px;
+    "
     data-component-kind="section"
     data-component-type="routine-showcase"
     data-component-id="{{ section.id }}"
@@ -33,17 +46,27 @@
             400,480,768,1280,1440,1536,2560
         {%- endcapture -%}
 
-        <div class="absolute inset-0" data-motion-reveal="media" data-motion-index="0">
+        <div
+            class="absolute inset-0 color-{{ section.settings.color_scheme }} bg-theme-bg {{ routine_background_surface_class }}"
+            data-motion-reveal="media"
+            data-motion-index="0"
+        >
             {%- assign image_alt = section.settings.bg_img.alt
                 | default: section.settings.heading
                 | escape
             -%}
             {%- render 'image',
                 image: section.settings.bg_img,
+                placeholder_key: 'lifestyle-1',
                 alt: image_alt,
                 width: section.settings.bg_img.width,
                 sizes: sizes,
                 widths: widths,
+                mode: 'frame',
+                fit: 'cover',
+                wrapper_class: 'h-full w-full bg-theme-bg',
+                placeholder_style: 'plain',
+                placeholder_class: 'text-theme-text/20',
                 loading: 'lazy',
                 motion_reveal: false
             -%}
@@ -68,12 +91,23 @@
                             aria-roledescription="{{ 'accessibility.carousel' | t }}"
                         >
                             <div class="swiper-wrapper">
-                                {%- assign products = section.settings.collection.products -%}
-
-                                {%- for product in products -%}
+                                {%- for product in routine_products -%}
+                                    {%- liquid
+                                        assign image_alt = product.title | escape
+                                        assign routine_placeholder_index = forloop.index | minus: 1 | modulo: 6 | plus: 1
+                                        assign routine_placeholder_key = 'product-' | append: routine_placeholder_index
+                                        assign routine_image_fit = 'cover'
+                                        assign routine_product_surface_class = 'bg-theme-bg max-pc:rounded-sm'
+                                        assign routine_product_placeholder_style = 'framed'
+                                        if product.featured_image == blank
+                                            assign routine_image_fit = 'contain'
+                                            assign routine_product_surface_class = 'media-placeholder-frame'
+                                            assign routine_product_placeholder_style = 'plain'
+                                        endif
+                                    -%}
                                     <div class="swiper-slide pc:w-136">
                                         <a
-                                            class="routine-showcase__product-link media-interaction relative block h-full overflow-hidden bg-theme-bg max-pc:rounded-sm"
+                                            class="routine-showcase__product-link media-interaction relative block h-full overflow-hidden {{ routine_product_surface_class }}"
                                             href="{{ product.url }}"
                                             x-data="{ hover: false }"
                                             @mouseenter="hover = true"
@@ -81,12 +115,14 @@
                                             @focus="hover = true"
                                             @blur="hover = false"
                                         >
-                                            {%- assign image_alt = product.title | escape -%}
                                             {%- render 'image',
                                                 aspect_ratio: '342/198',
                                                 image: product.featured_image,
+                                                placeholder_key: routine_placeholder_key,
                                                 alt: image_alt,
                                                 width: product.featured_image.width,
+                                                fit: routine_image_fit,
+                                                placeholder_style: routine_product_placeholder_style,
                                                 motion_reveal: false
                                             -%}
 
@@ -114,6 +150,50 @@
                                             </div>
                                         </a>
                                     </div>
+                                {%- else -%}
+                                    {%- for placeholder_index in (1..6) -%}
+                                        {%- liquid
+                                            assign routine_placeholder_key = 'product-' | append: placeholder_index
+                                            if placeholder_index < 10
+                                                assign display_index = placeholder_index | prepend: '0'
+                                            else
+                                                assign display_index = placeholder_index
+                                            endif
+                                        -%}
+                                        <div class="swiper-slide pc:w-136">
+                                            <div
+                                                class="routine-showcase__product-link media-placeholder-frame relative block h-full overflow-hidden"
+                                                x-data="{ hover: false }"
+                                                @mouseenter="hover = true"
+                                                @mouseleave="hover = false"
+                                            >
+                                                {%- render 'image',
+                                                    image: blank,
+                                                    placeholder_key: routine_placeholder_key,
+                                                    aspect_ratio: '342/198',
+                                                    mode: 'frame',
+                                                    fit: 'contain',
+                                                    placeholder_style: 'plain',
+                                                    motion_reveal: false
+                                                -%}
+
+                                                <div
+                                                    class="routine-showcase__product-info absolute right-0 bottom-0 left-0 flex items-center justify-between p-2 pc:p-4"
+                                                    :class="{ 'is-hovered': hover }"
+                                                >
+                                                    <p class="truncate body-lg text-theme-text">
+                                                        {{-
+                                                            'products.product.example_title_numbered'
+                                                            | t: index: placeholder_index
+                                                        -}}
+                                                    </p>
+                                                    <div class="text-nowrap">
+                                                        {{- display_index -}}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {%- endfor -%}
                                 {%- endfor -%}
                             </div>
                         </div>
@@ -127,7 +207,7 @@
 
                 <div class="grid flex-1 grid-cols-1 grid-rows-3 pc:absolute pc:inset-0 pc:grid-cols-3">
                     <div
-                        class="{{ content_position }} flex w-full flex-col gap-12 bg-theme-bg p-6 pc:p-8"
+                        class="{{ content_position }} flex w-full flex-col gap-12 bg-theme-bg p-6 pc:p-8 {{ routine_content_surface_class }}"
                         data-motion-reveal="content"
                         data-motion-index="1"
                     >
@@ -526,7 +606,31 @@
             "type": "text",
             "id": "rotate_badge_percent",
             "label": "t:sections.routine-showcase.settings.rotate_badge_percent",
-            "default": "100%"
+            "default": "t:sections.routine-showcase.defaults.rotate_badge_percent"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.routine-showcase.content.padding"
+        },
+        {
+            "type": "range",
+            "id": "padding_top",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "t:sections.routine-showcase.settings.padding_top",
+            "default": 32
+        },
+        {
+            "type": "range",
+            "id": "padding_bottom",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "t:sections.routine-showcase.settings.padding_bottom",
+            "default": 32
         }
     ],
     "presets": [

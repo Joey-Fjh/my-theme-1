@@ -31,8 +31,8 @@
                                     </h2>
                                     <ul class="flex flex-col gap-3">
                                         {% assign links_menu = block.settings.menu %}
-                                        {% if links_menu != blank %}
-                                            {% for link in linklists[links_menu].links %}
+                                        {% if links_menu != blank and links_menu.links != blank %}
+                                            {% for link in links_menu.links %}
                                                 <li>
                                                     {% render 'link',
                                                         text: link.title,
@@ -42,17 +42,14 @@
                                                 </li>
                                             {% endfor %}
                                         {% else %}
-                                            {% assign fallback_links = block.settings.heading
-                                                | downcase
-                                            %}
                                             {% for i in (1..4) %}
                                                 <li>
-                                                    {%- assign link_text = 'Link ' | append: i -%}
-                                                    {% render 'link',
-                                                        text: link_text,
-                                                        variant: 'underline',
-                                                        href: '#'
-                                                    %}
+                                                    {%- assign link_text = 'footer.default_link'
+                                                        | t: number: i
+                                                    -%}
+                                                    <span class="links-underline links">
+                                                        {{ link_text }}
+                                                    </span>
                                                 </li>
                                             {% endfor %}
                                         {% endif %}
@@ -130,7 +127,9 @@
                             motion_reveal: false
                         %}
                     </div>
+                {% endif %}
 
+                {% if section.settings.brand_name != blank %}
                     {% render 'watermark',
                         text: section.settings.brand_name,
                         container_class: 'relative z-10 w-full',
@@ -157,7 +156,7 @@
                     {%- liquid
                         assign copyright_brand = section.settings.brand_name | strip_html
                         if copyright_brand == blank
-                            assign copyright_brand = 'footer.default_brand_name' | t
+                            assign copyright_brand = shop.name
                         endif
                         assign copyright_brand = copyright_brand | escape
                     -%}

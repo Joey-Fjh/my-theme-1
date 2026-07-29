@@ -19,6 +19,17 @@
             <div class="swiper w-full flex-1 pc:h-full pc:w-1/2">
                 <div class="swiper-wrapper">
                     {% for block in section.blocks %}
+                        {%- liquid
+                            assign testimonial_author_name = block.settings.author_name
+                            if testimonial_author_name == blank
+                                assign testimonial_author_name = 'testimonial.defaults.author_name' | t
+                            endif
+
+                            assign testimonial_author_title = block.settings.author_title
+                            if testimonial_author_title == blank
+                                assign testimonial_author_title = 'testimonial.defaults.author_title' | t
+                            endif
+                        -%}
                         <div class="swiper-slide h-auto pc:h-full" {{ block.shopify_attributes }}>
                             <div
                                 class="
@@ -42,16 +53,10 @@
 
                                     <div class="flex flex-col gap-3">
                                         <p class="body-3xl font-bold">
-                                            {{
-                                                block.settings.author_name
-                                                | default: 'Alexandria Maria'
-                                            }}
+                                            {{ testimonial_author_name }}
                                         </p>
                                         <p>
-                                            {{
-                                                block.settings.author_title
-                                                | default: 'Beauty Influencer'
-                                            }}
+                                            {{ testimonial_author_title }}
                                         </p>
                                     </div>
                                 </div>
@@ -66,6 +71,7 @@
                 {% render 'image',
                     class: 'h-full w-full',
                     image: section.settings.image,
+                    placeholder_key: 'lifestyle-2',
                     alt: section.settings.image.alt,
                     width: section.settings.image.width,
                     mode: 'frame',
