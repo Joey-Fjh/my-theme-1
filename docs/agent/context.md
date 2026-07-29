@@ -537,6 +537,8 @@ Ownership:
 
 ### BLK-13 — Theme Identity And Support Metadata Are Placeholder/Misleading
 
+Status: **partially resolved by owner-accepted Package H** (2026-07-29). The `theme_info` metadata now uses the owner-approved `Ceylune` name, ESEN identity, version, documentation destination, and support destination. The matching preset name remains in Package I, while release notes and public support operations remain external launch work.
+
 Official expectation:
 
 - Theme name and presets must be unique, distinct, 1–2 words, and under 30 characters.
@@ -545,12 +547,13 @@ Official expectation:
 
 Repository evidence:
 
-- `config/settings_schema.json:4-8` currently declares:
+- At the audit baseline, `config/settings_schema.json:4-8` declared:
   - theme name: `Skeleton`.
   - version: `0.1.0`.
   - author: `Shopify`.
   - Shopify Help as documentation.
   - Shopify Support as support URL.
+- Package H replaces those values with `Ceylune`, `1.0.0`, `ESEN`, and the owner-supplied ESEN documentation and support destinations.
 
 Risk:
 
@@ -564,7 +567,7 @@ Acceptance criteria:
 - Final theme and preset names are selected and checked against the Theme Store.
 - Real author/Partner identity and semantic version are recorded.
 - Documentation URL points to public merchant documentation.
-- Support URL points to a public support form, not Shopify Support.
+- Theme metadata points to a project-owned destination where merchants can find support, not Shopify Support. The separate requirement for a public contact form and its Theme Store listing/documentation links remains tracked under BLK-17; `theme_support_url` itself does not have to be the form's direct URL.
 - Release notes are prepared for the submitted version.
 
 Ownership:
@@ -1406,9 +1409,16 @@ Manual gate: **passed by owner** (2026-07-29), covering the affected Theme Edito
 
 ### Package H — Theme Identity And Support Metadata
 
-Scope: BLK-13 only. Status: blocked on business input until the user supplies the final theme name, author/Partner identity, version, documentation URL, and support URL.
+Scope: the theme-metadata portion of BLK-13 only. Status: **owner-reviewed and accepted** (2026-07-29), uncommitted. The implementation and this acceptance record belong in the same owner commit.
 
-Do not invent or temporarily substitute these values.
+- `theme_name`: `Ceylune`, the owner-approved name selected for the cosmetics-oriented design direction. Current Shopify Theme Store and broader exact-name searches found no matching theme or obvious cosmetics brand; formal intellectual-property clearance remains a business gate rather than a repository claim.
+- `theme_version`: `1.0.0`.
+- `theme_author`: `ESEN`.
+- `theme_documentation_url`: `https://esentheme.vercel.app/en/theme-settings`.
+- `theme_support_url`: `https://esentheme.vercel.app/en/`.
+- Only `config/settings_schema.json` and this context record belong to the implementation. Preset naming/content, `config/settings_data.json`, `templates/*.json`, listing metadata, documentation completeness, and support operations remain outside Package H.
+
+Manual gate: **passed by owner** (2026-07-29), covering final acceptance of `Ceylune`, author/version accuracy, and the owner-supplied documentation and support destinations. No further Package H `theme_info` change is pending. Preset naming, release notes, documentation completeness, the public contact form, and support operations remain in their separately recorded packages or external gates.
 
 ### Package I — Default Install State And Preset Content
 
@@ -1535,6 +1545,10 @@ Purpose: perform a fresh post-remediation scan for confirmed storefront risks, f
 
 Required audit coverage:
 
+- Historical report credibility: independently re-verify every BLK-01 through BLK-18 and RISK-01 through RISK-08 policy assertion, repository-evidence claim, remediation status, and completion statement recorded since the original 2026-07-10 audit. Do not inherit this context's conclusions as facts.
+- Evidence classification: label each material statement as a current official hard requirement, official guidance, repository fact, interpretation/inference, owner runtime evidence, external/business evidence, or not currently verifiable. Record the primary source, date checked, and exact repository or commit evidence where applicable.
+- Interpretation audit: specifically search for requirements that were combined too aggressively or mapped to the wrong implementation field. The known `theme_support_url` versus public contact-form distinction is a required regression case, not an assumption that it was the only error.
+- Status reconstruction: compare every accepted package and resolved blocker against Git history, current code, protected-file boundaries, static validation, runtime evidence, and owner approval. Separate "implemented," "statically validated," "owner accepted," and "launch proven."
 - JavaScript lifecycle: component registration, Alpine ownership, observers, event listeners, timers, abort behavior, stale async responses, section replacement, Theme Editor reload/select/reorder, dialog/drawer cleanup, and duplicate initialization.
 - Runtime architecture: `ThemeEvents`, `ShopifyHttp`, `ShopifySectionRefresher`, cart store ownership, public/private API boundaries, and flat-asset/no-bundler constraints.
 - Liquid and HTML: nil/blank handling, invalid empty links/forms, pagination, routes/localization, product/variant context, responsive image use, semantic headings, accessible names, focus order, keyboard fallback, and no-JavaScript behavior.
@@ -1549,6 +1563,7 @@ Required audit coverage:
 Audit method and evidence standard:
 
 - Start from a clean committed baseline and record the exact commit.
+- Use `agent-router` and `orchestrate-agents` for the credibility review: assign independent read-only work for current Shopify official-policy verification, repository/Git evidence reconstruction, and a verifier review of disputed mappings. The primary agent resolves disagreements against primary evidence; agents do not average conclusions or approve their own findings.
 - Run repository inventories and existing deterministic checks first; inspect discoverable facts before raising questions.
 - Use targeted storefront/browser/runtime checks only where static evidence cannot prove behavior.
 - Classify every finding by severity (`blocker`, `warning`, or `suggestion`), ownership (`code`, `merchant configuration/content`, `business`, `Shopify/vendor`, or `measurement`), affected surfaces, reproduction/evidence, and smallest safe remediation boundary.
@@ -1559,6 +1574,7 @@ Audit method and evidence standard:
 
 Required deliverable:
 
+- A credibility matrix for every BLK/RISK and accepted package showing the original claim, current classification, official source or repository evidence, confidence, discovered correction, and remaining proof needed.
 - A concise audit report with confirmed findings ordered by severity, exact file evidence, runtime evidence where needed, regression risk, and recommended next action.
 - A separate list of disproven/safe areas so future agents do not repeat the same investigation.
 - A ranked optimization backlog showing expected benefit, evidence strength, effort, and rollback domain.
