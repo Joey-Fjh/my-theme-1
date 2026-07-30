@@ -537,7 +537,7 @@ Ownership:
 
 ### BLK-13 — Theme Identity And Support Metadata Are Placeholder/Misleading
 
-Status: **partially resolved by owner-accepted Package H** (2026-07-29). The `theme_info` metadata now uses the owner-approved `Ceylune` name, ESEN identity, version, documentation destination, and support destination. The matching preset name remains in Package I, while release notes and public support operations remain external launch work.
+Status: **code-owned metadata and preset naming resolved by owner-accepted Packages H and I** (2026-07-30). Package H set the `theme_info` metadata to the owner-approved `Ceylune` name, ESEN identity, version, documentation destination, and support destination. Package I committed the matching `Ceylune` parent-theme preset name in `1c01a3c`. Release notes, public merchant documentation, the public support form, and support operations remain external launch work.
 
 Official expectation:
 
@@ -646,7 +646,7 @@ Ownership:
 
 ### BLK-16 — Default Install State Contains Prohibited And Non-Transferable Content
 
-Status: **owner-reviewed and resolved at the Package I code-package level** (2026-07-30), awaiting the owner commit. The cosmetics-oriented copy, `Ceylune` preset rename, resource-handle dispositions, removal of store-specific uploaded-image dependencies, and context-aware placeholder coverage passed static validation and owner review on the directly inspectable storefront surfaces. Dedicated Product, Collection, and Blog empty-resource fixtures are deferred to BLK-18 clean-store evidence and are not treated as missing Package I implementation.
+Status: **owner-reviewed and resolved at the Package I code-package level; committed in `1c01a3c`** (2026-07-30). The cosmetics-oriented copy, `Ceylune` preset rename, resource-handle dispositions, removal of store-specific uploaded-image dependencies, and context-aware placeholder coverage passed static validation and owner review on the directly inspectable storefront surfaces. Dedicated Product, Collection, and Blog empty-resource fixtures are deferred to BLK-18 clean-store evidence and are not treated as missing Package I implementation.
 
 Official expectation:
 
@@ -756,6 +756,49 @@ Acceptance criteria:
 Ownership:
 
 - Mixed: theme code, merchant configuration/content, external operations, and QA.
+
+### BLK-19 — Required Shopify Account Component Is Missing
+
+Status: **owner-reviewed and resolved at the `ACCOUNT-COMPONENT-01` code-package level** (2026-07-30). Final legacy/disabled/signed-in account-mode coverage remains part of BLK-18 launch evidence and reopens BLK-19 only if it exposes a regression.
+
+Official expectation:
+
+- Current Shopify Theme Store requirements require the `<shopify-account>` component in the site header and require it to be visible on both mobile and desktop.
+- Shopify's theme implementation guidance gates the component with `shop.customer_accounts_enabled`; the component owns the account interaction, signed-in avatar, and account sheet. The optional `signed-out-avatar` slot customizes only the signed-out avatar presentation.
+
+Repository evidence:
+
+- No `<shopify-account>` occurrence exists at committed baseline `1c01a3c`.
+- `sections/header.liquid` renders a normal account link in the shared `header-navigation` region. That region is visible at mobile and desktop widths, so one component there can satisfy both viewport requirements.
+- `snippets/header-mobile-menu-drawer.liquid` renders a second ordinary account link inside the mobile drawer. It is a supplementary navigation entry, not a substitute for the required visible Header component.
+
+Risk:
+
+- Direct Theme Store rejection for a missing current mandatory feature.
+- Wrapping the existing link inside `<shopify-account>` would create nested or competing interactive ownership instead of implementing Shopify's account component contract.
+
+Acceptance criteria:
+
+- The shared Header navigation renders `<shopify-account menu="customer-account-main-menu">` when customer accounts are enabled and remains visible at mobile and desktop widths.
+- The component itself owns activation. No anchor, button, Alpine dialog trigger, or duplicate interactive control is nested inside it.
+- If the existing account icon is preserved, it is rendered through the `icons` snippet inside a non-interactive `signed-out-avatar` slot. Shopify retains ownership of the signed-in avatar and account sheet.
+- Latest customer accounts open the Shopify-controlled account sheet; legacy customer accounts retain Shopify's supported sign-in navigation.
+- The disabled-account state, Header grid, visible focus, color schemes, mobile menu, search/cart controls, and Theme Editor section reload behavior remain correct.
+- The existing mobile-drawer account link is separately classified during implementation and may remain as a supplementary direct-navigation link if it does not create a conflicting or duplicate interaction.
+
+Ownership:
+
+- Theme code. The minimal compliant implementation does not require merchant-owned configuration or a new Header schema setting.
+
+Implementation evidence (2026-07-30):
+
+- `sections/header.liquid` now renders `<shopify-account menu="customer-account-main-menu">` behind `shop.customer_accounts_enabled` in the shared mobile/desktop `header-navigation` region.
+- The existing account icon is preserved only as non-interactive `signed-out-avatar` slot content rendered through the `icons` snippet. Shopify owns activation, signed-in avatar presentation, and the account sheet.
+- The separate mobile-drawer account link remains a supplementary direct-navigation link and still closes the drawer when activated.
+- Owner review confirmed the account component and its mobile Header position. The mobile drawer's existing title/footer separators were present but visually ineffective in the default dark scheme because `border-theme-border/20` mixed two dark colors. The two mobile-menu-only separators now use the active foreground token at 30% opacity, preserving color-scheme adaptability without changing merchant-owned colors or other dialogs.
+- No JavaScript, Header schema, locale, merchant-owned configuration, or vendor asset changed. `assets/tailwind.output.css` was regenerated from source after the scoped utility classes changed.
+- Shopify MCP theme validation, Tailwind build, `npm.cmd run lint`, and `npm.cmd test` passed; Theme Check inspected 137 files with 0 offenses.
+- Owner storefront review passed for the available account sheet, shared desktop/mobile Header placement, mobile-drawer auxiliary account area, and refined title/footer separators on 2026-07-30.
 
 ## 5. Important Risks And Non-Blocking Debt
 
@@ -1424,7 +1467,7 @@ Manual gate: **passed by owner** (2026-07-29), covering final acceptance of `Cey
 
 ### Package I — Default Install State And Preset Content
 
-Scope: BLK-16, the merchant-owned template/default-content portion of BLK-15, the required parent-theme preset name, and `PLACEHOLDER-VARIETY-01`. Status: **owner-reviewed and accepted; uncommitted** (2026-07-30). Product, Collection, and Blog empty-resource fixtures move to BLK-18 clean-store evidence because the current store's route-bound resources cannot be safely cleared for this review. This remains one package with ordered phases, not separate Package I1/I2 rollback domains.
+Scope: BLK-16, the merchant-owned template/default-content portion of BLK-15, the required parent-theme preset name, and `PLACEHOLDER-VARIETY-01`. Status: **owner-reviewed and committed** (2026-07-30). Commit: `1c01a3c`. Product, Collection, and Blog empty-resource fixtures move to BLK-18 clean-store evidence because the current store's route-bound resources cannot be safely cleared for this review. This remains one package with ordered phases, not separate Package I1/I2 rollback domains.
 
 Phase 1 — content and configuration, current priority:
 
@@ -1488,7 +1531,7 @@ Phase 1 copy implementation (2026-07-29): **owner storefront review passed**. Th
 - Uploaded-image closure: all 53 original `shopify://shop_images/` dependencies are now removed from `config/`, `templates/`, and section groups (Routine showcase first, then the remaining 52 fields). Existing section geometry and behavior remain the owners of the empty state. Hero and generic image-picker surfaces continue to use Shopify's generic `image` placeholder; editorial cards/media use deterministic `lifestyle-1` / `lifestyle-2`; product and cart contexts use `product-1` through `product-6`; collection/category contexts use `collection-1` through `collection-6`. Before/After keeps two distinct lifestyle placeholders and the existing draggable comparison. Decorative media may be omitted when blank. Footer watermark rendering is now independent of the optional brush image, so clearing that upload does not remove the brand treatment.
 - Phase 2 code-owned coverage is implemented across Article, Blog, Blog stories, Collections, Category grid, Cart, About stats, Before/After, Promo banner, Philosophy, Promise, and Featured testimonial, in addition to the previously completed Featured product, Product comparison, Featured products, Scroll categories, and Routine showcase flows. Placeholder selection is deterministic; every real Shopify image/resource still takes precedence through the existing `image.liquid`, `image-magnifier.liquid`, and section interaction contracts. No custom placeholder asset, placeholder component, schema ID/type, section/block order, color scheme, disabled state, or layout setting was added or changed.
 - Owner Slideshow decision during placeholder review: the home Slideshow no longer exposes previous/next/pause controls and no longer auto-advances. Touch/mouse drag remains Swiper-owned; multi-slide output is focusable and supports RTL-aware Left/Right keyboard navigation. The removed autoplay schema settings and matching `templates/index.json` values were explicitly approved. Slideshow alone retains an intentionally unframed visible full-bleed placeholder; Routine showcase now frames its complete empty-state surfaces while delegating nested SVG framing to the composite parent. Announcement bar behavior was not changed.
-- Placeholder surface and color-state refinement (2026-07-30): `placeholder_style` remains the semantic `framed`/`plain` selector introduced in the uncommitted Package I placeholder consolidation; CSS continues to own border, radius, surface, and SVG color. The shared frame now mixes the active scheme's background and foreground tokens into an opaque surface instead of placing a translucent foreground tint over arbitrary ancestors, preventing a different ancestor color from bleeding through Routine SVG transparency. Routine product cards frame image plus caption as one empty-state surface, and its empty background/content panel have distinct token-based boundaries while retaining the intended localized hover inversion. Routine and Google Map expose independent top/bottom padding settings using the project-standard 32px defaults; Google Map retains its no-color-scheme contract and renders only when enabled with a nonblank embed code. A new global `page_canvas_color_scheme` setting, defaulting to `scheme-2`, explicitly owns the body background used by section gaps, overscroll, and unscoped platform sections, replacing the previous visible reliance on whichever scheme happened to be first while retaining the first scheme as the `:root` token fallback.
+- Placeholder surface and color-state refinement (2026-07-30): `placeholder_style` remains the semantic `framed`/`plain` selector introduced in the Package I placeholder consolidation; CSS continues to own border, radius, surface, and SVG color. The shared frame now mixes the active scheme's background and foreground tokens into an opaque surface instead of placing a translucent foreground tint over arbitrary ancestors, preventing a different ancestor color from bleeding through Routine SVG transparency. Routine product cards frame image plus caption as one empty-state surface, and its empty background/content panel have distinct token-based boundaries while retaining the intended localized hover inversion. Routine and Google Map expose independent top/bottom padding settings using the project-standard 32px defaults; Google Map retains its no-color-scheme contract and renders only when enabled with a nonblank embed code. A new global `page_canvas_color_scheme` setting, defaulting to `scheme-2`, explicitly owns the body background used by section gaps, overscroll, and unscoped platform sections, replacing the previous visible reliance on whichever scheme happened to be first while retaining the first scheme as the `:root` token fallback.
 - Newsletter Banner final empty-state correction (2026-07-30): Newsletter Banner is a contained `container-page` media surface, so the complete banner owns the shared frame while its nested generic Shopify placeholder remains `plain`. The illustration wrapper is geometrically centered at desktop and mobile breakpoints, the photo-only radial backdrop blur is skipped when no real image exists, and real background-image fit and position settings remain unchanged. The owner accepted the resulting empty-state presentation.
 - Consolidated static validation passed after the resource/image batch and final placeholder/Slideshow consolidation: Tailwind rebuilt successfully; `npm.cmd run lint` passed; `npm.cmd test` inspected 137 files with 0 offenses; Shopify MCP `validate_theme` passed the earlier 22-file resource/placeholder set and the final 9 directly changed theme files; targeted JSONC parsing, zero-reference scans, and `git diff --check` passed. A final local Tailwind rebuild, aggregate lint, Theme Check (`137` files, `0` offenses), and `git diff --check` also passed after the Newsletter Banner centering correction. Owner storefront review passed for the directly inspectable empty states and interactions.
 
@@ -1507,7 +1550,7 @@ Phase 2 authorization: the implemented code-owned placeholder consumers and exac
 
 Phase 2 manual gate: **passed for the directly inspectable current-store surfaces** (2026-07-30). Product, Collection, and Blog are route-bound to backend resources in the current store; their minimal/empty-resource fixtures, plus clean-install real-image precedence, move to BLK-18 rather than requiring destructive changes to the published data.
 
-Package gate: **passed by owner; ready for the owner commit** (2026-07-30). This closes Package I as a code package while preserving the three resource-backed fixture checks and full fresh-install proof in BLK-18.
+Package gate: **passed by owner and committed in `1c01a3c`** (2026-07-30). This closes Package I as a code package while preserving the three resource-backed fixture checks and full fresh-install proof in BLK-18.
 
 ### Package J — Route And Shopify-Link Compliance
 
@@ -1539,7 +1582,7 @@ Verification gate: **passed**. No additional Package J storefront QA is required
 
 ### Package K — Global Scroll Reveal Reliability
 
-Status: **owner-reviewed and committed** (2026-07-28). Commit: `045b9e8`. The owner reported no remaining Package K storefront motion issue after the final reveal coverage, easing, and speed-tier tuning. Packages G2 and H were subsequently owner-reviewed and committed as `213f81d` and `74cca20`. Package I phase 1 content/configuration inventory is next; its placeholder work is deferred to phase 2 of the same package, and Package L remains a later review-only audit before the final BLK-18 evidence gate.
+Status: **owner-reviewed and committed** (2026-07-28). Commit: `045b9e8`. The owner reported no remaining Package K storefront motion issue after the final reveal coverage, easing, and speed-tier tuning. Packages G2, H, and I were subsequently owner-reviewed and committed as `213f81d`, `74cca20`, and `1c01a3c`. Package L is the next review-only audit before the final BLK-18 evidence gate.
 
 Owner-approved visual scope expansion (2026-07-27): Package K now also owns the ordinary reveal presentation language. Content options are `none` / `fade` / `rise` / `slide`; media options are `none` / `fade` / `zoom` / `slide`, with `zoom` as the new-install default. Do not add an intensity setting or media `rise`. `motion_speed` controls duration/stagger only; each style owns fixed amplitude. Slide defaults to upward content reveal and left-to-right media reveal, with internal CSS-variable override points rather than another merchant control. Cascade is generic repeated-layout choreography and uses one coarse reveal target per visual item; it is not a product-card-only style. Hero copy may keep a base delay/amplitude refinement but must respect the selected content style and global reveal speed.
 
@@ -1613,7 +1656,7 @@ The detailed coverage matrix and stable exceptions live in `docs/references/arch
 
 ### Package L — Global Code Risk And Optimization Audit
 
-Status: **planned as review-only** (2026-07-27). Run after Package K and the remaining approved code-bearing work are settled on a clean baseline, before the final BLK-18 evidence gate. This package audits and classifies; it does not implement a repository-wide cleanup.
+Status: **owner-reviewed and accepted** (2026-07-30). Audit baseline: `1c01a3c`. Package L audited and classified; it did not implement theme-code fixes. The owner accepted the evidence-backed report, credibility corrections, safe-area record, optimization backlog, and focused `ACCOUNT-COMPONENT-01` follow-up.
 
 Purpose: perform a fresh post-remediation scan for confirmed storefront risks, fragile behavior, architecture drift, unnecessary runtime cost, and narrowly supportable optimization opportunities that the original launch audit or later packages may not cover.
 
@@ -1662,7 +1705,42 @@ Prohibited scope:
 - No manual edits to generated or vendor assets, and no speculative Lighthouse code fixes.
 - Do not mix Package K motion implementation, Package G2 copy, Package H metadata, or either Package I phase into this audit.
 
-Completion gate: Package L is complete when the evidence-backed report and ranked follow-up list are owner-reviewed. A clean lint/Theme Check result is baseline evidence only; it does not prove the audit found no runtime, accessibility, performance, lifecycle, or fresh-install risks.
+Completion gate: **passed by owner** (2026-07-30). A clean lint/Theme Check result remains baseline evidence only; it does not prove runtime, accessibility, performance, lifecycle, or fresh-install readiness.
+
+Accepted audit conclusions:
+
+- Git status reconstruction: Packages A through K, G2, H, I, and the accepted cart/product-card follow-ups have implementation commits. Package I is committed in `1c01a3c`. Recorded static validation and owner acceptance prove package history, not final launch readiness.
+- Policy classification: BLK-01 through BLK-12 and BLK-14 have current hard-requirement foundations, but several detailed acceptance criteria are repository QA standards or implementation inferences rather than verbatim Shopify requirements. BLK-13, BLK-15, and BLK-16 mix code, guidance, clean-install, release, and business evidence and must not be described as fully launch-proven from commits alone.
+- Support mapping correction: `theme_support_url` is not required to equal the public contact-form URL. The public support contact form, documentation/listing links, and two-business-day operation remain separate BLK-17 evidence.
+- Install-state correction: authentic demo content and no Lorem Ipsum are hard requirements. Exact placeholder-family selection, deterministic variation, and shared-frame styling are accepted project QA/design contracts. One `Ceylune` preset means the absent `/listings` directory is compliant; Shopify requires it only for themes with multiple presets.
+- Link-policy correction: Shopify's current wording says any link in code to a Shopify domain requires `rel="nofollow"`; the previous rendered-anchor-only boundary is a repository interpretation, not verified official wording. No current rendered Shopify-domain link defect was confirmed after Package J.
+- Resolved follow-up: BLK-19's mandatory `<shopify-account>` Header component was implemented and owner-accepted through `ACCOUNT-COMPONENT-01`.
+- Runtime safety: no application `fetch()` outside `assets/https.js`, manual section replacement outside `ShopifySectionRefresher`, dead `Components.register()` binding, empty/hash link, inline DOM handler, or confirmed high-risk cleanup defect was found in the audited static paths.
+- Runtime documentation: `docs/references/architecture/javascript-runtime.md` omits `dialog-motion.js` and `drawer-motion.js` from the documented load order. This is documentation drift, not a confirmed runtime-order failure.
+
+Accepted optimization backlog:
+
+1. Measure normal storefront and Theme Editor request, transfer, parse, execution, cache, long-task, and Lighthouse behavior before approving any global asset split.
+2. Treat globally requested `performance.js` as the smallest conditional-loading candidate only if normal, `debug=true`, and Shopify design-mode tests prove the diagnostic path remains available.
+3. Do not split Swiper, Alpine component groups, stores, or registries without measured benefit and a separately approved architecture package that preserves defer order and dynamic-section behavior.
+4. Stress overlapping cart mutations, section refresh, dialog/drawer focus, and Theme Editor lifecycle in BLK-18; static review did not prove a defect or prove race freedom.
+
+Package L's focused `ACCOUNT-COMPONENT-01` follow-up is owner-reviewed and accepted. BLK-17, BLK-18, RISK-03, RISK-04, and RISK-05 remain external, runtime, business, design, or evidence gates.
+
+### ACCOUNT-COMPONENT-01 — Shopify Account Header Component
+
+Status: **owner-reviewed and accepted** (2026-07-30).
+
+Implementation boundary:
+
+- Replaced the shared Header's ordinary account link with Shopify's `<shopify-account>` component, gated by `shop.customer_accounts_enabled` and using the canonical `customer-account-main-menu` menu.
+- Preserved the existing signed-out account icon through a non-interactive slot; retained the mobile-drawer account link as a separate auxiliary route.
+- After owner visual review, strengthened only the mobile menu's title/footer separators using the active foreground token at 30% opacity; this avoids the default dark scheme's near-invisible dark-on-dark border while remaining color-scheme aware.
+- Added no JavaScript, setting, translation, merchant-owned configuration, or vendor asset change. Tailwind output was regenerated from source for the new scoped utilities.
+
+Static validation: Shopify MCP theme validation passed for `sections/header.liquid`, `snippets/header-mobile-menu-drawer.liquid`, and `assets/tailwind.output.css`; Tailwind build and `npm.cmd run lint` passed; `npm.cmd test` inspected 137 files with 0 offenses; `npm.cmd run format:check` and `git diff --check` passed.
+
+Manual gate: **passed by owner for the directly available storefront states** (2026-07-30), covering the account sheet, shared desktop/mobile Header placement, mobile-drawer auxiliary account area, and refined separators. Disabled accounts, legacy accounts, signed-in avatar state, alternate color schemes, keyboard details, sticky/scrolled state, and Theme Editor reload remain in BLK-18's final cross-mode matrix; they do not reopen this accepted code package unless a regression is found.
 
 ### External And Evidence Gates
 

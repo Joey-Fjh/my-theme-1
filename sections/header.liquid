@@ -159,23 +159,16 @@
                     </a>
                 {%- endif -%}
 
-                {% assign account_href = routes.account_login_url %}
-                {% if customer %}
-                    {% assign account_href = routes.account_url %}
-                {% endif %}
-
-                {% capture link_content %}
-                    {% render 'icons', icon: 'icon-account', class: size_class %}
-                {% endcapture %}
-
-                {%- assign account_aria_label = 'accessibility.account' | t -%}
-                {% render 'link',
-                    href: account_href,
-                    content: link_content,
-                    variant: 'plain',
-                    class: 'header-icon-button',
-                    aria_label: account_aria_label
-                %}
+                {%- if shop.customer_accounts_enabled -%}
+                    <shopify-account
+                        menu="customer-account-main-menu"
+                        class="header-icon-button"
+                    >
+                        <span slot="signed-out-avatar">
+                            {%- render 'icons', icon: 'icon-account', class: size_class -%}
+                        </span>
+                    </shopify-account>
+                {%- endif -%}
             </div>
         </div>
     </div>
