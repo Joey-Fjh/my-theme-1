@@ -269,38 +269,16 @@ Conversion pages such as product, collection, search, cart, and checkout-adjacen
 
 Home, brand, editorial, campaign, and storytelling pages MAY use richer GSAP choreography when no critical first-viewport content is hidden before JavaScript, no LCP candidate waits for animation, reduced motion is respected, keyboard and screen-reader access remain intact, and the animation is registered and cleaned up through `Components.register()`.
 
-### Current Repository Coverage Audit (2026-07-28)
+### Current Coverage Boundary
 
-Status: **Package K owner-reviewed and accepted on 2026-07-28**. The owner reported no remaining storefront motion issue after the final reveal coverage, easing, and speed-tier tuning. A section having `data-motion-section` does not by itself prove coverage. Eligible visual regions must be owned by their nearest lifecycle root, use their own viewport position, and observe transform-free geometry where needed. Controls and intentional static surfaces are not coverage failures.
+- Editorial copy, media, cards, grids, recommendations, and other eligible below-the-fold visual regions may use the ordinary reveal contract.
+- Product purchase flows, cart, forms, controls, Header, dialogs, drawers, filters, embeds, and special pages remain static or use their own state/micro-interaction contract.
+- Search and Product Recommendations may delegate motion ownership to rendered result snippets.
+- Copy below tall media must observe its own position instead of inheriting the media or section trigger.
+- Repeated cards use their current visual row for cascade; hidden panels and clipped slides wait until they become eligible.
+- One shared observer-bound registry entry owns every target attached to that bound. A node must not own both a stable `data-motion-bound` and an animated reveal/copy hook.
 
-Repository coverage after closure:
-
-- `44` files exist under `sections/`; `28` declare a motion root directly. Search and Product Recommendations delegate motion roots to their rendered result snippets. The remaining no-root files are intentional static, state, conversion, overlay, or special-page surfaces.
-- Home/editorial/card surfaces, collection and search product grids, recommendations, blog/article headers and cards, generic page headers, list collections, and Footer bounded regions consume the global ordinary reveal contract.
-- Copy below tall media in Promo Banner, Blog Stories, Blog cards, Product Cards, Category Grid, Collections, Philosophy, Collection variants, Testimonial, and comparable composite layouts observes its own position through `data-motion-copy` rather than inheriting the media/section entry time.
-- Featured Products groups repeated cards by their current visual row. Hidden tab panels and overflow-clipped Swiper slides wait until visible; resize, tabs, Swiper relayout, and Theme Editor lifecycle cause safe re-registration.
-- Main Product, Cart, Password/Gift card, Header/Announcement, drawers/dialogs/overlays, filters, tab triggers, pagination, purchase/forms, media controls, Custom Liquid, Google Map, video/embed/play controls, and arbitrary long RTE bodies remain static or use their separate state/micro-interaction ownership by design.
-
-| Surface | Final Package K policy | Package K status |
-| --- | --- | --- |
-| Home | Eligible editorial copy/media and repeated card layouts reveal; conversion controls and embeds stay static. Runtime viewport-critical handling protects whichever reorderable section is actually first. | Implemented |
-| Product | Main product purchase flow and gallery controls stay static. Featured Product explanatory media/copy and below-the-fold comparison/recommendations use bounded reveal targets. | Implemented, restrained |
-| Collection | Hero and refreshed product grid own separate roots; media and card copy trigger independently; rows cascade from stable card bounds. | Implemented |
-| Search | Search form, tabs, filters, pagination, article/page lists, and controls stay static; product results use the delegated cascade root. | Implemented, restrained |
-| Blog / Article / Page | Bounded heroes, headings, metadata, cards, and CTAs reveal. Arbitrary multi-screen RTE content stays visible and static. | Implemented |
-| About / Contact | Editorial regions reveal from their own positions; forms and interactive controls stay static. | Implemented |
-| List collections | Media and lower copy own separate targets without changing the grid's direct-child structure. | Implemented |
-| Footer | Navigation groups and later copy use separate bounded targets; document-end recovery prevents an unreachable pending state. | Implemented |
-| Cart, Password, Gift card, Header, overlays | No ordinary reveal. | Intentional exception |
-
-Closure evidence:
-
-- Nearest-section ownership, stable bound separation, same-bound multi-target aggregation, current-row cascade, `once`/`always` replay, silent buffered reset, page-load queue release, stale-rAF cancellation, and first-viewport visibility were reviewed against the final runtime.
-- Static topology checks found no node that simultaneously owns `data-motion-bound` and an animated reveal/copy hook, and no form/control element inside an ordinary reveal/copy ancestor.
-- Parent/child media reveal stacking was removed; media controls and product conversion controls do not inherit reveal ownership.
-- Rotating Badge, marquees, Before/After automatic movement, carousel autoplay, and Flip Digit reduced-motion behavior now follow the page-motion/reduced-motion policy applicable to each behavior.
-
-Package K's storefront review gate passed by owner on 2026-07-28. The broader launch evidence matrix must still sample desktop/mobile slow and fast scroll, `once` and `always`, all content/media styles, multi-row cascade, tabs and Swiper touch/keyboard/pagination, responsive reflow, Theme Editor select/reorder/reload, motion disabled, reduced motion, no JavaScript, missing `IntersectionObserver`, and duplicate-listener checks with `?debug=motion` under BLK-18. Future changes must also preserve the invariant that one shared observer-bound registry entry owns all targets attached to that bound; unusual zero-speed or programmatic Swiper relayout paths still need representative storefront sampling.
+Treat this as a current architecture boundary, not a frozen coverage count. Re-audit touched surfaces and run representative storefront checks when motion behavior changes.
 
 ## Token And Preset Rules
 

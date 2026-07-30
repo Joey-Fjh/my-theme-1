@@ -6,7 +6,7 @@ Use `docs/` for durable context that is useful to agents but too large, too cont
 
 ## Directories
 
-- `agent/`: Agent context and next-session template.
+- `agent/`: Short current-state and cross-session handoff.
 - `references/`: Shared references, architecture details, canonical implementation examples, and long checklists that may be read on demand.
     - `architecture/`: Runtime, motion, and abstraction-boundary references routed from `AGENTS.md`.
     - `agent-workflow/`: Collaboration standard, task routing, third-party skill governance, and task frame references routed from `AGENTS.md`.
@@ -22,5 +22,7 @@ Use `docs/` for durable context that is useful to agents but too large, too cont
 - Tool-specific entry points may use relative symlinks to source files or directories. Current examples are `CLAUDE.md` -> `AGENTS.md` and `.claude/skills/` -> `../.agents/skills`.
 - `docs/references/` may be referenced by skills, but docs do not automatically trigger skills.
 - Skill-local `references/` should be used only for material strongly owned by one skill.
+- Completed audit logs and phase diaries belong in Git history, not in `docs/agent/`.
+- Keep `docs/agent/context.md` limited to accepted current decisions, unresolved work, and the minimum evidence needed to resume safely.
 
 If a doc conflicts with `AGENTS.md`, follow `AGENTS.md`.

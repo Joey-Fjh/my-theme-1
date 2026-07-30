@@ -27,8 +27,7 @@ Use this skill when code work needs a canonical implementation shape. `AGENTS.md
 - HTTP or section refresh: `docs/references/patterns/canonical-http-section-refresh.md`
 - Cart flow: `docs/references/patterns/canonical-cart-flow.md`
 - Swiper section: `docs/references/patterns/canonical-swiper-section.md`
-- GSAP choreography (optional, narrative-only): `docs/references/patterns/canonical-gsap-section.md`
-- Alpine/CSS state motion: `docs/references/patterns/canonical-motion-transition.md`
+- Motion classification, Alpine/CSS state motion, and optional GSAP boundaries: `docs/references/architecture/motion-architecture.md`
 - CSS layering: `docs/references/patterns/canonical-css-layering.md`
 - Accessibility semantics: `docs/references/patterns/canonical-accessibility.md`
 
@@ -39,4 +38,4 @@ Use this skill when code work needs a canonical implementation shape. `AGENTS.md
 - Do not add JavaScript where static markup is enough.
 - Do not move validation scripts into this skill; task-specific validation scripts live under `.agents/skills/*/scripts/`.
 - Run only the smallest relevant validation after implementation.
-- Ordinary reveal/state motion should route to `canonical-motion-transition` or a future CSS/Alpine reveal pattern. Route to GSAP only after `motion-architecture` classification confirms complex narrative choreography.
+- Ordinary reveal and state motion should follow `motion-architecture.md`. Route to GSAP only after that classification confirms complex narrative choreography.

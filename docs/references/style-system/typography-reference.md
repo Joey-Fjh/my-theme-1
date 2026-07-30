@@ -100,9 +100,3 @@ Component text defaults to body inheritance unless the component intentionally o
 - no `heading-base` or `body-base` in Liquid markup;
 - no Tailwind text-size utilities on `h1` through `h6`;
 - no heading class on non-heading elements, except documented exceptions.
-
-## Deferred Notes
-
-- Continue scoped review for component-owned `body-*` overrides; remove only usages that restate inherited default body text.
-- Semantic/visual heading mismatches should be fixed only when the owning page or component is scoped.
-- Display heading consistency belongs with visual/design work, not drive-by refactors.

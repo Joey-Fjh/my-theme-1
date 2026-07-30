@@ -2,7 +2,7 @@
 
 This reference is the current CSS layer, token, bridge, and consumption contract. `AGENTS.md` remains the rule source.
 
-Read this file when auditing CSS placement, token sources, bridge use, or layer migrations. Historical phase notes live in `docs/references/style-system/css-architecture-history.md`. Image rendering rules live in `docs/references/style-system/image-display-contract.md`.
+Read this file when auditing CSS placement, token sources, bridge use, or layer migrations. Image rendering rules live in `docs/references/style-system/image-display-contract.md`. Completed CSS migration history belongs in Git history.
 
 ## Pipeline
 
@@ -103,4 +103,4 @@ Rules:
 - `npm.cmd run lint:theme` enforces layer, heading, JS runtime, HTTP/cart, and related architecture rules.
 - CSS source changes require `npm.cmd run build:tw`; never manually edit `assets/tailwind.output.css`.
 - Record durable architecture decisions in the relevant reference, not in `context.md` unless it is short cross-session state.
-- Detailed accepted-phase history and deferred notes live in `css-architecture-history.md`.
+- Keep optional cleanup ideas out of this contract until repository evidence makes them actionable.

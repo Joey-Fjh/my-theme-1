@@ -131,14 +131,7 @@ Some rules are enforced by tooling; others remain review-only. `AGENTS.md` is st
 | SEO metadata and structured content       | Review only plus Lighthouse        | Launch blocker when code-owned  |
 | Generated files not hand-edited           | Review only                        | Warning                         |
 
-Warnings should be staged after launch unless they affect Lighthouse, accessibility, SEO, runtime stability, or production behavior.
-
-Known follow-ups:
-
-1. Evaluate whether a typography lint for redundant default body classes is worth adding now that default body/body-md alignment is documented.
-2. Add a lint for redundant matching heading classes such as `<h2 class="heading-h2">` only if review misses it repeatedly.
-3. Add a lint for mismatched heading classes such as `<h2 class="heading-h1">` only if review misses it repeatedly. Mismatches are semantic/visual decisions, not auto-fixable.
-4. Add focused accessibility automation only after the checklist stabilizes and manual review proves unreliable.
+Warnings may be deferred only when they do not affect Lighthouse, accessibility, SEO, runtime stability, or production behavior. Add new lint rules only when repeated review evidence justifies a stable, machine-detectable contract.
 
 ## Legacy Cleanup Safety
 

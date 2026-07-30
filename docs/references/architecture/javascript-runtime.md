@@ -13,6 +13,8 @@ All theme runtime objects live under `window.__Theme__`:
 | `__Theme__.ThemePerformance`        | `performance.js`            | Debug-only CWV monitoring       |
 | `__Theme__.AlpineComponentsFactory` | `alpine.components.js`      | Alpine component registry       |
 | `__Theme__.QuantityConstraints`     | `quantity-constraints.js`   | Pure quantity min/max/step math |
+| `__Theme__.DialogMotion`            | `dialog-motion.js`          | Shared dialog transition helper |
+| `__Theme__.DrawerMotion`            | `drawer-motion.js`          | Shared drawer transition helper |
 
 Additional globals:
 
@@ -45,11 +47,13 @@ Additional globals:
 18.  base.js
 19.  alpine.store.js
 20.  alpine.store.toast.js
-21.  alpine.store.dialog.js
-22.  alpine.store.cart.js
-23.  alpine.store.registry.js           <- merges/registers stores
-24.  vendor-alpine-intersect.min.js
-25.  vendor-alpine.min.js               <- MUST be last
+21.  dialog-motion.js
+22.  drawer-motion.js
+23.  alpine.store.dialog.js
+24.  alpine.store.cart.js
+25.  alpine.store.registry.js           <- merges/registers stores
+26.  vendor-alpine-intersect.min.js
+27.  vendor-alpine.min.js               <- MUST be last
 ```
 
 Constraints:

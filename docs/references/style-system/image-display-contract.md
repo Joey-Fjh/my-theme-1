@@ -54,13 +54,12 @@ If `img_class` already contains an `object-*` utility, including responsive vari
 5. Does the merchant need cover-vs-contain control? Expose or pass `fit`.
 6. The caller decides semantic mode; `image.liquid` should not guess business intent.
 
-## Current Status
+## Current Contract
 
 - `image.liquid` is the base image primitive.
 - Frame-mode default preserves legacy product card, gallery, hero, slide, overlay, blog, and collection behavior.
 - Natural-mode is used for cases where preserving intrinsic ratio matters.
 - Focal points are owned by Shopify `image_tag` unless the caller passes an explicit whitelist `position`.
-- Remaining improvements are mostly merchant controls per section, not primitive plumbing.
 
 ## Review Checklist
 

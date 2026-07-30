@@ -45,7 +45,7 @@ Important paths:
 - `.agents/roles/`: portable multi-agent role contracts
 - `.agents/contracts/`: task and result schemas
 - `docs/references/`: long references, examples, checklists
-- `docs/agent/`: agent context, next-session template
+- `docs/agent/`: short current-state and cross-session handoff
 - `sections/`, `snippets/`, `assets/`, `tailwind/`, `locales/`: theme implementation
 - `config/settings_data.json` and `templates/*.json`: merchant-owned configuration
 
@@ -121,7 +121,6 @@ Read only the matching reference for the current task:
 - Motion policy, choreography, reduced motion, animation ownership, duplication: `docs/references/architecture/motion-architecture.md`
 - Shared abstraction boundaries and whether to extend an existing utility/component: `docs/references/architecture/abstraction-boundaries.md`
 - CSS layer ownership, token/bridge contract, placement audits: `docs/references/style-system/css-architecture.md`
-- CSS accepted-history or deferred CSS API notes: `docs/references/style-system/css-architecture-history.md`
 - Image snippet display behavior and `image.liquid` mode/fit contract: `docs/references/style-system/image-display-contract.md`
 - Style-system index and build commands: `docs/references/style-system/css-and-typography.md`
 - Typography tiers and consumption rules: `docs/references/style-system/typography-reference.md`
@@ -182,4 +181,3 @@ Run `npm.cmd run lint` and `npm.cmd test` after meaningful theme changes. Run `n
 - Do not mix visual redesign, architecture cleanup, Lighthouse fixes, and configuration changes in one batch.
 - Preserve schema IDs, block types, section types, preset names, template references, and storefront behavior during cleanup.
 - `.shopifyignore`, `.gitignore`, and `.prettierignore` have different scopes. Read `docs/references/code-review/launch-gate.md` before changing ignore rules.
-- `.prettierignore` currently has unrelated local changes in this worktree; do not include or rewrite it unless explicitly asked.

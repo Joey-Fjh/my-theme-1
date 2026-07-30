@@ -7,7 +7,6 @@ Read this file for build commands and high-level style routing. Use narrower ref
 | Topic | Reference |
 | --- | --- |
 | CSS layer ownership and token bridge | `docs/references/style-system/css-architecture.md` |
-| CSS history and deferred notes | `docs/references/style-system/css-architecture-history.md` |
 | Typography tiers and consumption | `docs/references/style-system/typography-reference.md` |
 | Color, surface, inline styles, z-index | `docs/references/style-system/color-surface-reference.md` |
 | Image display contract | `docs/references/style-system/image-display-contract.md` |
