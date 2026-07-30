@@ -454,26 +454,28 @@
     {%- endif -%}
 </div>
 
-{%- capture quick_view_content -%}
-    {%- render 'product-quick-view',
-        product: product,
-        dialog_id: quick_view_dialog_id,
-        section_id: quick_view_dialog_id,
-        color_scheme: color_scheme
-    -%}
-{%- endcapture -%}
+{%- unless is_placeholder or request.visual_preview_mode -%}
+    {%- capture quick_view_content -%}
+        {%- render 'product-quick-view',
+            product: product,
+            dialog_id: quick_view_dialog_id,
+            section_id: quick_view_dialog_id,
+            color_scheme: color_scheme
+        -%}
+    {%- endcapture -%}
 
-<template x-teleport="body">
-    {%- assign quick_view_close_label = 'accessibility.close_quick_view' | t -%}
-    {%- render 'ui-dialog',
-        id: quick_view_dialog_id,
-        type: 'modal',
-        layer: 'modal-focus',
-        color_scheme: color_scheme,
-        modal_wrapper_class: 'items-center justify-center px-3 py-4 pc:px-[8vw] pc:py-[5vh]',
-        modal_panel_class: 'product-quick-view-dialog pc:h-full pc:w-full pc:!max-h-full pc:!max-w-full',
-        show_close_button: true,
-        close_label: quick_view_close_label,
-        content: quick_view_content
-    -%}
-</template>
+    <template x-teleport="body">
+        {%- assign quick_view_close_label = 'accessibility.close_quick_view' | t -%}
+        {%- render 'ui-dialog',
+            id: quick_view_dialog_id,
+            type: 'modal',
+            layer: 'modal-focus',
+            color_scheme: color_scheme,
+            modal_wrapper_class: 'items-center justify-center px-3 py-4 pc:px-[8vw] pc:py-[5vh]',
+            modal_panel_class: 'product-quick-view-dialog pc:h-full pc:w-full pc:!max-h-full pc:!max-w-full',
+            show_close_button: true,
+            close_label: quick_view_close_label,
+            content: quick_view_content
+        -%}
+    </template>
+{%- endunless -%}

@@ -299,18 +299,68 @@
         </div>
     {%- endcapture -%}
 
-    {%- render 'ui-dialog',
-        id: popup_id,
-        type: 'drawer',
-        layer: 'drawer',
-        position: section.settings.drawer_position,
-        top_class: 'top-[var(--announcement-bar-height)] pc:top-0',
-        color_scheme: section.settings.color_scheme,
-        drawer_motion_sheet: true,
-        mobile_layout: 'inset',
-        drawer_desktop_layout: true,
-        content: drawer_content
-    -%}
+    {%- if request.visual_preview_mode -%}
+        {%- liquid
+            assign drawer_position = section.settings.drawer_position | default: 'right'
+            assign drawer_side_class = 'right-0'
+            if drawer_position == 'left'
+                assign drawer_side_class = 'left-0'
+            endif
+        -%}
+        <div
+            class="z-layer-drawer-backdrop fixed inset-0"
+            data-overlay-visual-preview="cart"
+        >
+            <div
+                class="z-layer-drawer-backdrop fixed inset-x-0 top-[var(--announcement-bar-height)] bottom-0 bg-dialog-overlay pc:top-0"
+            ></div>
+            <div
+                class="
+                    ui-dialog-drawer-shell ui-dialog-drawer-width-default ui-dialog-desktop-drawer
+                    ui-dialog-desktop-drawer--{{ drawer_position }} ui-dialog-mobile-layout-inset
+                    z-layer-drawer fixed top-[var(--announcement-bar-height)] bottom-0 w-full
+                    {{ drawer_side_class }} pc:top-0
+                "
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="dialog-title-{{ popup_id }}"
+            >
+                <div
+                    class="ui-dialog-panel ui-dialog-drawer-panel ui-dialog-mobile-layout-panel color-{{ section.settings.color_scheme }} surface-component"
+                >
+                    <div class="flex h-full flex-col">
+                        <div class="ui-dialog-overlay-header">
+                            <h1 id="dialog-title-{{ popup_id }}">{{ 'cart.title' | t }}</h1>
+                            <button
+                                type="button"
+                                class="close-button"
+                                aria-label="{{ 'accessibility.close_cart_drawer' | t }}"
+                                disabled
+                            >
+                                {% render 'icons', icon: 'icon-close' %}
+                            </button>
+                        </div>
+                        <div class="ui-dialog-overlay-body flex h-full items-center justify-center text-center pc:px-6 pc:py-4">
+                            <p>{{ 'cart.empty' | t }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {%- else -%}
+        {%- render 'ui-dialog',
+            id: popup_id,
+            type: 'drawer',
+            layer: 'drawer',
+            position: section.settings.drawer_position,
+            top_class: 'top-[var(--announcement-bar-height)] pc:top-0',
+            color_scheme: section.settings.color_scheme,
+            drawer_motion_sheet: true,
+            mobile_layout: 'inset',
+            drawer_desktop_layout: true,
+            content: drawer_content
+        -%}
+    {%- endif -%}
 </div>
 
 {% stylesheet %}

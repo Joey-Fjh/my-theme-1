@@ -607,7 +607,7 @@ Ownership:
 
 ### BLK-15 — Merchant-Facing Schema Terminology And Spelling Need Full Review
 
-Status: **owner-reviewed and resolved** (2026-07-30). The code-owned schema/locale portion was committed in Package G2 as `213f81d`; the explicitly authorized Package I merchant-owned template/default-content copy tranche passed static validation and owner storefront review. Final clean-install evidence remains part of BLK-18 and does not reopen this terminology/copy package unless it exposes a regression.
+Status: **owner-reviewed and resolved** (2026-07-30). The code-owned schema/locale portion was committed in Package G2 as `213f81d`; the explicitly authorized Package I merchant-owned template/default-content copy tranche passed static validation and owner storefront review. Final clean-install presentation remains part of the compact submission ZIP/demo-store check and does not reopen this terminology/copy package unless it exposes a regression.
 
 Official expectation:
 
@@ -646,7 +646,7 @@ Ownership:
 
 ### BLK-16 — Default Install State Contains Prohibited And Non-Transferable Content
 
-Status: **owner-reviewed and resolved at the Package I code-package level; committed in `1c01a3c`** (2026-07-30). The cosmetics-oriented copy, `Ceylune` preset rename, resource-handle dispositions, removal of store-specific uploaded-image dependencies, and context-aware placeholder coverage passed static validation and owner review on the directly inspectable storefront surfaces. Dedicated Product, Collection, and Blog empty-resource fixtures are deferred to BLK-18 clean-store evidence and are not treated as missing Package I implementation.
+Status: **owner-reviewed and resolved at the Package I code-package level; committed in `1c01a3c`** (2026-07-30). The cosmetics-oriented copy, `Ceylune` preset rename, resource-handle dispositions, removal of store-specific uploaded-image dependencies, and context-aware placeholder coverage passed static validation and owner review on the directly inspectable storefront surfaces. Product, Collection, and Blog empty-resource presentation remains part of the compact submission ZIP/demo-store check and is not treated as missing Package I implementation.
 
 Official expectation:
 
@@ -732,6 +732,8 @@ Ownership:
 
 ### BLK-18 — Submission Cannot Be Declared Ready Without Runtime And External Evidence
 
+Status: **owner storefront smoke testing complete; exhaustive internal QA matrix retired** (2026-07-30). Remaining work is a lightweight submission check, external launch materials, and Shopify's official review feedback loop.
+
 Official expectation:
 
 - Shopify expects the theme to be fully tested before submission.
@@ -739,19 +741,23 @@ Official expectation:
 
 Repository evidence:
 
-- Project context previously recorded no complete manual launch QA.
-- This audit produced static evidence only.
-- No current Lighthouse benchmark report, browser matrix, demo-store audit, keyboard report, or licensing ledger was available.
+- The owner has manually exercised the key storefront interactions throughout the accepted package reviews and reports no remaining functional issue in the currently available store states.
+- Owner-observed Lighthouse scores vary between approximately 80 and 90 with local and network conditions. This is treated as performance smoke evidence, not as a single deterministic benchmark result; Shopify's current minimum average performance score is 60.
+- Lighthouse accessibility remains a separate metric with a current minimum average score of 90 and must not be inferred from the performance range.
+- Static validation is current through commit `2d73c77`: aggregate lint, Theme Check, required builds, Shopify theme validation, formatting, and diff checks passed for the completed code packages.
 
 Risk:
 
-- Rejection even after static blockers are fixed.
-- False confidence from 0 Theme Check offenses.
+- Shopify can still reject a submission that fails its benchmark dataset, official feature review, accessibility checks, demo-store review, or external launch requirements.
+- Repeating a large internal matrix would add process cost without materially improving the already completed owner smoke coverage.
 
 Acceptance criteria:
 
-- Every item in sections 7 and 8 has a dated result, target URL/store, viewport/browser, evidence link, and Pass/Fail.
-- All failures are classified as theme code, merchant configuration, content, uploaded asset, Shopify/app/vendor, or measurement noise before action.
+- Do not repeat accepted package-level storefront checks unless the submitted code changes or Shopify reports a regression.
+- Before upload, run one final clean static gate and one compact smoke pass against the actual submission ZIP/demo store.
+- Confirm the populated home, product, and collection averages meet Shopify's current minimums: performance 60 and accessibility 90 for desktop and mobile. Treat run-to-run performance variance as evidence only when the average remains above the threshold.
+- Record and fix failures only; classify each as theme code, merchant configuration/content, uploaded asset, Shopify/app/vendor, or measurement noise.
+- Shopify's official review feedback becomes the authoritative next validation loop after submission.
 
 Ownership:
 
@@ -759,7 +765,7 @@ Ownership:
 
 ### BLK-19 — Required Shopify Account Component Is Missing
 
-Status: **owner-reviewed and resolved at the `ACCOUNT-COMPONENT-01` code-package level** (2026-07-30). Final legacy/disabled/signed-in account-mode coverage remains part of BLK-18 launch evidence and reopens BLK-19 only if it exposes a regression.
+Status: **owner-reviewed and resolved through `ACCOUNT-COMPONENT-01`; committed in `2d73c77`** (2026-07-30). Shopify's platform component owns legacy, disabled, and signed-in account-mode behavior; do not create a separate internal matrix unless the official review or a reproducible storefront issue exposes a regression.
 
 Official expectation:
 
@@ -989,178 +995,29 @@ Do not rewrite these areas without a documented defect:
 
 Each remains subject to real store data, editor interaction, browser, keyboard, and visual testing.
 
-## 7. Mandatory Runtime QA Matrix
+## 7. Owner Runtime Smoke And Submission Check
 
-Record every test with date, theme ID/preview URL, test data, browser/device, result, evidence, owner, and follow-up issue.
+Status: **core storefront smoke passed by owner; exhaustive per-case evidence tracking removed** (2026-07-30).
 
-### Product And Purchase Flow
+The owner has exercised the key storefront flows during the accepted package reviews, including responsive presentation, navigation and overlays, product and cart interactions, search/filter behavior, motion, mobile Header/account behavior, and the Theme Editor surfaces available in the current store. Do not reopen or repeat those checks without a code change or a reported regression.
 
-- Product with one variant.
-- Product with multiple option groups and unavailable combinations.
-- Sold-out product and sold-out variant.
-- Product with compare-at price.
-- Product with price-varying variants.
-- Product with unit pricing.
-- Product with selling plan.
-- Gift card product with recipient fields.
-- Product with pickup availability at multiple locations.
-- Product with image, video, external video, and 3D model.
-- Variant image selection updates gallery.
-- Product form works without JavaScript.
-- Dynamic checkout default enabled and brand styling unmodified.
-- Shop Pay Installments/payment terms visible when eligible.
+Keep only this compact pre-upload check:
 
-### Featured Product And Quick View
+- Run the final repository lint, Theme Check, required generated-asset builds, and submission ZIP boundary check.
+- Smoke the actual submitted ZIP/demo store through navigation, product option selection, add to cart, cart editing, checkout handoff, search/filter, mobile navigation, and one representative Theme Editor reload.
+- Confirm keyboard focus for primary navigation, cart, search, account, and transient overlays; confirm navigation and the product form retain their required no-JavaScript fallback.
+- Use populated home, product, and collection pages for Lighthouse. Shopify's current minimum averages are performance 60 and accessibility 90 for desktop and mobile.
+- Treat the owner's approximately 80–90 score range as passing performance smoke evidence. Accessibility must be read separately and should average at least 90.
+- Record only failures and the resulting focused fix. Do not maintain a screenshot/evidence row for every already accepted interaction.
 
-- Featured product supports the same required buying data appropriate to its form.
-- App blocks and Custom Liquid render in main and featured product.
-- Quick view handles rich media if it presents rich media.
-- Quick view variant, quantity, add-to-cart, error, and focus-return behavior.
-- No stale variant state between repeated openings.
+## 8. Official Review Handoff
 
-### Cart Page And Drawer
+Shopify's review is the next authoritative validation stage after the compact submission check. It does not replace the minimum pre-upload smoke test, but it replaces further speculative internal test expansion.
 
-- Empty cart.
-- Single and multiple line items.
-- Variant option values.
-- Line-item properties.
-- Unit prices.
-- Selling plans.
-- Line and cart discounts.
-- Quantity update affecting multiple totals.
-- Remove item.
-- Cart note.
-- Accelerated checkout.
-- Checkout button.
-- Tax-inclusive and non-tax-inclusive stores.
-- Network failure and loading states.
-- JavaScript-disabled cart page fallback.
-- Cart page and drawer state synchronization.
-
-### Collection, Search, Blog, And Article
-
-- Empty collection.
-- Mixed image aspect ratios.
-- Sale, sold-out, price-range, and unit-price product cards.
-- Sort and every Search & Discovery facet type.
-- Filter drawer, horizontal, and vertical variants where supported.
-- Pagination, clear all, browser back/forward, copied filtered URL.
-- Empty search.
-- Product/article/page search types.
-- Search facets on product results.
-- Blog excerpt fallback.
-- Comments disabled, enabled, moderation enabled/disabled.
-- Comment success, error, pagination.
-
-### Header, Footer, Localization, And Overlays
-
-- Multi-level navigation with mouse, touch, keyboard, and Escape.
-- Mobile menu.
-- Country and language selectors.
-- Follow on Shop.
-- Predictive search.
-- Search overlay.
-- Cart drawer.
-- Newsletter overlay.
-- Toast, lightbox, dialog, drawer, media modal, and sticky header z-index.
-- Focus moves into and returns from every transient UI.
-- Hidden UI contains no reachable controls.
-
-### Theme Editor
-
-- Add, remove, reorder, duplicate, select, and deselect sections/blocks.
-- Settings update live without full reload where expected.
-- App blocks and Custom Liquid blocks can be added.
-- Header/footer group behavior.
-- Fresh install default menus.
-- Logo portrait and landscape aspect ratios.
-- Focal points.
-- Color schemes.
-- Motion settings.
-- Section reload teardown: no duplicate listeners, Swipers, observers, or dialogs.
-
-### Responsive And Motion
-
-- Required widths: 375px, 768px, and 1280px.
-- Additional stress widths around breakpoints.
-- 200% zoom.
-- Long translated text and RTL.
-- Motion enabled/disabled.
-- `prefers-reduced-motion`.
-- Critical above-the-fold content visible without waiting for JavaScript or animation.
-
-## 8. Accessibility, Performance, Browser, And No-JS Gates
-
-### Accessibility
-
-Required evidence:
-
-- Lighthouse accessibility average at least 90 on home/product/collection for desktop and mobile.
-- Full keyboard path for navigation, product, media, cart, filters, search, tabs, drawers, dialogs, newsletter, and forms.
-- Visible focus.
-- DOM and focus order alignment.
-- Accurate accessible names and states.
-- Unique input IDs and matching labels.
-- Valid HTML.
-- All images have `alt`.
-- Body text contrast at least 4.5:1.
-- Large text and non-text UI contrast at least 3:1.
-- Pointer targets at least 24 x 24 CSS px, except valid exceptions.
-- Headings remain visually distinguishable and semantically appropriate.
-- Screen-reader announcements for dynamic status/error/success changes.
-
-Suggested evidence:
-
-- Lighthouse CI.
-- axe or equivalent automated scan.
-- Manual keyboard and screen-reader smoke test.
-- HTML validation on representative rendered pages.
-
-### Performance
-
-Required evidence:
-
-- Average performance at least 60 for home/product/collection on both desktop and mobile with populated data.
-- Repeat runs to separate stable defects from variance.
-- Network request, unused JS/CSS, LCP, CLS, INP/TBT proxy, image loading, font loading, and third-party payload review.
-
-Classification rule:
-
-Every performance finding must be classified as:
-
-1. Theme code.
-2. Merchant configuration.
-3. Merchant content/copy.
-4. Uploaded asset/media.
-5. Shopify platform/app/vendor.
-6. Measurement noise.
-
-Do not code-fix non-code findings without authorization.
-
-### Browser And Webview Matrix
-
-Required support:
-
-- Safari: latest two macOS releases.
-- Chrome: latest three releases on macOS and Windows.
-- Firefox: latest three releases on macOS and Windows.
-- Edge: latest two Windows releases.
-- Mobile Safari: latest two iOS releases.
-- Chrome Mobile: latest three Android and iOS releases.
-- Samsung Internet: latest two Android releases.
-- Instagram, Facebook, and Pinterest webviews: latest Android and iOS release.
-
-Test browsing, product selection, add to cart, cart editing, and checkout handoff.
-
-### No-JavaScript Gate
-
-At minimum verify:
-
-- Navigation remains usable.
-- Product information remains visible.
-- Product form and add to cart work.
-- Cart page can reach checkout.
-- Critical first-viewport content is not hidden behind Alpine/animation initialization.
+- Submit the tested ZIP and current demo store after the external gates in sections 9 and 10 are ready.
+- Treat reviewer findings as the source for any next code package; do not pre-emptively refactor areas that passed owner review.
+- Address every rejection reason before resubmitting. Do not resubmit an unchanged package after a reported failure.
+- Re-run only the affected flow plus the compact submission check after a reviewer-requested change.
 
 ## 9. Demo Store, Listing, Naming, And Support Gates
 
@@ -1467,7 +1324,7 @@ Manual gate: **passed by owner** (2026-07-29), covering final acceptance of `Cey
 
 ### Package I — Default Install State And Preset Content
 
-Scope: BLK-16, the merchant-owned template/default-content portion of BLK-15, the required parent-theme preset name, and `PLACEHOLDER-VARIETY-01`. Status: **owner-reviewed and committed** (2026-07-30). Commit: `1c01a3c`. Product, Collection, and Blog empty-resource fixtures move to BLK-18 clean-store evidence because the current store's route-bound resources cannot be safely cleared for this review. This remains one package with ordered phases, not separate Package I1/I2 rollback domains.
+Scope: BLK-16, the merchant-owned template/default-content portion of BLK-15, the required parent-theme preset name, and `PLACEHOLDER-VARIETY-01`. Status: **owner-reviewed and committed** (2026-07-30). Commit: `1c01a3c`. Product, Collection, and Blog empty-resource presentation moves to the compact submission ZIP/demo-store check because the current store's route-bound resources cannot be safely cleared for this review. This remains one package with ordered phases, not separate Package I1/I2 rollback domains.
 
 Phase 1 — content and configuration, current priority:
 
@@ -1537,7 +1394,7 @@ Phase 1 copy implementation (2026-07-29): **owner storefront review passed**. Th
 
 Required authorization: the exact copy fields/preset name, all 27 resource-field dispositions, all 53 uploaded-image removals, and the dependent code-owned placeholder behavior used by the current Package I worktree were authorized and implemented. Merchant-configured disabled states, color-scheme changes, and unrelated merchant content remain unauthorized.
 
-Phase 1 manual gate: **passed for the current demo/storefront** (2026-07-30). Fresh-install parity and clean-store resource fixtures remain part of BLK-18 launch evidence.
+Phase 1 manual gate: **passed for the current demo/storefront** (2026-07-30). Fresh-install parity remains part of the compact submission ZIP/demo-store check.
 
 Phase 2 — context-aware placeholder coverage: **implemented and owner-accepted for directly inspectable surfaces** (2026-07-30):
 
@@ -1548,9 +1405,9 @@ Phase 2 — context-aware placeholder coverage: **implemented and owner-accepted
 
 Phase 2 authorization: the implemented code-owned placeholder consumers and exact supporting merchant-owned image clears were approved. Any newly discovered merchant-owned template field still requires separate exact-field authorization.
 
-Phase 2 manual gate: **passed for the directly inspectable current-store surfaces** (2026-07-30). Product, Collection, and Blog are route-bound to backend resources in the current store; their minimal/empty-resource fixtures, plus clean-install real-image precedence, move to BLK-18 rather than requiring destructive changes to the published data.
+Phase 2 manual gate: **passed for the directly inspectable current-store surfaces** (2026-07-30). Product, Collection, and Blog are route-bound to backend resources in the current store; their minimal/empty-resource presentation and clean-install real-image precedence move to the compact submission ZIP/demo-store check rather than requiring destructive changes to published data.
 
-Package gate: **passed by owner and committed in `1c01a3c`** (2026-07-30). This closes Package I as a code package while preserving the three resource-backed fixture checks and full fresh-install proof in BLK-18.
+Package gate: **passed by owner and committed in `1c01a3c`** (2026-07-30). This closes Package I as a code package; only the compact fresh-install/demo presentation check remains before submission.
 
 ### Package J — Route And Shopify-Link Compliance
 
@@ -1652,7 +1509,7 @@ Review result: runtime and Liquid/CSS architecture reviews report no Package K b
 
 Final parameter tune (2026-07-28; committed in `045b9e8`): speed tiers shifted up after storefront review found previous Slow matched the expected Normal feel. Final timing: Fast `820 / 480 / 130`, Normal (default) `1080 / 620 / 170`, Slow `1340 / 760 / 210` (step `+260 / +140 / +40`). Easing unchanged: `--motion-reveal-ease: cubic-bezier(0.25, 0.4, 0.4, 1)`. CSS fallbacks use Normal `1080ms / 620ms / 170ms`; JS cascade stagger fallback is `170`. Docs table in `motion-architecture.md` matches. Timing only — no reveal logic, observers, hooks, or amplitude changes. The owner accepted the final storefront feel and reported no remaining Package K issue.
 
-The detailed coverage matrix and stable exceptions live in `docs/references/architecture/motion-architecture.md`; `docs/references/architecture/javascript-runtime.md` records the shared-bound, runtime-critical, and document-end recovery rules. Package K's owner review gate is closed. The broader desktop/mobile, browser, reduced-motion, no-JavaScript, no-IntersectionObserver, Theme Editor, and duplicate-listener matrix remains part of the final BLK-18 launch evidence and does not reopen Package K unless it exposes a regression.
+The detailed coverage matrix and stable exceptions live in `docs/references/architecture/motion-architecture.md`; `docs/references/architecture/javascript-runtime.md` records the shared-bound, runtime-critical, and document-end recovery rules. Package K's owner review gate is closed. Do not repeat a broad motion matrix unless the submission smoke check, official review, or a reproducible issue exposes a regression.
 
 ### Package L — Global Code Risk And Optimization Audit
 
@@ -1723,7 +1580,7 @@ Accepted optimization backlog:
 1. Measure normal storefront and Theme Editor request, transfer, parse, execution, cache, long-task, and Lighthouse behavior before approving any global asset split.
 2. Treat globally requested `performance.js` as the smallest conditional-loading candidate only if normal, `debug=true`, and Shopify design-mode tests prove the diagnostic path remains available.
 3. Do not split Swiper, Alpine component groups, stores, or registries without measured benefit and a separately approved architecture package that preserves defer order and dynamic-section behavior.
-4. Stress overlapping cart mutations, section refresh, dialog/drawer focus, and Theme Editor lifecycle in BLK-18; static review did not prove a defect or prove race freedom.
+4. Do not stress-test overlapping cart mutations, section refresh, dialog/drawer focus, or Theme Editor lifecycle without a reproduced failure or reviewer request; static review did not prove a defect.
 
 Package L's focused `ACCOUNT-COMPONENT-01` follow-up is owner-reviewed and accepted. BLK-17, BLK-18, RISK-03, RISK-04, and RISK-05 remain external, runtime, business, design, or evidence gates.
 
@@ -1740,12 +1597,12 @@ Implementation boundary:
 
 Static validation: Shopify MCP theme validation passed for `sections/header.liquid`, `snippets/header-mobile-menu-drawer.liquid`, and `assets/tailwind.output.css`; Tailwind build and `npm.cmd run lint` passed; `npm.cmd test` inspected 137 files with 0 offenses; `npm.cmd run format:check` and `git diff --check` passed.
 
-Manual gate: **passed by owner for the directly available storefront states** (2026-07-30), covering the account sheet, shared desktop/mobile Header placement, mobile-drawer auxiliary account area, and refined separators. Disabled accounts, legacy accounts, signed-in avatar state, alternate color schemes, keyboard details, sticky/scrolled state, and Theme Editor reload remain in BLK-18's final cross-mode matrix; they do not reopen this accepted code package unless a regression is found.
+Manual gate: **passed by owner for the directly available storefront states** (2026-07-30), covering the account sheet, shared desktop/mobile Header placement, mobile-drawer auxiliary account area, and refined separators. Do not add a separate account-mode matrix unless the submission smoke check, official review, or a reproducible issue exposes a regression.
 
 ### External And Evidence Gates
 
 - BLK-17: public documentation, support form, support policy, and operating readiness.
-- BLK-18: complete runtime, accessibility, performance, browser, webview, no-JavaScript, demo, and fresh-install evidence.
+- BLK-18: owner smoke is complete; only the compact submission check, official Lighthouse thresholds, and Shopify review feedback loop remain.
 - RISK-05: asset and dependency provenance/business ownership decisions.
 
 These are not ordinary theme-code packages and must not be marked resolved by static implementation commits.
@@ -1782,7 +1639,7 @@ The theme may be called “ready to submit” only when all conditions are true:
 - Theme editor settings are clear, consistent, live-updating, and compliant.
 - Performance averages at least 60 on required pages/device classes.
 - Accessibility averages at least 90 on required pages/device classes.
-- Manual accessibility, purchase, cart, search/filter, media, localization, responsive, motion, no-JS, browser, and webview tests pass.
+- Owner storefront smoke is accepted, the compact submission check passes, and all Shopify reviewer findings are addressed.
 - Demo store matches the submitted preset and uses authentic licensed content.
 - Final theme/preset names, version, release notes, listing copy, screenshots, and reviewer instructions are ready.
 - Public merchant documentation, FAQ, support form, and two-business-day support process are live.

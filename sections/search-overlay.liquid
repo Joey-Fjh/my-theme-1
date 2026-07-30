@@ -192,18 +192,82 @@
         </div>
     {%- endcapture -%}
 
-    {%- render 'ui-dialog',
-        id: popup_id,
-        type: 'drawer',
-        layer: 'drawer',
-        position: section.settings.drawer_position,
-        top_class: 'top-[var(--announcement-bar-height)] pc:top-0',
-        color_scheme: section.settings.color_scheme,
-        drawer_motion_sheet: true,
-        mobile_layout: 'inset',
-        drawer_desktop_layout: true,
-        content: drawer_content
-    -%}
+    {%- if request.visual_preview_mode -%}
+        {%- liquid
+            assign drawer_position = section.settings.drawer_position | default: 'right'
+            assign drawer_side_class = 'right-0'
+            if drawer_position == 'left'
+                assign drawer_side_class = 'left-0'
+            endif
+        -%}
+        <div
+            class="z-layer-drawer-backdrop fixed inset-0"
+            data-overlay-visual-preview="search"
+        >
+            <div
+                class="z-layer-drawer-backdrop fixed inset-x-0 top-[var(--announcement-bar-height)] bottom-0 bg-dialog-overlay pc:top-0"
+            ></div>
+            <div
+                class="
+                    ui-dialog-drawer-shell ui-dialog-drawer-width-default ui-dialog-desktop-drawer
+                    ui-dialog-desktop-drawer--{{ drawer_position }} ui-dialog-mobile-layout-inset
+                    z-layer-drawer fixed top-[var(--announcement-bar-height)] bottom-0 w-full
+                    {{ drawer_side_class }} pc:top-0
+                "
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="dialog-title-{{ popup_id }}"
+            >
+                <div
+                    class="ui-dialog-panel ui-dialog-drawer-panel ui-dialog-mobile-layout-panel color-{{ section.settings.color_scheme }} surface-component"
+                >
+                    <div class="flex h-full flex-col">
+                        <div class="ui-dialog-overlay-header">
+                            <h1 id="dialog-title-{{ popup_id }}">{{ 'search.title' | t }}</h1>
+                            <button
+                                type="button"
+                                class="close-button"
+                                aria-label="{{ 'accessibility.close_search_drawer' | t }}"
+                                disabled
+                            >
+                                {% render 'icons', icon: 'icon-close' %}
+                            </button>
+                        </div>
+                        <div class="shrink-0 px-6 pt-6">
+                            <div class="flex items-center gap-2 border-b border-theme-border pb-2">
+                                {% render 'icons',
+                                    icon: 'icon-search',
+                                    class: 'shrink-0 opacity-80'
+                                %}
+                                <input
+                                    id="SearchOverlayPreviewInput-{{ section.id }}"
+                                    type="search"
+                                    class="w-full min-w-0 border-none bg-transparent outline-none placeholder:text-theme-text/50"
+                                    placeholder="{{ 'search.placeholder' | t }}"
+                                    disabled
+                                    readonly
+                                    tabindex="-1"
+                                >
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {%- else -%}
+        {%- render 'ui-dialog',
+            id: popup_id,
+            type: 'drawer',
+            layer: 'drawer',
+            position: section.settings.drawer_position,
+            top_class: 'top-[var(--announcement-bar-height)] pc:top-0',
+            color_scheme: section.settings.color_scheme,
+            drawer_motion_sheet: true,
+            mobile_layout: 'inset',
+            drawer_desktop_layout: true,
+            content: drawer_content
+        -%}
+    {%- endif -%}
 </div>
 
 {% stylesheet %}
@@ -223,6 +287,9 @@
     "name": "t:sections.search-overlay.name",
     "tag": "section",
     "class": "section",
+    "enabled_on": {
+        "groups": ["custom.overlay"]
+    },
     "limit": 1,
     "settings": [
         {

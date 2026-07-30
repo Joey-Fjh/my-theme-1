@@ -15,7 +15,127 @@
     data-section-id="{{ section.id }}"
     class="newsletter-overlay-section"
 >
-    {%- capture dialog_content -%}
+    {%- if request.visual_preview_mode -%}
+        {%- liquid
+            assign modal_placement_value = section.settings.modal_placement | default: 'center'
+            assign modal_placement_classes = 'items-center justify-center'
+            if modal_placement_value == 'bottom-left'
+                assign modal_placement_classes = 'items-end justify-start'
+            elsif modal_placement_value == 'bottom-right'
+                assign modal_placement_classes = 'items-end justify-end'
+            endif
+        -%}
+        <div
+            class="z-layer-modal-backdrop fixed inset-0"
+            data-overlay-visual-preview="newsletter"
+        >
+            <div class="z-layer-modal-backdrop fixed inset-x-0 top-0 bottom-0 bg-black/60"></div>
+            <div
+                class="
+                    z-layer-modal pointer-events-none fixed inset-x-0 top-0 bottom-0 flex max-pc:p-4
+                    {{ modal_placement_classes }}
+                    ui-dialog-mobile-layout-inset pc:p-8 fw:p-10
+                "
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="dialog-title-{{ popup_id }}"
+            >
+                <div
+                    class="
+                        ui-dialog-panel ui-dialog-modal-panel ui-dialog-modal-width-default ui-dialog-modal-height-default
+                        ui-dialog-mobile-layout-panel pointer-events-auto h-full w-full max-w-full
+                        pc:h-auto pc:max-w-[600px] fw:max-w-[680px]
+                        color-{{ section.settings.color_scheme }} surface-component
+                    "
+                >
+                    <div class="relative h-full">
+                        <button
+                            type="button"
+                            class="close-button close-button-corner close-button-subtle"
+                            aria-label="{{ 'accessibility.close_newsletter_popup' | t }}"
+                            disabled
+                        >
+                            {% render 'icons', icon: 'icon-close' %}
+                        </button>
+
+                        <div class="grid h-full min-h-0 grid-cols-1 grid-rows-[minmax(0,3fr)_minmax(0,2fr)] pc:min-h-[320px] pc:grid-cols-[36%_minmax(0,1fr)] pc:grid-rows-1">
+                            <div class="min-h-0 overflow-hidden pc:h-full">
+                                {%- render 'image',
+                                    class: 'w-full h-full',
+                                    img_class: 'w-full h-full object-cover',
+                                    image: section.settings.image,
+                                    alt: section.settings.image.alt,
+                                    width: section.settings.image.width
+                                -%}
+                            </div>
+
+                            <div class="flex min-h-0 w-full flex-col justify-between gap-3 overflow-y-auto px-6 pt-5 pb-5 pc:justify-around pc:gap-0 pc:px-6 pc:py-10 text-{{ section.settings.alignment }}">
+                                {%- for block in section.blocks -%}
+                                    {%- case block.type -%}
+                                        {%- when 'text' -%}
+                                            {%- liquid
+                                                assign overlay_text_class = block.settings.body_text_size | default: 'body-lg'
+                                            -%}
+                                            <div
+                                                class="rte rte--compact mb-0 pc:mb-2 {{ overlay_text_class }}"
+                                                {{ block.shopify_attributes }}
+                                            >
+                                                {{ block.settings.text }}
+                                            </div>
+
+                                        {%- when 'heading' -%}
+                                            {%- liquid
+                                                assign overlay_heading_class = block.settings.heading_text_size | default: 'heading-h2'
+                                            -%}
+                                            <h2
+                                                id="dialog-title-{{ popup_id }}"
+                                                class="mb-0 pc:mb-3 {{ overlay_heading_class }}"
+                                                {{ block.shopify_attributes }}
+                                            >
+                                                {{ block.settings.heading }}
+                                            </h2>
+
+                                        {%- when 'form' -%}
+                                            <div
+                                                class="newsletter-form"
+                                                {{ block.shopify_attributes }}
+                                            >
+                                                <label
+                                                    for="newsletter-email-preview-{{ section.id }}"
+                                                    class="sr-only"
+                                                >
+                                                    {{ 'newsletter.email_address' | t }}
+                                                </label>
+                                                <div class="inline-submit-field">
+                                                    <input
+                                                        id="newsletter-email-preview-{{ section.id }}"
+                                                        type="email"
+                                                        class="inline-submit-field__input"
+                                                        placeholder="{{ section.settings.placeholder }}"
+                                                        disabled
+                                                        readonly
+                                                        tabindex="-1"
+                                                    >
+                                                    <button
+                                                        type="button"
+                                                        class="inline-submit-field__button inline-submit-field__button--icon"
+                                                        aria-label="{{ 'accessibility.submit_newsletter_form' | t }}"
+                                                        disabled
+                                                    >
+                                                        {%- render 'icons', icon: 'icon-arrow2' -%}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                    {%- endcase -%}
+                                {%- endfor -%}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {%- else -%}
+        {%- capture dialog_content -%}
     <div
       class="relative h-full"
       data-newsletter-dialog-id="{{ popup_id }}"
@@ -125,18 +245,19 @@
     </div>
   {%- endcapture -%}
 
-    {%- render 'ui-dialog',
-        id: popup_id,
-        type: 'modal',
-        layer: 'modal',
-        color_scheme: section.settings.color_scheme,
-        modal_placement: section.settings.modal_placement,
-        overlay_class: 'bg-black/60',
-        mobile_layout: 'inset',
-        modal_wrapper_class: 'pc:p-8 fw:p-10',
-        modal_panel_class: 'h-full w-full max-w-full pc:h-auto pc:max-w-[600px] fw:max-w-[680px]',
-        content: dialog_content
-    -%}
+        {%- render 'ui-dialog',
+            id: popup_id,
+            type: 'modal',
+            layer: 'modal',
+            color_scheme: section.settings.color_scheme,
+            modal_placement: section.settings.modal_placement,
+            overlay_class: 'bg-black/60',
+            mobile_layout: 'inset',
+            modal_wrapper_class: 'pc:p-8 fw:p-10',
+            modal_panel_class: 'h-full w-full max-w-full pc:h-auto pc:max-w-[600px] fw:max-w-[680px]',
+            content: dialog_content
+        -%}
+    {%- endif -%}
 </div>
 
 {% schema %}
