@@ -9,21 +9,44 @@
     @param {string} [card_mode] - Optional. 'full' | 'lite'. Defaults to 'full'.
     @param {boolean} [show_hover_actions] - Optional. Defaults to true. Disable Quick View / Add to Cart layer when false.
     @param {boolean} [show_image_navigation] - Optional. Defaults to true. Hide image navigation controls when false.
-    @param {boolean} [show_image_pagination] - Deprecated alias for `show_image_navigation`.
     @param {string} [hover_mode] - Optional. 'actions' | 'none' | 'variants'. Defaults to 'actions'.
     @param {string} [scope_id] - Optional stable scope used for nested dialog/form ids.
     @param {string} [color_scheme] - Optional color scheme passed to quick view modal content.
     @param {string} [primary_image_loading] - Optional loading attribute for the primary image only ('lazy' or 'eager'). Defaults to 'lazy'. Carousel/secondary images remain lazy.
     @param {string} [primary_image_fetchpriority] - Optional fetchpriority attribute for the primary image only ('high', 'low', or 'auto'). Defaults to blank. Carousel/secondary images do not get fetchpriority.
+    @param {number} [placeholder_index] - One-based index for the static no-product placeholder state
 
     @example
     {% render 'product-card', product: product, class: 'my-product-card' %}
 {% enddoc %}
 
 {%- liquid
+    assign is_placeholder = false
+    if product == blank
+        assign is_placeholder = true
+    endif
+
     assign brand = product.type
     if brand == blank
         assign brand = product.vendor
+    endif
+    if brand == blank
+        assign brand = 'products.product.fallback_vendor' | t
+    endif
+
+    assign card_placeholder_index = placeholder_index | default: 1 | plus: 0
+    if card_placeholder_index < 1
+        assign card_placeholder_index = 1
+    endif
+    assign card_placeholder_index = card_placeholder_index | minus: 1 | modulo: 6 | plus: 1
+    assign card_placeholder_key = 'product-' | append: card_placeholder_index
+    assign card_title = product.title
+    if is_placeholder
+        assign card_title = 'products.product.example_title_numbered' | t: index: card_placeholder_index
+    endif
+    assign product_card_media_tag = 'a'
+    if is_placeholder
+        assign product_card_media_tag = 'div'
     endif
 
     assign pc_items = pc_items | default: 4
@@ -86,9 +109,6 @@
 
     if show_image_navigation != null
         assign show_image_navigation_explicit = true
-    elsif show_image_pagination != null
-        assign show_image_navigation_explicit = true
-        assign show_image_navigation = show_image_pagination
     endif
 
     if card_mode == 'lite'
@@ -113,6 +133,12 @@
         endif
     endif
 
+    if is_placeholder
+        assign show_hover_actions_enabled = false
+        assign show_image_navigation_enabled = false
+        assign hover_mode = 'none'
+    endif
+
     if show_hover_actions_enabled == false and hover_mode == 'actions'
         assign hover_mode = 'none'
     endif
@@ -131,27 +157,31 @@
 -%}
 
 <div
-    class="product-card product-card-shell {{ class }}"
+    class="product-card product-card-shell{% if is_placeholder %} product-card--placeholder{% endif %} {{ class }}"
+    data-motion-bound
     data-card-mode="{{ card_mode | escape }}"
     data-image-count="{{ image_count }}"
     data-hover-mode="{{ hover_mode | escape }}"
-    data-has-variant-panel="{{ has_variant_panel }}"
-    data-enable-image-navigation="{{ show_image_navigation_enabled }}"
-    data-quick-view-dialog-id="{{ quick_view_dialog_id | escape }}"
-    data-cart-dialog-id="cart-overlay-drawer"
-    data-cart-type="{{ settings.cart_type }}"
-    data-cart-url="{{ routes.cart_url | escape }}"
-    data-primary-variant-id="{{ selected_variant.id }}"
-    data-primary-variant-available="{{ selected_variant.available }}"
-    data-toast-added="{{ 'toast.added_to_cart' | t | escape }}"
-    x-data="productCard"
-    @mouseleave="setImageHover(false); setActionsHover(false)"
+    {% unless is_placeholder %}
+        data-has-variant-panel="{{ has_variant_panel }}"
+        data-enable-image-navigation="{{ show_image_navigation_enabled }}"
+        data-quick-view-dialog-id="{{ quick_view_dialog_id | escape }}"
+        data-cart-dialog-id="cart-overlay-drawer"
+        data-cart-type="{{ settings.cart_type }}"
+        data-cart-url="{{ routes.cart_url | escape }}"
+        data-primary-variant-id="{{ selected_variant.id }}"
+        data-primary-variant-available="{{ selected_variant.available }}"
+        data-toast-added="{{ 'toast.added_to_cart' | t | escape }}"
+        x-data="productCard"
+        @mouseleave="setImageHover(false); setActionsHover(false)"
+    {% endunless %}
 >
-    <div
-        class="product-card__category product-card-shell__meta"
-        data-motion-reveal="content"
-    >
-        <div class="product-card__category-brand product-card-shell__brand" title="{{ brand }}">
+    <div class="product-card__category product-card-shell__meta" data-motion-copy-bound>
+        <div
+            class="product-card__category-brand product-card-shell__brand"
+            title="{{ brand }}"
+            data-motion-copy
+        >
             {{ brand }}
         </div>
         <div class="product-card__category-meta product-card-shell__meta-side">
@@ -205,8 +235,10 @@
     <div
         class="product-card__image product-card-shell__media"
         style="--pc-media-ratio: {{ pc_media_ratio }};"
-        @mouseenter="setImageHover(true)"
-        @mouseleave="setImageHover(false)"
+        {% unless is_placeholder %}
+            @mouseenter="setImageHover(true)"
+            @mouseleave="setImageHover(false)"
+        {% endunless %}
     >
         {%- capture sizes -%}
             (min-width: 48rem) calc(100vw / {{ pc_items }}), calc(100vw / {{ mobile_items }})
@@ -216,7 +248,13 @@
             200,360,480,640,800,960
         {%- endcapture -%}
 
-        <a href="{{ product.url }}" class="product-card__image-link product-card-shell__media-link">
+        <{{ product_card_media_tag }}
+            {% unless is_placeholder %}
+                href="{{ product.url }}"
+            {% endunless %}
+            class="product-card__image-link product-card-shell__media-link{% unless is_placeholder %} media-interaction{% endunless %}"
+            data-motion-reveal="media"
+        >
             {%- for image in product.images -%}
                 {%- if forloop.first -%}
                     {%- assign img_loading = primary_image_loading -%}
@@ -227,6 +265,7 @@
                 {%- endif -%}
                 <div
                     class="product-card__carousel-slide"
+                    data-product-card-carousel-slide
                     data-index="{{ forloop.index0 }}"
                     x-show="activeImageIndex === Number($el.dataset.index)"
                 >
@@ -241,37 +280,79 @@
                         class: 'product-card-shell__media-frame',
                         img_class: 'product-card-shell__image',
                         loading: img_loading,
-                        fetchpriority: img_fetchpriority
+                        fetchpriority: img_fetchpriority,
+                        motion_reveal: false
                     -%}
                 </div>
             {%- else -%}
-                <div class="product-card__carousel-slide" x-show="true">
-                    {%- assign image_alt = product.featured_image.alt | default: product.title -%}
+                <div
+                    class="product-card__carousel-slide"
+                    {% unless is_placeholder %}
+                        x-show="true"
+                    {% endunless %}
+                >
+                    {%- assign image_alt = product.featured_image.alt | default: card_title -%}
                     {%- render 'image',
                         image: product.featured_image,
+                        placeholder_key: card_placeholder_key,
                         alt: image_alt,
                         width: product.featured_image.width,
                         sizes: sizes,
                         widths: widths,
                         aspect_ratio: aspect_ratio,
                         class: 'product-card-shell__media-frame',
+                        fit: 'contain',
                         img_class: 'product-card-shell__image',
                         loading: primary_image_loading,
-                        fetchpriority: primary_image_fetchpriority
+                        fetchpriority: primary_image_fetchpriority,
+                        motion_reveal: false
                     -%}
                 </div>
             {%- endfor -%}
-        </a>
+        </{{ product_card_media_tag }}>
+
+        {%- if show_hover_actions_enabled and hover_mode == 'actions' -%}
+            <button
+                type="button"
+                class="product-card__touch-actions-trigger"
+                :class="showHoverActions && 'is-active'"
+                @click="toggleTouchActions($event)"
+                :aria-expanded="showHoverActions"
+                data-actions-show-label="{{ 'accessibility.product_card_actions_show' | t: product: product.title | escape }}"
+                data-actions-hide-label="{{ 'accessibility.product_card_actions_hide' | t: product: product.title | escape }}"
+                :aria-label="showHoverActions ? $el.dataset.actionsHideLabel : $el.dataset.actionsShowLabel"
+            >
+                <span class="product-card__touch-actions-trigger-icon" x-show="!showHoverActions">
+                    {%- render 'icons', icon: 'icon-plus' -%}
+                </span>
+                <span
+                    class="product-card__touch-actions-trigger-icon"
+                    x-show="showHoverActions"
+                    x-cloak
+                >
+                    {%- render 'icons', icon: 'icon-close' -%}
+                </span>
+            </button>
+        {%- endif -%}
 
         {%- if hover_mode == 'variants' -%}
             <button
                 type="button"
                 class="product-card__quick-view-trigger"
-                :class="imageHover ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'"
+                :class="imageHover && 'is-visible'"
                 @click.prevent.stop="openQuickView()"
                 aria-label="{{ 'accessibility.quick_view' | t: product: product.title | escape }}"
             >
                 {% render 'icons', icon: 'icon-eye' %}
+            </button>
+
+            <button
+                type="button"
+                class="product-card__touch-quick-view-trigger"
+                @click.prevent.stop="openQuickView()"
+                aria-label="{{ 'accessibility.quick_view' | t: product: product.title | escape }}"
+            >
+                {%- render 'icons', icon: 'icon-eye' -%}
             </button>
 
             {%- if has_variant_panel -%}
@@ -281,15 +362,17 @@
                     @mouseenter="setImageHover(true)"
                     @mouseleave="setImageHover(false)"
                 >
-                    <div class="product-card__variant-heading">
-                        <div
-                            class="product-card__variant-title product-card-shell__title"
-                            title="{{ product.title }}"
-                        >
-                            {{ product.title }}
-                        </div>
-                        <div class="product-card__variant-price product-card-shell__price">
-                            {{ product.price | money }}
+                    <div data-motion-copy-bound>
+                        <div class="product-card__variant-heading" data-motion-copy>
+                            <div
+                                class="product-card__variant-title product-card-shell__title"
+                                title="{{ product.title }}"
+                            >
+                                {{ product.title }}
+                            </div>
+                            <div class="product-card__variant-price product-card-shell__price">
+                                {%- render 'product-card-price', product: product -%}
+                            </div>
                         </div>
                     </div>
 
@@ -299,15 +382,17 @@
                 </div>
             {%- else -%}
                 <div class="product-card__variant-shell product-card__variant-shell--static is-visible">
-                    <div class="product-card__variant-heading">
-                        <div
-                            class="product-card__variant-title product-card-shell__title"
-                            title="{{ product.title }}"
-                        >
-                            {{ product.title }}
-                        </div>
-                        <div class="product-card__variant-price product-card-shell__price">
-                            {{ product.price | money }}
+                    <div data-motion-copy-bound>
+                        <div class="product-card__variant-heading" data-motion-copy>
+                            <div
+                                class="product-card__variant-title product-card-shell__title"
+                                title="{{ product.title }}"
+                            >
+                                {{ product.title }}
+                            </div>
+                            <div class="product-card__variant-price product-card-shell__price">
+                                {%- render 'product-card-price', product: product -%}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -316,18 +401,21 @@
     </div>
 
     {%- unless hover_mode == 'variants' -%}
-        <div
-            class="product-card__info product-card-shell__info"
-            data-motion-reveal="content"
-        >
-            <div
-                class="product-card__info-title product-card-shell__title"
-                title="{{ product.title }}"
-            >
-                {{ product.title }}
-            </div>
-            <div class="product-card__info-price product-card-shell__price">
-                {{ product.price | money }}
+        <div data-motion-copy-bound>
+            <div class="product-card__info product-card-shell__info" data-motion-copy>
+                <div
+                    class="product-card__info-title product-card-shell__title"
+                    title="{{ card_title | escape }}"
+                >
+                    {{- card_title -}}
+                </div>
+                <div class="product-card__info-price product-card-shell__price">
+                    {%- if is_placeholder -%}
+                        {{- 1999 | money -}}
+                    {%- else -%}
+                        {%- render 'product-card-price', product: product -%}
+                    {%- endif -%}
+                </div>
             </div>
         </div>
     {%- endunless -%}
@@ -335,7 +423,7 @@
     {%- if show_hover_actions_enabled -%}
         <div
             class="product-card__hover-actions"
-            :class="showHoverActions ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'"
+            :class="showHoverActions && 'is-visible'"
             @mouseenter="setActionsHover(true)"
             @mouseleave="setActionsHover(false)"
         >
@@ -350,6 +438,7 @@
                 class="product-card__btn-secondary"
                 data-variant-id="{{ product.selected_or_first_available_variant.id }}"
                 :disabled="!primaryVariantAvailable || isAddingToCart"
+                :aria-busy="isAddingToCart"
                 :class="{ 'is-disabled': !primaryVariantAvailable }"
                 @click.prevent.stop="addPrimaryVariantToCart()"
             >
@@ -365,26 +454,28 @@
     {%- endif -%}
 </div>
 
-{%- capture quick_view_content -%}
-    {%- render 'product-quick-view',
-        product: product,
-        dialog_id: quick_view_dialog_id,
-        section_id: quick_view_dialog_id,
-        color_scheme: color_scheme
-    -%}
-{%- endcapture -%}
+{%- unless is_placeholder or request.visual_preview_mode -%}
+    {%- capture quick_view_content -%}
+        {%- render 'product-quick-view',
+            product: product,
+            dialog_id: quick_view_dialog_id,
+            section_id: quick_view_dialog_id,
+            color_scheme: color_scheme
+        -%}
+    {%- endcapture -%}
 
-<template x-teleport="body">
-    {%-
-        render 'ui-dialog',
-        id: quick_view_dialog_id,
-        type: 'modal',
-        color_scheme: color_scheme,
-        root_class: 'z-[10020]',
-        modal_wrapper_class: 'items-center justify-center px-3 py-4 pc:px-[8vw] pc:py-[5vh]',
-        modal_panel_class: 'h-full w-full !max-h-full !max-w-full overflow-hidden',
-        show_close_button: true,
-        close_label: 'accessibility.close_quick_view' | t,
-        content: quick_view_content
-    -%}
-</template>
+    <template x-teleport="body">
+        {%- assign quick_view_close_label = 'accessibility.close_quick_view' | t -%}
+        {%- render 'ui-dialog',
+            id: quick_view_dialog_id,
+            type: 'modal',
+            layer: 'modal-focus',
+            color_scheme: color_scheme,
+            modal_wrapper_class: 'items-center justify-center px-3 py-4 pc:px-[8vw] pc:py-[5vh]',
+            modal_panel_class: 'product-quick-view-dialog pc:h-full pc:w-full pc:!max-h-full pc:!max-w-full',
+            show_close_button: true,
+            close_label: quick_view_close_label,
+            content: quick_view_content
+        -%}
+    </template>
+{%- endunless -%}

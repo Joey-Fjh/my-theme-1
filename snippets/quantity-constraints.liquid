@@ -1,0 +1,160 @@
+{% doc %}
+    Computes quantity constraints for a variant.
+
+    Product surface:
+    - min/max are additional units on the quantity_rule grid.
+    - If the next valid increment cannot fit under absoluteMax, can_purchase is false.
+
+    Cart surface:
+    - max = absoluteMax - other matching variant line quantities (excludes this line).
+
+    @param {variant} variant - Variant object (required).
+    @param {string} [surface] - 'product' | 'cart' (default: 'product').
+    @param {number} [cart_quantity] - Override cart count for product surface.
+    @param {number} [value] - Current quantity (cart line quantity).
+    @param {string} [output] - json (default) | min | max | step | value | can_purchase | has_max | has_absolute_max | absolute_max | cart_quantity
+{% enddoc %}
+
+{%- liquid
+    assign qc_surface = surface | default: 'product'
+    assign qc_output = output | default: 'json'
+    assign qc_rule_min = variant.quantity_rule.min | default: 1
+    assign qc_step = variant.quantity_rule.increment | default: 1
+    assign qc_rule_max = variant.quantity_rule.max
+    assign qc_has_absolute_max = false
+    assign qc_absolute_max = 0
+    assign qc_cart_quantity = 0
+    assign qc_other_cart_quantity = 0
+    assign qc_can_purchase = true
+    assign qc_has_max = false
+    assign qc_max = 0
+    assign qc_min = qc_rule_min
+    assign qc_value = qc_rule_min
+
+    if cart_quantity != blank
+        assign qc_cart_quantity = cart_quantity | plus: 0
+    endif
+
+    if qc_rule_max != blank
+        assign qc_has_absolute_max = true
+        assign qc_absolute_max = qc_rule_max | plus: 0
+    endif
+
+    if variant.inventory_management != blank and variant.inventory_policy == 'deny'
+        assign qc_inv = variant.inventory_quantity | default: 0 | plus: 0
+        if qc_has_absolute_max == false
+            assign qc_has_absolute_max = true
+            assign qc_absolute_max = qc_inv
+        elsif qc_inv < qc_absolute_max
+            assign qc_absolute_max = qc_inv
+        endif
+    endif
+
+    if qc_surface == 'cart'
+        assign qc_min = qc_rule_min
+        assign qc_variant_total = cart | item_count_for_variant: variant.id
+        if value != blank
+            assign qc_value = value | plus: 0
+        else
+            assign qc_value = qc_min
+        endif
+        assign qc_other_cart_quantity = qc_variant_total | minus: qc_value
+        if qc_other_cart_quantity < 0
+            assign qc_other_cart_quantity = 0
+        endif
+        assign qc_cart_quantity = qc_variant_total
+        if qc_has_absolute_max
+            assign qc_has_max = true
+            assign qc_max = qc_absolute_max | minus: qc_other_cart_quantity
+            if qc_max < 0
+                assign qc_max = 0
+            endif
+        endif
+    else
+        if cart_quantity == blank
+            assign qc_cart_quantity = cart | item_count_for_variant: variant.id
+        endif
+
+        if qc_cart_quantity <= 0 or qc_cart_quantity < qc_rule_min
+            assign qc_first_total = qc_rule_min
+        else
+            assign qc_offset = qc_cart_quantity | minus: qc_rule_min
+            assign qc_rem = qc_offset | modulo: qc_step
+            if qc_rem == 0
+                assign qc_first_total = qc_cart_quantity | plus: qc_step
+            else
+                assign qc_ceil_n = qc_offset | plus: qc_step | minus: 1 | divided_by: qc_step
+                assign qc_span = qc_ceil_n | times: qc_step
+                assign qc_first_total = qc_rule_min | plus: qc_span
+            endif
+        endif
+
+        if qc_has_absolute_max and qc_first_total > qc_absolute_max
+            assign qc_can_purchase = false
+            assign qc_has_max = true
+            assign qc_min = 0
+            assign qc_max = 0
+            assign qc_value = 0
+        else
+            assign qc_min = qc_first_total | minus: qc_cart_quantity
+            if qc_has_absolute_max
+                assign qc_has_max = true
+                assign qc_room = qc_absolute_max | minus: qc_rule_min
+                assign qc_n_max = qc_room | divided_by: qc_step
+                assign qc_span_max = qc_n_max | times: qc_step
+                assign qc_largest = qc_rule_min | plus: qc_span_max
+                assign qc_max = qc_largest | minus: qc_cart_quantity
+                if qc_max < 0
+                    assign qc_max = 0
+                endif
+            endif
+
+            if qc_has_max and qc_min > qc_max
+                assign qc_can_purchase = false
+                assign qc_min = 0
+                assign qc_max = 0
+                assign qc_value = 0
+            else
+                if value != blank
+                    assign qc_value = value | plus: 0
+                else
+                    assign qc_value = qc_min
+                endif
+            endif
+        endif
+    endif
+-%}
+{%- case qc_output -%}
+    {%- when 'min' -%}
+        {{- qc_min -}}
+    {%- when 'max' -%}
+        {%- if qc_has_max -%}{{- qc_max -}}{%- else -%}null{%- endif -%}
+    {%- when 'step' -%}
+        {{- qc_step -}}
+    {%- when 'value' -%}
+        {{- qc_value -}}
+    {%- when 'can_purchase' -%}
+        {%- if qc_can_purchase -%}true{%- else -%}false{%- endif -%}
+    {%- when 'has_max' -%}
+        {%- if qc_has_max -%}true{%- else -%}false{%- endif -%}
+    {%- when 'has_absolute_max' -%}
+        {%- if qc_has_absolute_max -%}true{%- else -%}false{%- endif -%}
+    {%- when 'absolute_max' -%}
+        {%- if qc_has_absolute_max -%}{{- qc_absolute_max -}}{%- else -%}null{%- endif -%}
+    {%- when 'cart_quantity' -%}
+        {{- qc_cart_quantity -}}
+    {%- else -%}
+        {"min":{{ qc_min }},"max":{% if qc_has_max %}{{ qc_max }}{% else %}null{% endif %},"step":
+        {{- qc_step -}}
+        ,"value":{{ qc_value }},"can_purchase":
+        {%- if qc_can_purchase %}true{% else %}false{% endif -%}
+        ,"cart_quantity":{{ qc_cart_quantity }},"other_cart_quantity":
+        {{- qc_other_cart_quantity -}}
+        ,"absolute_max":
+        {%- if qc_has_absolute_max %}{{ qc_absolute_max }}{% else %}null{% endif -%}
+        ,"quantity_rule":{{ variant.quantity_rule | json }},"inventory_management":
+        {{- variant.inventory_management | json -}}
+        ,"inventory_policy":{{ variant.inventory_policy | json }},"inventory_quantity":
+        {{- variant.inventory_quantity | json -}}
+        ,"id":{{ variant.id | json }}}
+{%- endcase -%}

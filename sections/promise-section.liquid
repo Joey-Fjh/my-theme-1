@@ -1,25 +1,25 @@
 <div
     data-section-id="{{ section.id }}"
-    class="promise-section full-width color-{{ section.settings.color_scheme }} bg-scheme-surface"
+    class="promise-section full-width color-{{ section.settings.color_scheme }} surface-section"
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
     "
-    data-component-kind="section"
-    data-component-type="promise-section"
-    data-component-id="{{ section.id }}"
     x-data="motionRevealSection()"
     data-motion-section
 >
+    {%- liquid
+        assign promise_heading_class = section.settings.heading_size | default: 'heading-xl'
+    -%}
     <div class="layout container-page text-theme-text">
         <div class="grid grid-cols-1 gap-8 pc:grid-cols-2 pc:grid-rows-[auto_auto] pc:items-stretch pc:gap-10 fw:gap-16">
             {% comment %} Right - Heading {% endcomment %}
             <div
-                class="order-1 pc:order-2 pc:col-start-2 pc:row-start-1 pc:max-w-160"
+                class="order-1 pc:order-2 pc:col-start-2 pc:row-start-1"
                 data-motion-reveal="content"
             >
-                <h3 class="mb-4">{{ section.settings.subtitle }}</h3>
-                <h1 class="heading-xl text-balance">
+                <p class="mb-4 typo-subtitle">{{ section.settings.subtitle }}</p>
+                <h1 class="{{ promise_heading_class }} text-balance">
                     {{ section.settings.heading }}
                 </h1>
             </div>
@@ -31,10 +31,14 @@
                 {%- assign image_alt_fallback = 'sections.promise-section.defaults.image_alt'
                     | t
                 -%}
-                {%-
-                    render 'image',
+                {%- assign promise_image_alt = section.settings.image.alt
+                    | default: image_alt_fallback
+                    | escape
+                -%}
+                {%- render 'image',
                     image: section.settings.image,
-                    alt: section.settings.image.alt | default: image_alt_fallback | escape,
+                    placeholder_key: 'lifestyle-1',
+                    alt: promise_image_alt,
                     class: 'h-full',
                     aspect_ratio: '1/1',
                     width: section.settings.image.width
@@ -42,10 +46,7 @@
             </div>
 
             {% comment %} Right - Accordion  {% endcomment %}
-            <div
-                class="order-3 flex h-full flex-col gap-9 pc:order-3 pc:col-start-2 pc:row-start-2 pc:justify-start pc:gap-8"
-                data-motion-reveal="content"
-            >
+            <div class="order-3 flex h-full flex-col gap-9 pc:order-3 pc:col-start-2 pc:row-start-2 pc:justify-start pc:gap-8">
                 {% comment %} Accordion {% endcomment %}
                 {%- render 'accordion',
                     blocks: section.blocks,
@@ -53,11 +54,10 @@
                     id_prefix: section.id,
                     icon_type: 'chevron',
                     wrapper_class: 'flex flex-col',
-                    item_class: 'border-t border-theme-border-20 first:border-t-0',
-                    title_active_class: 'heading-h4 text-theme-text',
-                    title_inactive_class: 'heading-h4 text-theme-text opacity-80',
-                    content_class: 'rte rte--compact pb-6 pr-8 text-theme-text opacity-80',
-                    icon_color_class: 'text-current'
+                    item_class: 'border-t border-theme-border/20 first:border-t-0',
+                    title_active_class: 'text-theme-text',
+                    title_inactive_class: 'text-theme-text opacity-80',
+                    content_class: 'rte rte--compact pb-6 pe-8 text-theme-text opacity-80'
                 -%}
             </div>
         </div>
@@ -74,7 +74,7 @@
             "type": "color_scheme",
             "id": "color_scheme",
             "label": "t:sections.promise-section.settings.color_scheme",
-            "default": "scheme-1"
+            "default": "scheme-2"
         },
         {
             "type": "image_picker",
@@ -95,6 +95,58 @@
         },
         {
             "type": "header",
+            "content": "t:sections.slides-show.content.heading"
+        },
+        {
+            "type": "select",
+            "id": "heading_size",
+            "label": "t:sections.slides-show.settings.heading_size",
+            "options": [
+                {
+                    "value": "heading-4xl",
+                    "label": "t:sections.slides-show.options.heading_4xl"
+                },
+                {
+                    "value": "heading-3xl",
+                    "label": "t:sections.slides-show.options.heading_3xl"
+                },
+                {
+                    "value": "heading-2xl",
+                    "label": "t:sections.slides-show.options.heading_2xl"
+                },
+                {
+                    "value": "heading-xl",
+                    "label": "t:sections.slides-show.options.heading_xl"
+                },
+                {
+                    "value": "heading-h1",
+                    "label": "t:sections.slides-show.options.heading_h1"
+                },
+                {
+                    "value": "heading-h2",
+                    "label": "t:sections.slides-show.options.heading_h2"
+                },
+                {
+                    "value": "heading-h3",
+                    "label": "t:sections.slides-show.options.heading_h3"
+                },
+                {
+                    "value": "heading-h4",
+                    "label": "t:sections.slides-show.options.heading_h4"
+                },
+                {
+                    "value": "heading-h5",
+                    "label": "t:sections.slides-show.options.heading_h5"
+                },
+                {
+                    "value": "heading-h6",
+                    "label": "t:sections.slides-show.options.heading_h6"
+                }
+            ],
+            "default": "heading-xl"
+        },
+        {
+            "type": "header",
             "content": "t:sections.promise-section.content.padding"
         },
         {
@@ -105,7 +157,7 @@
             "step": 4,
             "unit": "px",
             "label": "t:sections.promise-section.settings.padding_top",
-            "default": 0
+            "default": 32
         },
         {
             "type": "range",
@@ -115,7 +167,7 @@
             "step": 4,
             "unit": "px",
             "label": "t:sections.promise-section.settings.padding_bottom",
-            "default": 0
+            "default": 32
         }
     ],
     "blocks": [
@@ -123,6 +175,42 @@
             "type": "accordion_item",
             "name": "t:sections.promise-section.blocks.accordion_item",
             "settings": [
+                {
+                    "type": "header",
+                    "content": "t:sections.blog-stories.content.card_title"
+                },
+                {
+                    "type": "select",
+                    "id": "title_size",
+                    "label": "t:sections.slides-show.settings.heading_size",
+                    "options": [
+                        {
+                            "value": "heading-h1",
+                            "label": "t:sections.slides-show.options.heading_h1"
+                        },
+                        {
+                            "value": "heading-h2",
+                            "label": "t:sections.slides-show.options.heading_h2"
+                        },
+                        {
+                            "value": "heading-h3",
+                            "label": "t:sections.slides-show.options.heading_h3"
+                        },
+                        {
+                            "value": "heading-h4",
+                            "label": "t:sections.slides-show.options.heading_h4"
+                        },
+                        {
+                            "value": "heading-h5",
+                            "label": "t:sections.slides-show.options.heading_h5"
+                        },
+                        {
+                            "value": "heading-h6",
+                            "label": "t:sections.slides-show.options.heading_h6"
+                        }
+                    ],
+                    "default": "heading-h2"
+                },
                 {
                     "type": "inline_richtext",
                     "id": "title",
@@ -143,32 +231,16 @@
             "name": "t:sections.promise-section.presets.promise_section",
             "blocks": [
                 {
-                    "type": "accordion_item",
-                    "settings": {
-                        "title": "Responsible Beauty Commitment",
-                        "text": "<p>Our promise extends beyond skincare. We embrace responsible practices that respect people, animals, and the planet at every step.</p>"
-                    }
+                    "type": "accordion_item"
                 },
                 {
-                    "type": "accordion_item",
-                    "settings": {
-                        "title": "Honest & Transparent Process",
-                        "text": "<p>We believe in full transparency — from ingredient sourcing to formulation. You deserve to know exactly what goes into every product.</p>"
-                    }
+                    "type": "accordion_item"
                 },
                 {
-                    "type": "accordion_item",
-                    "settings": {
-                        "title": "Gentle Yet Effective Formulas",
-                        "text": "<p>Our formulations balance gentleness with efficacy, ensuring your skin receives the care it needs without irritation or compromise.</p>"
-                    }
+                    "type": "accordion_item"
                 },
                 {
-                    "type": "accordion_item",
-                    "settings": {
-                        "title": "Thoughtfully Chosen Ingredients",
-                        "text": "<p>Every ingredient is carefully selected for its proven benefits, purity, and compatibility with all skin types.</p>"
-                    }
+                    "type": "accordion_item"
                 }
             ]
         }

@@ -9,10 +9,13 @@
     StoreGroups.cart = {
         items: [],
         total_price: 0,
+        total_discount: 0,
         item_count: 0,
+        cart_level_discount_applications: [],
         loading: false,
         hasFetched: false,
         fetchError: null,
+        _registeredSectionIds: [],
 
         _errorMessages: {
             generic: '',
@@ -32,21 +35,51 @@
             return window.ShopifyHttp;
         },
 
+        init() {},
+
         /**
          * Hydrate store from initial payload (pure function, no DOM coupling).
          * @param {Object} data - Initial cart state
          */
-        init(data = {}) {
+        hydrate(data = {}) {
             if (!data || typeof data !== 'object') return;
 
             this.items = Array.isArray(data.items) ? data.items : [];
             this.item_count = typeof data.item_count === 'number' ? data.item_count : 0;
             this.total_price = typeof data.total_price === 'number' ? data.total_price : 0;
+            this.total_discount = typeof data.total_discount === 'number' ? data.total_discount : 0;
+            this.cart_level_discount_applications = Array.isArray(
+                data.cart_level_discount_applications,
+            )
+                ? data.cart_level_discount_applications
+                : [];
             this.hasFetched =
                 Array.isArray(data.items) ||
                 typeof data.item_count === 'number' ||
                 typeof data.total_price === 'number';
             this.fetchError = null;
+        },
+
+        registerSection(sectionId) {
+            const normalized = typeof sectionId === 'string' ? sectionId.trim() : '';
+            if (!normalized) return () => {};
+
+            if (!this._registeredSectionIds.includes(normalized)) {
+                this._registeredSectionIds.push(normalized);
+            }
+
+            return () => {
+                this._registeredSectionIds = this._registeredSectionIds.filter(
+                    (id) => id !== normalized,
+                );
+            };
+        },
+
+        _resolveSections(sections = []) {
+            const requested = Array.isArray(sections) ? sections : [];
+            return [...new Set([...requested, ...this._registeredSectionIds])].filter(
+                (sectionId) => typeof sectionId === 'string' && sectionId.trim(),
+            );
         },
 
         /**
@@ -68,6 +101,13 @@
                     this.items = Array.isArray(data.items) ? data.items : [];
                     this.item_count = typeof data.item_count === 'number' ? data.item_count : 0;
                     this.total_price = typeof data.total_price === 'number' ? data.total_price : 0;
+                    this.total_discount =
+                        typeof data.total_discount === 'number' ? data.total_discount : 0;
+                    this.cart_level_discount_applications = Array.isArray(
+                        data.cart_level_discount_applications,
+                    )
+                        ? data.cart_level_discount_applications
+                        : [];
                     this.hasFetched = true;
                     this.fetchError = null;
 
@@ -99,8 +139,9 @@
             this.loading = true;
             const body = { items };
 
-            if (Array.isArray(sections) && sections.length > 0) {
-                body.sections = sections.join(',');
+            const resolvedSections = this._resolveSections(sections);
+            if (resolvedSections.length > 0) {
+                body.sections = resolvedSections.join(',');
             }
 
             return Http.postJSON('/cart/add.js', body, {
@@ -135,8 +176,9 @@
             } else {
                 bodyData.line = Number(lineOrId);
             }
-            if (Array.isArray(sections) && sections.length > 0) {
-                bodyData.sections = sections.join(',');
+            const resolvedSections = this._resolveSections(sections);
+            if (resolvedSections.length > 0) {
+                bodyData.sections = resolvedSections.join(',');
             }
             return Http.postJSON('/cart/change.js', bodyData, {
                 credentials: 'same-origin',
@@ -153,6 +195,15 @@
                         typeof parsedState.item_count === 'number' ? parsedState.item_count : 0;
                     this.total_price =
                         typeof parsedState.total_price === 'number' ? parsedState.total_price : 0;
+                    this.total_discount =
+                        typeof parsedState.total_discount === 'number'
+                            ? parsedState.total_discount
+                            : 0;
+                    this.cart_level_discount_applications = Array.isArray(
+                        parsedState.cart_level_discount_applications,
+                    )
+                        ? parsedState.cart_level_discount_applications
+                        : [];
                     this.hasFetched = true;
                     this.fetchError = null;
                     return parsedState;
@@ -173,8 +224,9 @@
             if (!Http?.postJSON) return this._handleError(new Error('Http client unavailable'));
             this.loading = true;
             const bodyData = {};
-            if (Array.isArray(sections) && sections.length > 0) {
-                bodyData.sections = sections.join(',');
+            const resolvedSections = this._resolveSections(sections);
+            if (resolvedSections.length > 0) {
+                bodyData.sections = resolvedSections.join(',');
             }
             return Http.postJSON('/cart/clear.js', bodyData, {
                 credentials: 'same-origin',
@@ -189,6 +241,13 @@
                     this.items = Array.isArray(data.items) ? data.items : [];
                     this.item_count = typeof data.item_count === 'number' ? data.item_count : 0;
                     this.total_price = typeof data.total_price === 'number' ? data.total_price : 0;
+                    this.total_discount =
+                        typeof data.total_discount === 'number' ? data.total_discount : 0;
+                    this.cart_level_discount_applications = Array.isArray(
+                        data.cart_level_discount_applications,
+                    )
+                        ? data.cart_level_discount_applications
+                        : [];
                     this.hasFetched = true;
                     this.fetchError = null;
                     return data;

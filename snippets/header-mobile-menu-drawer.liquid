@@ -14,14 +14,14 @@
             x-data="mobileMenuDrawer"
             @keydown.escape.window="$store.dialog.close()"
         >
-            <div class="flex items-center justify-between border-b border-theme-border-20 px-6 py-5">
+            <div class="ui-dialog-overlay-header border-theme-text/30">
                 <h2 id="dialog-title-{{ popup_id }}">
                     {{ 'accessibility.menu' | t }}
                 </h2>
 
                 <button
                     type="button"
-                    class="inline-flex cursor-pointer items-center justify-center"
+                    class="close-button"
                     @click="$store.dialog.close()"
                     aria-label="{{ 'accessibility.close_mobile_menu' | t }}"
                 >
@@ -29,7 +29,7 @@
                 </button>
             </div>
 
-            <div class="min-h-0 flex-1 overflow-y-auto px-6 py-6">
+            <div class="ui-dialog-overlay-body">
                 <template x-if="!thirdLevelLinks.length">
                     <nav aria-label="{{ 'accessibility.mobile_menu' | t }}">
                         <ul x-ref="topMenu" class="space-y-4" role="list">
@@ -61,7 +61,7 @@
                                         >
                                             <span>{{ link.title | escape }}</span>
                                             <span
-                                                class="inline-flex transition-transform duration-300"
+                                                class="header-mobile-menu-drawer__chevron inline-flex"
                                                 data-index="{{ forloop.index0 }}"
                                                 :class="activeTopIndex === Number($el.dataset.index) ? 'rotate-180' : ''"
                                             >
@@ -156,16 +156,18 @@
                 </template>
             </div>
 
-            <div class="flex items-center gap-9 border-t border-theme-border-20 px-6 py-5">
+            <div class="ui-dialog-overlay-footer flex items-center gap-9 border-theme-text/30">
                 {%- capture search_content -%}
                     {% render 'icons', icon: 'icon-search' %}
                 {%- endcapture -%}
 
+                {%- assign search_aria_label = 'accessibility.search' | t -%}
                 {%- render 'link',
                     href: routes.search_url,
-                    aria_label: '{{ "accessibility.search" | t }}',
+                    aria_label: search_aria_label,
                     content: search_content,
                     variant: 'plain',
+                    class: 'header-icon-button',
                     attributes: '@click="$store.dialog.close()"'
                 -%}
 
@@ -173,11 +175,13 @@
                     {% render 'icons', icon: 'icon-cart' %}
                 {%- endcapture -%}
 
+                {%- assign cart_aria_label = 'accessibility.cart' | t -%}
                 {%- render 'link',
                     href: routes.cart_url,
-                    aria_label: '{{ "accessibility.cart" | t }}',
+                    aria_label: cart_aria_label,
                     content: cart_content,
                     variant: 'plain',
+                    class: 'header-icon-button',
                     attributes: '@click="$store.dialog.close()"'
                 -%}
 
@@ -185,11 +189,13 @@
                     {% render 'icons', icon: 'icon-account' %}
                 {%- endcapture -%}
 
+                {%- assign account_aria_label = 'accessibility.account' | t -%}
                 {%- render 'link',
                     href: account_href,
-                    aria_label: '{{ "accessibility.account" | t }}',
+                    aria_label: account_aria_label,
                     content: account_content,
                     variant: 'plain',
+                    class: 'header-icon-button',
                     attributes: '@click="$store.dialog.close()"'
                 -%}
             </div>
@@ -198,12 +204,19 @@
 
     {%- render 'ui-dialog',
         id: popup_id,
-        type: 'modal',
-        modal_placement: 'center',
+        type: 'drawer',
+        layer: 'drawer',
+        position: 'right',
         top_class: 'top-[var(--announcement-bar-height)]',
-        root_class: 'z-[10010]',
         color_scheme: color_scheme,
-        modal_panel_class: 'h-[70dvh] overflow-hidden',
+        drawer_motion_sheet: true,
+        mobile_layout: 'inset',
         content: drawer_content
     -%}
 {%- endif -%}
+
+{% stylesheet %}
+    .header-mobile-menu-drawer__chevron {
+        transition: transform var(--motion-duration-base, 300ms) var(--motion-ease-default, ease);
+    }
+{% endstylesheet %}

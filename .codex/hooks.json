@@ -1,0 +1,19 @@
+{
+    "description": "Validate delegated agent result envelopes before Codex accepts them.",
+    "hooks": {
+        "SubagentStop": [
+            {
+                "matcher": "^(scout|implementer|validator|verifier|docs_steward)$",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/validate-agent-result.cjs\"",
+                        "commandWindows": "powershell.exe -NoProfile -Command \"$hookPayload = [Console]::In.ReadToEnd(); $agentRepoRoot = git rev-parse --show-toplevel; $hookPayload | node (Join-Path $agentRepoRoot '.codex/hooks/validate-agent-result.cjs')\"",
+                        "timeout": 10,
+                        "statusMessage": "Validating delegated agent result"
+                    }
+                ]
+            }
+        ]
+    }
+}

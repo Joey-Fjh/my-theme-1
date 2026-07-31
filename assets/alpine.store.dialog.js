@@ -5,6 +5,42 @@
     window.__Theme__.AlpineStoreGroups = window.__Theme__.AlpineStoreGroups || {};
 
     const StoreGroups = window.__Theme__.AlpineStoreGroups;
+    const DialogMotion = () => window.__Theme__.DialogMotion;
+    const DrawerMotion = () => window.__Theme__.DrawerMotion;
+
+    function getDialogMotion(root) {
+        if (!root) return null;
+
+        const drawerMotion = DrawerMotion();
+        if (drawerMotion && drawerMotion.hasMotion(root)) {
+            return drawerMotion;
+        }
+
+        const dialogMotion = DialogMotion();
+        if (dialogMotion && dialogMotion.hasMotion(root)) {
+            return dialogMotion;
+        }
+
+        return null;
+    }
+
+    function lockPageScroll() {
+        const motion = DialogMotion();
+        if (motion && typeof motion.lockScroll === 'function') {
+            motion.lockScroll();
+            return;
+        }
+        document.body.style.overflow = 'hidden';
+    }
+
+    function unlockPageScroll() {
+        const motion = DialogMotion();
+        if (motion && typeof motion.unlockScroll === 'function') {
+            motion.unlockScroll();
+            return;
+        }
+        document.body.style.overflow = '';
+    }
 
     const FOCUSABLE_SELECTOR = [
         'a[href]',
@@ -38,59 +74,176 @@
         return Array.from(container.querySelectorAll(FOCUSABLE_SELECTOR)).filter(isFocusable);
     }
 
+    function getDialogRoot(id) {
+        if (!id) return null;
+        return document.querySelector(
+            '[data-dialog-root][data-dialog-id="' + CSS.escape(id) + '"]',
+        );
+    }
+
+    function normalizeDialogId(id) {
+        if (typeof id !== 'string' || !id.trim()) return '';
+        return id.trim();
+    }
+
     StoreGroups.dialog = {
         active: null,
+        closing: null,
         _returnFocusTo: null,
         _trapHandler: null,
+        _openGeneration: 0,
+
+        isOpen(id) {
+            const cleanId = normalizeDialogId(id);
+            return Boolean(cleanId) && this.active === cleanId && this.closing !== cleanId;
+        },
+
+        isClosing(id) {
+            const cleanId = normalizeDialogId(id);
+            return Boolean(cleanId) && this.closing === cleanId;
+        },
 
         open(id) {
-            if (typeof id !== 'string' || !id.trim()) return;
-
-            const cleanId = id.trim();
+            const cleanId = normalizeDialogId(id);
+            if (!cleanId) return;
 
             if (this.active === cleanId) return;
 
+            this.closing = null;
             this._returnFocusTo = document.activeElement;
-
             this.active = cleanId;
 
-            document.body.style.overflow = 'hidden';
+            const generation = ++this._openGeneration;
+            const root = getDialogRoot(cleanId);
+            const trigger = this._returnFocusTo;
+            const motion = getDialogMotion(root);
 
-            requestAnimationFrame(() => {
+            const focusDialog = () => {
+                if (generation !== this._openGeneration) return;
+                if (this.active !== cleanId) return;
+
+                this._moveFocusIntoDialog();
+            };
+
+            const attachTrapWhenReady = () => {
                 requestAnimationFrame(() => {
-                    this._moveFocusIntoDialog();
+                    if (generation !== this._openGeneration) return;
+                    if (this.active !== cleanId) return;
+
                     this._attachTrap();
                 });
+            };
+
+            attachTrapWhenReady();
+
+            if (!motion) {
+                lockPageScroll();
+                requestAnimationFrame(() => {
+                    focusDialog();
+                });
+                return;
+            }
+
+            motion.playEnter(root, {
+                trigger,
+                lockScroll: true,
+                onEnterStart: focusDialog,
             });
         },
 
         close() {
-            if (!this.active) return;
+            if (!this.active || this.closing) return;
 
+            const cleanId = this.active;
             const returnTo = this._returnFocusTo;
+            const closeGeneration = ++this._openGeneration;
 
+            this.closing = cleanId;
+            this._detachTrap();
+
+            const root = getDialogRoot(cleanId);
+            const motion = getDialogMotion(root);
+
+            const finish = () => {
+                if (closeGeneration !== this._openGeneration) return;
+                if (this.closing !== cleanId) return;
+
+                this.active = null;
+                this.closing = null;
+                this._returnFocusTo = null;
+                unlockPageScroll();
+
+                if (
+                    returnTo &&
+                    returnTo.isConnected &&
+                    typeof returnTo.focus === 'function' &&
+                    isElementVisible(returnTo)
+                ) {
+                    returnTo.focus({ preventScroll: true });
+                }
+            };
+
+            if (motion && root && motion.hasMotion(root)) {
+                motion.playExit(root, { trigger: returnTo }).then(finish);
+                return;
+            }
+
+            finish();
+        },
+
+        /**
+         * Immediate cleanup when dialog DOM was removed or replaced out from under the store
+         * (e.g. SectionRefresher on search type switches). Does not animate or move focus.
+         * Invalidates any in-flight close animation finish callback.
+         */
+        forceClose(id) {
+            const cleanId = normalizeDialogId(id);
+            if (!cleanId) return;
+            if (this.active !== cleanId && this.closing !== cleanId) return;
+
+            this._openGeneration += 1;
             this._detachTrap();
             this.active = null;
+            this.closing = null;
             this._returnFocusTo = null;
+            unlockPageScroll();
+        },
 
-            document.body.style.overflow = '';
+        /**
+         * After open-dialog content was refreshed in place: retarget return focus and
+         * restore focus inside the live panel. No-ops if the dialog is not still open
+         * (including when the user has already started closing it).
+         */
+        refreshOpenContent(id, { returnFocusTo = null, focusElement = null } = {}) {
+            const cleanId = normalizeDialogId(id);
+            if (!cleanId || this.active !== cleanId || this.closing === cleanId) return false;
+
+            if (returnFocusTo && returnFocusTo.isConnected) {
+                this._returnFocusTo = returnFocusTo;
+            }
+
+            if (!this._trapHandler) {
+                this._attachTrap();
+            }
 
             if (
-                returnTo &&
-                returnTo.isConnected &&
-                typeof returnTo.focus === 'function' &&
-                isElementVisible(returnTo)
+                focusElement &&
+                focusElement.isConnected &&
+                typeof focusElement.focus === 'function' &&
+                isElementVisible(focusElement)
             ) {
-                returnTo.focus();
+                focusElement.focus({ preventScroll: true });
+                return true;
             }
+
+            this._moveFocusIntoDialog();
+            return true;
         },
 
         _getActivePanel() {
-            const id = this.active;
+            const id = this.active || this.closing;
             if (!id) return null;
-            const root = document.querySelector(
-                '[data-dialog-root][data-dialog-id="' + CSS.escape(id) + '"]',
-            );
+            const root = getDialogRoot(id);
             if (!root) return null;
             return root.querySelector('[data-dialog-panel]');
         },
@@ -135,9 +288,9 @@
 
             const focusable = getFocusableElements(panel);
             if (focusable.length > 0) {
-                focusable[0].focus();
+                focusable[0].focus({ preventScroll: true });
             } else {
-                panel.focus();
+                panel.focus({ preventScroll: true });
             }
         },
 

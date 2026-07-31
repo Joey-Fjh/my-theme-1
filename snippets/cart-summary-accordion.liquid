@@ -1,0 +1,99 @@
+{% doc %}
+    Renders the two fixed cart summary accordion panels without serializing their HTML through a delimiter.
+
+    @param {string} id_prefix - Unique prefix for panel IDs.
+    @param {string} note_title - Order note panel title.
+    @param {string} note_content - Order note panel HTML.
+    @param {string} shipping_title - Shipping estimator panel title.
+    @param {string} shipping_content - Shipping estimator panel HTML.
+{% enddoc %}
+
+{%- assign cart_accordion_id_prefix = id_prefix | default: 'cart-summary' -%}
+
+<div
+    x-data="accordion"
+    data-initial-active="1"
+    data-title-active-class="text-current"
+    data-title-inactive-class="text-current/80"
+    class="mt-6 flex flex-col gap-6"
+>
+    <div class="border-t border-theme-border/20 pt-6 first:border-t-0">
+        <button
+            type="button"
+            data-index="0"
+            @click="toggle($el.dataset.index)"
+            :aria-expanded="isActive($el.dataset.index)"
+            aria-controls="accordion-panel-{{ cart_accordion_id_prefix }}-0"
+            class="group accordion__trigger"
+        >
+            <h2
+                data-index="0"
+                class="accordion__title body-xl"
+                :class="titleClass($el.dataset.index)"
+            >
+                {{ note_title }}
+            </h2>
+
+            <span
+                data-index="0"
+                class="accordion__icon accordion__icon--plus ms-4"
+                :class="isActive($el.dataset.index) && 'is-active'"
+            >
+                {% render 'icons', icon: 'icon-plus', size: 'sm' %}
+            </span>
+        </button>
+
+        <div
+            id="accordion-panel-{{ cart_accordion_id_prefix }}-0"
+            data-index="0"
+            class="accordion__panel"
+            :class="isActive($el.dataset.index) && 'is-active'"
+        >
+            <div class="accordion__panel-inner">
+                <div class="pe-0 pb-6 text-current/80">
+                    {{ note_content }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="border-t border-theme-border/20 pt-6 first:border-t-0">
+        <button
+            type="button"
+            data-index="1"
+            @click="toggle($el.dataset.index)"
+            :aria-expanded="isActive($el.dataset.index)"
+            aria-controls="accordion-panel-{{ cart_accordion_id_prefix }}-1"
+            class="group accordion__trigger"
+        >
+            <h2
+                data-index="1"
+                class="accordion__title body-xl"
+                :class="titleClass($el.dataset.index)"
+            >
+                {{ shipping_title }}
+            </h2>
+
+            <span
+                data-index="1"
+                class="accordion__icon accordion__icon--plus ms-4"
+                :class="isActive($el.dataset.index) && 'is-active'"
+            >
+                {% render 'icons', icon: 'icon-plus', size: 'sm' %}
+            </span>
+        </button>
+
+        <div
+            id="accordion-panel-{{ cart_accordion_id_prefix }}-1"
+            data-index="1"
+            class="accordion__panel"
+            :class="isActive($el.dataset.index) && 'is-active'"
+        >
+            <div class="accordion__panel-inner">
+                <div class="pe-0 pb-6 text-current/80">
+                    {{ shipping_content }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

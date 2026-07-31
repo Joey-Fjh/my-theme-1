@@ -1,5 +1,15 @@
 <!doctype html>
-<html lang="{{ request.locale.iso_code }}">
+{%- liquid
+    assign rtl_locales = 'ar,he,fa,ur' | split: ','
+    assign lang_code = request.locale.iso_code | split: '-' | first
+    if rtl_locales contains lang_code
+        assign dir = 'rtl'
+    else
+        assign dir = 'ltr'
+    endif
+    assign page_canvas_color_scheme = settings.page_canvas_color_scheme | default: 'scheme-2'
+-%}
+<html lang="{{ request.locale.iso_code }}" dir="{{ dir }}">
     <head>
         {% # Social, title, etc. %}
         {% render 'meta-tags' %}
@@ -15,6 +25,7 @@
 
         {% comment %} --- 2. Core utility classes (No external dependencies) --- {% endcomment %}
         <script src="{{ 'utils.js' | asset_url }}" defer></script>
+        <script src="{{ 'quantity-constraints.js' | asset_url }}" defer></script>
         <script src="{{ 'events.js' | asset_url }}" defer></script>
 
         {% comment %} --- 3. Alpine component definitions (Depends on Utils) --- {% endcomment %}
@@ -42,6 +53,8 @@
         {% comment %} --- 5b. Alpine global stores -- must run before Alpine --- {% endcomment %}
         <script src="{{ 'alpine.store.js' | asset_url }}" defer></script>
         <script src="{{ 'alpine.store.toast.js' | asset_url }}" defer></script>
+        <script src="{{ 'dialog-motion.js' | asset_url }}" defer></script>
+        <script src="{{ 'drawer-motion.js' | asset_url }}" defer></script>
         <script src="{{ 'alpine.store.dialog.js' | asset_url }}" defer></script>
         <script src="{{ 'alpine.store.cart.js' | asset_url }}" defer></script>
         <script src="{{ 'alpine.store.registry.js' | asset_url }}" defer></script>
@@ -54,6 +67,7 @@
     </head>
 
     <body
+        class="color-{{ page_canvas_color_scheme }}"
         data-initial-cart="{{ cart | json | escape }}"
         data-cart-type="{{ settings.cart_type }}"
         {% if settings.motion_enabled == false %}
@@ -65,6 +79,7 @@
         {% if settings.media_reveal_style != blank and settings.media_reveal_style != 'none' %}
             data-media-reveal-style="{{ settings.media_reveal_style }}"
         {% endif %}
+        data-reveal-behavior="{{ settings.reveal_behavior | default: 'once' }}"
     >
         {% sections 'overlay-group' %}
 

@@ -1,16 +1,16 @@
 <div
     data-section-id="{{ section.id }}"
-    class="brand-statement-section full-width relative overflow-hidden color-{{ section.settings.color_scheme }} bg-scheme-surface"
+    class="brand-statement-section full-width relative overflow-hidden color-{{ section.settings.color_scheme }} surface-section"
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
     "
-    data-component-kind="section"
-    data-component-type="brand-statement"
-    data-component-id="{{ section.id }}"
     x-data="motionRevealSection()"
     data-motion-section
 >
+    {%- liquid
+        assign brand_statement_heading_class = section.settings.heading_size | default: 'heading-2xl'
+    -%}
     {% comment %} Decorative brushstroke {% endcomment %}
     <div
         class="pointer-events-none absolute inset-x-0 bottom-0 z-0 flex justify-center max-pc:h-full"
@@ -28,7 +28,9 @@
                 alt: image_alt,
                 width: section.settings.brushstroke_image.width,
                 class: 'max-w-none w-full',
-                img_class: 'h-full pc:h-auto w-full pc:object-contain object-center'
+                mode: 'natural',
+                fit: 'contain',
+                position: 'center'
             -%}
         {%- endif -%}
     </div>
@@ -37,7 +39,7 @@
         {% comment %} Statement Text {% endcomment %}
         <div class="mx-auto flex min-h-96 items-center justify-center py-8 pc:min-h-120 pc:py-0">
             <div
-                class="rte rte--compact text-center body-lg text-balance pc:max-w-5/6 pc:body-xl"
+                class="rte rte--compact {{ brand_statement_heading_class }} text-center text-balance pc:max-w-5/6"
                 data-motion-reveal="content"
             >
                 {{ section.settings.statement }}
@@ -56,13 +58,65 @@
             "type": "color_scheme",
             "id": "color_scheme",
             "label": "t:sections.brand-statement.settings.color_scheme",
-            "default": "scheme-1"
+            "default": "scheme-2"
         },
         {
             "type": "richtext",
             "id": "statement",
             "default": "t:sections.brand-statement.defaults.statement",
             "label": "t:sections.brand-statement.settings.statement_text"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.slides-show.content.heading"
+        },
+        {
+            "type": "select",
+            "id": "heading_size",
+            "label": "t:sections.slides-show.settings.heading_size",
+            "options": [
+                {
+                    "value": "heading-4xl",
+                    "label": "t:sections.slides-show.options.heading_4xl"
+                },
+                {
+                    "value": "heading-3xl",
+                    "label": "t:sections.slides-show.options.heading_3xl"
+                },
+                {
+                    "value": "heading-2xl",
+                    "label": "t:sections.slides-show.options.heading_2xl"
+                },
+                {
+                    "value": "heading-xl",
+                    "label": "t:sections.slides-show.options.heading_xl"
+                },
+                {
+                    "value": "heading-h1",
+                    "label": "t:sections.slides-show.options.heading_h1"
+                },
+                {
+                    "value": "heading-h2",
+                    "label": "t:sections.slides-show.options.heading_h2"
+                },
+                {
+                    "value": "heading-h3",
+                    "label": "t:sections.slides-show.options.heading_h3"
+                },
+                {
+                    "value": "heading-h4",
+                    "label": "t:sections.slides-show.options.heading_h4"
+                },
+                {
+                    "value": "heading-h5",
+                    "label": "t:sections.slides-show.options.heading_h5"
+                },
+                {
+                    "value": "heading-h6",
+                    "label": "t:sections.slides-show.options.heading_h6"
+                }
+            ],
+            "default": "heading-2xl"
         },
         {
             "type": "image_picker",
@@ -81,7 +135,7 @@
             "step": 4,
             "unit": "px",
             "label": "t:sections.brand-statement.settings.padding_top",
-            "default": 0
+            "default": 32
         },
         {
             "type": "range",
@@ -91,7 +145,7 @@
             "step": 4,
             "unit": "px",
             "label": "t:sections.brand-statement.settings.padding_bottom",
-            "default": 0
+            "default": 32
         }
     ],
     "presets": [

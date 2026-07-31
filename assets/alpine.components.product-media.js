@@ -36,6 +36,7 @@
                 setActive(index) {
                     if (this.imageCount === 0) return;
                     index = Math.max(0, Math.min(index, this.imageCount - 1));
+                    this._pauseActiveVideo();
                     this.activeIndex = index;
                     if (this._swiper) this._swiper.slideTo(index);
                 },
@@ -46,6 +47,35 @@
 
                 prev() {
                     this.setActive((this.activeIndex - 1 + this.imageCount) % this.imageCount);
+                },
+
+                activateMediaById(mediaId) {
+                    if (!mediaId) return;
+                    const item = this.$el.querySelector(
+                        '[data-media-id="' + CSS.escape(String(mediaId)) + '"]',
+                    );
+                    if (!item) return;
+                    const mediaType = item.dataset.mediaType;
+                    if (
+                        mediaType === 'model' ||
+                        mediaType === 'external_video' ||
+                        mediaType === 'video'
+                    ) {
+                        const dialogId = this.$el.dataset.mediaModalId;
+                        if (dialogId) {
+                            const Events = window.__Theme__.Events;
+                            Events.emit(Events.events.PRODUCT_MEDIA_MODAL_ACTIVATE, {
+                                mediaId: Number(mediaId),
+                            });
+                            window.Alpine.store('dialog').open(dialogId);
+                        }
+                    }
+                },
+
+                _pauseActiveVideo() {
+                    this.$el.querySelectorAll('video').forEach((video) => {
+                        if (!video.paused) video.pause();
+                    });
                 },
 
                 _handleThumbnailKeydown(event) {
@@ -115,10 +145,12 @@
                 ...AlpineComponentsFactory.useDisposable(),
                 imageCount: Math.max(1, Number(imageCount) || 1),
                 lightboxOpen: false,
+                lightboxClosing: false,
                 lightboxIndex: Math.max(0, Number(initialIndex) || 0),
                 _previousBodyOverflow: null,
                 _returnFocusTo: null,
                 _trapHandler: null,
+                _lightboxGeneration: 0,
 
                 init() {
                     const ds = this.$el?.dataset;
@@ -134,34 +166,88 @@
                 },
 
                 openLightbox(index = this.lightboxIndex) {
+                    const DialogMotion = window.__Theme__.DialogMotion;
+
                     this._returnFocusTo = document.activeElement;
                     this.lightboxIndex = this._normalizeIndex(index);
                     this.lightboxOpen = true;
-                    this._lockBodyScroll();
+                    this.lightboxClosing = false;
+
+                    const generation = ++this._lightboxGeneration;
+                    const root = this.$refs.lightboxDialog;
+                    const usesMotion = DialogMotion && root && DialogMotion.hasMotion(root);
+
+                    const focusLightbox = () => {
+                        if (generation !== this._lightboxGeneration) return;
+                        if (!this.lightboxOpen) return;
+
+                        this._moveFocusIntoLightbox();
+                    };
 
                     requestAnimationFrame(() => {
+                        if (generation !== this._lightboxGeneration) return;
+                        if (!this.lightboxOpen) return;
+
+                        this._attachTrap();
+                    });
+
+                    if (!usesMotion) {
+                        this._lockBodyScroll();
                         requestAnimationFrame(() => {
-                            this._moveFocusIntoLightbox();
-                            this._attachTrap();
+                            focusLightbox();
                         });
+                        return;
+                    }
+
+                    DialogMotion.playEnter(root, {
+                        trigger: this._returnFocusTo,
+                        lockScroll: true,
+                        onEnterStart: focusLightbox,
                     });
                 },
 
                 closeLightbox() {
-                    const returnTo = this._returnFocusTo;
-                    this._detachTrap();
-                    this.lightboxOpen = false;
-                    this._unlockBodyScroll();
-                    this._returnFocusTo = null;
+                    if (!this.lightboxOpen || this.lightboxClosing) return;
 
-                    if (
-                        returnTo &&
-                        returnTo.isConnected &&
-                        typeof returnTo.focus === 'function' &&
-                        this._isElementVisible(returnTo)
-                    ) {
-                        returnTo.focus();
+                    const DialogMotion = window.__Theme__.DialogMotion;
+
+                    this.lightboxClosing = true;
+                    this._lightboxGeneration += 1;
+
+                    const returnTo = this._returnFocusTo;
+                    const root = this.$refs.lightboxDialog;
+                    this._detachTrap();
+
+                    const unlock = () => {
+                        if (DialogMotion && typeof DialogMotion.unlockScroll === 'function') {
+                            DialogMotion.unlockScroll();
+                        } else {
+                            this._unlockBodyScroll();
+                        }
+                    };
+
+                    const finish = () => {
+                        this.lightboxOpen = false;
+                        this.lightboxClosing = false;
+                        unlock();
+                        this._returnFocusTo = null;
+
+                        if (
+                            returnTo &&
+                            returnTo.isConnected &&
+                            typeof returnTo.focus === 'function' &&
+                            this._isElementVisible(returnTo)
+                        ) {
+                            returnTo.focus({ preventScroll: true });
+                        }
+                    };
+
+                    if (DialogMotion && root && DialogMotion.hasMotion(root)) {
+                        DialogMotion.playExit(root, { trigger: returnTo }).then(finish);
+                        return;
                     }
+
+                    finish();
                 },
 
                 nextLightbox() {
@@ -230,9 +316,9 @@
 
                     const focusable = this._getFocusableElements(dialog);
                     if (focusable.length > 0) {
-                        focusable[0].focus();
+                        focusable[0].focus({ preventScroll: true });
                     } else {
-                        dialog.focus();
+                        dialog.focus({ preventScroll: true });
                     }
                 },
 
@@ -284,6 +370,7 @@
                 },
 
                 destroy() {
+                    this._lightboxGeneration += 1;
                     this._detachTrap();
                     if (this.lightboxOpen) this.closeLightbox();
                     this.dispose();
@@ -494,8 +581,13 @@
                 ...AlpineComponentsFactory.useDisposable(),
                 position: 0,
                 isDragging: false,
+                _animateFrame: null,
 
                 init() {
+                    if (!this._shouldAnimateSweep()) {
+                        this.position = 50;
+                    }
+
                     this.on(document, 'mouseup', () => this.endDrag());
                     this.on(document, 'touchend', () => this.endDrag());
                     this.on(document, 'mousemove', (e) => {
@@ -511,11 +603,43 @@
                     );
                 },
 
+                _prefersReducedMotion() {
+                    const Utils = window.__Theme__?.Utils;
+                    if (typeof Utils?.prefersReducedMotion === 'function') {
+                        return Utils.prefersReducedMotion();
+                    }
+                    return (
+                        typeof window.matchMedia === 'function' &&
+                        window.matchMedia('(prefers-reduced-motion: reduce)').matches
+                    );
+                },
+
+                _shouldAnimateSweep() {
+                    return (
+                        document.body?.dataset?.motionEnabled !== 'false' &&
+                        !this._prefersReducedMotion()
+                    );
+                },
+
+                _cancelSweep() {
+                    if (!this._animateFrame) return;
+                    cancelAnimationFrame(this._animateFrame);
+                    this._animateFrame = null;
+                },
+
                 animateToCenter() {
+                    this._cancelSweep();
+
+                    if (!this._shouldAnimateSweep()) {
+                        this.position = 50;
+                        return;
+                    }
+
                     const start = 0;
                     const end = 50;
                     const duration = 800;
                     const startTime = performance.now();
+                    this.position = start;
 
                     const animate = (currentTime) => {
                         const elapsed = currentTime - startTime;
@@ -525,14 +649,17 @@
                         this.position = start + (end - start) * easeOut;
 
                         if (progress < 1) {
-                            requestAnimationFrame(animate);
+                            this._animateFrame = requestAnimationFrame(animate);
+                        } else {
+                            this._animateFrame = null;
                         }
                     };
 
-                    requestAnimationFrame(animate);
+                    this._animateFrame = requestAnimationFrame(animate);
                 },
 
                 startDrag(e) {
+                    this._cancelSweep();
                     this.isDragging = true;
                     this.updatePosition(e);
                 },
@@ -547,6 +674,7 @@
                 },
 
                 handleKeydown(e) {
+                    this._cancelSweep();
                     const step = 5;
                     let handled = true;
 
@@ -592,6 +720,148 @@
                 },
 
                 destroy() {
+                    this._cancelSweep();
+                    this.dispose();
+                },
+            };
+        },
+
+        productMediaModal() {
+            return {
+                ...AlpineComponentsFactory.useDisposable(),
+                activeMediaId: null,
+                _eventScope: null,
+
+                init() {
+                    const Events = window.__Theme__.Events;
+                    this._eventScope = Events.createScope();
+                    this._eventScope.on(Events.events.PRODUCT_MEDIA_MODAL_ACTIVATE, (e) => {
+                        if (e.detail?.mediaId) {
+                            this.activeMediaId = e.detail.mediaId;
+                        }
+                    });
+                },
+
+                setMedia(mediaId) {
+                    this.activeMediaId = mediaId;
+                },
+
+                destroy() {
+                    this._eventScope?.dispose?.();
+                    this._eventScope = null;
+                    this.dispose();
+                },
+            };
+        },
+
+        mediaVideo() {
+            return {
+                ...AlpineComponentsFactory.useDisposable(),
+                isPlaying: false,
+                isMuted: true,
+                hasPlayed: false,
+                _videoCleanups: [],
+
+                init() {
+                    const videos = this._getAllVideos();
+                    if (!videos.length) return;
+
+                    const visible = this._getVideo();
+                    if (visible) {
+                        this.isMuted = visible.muted;
+                        this.isPlaying = !visible.paused;
+                    }
+
+                    const onPlay = () => {
+                        const current = this._getVideo();
+                        if (current && !current.paused) {
+                            this.isPlaying = true;
+                            this.hasPlayed = true;
+                        }
+                    };
+                    const onPause = () => {
+                        const current = this._getVideo();
+                        if (current && current.paused) {
+                            this.isPlaying = false;
+                        }
+                    };
+                    const onVolumeChange = () => {
+                        const current = this._getVideo();
+                        if (current) {
+                            this.isMuted = current.muted;
+                        }
+                    };
+
+                    videos.forEach((video) => {
+                        video.addEventListener('play', onPlay);
+                        video.addEventListener('pause', onPause);
+                        video.addEventListener('volumechange', onVolumeChange);
+                    });
+
+                    this._videoCleanups.push(() => {
+                        videos.forEach((video) => {
+                            video.removeEventListener('play', onPlay);
+                            video.removeEventListener('pause', onPause);
+                            video.removeEventListener('volumechange', onVolumeChange);
+                        });
+                    });
+                },
+
+                _getAllVideos() {
+                    const el = this.$el;
+                    if (!el) return [];
+                    return Array.from(el.querySelectorAll('video'));
+                },
+
+                _getVideo() {
+                    const el = this.$el;
+                    if (!el) return null;
+                    const desktop = el.querySelector('[data-video-desktop]');
+                    const mobile = el.querySelector('[data-video-mobile]');
+                    const desktopVideo = desktop?.querySelector('video');
+                    const mobileVideo = mobile?.querySelector('video');
+                    if (mobileVideo && mobile.offsetParent !== null) return mobileVideo;
+                    if (desktopVideo && desktop.offsetParent !== null) return desktopVideo;
+                    return desktopVideo || mobileVideo || el.querySelector('video');
+                },
+
+                _pauseOthers(currentVideo) {
+                    const videos = this._getAllVideos();
+                    videos.forEach((v) => {
+                        if (v !== currentVideo && !v.paused) v.pause();
+                    });
+                },
+
+                play() {
+                    const video = this._getVideo();
+                    if (video) {
+                        this._pauseOthers(video);
+                        video.play().catch(() => {});
+                    }
+                },
+
+                pause() {
+                    const video = this._getVideo();
+                    if (video) {
+                        video.pause();
+                    }
+                },
+
+                toggleMute() {
+                    const video = this._getVideo();
+                    if (video) {
+                        video.muted = !video.muted;
+                        this.isMuted = video.muted;
+                    }
+                },
+
+                destroy() {
+                    this._videoCleanups.forEach((fn) => fn());
+                    this._videoCleanups = [];
+                    const videos = this._getAllVideos();
+                    videos.forEach((v) => {
+                        if (!v.paused) v.pause();
+                    });
                     this.dispose();
                 },
             };

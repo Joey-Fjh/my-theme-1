@@ -9,23 +9,25 @@ Use this skill to select and run the smallest relevant project verification. Thi
 
 ## Commands
 
-- General lint gate: `npm run lint`
-- Theme architecture lint: `npm run lint:theme` via `check-theme-architecture`
-- i18n lint: `npm run lint:i18n` via `check-i18n`
-- Shopify Theme Check: `npm test`
-- Tailwind build after Tailwind source changes: `npm run build:tw`
-- SVG build after `icons/` changes: `npm run build:svg` via `build-svg-icons`
-- Local development: `npm run dev`
-- Shopify-only local preview: `npm run shopify:dev`
+Use `npm.cmd` in this Windows workspace.
+
+- General lint gate: `npm.cmd run lint`
+- Theme architecture lint: `npm.cmd run lint:theme` via `check-theme-architecture`
+- i18n lint: `npm.cmd run lint:i18n` via `check-i18n`
+- Shopify Theme Check: `npm.cmd test`
+- Tailwind build after Tailwind source changes: `npm.cmd run build:tw`
+- SVG build after `icons/` changes: `npm.cmd run build:svg` via `build-svg-icons`
+- Local development: `npm.cmd run dev`
+- Shopify-only local preview: `npm.cmd run shopify:dev`
 
 ## Selection Rules
 
 1. Read `AGENTS.md` validation rules before choosing commands.
 2. Prefer the narrowest command that covers the change.
 3. Use `check-i18n`, `check-theme-architecture`, or `build-svg-icons` when the request needs domain-specific validation details.
-4. Run `npm run lint` and `npm test` after meaningful theme changes.
-5. Run `npm run build:tw` only when Tailwind source changed.
-6. Run `npm run build:svg` only when `icons/` source changed.
+4. Run `npm.cmd run lint` and `npm.cmd test` after meaningful theme changes.
+5. Run `npm.cmd run build:tw` only when Tailwind source changed.
+6. Run `npm.cmd run build:svg` only when `icons/` source changed.
 7. Do not run formatting commands that rewrite files unless the user asks.
 
 ## Reporting

@@ -1,14 +1,63 @@
+{% doc %}
+    Renders product recommendations (related or complementary) with loading,
+    timeout, error, and empty states.
+
+    @param {product} product - Product to fetch recommendations for.
+    @param {section} section - Section object (for section.id and settings).
+    @param {recommendations} recommendations - Shopify recommendations object from the product recommendations section context.
+    @param {string} [heading] - Section heading text. Defaults to locale-based recommendation type label.
+    @param {string} [description] - Section description rich text.
+    @param {string} [heading_class] - Heading tier class for the section title. Default: heading-xl.
+    @param {string} [description_class] - Body tier class for the section description. Default: body-xl.
+    @param {number} [limit] - Number of recommended products. Default: 4.
+    @param {string} [intent] - Recommendation intent: 'related' or 'complementary'. Default: 'related'.
+    @param {string} [empty_text] - Message when no recommendations exist. Defaults to locale key.
+    @param {string} [loading_text] - Loading state message. Defaults to locale key.
+    @param {string} [timeout_text] - Timeout state message. Defaults to locale key.
+    @param {string} [error_text] - Error state message. Defaults to locale key.
+    @param {string} [retry_text] - Retry button label. Defaults to locale key.
+{% enddoc %}
+
 {%- liquid
-    assign heading = heading | default: 'Product recommendations'
+    assign heading = heading | default: ''
+    if heading == blank
+        assign heading = 'components.product_recommendations.heading_related' | t
+    endif
+
     assign description = description
     assign limit = limit | default: 4
     assign intent = intent | default: 'related'
-    assign empty_text = empty_text | default: 'No products available right now.'
-    assign loading_text = loading_text | default: 'Loading products...'
-    assign timeout_text = timeout_text | default: 'Request timed out. You can retry loading products.'
-    assign error_text = error_text | default: 'Failed to load products.'
-    assign retry_text = retry_text | default: 'Retry'
+    assign recommendations_heading_class = heading_class | default: 'heading-2xl'
+    assign recommendations_description_class = description_class | default: 'body-xl'
+    assign recommendations_description_class = 'typo-subtitle ' | append: recommendations_description_class
+
+    assign empty_text = empty_text | default: ''
+    if empty_text == blank
+        assign empty_text = 'components.product_recommendations.empty_related' | t
+    endif
+
+    assign loading_text = loading_text | default: ''
+    if loading_text == blank
+        assign loading_text = 'components.product_recommendations.loading_related' | t
+    endif
+
+    assign timeout_text = timeout_text | default: ''
+    if timeout_text == blank
+        assign timeout_text = 'components.product_recommendations.timeout_related' | t
+    endif
+
+    assign error_text = error_text | default: ''
+    if error_text == blank
+        assign error_text = 'components.product_recommendations.error_related' | t
+    endif
+
+    assign retry_text = retry_text | default: ''
+    if retry_text == blank
+        assign retry_text = 'components.product_recommendations.retry' | t
+    endif
+
     assign recommendation_url = routes.product_recommendations_url
+    assign recommendation_data = recommendations
 -%}
 
 {%- if product -%}
@@ -22,28 +71,40 @@
         data-related-products-section-id="{{ section.id }}"
         x-data="relatedProducts()"
     >
-        <div data-related-products-content>
-            {%- if recommendations.performed -%}
-                {%- if recommendations.products_count > 0 -%}
+        <div
+            data-related-products-content
+            x-data="motionRevealSection()"
+            data-motion-section
+        >
+            {%- if recommendation_data.performed -%}
+                {%- if recommendation_data.products_count > 0 -%}
                     <div
                         class="flex flex-col items-start justify-between gap-4 pc:flex-row pc:gap-8"
                         data-motion-reveal="content"
                     >
-                        <h2>{{ heading }}</h2>
+                        <h2 class="{{ recommendations_heading_class }}">{{ heading }}</h2>
                         {%- if description != blank -%}
-                            <div class="rte rte--compact max-w-3xl text-theme-text/80">
-                                {{ description }}
-                            </div>
+                            {%- render 'rte-compact-prose',
+                                content: description,
+                                content_class: recommendations_description_class
+                            -%}
                         {%- endif -%}
                     </div>
 
-                    <div class="mt-8 grid grid-cols-2 gap-6 pc:grid-cols-4">
-                        {%- for product in recommendations.products -%}
-                            {% render 'product-card',
-                                product: product,
-                                scope_id: section.id,
-                                color_scheme: section.settings.color_scheme
-                            %}
+                    <div
+                        class="mt-8 grid grid-cols-2 gap-6 pc:grid-cols-4"
+                        data-motion-cascade
+                    >
+                        {%- for product in recommendation_data.products -%}
+                            <div class="group" data-motion-bound>
+                                {% render 'product-card',
+                                    product: product,
+                                    scope_id: section.id,
+                                    color_scheme: section.settings.color_scheme,
+                                    pc_items: 4,
+                                    mobile_items: 2
+                                %}
+                            </div>
                         {%- endfor -%}
                     </div>
                 {%- else -%}
@@ -51,11 +112,12 @@
                         class="flex flex-col items-start justify-between gap-4 pc:flex-row pc:gap-8"
                         data-motion-reveal="content"
                     >
-                        <h2>{{ heading }}</h2>
+                        <h2 class="{{ recommendations_heading_class }}">{{ heading }}</h2>
                         {%- if description != blank -%}
-                            <div class="rte rte--compact max-w-3xl text-theme-text/80">
-                                {{ description }}
-                            </div>
+                            {%- render 'rte-compact-prose',
+                                content: description,
+                                content_class: recommendations_description_class
+                            -%}
                         {%- endif -%}
                     </div>
                     <p class="mt-8" role="status" aria-live="polite">
@@ -67,11 +129,12 @@
                     class="flex flex-col items-start justify-between gap-4 pc:flex-row pc:gap-8"
                     data-motion-reveal="content"
                 >
-                    <h2>{{ heading }}</h2>
+                    <h2 class="{{ recommendations_heading_class }}">{{ heading }}</h2>
                     {%- if description != blank -%}
-                        <div class="rte rte--compact max-w-3xl text-theme-text/80">
-                            {{ description }}
-                        </div>
+                        {%- render 'rte-compact-prose',
+                            content: description,
+                            content_class: recommendations_description_class
+                        -%}
                     {%- endif -%}
                 </div>
 
@@ -81,13 +144,13 @@
                     x-cloak
                 >
                     {%- for i in (1..limit) -%}
-                        <div class="border border-theme-border-20 bg-theme-bg p-4">
-                            <div class="aspect-square animate-pulse bg-theme-border-20"></div>
+                        <div class="border border-theme-border/20 bg-theme-bg p-4">
+                            <div class="aspect-square animate-pulse bg-theme-border/20"></div>
                             <div
-                                class="mt-4 h-4 w-3/4 animate-pulse bg-theme-border-20"
+                                class="mt-4 h-4 w-3/4 animate-pulse bg-theme-border/20"
                             ></div>
                             <div
-                                class="mt-2 h-4 w-1/2 animate-pulse bg-theme-border-20"
+                                class="mt-2 h-4 w-1/2 animate-pulse bg-theme-border/20"
                             ></div>
                         </div>
                     {%- endfor -%}
@@ -101,7 +164,10 @@
                     x-cloak
                 >
                     {{ loading_text }}
-                    <span x-text="loadingSeconds"></span>s
+                    <span
+                        data-loading-seconds-text="{{ 'general.loading_seconds' | t: seconds: '%%SECONDS%%' | escape }}"
+                        x-text="$el.dataset.loadingSecondsText.replace('%%SECONDS%%', loadingSeconds)"
+                    ></span>
                 </p>
 
                 <div
@@ -109,7 +175,7 @@
                     x-show="uiState == 'timeout'"
                     x-cloak
                 >
-                    <p class="body-md text-theme-text/70" role="status" aria-live="polite">
+                    <p role="status" aria-live="polite">
                         {{ timeout_text }}
                     </p>
                     <button
@@ -126,7 +192,7 @@
                     x-show="uiState == 'error'"
                     x-cloak
                 >
-                    <p class="body-md text-theme-text/70" role="status" aria-live="polite">
+                    <p role="status" aria-live="polite">
                         {{ error_text }}
                     </p>
                     <button

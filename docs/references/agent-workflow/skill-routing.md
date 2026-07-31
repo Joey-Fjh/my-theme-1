@@ -10,6 +10,7 @@ Use this flow for non-trivial tasks:
 User request
   -> AGENTS.md entry rules
   -> agent-router classification
+  -> orchestrate-agents when the delegation test passes
   -> docs/skill selection
   -> implementation or review skill
   -> run-shopify-theme validation
@@ -32,9 +33,10 @@ Read `docs/references/agent-workflow/collaboration-standard.md` for the definiti
 | Review diff or launch readiness | `code-review` | `code-review/pre-merge.md` or `launch-gate.md` | Review may run targeted checks |
 | Debugging or root-cause investigation | `implement-theme-pattern` | Matching architecture reference | Targeted validation of the fix |
 | Validate current state | `run-shopify-theme` | Command docs in `AGENTS.md` and relevant skill | Smallest proving command |
-| i18n or user-facing copy | `check-i18n` | `code-review/i18n-checklist.md` | `npm run lint:i18n` |
-| Liquid/JS architecture | `check-theme-architecture` | Matching architecture/pattern reference | `npm run lint:theme` |
-| SVG icon pipeline | `build-svg-icons` | Icon rules in style-system reference | `npm run build:svg` when icons changed |
+| i18n or user-facing copy | `check-i18n` | `code-review/i18n-checklist.md` | `npm.cmd run lint:i18n` |
+| Liquid/JS architecture | `check-theme-architecture` | Matching architecture/pattern reference | `npm.cmd run lint:theme` |
+| SVG icon pipeline | `build-svg-icons` | Icon rules in style-system reference | `npm.cmd run build:svg` when icons changed |
+| Multi-agent orchestration | `orchestrate-agents` after `agent-router` | `agent-workflow/multi-agent-architecture.md` | Shared result contract plus domain validation |
 | Collaboration, routing, governance | `agent-router` | `AGENTS.md` and this file | `git diff --check` for docs-only work |
 | Third-party skill evaluation | `agent-router` | `agent-workflow/external-skills.md` (adoption record) | No install unless reviewed and approved |
 
@@ -44,6 +46,7 @@ Read `docs/references/agent-workflow/collaboration-standard.md` for the definiti
 - Add a validation skill only when a command must be selected or explained.
 - Read docs references only when the task touches that domain.
 - Do not read all pattern references just because implementation is involved.
+- Use multiple agents only when the delegation test proves context isolation, independence, or latency value. Keep one writer in a shared worktree.
 
 ## Fallback For Agents Without Skill Auto-Triggering
 
@@ -61,6 +64,8 @@ Do not copy skill contents into tool-specific adapter directories.
 Hooks and MCP are adapters and enforcement layers:
 
 - Use hooks for deterministic lifecycle checks, safety gates, context injection, or post-edit validation.
+- The Codex `SubagentStop` adapter in `.codex/hooks.json` invokes the shared result validator after delegated roles finish. Its project configuration is shared, but each user must trust new or changed project hooks locally.
+- Other vendor adapters should invoke `.agents/skills/orchestrate-agents/scripts/agent-result-validator.cjs` at their equivalent subagent-completion boundary instead of copying schema logic.
 - Use MCP for external tool/data access.
 - Do not store project rules or long references in hooks or MCP configuration.
 - Record any hook/MCP routing policy in docs before adding tool-specific config.
@@ -68,6 +73,7 @@ Hooks and MCP are adapters and enforcement layers:
 ## Routing Update Requirements
 
 - New project skill: update this routing table and, if it becomes common, `.agents/skills/agent-router/SKILL.md`.
+- New or changed multi-agent role/contract: update `agent-workflow/multi-agent-architecture.md`, the matching `.agents/roles/` or `.agents/contracts/` source, and affected vendor adapters.
 - Third-party skill: review external source, record adoption in `docs/references/agent-workflow/external-skills.md`, then install adapted skill in `.agents/skills/`.
 - Hook or MCP: document trigger, purpose, enforcement strength, and boundaries here before changing tool-specific config.
 - New long reference: add it under `docs/references/` and route it from `AGENTS.md` only when agents need to discover it.
@@ -89,6 +95,7 @@ Content placement:
 
 - Long-lived project knowledge belongs in `docs/`.
 - Agent collaboration and governance rules belong in `docs/references/agent-workflow/`.
+- Portable multi-agent roles and handoff schemas belong in `.agents/roles/` and `.agents/contracts/`.
 - Canonical implementation examples belong in `docs/references/patterns/`.
 - Cross-session state belongs in `docs/agent/context.md` and must stay short.
 - Long checklists, code examples, background explanation, and durable references belong in docs, not in skills.

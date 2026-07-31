@@ -51,16 +51,30 @@
     {{ product.title }}
 </h2>
 
+{%- capture unit_prices_json -%}
+    {
+    {%- assign unit_price_map_first = true -%}
+    {%- for variant in product.variants -%}
+        {%- if variant.unit_price_measurement -%}
+            {%- unless unit_price_map_first -%},{%- endunless -%}
+            "{{ variant.id }}":{{ variant.unit_price | unit_price_with_measurement: variant.unit_price_measurement | json }}
+            {%- assign unit_price_map_first = false -%}
+        {%- endif -%}
+    {%- endfor -%}
+    }
+{%- endcapture -%}
 <div
-    class="product-quick-view__price product-info-blocks__price"
+    class="product-price product-quick-view__price product-info-blocks__price"
     data-section-id="{{ section_id }}"
+    data-variant-id="{{ current_variant.id }}"
     data-price="{{ current_variant.price | default: 0 }}"
     data-compare-price="{{ current_variant.compare_at_price | default: 0 }}"
-    data-currency="{{ shop.currency }}"
+    data-currency="{{ cart.currency.iso_code }}"
+    data-unit-prices="{{ unit_prices_json | strip | escape }}"
     x-data="ProductPrice()"
 >
     <s
-        class="product-quick-view__price-compare product-info-blocks__price-compare"
+        class="product-price__compare product-quick-view__price-compare product-info-blocks__price-compare"
         x-show="hasComparePrice"
         x-text="formattedComparePrice"
     >
@@ -69,15 +83,47 @@
         {%- endif -%}
     </s>
     <span
-        class="product-quick-view__price-main product-info-blocks__price-main body-lg"
+        class="product-price__main product-quick-view__price-main product-info-blocks__price-main body-lg"
         x-text="formattedPrice"
     >
         {{ current_variant.price | money }}
     </span>
+    <span
+        class="product-price__unit product-quick-view__price-unit product-info-blocks__price-unit block body-sm text-theme-text/80"
+        x-show="hasUnitPrice"
+        x-text="unitPriceText"
+    >
+        {%- if current_variant.unit_price_measurement -%}
+            {{-
+                current_variant.unit_price
+                | unit_price_with_measurement: current_variant.unit_price_measurement
+            -}}
+        {%- endif -%}
+    </span>
 </div>
+{%- assign payment_terms_form_id = 'product-payment-terms-'
+    | append: section_id
+    | append: '-'
+    | append: product.id
+-%}
+{%- form 'product', product, id: payment_terms_form_id -%}
+    <div
+        class="product-payment-terms product-quick-view__payment-terms"
+        data-section-id="{{ section_id }}"
+        x-data="ProductPaymentTerms()"
+    >
+        <input
+            type="hidden"
+            name="id"
+            value="{{ current_variant.id }}"
+        >
+        {{ form | payment_terms }}
+    </div>
+{%- endform -%}
+{%- render 'product-tax-note', class: 'mt-2 body-sm text-theme-text/80' -%}
 
 {%- if show_description_enabled and product.description != blank -%}
-    <div class="product-quick-view__description body-md text-theme-text/75">
+    <div class="product-quick-view__description">
         {{ product.description | strip_html | truncate: description_truncate }}
     </div>
 {%- endif -%}

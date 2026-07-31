@@ -1,9 +1,19 @@
+{%- liquid
+    assign desktop_menu_trigger = section.settings.desktop_menu_trigger | default: 'hover'
+    unless desktop_menu_trigger == 'click'
+        assign desktop_menu_trigger = 'hover'
+    endunless
+-%}
+
 <nav
     aria-label="{{ 'accessibility.main_menu' | t }}"
     class="header-dropdown-menu"
+    data-desktop-menu-trigger="{{ desktop_menu_trigger }}"
     x-data="dropdown"
     @mouseenter="onHeaderEnter()"
-    @mouseleave="onHeaderLeave()"
+    @click.capture="onMenuTriggerClickEvent($event)"
+    @mouseover="openOnHoverEvent($event)"
+    @mouseleave="closeHoverAndDeactivate()"
     @focusin="onHeaderFocusIn()"
     @focusout="onHeaderFocusOut($event)"
     @click.outside="closeAndDeactivate()"
@@ -14,7 +24,7 @@
             <li class="relative">
                 {%- if link.links != blank -%}
                     <details
-                        class="dropdown"
+                        class="dropdown relative"
                         data-dropdown
                         data-deep="1"
                     >
@@ -22,7 +32,6 @@
                             class="dropdown-trigger flex items-center gap-1"
                             id="HeaderMenu-{{ link.handle }}"
                             :aria-expanded="$el.parentElement.open"
-                            @click.stop.prevent="toggle($el.parentElement)"
                         >
                             {% capture link_content %}
                                 <span>
@@ -42,15 +51,16 @@
                         </summary>
 
                         <ul
-                            class="dropdown-panel dropdown-open color-{{ section.settings.menu_color_scheme }} mt-2 rounded-md bg-theme-bg p-3 text-theme-text"
+                            class="dropdown-panel dropdown-open panel-motion panel-motion-scale color-{{ section.settings.menu_color_scheme }} [inset-inline-start:0] top-[calc(100%+1.5rem)] mt-0 min-w-56 rounded-md surface-component p-3"
                             role="list"
                             tabindex="-1"
+                            @mouseenter="cancelHoverClose(); cancelHoverOpen(); onHeaderEnter()"
                         >
                             {%- for childlink in link.links -%}
-                                <li>
+                                <li class="w-full{% if childlink.links != blank %} relative{% endif %}">
                                     {%- if childlink.links == blank -%}
                                         {% capture childlink_classes %}
-                                            block px-4 py-2 text-theme-text
+                                            block w-full whitespace-nowrap px-4 py-2 text-theme-text
                                             {% if childlink.current %} font-medium {% endif %}
                                         {% endcapture %}
 
@@ -60,51 +70,43 @@
                                             {%- endif -%}
                                         {%- endcapture -%}
 
-                                        {%-
-                                            render 'link',
-                                            text: childlink.title | escape,
+                                        {%- assign child_link_text = childlink.title | escape -%}
+                                        {%- render 'link',
+                                            text: child_link_text,
                                             class: childlink_classes,
                                             href: childlink.url,
-                                            variant: "underline",
+                                            variant: 'underline',
                                             attributes: childlink_attributes
                                         -%}
                                     {%- else -%}
                                         <details
-                                            class="dropdown"
+                                            class="dropdown relative w-full"
                                             data-dropdown
                                             data-deep="2"
                                         >
                                             <summary
-                                                class="dropdown-trigger flex items-center justify-between px-4 py-2"
+                                                class="dropdown-trigger flex w-full items-center justify-between gap-6 px-4 py-2"
                                                 id="HeaderMenu-{{ childlink.handle }}"
                                                 :aria-expanded="$el.parentElement.open"
-                                                @click.stop.prevent="toggle($el.parentElement)"
                                             >
-                                                {% capture link_content %}
-                                                    <span>
-                                                        {{ childlink.title | escape }}
-                                                    </span>
-                                                    {% render 'icons',
-                                                        icon: 'icon-arrow1',
-                                                        class: 'dropdown-icon dropdown-icon--tilt'
-                                                    %}
-                                                {% endcapture %}
-
-                                                {% render 'link',
-                                                    content: link_content,
-                                                    variant: 'underline',
-                                                    class: 'flex items-center gap-3'
+                                                <span class="whitespace-nowrap text-theme-text{% if childlink.current %} font-medium{% endif %}">
+                                                    {{ childlink.title | escape }}
+                                                </span>
+                                                {% render 'icons',
+                                                    icon: 'icon-arrow1',
+                                                    class: 'dropdown-icon dropdown-icon--tilt shrink-0'
                                                 %}
                                             </summary>
 
                                             <ul
-                                                class="dropdown-panel dropdown-open top-0 left-full mt-1 ml-2 p-3 color-{{ section.settings.menu_color_scheme }} bg-theme-bg text-theme-text"
+                                                class="dropdown-panel dropdown-open panel-motion panel-motion-flyout inset-s-full [inset-inline-start:calc(100%+1.5rem)] top-0 mt-0 p-3 color-{{ section.settings.menu_color_scheme }} surface-component"
                                                 role="list"
+                                                @mouseenter="cancelHoverClose(); onHeaderEnter()"
                                             >
                                                 {%- for grandChildLink in childlink.links -%}
                                                     <li>
                                                         {%- capture grand_child_link_classes -%}
-                                                            block px-4 py-2 text-theme-text
+                                                            block w-full whitespace-nowrap px-4 py-2 text-theme-text
                                                             {% if grandChildLink.current %} font-medium {% endif %}
                                                         {%- endcapture -%}
 
@@ -114,12 +116,14 @@
                                                             {%- endif -%}
                                                         {%- endcapture -%}
 
-                                                        {%-
-                                                            render 'link',
-                                                            text: grandChildLink.title | escape,
+                                                        {%- assign grand_child_link_text = grandChildLink.title
+                                                            | escape
+                                                        -%}
+                                                        {%- render 'link',
+                                                            text: grand_child_link_text,
                                                             class: grand_child_link_classes,
                                                             href: grandChildLink.url,
-                                                            variant: "underline",
+                                                            variant: 'underline',
                                                             attributes: grand_child_link_attributes
                                                         -%}
                                                     </li>
@@ -138,11 +142,11 @@
                         {%- endif -%}
                     {%- endcapture -%}
 
-                    {%-
-                        render 'link',
-                        text: link.title | escape,
+                    {%- assign nav_link_text = link.title | escape -%}
+                    {%- render 'link',
+                        text: nav_link_text,
                         href: link.url,
-                        variant: "underline",
+                        variant: 'underline',
                         attributes: link_attributes
                     -%}
                 {%- endif -%}

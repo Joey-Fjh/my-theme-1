@@ -1,3 +1,9 @@
+{%- liquid
+    assign promo_banner_heading_class = section.settings.heading_size | default: 'heading-xl'
+    assign promo_banner_subtitle_size = section.settings.subtitle_size | default: 'body-xl'
+    assign promo_banner_subtitle_class = 'typo-subtitle ' | append: promo_banner_subtitle_size
+-%}
+
 <div
     data-section-id="{{ section.id }}"
     class="promo-banner-section full-width color-{{ section.settings.color_scheme }}"
@@ -10,17 +16,28 @@
 >
     <div class="layout container-page">
         {% comment %} Hero Banner {% endcomment %}
-        <div class="relative mb-2 aspect-4/5 overflow-hidden pc:aspect-16/7 fw:aspect-16/6">
+        <div
+            class="
+                relative mb-2 aspect-4/5 overflow-hidden
+                pc:aspect-16/7 fw:aspect-16/6
+                {% if section.settings.hero_link != blank %}media-interaction-scope{% endif %}
+            "
+        >
             {%- assign iamge_alt = section.settings.hero_image.alt
                 | default: section.settings.hero_heading
                 | default: shop.name
                 | escape
             -%}
+            {%- assign hero_image_url = section.settings.hero_link -%}
             {%- render 'image',
+                url: hero_image_url,
+                wrapper_class: 'block h-full w-full',
                 image: section.settings.hero_image,
                 alt: iamge_alt,
                 width: section.settings.hero_image.width,
-                loading: 'lazy'
+                img_class: 'h-full w-full object-cover',
+                loading: 'lazy',
+                placeholder_key: 'lifestyle-1'
             -%}
 
             {%- if section.settings.show_badge -%}
@@ -35,83 +52,120 @@
             {%- endif -%}
 
             <div
-                class="absolute inset-0 flex flex-col justify-end gap-6 p-6 pc:p-10 fw:p-14"
-                data-motion-reveal="content"
+                class="
+                    absolute inset-0 z-10 flex flex-col justify-end gap-6 p-6
+                    pc:p-10 fw:p-14
+                    {% if section.settings.hero_link != blank %}pointer-events-none{% endif %}
+                "
+                data-motion-sequence
             >
                 {%- if section.settings.hero_subtitle != blank -%}
-                    <h3 class="sub-heading">
+                    <p
+                        class="{{ promo_banner_subtitle_class }}"
+                        data-motion-reveal="content"
+                    >
                         {{ section.settings.hero_subtitle }}
-                    </h3>
+                    </p>
                 {%- endif -%}
 
                 {%- if section.settings.hero_heading != blank -%}
-                    <h1>
+                    <h2
+                        class="{{ promo_banner_heading_class }}"
+                        data-motion-reveal="content"
+                    >
                         {{ section.settings.hero_heading }}
-                    </h1>
+                    </h2>
                 {%- endif -%}
 
                 {%- if section.settings.hero_link != blank -%}
                     {%- capture link_content -%}
                         <span>{{ section.settings.hero_link_text }}</span>
-                        {% render 'icons', icon: 'icon-arrow2', class: 'ml-3' %}
+                        {% render 'icons', icon: 'icon-arrow2', class: 'ms-3' %}
                     {%- endcapture -%}
 
-                    {%- render 'link',
-                        href: section.settings.hero_link,
-                        content: link_content,
-                        variant: 'underline'
-                    -%}
+                    <div
+                        class="pointer-events-auto relative z-10 w-fit"
+                        data-motion-reveal="content"
+                    >
+                        {%- render 'link',
+                            href: section.settings.hero_link,
+                            content: link_content,
+                            variant: 'underline',
+                            class: 'body-xl'
+                        -%}
+                    </div>
                 {%- endif -%}
             </div>
         </div>
 
         {% comment %} Two Column Cards {% endcomment %}
-        <div class="grid grid-cols-1 gap-2 pc:grid-cols-2">
+        <div class="grid grid-cols-1 gap-2 pc:grid-cols-2" data-motion-cascade>
             {%- for block in section.blocks -%}
+                {%- liquid
+                    assign promo_placeholder_index = forloop.index0 | modulo: 2 | plus: 1
+                    assign promo_placeholder_key = 'lifestyle-' | append: promo_placeholder_index
+                -%}
                 <div
-                    class="pc:aspect-4/3.5 relative aspect-square overflow-hidden"
+                    class="
+                        pc:aspect-4/3.5 relative aspect-square overflow-hidden
+                        {% if block.settings.link != blank %}media-interaction-scope{% endif %}
+                    "
+                    data-motion-reveal="content"
                     {{ block.shopify_attributes }}
                 >
                     {%- assign image_alt = block.settings.image.alt
                         | default: block.settings.heading
                         | escape
                     -%}
+                    {%- assign card_image_url = block.settings.link -%}
                     {%- render 'image',
+                        url: card_image_url,
+                        wrapper_class: 'block h-full w-full',
                         image: block.settings.image,
+                        placeholder_key: promo_placeholder_key,
                         alt: image_alt,
                         width: block.settings.image.width,
                         sizes: '(max-width: 767px) 100vw, 50vw',
-                        loading: 'lazy'
+                        img_class: 'h-full w-full object-cover',
+                        loading: 'lazy',
+                        motion_reveal: false
                     -%}
 
                     <div
-                        class="absolute inset-0 flex flex-col justify-end gap-6 p-6 pc:p-8"
-                        data-motion-reveal="content"
+                        class="
+                            absolute inset-0 z-10 flex flex-col justify-end p-6 pc:p-8
+                            {% if block.settings.link != blank %}pointer-events-none{% endif %}
+                        "
                     >
-                        {%- if block.settings.subtitle != blank -%}
-                            <h3 class="sub-heading mb-1">
-                                {{ block.settings.subtitle }}
-                            </h3>
-                        {%- endif -%}
+                        <div data-motion-copy-bound>
+                            <div class="flex flex-col gap-6" data-motion-copy>
+                                {%- if block.settings.subtitle != blank -%}
+                                    <p class="{{ promo_banner_subtitle_class }} mb-1">
+                                        {{ block.settings.subtitle }}
+                                    </p>
+                                {%- endif -%}
 
-                        {%- if block.settings.heading != blank -%}
-                            <h1>
-                                {{ block.settings.heading }}
-                            </h1>
-                        {%- endif -%}
+                                {%- if block.settings.heading != blank -%}
+                                    <h2 class="{{ promo_banner_heading_class }}">
+                                        {{ block.settings.heading }}
+                                    </h2>
+                                {%- endif -%}
 
-                        {%- if block.settings.link != blank -%}
-                            {%- capture link_content -%}
-                                <span>{{ block.settings.link_text }}</span>
-                                {% render 'icons', icon: 'icon-arrow2', class: 'ml-3' %}
-                            {%- endcapture -%}
+                                {%- if block.settings.link != blank -%}
+                                    {%- capture link_content -%}
+                                        <span>{{ block.settings.link_text }}</span>
+                                        {% render 'icons', icon: 'icon-arrow2', class: 'ms-3' %}
+                                    {%- endcapture -%}
 
-                            {%- render 'link',
-                                href: block.settings.link,
-                                content: link_content,
-                                variant: 'underline'
-                            -%}
-                        {%- endif -%}
+                                    {%- render 'link',
+                                        href: block.settings.link,
+                                        content: link_content,
+                                        variant: 'underline',
+                                        class: 'body-xl pointer-events-auto relative z-10 w-fit'
+                                    -%}
+                                {%- endif -%}
+                            </div>
+                        </div>
                     </div>
                 </div>
             {%- endfor -%}
@@ -132,7 +186,99 @@
             "type": "color_scheme",
             "id": "color_scheme",
             "label": "t:sections.promo-bannder.settings.color_scheme",
-            "default": "scheme-1"
+            "default": "scheme-2"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.slides-show.content.font"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.slides-show.content.heading"
+        },
+        {
+            "type": "select",
+            "id": "heading_size",
+            "label": "t:sections.slides-show.settings.heading_size",
+            "options": [
+                {
+                    "value": "heading-4xl",
+                    "label": "t:sections.slides-show.options.heading_4xl"
+                },
+                {
+                    "value": "heading-3xl",
+                    "label": "t:sections.slides-show.options.heading_3xl"
+                },
+                {
+                    "value": "heading-2xl",
+                    "label": "t:sections.slides-show.options.heading_2xl"
+                },
+                {
+                    "value": "heading-xl",
+                    "label": "t:sections.slides-show.options.heading_xl"
+                },
+                {
+                    "value": "heading-h1",
+                    "label": "t:sections.slides-show.options.heading_h1"
+                },
+                {
+                    "value": "heading-h2",
+                    "label": "t:sections.slides-show.options.heading_h2"
+                },
+                {
+                    "value": "heading-h3",
+                    "label": "t:sections.slides-show.options.heading_h3"
+                },
+                {
+                    "value": "heading-h4",
+                    "label": "t:sections.slides-show.options.heading_h4"
+                },
+                {
+                    "value": "heading-h5",
+                    "label": "t:sections.slides-show.options.heading_h5"
+                },
+                {
+                    "value": "heading-h6",
+                    "label": "t:sections.slides-show.options.heading_h6"
+                }
+            ],
+            "default": "heading-xl"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.scroll-categories.content.subtitle"
+        },
+        {
+            "type": "select",
+            "id": "subtitle_size",
+            "label": "t:sections.scroll-categories.settings.subtitle_size",
+            "options": [
+                {
+                    "value": "body-3xl",
+                    "label": "t:sections.scroll-categories.options.body_3xl"
+                },
+                {
+                    "value": "body-2xl",
+                    "label": "t:sections.scroll-categories.options.body_2xl"
+                },
+                {
+                    "value": "body-xl",
+                    "label": "t:sections.scroll-categories.options.body_xl"
+                },
+                {
+                    "value": "body-lg",
+                    "label": "t:sections.scroll-categories.options.body_lg"
+                },
+                {
+                    "value": "body-md",
+                    "label": "t:sections.scroll-categories.options.body_md"
+                },
+                {
+                    "value": "body-sm",
+                    "label": "t:sections.scroll-categories.options.body_sm"
+                }
+            ],
+            "default": "body-xl"
         },
         {
             "type": "header",
@@ -186,7 +332,7 @@
             "type": "text",
             "id": "badge_value",
             "label": "t:sections.promo-bannder.settings.badge_value",
-            "default": "100%"
+            "default": "t:sections.promo-bannder.defaults.badge_value"
         },
         {
             "type": "header",
@@ -200,7 +346,7 @@
             "step": 4,
             "unit": "px",
             "label": "t:sections.promo-bannder.settings.padding_top",
-            "default": 0
+            "default": 32
         },
         {
             "type": "range",
@@ -210,7 +356,7 @@
             "step": 4,
             "unit": "px",
             "label": "t:sections.promo-bannder.settings.padding_bottom",
-            "default": 0
+            "default": 32
         }
     ],
     "blocks": [
@@ -252,7 +398,14 @@
     "presets": [
         {
             "name": "t:sections.promo-bannder.presets.promo_banner",
-            "settings": {}
+            "blocks": [
+                {
+                    "type": "card"
+                },
+                {
+                    "type": "card"
+                }
+            ]
         }
     ]
 }

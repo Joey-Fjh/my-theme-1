@@ -4,6 +4,7 @@
     @param {object} filter_source - Optional. Pass collection/search object.
     @param {string} [layout] - Optional. 'drawer' | 'vertical' | 'horizontal'. Default: 'vertical'.
     @param {boolean} [show_label] - Optional. Whether to render the leading "Filter:" label. Default: true.
+    @param {string} [clear_url] - Optional clear-all URL override. Search should pass a URL that keeps q/type/options[prefix].
 {% enddoc %}
 
 {%- assign filter_host = filter_source | default: collection | default: search -%}
@@ -21,7 +22,18 @@
 {%- endfor -%}
 
 {%- if active_filter_count > 0 -%}
-    {%- assign clear_all_url = filter_host.url | default: request.path -%}
+    {%- liquid
+        if clear_url != blank
+            assign clear_all_url = clear_url
+        elsif filter_host.url != blank
+            assign clear_all_url = filter_host.url
+        elsif filter_host.terms != blank
+            assign clear_q = filter_host.terms | url_encode
+            assign clear_all_url = routes.search_url | append: '?q=' | append: clear_q | append: '&options%5Bprefix%5D=last&type=product'
+        else
+            assign clear_all_url = request.path
+        endif
+    -%}
 
     {%- if active_layout == 'horizontal' -%}
         <div class="flex flex-wrap items-center gap-3">
@@ -33,7 +45,7 @@
                 {%- for value in filter.active_values -%}
                     <a
                         href="{{ value.url_to_remove }}"
-                        class="inline-flex min-h-10 items-center gap-2 rounded-full border border-theme-border-20 px-4 py-2 transition-colors hover:border-theme-text"
+                        class="active-filter-chip"
                         aria-label="{{ 'collections.filters.remove_filter' | t: filter: filter.label }}"
                         @click.prevent="if (typeof buildFilterActionUrl === 'function' && typeof loadUrl === 'function') { loadUrl(buildFilterActionUrl($el.href)); } else { window.location.assign($el.href); }"
                     >
@@ -46,7 +58,7 @@
                     {%- if filter.min_value.value != blank or filter.max_value.value != blank -%}
                         <a
                             href="{{ filter.url_to_remove }}"
-                            class="inline-flex min-h-10 items-center gap-2 rounded-full border border-theme-border-20 px-4 py-2 transition-colors hover:border-theme-text"
+                            class="active-filter-chip"
                             aria-label="{{ 'collections.filters.remove_filter' | t: filter: filter.label }}"
                             @click.prevent="if (typeof buildFilterActionUrl === 'function' && typeof loadUrl === 'function') { loadUrl(buildFilterActionUrl($el.href)); } else { window.location.assign($el.href); }"
                         >
@@ -62,14 +74,14 @@
 
             <a
                 href="{{ clear_all_url }}"
-                class="shrink-0 underline underline-offset-4 transition-opacity hover:opacity-80"
+                class="active-filters__clear-action shrink-0"
                 @click.prevent="if (typeof buildFilterActionUrl === 'function' && typeof loadUrl === 'function') { loadUrl(buildFilterActionUrl($el.href)); } else { window.location.assign($el.href); }"
             >
                 {{ 'collections.filters.clear_all' | t }}
             </a>
         </div>
     {%- else -%}
-        <div class="flex flex-col gap-4 border-b border-theme-border-20 pb-6">
+        <div class="flex flex-col gap-4 border-b border-theme-border/20 pb-6">
             <div class="flex items-center justify-between gap-4">
                 {%- if show_label -%}
                     <span class="shrink-0">
@@ -79,7 +91,7 @@
 
                 <a
                     href="{{ clear_all_url }}"
-                    class="underline underline-offset-4 transition-opacity hover:opacity-80"
+                    class="active-filters__clear-action"
                     @click.prevent="if (typeof buildFilterActionUrl === 'function' && typeof loadUrl === 'function') { loadUrl(buildFilterActionUrl($el.href)); } else { window.location.assign($el.href); }"
                 >
                     {{ 'collections.filters.clear_all' | t }}
@@ -91,7 +103,7 @@
                     {%- for value in filter.active_values -%}
                         <a
                             href="{{ value.url_to_remove }}"
-                            class="inline-flex min-h-10 items-center gap-2 rounded-full border border-theme-border-20 px-4 py-2 transition-colors hover:border-theme-text"
+                            class="active-filter-chip"
                             aria-label="{{ 'collections.filters.remove_filter' | t: filter: filter.label }}"
                             @click.prevent="if (typeof buildFilterActionUrl === 'function' && typeof loadUrl === 'function') { loadUrl(buildFilterActionUrl($el.href)); } else { window.location.assign($el.href); }"
                         >
@@ -106,7 +118,7 @@
                         -%}
                             <a
                                 href="{{ filter.url_to_remove }}"
-                                class="inline-flex min-h-10 items-center gap-2 rounded-full border border-theme-border-20 px-4 py-2 transition-colors hover:border-theme-text"
+                                class="active-filter-chip"
                                 aria-label="{{ 'collections.filters.remove_filter' | t: filter: filter.label }}"
                                 @click.prevent="if (typeof buildFilterActionUrl === 'function' && typeof loadUrl === 'function') { loadUrl(buildFilterActionUrl($el.href)); } else { window.location.assign($el.href); }"
                             >

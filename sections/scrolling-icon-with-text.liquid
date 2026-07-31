@@ -1,0 +1,397 @@
+{%- liquid
+    assign scrolling_direction = section.settings.direction | default: 'right_to_left'
+    unless scrolling_direction == 'right_to_left' or scrolling_direction == 'left_to_right'
+        assign scrolling_direction = 'right_to_left'
+    endunless
+
+    assign scrolling_speed = section.settings.speed | default: 'normal'
+    unless scrolling_speed == 'slow' or scrolling_speed == 'normal' or scrolling_speed == 'fast'
+        assign scrolling_speed = 'normal'
+    endunless
+
+    assign scrolling_gap = section.settings.gap | default: 40
+    assign scrolling_height = section.settings.height | default: 120
+    assign scrolling_content_scale = section.settings.content_scale | default: 100
+
+    assign scrolling_pause_on_hover = true
+    if section.settings.pause_on_hover == false
+        assign scrolling_pause_on_hover = false
+    endif
+
+    if scrolling_pause_on_hover
+        assign scrolling_pause_on_hover_attr = 'true'
+    else
+        assign scrolling_pause_on_hover_attr = 'false'
+    endif
+
+    assign scrolling_icon_size = scrolling_height | times: 42 | times: scrolling_content_scale | divided_by: 10000
+    if scrolling_icon_size < 24
+        assign scrolling_icon_size = 24
+    endif
+
+    assign scrolling_icon_size_max = scrolling_height | times: 50 | divided_by: 100
+    if scrolling_icon_size > scrolling_icon_size_max
+        assign scrolling_icon_size = scrolling_icon_size_max
+    endif
+
+    assign scrolling_icon_text_gap = scrolling_height | times: 10 | divided_by: 100
+    if scrolling_icon_text_gap < 8
+        assign scrolling_icon_text_gap = 8
+    elsif scrolling_icon_text_gap > 20
+        assign scrolling_icon_text_gap = 20
+    endif
+
+    assign scrolling_item_count = 0
+    for block in section.blocks
+        if block.settings.title != blank
+            assign scrolling_item_count = scrolling_item_count | plus: 1
+        endif
+    endfor
+
+    if scrolling_item_count == 1
+        assign scrolling_copies_per_set = 6
+    elsif scrolling_item_count == 2
+        assign scrolling_copies_per_set = 3
+    else
+        assign scrolling_copies_per_set = 2
+    endif
+-%}
+
+<div
+    data-section-id="{{ section.id }}"
+    class="scrolling-icon-with-text-section full-width color-{{ section.settings.color_scheme }} surface-section"
+    style="
+        --section-padding-top: {{ section.settings.padding_top }}px;
+        --section-padding-bottom: {{ section.settings.padding_bottom }}px;
+        --scrolling-icon-gap: {{ scrolling_gap }}px;
+        --scrolling-icon-height: {{ scrolling_height }}px;
+        --scrolling-content-scale-pct: {{ scrolling_content_scale }};
+        --scrolling-icon-media-size: {{ scrolling_icon_size }}px;
+    "
+>
+    <div class="layout{% if section.settings.section_width == 'fixed' %} container-page{% endif %}">
+        {%- if scrolling_item_count > 0 -%}
+            {%- if section.settings.show_divider -%}
+                <div
+                    class="scrolling-icon-with-text__divider scrolling-icon-with-text__divider--top"
+                    aria-hidden="true"
+                ></div>
+            {%- endif -%}
+
+            <div
+                class="scrolling-icon-with-text__marquee"
+                data-scrolling-direction="{{ scrolling_direction }}"
+                data-scrolling-speed="{{ scrolling_speed }}"
+                data-scrolling-pause-on-hover="{{ scrolling_pause_on_hover_attr }}"
+            >
+                <div class="scrolling-icon-with-text__viewport">
+                    <div class="scrolling-icon-with-text__track">
+                        {%- for pass in (1..2) -%}
+                            {%- for copy in (1..scrolling_copies_per_set) -%}
+                                {%- for block in section.blocks -%}
+                                    {%- liquid
+                                        assign block_title = block.settings.title
+                                        assign block_image = block.settings.image_icon
+                                        assign block_icon = block.settings.icon | default: 'icon-check'
+                                        assign block_layout = block.settings.layout | default: 'horizontal'
+                                        assign is_primary_item = false
+                                        if pass == 1 and copy == 1
+                                            assign is_primary_item = true
+                                        endif
+                                        assign block_link = ''
+                                        if is_primary_item
+                                            assign block_link = block.settings.link
+                                        endif
+                                    -%}
+                                    {%- if block_title != blank -%}
+                                        <div
+                                            class="scrolling-icon-with-text__item"
+                                            {% unless is_primary_item %}
+                                                aria-hidden="true"
+                                            {% endunless %}
+                                            {% if is_primary_item %}
+                                                {{ block.shopify_attributes }}
+                                            {% endif %}
+                                        >
+                                            {%- render 'icon-with-text-item',
+                                                title: block_title,
+                                                icon: block_icon,
+                                                image_icon: block_image,
+                                                link: block_link,
+                                                icon_size: scrolling_icon_size,
+                                                icon_size_mobile: scrolling_icon_size,
+                                                direction: block_layout,
+                                                gap: scrolling_icon_text_gap,
+                                                alignment: 'center',
+                                                class: 'scrolling-icon-with-text__icon-item',
+                                                title_class: 'scrolling-icon-with-text__title font-medium whitespace-nowrap'
+                                            -%}
+                                        </div>
+                                    {%- endif -%}
+                                {%- endfor -%}
+                            {%- endfor -%}
+                        {%- endfor -%}
+                    </div>
+                </div>
+            </div>
+
+            {%- if section.settings.show_divider -%}
+                <div
+                    class="scrolling-icon-with-text__divider scrolling-icon-with-text__divider--bottom"
+                    aria-hidden="true"
+                ></div>
+            {%- endif -%}
+        {%- endif -%}
+    </div>
+</div>
+
+{% schema %}
+{
+    "name": "t:sections.scrolling-icon-with-text.name",
+    "tag": "section",
+    "class": "section",
+    "disabled_on": {
+        "groups": ["header", "footer"]
+    },
+    "settings": [
+        {
+            "type": "color_scheme",
+            "id": "color_scheme",
+            "label": "t:sections.scrolling-icon-with-text.settings.color_scheme",
+            "default": "scheme-2"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.scrolling-icon-with-text.content.scrolling"
+        },
+        {
+            "type": "select",
+            "id": "direction",
+            "label": "t:sections.scrolling-icon-with-text.settings.direction",
+            "options": [
+                {
+                    "value": "right_to_left",
+                    "label": "t:sections.scrolling-icon-with-text.options.right_to_left"
+                },
+                {
+                    "value": "left_to_right",
+                    "label": "t:sections.scrolling-icon-with-text.options.left_to_right"
+                }
+            ],
+            "default": "right_to_left"
+        },
+        {
+            "type": "select",
+            "id": "speed",
+            "label": "t:sections.scrolling-icon-with-text.settings.speed",
+            "options": [
+                {
+                    "value": "slow",
+                    "label": "t:sections.scrolling-icon-with-text.options.slow"
+                },
+                {
+                    "value": "normal",
+                    "label": "t:sections.scrolling-icon-with-text.options.normal"
+                },
+                {
+                    "value": "fast",
+                    "label": "t:sections.scrolling-icon-with-text.options.fast"
+                }
+            ],
+            "default": "normal"
+        },
+        {
+            "type": "range",
+            "id": "gap",
+            "min": 0,
+            "max": 120,
+            "step": 4,
+            "unit": "px",
+            "label": "t:sections.scrolling-icon-with-text.settings.gap",
+            "default": 40
+        },
+        {
+            "type": "range",
+            "id": "height",
+            "min": 60,
+            "max": 220,
+            "step": 4,
+            "unit": "px",
+            "label": "t:sections.scrolling-icon-with-text.settings.height",
+            "info": "t:sections.scrolling-icon-with-text.info.height",
+            "default": 120
+        },
+        {
+            "type": "range",
+            "id": "content_scale",
+            "min": 80,
+            "max": 120,
+            "step": 5,
+            "unit": "%",
+            "label": "t:sections.scrolling-icon-with-text.settings.content_scale",
+            "info": "t:sections.scrolling-icon-with-text.info.content_scale",
+            "default": 100
+        },
+        {
+            "type": "checkbox",
+            "id": "pause_on_hover",
+            "label": "t:sections.scrolling-icon-with-text.settings.pause_on_hover",
+            "info": "t:sections.scrolling-icon-with-text.info.pause_on_hover",
+            "default": true
+        },
+        {
+            "type": "header",
+            "content": "t:sections.scrolling-icon-with-text.content.layout"
+        },
+        {
+            "type": "select",
+            "id": "section_width",
+            "label": "t:sections.scrolling-icon-with-text.settings.section_width",
+            "options": [
+                {
+                    "value": "full",
+                    "label": "t:sections.scrolling-icon-with-text.options.full_width"
+                },
+                {
+                    "value": "fixed",
+                    "label": "t:sections.scrolling-icon-with-text.options.fixed_width"
+                }
+            ],
+            "default": "fixed"
+        },
+        {
+            "type": "checkbox",
+            "id": "show_divider",
+            "label": "t:sections.scrolling-icon-with-text.settings.show_divider",
+            "default": false
+        },
+        {
+            "type": "header",
+            "content": "t:sections.scrolling-icon-with-text.content.padding"
+        },
+        {
+            "type": "range",
+            "id": "padding_top",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "t:sections.scrolling-icon-with-text.settings.padding_top",
+            "default": 32
+        },
+        {
+            "type": "range",
+            "id": "padding_bottom",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "t:sections.scrolling-icon-with-text.settings.padding_bottom",
+            "default": 32
+        }
+    ],
+    "blocks": [
+        {
+            "type": "item",
+            "name": "t:sections.scrolling-icon-with-text.blocks.item",
+            "settings": [
+                {
+                    "type": "text",
+                    "id": "title",
+                    "label": "t:sections.scrolling-icon-with-text.block_settings.title",
+                    "default": "t:sections.scrolling-icon-with-text.blocks_defaults.title"
+                },
+                {
+                    "type": "image_picker",
+                    "id": "image_icon",
+                    "label": "t:sections.scrolling-icon-with-text.block_settings.image_icon"
+                },
+                {
+                    "type": "select",
+                    "id": "icon",
+                    "label": "t:sections.icon-with-text.block_settings.icon",
+                    "options": [
+                        {
+                            "value": "none",
+                            "label": "t:sections.icon-with-text.options.none"
+                        },
+                        {
+                            "value": "icon-cart",
+                            "label": "t:sections.icon-with-text.options.cart"
+                        },
+                        {
+                            "value": "icon-check",
+                            "label": "t:sections.icon-with-text.options.check"
+                        },
+                        {
+                            "value": "icon-check-circle",
+                            "label": "t:sections.icon-with-text.options.check_circle"
+                        },
+                        {
+                            "value": "icon-info-circle",
+                            "label": "t:sections.icon-with-text.options.info_circle"
+                        },
+                        {
+                            "value": "icon-star",
+                            "label": "t:sections.icon-with-text.options.star"
+                        },
+                        {
+                            "value": "icon-arrow2",
+                            "label": "t:sections.icon-with-text.options.arrow_2"
+                        },
+                        {
+                            "value": "icon-eyeglasses",
+                            "label": "t:sections.icon-with-text.options.eyeglasses"
+                        },
+                        {
+                            "value": "icon-search",
+                            "label": "t:sections.icon-with-text.options.search"
+                        }
+                    ],
+                    "default": "icon-check"
+                },
+                {
+                    "type": "select",
+                    "id": "layout",
+                    "label": "t:sections.scrolling-icon-with-text.block_settings.layout",
+                    "options": [
+                        {
+                            "value": "horizontal",
+                            "label": "t:sections.scrolling-icon-with-text.options.horizontal"
+                        },
+                        {
+                            "value": "vertical",
+                            "label": "t:sections.scrolling-icon-with-text.options.vertical"
+                        }
+                    ],
+                    "default": "horizontal"
+                },
+                {
+                    "type": "url",
+                    "id": "link",
+                    "label": "t:sections.scrolling-icon-with-text.block_settings.link"
+                }
+            ]
+        }
+    ],
+    "presets": [
+        {
+            "name": "t:sections.scrolling-icon-with-text.presets.scrolling_icon_with_text",
+            "blocks": [
+                {
+                    "type": "item"
+                },
+                {
+                    "type": "item"
+                },
+                {
+                    "type": "item"
+                },
+                {
+                    "type": "item"
+                }
+            ]
+        }
+    ]
+}
+{% endschema %}

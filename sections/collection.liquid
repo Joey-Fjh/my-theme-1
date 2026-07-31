@@ -1,6 +1,6 @@
 <div
     data-section-id="{{ section.id }}"
-    class="collection-section full-width color-{{ section.settings.color_scheme }} bg-scheme-surface"
+    class="collection-section full-width color-{{ section.settings.color_scheme }} surface-section"
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
@@ -8,30 +8,32 @@
     data-pagination-section-id="{{ section.id }}"
     data-pagination-selectors='["[data-collection-dynamic-content]","[data-collection-drawer-shell]"]'
     x-data="collectionFilters()"
-    data-component-kind="section"
-    data-component-type="collection"
-    data-component-id="{{ section.id }}"
 >
+    {%- liquid
+        assign collection_heading_class = section.settings.heading_size | default: 'heading-4xl'
+        assign collection_subtitle_class = section.settings.subtitle_size | default: 'body-xl'
+    -%}
     <div class="layout layout-no-pb container-page pb-0">
         {%- comment -%} Hero {%- endcomment -%}
-        <div class="relative py-20 pc:py-40">
+        <div
+            class="relative py-20 pc:py-40"
+            x-data="motionRevealSection()"
+            data-motion-section
+        >
             <div class="flex items-start justify-between">
-                <div>
-                    <h1 class="mb-10 heading-4xl">
-                        {{ section.settings.header | default: 'Products' }}
-                    </h1>
-                    <div class="rte rte--compact max-w-3xl">
-                        {%- assign collection_description_fallback = 'collections.description_html'
-                            | t
-                        -%}
-                        {{
-                            section.settings.description
-                            | default: collection_description_fallback
-                        }}
-                    </div>
+                <div data-motion-reveal="content" data-motion-critical>
+                    {%- render 'listing-page-hero-copy',
+                        setting_header: section.settings.header,
+                        object_title: collection.title,
+                        header_locale_key: 'collections.products',
+                        setting_description: section.settings.description,
+                        description_locale_key: 'collections.description_html',
+                        heading_class: collection_heading_class,
+                        description_class: collection_subtitle_class
+                    -%}
                 </div>
 
-                <div>
+                <div data-motion-reveal="media">
                     {%- render 'rotating-badge',
                         classes: 'relative justify-self-center',
                         badge_class: 'text-theme-text',
@@ -88,7 +90,7 @@
                         <button
                             type="button"
                             @click="$store.dialog.open('collection-filters')"
-                            class="flex shrink-0 cursor-pointer items-center gap-3"
+                            class="collection-toolbar__action flex shrink-0 cursor-pointer items-center gap-3"
                         >
                             {% render 'icons', icon: 'icon-filter' %}
                             <span>{{ 'collections.filter' | t }}</span>
@@ -151,7 +153,7 @@
             >
                 {%- if enable_filtering and is_vertical_filter -%}
                     <aside class="hidden pc:block">
-                        <div class="sticky top-20 border-r border-theme-border-20 pr-6">
+                        <div class="sticky top-20 border-e border-theme-border/20 pe-6">
                             {%- render 'filter-vertical',
                                 filter_source: collection,
                                 show_more_limit: section.settings.filter_visible_values_limit,
@@ -195,7 +197,7 @@
                                 <button
                                     type="button"
                                     @click="$store.dialog.open('collection-filters')"
-                                    class="flex shrink-0 cursor-pointer items-center gap-2.5"
+                                    class="collection-toolbar__action flex shrink-0 cursor-pointer items-center gap-2.5"
                                 >
                                     {% render 'icons', icon: 'icon-filter' %}
                                     <span>{{ 'collections.filter' | t }}</span>
@@ -240,8 +242,8 @@
                             @click.prevent="window.location.assign(buildCollectionTabUrl($el.href))"
                             :tabindex="isActive(index) ? 0 : -1"
                             :aria-selected="isActive(index)"
-                            :class="isActive(index) ? 'opacity-100 border-b-2 border-current' : 'opacity-50 hover:opacity-100 border-b-2 border-transparent'"
-                            class="flex cursor-pointer flex-nowrap items-center gap-1 whitespace-nowrap focus-ring transition-all duration-300 focus:outline-none"
+                            :class="isActive(index) && 'is-active'"
+                            class="collection__tab tab-nav-item tab-nav-item--underline-opacity"
                         >
                             {{ 'collections.all' | t }}
                             <sup class="sup-badge">({{ all_products_collection.all_products_count | default: 0 }})</sup>
@@ -262,8 +264,8 @@
                                 @click.prevent="window.location.assign(buildCollectionTabUrl($el.href))"
                                 :tabindex="isActive(index) ? 0 : -1"
                                 :aria-selected="isActive(index)"
-                                :class="isActive(index) ? 'opacity-100 border-b-2 border-current' : 'opacity-50 hover:opacity-100 border-b-2 border-transparent'"
-                                class="flex cursor-pointer flex-nowrap items-center gap-1 whitespace-nowrap focus-ring transition-all duration-300 focus:outline-none"
+                                :class="isActive(index) && 'is-active'"
+                                class="collection__tab tab-nav-item tab-nav-item--underline-opacity"
                             >
                                 {{ tab_collection.title }}
                                 <sup class="sup-badge">({{ tab_collection.all_products_count | default: 0 }})</sup>
@@ -287,11 +289,9 @@
                             {% paginate collection.products by section.settings.products_per_page %}
                                 <div
                                     class="grid {{ mobile_grid_class }} {{ desktop_grid_class }} gap-x-4 gap-y-8 pb-10"
-                                    data-component-kind="section"
-                                    data-component-type="product-grid"
-                                    data-component-id="{{ section.id }}-grid"
                                     x-data="motionRevealSection()"
                                     data-motion-section
+                                    data-motion-cascade
                                 >
                                     {%- for product in collection.products -%}
                                         {%- if forloop.index <= first_row_count -%}
@@ -300,25 +300,23 @@
                                             {%- else -%}
                                                 {%- assign row_fetchpriority = '' -%}
                                             {%- endif -%}
-                                            <div class="group">
-                                                {%-
-                                                    render 'product-card',
-                                                        product: product,
-                                                        hover_mode: 'variants',
-                                                        scope_id: section.id,
-                                                        color_scheme: section.settings.color_scheme,
-                                                        primary_image_loading: 'eager',
-                                                        primary_image_fetchpriority: row_fetchpriority
+                                            <div class="group" data-motion-bound>
+                                                {%- render 'product-card',
+                                                    product: product,
+                                                    hover_mode: 'variants',
+                                                    scope_id: section.id,
+                                                    color_scheme: section.settings.color_scheme,
+                                                    primary_image_loading: 'eager',
+                                                    primary_image_fetchpriority: row_fetchpriority
                                                 -%}
                                             </div>
                                         {%- else -%}
-                                            <div class="group">
-                                                {%-
-                                                    render 'product-card',
-                                                        product: product,
-                                                        hover_mode: 'variants',
-                                                        scope_id: section.id,
-                                                        color_scheme: section.settings.color_scheme
+                                            <div class="group" data-motion-bound>
+                                                {%- render 'product-card',
+                                                    product: product,
+                                                    hover_mode: 'variants',
+                                                    scope_id: section.id,
+                                                    color_scheme: section.settings.color_scheme
                                                 %}
                                             </div>
                                         {%- endif -%}
@@ -342,9 +340,9 @@
                     {%- comment -%} Tab strip chrome: full-width bottom border on desktop when filter_type is not Horizontal (horizontal filters live in their own row); horizontal mode removes pc border from the tab row. {%- endcomment -%}
                     {%- liquid
                         assign header_outer_class_value = 'w-full pc:grid pc:grid-cols-[max-content_minmax(0,1fr)_max-content] pc:items-end pc:gap-12'
-                        assign header_class_value = 'body-lg gap-6 pc:gap-12 max-pc:border-b max-pc:border-theme-border-20'
+                        assign header_class_value = 'body-3xl gap-6 pc:gap-12 max-pc:border-b max-pc:border-theme-border/20'
                         if is_horizontal_filter == false
-                            assign header_outer_class_value = header_outer_class_value | append: ' pc:border-b pc:border-theme-border-20'
+                            assign header_outer_class_value = header_outer_class_value | append: ' pc:border-b pc:border-theme-border/20'
                         else
                             assign header_class_value = header_class_value | append: ' pc:border-0'
                         endif
@@ -379,10 +377,13 @@
             {%- render 'ui-dialog',
                 id: 'collection-filters',
                 type: 'drawer',
+                layer: 'drawer',
                 position: 'left',
-                top_class: 'top-0',
-                root_class: 'z-10140',
-                drawer_wrapper_class: 'max-pc:w-4/5 max-pc:max-w-none max-pc:top-3 max-pc:bottom-3 max-pc:left-1/2 max-pc:right-auto max-pc:-translate-x-1/2',
+                top_class: 'top-[var(--announcement-bar-height)] pc:top-0',
+                color_scheme: section.settings.color_scheme,
+                drawer_motion_sheet: true,
+                mobile_layout: 'inset',
+                drawer_desktop_layout: true,
                 show_close_button: false,
                 close_label: close_label,
                 content: drawer_content
@@ -455,7 +456,59 @@
             "type": "color_scheme",
             "id": "color_scheme",
             "label": "t:sections.collection.settings.color_scheme",
-            "default": "scheme-1"
+            "default": "scheme-2"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.slides-show.content.font"
+        },
+        {
+            "type": "select",
+            "id": "heading_size",
+            "label": "t:sections.slides-show.settings.heading_size",
+            "options": [
+                {
+                    "value": "heading-4xl",
+                    "label": "t:sections.slides-show.options.heading_4xl"
+                },
+                {
+                    "value": "heading-3xl",
+                    "label": "t:sections.slides-show.options.heading_3xl"
+                },
+                {
+                    "value": "heading-2xl",
+                    "label": "t:sections.slides-show.options.heading_2xl"
+                },
+                {
+                    "value": "heading-xl",
+                    "label": "t:sections.slides-show.options.heading_xl"
+                },
+                {
+                    "value": "heading-h1",
+                    "label": "t:sections.slides-show.options.heading_h1"
+                },
+                {
+                    "value": "heading-h2",
+                    "label": "t:sections.slides-show.options.heading_h2"
+                },
+                {
+                    "value": "heading-h3",
+                    "label": "t:sections.slides-show.options.heading_h3"
+                },
+                {
+                    "value": "heading-h4",
+                    "label": "t:sections.slides-show.options.heading_h4"
+                },
+                {
+                    "value": "heading-h5",
+                    "label": "t:sections.slides-show.options.heading_h5"
+                },
+                {
+                    "value": "heading-h6",
+                    "label": "t:sections.slides-show.options.heading_h6"
+                }
+            ],
+            "default": "heading-4xl"
         },
         {
             "type": "inline_richtext",
@@ -470,6 +523,46 @@
             "label": "t:sections.collection.settings.description"
         },
         {
+            "type": "header",
+            "content": "t:sections.scroll-categories.content.subtitle"
+        },
+        {
+            "type": "select",
+            "id": "subtitle_size",
+            "label": "t:sections.scroll-categories.settings.subtitle_size",
+            "options": [
+                {
+                    "value": "body-3xl",
+                    "label": "t:sections.scroll-categories.options.body_3xl"
+                },
+                {
+                    "value": "body-2xl",
+                    "label": "t:sections.scroll-categories.options.body_2xl"
+                },
+                {
+                    "value": "body-xl",
+                    "label": "t:sections.scroll-categories.options.body_xl"
+                },
+                {
+                    "value": "body-lg",
+                    "label": "t:sections.scroll-categories.options.body_lg"
+                },
+                {
+                    "value": "body-md",
+                    "label": "t:sections.scroll-categories.options.body_md"
+                },
+                {
+                    "value": "body-sm",
+                    "label": "t:sections.scroll-categories.options.body_sm"
+                },
+                {
+                    "value": "body-xs",
+                    "label": "t:sections.scroll-categories.options.body_xs"
+                }
+            ],
+            "default": "body-xl"
+        },
+        {
             "type": "text",
             "id": "rotate_badge_text",
             "label": "t:sections.collection.settings.rotate_badge_text",
@@ -479,7 +572,7 @@
             "type": "text",
             "id": "rotate_badge_percent",
             "label": "t:sections.collection.settings.rotate_badge_percent",
-            "default": "100%"
+            "default": "t:sections.collection.defaults.rotate_badge_percent"
         },
         {
             "type": "range",
@@ -576,7 +669,7 @@
             "step": 4,
             "unit": "px",
             "label": "t:sections.collection.settings.padding_top",
-            "default": 0
+            "default": 32
         },
         {
             "type": "range",
@@ -586,7 +679,7 @@
             "step": 4,
             "unit": "px",
             "label": "t:sections.collection.settings.padding_bottom",
-            "default": 0
+            "default": 32
         }
     ]
 }

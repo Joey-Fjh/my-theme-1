@@ -15,13 +15,15 @@ Use this skill as the project task dispatcher. It does not replace implementatio
 4. Read `docs/references/agent-workflow/skill-routing.md` for the routing matrix when the task is non-trivial, ambiguous, broad, cross-session, governance-related, or touches multiple rule families.
 5. Read `docs/references/agent-workflow/external-skills.md` for adoption history before recommending new third-party skills.
 6. Route to the smallest relevant project skill or docs reference.
-7. State the intended route before acting when the task is broad, risky, or likely to trigger multiple skills.
+7. Apply the delegation test in `docs/references/agent-workflow/multi-agent-architecture.md` when independent subproblems, noisy output, or separate verification may justify multiple agents.
+8. State the intended route before acting when the task is broad, risky, or likely to trigger multiple skills or agents.
 
 ## Routing Principles
 
 - `AGENTS.md` is the rule source.
 - `docs/references/` stores long shared references.
 - `.agents/skills/` stores project-approved reusable workflows and deterministic tool resources.
+- `.agents/roles/` and `.agents/contracts/` store portable role and handoff contracts.
 - Tool-specific directories such as `.claude/`, `.codex/`, or `.cursor/` are adapters, not project knowledge sources.
 - Third-party skills are not project rules until adapted and approved.
 - Users may state intent naturally; manual skill names are optional overrides.
@@ -40,6 +42,7 @@ Use this skill as the project task dispatcher. It does not replace implementatio
 - i18n, locale keys, user-facing copy, schema text, ARIA labels: use `check-i18n`.
 - Liquid/JS architecture, cart, HTTP, SectionRefresher, Alpine, headings: use `check-theme-architecture`.
 - Icon source or generated SVG assets: use `build-svg-icons`.
+- Multi-agent context isolation, parallel read-only work, or independent implementation and review: use `orchestrate-agents` after this router.
 - Collaboration standard, routing, third-party skill governance, MCP/hooks planning, or docs structure: read the matching `docs/references/agent-workflow/` reference.
 
 ## Output

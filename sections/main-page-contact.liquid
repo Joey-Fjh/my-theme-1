@@ -1,16 +1,16 @@
 <div
     data-section-id="{{ section.id }}"
-    class="main-page-contact-section full-width color-{{ section.settings.color_scheme }} bg-scheme-surface"
+    class="main-page-contact-section full-width color-{{ section.settings.color_scheme }} surface-section"
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
     "
-    data-component-kind="section"
-    data-component-type="main-page-contact"
-    data-component-id="{{ section.id }}"
     x-data="motionRevealSection()"
     data-motion-section
 >
+    {%- liquid
+        assign contact_heading_class = section.settings.heading_size | default: 'heading-xl'
+    -%}
     <div class="layout container-page">
         {%- comment -%} Main Content: Image + Form {%- endcomment -%}
         <div class="relative z-1 mx-auto w-full max-w-full pc:max-w-5/6">
@@ -40,7 +40,8 @@
                         width: section.settings.image.width,
                         sizes: sizes,
                         widths: widths,
-                        loading: 'eager'
+                        loading: 'eager',
+                        motion_reveal: false
                     %}
 
                     {%- comment -%} hCaptcha Notice {%- endcomment -%}
@@ -52,6 +53,7 @@
                         {% render 'link',
                             text: link_text,
                             href: 'https://www.hcaptcha.com/privacy',
+                            variant: 'plain',
                             class: 'underline',
                             target: '_blank',
                             attributes: 'rel="noopener"'
@@ -61,6 +63,7 @@
                         {% render 'link',
                             text: link_text,
                             href: 'https://www.hcaptcha.com/terms',
+                            variant: 'plain',
                             class: 'underline',
                             target: '_blank',
                             attributes: 'rel="noopener"'
@@ -74,17 +77,31 @@
                 <div
                     class="flex flex-col justify-center bg-(--contact-form-bg) px-6 py-8 text-(--contact-form-text) pc:px-10 pc:py-10 fw:px-12"
                     style="--contact-form-bg: {{ form_bg }}; --contact-form-text: {{ form_text }};"
-                    data-motion-reveal="content"
                 >
                     {%- assign heading_fallback = 'sections.main-page-contact.defaults.heading'
                         | t
                     -%}
-                    <h1 class="text-center text-(--contact-form-text)">
-                        {{ section.settings.heading | default: heading_fallback }}
-                    </h1>
-                    <div class="rte rte--compact mt-3 text-center opacity-80">
-                        {%- assign contact_description_fallback = 'contact.description_html' | t -%}
-                        {{ section.settings.description | default: contact_description_fallback }}
+                    <div data-motion-sequence>
+                        <h1
+                            class="{{ contact_heading_class }} text-center text-(--contact-form-text)"
+                            data-motion-reveal="content"
+                            data-motion-critical
+                        >
+                            {{ section.settings.heading | default: heading_fallback }}
+                        </h1>
+                        <div
+                            class="rte rte--compact mt-3 text-center"
+                            data-motion-reveal="content"
+                            data-motion-critical
+                        >
+                            {%- assign contact_description_fallback = 'contact.description_html'
+                                | t
+                            -%}
+                            {{
+                                section.settings.description
+                                | default: contact_description_fallback
+                            }}
+                        </div>
                     </div>
 
                     {%- form 'contact', class: 'mt-6 flex flex-col gap-5 pc:mt-8 pc:gap-6' -%}
@@ -195,7 +212,7 @@
                         {%- comment -%} Submit {%- endcomment -%}
                         <button
                             type="submit"
-                            class="btn-primary w-full"
+                            class="btn-primary w-full body-xl"
                         >
                             {{ section.settings.button_text | default: button_text_fallback }}
                         </button>
@@ -242,7 +259,7 @@
             "type": "color_scheme",
             "id": "color_scheme",
             "label": "t:sections.main-page-contact.settings.color_scheme",
-            "default": "scheme-1"
+            "default": "scheme-2"
         },
         {
             "type": "color",
@@ -272,6 +289,58 @@
             "id": "heading",
             "default": "t:sections.main-page-contact.defaults.heading",
             "label": "t:sections.main-page-contact.settings.heading"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.slides-show.content.heading"
+        },
+        {
+            "type": "select",
+            "id": "heading_size",
+            "label": "t:sections.slides-show.settings.heading_size",
+            "options": [
+                {
+                    "value": "heading-4xl",
+                    "label": "t:sections.slides-show.options.heading_4xl"
+                },
+                {
+                    "value": "heading-3xl",
+                    "label": "t:sections.slides-show.options.heading_3xl"
+                },
+                {
+                    "value": "heading-2xl",
+                    "label": "t:sections.slides-show.options.heading_2xl"
+                },
+                {
+                    "value": "heading-xl",
+                    "label": "t:sections.slides-show.options.heading_xl"
+                },
+                {
+                    "value": "heading-h1",
+                    "label": "t:sections.slides-show.options.heading_h1"
+                },
+                {
+                    "value": "heading-h2",
+                    "label": "t:sections.slides-show.options.heading_h2"
+                },
+                {
+                    "value": "heading-h3",
+                    "label": "t:sections.slides-show.options.heading_h3"
+                },
+                {
+                    "value": "heading-h4",
+                    "label": "t:sections.slides-show.options.heading_h4"
+                },
+                {
+                    "value": "heading-h5",
+                    "label": "t:sections.slides-show.options.heading_h5"
+                },
+                {
+                    "value": "heading-h6",
+                    "label": "t:sections.slides-show.options.heading_h6"
+                }
+            ],
+            "default": "heading-xl"
         },
         {
             "type": "richtext",
@@ -309,7 +378,7 @@
             "step": 4,
             "unit": "px",
             "label": "t:sections.main-page-contact.settings.padding_top",
-            "default": 0
+            "default": 32
         },
         {
             "type": "range",
@@ -319,7 +388,7 @@
             "step": 4,
             "unit": "px",
             "label": "t:sections.main-page-contact.settings.padding_bottom",
-            "default": 0
+            "default": 32
         }
     ]
 }

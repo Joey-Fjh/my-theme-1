@@ -188,6 +188,25 @@
         return buildAbsoluteUrlFromParams(targetUrl.pathname, nextParams);
     }
 
+    const SEARCH_CONTEXT_PARAM_KEYS = ['q', 'type', 'options[prefix]'];
+
+    function resolveSearchFilterActionUrl(targetHref, currentParams) {
+        const resolved = resolveCollectionFilterActionUrl(targetHref, currentParams);
+        const targetUrl = new URL(resolved, window.location.origin);
+        const nextParams = new URLSearchParams(targetUrl.search);
+
+        SEARCH_CONTEXT_PARAM_KEYS.forEach((key) => {
+            const value = currentParams.get(key);
+            if (value && !nextParams.has(key)) {
+                nextParams.set(key, value);
+            }
+        });
+
+        nextParams.delete('page');
+
+        return buildAbsoluteUrlFromParams(targetUrl.pathname, nextParams);
+    }
+
     function requestCollectionSectionHtml(Http, url, sectionId, signal) {
         const sep = url.includes('?') ? '&' : '?';
         const fetchUrl = `${url}${sep}section_id=${encodeURIComponent(sectionId)}`;
@@ -274,6 +293,290 @@
                     if (page) params.set('page', page);
                     else params.delete('page');
                     this.loadUrl(this._buildUrl(params));
+                },
+            };
+        },
+
+        /**
+         * Search product facets adapter.
+         * Reuses collectionFilters fetch/refresh/abort behavior, but:
+         * - preserves q / type / options[prefix] on facet remove and clear-all URLs
+         * - uses a narrower SectionRefresher boundary while the product drawer stays open
+         * - tracks renderedResultType for accurate popstate type-change detection
+         * - reconciles dialog focus via public dialog store APIs / force-closes on type switches
+         */
+        searchFilters(sectionId = null, selectors = null) {
+            const SEARCH_FILTER_DIALOG_ID = 'collection-filters';
+            const PRODUCT_REFRESH_SELECTORS = [
+                '[data-search-results-content]',
+                '[data-search-drawer-body]',
+            ];
+            const TYPE_CHANGE_SELECTORS = [
+                '[data-search-type-shell]',
+                '[data-search-drawer-shell]',
+            ];
+
+            const base = ComponentGroups.filters.collectionFilters(sectionId, selectors);
+
+            return {
+                ...base,
+
+                /** DOM-rendered result type; not derived from window.location during popstate. */
+                renderedResultType: 'product',
+
+                init() {
+                    const ds = this.$el?.dataset;
+                    const initial = (ds?.searchResultType || 'product').toLowerCase();
+                    this.renderedResultType =
+                        initial === 'article' || initial === 'page' || initial === 'product'
+                            ? initial
+                            : 'product';
+
+                    if (typeof base.init === 'function') {
+                        base.init.call(this);
+                    }
+                },
+
+                buildFilterActionUrl(targetHref) {
+                    return resolveSearchFilterActionUrl(targetHref, this._getFormParams());
+                },
+
+                _getFormParams() {
+                    const params = base._getFormParams.call(this);
+                    try {
+                        const currentSort = new URL(
+                            window.location.href,
+                            window.location.origin,
+                        ).searchParams.get('sort_by');
+                        if (currentSort && !params.has('sort_by')) {
+                            params.set('sort_by', currentSort);
+                        }
+                    } catch (_) {
+                        /* ignore */
+                    }
+                    return params;
+                },
+
+                _getSearchResultType(url) {
+                    try {
+                        const parsed = new URL(url, window.location.origin);
+                        const type = (parsed.searchParams.get('type') || 'product').toLowerCase();
+                        if (type === 'article' || type === 'page' || type === 'product')
+                            return type;
+                    } catch (_) {
+                        /* ignore */
+                    }
+                    return 'product';
+                },
+
+                _getSearchDialogStore() {
+                    return window.Alpine?.store?.('dialog') || null;
+                },
+
+                _isSearchFilterDialogOpen() {
+                    const dialog = this._getSearchDialogStore();
+                    return Boolean(dialog?.isOpen?.(SEARCH_FILTER_DIALOG_ID));
+                },
+
+                _hasSearchFilterDialogLifecycle() {
+                    const dialog = this._getSearchDialogStore();
+                    return Boolean(
+                        dialog?.isOpen?.(SEARCH_FILTER_DIALOG_ID) ||
+                        dialog?.isClosing?.(SEARCH_FILTER_DIALOG_ID),
+                    );
+                },
+
+                _getSearchFilterTrigger() {
+                    return this.$el?.querySelector?.('[data-search-filter-trigger]') || null;
+                },
+
+                _getSearchDialogPanel() {
+                    return document.querySelector(
+                        `[data-dialog-root][data-dialog-id="${SEARCH_FILTER_DIALOG_ID}"] [data-dialog-panel]`,
+                    );
+                },
+
+                _captureDrawerFocusIntent() {
+                    const active = document.activeElement;
+                    if (!active || active === document.body) return { kind: 'panel' };
+
+                    const panel = this._getSearchDialogPanel();
+                    if (!panel || !panel.contains(active)) return { kind: 'panel' };
+
+                    const name = active.getAttribute?.('name') || active.name;
+                    if (!name) return { kind: 'panel' };
+
+                    return {
+                        kind: 'control',
+                        name,
+                        value: active.value || '',
+                    };
+                },
+
+                _findDrawerFocusTarget(intent) {
+                    const panel = this._getSearchDialogPanel();
+                    if (!panel) return null;
+
+                    if (intent?.kind === 'control' && intent.name) {
+                        let match = null;
+                        if (intent.value !== '') {
+                            match = panel.querySelector(
+                                `[name="${CSS.escape(intent.name)}"][value="${CSS.escape(intent.value)}"]`,
+                            );
+                        }
+                        if (!match) {
+                            match = panel.querySelector(`[name="${CSS.escape(intent.name)}"]`);
+                        }
+                        if (match && panel.contains(match)) return match;
+                    }
+
+                    return null;
+                },
+
+                _forceCloseSearchFilterDialog() {
+                    const dialog = this._getSearchDialogStore();
+                    dialog?.forceClose?.(SEARCH_FILTER_DIALOG_ID);
+                },
+
+                _parkFocusBeforeTypeChange() {
+                    const trigger = this._getSearchFilterTrigger();
+                    if (trigger?.isConnected && typeof trigger.focus === 'function') {
+                        trigger.focus({ preventScroll: true });
+                        return;
+                    }
+
+                    const tab =
+                        this.$el?.querySelector?.('[role="tab"][aria-selected="true"]') ||
+                        this.$el?.querySelector?.('[role="tab"].is-active');
+                    if (tab?.isConnected && typeof tab.focus === 'function') {
+                        tab.focus({ preventScroll: true });
+                    }
+                },
+
+                _announceSearchResults() {
+                    const live = this.$el?.querySelector?.('[data-search-results-live]');
+                    const source = this.$el?.querySelector?.('[data-search-results-status]');
+                    if (!live || !source) return;
+
+                    const nextText = (source.textContent || '').trim();
+                    if (!nextText) return;
+
+                    if (live.textContent === nextText) {
+                        live.textContent = '';
+                    }
+                    requestAnimationFrame(() => {
+                        live.textContent = nextText;
+                    });
+                },
+
+                _focusActiveSearchTab() {
+                    const focusTab = () => {
+                        const tab =
+                            this.$el?.querySelector?.('[role="tab"][aria-selected="true"]') ||
+                            this.$el?.querySelector?.('[role="tab"].is-active');
+                        if (tab && typeof tab.focus === 'function' && tab.isConnected) {
+                            tab.focus({ preventScroll: true });
+                            return true;
+                        }
+                        return false;
+                    };
+
+                    requestAnimationFrame(() => {
+                        if (focusTab()) return;
+                        requestAnimationFrame(focusTab);
+                    });
+                },
+
+                _reconcileSearchFilterDialog({
+                    nextType,
+                    dialogWasOpen,
+                    focusIntent,
+                    closedDialogForTypeChange,
+                }) {
+                    if (nextType !== 'product') {
+                        this._forceCloseSearchFilterDialog();
+                        if (closedDialogForTypeChange) {
+                            this._focusActiveSearchTab();
+                        }
+                        return;
+                    }
+
+                    if (!dialogWasOpen) return;
+
+                    const dialog = this._getSearchDialogStore();
+                    // User started closing (or closed) while the request was in flight — do not revive.
+                    if (!dialog?.isOpen?.(SEARCH_FILTER_DIALOG_ID)) return;
+
+                    const trigger = this._getSearchFilterTrigger();
+                    const focusElement = this._findDrawerFocusTarget(focusIntent);
+
+                    dialog.refreshOpenContent(SEARCH_FILTER_DIALOG_ID, {
+                        returnFocusTo: trigger,
+                        focusElement,
+                    });
+                },
+
+                _executeFetch(url, updateHistory) {
+                    const Http = window.ShopifyHttp;
+                    const SectionRefresher = window.ShopifySectionRefresher;
+                    if (!Http || !SectionRefresher || !this.sectionId) return;
+
+                    if (this.abortController) this.abortController.abort();
+                    this.abortController = new AbortController();
+                    const activeController = this.abortController;
+
+                    const prevType = this.renderedResultType || 'product';
+                    const nextType = this._getSearchResultType(url);
+                    const typeChanged = prevType !== nextType;
+                    const dialogWasOpen = this._isSearchFilterDialogOpen();
+                    const dialogLifecycle = this._hasSearchFilterDialogLifecycle();
+                    const focusIntent = dialogWasOpen ? this._captureDrawerFocusIntent() : null;
+                    let closedDialogForTypeChange = false;
+
+                    if (dialogLifecycle && nextType !== 'product') {
+                        this._forceCloseSearchFilterDialog();
+                        closedDialogForTypeChange = true;
+                        this._parkFocusBeforeTypeChange();
+                    }
+
+                    const previousSelectors = this.selectors;
+                    this.selectors =
+                        !typeChanged && nextType === 'product'
+                            ? PRODUCT_REFRESH_SELECTORS
+                            : TYPE_CHANGE_SELECTORS;
+
+                    requestCollectionSectionHtml(Http, url, this.sectionId, activeController.signal)
+                        .then((html) => {
+                            if (typeof html !== 'string' || !html.trim()) return;
+                            if (this.abortController !== activeController) return;
+
+                            SectionRefresher.render(html, this.buildDomMap());
+                            this.renderedResultType = nextType;
+
+                            if (updateHistory) {
+                                window.history.pushState({ path: url }, '', url);
+                            }
+
+                            this.syncControlsFromUrl(url);
+                            this._announceSearchResults();
+                            this._reconcileSearchFilterDialog({
+                                nextType,
+                                dialogWasOpen,
+                                focusIntent,
+                                closedDialogForTypeChange,
+                            });
+                        })
+                        .catch((err) => {
+                            if (err?.isAbort || err?.name === 'AbortError') return;
+                            if (updateHistory) window.location.href = url;
+                        })
+                        .finally(() => {
+                            if (this.abortController === activeController) {
+                                this.selectors = previousSelectors;
+                                this.isLoading = false;
+                                this.abortController = null;
+                            }
+                        });
                 },
             };
         },

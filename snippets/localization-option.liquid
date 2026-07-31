@@ -1,0 +1,42 @@
+{% doc %}
+    Single submit option in a localization picker menu.
+
+    @param {string} submit_name - Form field name (for example locale_code or country_code).
+    @param {string} submit_value - Value submitted with the form.
+    @param {boolean} is_current - Whether this option matches the active selection.
+    @param {string} label - Primary label text.
+    @param {boolean} [show_currency] - When true, renders currency ISO code and symbol suffix.
+    @param {string} [currency_iso] - Currency ISO code for country options.
+    @param {string} [currency_symbol] - Currency symbol for country options.
+
+    @example
+    {%- render 'localization-option',
+        submit_name: 'locale_code',
+        submit_value: locale.iso_code,
+        is_current: is_current_locale,
+        label: locale.endonym_name
+    -%}
+{% enddoc %}
+
+<div class="localization-item">
+    <button
+        name="{{ submit_name }}"
+        type="submit"
+        value="{{ submit_value }}"
+        class="localization-link w-full"
+        {%- if is_current %}
+            aria-current="true"
+        {%- endif -%}
+    >
+        {%- if is_current -%}
+            {%- render 'localization-selected-icon' -%}
+        {%- endif -%}
+        <span>{{ label }}</span>
+        {%- if show_currency -%}
+            <span>
+                {{- currency_iso }}
+                {{ currency_symbol -}}
+            </span>
+        {%- endif -%}
+    </button>
+</div>

@@ -4,21 +4,20 @@
 
 <div
     data-section-id="{{ section.id }}"
-    class="search-section full-width min-h-[50vh] color-{{ section.settings.color_scheme }} bg-scheme-surface"
+    class="search-section full-width min-h-[50vh] color-{{ section.settings.color_scheme }} surface-section"
     style="
         --section-padding-top: {{ section.settings.padding_top | default: 0 }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom | default: 0 }}px;
     "
-    data-component-kind="section"
-    data-component-type="search-section"
-    data-component-id="{{ section.id }}"
 >
-    <div class="layout container-page overflow-visible!">
+    {%- comment -%} Search form: always visible, independent of results {%- endcomment -%}
+    <div class="layout container-page overflow-visible!{% unless search.performed %} flex min-h-[50vh] flex-col items-center justify-center{% endunless %}">
         <div
-            class="mx-auto w-full pc:max-w-1/2"
+            class="mx-auto w-full px-4 pc:max-w-1/2 pc:px-0{% if search.performed %} py-10{% endif %}"
             x-data="predictiveSearch"
             data-predictive-search-enabled="{{ settings.predictive_search_enabled }}"
-            data-predictive-search-url="{{ routes.search_url }}"
+            data-search-url="{{ routes.search_url | escape }}"
+            data-predictive-search-url="{{ routes.predictive_search_url | escape }}"
             data-predictive-search-query="{{ terms | escape }}"
             data-predictive-search-performed="{{ search.performed }}"
             data-toast-search-failed="{{ 'toast.search_failed' | t | escape }}"
@@ -26,11 +25,16 @@
             <h1 class="sr-only">{{ 'search.title' | t }}</h1>
 
             <form
+                action="{{ routes.search_url }}"
+                method="get"
                 @submit.prevent="performSearch()"
                 role="search"
                 class="relative w-full"
+                :class="{ 'is-open': isOpen }"
                 @click.outside="closePanel()"
             >
+                <input type="hidden" name="options[prefix]" value="last">
+                <input type="hidden" name="type" value="product">
                 <div class="mb-1 flex items-center gap-3 border-b border-theme-border pb-3 text-theme-text">
                     {%- render 'icons', icon: 'icon-search', class: 'shrink-0' -%}
 
@@ -52,18 +56,29 @@
                     >
                 </div>
 
-                {% render 'search-predictive-panel' %}
+                {% render 'search-predictive-panel',
+                    mobile_card_columns: section.settings.mobile_card_columns
+                %}
             </form>
         </div>
+    </div>
 
-        {% if search.performed %}
+    {%- comment -%} Results tabs: only rendered after a search {%- endcomment -%}
+    {% if search.performed %}
+        <div class="layout container-page overflow-visible!">
             {%- liquid
                 assign q = search.terms | default: '' | strip | url_encode
-                assign param_type = request.params.type | default: '' | downcase | strip
 
-                if param_type != 'product' and param_type != 'article' and param_type != 'page'
-                    assign param_type = 'product'
-                endif
+                # Current result type comes from search.types (driven by the type query param),
+                # not request.params.type, which is unreliable after Section Rendering refreshes.
+                assign param_type = 'product'
+                for search_type in search.types
+                    assign type_candidate = search_type | downcase | strip
+                    if type_candidate == 'product' or type_candidate == 'article' or type_candidate == 'page'
+                        assign param_type = type_candidate
+                        break
+                    endif
+                endfor
 
                 assign active_tab_index = 0
                 if param_type == 'article'
@@ -85,11 +100,29 @@
                 articles_url: articles_url,
                 pages_url: pages_url,
                 param_type: param_type,
-                search_per_page: section.settings.search_per_page
+                search_per_page: section.settings.search_per_page,
+                mobile_card_columns: section.settings.mobile_card_columns,
+                color_scheme: section.settings.color_scheme
             -%}
-        {% endif %}
-    </div>
+        </div>
+    {% endif %}
 </div>
+
+{% stylesheet %}
+    .search-section {
+        .product-grid {
+            width: 100%;
+            display: grid;
+            grid-template-columns: repeat(var(--product-grid-columns-mobile), minmax(0, 1fr));
+            gap: 3px;
+
+            @media (min-width: 768px) {
+                grid-template-columns: repeat(var(--product-grid-columns), minmax(0, 1fr));
+                gap: 8px;
+            }
+        }
+    }
+{% endstylesheet %}
 
 {% schema %}
 {
@@ -104,7 +137,7 @@
             "type": "color_scheme",
             "id": "color_scheme",
             "label": "t:sections.search.settings.color_scheme",
-            "default": "scheme-1"
+            "default": "scheme-2"
         },
         {
             "type": "range",
@@ -114,6 +147,22 @@
             "step": 3,
             "default": 12,
             "label": "t:sections.search.settings.search_per_page"
+        },
+        {
+            "type": "select",
+            "id": "mobile_card_columns",
+            "label": "t:sections.search.settings.mobile_product_card_columns",
+            "default": "2",
+            "options": [
+                {
+                    "value": "1",
+                    "label": "t:sections.collection.options.1_column"
+                },
+                {
+                    "value": "2",
+                    "label": "t:sections.collection.options.2_columns"
+                }
+            ]
         },
         {
             "type": "header",
@@ -127,7 +176,7 @@
             "step": 4,
             "unit": "px",
             "label": "t:sections.search.settings.padding_top",
-            "default": 0
+            "default": 32
         },
         {
             "type": "range",
@@ -137,7 +186,7 @@
             "step": 4,
             "unit": "px",
             "label": "t:sections.search.settings.padding_bottom",
-            "default": 0
+            "default": 32
         }
     ]
 }

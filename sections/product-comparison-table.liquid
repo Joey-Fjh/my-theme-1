@@ -1,6 +1,6 @@
 <section
     data-section-id="{{ section.id }}"
-    class="product-comparison-table-section full-width color-{{ section.settings.color_scheme }} bg-scheme-surface"
+    class="product-comparison-table-section full-width color-{{ section.settings.color_scheme }} surface-section"
     style="
         --section-padding-top: {{ section.settings.padding_top | default: 0 }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom | default: 0 }}px;
@@ -14,29 +14,42 @@
     x-data="motionRevealSection()"
     data-motion-section
 >
+    {%- liquid
+        assign comparison_heading_class = section.settings.heading_size | default: 'heading-2xl'
+        assign comparison_products = section.settings.products
+        assign comparison_item_count = comparison_products.size
+        assign has_comparison_products = false
+        if comparison_item_count > 0
+            assign has_comparison_products = true
+        else
+            assign comparison_item_count = 6
+        endif
+    -%}
     <div
         class="layout container-page mx-auto pb-8"
         style="
-            --comparison-table-width-mobile: {{ section.settings.products.size | times: 140 | plus: 116 }}px;
-            --comparison-table-width-pc: {{ section.settings.products.size | times: 280 | plus: 156 }}px;
+            --comparison-table-width-mobile: {{ comparison_item_count | times: 140 | plus: 116 }}px;
+            --comparison-table-width-pc: {{ comparison_item_count | times: 280 | plus: 156 }}px;
         "
     >
         {% if section.settings.heading != blank %}
-            <h1 class="mb-10 text-center pc:mb-16" data-motion-reveal="content">
+            <h1
+                class="mb-10 text-center pc:mb-16 {{ comparison_heading_class }}"
+                data-motion-reveal="content"
+            >
                 {{ section.settings.heading }}
             </h1>
         {% endif %}
-        {% if section.settings.products != blank and section.blocks.size > 0 %}
+        {% if section.blocks.size > 0 %}
             <div
                 class="comparison-table-scroll overflow-x-auto"
-                data-motion-reveal="content"
                 tabindex="0"
                 role="group"
                 aria-label="{{ 'accessibility.scroll_to_compare' | t }}"
                 data-comparison-scroll
             >
                 <table
-                    class="comparison-table table-fixed border-collapse text-left"
+                    class="comparison-table table-fixed border-collapse text-start"
                     role="grid"
                     aria-label="{{ 'accessibility.product_comparison' | t }}"
                 >
@@ -50,9 +63,10 @@
                                         comparison-table__sticky-col
                                         comparison-table__row-header
                                         sticky left-0 z-10
-                                        border border-theme-border-20 bg-theme-bg
+                                        border border-theme-border/20 bg-theme-bg
                                         px-4 py-5 align-middle whitespace-normal shadow-[2px_0_6px_-2px_rgba(0,0,0,0.06)]
                                         pc:px-6 pc:py-7
+                                        {% unless block.type == 'metafield_text' %}body-lg{% endunless %}
                                     "
                                 >
                                     {% case block.type %}
@@ -72,53 +86,104 @@
                                 </th>
 
                                 {% comment %} Product data columns {% endcomment %}
-                                {% for item in section.settings.products %}
-                                    {% assign is_highlight = false %}
-                                    {% if section.settings.highlight_index > 0
-                                        and forloop.index == section.settings.highlight_index
-                                    %}
-                                        {% assign is_highlight = true %}
-                                    {% endif %}
+                                {% for column_index in (1..comparison_item_count) %}
+                                    {%- liquid
+                                        assign item = comparison_products[forloop.index0]
+                                        assign is_placeholder = false
+                                        unless has_comparison_products
+                                            assign is_placeholder = true
+                                        endunless
+                                        assign placeholder_index = column_index | minus: 1 | modulo: 6 | plus: 1
+                                        assign placeholder_key = 'product-' | append: placeholder_index
+                                        assign is_highlight = false
+                                        if section.settings.highlight_index > 0 and column_index == section.settings.highlight_index
+                                            assign is_highlight = true
+                                        endif
+                                    -%}
                                     <td
                                         class="
                                             comparison-table__product-cell
-                                            border border-theme-border-20 p-3 align-middle pc:p-6
+                                            border border-theme-border/20 p-3 align-middle pc:p-6
                                             {% if is_highlight %}bg-(--comparison-column-bg-color){% else %}bg-transparent{% endif %}
+                                            {% if block.type != 'header' and block.type != 'metafield_text' %}body-lg{% endif %}
                                         "
                                     >
                                         {% case block.type %}
                                             {% when 'header' %}
-                                                <a
-                                                    href="{{ item.url }}"
-                                                    class="comparison-table-product-link flex w-full cursor-pointer flex-col items-center text-inherit no-underline"
-                                                >
-                                                    <div class="mb-4 flex h-44 w-full items-center justify-center pc:mb-6 pc:h-[260px]">
-                                                        <div class="h-full w-full max-w-[76%] pc:max-w-[74%]">
-                                                            {%- assign image_alt = item.featured_image.alt
-                                                                | default: item.title
-                                                            -%}
-                                                            {%- render 'image',
-                                                                image: item.featured_image,
-                                                                width: 360,
-                                                                aspect_ratio: '3/4',
-                                                                wrapper: 'div',
-                                                                class: 'w-full h-full',
-                                                                img_class: 'image_img w-full h-full object-contain object-center',
-                                                                alt: image_alt
-                                                            -%}
+                                                {%- if is_placeholder -%}
+                                                    <div class="flex w-full flex-col items-center text-inherit">
+                                                        <div class="mb-4 flex h-44 w-full items-center justify-center pc:mb-6 pc:h-[260px]">
+                                                            <div class="h-full w-full max-w-[76%] pc:max-w-[74%]">
+                                                                {%- render 'image',
+                                                                    image: blank,
+                                                                    placeholder_key: placeholder_key,
+                                                                    aspect_ratio: '3/4',
+                                                                    mode: 'frame',
+                                                                    fit: 'contain',
+                                                                    wrapper_class: 'h-full w-full',
+                                                                    motion_reveal: false
+                                                                -%}
+                                                            </div>
                                                         </div>
+                                                        <span class="block w-full text-center body-xl">
+                                                            {{-
+                                                                'products.comparison.example_product'
+                                                                | t: index: column_index
+                                                            -}}
+                                                        </span>
                                                     </div>
-                                                    <span class="block w-full text-center">
-                                                        {{- item.title -}}
-                                                    </span>
-                                                </a>
+                                                {%- else -%}
+                                                    <a
+                                                        href="{{ item.url }}"
+                                                        class="comparison-table-product-link media-interaction flex w-full cursor-pointer flex-col items-center text-inherit no-underline"
+                                                    >
+                                                        <div class="mb-4 flex h-44 w-full items-center justify-center pc:mb-6 pc:h-[260px]">
+                                                            <div class="h-full w-full max-w-[76%] pc:max-w-[74%]">
+                                                                {%- assign image_alt = item.featured_image.alt
+                                                                    | default: item.title
+                                                                -%}
+                                                                {%- if item.featured_image != blank
+                                                                -%}
+                                                                    {%- render 'image',
+                                                                        image: item.featured_image,
+                                                                        width: 360,
+                                                                        aspect_ratio: '3/4',
+                                                                        wrapper: 'div',
+                                                                        class: 'w-full h-full',
+                                                                        img_class: 'image_img w-full h-full object-contain object-center',
+                                                                        alt: image_alt,
+                                                                        motion_reveal: false
+                                                                    -%}
+                                                                {%- else -%}
+                                                                    {%- render 'image',
+                                                                        image: blank,
+                                                                        placeholder_key: placeholder_key,
+                                                                        aspect_ratio: '3/4',
+                                                                        mode: 'frame',
+                                                                        fit: 'contain',
+                                                                        wrapper_class: 'h-full w-full',
+                                                                        motion_reveal: false
+                                                                    -%}
+                                                                {%- endif -%}
+                                                            </div>
+                                                        </div>
+                                                        <span class="block w-full text-center body-xl">
+                                                            {{- item.title -}}
+                                                        </span>
+                                                    </a>
+                                                {%- endif -%}
 
                                             {% when 'price' %}
                                                 <div class="flex flex-wrap items-baseline gap-2">
                                                     <span>
-                                                        {{- item.price | money -}}
+                                                        {%- if is_placeholder -%}
+                                                            {{- 1999 | money -}}
+                                                        {%- else -%}
+                                                            {{- item.price | money -}}
+                                                        {%- endif -%}
                                                     </span>
-                                                    {% if item.compare_at_price != blank
+                                                    {% if is_placeholder == false
+                                                        and item.compare_at_price != blank
                                                         and item.compare_at_price > item.price
                                                     %}
                                                         <span class="line-through">
@@ -140,31 +205,46 @@
                                                 </div>
 
                                             {% when 'metafield_text' %}
-                                                {% assign meta_key = block.settings.metafield_key
-                                                    | strip
-                                                %}
-                                                {% if meta_key != '' %}
-                                                    {% assign meta_parts = meta_key | split: '.' %}
-                                                    {% assign meta_ns = meta_parts[0] %}
-                                                    {% assign meta_key_name = meta_parts[1] %}
-                                                    {% assign meta_val = item.metafields[meta_ns][meta_key_name] %}
-                                                    <div>
-                                                        {% if meta_val != blank
-                                                            and meta_val.value != blank
-                                                        %}
-                                                            {{ meta_val.value }}
-                                                        {% elsif meta_val != blank %}
-                                                            {{ meta_val }}
-                                                        {% else %}
-                                                            —
-                                                        {% endif %}
-                                                    </div>
+                                                {% if is_placeholder %}
+                                                    <span>
+                                                        {{-
+                                                            'products.comparison.example_detail'
+                                                            | t
+                                                        -}}
+                                                    </span>
                                                 {% else %}
-                                                    <span>—</span>
+                                                    {% assign meta_key = block.settings.metafield_key
+                                                        | strip
+                                                    %}
+                                                    {% if meta_key != '' %}
+                                                        {% assign meta_parts = meta_key
+                                                            | split: '.'
+                                                        %}
+                                                        {% assign meta_ns = meta_parts[0] %}
+                                                        {% assign meta_key_name = meta_parts[1] %}
+                                                        {% assign meta_val = item.metafields[meta_ns][meta_key_name] %}
+                                                        <div>
+                                                            {% if meta_val != blank
+                                                                and meta_val.value != blank
+                                                            %}
+                                                                {{ meta_val.value }}
+                                                            {% elsif meta_val != blank %}
+                                                                {{ meta_val }}
+                                                            {% else %}
+                                                                —
+                                                            {% endif %}
+                                                        </div>
+                                                    {% else %}
+                                                        <span>—</span>
+                                                    {% endif %}
                                                 {% endif %}
 
                                             {% when 'availability' %}
-                                                {% if item.available %}
+                                                {% if is_placeholder %}
+                                                    <span class="text-theme-text/60">
+                                                        {{- 'products.product.unavailable' | t -}}
+                                                    </span>
+                                                {% elsif item.available %}
                                                     <span class="text-(--comparison-success-color)">
                                                         {{- 'products.comparison.in_stock' | t -}}
                                                     </span>
@@ -189,8 +269,7 @@
             </div>
         {% else %}
             <div class="py-12 text-center text-theme-text/60">
-                <h4>{{ 'products.comparison.no_products' | t }}</h4>
-                <p class="mt-2">{{ 'products.comparison.no_blocks' | t }}</p>
+                <p>{{ 'products.comparison.no_blocks' | t }}</p>
             </div>
         {% endif %}
     </div>
@@ -436,13 +515,65 @@
             "type": "color_scheme",
             "id": "color_scheme",
             "label": "t:sections.product-comparison-table.settings.color_scheme",
-            "default": "scheme-1"
+            "default": "scheme-2"
         },
         {
             "type": "inline_richtext",
             "id": "heading",
             "label": "t:sections.product-comparison-table.settings.section_heading",
             "default": "t:sections.product-comparison-table.defaults.heading"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.slides-show.content.heading"
+        },
+        {
+            "type": "select",
+            "id": "heading_size",
+            "label": "t:sections.slides-show.settings.heading_size",
+            "options": [
+                {
+                    "value": "heading-4xl",
+                    "label": "t:sections.slides-show.options.heading_4xl"
+                },
+                {
+                    "value": "heading-3xl",
+                    "label": "t:sections.slides-show.options.heading_3xl"
+                },
+                {
+                    "value": "heading-2xl",
+                    "label": "t:sections.slides-show.options.heading_2xl"
+                },
+                {
+                    "value": "heading-xl",
+                    "label": "t:sections.slides-show.options.heading_xl"
+                },
+                {
+                    "value": "heading-h1",
+                    "label": "t:sections.slides-show.options.heading_h1"
+                },
+                {
+                    "value": "heading-h2",
+                    "label": "t:sections.slides-show.options.heading_h2"
+                },
+                {
+                    "value": "heading-h3",
+                    "label": "t:sections.slides-show.options.heading_h3"
+                },
+                {
+                    "value": "heading-h4",
+                    "label": "t:sections.slides-show.options.heading_h4"
+                },
+                {
+                    "value": "heading-h5",
+                    "label": "t:sections.slides-show.options.heading_h5"
+                },
+                {
+                    "value": "heading-h6",
+                    "label": "t:sections.slides-show.options.heading_h6"
+                }
+            ],
+            "default": "heading-2xl"
         },
         {
             "type": "color",
@@ -490,7 +621,7 @@
             "step": 4,
             "unit": "px",
             "label": "t:sections.product-comparison-table.settings.padding_top",
-            "default": 0
+            "default": 32
         },
         {
             "type": "range",
@@ -500,7 +631,7 @@
             "step": 4,
             "unit": "px",
             "label": "t:sections.product-comparison-table.settings.padding_bottom",
-            "default": 0
+            "default": 32
         }
     ],
     "blocks": [
@@ -558,11 +689,7 @@
                     "type": "rating"
                 },
                 {
-                    "type": "metafield_text",
-                    "settings": {
-                        "row_title": "Ingredients",
-                        "metafield_key": "custom.ingredients"
-                    }
+                    "type": "metafield_text"
                 },
                 {
                     "type": "availability"

@@ -1,0 +1,308 @@
+{% doc %}
+    Renders the gift card recipient purchase fields inside a product form.
+
+    Collects Shopify line item properties for recipient email delivery.
+    JavaScript enhances enable/disable, timezone offset, and client validation;
+    without JavaScript the native product form still submits valid properties.
+
+    @param {product} product - Gift card product object.
+    @param {form} form - Product form object (errors and posted values).
+    @param {string} section_id - Section scope used for unique field IDs.
+    @param {string} [product_form_id] - Optional form id suffix for uniqueness.
+
+    Usage: {% render 'gift-card-recipient-form', product: product, form: form, section_id:
+    section_id %}
+{% enddoc %}
+
+{%- liquid
+    assign recipient_form_uid = product_form_id | default: section_id | default: 'recipient'
+
+    assign control_flag_name = 'properties[__shopify_send_gift_card_to_recipient]'
+    assign max_chars_message = 200
+    assign max_chars_name = 255
+    assign send_on_min = 'now' | date: '%Y-%m-%d'
+    assign send_on_max_timestamp = 'now' | date: '%s' | plus: 7776000
+    assign send_on_max = send_on_max_timestamp | date: '%Y-%m-%d'
+    assign has_form_errors = false
+    if form.errors
+        assign has_form_errors = true
+    endif
+-%}
+
+<div
+    class="gift-card-recipient-form mb-10 flex flex-col gap-5"
+    data-gift-card-recipient
+    data-section-id="{{ section_id | escape }}"
+    data-product-form-id="{{ product_form_id | escape }}"
+    data-product-variant-id="{{ product.selected_or_first_available_variant.id }}"
+    data-has-errors="{{ has_form_errors }}"
+    data-expanded-text="{{ 'recipient.form.expanded' | t | escape }}"
+    data-collapsed-text="{{ 'recipient.form.collapsed' | t | escape }}"
+    data-email-blank-text="{{ 'recipient.form.email_blank' | t | escape }}"
+    data-email-invalid-text="{{ 'recipient.form.email_invalid' | t | escape }}"
+    data-name-too-long-text="{{ 'recipient.form.name_too_long' | t: max_chars: max_chars_name | escape }}"
+    data-message-too-long-text="{{ 'recipient.form.message_too_long' | t: max_chars: max_chars_message | escape }}"
+    data-send-on-invalid-text="{{ 'recipient.form.send_on_invalid' | t | escape }}"
+    data-error-heading="{{ 'recipient.form.error_heading' | t | escape }}"
+    data-send-on-min="{{ send_on_min | escape }}"
+    data-send-on-max="{{ send_on_max | escape }}"
+    x-data="GiftCardRecipient()"
+>
+    <div class="flex min-h-11 items-center gap-3">
+        <input
+            id="Recipient-checkbox-{{ recipient_form_uid }}"
+            class="size-8 shrink-0 accent-current focus-ring"
+            type="checkbox"
+            name="{{ control_flag_name }}"
+            value="true"
+            x-ref="checkbox"
+            x-model="enabled"
+            :disabled="!jsReady"
+            {% if has_form_errors %}
+                checked
+            {% else %}
+                disabled
+            {% endif %}
+            @change="onToggle()"
+        >
+        <label
+            class="cursor-pointer leading-snug"
+            for="Recipient-checkbox-{{ recipient_form_uid }}"
+        >
+            {{ 'recipient.form.checkbox' | t }}
+        </label>
+    </div>
+
+    <div
+        class="gift-card-recipient-form__errors rounded border border-error-text/30 bg-error p-3 text-error-text"
+        role="alert"
+        tabindex="-1"
+        x-ref="errorSummary"
+        {% unless has_form_errors %}
+            hidden
+        {% endunless %}
+        :hidden="!showErrorSummary"
+    >
+        <p class="font-medium" x-ref="errorHeading">
+            {{ 'recipient.form.error_heading' | t }}
+        </p>
+        <ul class="mt-2 list-disc space-y-1 ps-5 body-sm" x-ref="errorList">
+            {%- if form.errors -%}
+                {%- for field in form.errors -%}
+                    <li>
+                        {%- if field == 'form' -%}
+                            {{ form.errors.messages[field] }}
+                        {%- else -%}
+                            {%- liquid
+                                if field == 'send_on'
+                                    assign recipient_error_anchor = 'Recipient-send-on-' | append: recipient_form_uid
+                                else
+                                    assign recipient_error_anchor = 'Recipient-' | append: field | append: '-' | append: recipient_form_uid
+                                endif
+                            -%}
+                            <a
+                                class="underline"
+                                href="#{{ recipient_error_anchor }}"
+                            >
+                                {{- form.errors.messages[field] -}}
+                            </a>
+                        {%- endif -%}
+                    </li>
+                {%- endfor -%}
+            {%- endif -%}
+        </ul>
+    </div>
+
+    <p
+        id="Recipient-fields-live-region-{{ recipient_form_uid }}"
+        class="sr-only"
+        role="status"
+        aria-live="polite"
+        x-ref="liveRegion"
+    ></p>
+
+    <div
+        class="gift-card-recipient-form__fields flex flex-col gap-5"
+        x-ref="fields"
+        {% unless has_form_errors %}
+            {%- comment -%}
+                Without JS the fields stay visible (if_present control).
+                With JS, Alpine hides them until the checkbox is enabled.
+            {%- endcomment -%}
+        {% endunless %}
+        :hidden="jsReady && !enabled"
+    >
+        <div class="flex flex-col gap-1.5">
+            <label for="Recipient-email-{{ recipient_form_uid }}">
+                <span x-show="!jsReady">
+                    {{- 'recipient.form.email_label_optional_for_no_js_behavior' | t -}}
+                </span>
+                <span x-show="jsReady" x-cloak>
+                    {{- 'recipient.form.email_label' | t -}}
+                </span>
+            </label>
+            <input
+                class="field"
+                id="Recipient-email-{{ recipient_form_uid }}"
+                type="email"
+                name="properties[Recipient email]"
+                autocomplete="email"
+                placeholder="{{ 'recipient.form.email' | t | escape }}"
+                value="{{ form.email }}"
+                x-ref="email"
+                :disabled="jsReady && !enabled"
+                {% if form.errors contains 'email' %}
+                    aria-invalid="true"
+                    aria-describedby="RecipientForm-email-error-{{ recipient_form_uid }}"
+                {% endif %}
+            >
+            <p
+                id="RecipientForm-email-error-{{ recipient_form_uid }}"
+                class="body-sm text-error-text"
+                x-ref="emailError"
+                {% unless form.errors contains 'email' %}
+                    hidden
+                {% endunless %}
+            >
+                {%- if form.errors contains 'email' -%}
+                    {{ form.errors.messages.email }}.
+                {%- endif -%}
+            </p>
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+            <label for="Recipient-name-{{ recipient_form_uid }}">
+                {{- 'recipient.form.name_label' | t -}}
+            </label>
+            <input
+                class="field"
+                id="Recipient-name-{{ recipient_form_uid }}"
+                type="text"
+                name="properties[Recipient name]"
+                autocomplete="name"
+                maxlength="{{ max_chars_name }}"
+                placeholder="{{ 'recipient.form.name' | t | escape }}"
+                value="{{ form.name }}"
+                x-ref="name"
+                :disabled="jsReady && !enabled"
+                {% if form.errors contains 'name' %}
+                    aria-invalid="true"
+                    aria-describedby="RecipientForm-name-error-{{ recipient_form_uid }}"
+                {% endif %}
+            >
+            <p
+                id="RecipientForm-name-error-{{ recipient_form_uid }}"
+                class="body-sm text-error-text"
+                x-ref="nameError"
+                {% unless form.errors contains 'name' %}
+                    hidden
+                {% endunless %}
+            >
+                {%- if form.errors contains 'name' -%}
+                    {{ form.errors.messages.name }}.
+                {%- endif -%}
+            </p>
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+            {%- assign max_chars_message_rendered = 'recipient.form.max_characters'
+                | t: max_chars: max_chars_message
+            -%}
+            {%- assign message_label_rendered = 'recipient.form.message_label' | t -%}
+            <label for="Recipient-message-{{ recipient_form_uid }}">
+                {{ message_label_rendered }}
+            </label>
+            <textarea
+                class="field-textarea"
+                id="Recipient-message-{{ recipient_form_uid }}"
+                name="properties[Message]"
+                rows="4"
+                maxlength="{{ max_chars_message }}"
+                placeholder="{{ 'recipient.form.message' | t | escape }}"
+                aria-describedby="Recipient-message-help-{{ recipient_form_uid }}"
+                x-ref="message"
+                :disabled="jsReady && !enabled"
+                {% if form.errors contains 'message' %}
+                    aria-invalid="true"
+                    aria-describedby="Recipient-message-help-{{ recipient_form_uid }} RecipientForm-message-error-{{ recipient_form_uid }}"
+                {% endif %}
+            >{{ form.message }}</textarea>
+            <p
+                id="Recipient-message-help-{{ recipient_form_uid }}"
+                class="body-sm text-theme-text/70"
+            >
+                {{ max_chars_message_rendered }}
+            </p>
+            <p
+                id="RecipientForm-message-error-{{ recipient_form_uid }}"
+                class="body-sm text-error-text"
+                x-ref="messageError"
+                {% unless form.errors contains 'message' %}
+                    hidden
+                {% endunless %}
+            >
+                {%- if form.errors contains 'message' -%}
+                    {{ form.errors.messages.message }}.
+                {%- endif -%}
+            </p>
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+            <label for="Recipient-send-on-{{ recipient_form_uid }}">
+                {{ 'recipient.form.send_on_label' | t }}
+            </label>
+            <input
+                class="field"
+                id="Recipient-send-on-{{ recipient_form_uid }}"
+                type="date"
+                name="properties[Send on]"
+                autocomplete="off"
+                placeholder="{{ 'recipient.form.send_on' | t | escape }}"
+                pattern="\d{4}-\d{2}-\d{2}"
+                min="{{ send_on_min }}"
+                max="{{ send_on_max }}"
+                value="{{ form.send_on }}"
+                x-ref="sendOn"
+                :disabled="jsReady && !enabled"
+                {% if form.errors contains 'send_on' %}
+                    aria-invalid="true"
+                    aria-describedby="RecipientForm-send_on-error-{{ recipient_form_uid }}"
+                {% endif %}
+            >
+            <p
+                id="RecipientForm-send_on-error-{{ recipient_form_uid }}"
+                class="body-sm text-error-text"
+                x-ref="sendOnError"
+                {% unless form.errors contains 'send_on' %}
+                    hidden
+                {% endunless %}
+            >
+                {%- if form.errors contains 'send_on' -%}
+                    {{ form.errors.messages.send_on }}.
+                {%- endif -%}
+            </p>
+        </div>
+    </div>
+
+    <input
+        type="hidden"
+        name="{{ control_flag_name }}"
+        value="if_present"
+        id="Recipient-control-{{ recipient_form_uid }}"
+        x-ref="control"
+        {% if has_form_errors %}
+            disabled
+        {% endif %}
+        :disabled="jsReady"
+    >
+
+    <input
+        type="hidden"
+        name="properties[__shopify_offset]"
+        value=""
+        id="Recipient-timezone-offset-{{ recipient_form_uid }}"
+        x-ref="offset"
+        disabled
+        :disabled="jsReady && !enabled"
+    >
+</div>

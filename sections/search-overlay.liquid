@@ -10,24 +10,25 @@
             data-search-limit="{{ section.settings.search_result_limit | json }}"
             x-data="predictiveSearch()"
             data-predictive-search-enabled="{{ settings.predictive_search_enabled }}"
-            data-predictive-search-url="{{ routes.search_url }}"
+            data-search-url="{{ routes.search_url | escape }}"
+            data-predictive-search-url="{{ routes.predictive_search_url | escape }}"
             data-toast-search-failed="{{ 'toast.search_failed' | t | escape }}"
             @keydown.escape.window="$store.dialog.close()"
         >
-            <div class="p-6">
-                <div class="mb-5 flex items-center justify-between gap-4">
-                    <h1 id="dialog-title-{{ popup_id }}">{{ 'search.title' | t }}</h1>
-                    
-                    <button
-                        type="button"
-                        class="inline-flex cursor-pointer items-center justify-center text-theme-text/80 transition hover:text-theme-text"
-                        @click="$store.dialog.close()"
-                        aria-label="{{ 'accessibility.close_search_drawer' | t }}"
-                    >
-                        {% render 'icons', icon: 'icon-close' %}
-                    </button>
-                </div>
+            <div class="ui-dialog-overlay-header">
+                <h1 id="dialog-title-{{ popup_id }}">{{ 'search.title' | t }}</h1>
+                
+                <button
+                    type="button"
+                    class="close-button"
+                    @click="$store.dialog.close()"
+                    aria-label="{{ 'accessibility.close_search_drawer' | t }}"
+                >
+                    {% render 'icons', icon: 'icon-close' %}
+                </button>
+            </div>
 
+            <div class="shrink-0 px-6 pt-6">
                 <form @submit.prevent="performSearch()" role="search" class="w-full">
                     <div class="flex items-center gap-2 border-b border-theme-border pb-2">
                         {% render 'icons', icon: 'icon-search', class: 'shrink-0 opacity-80' %}
@@ -57,7 +58,7 @@
                             <li>
                                 <button
                                     type="button"
-                                    class="border-b border-theme-border-20 transition-colors hover:border-theme-border"
+                                    class="border-b border-theme-border/20 transition-colors hover:border-theme-border"
                                     @click="onSuggestionClick(item)"
                                     x-html="highlightSuggestion(item.text)"
                                 ></button>
@@ -67,7 +68,7 @@
                 </template>
             </div>
 
-            <div class="flex min-h-0 flex-1 flex-col px-5 py-4 pc:px-6">
+            <div class="ui-dialog-overlay-body pc:px-6 pc:py-4">
                 <div x-show="!isLoading && hasEmptyState && query" class="py-6 text-center">
                     <p>{{ 'search.no_results_for' | t }} "<span x-text="query"></span>"</p>
                 </div>
@@ -83,8 +84,8 @@
                             x-init="index = registerTab($el)"
                             @click="setActive(index); activeTab = 'products'"
                             :aria-selected="isActive(index)"
-                            class="border-b pb-2 tracking-[0.16em] uppercase transition-colors"
-                            :class="isActive(index) ? 'text-theme-text border-theme-border' : 'text-theme-text/50 border-transparent hover:text-theme-text'"
+                            class="search-overlay__tab tab-nav-item tab-nav-item--search tab-nav-item--search-border-token"
+                            :class="{ 'is-active': isActive(index) }"
                         >
                             {{ 'search.products' | t }}
                         </button>
@@ -98,8 +99,8 @@
                             x-init="index = registerTab($el)"
                             @click="setActive(index); activeTab = 'articles'"
                             :aria-selected="isActive(index)"
-                            class="border-b pb-2 tracking-[0.16em] uppercase transition-colors"
-                            :class="isActive(index) ? 'text-theme-text border-theme-border' : 'text-theme-text/50 border-transparent hover:text-theme-text'"
+                            class="search-overlay__tab tab-nav-item tab-nav-item--search tab-nav-item--search-border-token"
+                            :class="{ 'is-active': isActive(index) }"
                         >
                             {{ 'search.articles' | t }}
                         </button>
@@ -113,8 +114,8 @@
                             x-init="index = registerTab($el)"
                             @click="setActive(index); activeTab = 'pages'"
                             :aria-selected="isActive(index)"
-                            class="border-b pb-2 tracking-[0.16em] uppercase transition-colors"
-                            :class="isActive(index) ? 'text-theme-text border-theme-border' : 'text-theme-text/50 border-transparent hover:text-theme-text'"
+                            class="search-overlay__tab tab-nav-item tab-nav-item--search tab-nav-item--search-border-token"
+                            :class="{ 'is-active': isActive(index) }"
                         >
                             {{ 'search.pages' | t }}
                         </button>
@@ -128,13 +129,11 @@
                             x-data="{ index: null }"
                             x-init="index = registerPanel($el)"
                             x-show="activeTab === 'products'"
-                            class="h-full overflow-y-auto pr-1"
+                            class="h-full overflow-y-auto pe-1"
                         >
                             <div class="grid grid-cols-2 gap-3">
                                 <template x-for="product in products" :key="product.id">
-                                    {%- render 'predictive-search-product-card',
-                                        class: 'transition-shadow hover:shadow-sm'
-                                    -%}
+                                    {%- render 'predictive-search-product-card' -%}
                                 </template>
                             </div>
                             <p x-show="!products.length" class="py-4">{{ 'search.no_products' | t }}</p>
@@ -147,11 +146,11 @@
                             x-data="{ index: null }"
                             x-init="index = registerPanel($el)"
                             x-show="activeTab === 'articles'"
-                            class="h-full overflow-y-auto pr-1"
+                            class="h-full overflow-y-auto pe-1"
                         >
                             <ul class="space-y-3">
                                 <template x-for="article in articles" :key="article.id">
-                                    <li class="border-b border-theme-border-20 pb-2">
+                                    <li class="border-b border-theme-border/20 pb-2">
                                         <a class="hover:underline" :href="article.url" x-text="article.title"></a>
                                     </li>
                                 </template>
@@ -166,11 +165,11 @@
                             x-data="{ index: null }"
                             x-init="index = registerPanel($el)"
                             x-show="activeTab === 'pages'"
-                            class="h-full overflow-y-auto pr-1"
+                            class="h-full overflow-y-auto pe-1"
                         >
                             <ul class="space-y-3">
                                 <template x-for="page in pages" :key="page.id">
-                                    <li class="border-b border-theme-border-20 pb-2">
+                                    <li class="border-b border-theme-border/20 pb-2">
                                         <a class="hover:underline" :href="page.url" x-text="page.title"></a>
                                     </li>
                                 </template>
@@ -193,31 +192,111 @@
         </div>
     {%- endcapture -%}
 
-    {%- render 'ui-dialog',
-        id: popup_id,
-        type: 'drawer',
-        position: section.settings.drawer_position,
-        top_class: 'top-[var(--announcement-bar-height)] pc:top-0',
-        color_scheme: section.settings.color_scheme,
-        root_class: 'z-[10010]',
-        drawer_wrapper_class: '!max-w-none pc:!max-w-[33vw]',
-        drawer_panel_class: 'overflow-hidden',
-        content: drawer_content
-    -%}
+    {%- if request.visual_preview_mode -%}
+        {%- liquid
+            assign drawer_position = section.settings.drawer_position | default: 'right'
+            assign drawer_side_class = 'right-0'
+            if drawer_position == 'left'
+                assign drawer_side_class = 'left-0'
+            endif
+        -%}
+        <div
+            class="z-layer-drawer-backdrop fixed inset-0"
+            data-overlay-visual-preview="search"
+        >
+            <div
+                class="z-layer-drawer-backdrop fixed inset-x-0 top-[var(--announcement-bar-height)] bottom-0 bg-dialog-overlay pc:top-0"
+            ></div>
+            <div
+                class="
+                    ui-dialog-drawer-shell ui-dialog-drawer-width-default ui-dialog-desktop-drawer
+                    ui-dialog-desktop-drawer--{{ drawer_position }} ui-dialog-mobile-layout-inset
+                    z-layer-drawer fixed top-[var(--announcement-bar-height)] bottom-0 w-full
+                    {{ drawer_side_class }} pc:top-0
+                "
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="dialog-title-{{ popup_id }}"
+            >
+                <div
+                    class="ui-dialog-panel ui-dialog-drawer-panel ui-dialog-mobile-layout-panel color-{{ section.settings.color_scheme }} surface-component"
+                >
+                    <div class="flex h-full flex-col">
+                        <div class="ui-dialog-overlay-header">
+                            <h1 id="dialog-title-{{ popup_id }}">{{ 'search.title' | t }}</h1>
+                            <button
+                                type="button"
+                                class="close-button"
+                                aria-label="{{ 'accessibility.close_search_drawer' | t }}"
+                                disabled
+                            >
+                                {% render 'icons', icon: 'icon-close' %}
+                            </button>
+                        </div>
+                        <div class="shrink-0 px-6 pt-6">
+                            <div class="flex items-center gap-2 border-b border-theme-border pb-2">
+                                {% render 'icons',
+                                    icon: 'icon-search',
+                                    class: 'shrink-0 opacity-80'
+                                %}
+                                <input
+                                    id="SearchOverlayPreviewInput-{{ section.id }}"
+                                    type="search"
+                                    class="w-full min-w-0 border-none bg-transparent outline-none placeholder:text-theme-text/50"
+                                    placeholder="{{ 'search.placeholder' | t }}"
+                                    disabled
+                                    readonly
+                                    tabindex="-1"
+                                >
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {%- else -%}
+        {%- render 'ui-dialog',
+            id: popup_id,
+            type: 'drawer',
+            layer: 'drawer',
+            position: section.settings.drawer_position,
+            top_class: 'top-[var(--announcement-bar-height)] pc:top-0',
+            color_scheme: section.settings.color_scheme,
+            drawer_motion_sheet: true,
+            mobile_layout: 'inset',
+            drawer_desktop_layout: true,
+            content: drawer_content
+        -%}
+    {%- endif -%}
 </div>
+
+{% stylesheet %}
+    /* Section typography + muted level — not tab-nav-item trigger chrome (Phase 5A) */
+    .search-overlay__tab {
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+    }
+
+    .search-overlay__tab:not(:hover):not(:focus-visible):not(.is-active) {
+        color: rgb(var(--color-foreground) / 0.5);
+    }
+{% endstylesheet %}
 
 {% schema %}
 {
     "name": "t:sections.search-overlay.name",
     "tag": "section",
     "class": "section",
+    "enabled_on": {
+        "groups": ["custom.overlay"]
+    },
     "limit": 1,
     "settings": [
         {
             "type": "color_scheme",
             "id": "color_scheme",
             "label": "t:sections.search-overlay.settings.color_scheme",
-            "default": "scheme-1"
+            "default": "scheme-2"
         },
         {
             "type": "select",

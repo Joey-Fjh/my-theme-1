@@ -1,6 +1,12 @@
+{%- liquid
+    assign about_stats_stat_title_class = section.settings.stat_title_size | default: 'body-3xl'
+    assign about_stats_stat_subtitle_class = section.settings.stat_subtitle_size | default: 'heading-2xl'
+    assign about_stats_stat_subtitle_class = 'typo-subtitle ' | append: about_stats_stat_subtitle_class
+-%}
+
 <div
     data-section-id="{{ section.id }}"
-    class="about-stats-section full-width color-{{ section.settings.color_scheme }} bg-scheme-surface"
+    class="about-stats-section full-width color-{{ section.settings.color_scheme }} surface-section"
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
@@ -22,13 +28,15 @@
             -%}
             <div class="relative w-full shrink-0">
                 {%- if has_both_images -%}
-                    <div class="w-full pc:hidden">
+                    <div class="w-full pc:hidden" data-motion-reveal="media">
                         <div class="aspect-square overflow-hidden">
                             {%- render 'image',
                                 image: primary_image,
+                                placeholder_key: 'lifestyle-1',
                                 alt: primary_image.alt,
                                 width: primary_image.width,
-                                sizes: '100vw'
+                                sizes: '100vw',
+                                motion_reveal: false
                             -%}
                         </div>
                     </div>
@@ -47,9 +55,11 @@
                         >
                             {%- render 'image',
                                 image: primary_image,
+                                placeholder_key: 'lifestyle-1',
                                 alt: primary_image.alt,
                                 width: primary_image.width,
-                                sizes: '(min-width: 1280px) 17vw, 16vw'
+                                sizes: '(min-width: 1280px) 17vw, 16vw',
+                                motion_reveal: false
                             -%}
                         </button>
 
@@ -63,27 +73,39 @@
                         >
                             {%- render 'image',
                                 image: secondary_image,
+                                placeholder_key: 'lifestyle-2',
                                 alt: secondary_image.alt,
                                 width: secondary_image.width,
-                                sizes: '(min-width: 1280px) 17vw, 16vw'
+                                sizes: '(min-width: 1280px) 17vw, 16vw',
+                                motion_reveal: false
                             -%}
                         </button>
                     </div>
                 {%- else -%}
-                    <div class="aspect-square w-full overflow-hidden pc:hidden">
+                    <div
+                        class="aspect-square w-full overflow-hidden pc:hidden"
+                        data-motion-reveal="media"
+                    >
                         {%- render 'image',
                             image: display_image,
+                            placeholder_key: 'lifestyle-1',
                             alt: display_image.alt,
                             width: display_image.width,
-                            sizes: '100vw'
+                            sizes: '100vw',
+                            motion_reveal: false
                         -%}
                     </div>
-                    <div class="hidden aspect-square w-full overflow-hidden pc:block">
+                    <div
+                        class="hidden aspect-square w-full overflow-hidden pc:block"
+                        data-motion-reveal="media"
+                    >
                         {%- render 'image',
                             image: display_image,
+                            placeholder_key: 'lifestyle-1',
                             alt: display_image.alt,
                             width: display_image.width,
-                            sizes: '(min-width: 1280px) 32vw, 40vw'
+                            sizes: '(min-width: 1280px) 32vw, 40vw',
+                            motion_reveal: false
                         -%}
                     </div>
                 {%- endif -%}
@@ -92,50 +114,69 @@
             {% comment %} Content {% endcomment %}
             <div
                 class="flex flex-1 flex-col gap-12 pc:h-full pc:justify-between pc:gap-16"
-                data-motion-reveal="content"
+                data-motion-sequence
             >
-                <p>
+                <p class="body-3xl" data-motion-reveal="content">
                     {{ section.settings.year }}
                 </p>
 
-                <div class="rte rte--compact body-lg pc:body-xl">
+                <div
+                    class="rte rte--compact body-size-custom"
+                    style="--body-size-custom: 24px; --body-size-custom-pc: 40px;"
+                    data-motion-reveal="content"
+                >
                     {{ section.settings.description }}
                 </div>
 
                 {%- if section.settings.link != blank -%}
                     {%- capture link_content -%}
                         <span>{{ section.settings.link_text }}</span>
-                        {% render 'icons', icon: 'icon-arrow2', class: 'ml-3' %}
+                        {% render 'icons', icon: 'icon-arrow2', class: 'ms-3' %}
                     {%- endcapture -%}
 
-                    {%- render 'link',
-                        href: section.settings.link,
-                        content: link_content,
-                        variant: 'underline'
-                    -%}
+                    <div class="w-fit" data-motion-reveal="content">
+                        {%- render 'link',
+                            href: section.settings.link,
+                            content: link_content,
+                            variant: 'underline',
+                            class: 'body-xl'
+                        -%}
+                    </div>
                 {%- endif -%}
 
                 {% comment %} Stats {% endcomment %}
-                <div class="flex gap-12 pc:gap-16 fw:gap-24">
+                <div
+                    class="flex gap-12 pc:gap-16 fw:gap-24"
+                    data-motion-reveal="content"
+                >
                     {%- for block in section.blocks -%}
                         <div
                             class="mt-25"
                             {{ block.shopify_attributes }}
                         >
-                            <p class="mb-2 body-lg">{{ block.settings.label }}</p>
-                            <h1>{{ block.settings.value }}</h1>
+                            <p class="mb-2 {{ about_stats_stat_title_class }}">
+                                {{ block.settings.label }}
+                            </p>
+                            <h3 class="{{ about_stats_stat_subtitle_class }}">
+                                {{ block.settings.value }}
+                            </h3>
                         </div>
                     {%- endfor -%}
                 </div>
             </div>
 
             {%- if has_both_images -%}
-                <div class="aspect-square w-full overflow-hidden pc:hidden">
+                <div
+                    class="aspect-square w-full overflow-hidden pc:hidden"
+                    data-motion-reveal="media"
+                >
                     {%- render 'image',
                         image: secondary_image,
+                        placeholder_key: 'lifestyle-2',
                         alt: secondary_image.alt,
                         width: secondary_image.width,
-                        sizes: '100vw'
+                        sizes: '100vw',
+                        motion_reveal: false
                     -%}
                 </div>
             {%- endif -%}
@@ -156,7 +197,99 @@
             "type": "color_scheme",
             "id": "color_scheme",
             "label": "t:sections.about-stats.settings.color_scheme",
-            "default": "scheme-1"
+            "default": "scheme-2"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.slides-show.content.font"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.about-stats.content.stat_title"
+        },
+        {
+            "type": "select",
+            "id": "stat_title_size",
+            "label": "t:sections.scroll-categories.settings.subtitle_size",
+            "options": [
+                {
+                    "value": "body-3xl",
+                    "label": "t:sections.scroll-categories.options.body_3xl"
+                },
+                {
+                    "value": "body-2xl",
+                    "label": "t:sections.scroll-categories.options.body_2xl"
+                },
+                {
+                    "value": "body-xl",
+                    "label": "t:sections.scroll-categories.options.body_xl"
+                },
+                {
+                    "value": "body-lg",
+                    "label": "t:sections.scroll-categories.options.body_lg"
+                },
+                {
+                    "value": "body-md",
+                    "label": "t:sections.scroll-categories.options.body_md"
+                },
+                {
+                    "value": "body-sm",
+                    "label": "t:sections.scroll-categories.options.body_sm"
+                }
+            ],
+            "default": "body-3xl"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.about-stats.content.stat_subtitle"
+        },
+        {
+            "type": "select",
+            "id": "stat_subtitle_size",
+            "label": "t:sections.slides-show.settings.heading_size",
+            "options": [
+                {
+                    "value": "heading-4xl",
+                    "label": "t:sections.slides-show.options.heading_4xl"
+                },
+                {
+                    "value": "heading-3xl",
+                    "label": "t:sections.slides-show.options.heading_3xl"
+                },
+                {
+                    "value": "heading-2xl",
+                    "label": "t:sections.slides-show.options.heading_2xl"
+                },
+                {
+                    "value": "heading-xl",
+                    "label": "t:sections.slides-show.options.heading_xl"
+                },
+                {
+                    "value": "heading-h1",
+                    "label": "t:sections.slides-show.options.heading_h1"
+                },
+                {
+                    "value": "heading-h2",
+                    "label": "t:sections.slides-show.options.heading_h2"
+                },
+                {
+                    "value": "heading-h3",
+                    "label": "t:sections.slides-show.options.heading_h3"
+                },
+                {
+                    "value": "heading-h4",
+                    "label": "t:sections.slides-show.options.heading_h4"
+                },
+                {
+                    "value": "heading-h5",
+                    "label": "t:sections.slides-show.options.heading_h5"
+                },
+                {
+                    "value": "heading-h6",
+                    "label": "t:sections.slides-show.options.heading_h6"
+                }
+            ],
+            "default": "heading-2xl"
         },
         {
             "type": "image_picker",
@@ -203,7 +336,7 @@
             "step": 4,
             "unit": "px",
             "label": "t:sections.about-stats.settings.padding_top",
-            "default": 0
+            "default": 32
         },
         {
             "type": "range",
@@ -213,7 +346,7 @@
             "step": 4,
             "unit": "px",
             "label": "t:sections.about-stats.settings.padding_bottom",
-            "default": 0
+            "default": 32
         }
     ],
     "blocks": [
@@ -231,7 +364,7 @@
                     "type": "inline_richtext",
                     "id": "value",
                     "label": "t:sections.about-stats.block_settings.value",
-                    "default": "100%"
+                    "default": "t:sections.about-stats.defaults.block_value"
                 }
             ]
         }
@@ -239,7 +372,17 @@
     "presets": [
         {
             "name": "t:sections.about-stats.presets.about_stats",
-            "settings": {}
+            "blocks": [
+                {
+                    "type": "stat"
+                },
+                {
+                    "type": "stat"
+                },
+                {
+                    "type": "stat"
+                }
+            ]
         }
     ]
 }

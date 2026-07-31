@@ -19,10 +19,6 @@
     @param {string} [muted_text_class] - Optional muted text style for helper labels.
     @param {string} [filter_label_class] - Optional filter label typography classes.
     @param {string} [count_text_class] - Optional result count text classes.
-    @param {string} [chip_bg_class] - Optional chip background classes for boolean filters.
-    @param {string} [track_bg_class] - Optional inactive range/toggle track background classes.
-    @param {string} [active_bg_class] - Optional active range/toggle background classes.
-    @param {string} [input_shell_class] - Optional wrapper classes for price inputs.
     @param {string} [footer_button_class] - Optional footer CTA button classes.
     @param {number} [show_more_limit] - Optional visible item count before progressive expansion. Default: 6.
     @param {number} [show_more_step] - Optional items added per click. Default: show_more_limit.
@@ -36,33 +32,29 @@
     | default: filter_host.results_count
     | default: 0
 -%}
-{%- assign drawer_class = drawer_class
-    | default: 'flex h-full flex-col bg-theme-bg text-theme-text'
--%}
-{%- assign divider_class = divider_class | default: 'border-theme-border-20' -%}
+{%- assign drawer_class = drawer_class | default: 'flex h-full flex-col' -%}
+{%- assign divider_class = divider_class | default: 'border-theme-border/20' -%}
 {%- assign muted_text_class = muted_text_class | default: 'body-sm opacity-80' -%}
-{%- assign filter_label_class = filter_label_class | default: 'body-md' -%}
+{%- assign filter_label_class = filter_label_class | default: '' -%}
 {%- assign count_text_class = count_text_class | default: 'body-sm opacity-80' -%}
 {%- assign show_more_limit = show_more_limit | default: 6 -%}
 {%- assign show_more_step = show_more_step | default: show_more_limit -%}
-{%- assign footer_button_class = footer_button_class
-    | default: 'btn-primary w-full bg-theme-text text-theme-bg hover:opacity-90'
--%}
+{%- assign footer_button_class = footer_button_class | default: 'filters-drawer__footer-button' -%}
 
 <div class="{{ drawer_class }}">
-    <div class="flex items-center justify-between border-b px-4 py-4 pc:px-6 {{ divider_class }}">
+    <div class="ui-dialog-overlay-header">
         <h2 id="dialog-title-collection-filters">{{ 'collections.filters.filters' | t }}</h2>
         <button
             type="button"
             @click="$store.dialog.close()"
-            class="-mr-2 flex h-9 w-9 cursor-pointer items-center justify-center text-current"
+            class="close-button"
             aria-label="{{ 'accessibility.close' | t }}"
         >
             {% render 'icons', icon: 'icon-close' %}
         </button>
     </div>
 
-    <div class="flex-1 overflow-y-auto px-4 py-2 pc:px-6">
+    <div class="ui-dialog-overlay-body">
         {% render 'filters-groups',
             filter_source: filter_host,
             layout: 'drawer',
@@ -76,11 +68,11 @@
         %}
     </div>
 
-    <div class="sticky bottom-0 border-t bg-theme-bg px-4 py-4 pc:px-6 {{ divider_class }}">
+    <div class="ui-dialog-overlay-footer">
         <button
             type="button"
             @click="$store.dialog.close()"
-            class="{{ footer_button_class }}"
+            class="{{ footer_button_class }} w-full"
         >
             {{ 'collections.filters.view_result' | t }}
             <sup class="opacity-60">({{ result_count }})</sup>

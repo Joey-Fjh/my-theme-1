@@ -11,6 +11,7 @@
             PRODUCT_VARIANT_CHANGED: 'theme:product:variant:changed',
             PRODUCT_GALLERY_SLIDE_TO_REQUEST: 'theme:product-gallery:request:slide-to',
             PRODUCT_QUANTITY_CHANGED: 'theme:product:quantity:changed',
+            PRODUCT_MEDIA_MODAL_ACTIVATE: 'theme:product-media-modal:activate',
         };
 
         static _resolveTarget(target) {

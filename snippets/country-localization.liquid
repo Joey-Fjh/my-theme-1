@@ -22,87 +22,69 @@
 {%- assign current_country = localization.country.iso_code -%}
 {%- assign available_countries = localization.available_countries -%}
 
-<div x-data="{ open: false }" @click.away="open = false" class="localization-switcher">
-    {% form 'localization', id: localPosition %}
-        <button
-            type="button"
-            @click="open = !open"
-            :aria-expanded="open"
-            aria-haspopup="true"
-            aria-controls="country-list-{{ localPosition }}"
-            class="localization-toggle"
-        >
-            <span>{{ localization.country.name }}</span>
-            {% if show_currencies %}
-                &nbsp;|&nbsp;{{ localization.country.currency.iso_code }}
-                {{ localization.country.currency.symbol }}
-            {% endif %}
-        </button>
+{%- capture localization_content -%}
+    <button
+        type="button"
+        @click="open = !open"
+        :aria-expanded="open"
+        aria-haspopup="true"
+        aria-controls="country-list-{{ localPosition }}"
+        class="localization-toggle"
+    >
+        <span>{{ localization.country.name }}</span>
+        {% if show_currencies %}
+            &nbsp;|&nbsp;{{ localization.country.currency.iso_code }}
+            {{ localization.country.currency.symbol }}
+        {% endif %}
+    </button>
 
-        <div
-            id="country-list-{{ localPosition }}"
-            x-show="open"
-            x-cloak
-            class="localization-menu"
-        >
-            {%- if show_popular_countries -%}
-                <div>
-                    <div>{{ 'collections.popular_countries' | t }}</div>
-                    {%- for country in popular_countries -%}
-                        <div class="localization-item">
-                            <button
-                                name="country_code"
-                                type="submit"
-                                value="{{ country.iso_code }}"
-                                class="localization-link w-full"
-                                {%- if country.iso_code == current_country %}
-                                    aria-current="true"
-                                {%- endif -%}
-                            >
-                                {%- if country.iso_code == current_country -%}
-                                    <span>✓</span>
-                                {%- endif -%}
-                                <span>{{ country.name }}</span>
-                                {%- if show_currencies -%}
-                                    <span>
-                                        {{- country.currency.iso_code }}
-                                        {{ country.currency.symbol -}}
-                                    </span>
-                                {%- endif -%}
-                            </button>
-                        </div>
-                    {%- endfor -%}
-                </div>
-            {%- endif -%}
-
+    <div
+        id="country-list-{{ localPosition }}"
+        x-show="open"
+        x-cloak
+        class="localization-menu panel-motion panel-motion-compact"
+    >
+        {%- if show_popular_countries -%}
             <div>
-                {%- for country in available_countries -%}
-                    {%- unless popular_countries contains country -%}
-                        <div class="localization-item">
-                            <button
-                                name="country_code"
-                                type="submit"
-                                value="{{ country.iso_code }}"
-                                class="localization-link w-full"
-                                {%- if country.iso_code == current_country %}
-                                    aria-current="true"
-                                {%- endif -%}
-                            >
-                                {%- if country.iso_code == current_country -%}
-                                    <span>✓</span>
-                                {%- endif -%}
-                                <span>{{ country.name }}</span>
-                                {%- if show_currencies -%}
-                                    <span>
-                                        {{- country.currency.iso_code }}
-                                        {{ country.currency.symbol -}}
-                                    </span>
-                                {%- endif -%}
-                            </button>
-                        </div>
-                    {%- endunless -%}
+                <div>{{ 'collections.popular_countries' | t }}</div>
+                {%- for country in popular_countries -%}
+                    {%- assign is_current_country = false -%}
+                    {%- if country.iso_code == current_country -%}
+                        {%- assign is_current_country = true -%}
+                    {%- endif -%}
+                    {%- render 'localization-option',
+                        submit_name: 'country_code',
+                        submit_value: country.iso_code,
+                        is_current: is_current_country,
+                        label: country.name,
+                        show_currency: show_currencies,
+                        currency_iso: country.currency.iso_code,
+                        currency_symbol: country.currency.symbol
+                    -%}
                 {%- endfor -%}
             </div>
+        {%- endif -%}
+
+        <div>
+            {%- for country in available_countries -%}
+                {%- unless popular_countries contains country -%}
+                    {%- assign is_current_country = false -%}
+                    {%- if country.iso_code == current_country -%}
+                        {%- assign is_current_country = true -%}
+                    {%- endif -%}
+                    {%- render 'localization-option',
+                        submit_name: 'country_code',
+                        submit_value: country.iso_code,
+                        is_current: is_current_country,
+                        label: country.name,
+                        show_currency: show_currencies,
+                        currency_iso: country.currency.iso_code,
+                        currency_symbol: country.currency.symbol
+                    -%}
+                {%- endunless -%}
+            {%- endfor -%}
         </div>
-    {% endform %}
-</div>
+    </div>
+{%- endcapture -%}
+
+{%- render 'localization-switcher', localPosition: localPosition, content: localization_content -%}

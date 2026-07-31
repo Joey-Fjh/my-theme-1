@@ -8,18 +8,38 @@
     data-component-kind="section"
     data-component-type="slides-show"
     data-component-id="{{ section.id }}"
-    data-auto-slide="{{ section.settings.is_auto_slide }}"
-    data-slide-delay="{{ section.settings.slide_delay }}"
     x-data="motionRevealSection()"
     data-motion-section
     data-motion-media="static"
 >
+    {%- liquid
+        assign slides_show_sr_only_title = shop.name
+        assign slides_show_first_block = section.blocks.first
+        if slides_show_first_block.settings.headline != blank
+            assign slides_show_sr_only_title = slides_show_first_block.settings.headline
+        endif
+        assign slides_show_multi_slide = false
+        if section.blocks.size > 1
+            assign slides_show_multi_slide = true
+        endif
+
+        assign slides_show_heading_class = section.settings.heading_size | default: 'heading-3xl'
+        assign slides_show_subtitle_size = section.settings.subtitle_size | default: 'body-3xl'
+        assign slides_show_subtitle_class = 'typo-subtitle ' | append: slides_show_subtitle_size
+    -%}
     <div
-        class="swiper h-full w-full"
+        class="swiper h-full w-full focus-ring"
         role="region"
         aria-label="{{ 'accessibility.hero_slides' | t }}"
         aria-roledescription="{{ 'accessibility.carousel' | t }}"
+        {% if slides_show_multi_slide %}
+            tabindex="0"
+            aria-keyshortcuts="ArrowLeft ArrowRight"
+        {% endif %}
     >
+        {%- if slides_show_multi_slide -%}
+            <h1 class="sr-only">{{ slides_show_sr_only_title }}</h1>
+        {%- endif -%}
         <div class="swiper-wrapper">
             {%- for block in section.blocks -%}
                 <div class="swiper-slide" {{ block.shopify_attributes }}>
@@ -49,44 +69,56 @@
                         sizes: sizes,
                         widths: widths,
                         loading: image_loading,
-                        fetchpriority: image_fetchpriority
+                        fetchpriority: image_fetchpriority,
+                        placeholder_key: 'lifestyle-1',
+                        placeholder_style: 'plain',
+                        motion_reveal: false
                     -%}
 
                     <div class="layout layout-safe-top container-page absolute inset-0">
-                        <div
-                            class="grid grid-cols-1 grid-rows-3 pc:grid-cols-3"
-                            data-motion-reveal="content"
-                        >
+                        <div class="slides-show__content-grid grid h-full min-h-0 grid-cols-1 grid-rows-3 text-theme-text/80 pc:grid-cols-3">
                             <div
-                                class="{{ block.settings.caption_position }} flex flex-col justify-around pc:h-full pc:w-full"
+                                class="slides-show__caption-content {{ block.settings.caption_position }} flex h-full min-h-0 w-full flex-col justify-around gap-4"
+                                {% if forloop.first %}
+                                    data-motion-reveal="content"
+                                    data-motion-hero-copy
+                                    data-motion-index="0"
+                                {% endif %}
                             >
-                                <p>
+                                <p class="body-3xl">
                                     {{ block.settings.year }}
                                 </p>
 
-                                <div class="rte rte--compact mt-2">
+                                <div class="rte rte--compact mt-2 {{ slides_show_subtitle_class }}">
                                     {{ block.settings.description }}
                                 </div>
 
                                 {%- if block.settings.cta_text != blank
                                     and block.settings.cta_link != blank
                                 -%}
+                                    {%- liquid
+                                        assign cta_href = block.settings.cta_link
+                                        if cta_href == '/collections'
+                                            assign cta_href = routes.collections_url
+                                        endif
+                                    -%}
                                     {%- capture link_content -%}
                                         <span>{{ block.settings.cta_text }}</span>
-                                        {% render 'icons', icon: 'icon-arrow2', class: 'ml-3' %}
+                                        {% render 'icons', icon: 'icon-arrow2', class: 'ms-3' %}
                                     {%- endcapture -%}
 
                                     {%- if block.settings.cta_style == 'button' -%}
                                         {%- render 'link',
-                                            href: block.settings.cta_link,
+                                            href: cta_href,
                                             variant: 'plain',
                                             class: 'btn-primary w-fit max-w-full',
                                             content: link_content
                                         -%}
                                     {%- else -%}
                                         {%- render 'link',
-                                            href: block.settings.cta_link,
+                                            href: cta_href,
                                             variant: 'underline',
+                                            class: 'body-2xl text-theme-text',
                                             content: link_content
                                         -%}
                                     {%- endif -%}
@@ -94,51 +126,39 @@
                             </div>
 
                             <div
-                                class="{{ block.settings.heading_position }} flex items-center pc:h-full pc:w-full"
+                                class="slides-show__headline-content {{ block.settings.heading_position }} flex h-full min-h-0 w-full items-center"
+                                {% if forloop.first %}
+                                    data-motion-reveal="content"
+                                    data-motion-hero-copy
+                                    data-motion-index="1"
+                                {% endif %}
                             >
-                                <h1 class="heading-2xl">
-                                    {{ block.settings.headline }}
-                                </h1>
+                                {%- if slides_show_multi_slide -%}
+                                    <h2 class="{{ slides_show_heading_class }}">
+                                        {{ block.settings.headline }}
+                                    </h2>
+                                {%- else -%}
+                                    <h1 class="{{ slides_show_heading_class }}">
+                                        {{ block.settings.headline }}
+                                    </h1>
+                                {%- endif -%}
                             </div>
 
                             <div
-                                class="{{ block.settings.meta_position }} flex flex-col justify-around pc:h-full pc:w-full pc:items-center"
+                                class="slides-show__meta-content {{ block.settings.meta_position }} flex h-full min-h-0 w-full flex-col justify-around pc:items-center"
+                                {% if forloop.first %}
+                                    data-motion-reveal="content"
+                                    data-motion-hero-copy
+                                    data-motion-index="2"
+                                {% endif %}
                             >
                                 <div>{{ block.settings.meta_text }}</div>
-                                <div>{{ block.settings.meta_counter }}</div>
                             </div>
                         </div>
                     </div>
                 </div>
             {%- endfor -%}
         </div>
-        {%- if section.blocks.size > 1 -%}
-            <div class="slides-show__controls absolute right-6 bottom-6 z-10 flex items-center gap-3 pc:right-10 pc:bottom-10">
-                <button
-                    type="button"
-                    class="slides-show__nav-prev flex items-center justify-center rounded-full bg-theme-bg/50 text-theme-text focus-ring backdrop-blur-sm hover:bg-theme-bg/80"
-                    aria-label="{{ 'accessibility.previous_slide' | t }}"
-                >
-                    {%- render 'icons', icon: 'icon-arrow2', class: 'scale-x-[-1]' -%}
-                </button>
-                <button
-                    type="button"
-                    class="slides-show__nav-next flex items-center justify-center rounded-full bg-theme-bg/50 text-theme-text focus-ring backdrop-blur-sm hover:bg-theme-bg/80"
-                    aria-label="{{ 'accessibility.next_slide' | t }}"
-                >
-                    {%- render 'icons', icon: 'icon-arrow2' -%}
-                </button>
-                {%- if section.settings.is_auto_slide -%}
-                    <button
-                        type="button"
-                        class="slides-show__pause-toggle flex h-20 w-20 items-center justify-center rounded-full bg-theme-bg/50 text-theme-text focus-ring backdrop-blur-sm hover:bg-theme-bg/80"
-                        aria-label="{{ 'accessibility.pause_slideshow' | t }}"
-                        aria-pressed="false"
-                        data-play-label="{{ 'accessibility.play_slideshow' | t }}"
-                    ></button>
-                {%- endif -%}
-            </div>
-        {%- endif -%}
     </div>
 </div>
 
@@ -159,17 +179,9 @@
                         return { swiper: null, cleanups };
                     }
 
-                    const autoSlide = el.getAttribute('data-auto-slide') === 'true';
-                    const slideDelay = parseInt(el.getAttribute('data-slide-delay'), 10) || 5;
-
                     const swiper = new Swiper(swiperContainer, {
                         loop: slides.length > 1,
-                        autoplay: autoSlide
-                            ? {
-                                  delay: slideDelay * 1000,
-                                  disableOnInteraction: false,
-                              }
-                            : false,
+                        autoplay: false,
                         slidesPerView: 1,
                         effect: 'fade',
                         fadeEffect: {
@@ -179,59 +191,54 @@
                         navigation: false,
                     });
 
-                    const prevBtn = el.querySelector('.slides-show__nav-prev');
-                    const nextBtn = el.querySelector('.slides-show__nav-next');
+                    function syncSlideAriaHidden() {
+                        swiperContainer.querySelectorAll('.swiper-slide').forEach(function (slide) {
+                            const isActive = slide.classList.contains('swiper-slide-active');
+                            slide.setAttribute('aria-hidden', isActive ? 'false' : 'true');
+                            if (isActive) {
+                                slide.removeAttribute('inert');
+                            } else {
+                                slide.setAttribute('inert', '');
+                            }
+                        });
+                    }
 
-                    if (prevBtn) {
-                        function onPrev() {
+                    function onSlideChange() {
+                        syncSlideAriaHidden();
+                    }
+
+                    swiper.on('slideChange', onSlideChange);
+                    syncSlideAriaHidden();
+                    cleanups.push(function () {
+                        swiper.off('slideChange', onSlideChange);
+                    });
+
+                    function onKeydown(event) {
+                        if (
+                            event.target !== swiperContainer ||
+                            (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight')
+                        ) {
+                            return;
+                        }
+
+                        event.preventDefault();
+                        const moveNext =
+                            event.key === (swiper.rtlTranslate ? 'ArrowLeft' : 'ArrowRight');
+                        if (moveNext) {
+                            swiper.slideNext();
+                        } else {
                             swiper.slidePrev();
                         }
-                        prevBtn.addEventListener('click', onPrev);
-                        cleanups.push(function () {
-                            prevBtn.removeEventListener('click', onPrev);
-                        });
                     }
-
-                    if (nextBtn) {
-                        function onNext() {
-                            swiper.slideNext();
-                        }
-                        nextBtn.addEventListener('click', onNext);
-                        cleanups.push(function () {
-                            nextBtn.removeEventListener('click', onNext);
-                        });
-                    }
-
-                    const pauseBtn = el.querySelector('.slides-show__pause-toggle');
-                    if (pauseBtn && swiper.autoplay) {
-                        const pauseLabel = pauseBtn.getAttribute('aria-label');
-                        const playLabel = pauseBtn.getAttribute('data-play-label');
-
-                        function updatePauseButton() {
-                            const isRunning = swiper.autoplay.running;
-                            pauseBtn.setAttribute('aria-label', isRunning ? pauseLabel : playLabel);
-                            pauseBtn.setAttribute('aria-pressed', String(!isRunning));
-                        }
-
-                        function onTogglePause() {
-                            if (swiper.autoplay.running) {
-                                swiper.autoplay.stop();
-                            } else {
-                                swiper.autoplay.start();
-                            }
-                            updatePauseButton();
-                        }
-
-                        pauseBtn.addEventListener('click', onTogglePause);
-                        cleanups.push(function () {
-                            pauseBtn.removeEventListener('click', onTogglePause);
-                        });
-                    }
+                    swiperContainer.addEventListener('keydown', onKeydown);
+                    cleanups.push(function () {
+                        swiperContainer.removeEventListener('keydown', onKeydown);
+                    });
 
                     return { swiper, cleanups };
                 },
 
-                destroy(el, state) {
+                destroy(_el, state) {
                     if (!state) return;
 
                     if (Array.isArray(state.cleanups)) {
@@ -251,14 +258,137 @@
 {% endjavascript %}
 
 {% stylesheet %}
-    .slides-show__pause-toggle::before {
-        content: '\23F8';
-        font-size: 0.75rem;
-        line-height: 1;
+    .slides-show-section .slides-show__content-grid {
+        grid-template-rows: repeat(3, minmax(0, 1fr));
+        row-gap: 1rem;
     }
 
-    .slides-show__pause-toggle[aria-pressed='true']::before {
-        content: '\25B6';
+    .slides-show-section .place-top-left,
+    .slides-show-section .place-top-center,
+    .slides-show-section .place-top-right {
+        grid-column: 1 / -1;
+        grid-row-start: 1;
+        align-self: start;
+        justify-self: stretch;
+    }
+
+    .slides-show-section .place-center-left,
+    .slides-show-section .place-center,
+    .slides-show-section .place-center-right {
+        grid-column: 1 / -1;
+        grid-row-start: 2;
+        align-self: center;
+        justify-self: stretch;
+    }
+
+    .slides-show-section .place-bottom-left,
+    .slides-show-section .place-bottom-center,
+    .slides-show-section .place-bottom-right {
+        grid-column: 1 / -1;
+        grid-row-start: 3;
+        align-self: end;
+        justify-self: stretch;
+    }
+
+    .slides-show-section .slides-show__caption-content {
+        grid-column: 1 / -1;
+        grid-row-start: 1;
+        align-self: stretch;
+        justify-self: stretch;
+    }
+
+    .slides-show-section .slides-show__headline-content {
+        grid-column: 1 / -1;
+        grid-row-start: 2;
+        align-self: stretch;
+        justify-self: stretch;
+    }
+
+    .slides-show-section .slides-show__meta-content {
+        grid-column: 1 / -1;
+        grid-row-start: 3;
+        align-self: stretch;
+        justify-self: stretch;
+    }
+
+    @media (width >= 48rem) {
+        .slides-show-section .place-top-left {
+            grid-column: auto;
+            grid-column-start: 1;
+            grid-row-start: 1;
+            align-self: start;
+            justify-self: start;
+        }
+
+        .slides-show-section .place-top-center {
+            grid-column: auto;
+            grid-column-start: 2;
+            grid-row-start: 1;
+            align-self: start;
+            justify-self: center;
+        }
+
+        .slides-show-section .place-top-right {
+            grid-column: auto;
+            grid-column-start: 3;
+            grid-row-start: 1;
+            align-self: start;
+            justify-self: end;
+        }
+
+        .slides-show-section .place-center-left {
+            grid-column: auto;
+            grid-column-start: 1;
+            grid-row-start: 2;
+            align-self: center;
+            justify-self: start;
+        }
+
+        .slides-show-section .place-center {
+            grid-column: auto;
+            grid-column-start: 2;
+            grid-row-start: 2;
+            align-self: center;
+            justify-self: center;
+        }
+
+        .slides-show-section .place-center-right {
+            grid-column: auto;
+            grid-column-start: 3;
+            grid-row-start: 2;
+            align-self: center;
+            justify-self: end;
+        }
+
+        .slides-show-section .place-bottom-left {
+            grid-column: auto;
+            grid-column-start: 1;
+            grid-row-start: 3;
+            align-self: end;
+            justify-self: start;
+        }
+
+        .slides-show-section .place-bottom-center {
+            grid-column: auto;
+            grid-column-start: 2;
+            grid-row-start: 3;
+            align-self: end;
+            justify-self: center;
+        }
+
+        .slides-show-section .place-bottom-right {
+            grid-column: auto;
+            grid-column-start: 3;
+            grid-row-start: 3;
+            align-self: end;
+            justify-self: end;
+        }
+    }
+
+    .slides-show-section {
+        --motion-reveal-base-delay: 180ms;
+        --motion-reveal-rise-distance: clamp(48px, 6vw, 80px);
+        --motion-slide-content-distance-y: clamp(36px, 5vw, 64px);
     }
 {% endstylesheet %}
 
@@ -279,23 +409,95 @@
         },
         {
             "type": "header",
-            "content": "t:sections.slides-show.content.slide_setting"
+            "content": "t:sections.slides-show.content.font"
         },
         {
-            "type": "checkbox",
-            "id": "is_auto_slide",
-            "label": "t:sections.slides-show.settings.auto_slide",
-            "default": true
+            "type": "header",
+            "content": "t:sections.slides-show.content.heading"
         },
         {
-            "type": "range",
-            "id": "slide_delay",
-            "min": 3,
-            "max": 10,
-            "step": 1,
-            "unit": "s",
-            "label": "t:sections.slides-show.settings.slide_delay",
-            "default": 5
+            "type": "select",
+            "id": "heading_size",
+            "label": "t:sections.slides-show.settings.heading_size",
+            "options": [
+                {
+                    "value": "heading-4xl",
+                    "label": "t:sections.slides-show.options.heading_4xl"
+                },
+                {
+                    "value": "heading-3xl",
+                    "label": "t:sections.slides-show.options.heading_3xl"
+                },
+                {
+                    "value": "heading-2xl",
+                    "label": "t:sections.slides-show.options.heading_2xl"
+                },
+                {
+                    "value": "heading-xl",
+                    "label": "t:sections.slides-show.options.heading_xl"
+                },
+                {
+                    "value": "heading-h1",
+                    "label": "t:sections.slides-show.options.heading_h1"
+                },
+                {
+                    "value": "heading-h2",
+                    "label": "t:sections.slides-show.options.heading_h2"
+                },
+                {
+                    "value": "heading-h3",
+                    "label": "t:sections.slides-show.options.heading_h3"
+                },
+                {
+                    "value": "heading-h4",
+                    "label": "t:sections.slides-show.options.heading_h4"
+                },
+                {
+                    "value": "heading-h5",
+                    "label": "t:sections.slides-show.options.heading_h5"
+                },
+                {
+                    "value": "heading-h6",
+                    "label": "t:sections.slides-show.options.heading_h6"
+                }
+            ],
+            "default": "heading-3xl"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.scroll-categories.content.subtitle"
+        },
+        {
+            "type": "select",
+            "id": "subtitle_size",
+            "label": "t:sections.scroll-categories.settings.subtitle_size",
+            "options": [
+                {
+                    "value": "body-3xl",
+                    "label": "t:sections.scroll-categories.options.body_3xl"
+                },
+                {
+                    "value": "body-2xl",
+                    "label": "t:sections.scroll-categories.options.body_2xl"
+                },
+                {
+                    "value": "body-xl",
+                    "label": "t:sections.scroll-categories.options.body_xl"
+                },
+                {
+                    "value": "body-lg",
+                    "label": "t:sections.scroll-categories.options.body_lg"
+                },
+                {
+                    "value": "body-md",
+                    "label": "t:sections.scroll-categories.options.body_md"
+                },
+                {
+                    "value": "body-sm",
+                    "label": "t:sections.scroll-categories.options.body_sm"
+                }
+            ],
+            "default": "body-3xl"
         },
         {
             "type": "header",
@@ -309,7 +511,7 @@
             "step": 4,
             "unit": "px",
             "label": "t:sections.slides-show.settings.padding_top",
-            "default": 0
+            "default": 32
         },
         {
             "type": "range",
@@ -319,7 +521,7 @@
             "step": 4,
             "unit": "px",
             "label": "t:sections.slides-show.settings.padding_bottom",
-            "default": 0
+            "default": 32
         }
     ],
     "blocks": [
@@ -547,19 +749,18 @@
                     "id": "meta_text",
                     "label": "t:sections.slides-show.block_settings.meta_text",
                     "default": "t:sections.slides-show.blocks.defaults.meta_text"
-                },
-                {
-                    "type": "text",
-                    "id": "meta_counter",
-                    "label": "t:sections.slides-show.block_settings.meta_counter_number",
-                    "default": "002/12"
                 }
             ]
         }
     ],
     "presets": [
         {
-            "name": "t:sections.slides-show.presets.slides_show"
+            "name": "t:sections.slides-show.presets.slides_show",
+            "blocks": [
+                {
+                    "type": "slide"
+                }
+            ]
         }
     ]
 }

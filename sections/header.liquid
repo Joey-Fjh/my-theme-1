@@ -10,11 +10,16 @@
 {%- if request.page_type == 'index' -%}
     {%- assign is_homepage = true -%}
 {%- endif -%}
+{%- assign header_menu = section.settings.menu -%}
+{%- assign has_header_menu = false -%}
+{%- if header_menu != blank and header_menu.links != blank -%}
+    {%- assign has_header_menu = true -%}
+{%- endif -%}
 
 <header
     data-section-id="{{ section.id }}"
     class="
-        header-section full-width color-{{ section.settings.color_scheme }} bg-scheme-surface
+        header-section full-width color-{{ section.settings.color_scheme }} surface-section
         {% if is_homepage %}is-homepage{% else %}is-innerpage{% endif %}
     "
     x-data="stickyHeader"
@@ -31,26 +36,28 @@
     <div class="container-page">
         <div class="header__cols header__cols-{{ logo_position }} grid py-5">
             <div class="flex items-center pc:hidden" style="grid-area: mobile-menu">
-                {%- render 'header-mobile-menu-drawer',
-                    popup_id: mobile_menu_popup_id,
-                    menu_handle: section.settings.menu.handle,
-                    color_scheme: section.settings.mobile_menu_color_scheme
-                -%}
+                {%- if has_header_menu -%}
+                    {%- render 'header-mobile-menu-drawer',
+                        popup_id: mobile_menu_popup_id,
+                        menu_handle: header_menu.handle,
+                        color_scheme: section.settings.mobile_menu_color_scheme
+                    -%}
 
-                <button
-                    type="button"
-                    class="cursor-pointer focus-ring"
-                    @click="$store.dialog.open('{{ mobile_menu_popup_id }}')"
-                    aria-label="{{ 'accessibility.mobile_menu' | t }}"
-                >
-                    {%- render 'icons', icon: 'icon-menu', class: 'ml-3' -%}
-                </button>
+                    <button
+                        type="button"
+                        class="header-icon-button"
+                        @click="$store.dialog.open('{{ mobile_menu_popup_id }}')"
+                        aria-label="{{ 'accessibility.mobile_menu' | t }}"
+                    >
+                        {%- render 'icons', icon: 'icon-menu', class: 'ms-3' -%}
+                    </button>
+                {%- endif -%}
             </div>
 
             <div class="header-search hidden items-center justify-start" style="grid-area: search">
                 <button
                     type="button"
-                    class="cursor-pointer focus-ring"
+                    class="header-icon-button"
                     @click="$store.dialog.open('{{ search_overlay_popup_id }}')"
                     aria-label="{{ 'accessibility.search' | t }}"
                 >
@@ -78,9 +85,12 @@
                         height: logo_height,
                         alt: logo_alt,
                         url: routes.root_url,
+                        interactive: false,
                         sizes: sizes,
                         widths: widths,
-                        loading: 'eager'
+                        loading: 'eager',
+                        mode: 'natural',
+                        fit: 'contain'
                     %}
                 {%- else -%}
                     {%- render 'link',
@@ -96,10 +106,12 @@
                 class="header-menu flex items-center justify-center max-pc:hidden"
                 style="grid-area: menu"
             >
-                {%- if section.settings.menu_type == 'super' -%}
-                    {%- render 'header-dropdown-super-menu' -%}
-                {%- else -%}
-                    {%- render 'header-dropdown-menu' -%}
+                {%- if has_header_menu -%}
+                    {%- if section.settings.menu_type == 'super' -%}
+                        {%- render 'header-dropdown-super-menu' -%}
+                    {%- else -%}
+                        {%- render 'header-dropdown-menu' -%}
+                    {%- endif -%}
                 {%- endif -%}
             </div>
 
@@ -109,7 +121,7 @@
             >
                 <button
                     type="button"
-                    class="header-search__right cursor-pointer focus-ring"
+                    class="header-search__right header-icon-button"
                     @click="$store.dialog.open('{{ search_overlay_popup_id }}')"
                     aria-label="{{ 'accessibility.search' | t }}"
                 >
@@ -119,7 +131,7 @@
                 {%- if settings.cart_type == 'drawer' -%}
                     <button
                         type="button"
-                        class="relative cursor-pointer focus-ring"
+                        class="header-icon-button relative"
                         @click="$store.dialog.open('{{ cart_overlay_popup_id }}')"
                         aria-label="{{ 'accessibility.cart' | t }}"
                     >
@@ -127,42 +139,36 @@
                         <span
                             x-cloak
                             x-show="$store.cart && $store.cart.item_count > 0"
-                            class="absolute -top-1 -right-1 inline-flex min-w-[1.25rem] items-center justify-center rounded-full px-1.5 py-0.5"
+                            class="header__cart-count badge-cart"
                             x-text="$store.cart.item_count"
                         ></span>
                     </button>
                 {%- else -%}
                     <a
                         href="{{ routes.cart_url }}"
-                        class="relative cursor-pointer focus-ring"
+                        class="header-icon-button relative"
                         aria-label="{{ 'accessibility.cart' | t }}"
                     >
                         {% render 'icons', icon: 'icon-cart', class: size_class %}
                         <span
                             x-cloak
                             x-show="$store.cart && $store.cart.item_count > 0"
-                            class="absolute -top-1 -right-1 inline-flex min-w-[1.25rem] items-center justify-center rounded-full px-1.5 py-0.5"
+                            class="header__cart-count badge-cart"
                             x-text="$store.cart.item_count"
                         ></span>
                     </a>
                 {%- endif -%}
 
-                {% assign account_href = routes.account_login_url %}
-                {% if customer %}
-                    {% assign account_href = routes.account_url %}
-                {% endif %}
-
-                {% capture link_content %}
-                    {% render 'icons', icon: 'icon-account', class: size_class %}
-                {% endcapture %}
-
-                {% render 'link',
-                    href: account_href,
-                    content: link_content,
-                    variant: 'plain',
-                    class: 'cursor-pointer focus-ring',
-                    aria_label: '{{ "accessibility.account" | t }}'
-                %}
+                {%- if shop.customer_accounts_enabled -%}
+                    <shopify-account
+                        menu="customer-account-main-menu"
+                        class="header-icon-button"
+                    >
+                        <span slot="signed-out-avatar">
+                            {%- render 'icons', icon: 'icon-account', class: size_class -%}
+                        </span>
+                    </shopify-account>
+                {%- endif -%}
             </div>
         </div>
     </div>
@@ -174,7 +180,7 @@
         left: 0;
         right: 0;
         top: var(--announcement-bar-height);
-        z-index: 9998;
+        z-index: var(--z-layer-sticky);
     }
 
     .site-header > header {
@@ -412,7 +418,7 @@
             .header-super-menu-series {
                 min-width: 0;
                 min-height: auto;
-                padding-left: 2rem;
+                padding-inline-start: 2rem;
             }
 
             .header-super-menu-series-tabs {
@@ -448,7 +454,7 @@
                 }
 
                 .header-super-menu-layout--series-top-bottom .header-super-menu-series {
-                    padding-left: 0;
+                    padding-inline-start: 0;
                 }
 
                 .header-super-menu-layout--series-top-bottom .header-super-menu-columns {
@@ -461,17 +467,17 @@
                     .header-super-menu-grandchildren-links {
                     position: absolute;
                     top: 0;
-                    left: calc(100% + 1.6rem);
+                    inset-inline-start: calc(100% + 1.6rem);
                     width: auto;
                     min-width: max-content;
                     max-height: none;
-                    padding-left: 1.6rem;
+                    padding-inline-start: 1.6rem;
                     flex-direction: row;
                     flex-wrap: wrap;
                     overflow: visible;
                     opacity: 0;
                     transform: translateX(-0.4rem);
-                    border-left: 1px solid rgba(var(--color-border), 0.2);
+                    border-inline-start: 1px solid rgba(var(--color-border), 0.2);
                     transition:
                         opacity 0.18s ease,
                         transform 0.18s ease;
@@ -493,6 +499,14 @@
                 }
             }
         }
+    }
+
+    .header__cart-count {
+        position: absolute;
+        top: 0.25rem;
+        inset-inline-end: 0.25rem;
+        transform: translate(50%, -50%);
+        pointer-events: none;
     }
 {% endstylesheet %}
 
@@ -599,7 +613,8 @@
         {
             "type": "link_list",
             "id": "menu",
-            "label": "t:labels.menu"
+            "label": "t:labels.menu",
+            "default": "main-menu"
         },
         {
             "type": "header",
@@ -618,6 +633,22 @@
                 {
                     "value": "super",
                     "label": "t:sections.header.options.super_menu"
+                }
+            ]
+        },
+        {
+            "type": "select",
+            "id": "desktop_menu_trigger",
+            "label": "t:sections.header.settings.desktop_menu_trigger",
+            "default": "hover",
+            "options": [
+                {
+                    "value": "hover",
+                    "label": "t:sections.header.options.hover"
+                },
+                {
+                    "value": "click",
+                    "label": "t:sections.header.options.click"
                 }
             ]
         },

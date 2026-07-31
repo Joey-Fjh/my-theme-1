@@ -100,67 +100,131 @@ font body
 @utility body-base {
     font-family: var(--font-body-family);
     font-style: var(--font-body-style);
-    font-weight: var(--font-body-weight);
     line-height: var(--font-body-line-height);
     letter-spacing: var(--font-body-letter-spacing);
     text-transform: var(--font-body-text-transform);
     word-break: break-word;
-
-    color: rgba(var(--color-foreground), 0.8);
 }
 
 @utility body-3xl {
     @apply body-base;
-    font-size: calc(var(--font-body-scale) * 2.4rem);
+    font-size: calc(var(--font-body-size-mobile) * var(--font-body-scale) * 1.375);
     @media (width >= theme(--breakpoint-pc)) {
-        font-size: calc(var(--font-body-scale) * 2.6rem);
+        font-size: calc(var(--font-body-size) * var(--font-body-scale) * 1.5);
     }
 }
 
 @utility body-2xl {
     @apply body-base;
-    font-size: calc(var(--font-body-scale) * 2rem);
+    font-size: calc(var(--font-body-size-mobile) * var(--font-body-scale) * 1.25);
     @media (width >= theme(--breakpoint-pc)) {
-        font-size: calc(var(--font-body-scale) * 2.2rem);
+        font-size: calc(var(--font-body-size) * var(--font-body-scale) * 1.375);
     }
 }
 
 @utility body-xl {
     @apply body-base;
-    font-size: calc(var(--font-body-scale) * 1.8rem);
+    font-size: calc(var(--font-body-size-mobile) * var(--font-body-scale) * 1.125);
     @media (width >= theme(--breakpoint-pc)) {
-        font-size: calc(var(--font-body-scale) * 2rem);
+        font-size: calc(var(--font-body-size) * var(--font-body-scale) * 1.25);
     }
 }
 
 @utility body-lg {
     @apply body-base;
-    font-size: calc(var(--font-body-scale) * 1.6rem);
+    font-size: calc(var(--font-body-size-mobile) * var(--font-body-scale));
     @media (width >= theme(--breakpoint-pc)) {
-        font-size: calc(var(--font-body-scale) * 1.8rem);
+        font-size: calc(var(--font-body-size) * var(--font-body-scale) * 1.125);
     }
 }
 
 @utility body-md {
     @apply body-base;
-    font-size: calc(var(--font-body-scale) * 1.4rem);
+    font-size: calc(var(--font-body-size-mobile) * var(--font-body-scale) * 0.875);
     @media (width >= theme(--breakpoint-pc)) {
-        font-size: calc(var(--font-body-scale) * 1.6rem);
+        font-size: calc(var(--font-body-size) * var(--font-body-scale));
     }
 }
 
 @utility body-sm {
     @apply body-base;
-    font-size: calc(var(--font-body-scale) * 1.2rem);
+    font-size: calc(var(--font-body-size-mobile) * var(--font-body-scale) * 0.75);
     @media (width >= theme(--breakpoint-pc)) {
-        font-size: calc(var(--font-body-scale) * 1.3rem);
+        font-size: calc(var(--font-body-size) * var(--font-body-scale) * 0.875);
     }
 }
 
 @utility body-xs {
     @apply body-base;
-    font-size: calc(var(--font-body-scale) * 1rem);
+    font-size: calc(var(--font-body-size-mobile) * var(--font-body-scale) * 0.625);
     @media (width >= theme(--breakpoint-pc)) {
-        font-size: calc(var(--font-body-scale) * 1.1rem);
+        font-size: calc(var(--font-body-size) * var(--font-body-scale) * 0.75);
     }
+}
+
+/* =========================================================
+font subtitle
+========================================================= */
+@utility subtitle-base {
+    font-family: var(--font-subtitle-family);
+    font-style: var(--font-subtitle-style);
+    font-weight: var(--font-subtitle-weight);
+    line-height: var(--font-subtitle-line-height);
+    letter-spacing: var(--font-subtitle-letter-spacing);
+    text-transform: var(--font-subtitle-text-transform);
+    word-break: break-word;
+}
+
+/* =========================================================
+Typography role — subtitle font settings only (family from
+subtitle_font_source + subtitle weight/spacing/transform). Compose
+with heading-* or body-* tiers at the consumer for size.
+========================================================= */
+@utility typo-subtitle {
+    @apply subtitle-base;
+}
+
+/* =========================================================
+Custom size utilities — controlled font-size escape hatch.
+Apply heading-base / body-base stack; override font-size only
+via local CSS variables. Do not add unbounded body-8xl tiers.
+========================================================= */
+@utility heading-size-custom {
+    @apply heading-base;
+    font-size: var(--heading-size-custom);
+
+    @media (width >= theme(--breakpoint-pc)) {
+        font-size: var(--heading-size-custom-pc, var(--heading-size-custom));
+    }
+}
+
+@utility body-size-custom {
+    @apply body-base;
+    font-size: calc(var(--body-size-custom) * var(--font-body-scale));
+
+    @media (width >= theme(--breakpoint-pc)) {
+        font-size: calc(
+            var(--body-size-custom-pc, var(--body-size-custom)) * var(--font-body-scale)
+        );
+    }
+}
+
+/* =========================================================
+RTL / Arabic-script typography overrides
+These override the CSS custom properties consumed by heading-base
+and body-base, so all typography utilities respond automatically.
+Font families are NOT overridden here — merchant-selected Shopify
+fonts from font_picker apply as-is. Arabic-script glyphs render
+from that font; if it lacks Arabic glyphs the browser fallback
+handles it.
+========================================================= */
+:lang(ar),
+:lang(fa),
+:lang(ur) {
+    --font-body-letter-spacing: 0em;
+    --font-heading-letter-spacing: 0em;
+    --font-subtitle-letter-spacing: 0em;
+    --font-body-text-transform: none;
+    --font-heading-text-transform: none;
+    --font-subtitle-text-transform: none;
 }

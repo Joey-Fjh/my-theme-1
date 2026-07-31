@@ -27,7 +27,7 @@
     {%- endif -%}
 {%- endif -%}
 
-{%- assign divider_class = divider_class | default: 'border-theme-border-20' -%}
+{%- assign divider_class = divider_class | default: 'border-theme-border/20' -%}
 {%- assign muted_text_class = muted_text_class | default: 'body-lg' -%}
 {%- assign filter_label_class = filter_label_class | default: 'body-lg' -%}
 {%- assign count_text_class = count_text_class | default: 'body-lg' -%}
@@ -62,7 +62,7 @@
 
                         <label
                             x-show="isVisible({{ forloop.index0 }})"
-                            class="flex items-center gap-3 {% if is_disabled %}cursor-not-allowed opacity-50{% endif %}"
+                            class="flex items-center gap-3 {% if is_disabled %}filters-field__option--disabled{% endif %}"
                             :class="{ 'hidden': !isVisible({{ forloop.index0 }}) }"
                             {% if is_disabled %}
                                 aria-disabled="true"
@@ -81,7 +81,7 @@
                             <span class="{{ filter_label_class }}">
                                 {{ value.label }}
                             </span>
-                            <span class="ml-auto {{ count_text_class }}">
+                            <span class="ms-auto {{ count_text_class }}">
                                 ({{ value.count | default: 0 }})
                             </span>
                         </label>
@@ -91,7 +91,7 @@
                         <button
                             type="button"
                             @click.stop="canShowMore({{ sorted_values.size }}) ? showMore({{ sorted_values.size }}) : showLess()"
-                            class="inline-flex cursor-pointer items-center gap-3 pt-1 transition-opacity hover:opacity-80"
+                            class="filters-field__show-more filters-field__show-more--panel"
                         >
                             {% render 'show-more-icon' %}
                             <span x-text="canShowMore({{ sorted_values.size }}) ? '{{ 'collections.filters.show_more' | t }}' : '{{ 'collections.filters.show_less' | t }}'"></span>
@@ -142,7 +142,7 @@
                         <button
                             type="button"
                             @click.stop="canShowMore({{ sorted_values.size }}) ? showMore({{ sorted_values.size }}) : showLess()"
-                            class="inline-flex cursor-pointer items-center gap-3 pt-2 transition-opacity hover:opacity-80"
+                            class="filters-field__show-more filters-field__show-more--horizontal"
                         >
                             {% render 'show-more-icon' %}
                             <span x-text="canShowMore({{ sorted_values.size }}) ? '{{ 'collections.filters.show_more' | t }}' : '{{ 'collections.filters.show_less' | t }}'"></span>
@@ -166,8 +166,8 @@
                     x-data="collectionFilterField()"
                 >
                     <div
-                        class="relative flex h-8 w-full items-center transition-opacity"
-                        :class="{ 'opacity-50 cursor-not-allowed': isLoading }"
+                        class="filters-field__range-wrapper"
+                        :class="{ 'is-loading': isLoading }"
                     >
                         <div class="absolute inset-x-0 h-px rounded-full bg-theme-border"></div>
                         <div
@@ -200,8 +200,8 @@
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="mb-1 block {{ muted_text_class }}" for="Filter-{{ filter.label | handleize }}-GTE">{{ 'collections.filters.from' | t }}</label>
-                            <div class="flex items-center border-b {{ divider_class }} bg-theme-border-20 px-3 py-2">
-                                <span class="mr-1">$</span>
+                            <div class="filters-field__range-input-wrapper {{ divider_class }}" :class="{ 'is-loading': isLoading }">
+                                <span class="me-1">$</span>
                                 <input
                                     x-ref="inputMin"
                                     id="Filter-{{ filter.label | handleize }}-GTE"
@@ -214,15 +214,14 @@
                                     form="CollectionFiltersForm"
                                     @input.debounce.500ms="setMinFromInput($el.value); $el.value = min; onChange()"
                                     :disabled="isLoading"
-                                    :class="{ 'cursor-not-allowed opacity-80': isLoading }"
                                     class="w-full appearance-none bg-transparent focus-ring outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                 >
                             </div>
                         </div>
                         <div>
                             <label class="mb-1 block {{ muted_text_class }}" for="Filter-{{ filter.label | handleize }}-LTE">{{ 'collections.filters.to' | t }}</label>
-                            <div class="flex items-center border-b {{ divider_class }} bg-theme-border-20 px-3 py-2">
-                                <span class="mr-1">$</span>
+                            <div class="filters-field__range-input-wrapper {{ divider_class }}" :class="{ 'is-loading': isLoading }">
+                                <span class="me-1">$</span>
                                 <input
                                     x-ref="inputMax"
                                     id="Filter-{{ filter.label | handleize }}-LTE"
@@ -235,7 +234,6 @@
                                     form="CollectionFiltersForm"
                                     @input.debounce.500ms="setMaxFromInput($el.value); $el.value = max; onChange()"
                                     :disabled="isLoading"
-                                    :class="{ 'cursor-not-allowed opacity-80': isLoading }"
                                     class="w-full appearance-none bg-transparent focus-ring outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                 >
                             </div>
@@ -282,54 +280,57 @@
 {%- else -%}
     <details
         {% if render_mode == 'horizontal' %}
-            :open="activeFilter === '{{ field_index }}'"
-            @toggle="
-                if ($el.open) {
-                    activeFilter = '{{ field_index }}';
-                } else if (activeFilter === '{{ field_index }}') {
-                    activeFilter = null;
-                }
+            data-filter-dropdown
+            @click.outside="
+                activeFilter = null;
+                $el.open = false;
             "
-            @click.outside="activeFilter = null"
         {% endif %}
         class="group {% if render_mode == 'horizontal' %}relative{% endif %}"
     >
         <summary
             class="
-                flex cursor-pointer list-none items-center gap-3 marker:content-none
+                filters-field__summary
                 {% if render_mode == 'horizontal' %}
-                    w-fit min-w-0 justify-between rounded-full border border-theme-border-20 bg-theme-bg px-5 py-3 transition-colors duration-300 hover:border-theme-text group-open:border-theme-text
+                    w-fit min-w-0 justify-between rounded-full border border-theme-border/20 bg-theme-bg px-5 py-3
                 {% else %}
                     h2
                 {% endif %}
             "
+            {% if render_mode == 'horizontal' %}
+                @click.prevent="
+                    const details = $el.parentElement;
+                    const shouldOpen = !details.open;
+                    activeFilter = shouldOpen ? '{{ field_index }}' : null;
+                    $root.querySelectorAll('[data-filter-dropdown]').forEach((dropdown) => {
+                        dropdown.open = dropdown === details && shouldOpen;
+                    });
+                "
+            {% endif %}
         >
             <span class="inline-flex items-center gap-3">
                 <span>{{ filter.label }}</span>
                 {%- if render_mode == 'horizontal' and active_filter_count > 0 -%}
-                    <span class="inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-theme-text px-2">
+                    <span class="filter-count-badge">
                         {{ active_filter_count }}
                     </span>
                 {%- endif -%}
             </span>
-            {% render 'icons',
-                icon: 'icon-arrow',
-                class: 'transition-transform group-open:rotate-180'
-            %}
+            {% render 'icons', icon: 'icon-arrow', class: 'filters-field__summary-icon' %}
         </summary>
 
         <div
             class="
                 mt-3
                 {% if render_mode == 'horizontal' %}
-                    absolute top-full left-0 z-20 rounded-lg border border-theme-border-20 bg-theme-bg p-5
+                    absolute top-full left-0 z-layer-popover panel-motion panel-motion-compact rounded-lg border border-theme-border/20 bg-theme-bg p-5
                     {% if filter.type == 'price_range' %}
                         min-w-[24rem] pc:max-w-[36rem]
                     {% else %}
                         min-w-[24rem]
                     {% endif %}
                 {% else %}
-                    rounded-lg border border-theme-border-20 p-4
+                    rounded-lg border border-theme-border/20 p-4
                 {% endif %}
             "
         >

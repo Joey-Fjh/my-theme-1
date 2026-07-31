@@ -14,16 +14,32 @@
     {% render 'rotating-badge',
         size: 100,
         size_mobile: 80,
-        badge_text: 'ORGANIC · ETHICALLY SOURCED ·',
-        center_text: '99%'
+        badge_text: 'FEATURED · NEW · DISCOVER ·',
+        center_text: 'NEW'
     %}
 {% enddoc %}
 
 {%- liquid
     assign badge_size = size | default: 100
     assign badge_size_mobile = size_mobile | default: badge_size
-    assign badge_text = badge_text | default: 'ORGANIC · ETHICALLY SOURCED ·'
-    assign center_text = center_text | default: '100%'
+    if badge_text == blank
+        assign badge_text = 'components.rotating_badge.default_text' | t
+    endif
+    if center_text == blank
+        assign center_text = 'components.rotating_badge.default_center_text' | t
+    endif
+
+    assign center_text_length = center_text | strip | size
+    assign center_text_scale = 0.26
+    if center_text_length > 4
+        assign center_text_scale = 0.16
+    endif
+    if center_text_length > 7
+        assign center_text_scale = 0.14
+    endif
+    if center_text_length > 10
+        assign center_text_scale = 0.11
+    endif
 
     assign badge_class = badge_class | default: 'text-theme-text'
     assign center_class = center_class | default: 'text-theme-text'
@@ -33,11 +49,12 @@
     x-data="{ inView: false }"
     x-intersect.once="inView = true"
     class="{{ classes }} h-(--badge-size-mb) w-(--badge-size-mb) pc:h-(--badge-size-pc) pc:w-(--badge-size-pc)"
-    style="--badge-size-pc: {{ badge_size }}px; --badge-size-mb: {{ badge_size_mobile }}px;"
+    style="--badge-size-pc: {{ badge_size }}px; --badge-size-mb: {{ badge_size_mobile }}px; --badge-center-scale: {{ center_text_scale }};"
 >
     <svg
         :class="inView && 'is-running'"
         class="absolute inset-0 h-full w-full {{ badge_class }} origin-center animate-spin-slow is-paused"
+        data-rotating-badge-motion
         viewBox="0 0 100 100"
     >
         <defs>
@@ -71,7 +88,7 @@
 
     <div class="absolute inset-0 flex items-center justify-center">
         <span
-            class="{{ center_class }} translate-y-[2%] text-[calc(var(--badge-size-mb)*0.26)] font-bold pc:text-[calc(var(--badge-size-pc)*0.26)]"
+            class="{{ center_class }} translate-y-[2%] text-center text-[calc(var(--badge-size-mb)*var(--badge-center-scale))] leading-none font-bold whitespace-nowrap pc:text-[calc(var(--badge-size-pc)*var(--badge-center-scale))]"
         >
             {{ center_text }}
         </span>

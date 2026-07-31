@@ -11,11 +11,26 @@
     assign content_position = section.settings.content_position | default: 'place-center-right'
 
     assign badge_position = section.settings.badge_position | default: 'place-bottom-right'
+
+    assign routine_showcase_heading_class = section.settings.heading_size | default: 'heading-h4'
+
+    assign routine_products = section.settings.collection.products
+
+    assign routine_background_surface_class = ''
+    assign routine_content_surface_class = ''
+    if section.settings.bg_img == blank
+        assign routine_background_surface_class = 'media-placeholder-frame'
+        assign routine_content_surface_class = 'media-placeholder-frame'
+    endif
 -%}
 
 <div
     data-section-id="{{ section.id }}"
     class="routine-showcase-section full-width"
+    style="
+        --section-padding-top: {{ section.settings.padding_top }}px;
+        --section-padding-bottom: {{ section.settings.padding_bottom }}px;
+    "
     data-component-kind="section"
     data-component-type="routine-showcase"
     data-component-id="{{ section.id }}"
@@ -31,64 +46,97 @@
             400,480,768,1280,1440,1536,2560
         {%- endcapture -%}
 
-        <div class="absolute inset-0">
+        <div
+            class="absolute inset-0 color-{{ section.settings.color_scheme }} bg-theme-bg {{ routine_background_surface_class }}"
+            data-motion-reveal="media"
+            data-motion-index="0"
+        >
             {%- assign image_alt = section.settings.bg_img.alt
                 | default: section.settings.heading
                 | escape
             -%}
             {%- render 'image',
                 image: section.settings.bg_img,
+                placeholder_key: 'lifestyle-1',
                 alt: image_alt,
                 width: section.settings.bg_img.width,
                 sizes: sizes,
                 widths: widths,
-                loading: 'lazy'
+                mode: 'frame',
+                fit: 'cover',
+                wrapper_class: 'h-full w-full bg-theme-bg',
+                placeholder_style: 'plain',
+                placeholder_class: 'text-theme-text/20',
+                loading: 'lazy',
+                motion_reveal: false
             -%}
         </div>
 
         <div class="layout container-page relative h-full color-{{ section.settings.color_scheme }} bg-transparent!">
             <div class="relative flex h-full flex-col gap-8 py-3 pc:block">
                 <div class="{{ product_position_class }} z-20 flex min-w-0 flex-col gap-5 pc:absolute pc:top-3 pc:bottom-3 pc:w-fit">
-                    <div class="routine-showcase__swiper-wrap flex min-h-0 flex-row gap-3 max-pc:h-full pc:h-full pc:w-fit pc:flex-col pc:justify-between">
+                    <div
+                        class="routine-showcase__swiper-wrap flex min-h-0 flex-row gap-3 max-pc:h-full pc:h-full pc:w-fit pc:flex-col pc:justify-between"
+                    >
                         <button
                             type="button"
-                            class="swiper-button-prev self-center"
+                            class="swiper-button-prev self-center max-pc:hidden"
                             aria-label="{{ 'accessibility.previous_slide' | t }}"
                         ></button>
                         <div
-                            class="swiper ml-0 min-w-0 flex-1 pc:h-full pc:min-h-0"
+                            class="swiper ms-0 min-w-0 flex-1 pc:h-full pc:min-h-0"
+                            data-motion-reveal="media"
                             role="region"
                             aria-label="{{ 'accessibility.routine_carousel' | t }}"
                             aria-roledescription="{{ 'accessibility.carousel' | t }}"
                         >
                             <div class="swiper-wrapper">
-                                {%- assign products = section.settings.collection.products -%}
-
-                                {%- for product in products -%}
-                                    <div class="swiper-slide w-auto pc:w-136">
+                                {%- for product in routine_products -%}
+                                    {%- liquid
+                                        assign image_alt = product.title | escape
+                                        assign routine_placeholder_index = forloop.index | minus: 1 | modulo: 6 | plus: 1
+                                        assign routine_placeholder_key = 'product-' | append: routine_placeholder_index
+                                        assign routine_image_fit = 'cover'
+                                        assign routine_product_surface_class = 'bg-theme-bg max-pc:rounded-sm'
+                                        assign routine_product_placeholder_style = 'framed'
+                                        if product.featured_image == blank
+                                            assign routine_image_fit = 'contain'
+                                            assign routine_product_surface_class = 'media-placeholder-frame'
+                                            assign routine_product_placeholder_style = 'plain'
+                                        endif
+                                    -%}
+                                    <div class="swiper-slide pc:w-136">
                                         <a
-                                            class="relative block h-full"
+                                            class="routine-showcase__product-link media-interaction relative block h-full overflow-hidden {{ routine_product_surface_class }}"
                                             href="{{ product.url }}"
                                             x-data="{ hover: false }"
                                             @mouseenter="hover = true"
                                             @mouseleave="hover = false"
+                                            @focus="hover = true"
+                                            @blur="hover = false"
                                         >
-                                            {%- assign image_alt = product.title | escape -%}
                                             {%- render 'image',
                                                 aspect_ratio: '342/198',
                                                 image: product.featured_image,
+                                                placeholder_key: routine_placeholder_key,
                                                 alt: image_alt,
-                                                width: product.featured_image.width
+                                                width: product.featured_image.width,
+                                                fit: routine_image_fit,
+                                                placeholder_style: routine_product_placeholder_style,
+                                                motion_reveal: false
                                             -%}
 
                                             <div
                                                 class="
+                                                    routine-showcase__product-info
                                                     absolute right-0 bottom-0 left-0
-                                                    flex items-center justify-between p-2 transition-colors pc:p-4
+                                                    flex items-center justify-between p-2 pc:p-4
                                                 "
-                                                :class=" hover ? 'bg-theme-text text-theme-bg' : 'bg-theme-bg text-theme-text' "
+                                                :class="{ 'is-hovered': hover }"
                                             >
-                                                <h3 class="truncate">{{ product.title }}</h3>
+                                                <p class="truncate body-lg text-theme-text">
+                                                    {{ product.title }}
+                                                </p>
                                                 <div class="text-nowrap">
                                                     {% if forloop.index < 10 %}
                                                         {% assign display_index = forloop.index
@@ -102,45 +150,99 @@
                                             </div>
                                         </a>
                                     </div>
+                                {%- else -%}
+                                    {%- for placeholder_index in (1..6) -%}
+                                        {%- liquid
+                                            assign routine_placeholder_key = 'product-' | append: placeholder_index
+                                            if placeholder_index < 10
+                                                assign display_index = placeholder_index | prepend: '0'
+                                            else
+                                                assign display_index = placeholder_index
+                                            endif
+                                        -%}
+                                        <div class="swiper-slide pc:w-136">
+                                            <div
+                                                class="routine-showcase__product-link media-placeholder-frame relative block h-full overflow-hidden"
+                                                x-data="{ hover: false }"
+                                                @mouseenter="hover = true"
+                                                @mouseleave="hover = false"
+                                            >
+                                                {%- render 'image',
+                                                    image: blank,
+                                                    placeholder_key: routine_placeholder_key,
+                                                    aspect_ratio: '342/198',
+                                                    mode: 'frame',
+                                                    fit: 'contain',
+                                                    placeholder_style: 'plain',
+                                                    motion_reveal: false
+                                                -%}
+
+                                                <div
+                                                    class="routine-showcase__product-info absolute right-0 bottom-0 left-0 flex items-center justify-between p-2 pc:p-4"
+                                                    :class="{ 'is-hovered': hover }"
+                                                >
+                                                    <p class="truncate body-lg text-theme-text">
+                                                        {{-
+                                                            'products.product.example_title_numbered'
+                                                            | t: index: placeholder_index
+                                                        -}}
+                                                    </p>
+                                                    <div class="text-nowrap">
+                                                        {{- display_index -}}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {%- endfor -%}
                                 {%- endfor -%}
                             </div>
                         </div>
                         <button
                             type="button"
-                            class="swiper-button-next left-0 self-center"
+                            class="swiper-button-next left-0 self-center max-pc:hidden"
                             aria-label="{{ 'accessibility.next_slide' | t }}"
                         ></button>
-                    </div>
-
-                    <div>
-                        {{ section.settings.badge_counter }}
                     </div>
                 </div>
 
                 <div class="grid flex-1 grid-cols-1 grid-rows-3 pc:absolute pc:inset-0 pc:grid-cols-3">
                     <div
-                        class="{{ content_position }} flex w-auto flex-col gap-12 p-6"
+                        class="{{ content_position }} flex w-full flex-col gap-12 bg-theme-bg p-6 pc:p-8 {{ routine_content_surface_class }}"
                         data-motion-reveal="content"
+                        data-motion-index="1"
                     >
-                        <div>{{ section.settings.eyebrow }}</div>
+                        <p class="body-3xl typo-subtitle text-theme-text/80">
+                            {{ section.settings.eyebrow }}
+                        </p>
 
-                        <div class="gap-2">
-                            <h1>{{ section.settings.heading }}</h1>
-                            <div class="rte rte--compact opacity-60">
+                        <div class="flex flex-col gap-4">
+                            <h2 class="{{ routine_showcase_heading_class }}">
+                                {{ section.settings.heading }}
+                            </h2>
+                            <div class="rte rte--compact text-theme-text/60">
                                 {{ section.settings.description }}
                             </div>
                         </div>
 
-                        {%- capture link_content -%}
-                            <span>{{ section.settings.cta_text }}</span>
-                            {% render 'icons', icon: 'icon-arrow2', class: 'ml-3' %}
-                        {%- endcapture -%}
-
-                        {%- render 'link',
-                            href: section.settings.cta_link,
-                            content: link_content,
-                            variant: 'underline'
+                        {%- liquid
+                            assign cta_href = section.settings.cta_link
+                            if cta_href == '/collections'
+                                assign cta_href = routes.collections_url
+                            endif
                         -%}
+                        {%- if section.settings.cta_text != blank and cta_href != blank -%}
+                            {%- capture link_content -%}
+                                <span>{{ section.settings.cta_text }}</span>
+                                {% render 'icons', icon: 'icon-arrow2', class: 'ms-3' %}
+                            {%- endcapture -%}
+
+                            {%- render 'link',
+                                href: cta_href,
+                                variant: 'underline',
+                                class: 'body-xl text-theme-text',
+                                content: link_content
+                            -%}
+                        {%- endif -%}
                     </div>
 
                     <div class="{{ badge_position }} flex h-full w-full items-center justify-center max-pc:hidden">
@@ -252,6 +354,27 @@
             }
         }
     }
+
+    .routine-showcase__product-info {
+        background-color: rgb(var(--color-background));
+        color: rgb(var(--color-foreground));
+        transition:
+            background-color var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease),
+            color var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease);
+    }
+
+    .routine-showcase__product-info.is-hovered {
+        background-color: rgb(var(--color-foreground));
+        color: rgb(var(--color-background));
+    }
+
+    .routine-showcase__product-info :where(h1, h2, h3, h4, h5, h6) {
+        color: currentColor;
+    }
+
+    .routine-showcase__product-info :where(p) {
+        color: inherit;
+    }
 {% endstylesheet %}
 
 {% schema %}
@@ -267,7 +390,63 @@
             "type": "color_scheme",
             "id": "color_scheme",
             "label": "t:sections.routine-showcase.settings.color_scheme",
-            "default": "scheme-1"
+            "default": "scheme-2"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.slides-show.content.font"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.routine-showcase.content.section_heading"
+        },
+        {
+            "type": "select",
+            "id": "heading_size",
+            "label": "t:sections.slides-show.settings.heading_size",
+            "options": [
+                {
+                    "value": "heading-4xl",
+                    "label": "t:sections.slides-show.options.heading_4xl"
+                },
+                {
+                    "value": "heading-3xl",
+                    "label": "t:sections.slides-show.options.heading_3xl"
+                },
+                {
+                    "value": "heading-2xl",
+                    "label": "t:sections.slides-show.options.heading_2xl"
+                },
+                {
+                    "value": "heading-xl",
+                    "label": "t:sections.slides-show.options.heading_xl"
+                },
+                {
+                    "value": "heading-h1",
+                    "label": "t:sections.slides-show.options.heading_h1"
+                },
+                {
+                    "value": "heading-h2",
+                    "label": "t:sections.slides-show.options.heading_h2"
+                },
+                {
+                    "value": "heading-h3",
+                    "label": "t:sections.slides-show.options.heading_h3"
+                },
+                {
+                    "value": "heading-h4",
+                    "label": "t:sections.slides-show.options.heading_h4"
+                },
+                {
+                    "value": "heading-h5",
+                    "label": "t:sections.slides-show.options.heading_h5"
+                },
+                {
+                    "value": "heading-h6",
+                    "label": "t:sections.slides-show.options.heading_h6"
+                }
+            ],
+            "default": "heading-h4"
         },
         {
             "type": "image_picker",
@@ -419,12 +598,6 @@
         },
         {
             "type": "text",
-            "id": "badge_counter",
-            "label": "t:sections.routine-showcase.settings.counter_number",
-            "default": "002/12"
-        },
-        {
-            "type": "text",
             "id": "rotate_badge_text",
             "label": "t:sections.routine-showcase.settings.rotate_badge_text",
             "default": "t:sections.routine-showcase.defaults.rotate_badge_text"
@@ -433,7 +606,31 @@
             "type": "text",
             "id": "rotate_badge_percent",
             "label": "t:sections.routine-showcase.settings.rotate_badge_percent",
-            "default": "100%"
+            "default": "t:sections.routine-showcase.defaults.rotate_badge_percent"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.routine-showcase.content.padding"
+        },
+        {
+            "type": "range",
+            "id": "padding_top",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "t:sections.routine-showcase.settings.padding_top",
+            "default": 32
+        },
+        {
+            "type": "range",
+            "id": "padding_bottom",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "t:sections.routine-showcase.settings.padding_bottom",
+            "default": 32
         }
     ],
     "presets": [

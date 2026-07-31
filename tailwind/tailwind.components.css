@@ -1,4 +1,56 @@
 /* =========================================================
+Inline Submit Field
+========================================================= */
+@layer components {
+    .inline-submit-field {
+        @apply grid w-full grid-cols-[minmax(0,1fr)_auto] items-stretch gap-0;
+    }
+
+    .inline-submit-field__input {
+        @apply field min-w-0;
+        border-start-end-radius: 0;
+        border-end-end-radius: 0;
+    }
+
+    .inline-submit-field__button {
+        @apply btn-primary shrink-0;
+        border-start-start-radius: 0;
+        border-end-start-radius: 0;
+    }
+
+    .inline-submit-field__button--icon {
+        @apply aspect-square px-0;
+        min-width: 3rem;
+    }
+}
+
+/* =========================================================
+Link With Icon Motion
+
+Composition class for links that render child icons through snippets/icons.liquid.
+The base underline primitive stays in elements.css; child icon choreography belongs here.
+========================================================= */
+@layer components {
+    .link-with-icon-motion {
+        .icons {
+            transition:
+                transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+                opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+        }
+
+        &:hover .icons,
+        &:focus-visible .icons {
+            transform: translateX(0.2rem);
+        }
+
+        [dir='rtl'] &:hover .icons,
+        [dir='rtl'] &:focus-visible .icons {
+            transform: translateX(-0.2rem);
+        }
+    }
+}
+
+/* =========================================================
 Localization Switcher
 ========================================================= */
 @layer components {
@@ -10,9 +62,10 @@ Localization Switcher
         }
 
         .localization-menu {
-            @apply absolute z-10 mt-1 overflow-hidden border border-theme-border bg-theme-bg;
+            @apply absolute mt-1 overflow-hidden border border-theme-border bg-theme-bg;
+            z-index: var(--z-layer-dropdown);
             top: 100%;
-            left: 0;
+            inset-inline-start: 0;
 
             .localization-item {
                 @apply border-t border-theme-border first:border-t-0;
@@ -36,7 +89,7 @@ Dropdown
 
         .dropdown-panel {
             position: absolute;
-            z-index: 20;
+            z-index: var(--z-layer-dropdown);
 
             min-width: max-content;
 
@@ -44,34 +97,23 @@ Dropdown
             visibility: hidden;
             pointer-events: none;
 
-            transform: translateY(-12px) scale(0.98);
+            transition: visibility 0s linear var(--motion-duration-fast);
+        }
 
-            transition:
-                opacity 0.25s ease,
-                transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
-                visibility 0s linear 0.25s;
+        /* Panel-motion variants own open keyframe animation — avoid opacity/transform transitions */
+        .dropdown-panel.panel-motion {
+            transition: visibility 0s linear var(--motion-duration-fast);
         }
 
         .dropdown-open {
             details[open] > &,
+            [data-dropdown][open] > &,
             [aria-expanded='true'] > &,
             .is-open > & {
                 opacity: 1;
                 visibility: visible;
                 pointer-events: auto;
-                transform: translateY(0) scale(1);
                 transition-delay: 0s;
-            }
-
-            /* hover (desktop only) */
-            @media (hover: hover) and (pointer: fine) {
-                details.dropdown:hover > & {
-                    opacity: 1;
-                    visibility: visible;
-                    pointer-events: auto;
-                    transform: translateY(0) scale(1);
-                    transition-delay: 0s;
-                }
             }
         }
 
@@ -81,8 +123,8 @@ Dropdown
             justify-content: center;
 
             transition:
-                transform 0.24s cubic-bezier(0.22, 1, 0.36, 1),
-                opacity 0.24s ease;
+                transform var(--motion-duration-fast) var(--motion-ease-enter),
+                opacity var(--motion-duration-fast) var(--motion-ease-default);
         }
 
         .dropdown-icon--down {
@@ -104,6 +146,329 @@ Dropdown
 }
 
 /* =========================================================
+Panel motion — shared dropdown / menu / disclosure variants
+
+Policy: stateful UI micro-motion (button/icon interaction boundary).
+Governed by prefers-reduced-motion only. Independent from scroll/section
+reveal and content/media reveal systems.
+
+Contract:
+- Pair `.panel-motion` + a variant on the panel element.
+- OPEN motion uses keyframe animations on state selectors (not transition from
+  closed styles) so panels are visible when mounting via details[open] or x-show.
+- Child stagger uses keyed item animations on the same open selectors.
+
+Variants:
+- scale — header primary dropdown
+- flyout — header nested horizontal submenu
+- layered — header super / mega menu
+- compact — sort, localization, horizontal filter list panels
+- disclosure — password header and other small details expansions
+- popover — rich attached panels (predictive search)
+========================================================= */
+@layer components {
+    .panel-motion {
+        transform-origin: top center;
+        transition:
+            box-shadow var(--motion-duration-fast) var(--motion-ease-default),
+            border-color var(--motion-duration-fast) var(--motion-ease-default);
+    }
+
+    /* --- Scale from trigger (global default) --- */
+    .panel-motion-scale {
+        --panel-motion-dur: var(--panel-motion-duration-scale);
+    }
+
+    details[open] > .panel-motion-scale,
+    [aria-expanded='true'] > .panel-motion-scale,
+    .is-open > .panel-motion-scale,
+    [data-dropdown][open] > .panel-motion-scale,
+    .localization-toggle[aria-expanded='true'] ~ .panel-motion-scale {
+        animation: panel-motion-scale-in var(--panel-motion-dur) var(--panel-motion-ease-enter) both;
+    }
+
+    /* --- Rich attached popover (predictive search) --- */
+    .panel-motion-popover {
+        --panel-motion-dur: var(--panel-motion-duration-popover);
+    }
+
+    details[open] > .panel-motion-popover,
+    [aria-expanded='true'] > .panel-motion-popover,
+    .is-open > .panel-motion-popover,
+    [data-dropdown][open] > .panel-motion-popover {
+        animation: panel-motion-popover-in var(--panel-motion-dur) var(--panel-motion-ease-soft)
+            both;
+    }
+
+    /* --- Layered reveal (rich header panel) ---
+       Super-menu replay is driven by Alpine via data-panel-motion='enter'.
+       This stays independent from scroll/section reveal and global settings. */
+    .panel-motion-layered {
+        --panel-motion-dur: var(--panel-motion-duration-layered);
+        --panel-motion-shell-dur: calc(var(--panel-motion-dur) * 0.85);
+        --panel-motion-layered-shell-scale: 0.45;
+        --panel-motion-layered-content-offset: 12px;
+
+        padding: 0;
+        overflow: hidden;
+        background: transparent;
+        border-color: transparent;
+        box-shadow: none;
+    }
+
+    .panel-motion-layered .panel-motion-shell {
+        overflow: hidden;
+        transform: scaleY(1);
+        transform-origin: top center;
+        animation: none;
+    }
+
+    .panel-motion-layered .panel-motion-content > * {
+        opacity: 1;
+        transform: translateY(0);
+        animation: none;
+    }
+
+    details:not([open]) > .panel-motion-layered .panel-motion-shell,
+    [data-dropdown]:not([open]) > .panel-motion-layered .panel-motion-shell {
+        transform: scaleY(var(--panel-motion-layered-shell-scale));
+        animation: none;
+    }
+
+    details:not([open]) .panel-motion-layered .panel-motion-content > *,
+    [data-dropdown]:not([open]) .panel-motion-layered .panel-motion-content > * {
+        animation: none;
+        opacity: 0;
+        transform: translateY(var(--panel-motion-layered-content-offset));
+    }
+
+    details[open] > .panel-motion-layered[data-panel-motion='enter'] .panel-motion-shell,
+    [data-dropdown][open] > .panel-motion-layered[data-panel-motion='enter'] .panel-motion-shell {
+        animation: panel-motion-layered-shell-in var(--panel-motion-shell-dur)
+            var(--panel-motion-ease-enter) both;
+    }
+
+    details[open] > .panel-motion-layered[data-panel-motion='enter'],
+    [data-dropdown][open] > .panel-motion-layered[data-panel-motion='enter'] {
+        animation: panel-motion-layered-panel-in var(--panel-motion-dur)
+            var(--panel-motion-ease-enter) both;
+    }
+
+    details[open] .panel-motion-layered[data-panel-motion='enter'] .panel-motion-content > *,
+    [data-dropdown][open]
+        .panel-motion-layered[data-panel-motion='enter']
+        .panel-motion-content
+        > * {
+        animation: panel-motion-content-in var(--panel-motion-duration-item)
+            var(--panel-motion-ease-enter) both;
+    }
+
+    details[open]
+        .panel-motion-layered[data-panel-motion='enter']
+        .panel-motion-content
+        > *:nth-child(1),
+    [data-dropdown][open]
+        .panel-motion-layered[data-panel-motion='enter']
+        .panel-motion-content
+        > *:nth-child(1) {
+        animation-delay: var(--panel-motion-content-delay-layered);
+    }
+
+    details[open]
+        .panel-motion-layered[data-panel-motion='enter']
+        .panel-motion-content
+        > *:nth-child(2),
+    [data-dropdown][open]
+        .panel-motion-layered[data-panel-motion='enter']
+        .panel-motion-content
+        > *:nth-child(2) {
+        animation-delay: calc(
+            var(--panel-motion-content-delay-layered) + var(--panel-motion-stagger-step, 32ms)
+        );
+    }
+
+    details[open]
+        .panel-motion-layered[data-panel-motion='enter']
+        .panel-motion-content
+        > *:nth-child(3),
+    [data-dropdown][open]
+        .panel-motion-layered[data-panel-motion='enter']
+        .panel-motion-content
+        > *:nth-child(3) {
+        animation-delay: calc(
+            var(--panel-motion-content-delay-layered) + var(--panel-motion-stagger-step, 32ms) * 2
+        );
+    }
+
+    details[open]
+        .panel-motion-layered[data-panel-motion='enter']
+        .panel-motion-content
+        > *:nth-child(4),
+    [data-dropdown][open]
+        .panel-motion-layered[data-panel-motion='enter']
+        .panel-motion-content
+        > *:nth-child(4) {
+        animation-delay: calc(
+            var(--panel-motion-content-delay-layered) + var(--panel-motion-stagger-step, 32ms) * 3
+        );
+    }
+
+    /* --- Compact snap (sort / filter / localization) --- */
+    .panel-motion-compact {
+        --panel-motion-dur: var(--panel-motion-duration-compact);
+        --panel-motion-stagger-step: var(--panel-motion-stagger-step-compact);
+    }
+
+    :is(.localization-menu, .sort-by-dropdown__panel).panel-motion-compact {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
+    details[open] > .panel-motion-compact,
+    [aria-expanded='true'] > .panel-motion-compact,
+    .is-open > .panel-motion-compact,
+    [data-dropdown][open] > .panel-motion-compact,
+    .localization-toggle[aria-expanded='true'] ~ .panel-motion-compact {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+        animation: panel-motion-compact-in var(--panel-motion-dur) var(--panel-motion-ease-enter)
+            both;
+    }
+
+    /* --- Directional flyout (nested submenu — inline axis) --- */
+    .panel-motion-flyout {
+        --panel-motion-dur: var(--panel-motion-duration-flyout);
+        transform-origin: top inline-start;
+    }
+
+    [dir='rtl'] .panel-motion-flyout {
+        transform-origin: top inline-end;
+    }
+
+    details[open] > .panel-motion-flyout[class*='inset-s-full'],
+    [data-dropdown][open] > .panel-motion-flyout[class*='inset-s-full'] {
+        animation: panel-motion-flyout-in var(--panel-motion-dur) var(--panel-motion-ease-enter)
+            both;
+    }
+
+    [dir='rtl'] details[open] > .panel-motion-flyout[class*='inset-s-full'],
+    [dir='rtl'] [data-dropdown][open] > .panel-motion-flyout[class*='inset-s-full'] {
+        animation-name: panel-motion-flyout-in-rtl;
+    }
+
+    details[open] > .panel-motion-flyout:not([class*='inset-s-full']),
+    [aria-expanded='true'] > .panel-motion-flyout:not([class*='inset-s-full']),
+    .is-open > .panel-motion-flyout:not([class*='inset-s-full']),
+    [data-dropdown][open] > .panel-motion-flyout:not([class*='inset-s-full']) {
+        animation: panel-motion-flyout-down-in var(--panel-motion-dur)
+            var(--panel-motion-ease-enter) both;
+        transform-origin: top center;
+    }
+
+    /* --- Disclosure (details-based panels, e.g. password access) --- */
+    .panel-motion-disclosure {
+        --panel-motion-dur: var(--panel-motion-duration-disclosure);
+
+        overflow: hidden;
+        max-height: 0;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    details[open] > .panel-motion-disclosure {
+        max-height: var(--panel-motion-disclosure-max-height);
+        pointer-events: auto;
+        animation: panel-motion-disclosure-in var(--panel-motion-dur) var(--panel-motion-ease-soft)
+            both;
+    }
+
+    /* Unbounded lists (e.g. pickup store list) — open state must not clip after enter. */
+    details[open] > .panel-motion-disclosure--fluid {
+        max-height: none;
+        overflow: visible;
+    }
+
+    /* --- Child item stagger (open-state keyframe animations) --- */
+    details[open]
+        > :is(.panel-motion-scale, .panel-motion-compact)
+        > :is(li, [role='option'], .localization-item),
+    [data-dropdown][open] > :is(.panel-motion-scale, .panel-motion-compact) > [role='option'],
+    .localization-toggle[aria-expanded='true']
+        ~ :is(.panel-motion-scale, .panel-motion-compact)
+        > .localization-item {
+        animation: panel-motion-item-in var(--panel-motion-duration-item)
+            var(--panel-motion-ease-enter) both;
+    }
+
+    details[open] > .panel-motion-flyout > li,
+    [data-dropdown][open] > .panel-motion-flyout > li {
+        animation: panel-motion-item-flyout-in var(--panel-motion-duration-item)
+            var(--panel-motion-ease-enter) both;
+    }
+
+    [dir='rtl'] details[open] > .panel-motion-flyout > li,
+    [dir='rtl'] [data-dropdown][open] > .panel-motion-flyout > li {
+        animation-name: panel-motion-item-flyout-in-rtl;
+    }
+
+    :is(.panel-motion-scale, .panel-motion-compact)
+        > :is(li, [role='option'], .localization-item):nth-child(1) {
+        animation-delay: calc(var(--panel-motion-content-delay, 70ms) + 0ms);
+    }
+
+    :is(.panel-motion-scale, .panel-motion-compact)
+        > :is(li, [role='option'], .localization-item):nth-child(2) {
+        animation-delay: calc(
+            var(--panel-motion-content-delay, 70ms) + var(--panel-motion-stagger-step, 32ms)
+        );
+    }
+
+    :is(.panel-motion-scale, .panel-motion-compact)
+        > :is(li, [role='option'], .localization-item):nth-child(3) {
+        animation-delay: calc(
+            var(--panel-motion-content-delay, 70ms) + var(--panel-motion-stagger-step, 32ms) * 2
+        );
+    }
+
+    :is(.panel-motion-scale, .panel-motion-compact)
+        > :is(li, [role='option'], .localization-item):nth-child(4) {
+        animation-delay: calc(
+            var(--panel-motion-content-delay, 70ms) + var(--panel-motion-stagger-step, 32ms) * 3
+        );
+    }
+
+    :is(.panel-motion-scale, .panel-motion-compact)
+        > :is(li, [role='option'], .localization-item):nth-child(5) {
+        animation-delay: calc(
+            var(--panel-motion-content-delay, 70ms) + var(--panel-motion-stagger-step, 32ms) * 4
+        );
+    }
+
+    :is(.panel-motion-scale, .panel-motion-compact)
+        > :is(li, [role='option'], .localization-item):nth-child(6) {
+        animation-delay: calc(
+            var(--panel-motion-content-delay, 70ms) + var(--panel-motion-stagger-step, 32ms) * 5
+        );
+    }
+
+    :is(.panel-motion-scale, .panel-motion-compact)
+        > :is(li, [role='option'], .localization-item):nth-child(7) {
+        animation-delay: calc(
+            var(--panel-motion-content-delay, 70ms) + var(--panel-motion-stagger-step, 32ms) * 6
+        );
+    }
+
+    :is(.panel-motion-scale, .panel-motion-compact)
+        > :is(li, [role='option'], .localization-item):nth-child(8) {
+        animation-delay: calc(
+            var(--panel-motion-content-delay, 70ms) + var(--panel-motion-stagger-step, 32ms) * 7
+        );
+    }
+}
+
+/* =========================================================
 Tab Control
 ========================================================= */
 @layer components {
@@ -114,6 +479,12 @@ Tab Control
         flex-direction: column;
         gap: 2.4rem;
         width: 100%;
+    }
+
+    .tab-control-default > *,
+    .tab-control-underlined > * {
+        width: 100%;
+        min-width: 0;
     }
 
     /* 1. Generic Default (Mobile: horizontal scroll, Desktop: wrap) */
@@ -164,7 +535,7 @@ Tab Control
 
     .tab-control-underlined .tab-header-underlined {
         gap: 2.4rem;
-        @apply border-b border-theme-border-20;
+        @apply border-b border-theme-border/20;
 
         @media (width >= theme(--breakpoint-pc)) {
             gap: 4rem;
@@ -179,20 +550,214 @@ Tab Control
 }
 
 /* =========================================================
+Tab Nav Item
+
+Trigger chrome for role="tab" inside tab-control.
+Shell/layout: tab-control-default | tab-control-underlined (unchanged).
+Layout (flex, gap, uppercase, tracking): tab-header header_class or legacy owner delta.
+Active contract: .is-active on trigger (Alpine tabControl).
+========================================================= */
+@layer components {
+    .tab-nav-item {
+        @apply cursor-pointer focus-ring;
+    }
+
+    .tab-nav-item--search {
+        @apply border-b border-transparent pb-2;
+        color: rgb(var(--color-foreground) / 0.6);
+        transition:
+            color var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease),
+            border-color var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease);
+
+        &:hover,
+        &:focus-visible {
+            color: rgb(var(--color-foreground));
+        }
+
+        &.is-active {
+            border-color: rgb(var(--color-foreground));
+            color: rgb(var(--color-foreground));
+            font-weight: 500;
+        }
+    }
+
+    .tab-nav-item--search.tab-nav-item--search-border-token.is-active {
+        border-color: rgb(var(--color-border));
+    }
+
+    .tab-nav-item--underline-opacity {
+        border-bottom: 2px solid transparent;
+        opacity: 0.5;
+        transition:
+            opacity var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease),
+            border-color var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease);
+
+        &:hover,
+        &:focus-visible {
+            opacity: 1;
+        }
+
+        &.is-active {
+            opacity: 1;
+            border-color: currentColor;
+        }
+    }
+
+    .tab-nav-item--underline-opacity.tab-nav-item--hover-muted {
+        opacity: 0.4;
+
+        &:hover {
+            opacity: 0.6;
+        }
+
+        &:focus-visible,
+        &.is-active {
+            opacity: 1;
+        }
+    }
+
+    .tab-nav-item--opacity {
+        opacity: 0.4;
+        transition: opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+
+        &:hover,
+        &:focus-visible,
+        &.is-active {
+            opacity: 1;
+        }
+    }
+}
+
+/* =========================================================
+Accordion
+
+CSS promoted from snippets.css (Phase 5B layer promotion).
+Render/API owner: snippets/accordion.liquid
+Consumers: sections/promise-section, sections/cart, snippets/filters-groups
+========================================================= */
+@layer components {
+    .accordion__trigger {
+        @apply flex w-full cursor-pointer items-center justify-between py-5 text-start;
+    }
+
+    .accordion__title {
+        @apply text-start;
+        opacity: 0.7;
+        transition:
+            color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+            opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+    }
+
+    .accordion__title--active {
+        opacity: 1;
+    }
+
+    .accordion__title--inactive {
+        opacity: 0.7;
+    }
+
+    .accordion__icon {
+        @apply inline-flex shrink-0 items-center justify-center;
+        --_accordion-rotate: rotate(180deg);
+        transition: transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+    }
+
+    .accordion__icon--plus {
+        --_accordion-rotate: rotate(45deg);
+    }
+
+    .accordion__icon.is-active {
+        transform: var(--_accordion-rotate);
+    }
+
+    .accordion__panel {
+        display: grid;
+        grid-template-rows: 0fr;
+        opacity: 0;
+        transition:
+            grid-template-rows var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+            opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+    }
+
+    .accordion__panel.is-active {
+        grid-template-rows: 1fr;
+        opacity: 1;
+    }
+
+    .accordion__panel-inner {
+        overflow: hidden;
+    }
+}
+
+/* =========================================================
+Icon With Text Item
+
+CSS promoted from snippets.css (Phase 5D-1 layer promotion).
+Render/API owner: snippets/icon-with-text-item.liquid
+Consumers: sections/icon-with-text, snippets/product-info-blocks
+Uses snippet-local vars (injected per item in markup):
+  --icon-with-text-icon-size, --icon-with-text-icon-size-mobile, --icon-with-text-gap
+Hybrid pattern — same as pagination: components.css reads vars from snippet inline style.
+Section grid/carousel (.icon-with-text-section__*) and PDP wrappers stay in snippets.css.
+========================================================= */
+@layer components {
+    .icon-with-text-item {
+        @apply flex min-w-0 text-theme-text;
+        gap: var(--icon-with-text-gap, 0.5rem);
+    }
+
+    .icon-with-text-item--link {
+        @apply no-underline transition-opacity hover:opacity-75;
+    }
+
+    .icon-with-text-item--vertical {
+        @apply flex-col;
+    }
+
+    .icon-with-text-item--horizontal {
+        @apply flex-row;
+    }
+
+    .icon-with-text-item__icon {
+        width: var(--icon-with-text-icon-size-mobile, var(--icon-with-text-icon-size, 24px));
+        height: var(--icon-with-text-icon-size-mobile, var(--icon-with-text-icon-size, 24px));
+    }
+
+    .icon-with-text-item__image {
+        @apply shrink-0 object-contain;
+        width: var(--icon-with-text-icon-size-mobile, var(--icon-with-text-icon-size, 24px));
+        height: var(--icon-with-text-icon-size-mobile, var(--icon-with-text-icon-size, 24px));
+    }
+
+    .icon-with-text-item__title {
+        @apply min-w-0 leading-tight break-words;
+    }
+
+    @media (width >= theme(--breakpoint-pc)) {
+        .icon-with-text-item__icon,
+        .icon-with-text-item__image {
+            width: var(--icon-with-text-icon-size, 24px);
+            height: var(--icon-with-text-icon-size, 24px);
+        }
+    }
+}
+
+/* =========================================================
 Dialog
 
 .ui-dialog-panel          – Single chrome primitive: border, radius, shadow, background.
                              Consumed by all dialog panel variants via composition in markup.
 .ui-dialog-modal-panel    – Modal structural layout: pointer-events, relative, full-width, overflow-auto.
 .ui-dialog-drawer-panel   – Drawer structural layout: relative, full height/width, overflow-auto.
+.ui-dialog-drawer-shell   – Drawer positioning shell only; no chrome (transparent, clips via inner panel).
 ========================================================= */
 @layer components {
     .ui-dialog-panel {
         @apply border-theme-border bg-theme-bg;
 
-        border-width: var(--dialog-border-width);
+        border-width: var(--dialog-border-width, 0px);
         border-style: solid;
-        border-radius: var(--dialog-radius);
+        border-radius: var(--dialog-radius, 0px);
 
         box-shadow: var(--dialog-shadow-horizontal-offset) var(--dialog-shadow-vertical-offset)
             var(--dialog-shadow-blur-radius)
@@ -203,8 +768,12 @@ Dialog
         @apply pointer-events-auto relative w-full overflow-auto;
     }
 
+    .ui-dialog-drawer-shell {
+        @apply bg-transparent;
+    }
+
     .ui-dialog-drawer-panel {
-        @apply relative h-full w-full overflow-auto;
+        @apply relative h-full min-h-0 w-full;
     }
 
     .ui-dialog-modal-width-default {
@@ -217,6 +786,88 @@ Dialog
 
     .ui-dialog-drawer-width-default {
         @apply max-w-2/3 pc:max-w-1/3;
+    }
+
+    .ui-dialog-modal-shell--origin {
+        perspective: 1400px;
+        isolation: isolate;
+    }
+
+    /*
+        ui-dialog mobile layout preset: inset shell (below pc only).
+        Panel chrome remains on .ui-dialog-panel; overflow clipping on .ui-dialog-mobile-layout-panel.
+
+        Desktop overlay drawer preset (cart/search/filter on pc+):
+        - base: .ui-dialog-desktop-drawer (width, top, height anchor)
+        - anchor: .ui-dialog-desktop-drawer--left | --right (from ui-dialog `position`)
+        Enable via drawer_desktop_layout: true in ui-dialog call sites.
+    */
+    .ui-dialog-mobile-layout-inset {
+        @media (width < theme(--breakpoint-pc)) {
+            @apply !right-auto !bottom-12 !left-1/2 !w-[calc(100%-2rem)] !max-w-none !-translate-x-1/2 !p-0;
+
+            top: calc(var(--announcement-bar-height, 0px) + 3rem) !important;
+            height: auto !important;
+            max-height: none !important;
+        }
+    }
+
+    .ui-dialog-drawer-shell.ui-dialog-mobile-layout-inset {
+        @media (width < theme(--breakpoint-pc)) {
+            @apply flex flex-col;
+        }
+    }
+
+    .ui-dialog-mobile-layout-inset > .ui-dialog-panel {
+        @media (width < theme(--breakpoint-pc)) {
+            @apply h-full min-h-0 flex-1;
+        }
+    }
+
+    .ui-dialog-desktop-drawer {
+        @media (width >= theme(--breakpoint-pc)) {
+            @apply !bottom-0 !w-full !max-w-[40rem] !translate-x-0;
+        }
+
+        @media (width >= theme(--breakpoint-pc)) {
+            top: var(--announcement-bar-height, 0px) !important;
+        }
+
+        @media (width >= theme(--breakpoint-fw)) {
+            @apply !max-w-[33vw];
+        }
+    }
+
+    .ui-dialog-desktop-drawer--left {
+        @media (width >= theme(--breakpoint-pc)) {
+            @apply !right-auto !left-0;
+        }
+    }
+
+    .ui-dialog-desktop-drawer--right {
+        @media (width >= theme(--breakpoint-pc)) {
+            @apply !right-0 !left-auto;
+        }
+    }
+
+    .ui-dialog-mobile-layout-panel {
+        @apply overflow-hidden;
+    }
+
+    .ui-dialog-drawer-panel:not(.ui-dialog-mobile-layout-panel) {
+        @apply overflow-auto;
+    }
+
+    .ui-dialog-overlay-header {
+        @apply flex shrink-0 items-center justify-between gap-4 border-b border-theme-border/20 px-6 py-5;
+    }
+
+    .ui-dialog-overlay-body {
+        @apply min-h-0 flex-1 overflow-y-auto px-6 py-6;
+    }
+
+    .ui-dialog-overlay-footer {
+        @apply shrink-0 border-t border-theme-border/20 px-6 py-5;
     }
 }
 
@@ -261,8 +912,6 @@ Rich text (RTE)
 Standard:
 - `.rte` handles shared rich-text structure and the default long-form media treatment.
 - `rte--compact` reduces vertical rhythm for short supporting copy.
-- `rte--supporting` is for secondary content areas where media should stay
-  smaller and align with the copy instead of centering like a main editorial image.
 
 Used to style backend rich-text HTML output:
 - {{ page.content }}
@@ -340,7 +989,7 @@ Used to style backend rich-text HTML output:
 
     .rte ul {
         list-style: circle;
-        padding-left: 1.45em;
+        padding-inline-start: 1.45em;
     }
 
     .rte ul ul {
@@ -353,7 +1002,7 @@ Used to style backend rich-text HTML output:
 
     .rte ol {
         list-style: decimal;
-        padding-left: 1.6em;
+        padding-inline-start: 1.6em;
     }
 
     .rte ol ol {
@@ -392,19 +1041,19 @@ Used to style backend rich-text HTML output:
     }
 
     .rte ul > li > ul {
-        padding-left: 1.2em;
+        padding-inline-start: 1.2em;
     }
 
     .rte ol > li > ul {
-        padding-left: 1.35em;
+        padding-inline-start: 1.35em;
     }
 
     .rte ul > li > ol {
-        padding-left: 1.35em;
+        padding-inline-start: 1.35em;
     }
 
     .rte ol > li > ol {
-        padding-left: 1.25em;
+        padding-inline-start: 1.25em;
     }
 
     .rte a {
@@ -412,7 +1061,7 @@ Used to style backend rich-text HTML output:
     }
 
     .rte blockquote {
-        @apply border-l border-theme-border pl-5 text-theme-text/80 italic;
+        @apply border-s border-theme-border ps-5 text-theme-text/80 italic;
     }
 
     .rte :is(p, div):has(> img:only-child) {
@@ -454,7 +1103,7 @@ Used to style backend rich-text HTML output:
     }
 
     .rte hr {
-        @apply border-theme-border-20;
+        @apply border-theme-border/20;
 
         margin: 2em 0;
     }
@@ -489,10 +1138,10 @@ Used to style backend rich-text HTML output:
     }
 
     .rte :is(th, td) {
-        @apply border border-theme-border-20;
+        @apply border border-theme-border/20;
 
         padding: 0.75em 1em;
-        text-align: left;
+        text-align: start;
     }
 
     .rte th {
@@ -505,28 +1154,6 @@ Used to style backend rich-text HTML output:
 
     .rte > *:last-child {
         margin-bottom: 0;
-    }
-
-    .rte.rte--supporting {
-        max-width: 42rem;
-    }
-
-    .rte.rte--supporting :is(p, div):has(> img:only-child),
-    .rte.rte--supporting figure {
-        margin-inline: 0;
-    }
-
-    .rte.rte--supporting img,
-    .rte.rte--supporting figure {
-        max-width: min(100%, 36rem);
-    }
-
-    .rte.rte--supporting img {
-        margin-inline: 0;
-    }
-
-    .rte.rte--supporting figcaption {
-        text-align: left;
     }
 }
 
@@ -541,5 +1168,342 @@ Used to style backend rich-text HTML output:
     .rte.rte--compact :is(h1, h2, h3, h4, h5, h6) {
         margin-top: 0.8em;
         margin-bottom: 0.3em;
+    }
+}
+
+/* =========================================================
+Media Placeholder Frame
+
+Shared framed empty-state media surface. The consuming section owns
+placeholder family, placeholder selection, aspect ratio, and outer layout.
+========================================================= */
+@layer components {
+    .media-placeholder-frame {
+        @apply overflow-hidden rounded-md border border-theme-border/20;
+
+        background-color: rgb(var(--color-background));
+
+        @supports (background-color: color-mix(in oklab, white, black)) {
+            background-color: color-mix(
+                in oklab,
+                rgb(var(--color-background)) 95%,
+                rgb(var(--color-foreground)) 5%
+            );
+        }
+    }
+
+    .media-placeholder-frame .svg-placeholder {
+        @apply text-theme-text/20;
+    }
+}
+
+/* =========================================================
+Product Price
+
+Shared price primitive used by PDP/featured product-info-blocks and quick view.
+Scene owners can add BEM classes for typography/order/color deltas.
+========================================================= */
+@layer components {
+    .product-price {
+        @apply flex items-center gap-3;
+    }
+
+    .product-price__main {
+        @apply font-medium text-theme-text;
+    }
+
+    .product-price__compare {
+        @apply text-theme-text/80 line-through;
+    }
+}
+
+/* =========================================================
+Quantity Selector
+
+Reusable across: product, cart, featured-product, cart-overlay.
+Consumed via snippets/quantity-selector.liquid and inline in cart sections.
+========================================================= */
+@layer components {
+    .quantity-selector {
+        @apply inline-flex w-max items-center text-current;
+        gap: 0.5rem;
+    }
+
+    .quantity-selector__button {
+        @apply control-icon;
+
+        border: 1px solid transparent;
+        transition:
+            color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+            background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+            border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+            box-shadow var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+            transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+
+        @media (hover: hover) and (pointer: fine) {
+            &:hover:not(:disabled):not([aria-disabled='true']) {
+                border-color: rgb(var(--color-foreground) / 0.16);
+                background-color: rgb(var(--color-foreground) / 0.1);
+                box-shadow: inset 0 0 0 1px rgb(var(--color-background) / 0.28);
+            }
+        }
+
+        &:active:not(:disabled):not([aria-disabled='true']) {
+            border-color: rgb(var(--color-foreground) / 0.22);
+            background-color: rgb(var(--color-foreground) / 0.16);
+        }
+
+        &:disabled,
+        &[aria-disabled='true'] {
+            border-color: transparent;
+            background-color: transparent;
+            box-shadow: none;
+        }
+    }
+
+    .quantity-selector__input {
+        @apply w-[4ch] appearance-none border-b border-current bg-transparent p-0 text-center text-current tabular-nums focus-ring [-moz-appearance:textfield] focus:ring-0 focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none;
+        font: inherit;
+    }
+
+    .quantity-selector--static .quantity-selector__button {
+        @apply pointer-events-none cursor-default;
+    }
+
+    .quantity-selector--static .quantity-selector__input {
+        @apply pointer-events-none cursor-default opacity-100;
+        -webkit-text-fill-color: currentColor;
+    }
+}
+
+/* =========================================================
+Buy Buttons — purchase_group chrome
+
+Reusable across: PDP, featured-product, quick view.
+Consumed via snippets/buy-buttons.liquid (render/API owner).
+Not included: pickup-availability-inline__retry-action (pickup owner delta in snippets.css, Phase 5D-2b).
+========================================================= */
+@layer components {
+    .buy-buttons__actions--purchase-group {
+        @apply flex w-full flex-col gap-3;
+    }
+
+    .buy-buttons__primary-row {
+        @apply grid w-full grid-cols-1 items-stretch gap-3;
+    }
+
+    .buy-buttons__actions--with-quantity .buy-buttons__primary-row {
+        @apply grid-cols-[minmax(8.75rem,9.75rem)_minmax(0,1fr)] pc:grid-cols-[10.5rem_minmax(0,1fr)];
+    }
+
+    .buy-buttons__quantity {
+        @apply flex min-w-0 items-stretch;
+    }
+
+    .buy-buttons__quantity > * {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .buy-buttons__submit--unavailable {
+        @apply border-theme-border/20 bg-theme-border/20 text-theme-text/45 opacity-100;
+    }
+
+    .buy-buttons__label {
+        @apply inline-block transition-opacity;
+    }
+
+    .buy-buttons__label.is-loading {
+        @apply opacity-0;
+    }
+}
+
+/* =========================================================
+Pagination
+
+Reusable across: collection, blog, slides-show, announcement-bar,
+featured-products, collections, testimonial-featured, icon-with-text.
+Consumed via snippets/pagination.liquid.
+========================================================= */
+@layer components {
+    .pagination {
+        list-style: none;
+    }
+
+    .pagination__inner {
+        @apply mx-auto flex w-fit max-w-full items-center;
+        gap: 0.25rem;
+    }
+
+    /* ---- shared button base ---- */
+    .pagination__button {
+        @apply inline-flex h-10 shrink-0 items-center justify-center gap-1 rounded px-2 whitespace-nowrap;
+
+        font-family: inherit;
+        font-size: var(--pagination-font-size);
+        border-radius: var(--pagination-radius);
+        transition:
+            color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+            background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+            border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+            transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+
+        &:focus-visible {
+            outline: var(--focus-ring-width) solid
+                rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+            outline-offset: var(--focus-ring-offset);
+        }
+
+        &:active:not(.pagination__button--disabled) {
+            transform: scale(0.98);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            &:active:not(.pagination__button--disabled) {
+                transform: none;
+            }
+        }
+    }
+
+    .pagination__button--disabled {
+        @apply pointer-events-none cursor-default;
+        opacity: 0.4;
+    }
+
+    /* hover variants (applied alongside pagination__button) */
+    .pagination__button--hover-default {
+        @media (hover: hover) and (pointer: fine) {
+            &:hover:not(.pagination__button--disabled) {
+                background-color: rgb(var(--color-foreground) / 0.08);
+            }
+        }
+    }
+
+    .pagination__button--hover-minimal {
+        @media (hover: hover) and (pointer: fine) {
+            &:hover:not(.pagination__button--disabled) {
+                text-decoration: underline;
+            }
+        }
+
+        &:focus-visible:not(.pagination__button--disabled) {
+            text-decoration: underline;
+        }
+    }
+
+    .pagination__button--outline {
+        @apply border border-theme-border/20;
+    }
+
+    .pagination__button--hover-outline {
+        @apply border border-theme-border/20;
+
+        @media (hover: hover) and (pointer: fine) {
+            &:hover:not(.pagination__button--disabled) {
+                background-color: rgb(var(--color-foreground) / 0.08);
+            }
+        }
+    }
+
+    /* ---- page number base ---- */
+    .pagination__page {
+        @apply inline-flex h-10 min-w-10 shrink-0 items-center justify-center rounded px-2;
+
+        font-family: inherit;
+        font-size: var(--pagination-font-size);
+        border-radius: var(--pagination-radius);
+        transition:
+            color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+            background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+            border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+            transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+
+        &:focus-visible {
+            outline: var(--focus-ring-width) solid
+                rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+            outline-offset: var(--focus-ring-offset);
+        }
+    }
+
+    a.pagination__page {
+        &:active {
+            transform: scale(0.98);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            &:active {
+                transform: none;
+            }
+        }
+    }
+
+    /* hover variants (applied alongside pagination__page) */
+    .pagination__page--hover-default {
+        @media (hover: hover) and (pointer: fine) {
+            &:hover {
+                background-color: rgb(var(--color-foreground) / 0.08);
+            }
+        }
+    }
+
+    .pagination__page--hover-minimal {
+        @media (hover: hover) and (pointer: fine) {
+            &:hover {
+                text-decoration: underline;
+            }
+        }
+
+        &:focus-visible {
+            text-decoration: underline;
+        }
+    }
+
+    .pagination__page--outline {
+        @apply border border-theme-border/20;
+    }
+
+    .pagination__page--hover-outline {
+        @apply border border-theme-border/20;
+
+        @media (hover: hover) and (pointer: fine) {
+            &:hover {
+                background-color: rgb(var(--color-foreground) / 0.08);
+            }
+        }
+    }
+
+    /* current page variants */
+    .pagination__page--current--default {
+        @apply surface-inverted;
+    }
+
+    .pagination__page--current--outline {
+        @apply border border-theme-text text-theme-text;
+    }
+
+    .pagination__page--current--minimal {
+        @apply text-theme-text underline;
+    }
+
+    /* ellipsis */
+    .pagination__page--ellipsis {
+        @apply cursor-default;
+        font-size: var(--pagination-font-size);
+    }
+
+    /* ---- pages container ---- */
+    .pagination__pages-wrap {
+        @apply max-w-full min-w-0 overflow-x-auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+
+        &::-webkit-scrollbar {
+            display: none;
+        }
+    }
+
+    .pagination__pages {
+        @apply mx-auto inline-flex min-w-max items-center;
+        gap: 0.25rem;
     }
 }

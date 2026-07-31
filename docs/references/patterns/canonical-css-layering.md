@@ -19,7 +19,7 @@ Define any new translation keys in `locales/en.default.json` when copying this p
 
 ```css
 @utility badge-status {
-    @apply inline-flex items-center rounded-full border border-theme-border-20 px-3 py-1 body-sm;
+    @apply inline-flex items-center rounded-full border border-theme-border/20 px-3 py-1 body-sm;
 }
 ```
 
@@ -73,4 +73,4 @@ Use section `{% stylesheet %}` only for section-specific CSS that Tailwind canno
 - Do not use heading classes on non-heading elements.
 - Do not use arbitrary colors to bypass theme tokens.
 - Use inline `style` only for dynamic CSS variables, grid area names, or calculated Liquid values.
-- Run `npm run build:tw` after changing Tailwind source files.
+- Run `npm.cmd run build:tw` after changing Tailwind source files.

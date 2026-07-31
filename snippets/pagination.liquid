@@ -30,47 +30,22 @@
     <nav
         class="pagination py-10"
         role="navigation"
+        data-pagination-nav
+        style="--pagination-font-size: {{ pagination_font_size }}px; --pagination-radius: {{ pagination_border_radius }}px;"
     >
-        <div class="pagination__inner mx-auto flex w-fit max-w-full items-center gap-1">
+        <div class="pagination__inner">
             {%- comment -%} PREVIOUS {%- endcomment -%}
             {%- if pagination_data.previous -%}
                 <a
                     href="{{ pagination_data.previous.url }}"
-                    class="
-                        pagination__prev
-                        inline-flex h-10 items-center gap-1 rounded
-                        px-2 text-theme-text transition-colors
-                        {% case pagination_style %}
-                            {% when 'minimal' %}
-                                hover:underline
-                            {% when 'outline' %}
-                                border border-theme-border-20 hover:bg-theme-text/50
-                            {% else %}
-                                hover:bg-theme-text/50
-                        {% endcase %}
-                    "
-                    style="
-                        font-size: {{ pagination_font_size }}px;
-                        border-radius: {{ pagination_border_radius }}px;
-                    "
+                    class="pagination__button pagination__prev {% case pagination_style %}{% when 'minimal' %}pagination__button--hover-minimal{% when 'outline' %}pagination__button--hover-outline{% else %}pagination__button--hover-default{% endcase %}"
                 >
                     {%- render 'icons', icon: 'icon-chevron-left' -%}
                     <span>{{ 'pagination.previous' | t }}</span>
                 </a>
             {%- else -%}
                 <span
-                    class="
-                        pagination__prev pagination__prev--disabled
-                        pointer-events-none inline-flex h-10 items-center gap-1
-                        rounded px-2 text-theme-text opacity-40
-                        {% if pagination_style == 'outline' %}
-                            border border-theme-border-20
-                        {% endif %}
-                    "
-                    style="
-                        font-size: {{ pagination_font_size }}px;
-                        border-radius: {{ pagination_border_radius }}px;
-                    "
+                    class="pagination__button pagination__prev pagination__button--disabled {% if pagination_style == 'outline' %}pagination__button--outline{% endif %}"
                     aria-disabled="true"
                 >
                     {%- render 'icons', icon: 'icon-chevron-left' -%}
@@ -78,61 +53,26 @@
             {%- endif -%}
 
             {%- comment -%} PAGES {%- endcomment -%}
-            <div class="pagination__pages-wrap max-w-full min-w-0 overflow-x-auto">
-                <div class="pagination__pages mx-auto inline-flex min-w-max items-center gap-1">
+            <div class="pagination__pages-wrap">
+                <div class="pagination__pages">
                     {%- for part in pagination_data.parts -%}
                         {%- if part.is_link -%}
                             <a
                                 href="{{ part.url }}"
-                                class="
-                                    pagination__page
-                                    inline-flex h-10 min-w-10 items-center justify-center rounded
-                                    px-2 text-theme-text transition-colors
-                                    {% case pagination_style %}
-                                        {% when 'minimal' %}
-                                            hover:underline
-                                        {% when 'outline' %}
-                                            border border-theme-border-20 hover:bg-theme-text/50
-                                        {% else %}
-                                            hover:bg-theme-text/50
-                                    {% endcase %}
-                                "
-                                style="
-                                    font-size: {{ pagination_font_size }}px;
-                                    border-radius: {{ pagination_border_radius }}px;
-                                "
+                                class="pagination__page {% case pagination_style %}{% when 'minimal' %}pagination__page--hover-minimal{% when 'outline' %}pagination__page--hover-outline{% else %}pagination__page--hover-default{% endcase %}"
                             >
                                 {{- part.title -}}
                             </a>
                         {%- else -%}
                             {%- if part.title == pagination_data.current_page -%}
                                 <span
-                                    class="
-                                        pagination__page pagination__page--current
-                                        inline-flex h-10 min-w-10 items-center justify-center rounded
-                                        px-2
-                                        {% case pagination_style %}
-                                            {% when 'default' %}
-                                                bg-theme-text text-theme-bg
-                                            {% when 'outline' %}
-                                                border border-theme-text text-theme-text
-                                            {% else %}
-                                                text-theme-text underline
-                                        {% endcase %}
-                                    "
-                                    style="
-                                        font-size: {{ pagination_font_size }}px;
-                                        border-radius: {{ pagination_border_radius }}px;
-                                    "
+                                    class="pagination__page pagination__page--current pagination__page--current--{{ pagination_style }}"
                                     aria-current="page"
                                 >
                                     {{- part.title -}}
                                 </span>
                             {%- else -%}
-                                <span
-                                    class="pagination__page pagination__page--ellipsis inline-flex h-10 min-w-10 items-center justify-center px-2 text-theme-text"
-                                    style="font-size: {{ pagination_font_size }}px;"
-                                >
+                                <span class="pagination__page pagination__page--ellipsis">
                                     {{- part.title -}}
                                 </span>
                             {%- endif -%}
@@ -145,41 +85,14 @@
             {%- if pagination_data.next -%}
                 <a
                     href="{{ pagination_data.next.url }}"
-                    class="
-                        pagination__next
-                        inline-flex h-10 items-center gap-1 rounded
-                        px-2 text-theme-text transition-colors
-                        {% case pagination_style %}
-                            {% when 'minimal' %}
-                                hover:underline
-                            {% when 'outline' %}
-                                border border-theme-border-20 hover:bg-theme-text/50
-                            {% else %}
-                                hover:bg-theme-text/50
-                        {% endcase %}
-                    "
-                    style="
-                        font-size: {{ pagination_font_size }}px;
-                        border-radius: {{ pagination_border_radius }}px;
-                    "
+                    class="pagination__button pagination__next {% case pagination_style %}{% when 'minimal' %}pagination__button--hover-minimal{% when 'outline' %}pagination__button--hover-outline{% else %}pagination__button--hover-default{% endcase %}"
                 >
                     <span>{{ 'pagination.next' | t }}</span>
                     {%- render 'icons', icon: 'icon-chevron-right' -%}
                 </a>
             {%- else -%}
                 <span
-                    class="
-                        pagination__next pagination__next--disabled
-                        pointer-events-none inline-flex h-10 items-center gap-1
-                        rounded px-2 text-theme-text opacity-40
-                        {% if pagination_style == 'outline' %}
-                            border border-theme-border-20
-                        {% endif %}
-                    "
-                    style="
-                        font-size: {{ pagination_font_size }}px;
-                        border-radius: {{ pagination_border_radius }}px;
-                    "
+                    class="pagination__button pagination__next pagination__button--disabled {% if pagination_style == 'outline' %}pagination__button--outline{% endif %}"
                     aria-disabled="true"
                 >
                     {%- render 'icons', icon: 'icon-chevron-right' -%}
@@ -188,35 +101,3 @@
         </div>
     </nav>
 {%- endif -%}
-
-{% stylesheet %}
-    .pagination {
-        list-style: none;
-    }
-
-    .pagination__prev,
-    .pagination__next,
-    .pagination__prev--disabled,
-    .pagination__next--disabled {
-        flex-shrink: 0;
-        white-space: nowrap;
-    }
-
-    .pagination__pages-wrap {
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
-    }
-
-    .pagination__pages-wrap::-webkit-scrollbar {
-        display: none;
-    }
-
-    .pagination__page--ellipsis {
-        cursor: default;
-    }
-
-    .pagination__prev--disabled,
-    .pagination__next--disabled {
-        cursor: default;
-    }
-{% endstylesheet %}

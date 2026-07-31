@@ -1,0 +1,115 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://example.invalid/my-theme-1/agent-result.schema.json",
+    "title": "Project agent result",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "task_id",
+        "context_version",
+        "role",
+        "status",
+        "output_contract",
+        "summary",
+        "evidence",
+        "files_changed",
+        "commands",
+        "blockers",
+        "risks",
+        "next_action"
+    ],
+    "properties": {
+        "task_id": {
+            "type": "string"
+        },
+        "context_version": {
+            "type": "string",
+            "minLength": 1
+        },
+        "role": {
+            "enum": ["scout", "implementer", "validator", "verifier", "docs-steward"]
+        },
+        "status": {
+            "enum": ["complete", "blocked", "failed"]
+        },
+        "output_contract": {
+            "enum": [
+                "evidence-report",
+                "implementation-result",
+                "validation-result",
+                "review-result",
+                "documentation-result"
+            ]
+        },
+        "summary": {
+            "type": "string"
+        },
+        "evidence": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["kind", "reference", "detail"],
+                "properties": {
+                    "kind": {
+                        "enum": ["file", "command", "runtime", "decision"]
+                    },
+                    "reference": {
+                        "type": "string"
+                    },
+                    "line": {
+                        "type": ["integer", "null"],
+                        "minimum": 1
+                    },
+                    "detail": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "files_changed": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "commands": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["command", "exit_code", "summary"],
+                "properties": {
+                    "command": {
+                        "type": "string"
+                    },
+                    "exit_code": {
+                        "type": "integer"
+                    },
+                    "duration_ms": {
+                        "type": ["integer", "null"],
+                        "minimum": 0
+                    },
+                    "summary": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "blockers": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "risks": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "next_action": {
+            "type": ["string", "null"]
+        }
+    }
+}

@@ -2,14 +2,19 @@
 icon
 ========================================================= */
 @utility icons {
-    @apply inline-flex items-center justify-center transition-all duration-300 ease-in-out;
+    @apply inline-flex items-center justify-center;
+    transition:
+        color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+        opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+        transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
 }
 
 /* =========================================================
 link
 ========================================================= */
 @utility links {
-    @apply inline-flex w-fit cursor-pointer items-center text-theme-text no-underline transition-colors duration-300 outline-none;
+    @apply inline-flex w-fit cursor-pointer items-center text-theme-text no-underline outline-none;
+    transition: color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
 
     position: relative;
 
@@ -24,12 +29,12 @@ link
     &::after {
         content: '';
         position: absolute;
-        left: 0;
+        inset-inline-start: 0;
         bottom: -2px;
         width: 100%;
         height: 2px;
         background-color: currentColor;
-        transition: transform 0.3s ease;
+        transition: transform var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease);
     }
 }
 
@@ -50,20 +55,19 @@ link
         transform-origin: center;
     }
 
-    .icons {
-        transition:
-            transform 0.3s ease,
-            opacity 0.3s ease;
-    }
-
     &:hover::after,
     &:focus-visible::after {
         transform: scaleX(1);
     }
+}
 
-    &:hover .icons,
-    &:focus-visible .icons {
-        transform: translateX(0.2rem);
+/* focus-ring + hover underline — text link micro-pattern (Phase 5C).
+   No color, typography, layout, or spacing. Pair with legacy BEM or utilities in markup. */
+@utility interactive-link {
+    @apply focus-ring;
+
+    &:hover {
+        text-decoration: underline;
     }
 }
 
@@ -71,9 +75,93 @@ link
 button
 ========================================================= */
 
-/* 基础按钮 */
+@property --btn-reverse-fill-pct {
+    syntax: '<percentage>';
+    inherits: false;
+    initial-value: 0%;
+}
+
+@property --btn-reverse-text-pct {
+    syntax: '<percentage>';
+    inherits: false;
+    initial-value: 0%;
+}
+
+@property --btn-reverse-border-pct {
+    syntax: '<percentage>';
+    inherits: false;
+    initial-value: 0%;
+}
+
+@keyframes btn-soft-reverse-breath {
+    0%,
+    100% {
+        --btn-reverse-fill-pct: var(--btn-reverse-fill-rest);
+        --btn-reverse-text-pct: var(--btn-reverse-text-rest);
+        --btn-reverse-border-pct: var(--btn-reverse-border-rest);
+        transform: translateY(0) scale(1);
+        animation-timing-function: ease-in;
+    }
+
+    38%,
+    62% {
+        --btn-reverse-fill-pct: calc(
+            var(--btn-reverse-fill-hover) + var(--btn-reverse-fill-breath)
+        );
+        --btn-reverse-text-pct: var(--btn-reverse-text-hover);
+        --btn-reverse-border-pct: calc(
+            var(--btn-reverse-border-hover) - var(--btn-reverse-border-breath)
+        );
+        transform: translateY(var(--btn-reverse-lift-y)) scale(var(--btn-reverse-scale-peak));
+        animation-timing-function: ease-out;
+    }
+}
+
+/* base button */
 @utility btn {
-    @apply inline-flex cursor-pointer items-center justify-center gap-2 border font-body transition-all duration-200 ease-in-out outline-none;
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 border font-body outline-none;
+
+    --btn-bg-rgb: var(--color-primary-button);
+    --btn-text-rgb: var(--color-primary-button-text);
+    --btn-border-rgb: var(--color-primary-button-border);
+    --btn-reverse-fill-pct: 0%;
+    --btn-reverse-text-pct: 0%;
+    --btn-reverse-border-pct: 0%;
+    --btn-reverse-fill-rest: 10%;
+    --btn-reverse-text-rest: 10%;
+    --btn-reverse-border-rest: 100%;
+    /* Hover animation breathes between the readable rest state and the reverse target */
+    --btn-reverse-fill-hover: 88%;
+    --btn-reverse-text-hover: 90%;
+    --btn-reverse-border-hover: 100%;
+    --btn-reverse-fill-breath: 4%;
+    --btn-reverse-border-breath: 3%;
+    --btn-reverse-scale-peak: 1.02;
+    --btn-reverse-lift-y: -2.5px;
+    --btn-reverse-cycle: 2.5s;
+    --btn-reverse-ease: ease-in-out;
+    --btn-ui-transition-duration: 200ms;
+    --btn-ui-transition-ease: ease;
+
+    --btn-hover-filter: none;
+    --btn-active-filter: brightness(0.95);
+    --btn-hover-y: -1px;
+    --btn-active-scale: 0.98;
+    --btn-hover-shadow-opacity: 1.35;
+    --btn-shadow-hover-y: calc(var(--button-shadow-vertical-offset) + var(--btn-reverse-lift-y));
+    --btn-shadow-hover-blur: calc(var(--button-shadow-blur-radius) * 1.12);
+    --btn-shadow-hover-opacity: calc(
+        var(--button-shadow-opacity) * var(--btn-hover-shadow-opacity)
+    );
+
+    transition:
+        color var(--btn-ui-transition-duration) var(--btn-ui-transition-ease),
+        background-color var(--btn-ui-transition-duration) var(--btn-ui-transition-ease),
+        border-color var(--btn-ui-transition-duration) var(--btn-ui-transition-ease),
+        box-shadow var(--btn-ui-transition-duration) var(--btn-ui-transition-ease),
+        filter var(--btn-ui-transition-duration) var(--btn-ui-transition-ease),
+        opacity var(--btn-ui-transition-duration) var(--btn-ui-transition-ease),
+        transform var(--btn-ui-transition-duration) var(--btn-ui-transition-ease);
 
     padding: var(--button-padding-y) var(--button-padding-x);
 
@@ -96,22 +184,154 @@ button
         outline-offset: var(--focus-ring-offset);
     }
 
+    border-color: rgb(var(--btn-border-rgb));
+    background-color: rgb(var(--btn-bg-rgb));
+    color: rgb(var(--btn-text-rgb));
+
+    @supports (background-color: color-mix(in srgb, black, white)) {
+        transition:
+            --btn-reverse-fill-pct var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease),
+            --btn-reverse-text-pct var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease),
+            --btn-reverse-border-pct var(--motion-duration-fast, 250ms)
+                var(--motion-ease-enter, ease),
+            background-color var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease),
+            color var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease),
+            border-color var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease),
+            box-shadow var(--btn-ui-transition-duration) var(--btn-ui-transition-ease),
+            opacity var(--btn-ui-transition-duration) var(--btn-ui-transition-ease),
+            filter var(--btn-ui-transition-duration) var(--btn-ui-transition-ease),
+            transform var(--btn-ui-transition-duration) var(--btn-ui-transition-ease);
+
+        background-color: color-mix(
+            in srgb,
+            rgb(var(--btn-bg-rgb)) calc(100% - var(--btn-reverse-fill-pct)),
+            rgb(var(--btn-text-rgb)) var(--btn-reverse-fill-pct)
+        );
+        color: color-mix(
+            in srgb,
+            rgb(var(--btn-text-rgb)) calc(100% - var(--btn-reverse-text-pct)),
+            rgb(var(--btn-bg-rgb)) var(--btn-reverse-text-pct)
+        );
+        /* Mix border toward button bg (not text) so reversed fill keeps a visible edge */
+        border-color: color-mix(
+            in srgb,
+            rgb(var(--btn-border-rgb)) calc(100% - var(--btn-reverse-border-pct)),
+            rgb(var(--btn-bg-rgb)) var(--btn-reverse-border-pct)
+        );
+
+        @media (hover: hover) and (pointer: fine) {
+            &:hover:not(:active):not(:disabled):not([aria-disabled='true']):not(
+                    [aria-busy='true']
+                ) {
+                animation: btn-soft-reverse-breath var(--btn-reverse-cycle) var(--btn-reverse-ease)
+                    infinite;
+                box-shadow: var(--button-shadow-horizontal-offset) var(--btn-shadow-hover-y)
+                    var(--btn-shadow-hover-blur)
+                    rgba(var(--color-foreground), var(--btn-shadow-hover-opacity));
+            }
+        }
+
+        &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+            animation: none;
+            transform: scale(var(--btn-active-scale));
+            --btn-reverse-fill-pct: 6%;
+            --btn-reverse-text-pct: 4%;
+            --btn-reverse-border-pct: 5%;
+            filter: var(--btn-active-filter);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            @media (hover: hover) and (pointer: fine) {
+                &:hover:not(:active):not(:disabled):not([aria-disabled='true']):not(
+                        [aria-busy='true']
+                    ) {
+                    animation: none;
+                    --btn-reverse-fill-pct: var(--btn-reverse-fill-hover);
+                    --btn-reverse-text-pct: var(--btn-reverse-text-hover);
+                    --btn-reverse-border-pct: var(--btn-reverse-border-hover);
+                    transform: none;
+                }
+            }
+
+            &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+                transform: scale(var(--btn-active-scale));
+            }
+        }
+    }
+
+    @supports not (background-color: color-mix(in srgb, black, white)) {
+        @media (hover: hover) and (pointer: fine) {
+            &:hover:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+                transform: translateY(var(--btn-hover-y));
+                filter: var(--btn-hover-filter);
+                box-shadow: var(--button-shadow-horizontal-offset) var(--btn-shadow-hover-y)
+                    var(--btn-shadow-hover-blur)
+                    rgba(var(--color-foreground), var(--btn-shadow-hover-opacity));
+            }
+        }
+
+        &:active:not(:disabled):not([aria-disabled='true']):not([aria-busy='true']) {
+            transform: scale(var(--btn-active-scale));
+            filter: var(--btn-active-filter);
+        }
+    }
+
     &:disabled,
     &[aria-disabled='true'] {
         cursor: not-allowed;
         opacity: 0.5;
         pointer-events: none;
     }
+
+    &[aria-busy='true'] {
+        cursor: wait;
+        opacity: 0.82;
+        pointer-events: none;
+    }
 }
 
-/* 主按钮 */
+/* primary button */
 @utility btn-primary {
-    @apply btn border-primary-border bg-primary text-primary-text hover:brightness-110;
+    @apply btn;
+
+    --btn-bg-rgb: var(--color-primary-button);
+    --btn-text-rgb: var(--color-primary-button-text);
+    --btn-border-rgb: var(--color-primary-button-border);
+    --btn-reverse-fill-rest: 12%;
+    --btn-reverse-text-rest: 12%;
+    --btn-reverse-border-rest: 100%;
+    --btn-reverse-fill-hover: 88%;
+    --btn-reverse-text-hover: 90%;
+    --btn-reverse-border-hover: 100%;
+    --btn-reverse-fill-breath: 4%;
+    --btn-reverse-border-breath: 3%;
+    --btn-reverse-scale-peak: 1.02;
+    --btn-reverse-lift-y: -2.5px;
+    --btn-hover-filter: brightness(1.06);
+    --btn-active-filter: brightness(0.94);
+    --btn-hover-shadow-opacity: 1.45;
 }
 
-/* 次按钮 */
+/* secondary button */
 @utility btn-secondary {
-    @apply btn border-secondary-border bg-secondary text-secondary-text hover:brightness-95;
+    @apply btn;
+
+    --btn-bg-rgb: var(--color-secondary-button);
+    --btn-text-rgb: var(--color-secondary-button-text);
+    --btn-border-rgb: var(--color-secondary-button-border);
+    --btn-reverse-fill-rest: 8%;
+    --btn-reverse-text-rest: 16%;
+    --btn-reverse-border-rest: 100%;
+    --btn-reverse-fill-hover: 42%;
+    --btn-reverse-text-hover: 65%;
+    --btn-reverse-border-hover: 100%;
+    --btn-reverse-fill-breath: 5%;
+    --btn-reverse-border-breath: 4%;
+    --btn-reverse-scale-peak: 1.014;
+    --btn-reverse-lift-y: -1.5px;
+    --btn-hover-filter: brightness(0.97);
+    --btn-active-filter: brightness(0.9);
+    --btn-hover-shadow-opacity: 1.28;
 }
 
 .shopify-payment-button-wrapper,
@@ -128,12 +348,34 @@ button.shopify-payment-button__button--unbranded {
  *
  * Shopify's stylesheet targets:
  *   .shopify-payment-button__button--unbranded:hover:not([disabled])
- * with specificity (0,3,0), which overrides the theme's btn-primary hover
- * background-color. The selector below exceeds Shopify's specificity so the
- * theme's primary-button color is preserved on hover.
+ * with specificity (0,3,0), which overrides the theme btn-primary hover
+ * background-color. The selector below exceeds Shopify specificity so
+ * soft-reverse color-mix and animation are preserved on dynamic checkout.
  */
 button.shopify-payment-button__button--unbranded:hover:not([disabled]) {
-    background-color: rgb(var(--color-primary-button));
+    @supports (background-color: color-mix(in srgb, black, white)) {
+        background-color: color-mix(
+            in srgb,
+            rgb(var(--btn-bg-rgb)) calc(100% - var(--btn-reverse-fill-pct)),
+            rgb(var(--btn-text-rgb)) var(--btn-reverse-fill-pct)
+        );
+        color: color-mix(
+            in srgb,
+            rgb(var(--btn-text-rgb)) calc(100% - var(--btn-reverse-text-pct)),
+            rgb(var(--btn-bg-rgb)) var(--btn-reverse-text-pct)
+        );
+        border-color: color-mix(
+            in srgb,
+            rgb(var(--btn-border-rgb)) calc(100% - var(--btn-reverse-border-pct)),
+            rgb(var(--btn-bg-rgb)) var(--btn-reverse-border-pct)
+        );
+    }
+
+    @supports not (background-color: color-mix(in srgb, black, white)) {
+        background-color: rgb(var(--color-primary-button));
+        border-color: rgb(var(--color-primary-button-border));
+        color: rgb(var(--color-primary-button-text));
+    }
 }
 
 /*
@@ -175,7 +417,7 @@ shopify-accelerated-checkout {
 field
 ========================================================= */
 
-/* 标准输入框 */
+/* standard input */
 @utility field {
     @apply w-full border-field-border bg-field text-field-text;
 
@@ -193,11 +435,11 @@ field
     outline: none;
 
     transition:
-        color 300ms ease,
-        background-color 300ms ease,
-        border-color 300ms ease,
-        box-shadow 300ms ease,
-        outline-color 300ms ease;
+        color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+        background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+        border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+        box-shadow var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+        outline-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
 
     &::placeholder {
         color: var(--color-field-placeholder);
@@ -218,7 +460,7 @@ field
     }
 }
 
-/* 下划线输入框：搜索类 */
+/* underline input — search variant */
 @utility field-underline {
     @apply field;
 
@@ -265,6 +507,189 @@ removes the browser default outline (outline-none / focus:outline-none).
 }
 
 /* =========================================================
+media-interaction — opt-in interactive image shell
+
+Consumption paths:
+1. snippets/image.liquid url wrappers — auto-appends media-interaction when url is set
+   (interactive: false opts out). Use for simple linked images only.
+2. External composite shells — apply on <a> or <button> that wraps media without an
+   image.liquid url wrapper (collections grid card, product-card media link, comparison
+   table product header, routine showcase slide, philosophy card link, predictive search).
+
+Related utilities:
+- media-interaction-subtle — lighter scale for PDP gallery thumbnail buttons
+- media-interaction-scope — wrapper hover/focus-within when overlay siblings or content
+  layers share the media surface (promo tiles, product-card media)
+
+Targets nested .image_img / img for scale/brightness feedback only. Does not replace
+card-level shadow, arrow motion, or section reveal choreography.
+
+Exclude: slideshow/hero, logo, static editorial, decorative media, PDP main LCP gallery.
+========================================================= */
+@utility media-interaction {
+    @apply focus-ring;
+
+    --media-interaction-scale-hover: 1.04;
+    --media-interaction-scale-focus: 1.02;
+    --media-interaction-scale-active: 0.98;
+    --media-interaction-brightness-hover: 1.04;
+    --media-interaction-brightness-focus: 1.02;
+    --media-interaction-brightness-active: 0.97;
+    --media-interaction-duration: var(--motion-duration-fast, 250ms);
+    --media-interaction-ease: var(--motion-ease-default, ease);
+
+    & .image_img,
+    & img {
+        transform: scale(1);
+        transform-origin: center;
+        transition:
+            transform var(--media-interaction-duration) var(--media-interaction-ease),
+            filter var(--media-interaction-duration) var(--media-interaction-ease);
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+        &:hover:not(:active):not(:disabled):not([aria-disabled='true']) .image_img,
+        &:hover:not(:active):not(:disabled):not([aria-disabled='true']) img {
+            transform: scale(var(--media-interaction-scale-hover));
+            filter: brightness(var(--media-interaction-brightness-hover));
+        }
+    }
+
+    &:focus-visible:not(:disabled):not([aria-disabled='true']) .image_img,
+    &:focus-visible:not(:disabled):not([aria-disabled='true']) img {
+        transform: scale(var(--media-interaction-scale-focus));
+        filter: brightness(var(--media-interaction-brightness-focus));
+    }
+
+    &:active:not(:disabled):not([aria-disabled='true']) .image_img,
+    &:active:not(:disabled):not([aria-disabled='true']) img {
+        transform: scale(var(--media-interaction-scale-active));
+        filter: brightness(var(--media-interaction-brightness-active));
+        transition-duration: calc(var(--media-interaction-duration) * 0.75);
+    }
+
+    &:disabled,
+    &[aria-disabled='true'] {
+        cursor: not-allowed;
+        pointer-events: none;
+
+        & .image_img,
+        & img {
+            transform: none;
+            filter: none;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        @media (hover: hover) and (pointer: fine) {
+            &:hover:not(:active):not(:disabled):not([aria-disabled='true']) .image_img,
+            &:hover:not(:active):not(:disabled):not([aria-disabled='true']) img {
+                transform: scale(1.01);
+                filter: brightness(1.02);
+            }
+        }
+
+        &:focus-visible:not(:disabled):not([aria-disabled='true']) .image_img,
+        &:focus-visible:not(:disabled):not([aria-disabled='true']) img,
+        &:active:not(:disabled):not([aria-disabled='true']) .image_img,
+        &:active:not(:disabled):not([aria-disabled='true']) img {
+            transform: none;
+            filter: brightness(1.02);
+        }
+    }
+}
+
+/* Thumbnail / small-surface variant — lighter scale for PDP gallery tabs */
+@utility media-interaction-subtle {
+    @apply media-interaction;
+
+    --media-interaction-scale-hover: 1.02;
+    --media-interaction-scale-focus: 1.01;
+    --media-interaction-scale-active: 0.99;
+    --media-interaction-brightness-hover: 1.02;
+    --media-interaction-brightness-focus: 1.01;
+}
+
+/* Overlay card scope — drives child .media-interaction image response from
+   wrapper hover/focus-within when an absolute content layer sits above the
+   linked image (promo tiles, etc.) or when sibling controls share the media
+   surface (product-card quick view / variant panel). Pair with
+   pointer-events-none on overlay shells and pointer-events-auto on nested CTAs. */
+@utility media-interaction-scope {
+    --media-interaction-scale-hover: 1.04;
+    --media-interaction-scale-focus: 1.02;
+    --media-interaction-scale-active: 0.98;
+    --media-interaction-brightness-hover: 1.04;
+    --media-interaction-brightness-focus: 1.02;
+    --media-interaction-brightness-active: 0.97;
+    --media-interaction-duration: var(--motion-duration-fast, 250ms);
+    --media-interaction-ease: var(--motion-ease-default, ease);
+
+    @media (hover: hover) and (pointer: fine) {
+        &:hover:has(.media-interaction)
+            .media-interaction:not(:active):not(:disabled):not([aria-disabled='true'])
+            .image_img,
+        &:hover:has(.media-interaction)
+            .media-interaction:not(:active):not(:disabled):not([aria-disabled='true'])
+            img {
+            transform: scale(var(--media-interaction-scale-hover));
+            filter: brightness(var(--media-interaction-brightness-hover));
+        }
+    }
+
+    &:focus-within:has(.media-interaction)
+        .media-interaction:not(:disabled):not([aria-disabled='true'])
+        .image_img,
+    &:focus-within:has(.media-interaction)
+        .media-interaction:not(:disabled):not([aria-disabled='true'])
+        img {
+        transform: scale(var(--media-interaction-scale-focus));
+        filter: brightness(var(--media-interaction-brightness-focus));
+    }
+
+    &:has(.media-interaction:active:not(:disabled):not([aria-disabled='true']))
+        .media-interaction
+        .image_img,
+    &:has(.media-interaction:active:not(:disabled):not([aria-disabled='true']))
+        .media-interaction
+        img {
+        transform: scale(var(--media-interaction-scale-active));
+        filter: brightness(var(--media-interaction-brightness-active));
+        transition-duration: calc(var(--media-interaction-duration) * 0.75);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        @media (hover: hover) and (pointer: fine) {
+            &:hover:has(.media-interaction)
+                .media-interaction:not(:active):not(:disabled):not([aria-disabled='true'])
+                .image_img,
+            &:hover:has(.media-interaction)
+                .media-interaction:not(:active):not(:disabled):not([aria-disabled='true'])
+                img {
+                transform: scale(1.01);
+                filter: brightness(1.02);
+            }
+        }
+
+        &:focus-within:has(.media-interaction)
+            .media-interaction:not(:disabled):not([aria-disabled='true'])
+            .image_img,
+        &:focus-within:has(.media-interaction)
+            .media-interaction:not(:disabled):not([aria-disabled='true'])
+            img,
+        &:has(.media-interaction:active:not(:disabled):not([aria-disabled='true']))
+            .media-interaction
+            .image_img,
+        &:has(.media-interaction:active:not(:disabled):not([aria-disabled='true']))
+            .media-interaction
+            img {
+            transform: none;
+            filter: brightness(1.02);
+        }
+    }
+}
+
+/* =========================================================
 badge
 ========================================================= */
 @utility badge {
@@ -307,5 +732,198 @@ badge
         padding-block: 0.2em;
         font-size: 0.75rem;
         letter-spacing: 0.08em;
+    }
+}
+
+/* =========================================================
+close-button — dismiss control (icons-animate-pop)
+
+Variants:
+- close-button-corner — absolute top-end placement for dialogs/overlays
+- close-button-subtle — lower default opacity on light surfaces (newsletter, etc.)
+- close-button-on-overlay — muted white on dark media/lightbox overlays
+========================================================= */
+@utility close-button {
+    @apply inline-flex h-10 w-10 shrink-0 icons-animate-pop cursor-pointer items-center justify-center rounded;
+
+    transition:
+        color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+        background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+        border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+        opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+
+    &:focus-visible {
+        outline: var(--focus-ring-width) solid
+            rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+        outline-offset: var(--focus-ring-offset);
+    }
+
+    &:disabled,
+    &[aria-disabled='true'] {
+        cursor: not-allowed;
+        opacity: 0.5;
+        pointer-events: none;
+    }
+}
+
+@utility close-button-corner {
+    @apply absolute top-3 z-10;
+
+    inset-inline-end: calc(var(--spacing) * 3);
+}
+
+@utility close-button-subtle {
+    opacity: 0.7;
+
+    @media (hover: hover) and (pointer: fine) {
+        &:hover:not(:disabled):not([aria-disabled='true']) {
+            opacity: 1;
+        }
+    }
+
+    &:focus-visible:not(:disabled):not([aria-disabled='true']) {
+        opacity: 1;
+    }
+}
+
+@utility close-button-on-overlay {
+    @apply text-white/80;
+
+    @media (hover: hover) and (pointer: fine) {
+        &:hover:not(:disabled):not([aria-disabled='true']) {
+            @apply text-white;
+        }
+    }
+
+    &:focus-visible:not(:disabled):not([aria-disabled='true']) {
+        @apply text-white;
+    }
+}
+
+/* =========================================================
+header-icon-button — icon-only header nav control (icons-animate-breathe)
+
+Apply on the control shell (<button> or icon-only <a>), not on child .icons.
+Consumers: header menu, search, cart, account entry points.
+========================================================= */
+@utility header-icon-button {
+    @apply inline-flex h-10 w-10 shrink-0 icons-animate-breathe cursor-pointer items-center justify-center text-current;
+
+    transition: color var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease);
+
+    &:focus-visible {
+        outline: var(--focus-ring-width) solid
+            rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+        outline-offset: var(--focus-ring-offset);
+    }
+
+    &:disabled,
+    &[aria-disabled='true'] {
+        cursor: not-allowed;
+        opacity: 0.5;
+        pointer-events: none;
+    }
+}
+
+/* =========================================================
+control-icon — compact square icon control (quantity, carousel arrows)
+
+Stateful micro-interaction: respects prefers-reduced-motion only;
+independent from body[data-motion-enabled] page/brand motion.
+Consumers: quantity-selector (default size), product-card carousel arrows (`control-icon-compact`).
+========================================================= */
+@utility control-icon {
+    @apply inline-flex shrink-0 cursor-pointer items-center justify-center rounded text-current;
+
+    width: var(--control-icon-size, 2.5rem);
+    height: var(--control-icon-size, 2.5rem);
+
+    transition:
+        color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+        background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+        transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+
+    @media (hover: hover) and (pointer: fine) {
+        &:hover:not(:disabled):not([aria-disabled='true']) {
+            background-color: rgb(var(--color-foreground) / 0.08);
+        }
+    }
+
+    &:focus-visible {
+        outline: var(--focus-ring-width) solid
+            rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+        outline-offset: var(--focus-ring-offset);
+    }
+
+    &:active:not(:disabled):not([aria-disabled='true']) {
+        transform: scale(0.96);
+        background-color: rgb(var(--color-foreground) / 0.12);
+    }
+
+    &:disabled,
+    &[aria-disabled='true'] {
+        cursor: not-allowed;
+        opacity: 0.4;
+        pointer-events: none;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        &:active:not(:disabled):not([aria-disabled='true']) {
+            transform: none;
+        }
+    }
+}
+
+@utility control-icon-compact {
+    @apply control-icon;
+
+    --control-icon-size: 1.75rem;
+}
+
+/* =========================================================
+control-dot — carousel / step indicator dot
+
+Consumers: product-card-shell pagination dots (is-active stays component-owned).
+========================================================= */
+@utility control-dot {
+    @apply relative shrink-0 cursor-pointer rounded-full;
+
+    width: var(--control-dot-size, 0.75rem);
+    height: var(--control-dot-size, 0.75rem);
+    background-color: color-mix(in srgb, currentColor 20%, transparent);
+    transition:
+        width var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+        height var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+        background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+        border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+        transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+
+    @media (hover: hover) and (pointer: fine) {
+        &:hover:not(:disabled):not([aria-disabled='true']) {
+            background-color: color-mix(in srgb, currentColor 35%, transparent);
+        }
+    }
+
+    &:focus-visible {
+        outline: var(--focus-ring-width) solid
+            rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+        outline-offset: var(--focus-ring-offset);
+    }
+
+    &:active:not(:disabled):not([aria-disabled='true']) {
+        transform: scale(0.92);
+    }
+
+    &:disabled,
+    &[aria-disabled='true'] {
+        cursor: not-allowed;
+        opacity: 0.4;
+        pointer-events: none;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        &:active:not(:disabled):not([aria-disabled='true']) {
+            transform: none;
+        }
     }
 }

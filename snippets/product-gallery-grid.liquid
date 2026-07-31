@@ -2,7 +2,7 @@
     Gallery layout: grid - CSS grid of all images.
     Internal sub-snippet; always rendered inside product-gallery.liquid's x-data scope.
 
-    @param {array}   images       - Image objects
+    @param {array}   images       - Image or media objects
     @param {boolean} zoom         - Enable click on images
     @param {boolean} magnifier    - Enable desktop hover magnifier on images
     @param {number}  magnifier_zoom_scale - Background scale multiplier for magnifier
@@ -11,6 +11,7 @@
     @param {number}  magnifier_preview_max_width - Maximum magnifier preview width in pixels
     @param {string}  aspect_ratio - Optional CSS aspect-ratio (fallback when first image has no ratio)
     @param {string}  max_height   - Optional desktop max height for the first grid media box
+    @param {boolean} motion_reveal - Allow nested image reveal hooks
 {% endcomment %}
 
 {%- assign first_img = images.first -%}
@@ -21,13 +22,16 @@
     {%- assign gallery_aspect = images.first.aspect_ratio | default: '3/4' -%}
 {%- endif -%}
 <div class="grid w-full min-w-0 grid-cols-2 gap-2">
+    {%- assign image_only_index = 0 -%}
     {%- for image in images -%}
         {%- assign media_image = image.preview_image | default: image -%}
+        {%- assign media_type = image.media_type | default: 'image' -%}
         {%- assign item_aspect = '1/1' -%}
         {%- if forloop.first -%}
             {%- assign item_aspect = gallery_aspect -%}
         {%- endif -%}
-        {%- if zoom -%}
+
+        {%- if zoom and media_type == 'image' -%}
             <button
                 type="button"
                 aria-label="{{ 'accessibility.open_image_zoom' | t }}"
@@ -46,7 +50,35 @@
                         --product-gallery-max-height: {{ max_height }};
                     {% endif %}
                 "
-                @click="openLightbox({{ forloop.index0 }})"
+                @click="openLightbox({{ image_only_index }})"
+            >
+                {%- assign image_only_index = image_only_index | plus: 1 -%}
+        {%- elsif media_type != 'image' -%}
+            <button
+                type="button"
+                class="
+                    min-w-0 overflow-hidden rounded-sm
+                    {% if forloop.first %}
+                      col-span-2
+                      {% if max_height != blank %}
+                        pc:max-h-(--product-gallery-max-height)
+                      {% endif %}
+                    {% endif %}
+                "
+                style="
+                    aspect-ratio: {{ item_aspect }};
+                    {% if forloop.first and max_height != blank %}
+                        --product-gallery-max-height: {{ max_height }};
+                    {% endif %}
+                "
+                @click="activateMediaById({{ image.id }})"
+                data-media-id="{{ image.id }}"
+                data-media-type="{{ media_type }}"
+                {% if media_type == 'model' %}
+                    aria-label="{{ 'accessibility.view_3d_model' | t }}"
+                {% elsif media_type == 'video' or media_type == 'external_video' %}
+                    aria-label="{{ 'accessibility.play_video' | t }}"
+                {% endif %}
             >
         {%- else -%}
             <div
@@ -73,34 +105,52 @@
             {%- assign gallery_loading = 'eager' -%}
             {%- assign gallery_fetchpriority = 'high' -%}
         {%- endif -%}
-        {%- if magnifier -%}
-            {%- render 'image-magnifier',
-                image: media_image,
-                width: 800,
-                img_class: 'w-full h-full object-cover',
-                alt: media_image.alt,
+
+        {%- if media_type == 'image' -%}
+            {%- if magnifier -%}
+                {%- render 'image-magnifier',
+                    image: media_image,
+                    width: 800,
+                    img_class: 'w-full h-full object-cover',
+                    alt: media_image.alt,
+                    sizes: '(min-width: 48rem) 25vw, 50vw',
+                    widths: '300,400,600,800',
+                    loading: gallery_loading,
+                    fetchpriority: gallery_fetchpriority,
+                    zoom_scale: magnifier_zoom_scale,
+                    preview_width: magnifier_preview_width,
+                    preview_height: magnifier_preview_height,
+                    preview_max_width: magnifier_preview_max_width,
+                    motion_reveal: motion_reveal
+                -%}
+            {%- else -%}
+                {%- render 'image',
+                    image: media_image,
+                    width: 800,
+                    img_class: 'w-full h-full object-cover',
+                    alt: media_image.alt,
+                    sizes: '(min-width: 48rem) 25vw, 50vw',
+                    widths: '300,400,600,800',
+                    loading: gallery_loading,
+                    fetchpriority: gallery_fetchpriority,
+                    motion_reveal: motion_reveal
+                -%}
+            {%- endif -%}
+        {%- else -%}
+            {%- render 'product-media',
+                media: image,
+                aspect_ratio: item_aspect,
                 sizes: '(min-width: 48rem) 25vw, 50vw',
                 widths: '300,400,600,800',
                 loading: gallery_loading,
                 fetchpriority: gallery_fetchpriority,
-                zoom_scale: magnifier_zoom_scale,
-                preview_width: magnifier_preview_width,
-                preview_height: magnifier_preview_height,
-                preview_max_width: magnifier_preview_max_width
-            -%}
-        {%- else -%}
-            {%- render 'image',
-                image: media_image,
-                width: 800,
-                img_class: 'w-full h-full object-cover',
-                alt: media_image.alt,
-                sizes: '(min-width: 48rem) 25vw, 50vw',
-                widths: '300,400,600,800',
-                loading: gallery_loading,
-                fetchpriority: gallery_fetchpriority
+                motion_reveal: motion_reveal
             -%}
         {%- endif -%}
-        {%- if zoom -%}
+
+        {%- if zoom and media_type == 'image' -%}
+            </button>
+        {%- elsif media_type != 'image' -%}
             </button>
         {%- else -%}
             </div>

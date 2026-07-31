@@ -14,8 +14,9 @@
             const Utils = window.__Theme__?.Utils;
 
             return {
-                ...(Utils ? AlpineComponentsFactory.useDisposable() : {}),
-                searchUrl: '/search',
+                ...AlpineComponentsFactory.useDisposable(),
+                searchUrl: '',
+                predictiveSearchUrl: '',
                 query: '',
                 isOpen: false,
                 isLoading: false,
@@ -57,8 +58,12 @@
                         this._predictiveEnabled = dataset.predictiveSearchEnabled !== 'false';
                     }
 
+                    if (dataset.searchUrl) {
+                        this.searchUrl = dataset.searchUrl;
+                    }
+
                     if (dataset.predictiveSearchUrl) {
-                        this.searchUrl = dataset.predictiveSearchUrl;
+                        this.predictiveSearchUrl = dataset.predictiveSearchUrl;
                     }
 
                     if (typeof dataset.predictiveSearchQuery === 'string') {
@@ -184,7 +189,7 @@
                     const controller = this._abortController;
                     const requestedTerm = term;
 
-                    const url = new URL('/search/suggest.json', window.location.origin);
+                    const url = new URL(this.predictiveSearchUrl, window.location.origin);
                     url.searchParams.set('q', term);
                     url.searchParams.set('resources[type]', 'query,product,article,page');
                     const lim = Math.max(1, Math.min(20, Number(this.resultLimit) || 8));
@@ -212,14 +217,18 @@
                     request
                         .then((data) => {
                             const results = data?.resources?.results || {};
-                            const currency =
-                                window.Shopify?.currency?.active ||
-                                (window.Shopify && window.Shopify.currency) ||
-                                'USD';
-                            const fmt = new Intl.NumberFormat(undefined, {
-                                style: 'currency',
-                                currency,
-                            });
+                            const locale = document.documentElement.lang || undefined;
+                            const currency = window.Shopify?.currency?.active || 'USD';
+                            const formatPrice = (cents) => {
+                                if (typeof window.Shopify?.formatMoney === 'function') {
+                                    return window.Shopify.formatMoney(cents);
+                                }
+                                return new Intl.NumberFormat(locale, {
+                                    style: 'currency',
+                                    currency,
+                                    currencyDisplay: 'narrowSymbol',
+                                }).format(cents / 100);
+                            };
 
                             this.suggestions = (results.queries || [])
                                 .map((q) => ({
@@ -231,7 +240,7 @@
                             this.products = (results.products || []).map((p) => {
                                 let finalPrice = p.price;
                                 if (typeof p.price === 'number') {
-                                    finalPrice = fmt.format(p.price / 100);
+                                    finalPrice = formatPrice(p.price);
                                 }
 
                                 const imageCandidates = [];
@@ -328,14 +337,19 @@
 
                 performSearch() {
                     const term = (this.query || '').trim();
-                    if (!term) return;
-
-                    // When executing a full search navigation, ensure the predictive panel closes
-                    // so the UI doesn't remain open during/after navigation on the search page.
                     this.closePanel();
 
                     const url = new URL(this.searchUrl, window.location.origin);
-                    url.searchParams.set('q', term);
+                    url.searchParams.set('options[prefix]', 'last');
+
+                    if (term) {
+                        url.searchParams.set('q', term);
+                        url.searchParams.set('type', 'product');
+                    } else {
+                        url.searchParams.delete('q');
+                        url.searchParams.delete('type');
+                    }
+
                     window.location.assign(url.toString());
                 },
 

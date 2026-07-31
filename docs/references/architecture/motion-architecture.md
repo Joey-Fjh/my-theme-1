@@ -34,6 +34,18 @@ Ordinary animation is **CSS/Alpine-first**:
 | Ordinary content/media reveal across sections | Alpine component with shared `IntersectionObserver` + CSS rules in `tailwind.animates.css` | GSAP |
 | Complex narrative choreography (parallax, scrub, timeline, split text, coordinated storytelling) | GSAP — only after explicit classification | — |
 
+### Motion Setting Boundary
+
+`motion_enabled` and `body[data-motion-enabled='false']` are the merchant-facing gate for page and brand motion: section reveal, media reveal, scroll motion, and approved narrative choreography.
+
+Do not use `body[data-motion-enabled='false']` as a blanket kill switch for state or micro interactions. Hover/focus feedback, button interactions, dropdown open/close, dialog open/close, drawer open/close, loading states, and other UI state transitions should remain functionally expressive when merchant page motion is disabled.
+
+`motion_speed` is scoped to page and brand reveal timing. It drives `--motion-reveal-duration-base` and `--motion-reveal-stagger`; visual amplitude belongs to the selected reveal recipe so changing speed does not also change distance or scale. Do not wire it to hover, focus, panel, drawer, dialog, loading, or other state/micro interaction timings.
+
+State and micro interactions must still respect `@media (prefers-reduced-motion: reduce)`. When an interaction uses noticeable translate, scale, parallax, or origin-based FLIP motion, reduced motion should degrade it to opacity-only or immediate state change while preserving visibility, focus, keyboard behavior, and close/open state.
+
+If merchants later need control over micro interactions, introduce a separate policy setting such as `micro_motion_enabled`; do not expand `motion_enabled` beyond page and brand motion.
+
 ### Conflict Rule
 
 Alpine/CSS and GSAP **must not** control `opacity` or `transform` on the same element. Choose one ownership path per element.
@@ -61,7 +73,7 @@ Allowed in `tailwind/tailwind.animates.css`:
 
 Capability utilities SHOULD use semantic data hooks or a clear motion namespace for new code. Do not recreate the removed legacy `motion-*` state transition recipe layer.
 
-`tailwind.animates.css` also owns the global setting selectors that map body-level motion settings to CSS behavior, for example `body[data-content-reveal-style]`, `body[data-media-reveal-style]`, `body[data-motion-enabled]`, and `@media (prefers-reduced-motion: reduce)`.
+`tailwind.animates.css` also owns the global setting selectors that map body-level page and brand motion settings to CSS behavior, for example `body[data-content-reveal-style]`, `body[data-media-reveal-style]`, `body[data-motion-enabled]`, and `@media (prefers-reduced-motion: reduce)`. `body[data-motion-enabled]` should target reveal, media reveal, scroll, and narrative motion only; state and micro interaction recipes should use `@media (prefers-reduced-motion: reduce)` unless a future dedicated micro-motion setting is approved.
 
 `tailwind.animates.css` does not own section business structure or trigger logic. It may style `[data-motion-reveal]` targets, but it must not require section templates to consume long internal utility class combinations for ordinary reveal.
 
@@ -83,22 +95,107 @@ Recommended DOM contract:
 </section>
 ```
 
+When a reveal target's own `transform` would destabilize observation or row grouping, separate the stable geometry node from the animated node:
+
+```liquid
+<div data-motion-cascade>
+    <div class="group" data-motion-bound>
+        <div class="product-card" data-motion-reveal="content">
+            ...
+        </div>
+    </div>
+</div>
+```
+
 Recommended runtime contract:
 
-- Each `x-data="motionRevealSection()"` creates an independent Alpine instance.
-- The component implementation should use a module-level shared `IntersectionObserver` singleton, with a registry such as a `WeakMap` from element to instance.
-- Each section instance registers its root with the shared observer during `init()` and unregisters during disposal.
-- Default reveal behavior is once-only: when the section enters the viewport, set `data-motion-state="revealed"` and unobserve the section.
-- If motion is disabled, reduced motion is preferred, or reveal should not wait for viewport entry, set `data-motion-state="revealed"` immediately.
-- The component may assign lightweight per-target variables such as `--motion-index` for stagger, but it should not compute animation types or keyframes.
+- Each `x-data="motionRevealSection()"` creates an independent Alpine instance on the section root (`data-motion-section`).
+- The section instance owns lifecycle only: `init()` / `destroy()`, Theme Editor replay, `motion_enabled` / reduced-motion guards, and target registration.
+- Each `[data-motion-reveal]` or `[data-motion-copy]` target is owned by the **nearest** ancestor `[data-motion-section]`. Parent instances must not register nested section targets.
+- The implementation uses module-level shared `IntersectionObserver` singletons with `WeakMap` registries from observed element to callback. One ordinary stable bound may own several independently animated targets; the owning instance aggregates them behind one bound callback instead of letting later registrations replace earlier ones.
+- `[data-motion-reveal]` is the ordinary animated node (`opacity` / `transform` via CSS). `[data-motion-copy]` is the equivalent independently observed content target for copy positioned after tall media.
+- `[data-motion-bound]` is the optional stable observation / row-geometry node. When present on an owned ancestor, observers and cascade row grouping use the bound; otherwise the reveal target is observed directly.
+- `[data-motion-copy-bound]` is the optional tight, transform-free observation / row-geometry node for `[data-motion-copy]`. Copy deliberately ignores a coarse card's outer `[data-motion-bound]`; without a copy bound, the copy target observes itself.
+- Default reveal behavior aligns with **Dawn once**: `body[data-reveal-behavior='once']` (default) reveals each target once, then unobserves it.
+- `body[data-reveal-behavior='always']` keeps observing: a target resets only after its bound fully leaves a buffered exit region. Enter uses the shared enter observer (`rootMargin: 0 0 -15% 0`). Exit uses a separate shared exit observer (`rootMargin: ±64px`) so non-intersecting fires when the bound has actually cleared the buffer — not on the first leave of the enter trigger line. Reset applies a silent `data-motion-resetting` pending state (no reverse hide animation, no transform jitter). Re-entry briefly uses internal `data-motion-staging` to restore the pending pose without a transition, then plays the full pending-to-revealed distance in either direction.
+- Unbound ordinary rise/zoom targets (no separate `data-motion-bound`) stay transform-stable while `data-motion-resetting` is set (`transform: none`). Enter is confirmed on that stable box; pending transform is applied only after enter, immediately before flipping to `revealed`, and inset is not re-checked against the transformed box.
+- If motion is disabled, reduced motion is preferred, `IntersectionObserver` is unavailable, or the target type's reveal style is `none`, eligible targets receive `data-motion-state="revealed"` immediately and do not enter ordinary/cascade observation.
+- Initial target registration runs after Alpine's first DOM update so tab panels can settle their `x-show` / `x-cloak` state before reveal scans. Targets inside `display: none` / `visibility: hidden` ancestors (inactive tab panels) are not observed and are not revealed early; tab clicks within the section trigger a rescan to register newly visible targets.
+- Storefront resize uses one module-level shared `resize` listener (first instance registers, last instance destroys). Swiper navigation / wrapper `transitionend`, tab clicks, and Theme Editor select/reorder trigger re-registration so cascade rows stay aligned with the current visual layout.
+- Cascade children clipped by overflow (for example horizontally off-screen Swiper slides) are excluded until they become clip-visible.
+- Non-cascade targets default to `--motion-index: 0`. A compact copy group may use `[data-motion-sequence]` to assign its owned, non-cascade descendant reveal targets DOM-order indices for ordinary CSS stagger. Use `[data-motion-cascade]` on repeated peer layouts to auto-assign `0..n` **within each current visual row** to clip-visible descendant `[data-motion-reveal]` and `[data-motion-copy]` targets (left to right). Explicit `data-motion-index` always wins. Hidden or clipped cascade children are skipped.
+- Stagger ownership: cascade timing is owned by JS delayed state flips; ordinary (non-cascade) stagger delay is owned by CSS `transition-delay` on the revealed state. Do not stack both.
 
 ### Trigger Behavior
 
-- The shared `IntersectionObserver` uses `rootMargin: '0px 0px -50px 0px'` and `threshold: 0`. This triggers slightly before the section fully enters the viewport, matching Dawn's unified trigger strategy.
-- There is **no first-viewport guard**. All eligible sections — including hero and above-the-fold — go through the same `pending → observer → revealed` path. HTML renders visible by default; JS initialization sets `pending` only after Alpine mounts, so no-JS and pre-init states remain safe.
-- Sections already in the viewport when the observer attaches are naturally triggered by the next `IntersectionObserver` callback cycle, producing a near-immediate reveal animation — consistent with Dawn's behavior.
-- Ordinary reveal remains once-only: `revealed` + `unobserve` on first intersection. No replay on scroll-leave.
-- Sections with critical LCP or carousel media may opt media out with `data-motion-media="static"` on the section root while still allowing content reveal. Use this for hero/Swiper media where animating the image itself causes flashing or conflicts with carousel effects.
+- The shared non-cascade `IntersectionObserver` uses `rootMargin: '0px 0px -15% 0px'` and `threshold: 0`. Each **non-cascade** bound (or target when no bound exists) reveals when its top/bottom edge crosses the inset viewport trigger line (bottom inset remains `15%` of viewport height), not when a fraction of the target's own height is visible and not when the section root intersects.
+- A single shared passive scroll-settle listener provides a visibility recovery path after scrolling pauses. Normal recovery keeps the same `15%` inset rule. Only when the document is actually at its end does recovery relax to the full viewport, preventing lower Footer copy from remaining pending when no further scroll distance exists. The first instance attaches the listener and the last instance removes it; it does not own `always` exit/reset behavior.
+- HTML renders visible by default; Alpine sets `data-motion-state="pending"` on each observed target only after init, so no-JS and pre-init states remain safe.
+- **Page-load reveal:** targets already intersecting when registered (hero copy, above-the-fold blocks) are not revealed in the same frame as `pending`. On the first registration only, the runtime marks targets that are actually viewport-visible and clip-visible as `data-motion-critical-runtime`. Critical targets never begin transparent or clipped; Rise, Zoom, and Slide may still play their full transform entrance. Registration sets `_deferToPageLoadFlush` before `observe()` so synchronous IO callbacks cannot skip the paint frame. After double `requestAnimationFrame`, in-view pending targets reveal with `48ms` base delay; ordinary targets rely on CSS `--motion-index` delay for stagger, while cascade rows use JS within-row stagger. Scroll-in targets still reveal from `IntersectionObserver` when entering view.
+- Page-fixed critical hero copy may use explicit `data-motion-critical`. Reorderable sections should rely on the runtime viewport-critical marker instead of broad selectors such as “the first motion section.” LCP/carousel media remains static and immediately visible.
+- Sections with critical LCP or carousel media may opt media out with `data-motion-media="static"` on the section root; JS skips observing those media targets and CSS keeps them static. Pass `motion_reveal: false` on hero images when the section root is static.
+
+### Cascade (`data-motion-cascade`)
+
+- Add `data-motion-cascade` on a visible wrapper for repeated peer layouts (product, collection, category, article, promotion, or icon card lists).
+- Cascade owns row grouping and stagger only. The selected content/media reveal style owns presentation. A repeated visual item should normally expose one coarse reveal target; nested images pass `motion_reveal: false` when the whole item reveals.
+- A tall composite card may contain an independently observed `[data-motion-copy]` target when its copy enters the viewport materially later than its media or coarse card target. Give it a tight `[data-motion-copy-bound]` wrapper when the animated copy's transform would otherwise alter observation geometry. This is trigger granularity, not a separate visual style: copy still consumes the selected content reveal recipe and shared speed tokens.
+- Do not use a large delay tied to the coarse parent state for this case. The delay still runs off-screen and cannot guarantee that the copy animates when the customer can see it.
+- Prefer existing layout wrappers with `data-motion-bound` around each animated card so row geometry and observation stay independent from reveal `transform`.
+- `motionRevealSection()` assigns `--motion-index` `0, 1, 2…` to clip-visible `[data-motion-reveal]` and `[data-motion-copy]` descendants **per visual row** (not across the whole container).
+- Inactive tab panels (`display: none`) and overflow-clipped children (for example off-screen Swiper slides) are excluded from indexing and registration until they become visible.
+- **Row/batch trigger:** cascade children are **not** observed individually with the ordinary per-target observer. Visible clip-visible targets inside each cascade container are grouped into visual rows using stable bound layout boxes (`8px` tolerance). Each row watches its representative bound (lowest `--motion-index` / leftmost). When that bound enters the inset viewport, **all** pending clip-visible targets in that row reveal together through JS stagger. The effective interval is reduced when necessary so the final item starts within a `500ms` row window. CSS cascade targets force transition/animation delay to `0` so JS and CSS delays never stack.
+- Ordinary (non-cascade) targets keep the shared per-bound observer (`threshold: 0`, same bottom `15%` inset). Multiple targets sharing one stable bound are aggregated and revealed independently without observer callback replacement. Page-load in-view checks use the same inset trigger-line rule on the bound.
+- `reveal_behavior='always'`: cascade row replay resets only when every bound in the row has fully left the buffered exit region, detected by the shared exit observer (`±64px` rootMargin). Reset uses `data-motion-resetting` so no reverse hide animation is visible. Transform changes on the animated card must not drive observation.
+- Delayed reveal timers re-check ownership, visibility, clip visibility, and inset enter conditions before flipping state. On skip or success they always clear `_pageLoadQueue` so a later enter can still reveal.
+- once cascade: row enter observers stay active until every pending target in the row has successfully reached `revealed` (or is no longer eligible). Scheduling stagger timers alone must not unobserve the row.
+- Do not nest cascade containers unless intentional. Do not wrap conversion controls.
+
+### Reveal behavior (`reveal_behavior`)
+
+| Value | Behavior | Dawn alignment |
+| --- | --- | --- |
+| `once` (default) | Target reveals once, then `unobserve` | Matches Dawn scroll-trigger default |
+| `always` | Target silently resets to `pending` only after its bound fully leaves a buffered exit region; re-entry replays. Cascade rows reset only after **every** bound in the row batch has fully left that buffered region. | Optional merchant setting |
+
+Setting: `config/settings_schema.json` → `body[data-reveal-behavior]` in `layout/theme.liquid`. Do not read merchant `settings_data.json` in theme code beyond Liquid `settings.*`.
+
+### Reveal Speed Tokens (`motion_speed`)
+
+`motion_speed` drives reveal-only CSS variables in `snippets/css-variables.liquid`. It does not affect hover, panel, drawer, dialog, or loading timings.
+
+| Setting | `--motion-reveal-duration-base` | `--motion-reveal-opacity-duration` | `--motion-reveal-stagger` |
+| --- | --- | --- | --- |
+| `fast` | 820ms | 480ms | 130ms |
+| `normal` (default) | 1080ms | 620ms | 170ms |
+| `slow` | 1340ms | 760ms | 210ms |
+
+Speed tiers were shifted up so the previous Slow becomes the new Normal default: storefront review found Slow matched the expected “obvious but premium” feel for ordinary browsing. Step deltas remain `+260ms` duration, `+140ms` opacity, and `+40ms` stagger. Reveal easing stays `cubic-bezier(0.25, 0.4, 0.4, 1)`. `motion_speed` still controls timing only and does not change Rise, Zoom, or Slide amplitude.
+
+`tailwind/tailwind.animates.css` consumes these timing tokens for content `fade` / `rise` / `slide` and media `fade` / `zoom` / `slide`. Rise and zoom use a shorter opacity phase than their transform phase so movement remains perceptible after content becomes readable. Recipe-owned amplitude tokens keep content rise at a responsive `40px..64px`, media zoom at `0.92..1`, content slide revealing upward, and media slide revealing left-to-right. Slide direction remains internally overridable through `--motion-slide-content-*` and `--motion-slide-media-*` without adding low-level merchant settings.
+
+### Settings → Consumption Chain
+
+```text
+config/settings_schema.json (motion_enabled, motion_speed, content_reveal_style, media_reveal_style, reveal_behavior)
+  → layout/theme.liquid body[data-motion-enabled], body[data-content-reveal-style], body[data-media-reveal-style], body[data-reveal-behavior]
+  → snippets/css-variables.liquid (--motion-reveal-* tokens from motion_speed)
+  → assets/alpine.components.ui.js motionRevealSection() (nearest-section ownership; per-bound IntersectionObserver for ordinary [data-motion-reveal] / [data-motion-copy] targets; row/batch cascade observer on stable bounds; target data-motion-state / data-motion-resetting / data-motion-staging; per-row --motion-index)
+  → tailwind/tailwind.animates.css (:is([data-motion-reveal], [data-motion-copy])[data-motion-state] × body reveal style; silent reset/staging; cascade delay ownership)
+  → sections/snippets hooks (data-motion-section lifecycle root; data-motion-bound / data-motion-copy-bound stable geometry; data-motion-sequence compact copy rhythm; data-motion-reveal / data-motion-copy animated targets)
+```
+
+### Consumption Granularity
+
+- Section root: `x-data="motionRevealSection()"` + `data-motion-section` (lifecycle only).
+- Coarse targets: `data-motion-reveal="content"` / `"media"` on stable content groups, repeated items, and image columns — not every heading, button, or icon by default.
+- Compact copy sequences: use one `[data-motion-sequence]` container with a small number of meaningful descendant content targets (for example eyebrow, heading, description, CTA). The runtime assigns DOM-order stagger indices; do not hand-maintain indices for ordinary copy groups.
+- Tall content groups: do not place one reveal target around content whose lower regions can remain below the viewport when its upper edge triggers. Split it into a few meaningful targets so each region is observed at its own position; sequence the containing group when the DOM order should remain legible.
+- Stable observation: reuse natural layout wrappers with `data-motion-bound` when the animated node uses transform (product card cells, Swiper slides, collection/category card shells).
+- Stable components (`product-card`, `image.liquid`) may own internal hooks; pass `motion_reveal: false` on nested images when a parent shell already owns media reveal.
+- Skip reveal on conversion controls, tab triggers, slider handles, and embeds such as `google-map` iframe sections.
+- Registration skips targets inside `display: none` / `visibility: hidden` ancestors and overflow-clipped cascade children; tab clicks, resize, and Swiper relayout rescan for newly visible targets.
+- Repeated peer layouts: use `data-motion-cascade` on the layout wrapper and one coarse reveal target per item so cards stagger per current visual row without nested transform ownership.
 
 ### Theme Editor Preview
 
@@ -111,12 +208,15 @@ Recommended runtime contract:
 Recommended CSS contract:
 
 - HTML should render visible by default without JavaScript.
-- Alpine may set `data-motion-state="pending"` only after initialization, so no-JS content remains visible.
+- Alpine sets `data-motion-state="pending"` on each observed target only after initialization, so no-JS content remains visible.
 - `tailwind.animates.css` owns selectors such as:
-  - `[data-motion-section][data-motion-state='pending'] [data-motion-reveal]`
-  - `[data-motion-section][data-motion-state='revealed'] [data-motion-reveal]`
-  - `body[data-content-reveal-style='...'] [data-motion-reveal='content']`
-  - `body[data-media-reveal-style='...'] [data-motion-reveal='media']`
+  - `[data-motion-reveal='content'][data-motion-state='pending']`
+  - `[data-motion-reveal='content'][data-motion-state='revealed']`
+  - `[data-motion-reveal='media'][data-motion-state='pending']`
+  - `[data-motion-reveal='media'][data-motion-state='revealed']`
+  - `[data-motion-copy][data-motion-state='pending' | 'revealed']`
+  - `[data-motion-resetting]` and `[data-motion-staging]` for silent `always` reset/replay
+  - `body[data-content-reveal-style='...']` and `body[data-media-reveal-style='...']` for reveal type
 - Global motion setting effects should be expressed in CSS through body data attributes and motion variables, not through per-section GSAP timelines.
 
 `x-intersect` MAY be used for isolated simple cases, but it is not the preferred architecture for ordinary reveal coverage. The preferred architecture is one shared observer behind the Alpine component, rather than many scattered `x-intersect` directives.
@@ -169,6 +269,17 @@ Conversion pages such as product, collection, search, cart, and checkout-adjacen
 
 Home, brand, editorial, campaign, and storytelling pages MAY use richer GSAP choreography when no critical first-viewport content is hidden before JavaScript, no LCP candidate waits for animation, reduced motion is respected, keyboard and screen-reader access remain intact, and the animation is registered and cleaned up through `Components.register()`.
 
+### Current Coverage Boundary
+
+- Editorial copy, media, cards, grids, recommendations, and other eligible below-the-fold visual regions may use the ordinary reveal contract.
+- Product purchase flows, cart, forms, controls, Header, dialogs, drawers, filters, embeds, and special pages remain static or use their own state/micro-interaction contract.
+- Search and Product Recommendations may delegate motion ownership to rendered result snippets.
+- Copy below tall media must observe its own position instead of inheriting the media or section trigger.
+- Repeated cards use their current visual row for cascade; hidden panels and clipped slides wait until they become eligible.
+- One shared observer-bound registry entry owns every target attached to that bound. A node must not own both a stable `data-motion-bound` and an animated reveal/copy hook.
+
+Treat this as a current architecture boundary, not a frozen coverage count. Re-audit touched surfaces and run representative storefront checks when motion behavior changes.
+
 ## Token And Preset Rules
 
 Do not over-tokenize motion. Tokens are for shared foundation values, not every component detail.
@@ -189,11 +300,15 @@ Component-specific values SHOULD stay inside the named recipe until a real reuse
 
 Merchant-facing motion settings SHOULD control policy, not low-level implementation details.
 
+`motion_enabled` is scoped to page and brand motion. It should disable or simplify section reveal, media reveal, scroll motion, and narrative choreography. It should not disable ordinary hover/focus feedback, dropdowns, dialogs, drawers, loading states, or other UI state and micro interactions.
+
+`prefers-reduced-motion` is the baseline accessibility control for both page/brand motion and state/micro interactions. State and micro interaction recipes that use noticeable movement must provide a reduced-motion branch even when they do not read `motion_enabled`.
+
 Allowed future global settings:
 
 - `motion_enabled`
 - `motion_speed`
-- `motion_intensity`
+- `reveal_behavior`
 - `micro_motion_enabled`
 - `scroll_motion_enabled`
 
@@ -266,5 +381,6 @@ If any criterion fails, the motion pattern needs better encapsulation even if it
 - Prefer opacity and transform for visual motion; avoid layout-changing animation properties.
 - Critical first-viewport content must render visible without JavaScript or animation completion.
 - Reduced motion and `body[data-motion-enabled='false']` must leave content visible and must not break UI state such as `x-show`.
+- `body[data-motion-enabled='false']` is not a blanket kill rule for state or micro interactions. Hover/focus, dropdown, dialog, drawer, and loading motion should remain governed by their state contract and `prefers-reduced-motion` unless a dedicated micro-motion setting is approved.
 - Shared observers, timers, listeners, or animation runtimes must be cleaned up through the owning component lifecycle.
 - Do not add cookbook examples for inactive runtimes to this file. Add future runtime-specific guidance only when that runtime is approved and active again.

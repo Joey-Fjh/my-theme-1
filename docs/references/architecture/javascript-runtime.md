@@ -8,10 +8,13 @@ All theme runtime objects live under `window.__Theme__`:
 
 | Property                            | Module                 | Purpose                         |
 | ----------------------------------- | ---------------------- | ------------------------------- |
-| `__Theme__.Events`                  | `events.js`            | Typed event bus (`ThemeEvents`) |
-| `__Theme__.Components`              | `base.js`              | Section/block lifecycle engine  |
-| `__Theme__.ThemePerformance`        | `performance.js`       | Debug-only CWV monitoring       |
-| `__Theme__.AlpineComponentsFactory` | `alpine.components.js` | Alpine component registry       |
+| `__Theme__.Events`                  | `events.js`                 | Typed event bus (`ThemeEvents`) |
+| `__Theme__.Components`              | `base.js`                   | Section/block lifecycle engine  |
+| `__Theme__.ThemePerformance`        | `performance.js`            | Debug-only CWV monitoring       |
+| `__Theme__.AlpineComponentsFactory` | `alpine.components.js`      | Alpine component registry       |
+| `__Theme__.QuantityConstraints`     | `quantity-constraints.js`   | Pure quantity min/max/step math |
+| `__Theme__.DialogMotion`            | `dialog-motion.js`          | Shared dialog transition helper |
+| `__Theme__.DrawerMotion`            | `drawer-motion.js`          | Shared drawer transition helper |
 
 Additional globals:
 
@@ -26,28 +29,31 @@ Additional globals:
 ```text
  1.  vendor-swiper.min.js
  2.  utils.js
- 3.  events.js
- 4.  alpine.components.js
- 5.  alpine.components.ui.js
- 6.  alpine.components.header.js
- 7.  alpine.components.pagination.js
- 8.  alpine.components.filters.js
- 9.  alpine.components.product.js
-10.  alpine.components.product-media.js
-11.  alpine.components.product-cards.js
-12.  alpine.components.search.js
-13.  alpine.components.overlays.js
-14.  alpine.components.registry.js      <- merges groups into window.__Theme__.AlpineComponents
-15.  performance.js
-16.  https.js
-17.  base.js
-18.  alpine.store.js
-19.  alpine.store.toast.js
-20.  alpine.store.dialog.js
-21.  alpine.store.cart.js
-22.  alpine.store.registry.js           <- merges/registers stores
-23.  vendor-alpine-intersect.min.js
-24.  vendor-alpine.min.js               <- MUST be last
+ 3.  quantity-constraints.js
+ 4.  events.js
+ 5.  alpine.components.js
+ 6.  alpine.components.ui.js
+ 7.  alpine.components.header.js
+ 8.  alpine.components.pagination.js
+ 9.  alpine.components.filters.js
+10.  alpine.components.product.js
+11.  alpine.components.product-media.js
+12.  alpine.components.product-cards.js
+13.  alpine.components.search.js
+14.  alpine.components.overlays.js
+15.  alpine.components.registry.js      <- merges groups into window.__Theme__.AlpineComponents
+16.  performance.js
+17.  https.js
+18.  base.js
+19.  alpine.store.js
+20.  alpine.store.toast.js
+21.  dialog-motion.js
+22.  drawer-motion.js
+23.  alpine.store.dialog.js
+24.  alpine.store.cart.js
+25.  alpine.store.registry.js           <- merges/registers stores
+26.  vendor-alpine-intersect.min.js
+27.  vendor-alpine.min.js               <- MUST be last
 ```
 
 Constraints:
@@ -83,6 +89,7 @@ Predefined events:
 | `PRODUCT_VARIANT_CHANGED`          | `theme:product:variant:changed`          | Variant selection changed            |
 | `PRODUCT_GALLERY_SLIDE_TO_REQUEST` | `theme:product-gallery:request:slide-to` | Request gallery to slide to an index |
 | `PRODUCT_QUANTITY_CHANGED`         | `theme:product:quantity:changed`         | Quantity input changed               |
+| `PRODUCT_MEDIA_MODAL_ACTIVATE`     | `theme:product-media-modal:activate`   | Request product media modal focus    |
 
 When adding new cross-component events, add them to `ThemeEvents.events` in `events.js`.
 
@@ -207,11 +214,15 @@ Ordinary content/media reveal should be implemented as an Alpine behavior plus C
 Preferred shape:
 
 - Register a reusable Alpine behavior such as `motionRevealSection` in an appropriate `alpine.components.*.js` group.
-- Each `x-data="motionRevealSection()"` instance is independent, but the implementation should use a module-level shared `IntersectionObserver` singleton.
-- Use a registry such as a `WeakMap` to map observed section roots to their Alpine instances.
-- Observe section roots such as `[data-motion-section]`; do not create one observer per reveal target.
-- Mark reveal targets with `data-motion-reveal="content"` or `data-motion-reveal="media"`.
-- The Alpine component only changes state, such as `data-motion-state="pending"` and `data-motion-state="revealed"`, and may set lightweight variables such as `--motion-index`.
+- Each `x-data="motionRevealSection()"` instance is independent on the section root (`data-motion-section`), but the implementation should use a module-level shared `IntersectionObserver` singleton.
+- Use shared registries such as `WeakMap` instances to map observed stable bounds to their ordinary/cascade enter and `always` exit callbacks. If several ordinary targets share one bound, aggregate them behind that bound's single registry callback; never overwrite an existing callback with the last target registered.
+- The section root owns lifecycle only. Each visible `[data-motion-reveal]` or `[data-motion-copy]` target is owned by its nearest `[data-motion-section]` and is registered independently unless it belongs to a cascade row batch.
+- Mark ordinary targets with `data-motion-reveal="content"` / `"media"`. Use `data-motion-copy` only when copy after tall media must wait for its own viewport position; give it a tight transform-free `data-motion-copy-bound` when needed.
+- `data-motion-bound` separates stable observation/row geometry from a transforming target. Putting bound and reveal on the same node does not create a stable boundary.
+- Optional `data-motion-cascade` groups visible targets by current visual row and assigns row-local `--motion-index`; `data-motion-sequence` assigns compact ordinary copy targets DOM-order indices.
+- The Alpine component sets per-target `data-motion-state="pending"` / `"revealed"`, uses `data-motion-resetting` / `data-motion-staging` for silent `always` replay, handles page-load double-rAF registration, and reads `body[data-reveal-behavior]` for once vs always.
+- On the first registration, actual viewport-visible and clip-visible targets receive `data-motion-critical-runtime`. CSS must keep them opaque and unclipped while allowing the selected transform entrance; fixed critical heroes may use explicit `data-motion-critical`. Do not infer criticality from DOM order or the first section selector.
+- Scroll-settle recovery keeps the normal bottom inset except at the true document end, where it may use the full viewport so Footer targets cannot remain pending without further scroll distance.
 - `tailwind/tailwind.animates.css` owns body setting selectors, target styles, keyframes, duration/ease variables, reduced-motion, and motion-disabled behavior.
 - Do not reuse `base.js`'s component lazy-init `IntersectionObserver` for visual reveal; component lifecycle and visual reveal are separate concerns.
 
@@ -314,4 +325,4 @@ destroy(el, state) {
 | Liquid values directly in `x-data="..."`             | `data-*` attributes + `this.$el.dataset`                                                    |
 | Cross-component event via `new CustomEvent(...)`     | `ThemeEvents.emit(type, detail)`                                                            |
 | Raw `<svg>` pasted in Liquid                         | `{%- render 'icons', icon: 'icon-name' -%}` via icon pipeline                               |
-| Manually editing `assets/icon-*.svg`                 | Generate from `icons/` via `npm run build:svg` after checking for existing equivalent icons |
+| Manually editing `assets/icon-*.svg`                 | Generate from `icons/` via `npm.cmd run build:svg` after checking for existing equivalent icons |

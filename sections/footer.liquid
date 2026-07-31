@@ -16,73 +16,83 @@
     <div class="container-page">
         <div class="relative overflow-hidden p-12">
             {% comment %} Top Content Area {% endcomment %}
-            <div
-                class="z-10 flex flex-col gap-12 pc:mb-24 pc:flex-row pc:justify-between"
-                data-motion-reveal="content"
-            >
+            <div class="z-10 flex flex-col gap-12 pc:mb-24 pc:flex-row pc:justify-between">
                 {%- comment -%} Navigation Link Columns {%- endcomment -%}
-                <div class="grid grid-cols-3 gap-x-4 gap-y-10 pc:flex pc:gap-20 fw:gap-28">
-                    {% for block in section.blocks %}
-                        {% if block.type == 'link_column' %}
-                            <div {{ block.shopify_attributes }}>
-                                <h2 class="mb-6 pc:mb-10">
-                                    {{ block.settings.heading }}
-                                </h2>
-                                <ul class="flex flex-col gap-3">
-                                    {% assign links_menu = block.settings.menu %}
-                                    {% if links_menu != blank %}
-                                        {% for link in linklists[links_menu].links %}
-                                            <li>
-                                                {% render 'link',
-                                                    text: link.title,
-                                                    variant: 'underline',
-                                                    href: link.url
-                                                %}
-                                            </li>
-                                        {% endfor %}
-                                    {% else %}
-                                        {% assign fallback_links = block.settings.heading
-                                            | downcase
-                                        %}
-                                        {% for i in (1..4) %}
-                                            <li>
-                                                {%- assign link_text = 'Link ' | append: i -%}
-                                                {% render 'link',
-                                                    text: link_text,
-                                                    variant: 'underline',
-                                                    href: '#'
-                                                %}
-                                            </li>
-                                        {% endfor %}
-                                    {% endif %}
-                                </ul>
-                            </div>
-                        {% endif %}
-                    {% endfor %}
+                <div data-motion-bound>
+                    <div
+                        class="grid grid-cols-3 gap-x-4 gap-y-10 pc:flex pc:gap-20 fw:gap-28"
+                        data-motion-reveal="content"
+                    >
+                        {% for block in section.blocks %}
+                            {% if block.type == 'link_column' %}
+                                <div {{ block.shopify_attributes }}>
+                                    <h2 class="mb-6 heading-h2 pc:mb-10">
+                                        {{ block.settings.heading }}
+                                    </h2>
+                                    <ul class="flex flex-col gap-3">
+                                        {% assign links_menu = block.settings.menu %}
+                                        {% if links_menu != blank and links_menu.links != blank %}
+                                            {% for link in links_menu.links %}
+                                                <li>
+                                                    {% render 'link',
+                                                        text: link.title,
+                                                        variant: 'underline',
+                                                        href: link.url
+                                                    %}
+                                                </li>
+                                            {% endfor %}
+                                        {% else %}
+                                            {% for i in (1..4) %}
+                                                <li>
+                                                    {%- assign link_text = 'footer.default_link'
+                                                        | t: number: i
+                                                    -%}
+                                                    <span class="links-underline links">
+                                                        {{ link_text }}
+                                                    </span>
+                                                </li>
+                                            {% endfor %}
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
                 </div>
 
                 {%- comment -%} Right Content Block {%- endcomment -%}
                 <div class="flex max-w-3xl flex-col gap-8 pc:gap-12">
-                    {% if section.settings.content_heading != blank %}
-                        <h3>
-                            {{ section.settings.content_heading }}
-                        </h3>
-                    {% endif %}
-                    {% if section.settings.content_text != blank %}
-                        <div class="rte rte--compact body-lg">
-                            {{ section.settings.content_text }}
+                    {% if section.settings.content_heading != blank
+                        or section.settings.content_text != blank
+                    %}
+                        <div data-motion-copy-bound>
+                            <div
+                                class="flex flex-col gap-8 pc:gap-12"
+                                data-motion-copy
+                            >
+                                {% if section.settings.content_heading != blank %}
+                                    <h3 class="heading-h2">
+                                        {{ section.settings.content_heading }}
+                                    </h3>
+                                {% endif %}
+                                {% if section.settings.content_text != blank %}
+                                    <div class="rte rte--compact body-3xl">
+                                        {{ section.settings.content_text }}
+                                    </div>
+                                {% endif %}
+                            </div>
                         </div>
                     {% endif %}
                     {% if section.settings.content_link != blank %}
                         {%- capture link_content -%}
                             <span>{{ section.settings.content_link_text }}</span>
-                            {% render 'icons', icon: 'icon-arrow2', class: 'ml-3' %}
+                            {% render 'icons', icon: 'icon-arrow2', class: 'ms-3' %}
                         {%- endcapture -%}
 
                         {%- render 'link',
                             href: section.settings.content_link,
                             content: link_content,
-                            class: 'body-lg',
+                            class: 'body-xl',
                             variant: 'underline'
                         -%}
                     {% endif %}
@@ -108,13 +118,18 @@
                 {% if section.settings.brush_image != blank %}
                     <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
                         {% render 'image',
-                            class: '!h-fit object-contain mix-blend-lighten',
+                            class: '!h-fit mix-blend-lighten',
                             image: section.settings.brush_image,
                             alt: section.settings.brush_image.alt,
-                            width: section.settings.brush_image.width
+                            width: section.settings.brush_image.width,
+                            mode: 'natural',
+                            fit: 'contain',
+                            motion_reveal: false
                         %}
                     </div>
+                {% endif %}
 
+                {% if section.settings.brand_name != blank %}
                     {% render 'watermark',
                         text: section.settings.brand_name,
                         container_class: 'relative z-10 w-full',
@@ -126,21 +141,33 @@
 
             {%- comment -%} Bottom Bar {%- endcomment -%}
             <div
-                class="z-10 grid grid-cols-2 gap-y-8 border-t border-theme-border-50 pt-6 pc:flex pc:flex-row pc:items-center pc:justify-between"
-                data-motion-reveal="content"
+                class="z-10 grid grid-cols-2 gap-y-8 border-t border-theme-border/50 pt-6 pc:flex pc:flex-row pc:items-center pc:justify-between"
             >
+                {%- liquid
+                    assign footer_location = section.settings.location
+                    if footer_location == blank
+                        assign footer_location = 'footer.default_location' | t
+                    endif
+                -%}
                 <span class="col-span-1 pc:order-first">
-                    {{ section.settings.location | default: 'Shibuya, JP' }}
+                    {{ footer_location }}
                 </span>
-                <span class="col-span-1 text-right pc:order-0 pc:text-center">
+                <span class="col-span-1 text-end pc:order-0 pc:text-center">
+                    {%- liquid
+                        assign copyright_brand = section.settings.brand_name | strip_html
+                        if copyright_brand == blank
+                            assign copyright_brand = shop.name
+                        endif
+                        assign copyright_brand = copyright_brand | escape
+                    -%}
                     {{ 'now' | date: '%Y' }}
-                    {{ section.settings.brand_name | default: 'Eccenova' }}
+                    {{ copyright_brand }}
                     {{ 'footer.all_rights_reserved' | t }}
                 </span>
                 <button
                     type="button"
-                    @click="window.scrollTo({ top: 0, behavior: 'smooth' })"
-                    class="col-span-2 flex cursor-pointer items-center justify-center gap-1 opacity-50 transition-opacity hover:opacity-100 pc:order-last pc:col-span-1 pc:justify-end"
+                    @click="window.__Theme__.Utils.scrollToTop()"
+                    class="footer__back-to-top col-span-2 pc:order-last pc:col-span-1"
                 >
                     <span>{{ 'footer.back_to_top' | t }}</span>
                     {%- render 'icons', icon: 'icon-chevron-up' -%}
@@ -149,6 +176,34 @@
         </div>
     </div>
 </footer>
+
+{% stylesheet %}
+    .footer__back-to-top {
+        display: flex;
+        cursor: pointer;
+        align-items: center;
+        justify-content: center;
+        gap: 0.25rem;
+        opacity: 0.5;
+        transition: opacity var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease);
+    }
+
+    .footer__back-to-top:hover {
+        opacity: 1;
+    }
+
+    .footer__back-to-top:focus-visible {
+        outline: var(--focus-ring-width) solid
+            rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+        outline-offset: var(--focus-ring-offset);
+    }
+
+    @media (min-width: 48rem) {
+        .footer__back-to-top {
+            justify-content: flex-end;
+        }
+    }
+{% endstylesheet %}
 
 {% schema %}
 {
@@ -244,7 +299,8 @@
                 {
                     "type": "link_list",
                     "id": "menu",
-                    "label": "t:sections.footer.block_settings.menu"
+                    "label": "t:sections.footer.block_settings.menu",
+                    "default": "footer"
                 }
             ]
         }
@@ -254,10 +310,7 @@
             "name": "t:sections.footer.presets.footer",
             "blocks": [
                 {
-                    "type": "link_column",
-                    "settings": {
-                        "heading": "Catalog"
-                    }
+                    "type": "link_column"
                 },
                 {
                     "type": "link_column",

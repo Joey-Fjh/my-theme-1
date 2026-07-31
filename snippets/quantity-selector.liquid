@@ -1,32 +1,131 @@
-{% comment %}
+{% doc %}
     Reusable quantity selector (Tailwind + Alpine.js).
-    All logic lives in the registered QuantitySelector Alpine component.
+    Constraint math lives in `quantity-constraints` and `__Theme__.QuantityConstraints`.
 
-    @param {number}  [value]         - Initial quantity (default: 1)
-    @param {number}  [min]           - Minimum allowed value (default: 1)
-    @param {number}  [max]           - Maximum allowed value (optional, null = no cap)
-    @param {number}  [step]          - Increment / decrement step (default: 1)
-    @param {string}  [name]          - Input name attribute (default: 'quantity')
-    @param {string}  [product_form_id] - Form id to bind via the form attribute (optional)
-    @param {string}  [section_id]    - Section ID; when set, listens for variant:change to auto-update max from inventory
-    @param {string}  [input_id]      - Unique id for the <input> (optional)
-    @param {string}  [wrapper_class] - Override Tailwind classes on the outer container
-    @param {string}  [label]         - Accessible label text (default: 'Quantity')
+    @param {number} [value] - Initial quantity (default: computed min when variant is passed, else 1)
+    @param {number} [min] - Minimum when variant is omitted (default: 1)
+    @param {number} [max] - Maximum when variant is omitted (optional)
+    @param {number} [step] - Step when variant is omitted (default: 1)
+    @param {variant} [variant] - Derives min/max/step from quantity_rule + inventory + cart count
+    @param {string} [surface] - 'product' | 'cart' (default: 'product')
+    @param {number} [cart_quantity] - Override cart count for product surface
+    @param {string} [name] - Input name (default: 'quantity')
+    @param {string} [product_form_id] - Form id via form attribute
+    @param {string} [section_id] - Section ID for variant/cart sync
+    @param {string} [input_id] - Input id
+    @param {string} [wrapper_class] - Escape hatch wrapper classes
+    @param {string} [button_class] - Escape hatch button classes
+    @param {string} [input_class] - Escape hatch input classes
+    @param {string} [label] - Accessible label
+    @param {boolean} [interactive] - Set false for a static visual state without form or Alpine behavior
+{% enddoc %}
 
-    Usage (product page):
-    {% render 'quantity-selector', value: 1, min: 1, product_form_id: product_form_id, section_id: section.id %}
+{%- liquid
+    assign qty_interactive = true
+    if interactive == false or interactive == 'false'
+        assign qty_interactive = false
+    endif
 
-    Usage (cart — wrap with event listener):
-    <div @quantity:change="$store.cart.change('{{ item.key }}', $event.detail.value, ['{{ section.id }}'])">
-      {% render 'quantity-selector', value: item.quantity, min: 1, max: max_qty %}
-    </div>
-{% endcomment %}
+    assign qty_surface = surface | default: 'product'
+    assign qty_min = min | default: 1
+    assign qty_step = step | default: 1
+    assign qty_value = value | default: 1
+    assign qty_has_max = false
+    assign qty_max = 0
+    assign qty_can_purchase = true
+    assign qty_cart_quantity = 0
+    assign qty_variant_id = ''
+
+    if cart_quantity != blank
+        assign qty_cart_quantity = cart_quantity | plus: 0
+    endif
+
+    if variant != blank
+        assign qty_variant_id = variant.id
+        capture qty_constraints_json
+            render 'quantity-constraints', variant: variant, surface: qty_surface, cart_quantity: cart_quantity, value: value
+        endcapture
+        capture qty_min
+            render 'quantity-constraints', variant: variant, surface: qty_surface, cart_quantity: cart_quantity, value: value, output: 'min'
+        endcapture
+        capture qty_max_raw
+            render 'quantity-constraints', variant: variant, surface: qty_surface, cart_quantity: cart_quantity, value: value, output: 'max'
+        endcapture
+        capture qty_step
+            render 'quantity-constraints', variant: variant, surface: qty_surface, cart_quantity: cart_quantity, value: value, output: 'step'
+        endcapture
+        capture qty_value
+            render 'quantity-constraints', variant: variant, surface: qty_surface, cart_quantity: cart_quantity, value: value, output: 'value'
+        endcapture
+        capture qty_can_purchase_raw
+            render 'quantity-constraints', variant: variant, surface: qty_surface, cart_quantity: cart_quantity, value: value, output: 'can_purchase'
+        endcapture
+        capture qty_has_max_raw
+            render 'quantity-constraints', variant: variant, surface: qty_surface, cart_quantity: cart_quantity, value: value, output: 'has_max'
+        endcapture
+        capture qty_cart_quantity
+            render 'quantity-constraints', variant: variant, surface: qty_surface, cart_quantity: cart_quantity, value: value, output: 'cart_quantity'
+        endcapture
+        assign qty_constraints_json = qty_constraints_json | strip
+        assign qty_min = qty_min | strip | plus: 0
+        assign qty_step = qty_step | strip | plus: 0
+        assign qty_value = qty_value | strip | plus: 0
+        assign qty_cart_quantity = qty_cart_quantity | strip | plus: 0
+        assign qty_max_raw = qty_max_raw | strip
+        assign qty_can_purchase_raw = qty_can_purchase_raw | strip
+        assign qty_has_max_raw = qty_has_max_raw | strip
+        if qty_has_max_raw == 'true'
+            assign qty_has_max = true
+            assign qty_max = qty_max_raw | plus: 0
+        endif
+        if qty_can_purchase_raw == 'false'
+            assign qty_can_purchase = false
+        endif
+    elsif max != blank
+        assign qty_has_max = true
+        assign qty_max = max | plus: 0
+        capture qty_constraints_json
+            echo '{'
+            echo '"min":'
+            echo qty_min
+            echo ',"max":'
+            echo qty_max
+            echo ',"step":'
+            echo qty_step
+            echo ',"value":'
+            echo qty_value
+            echo ',"can_purchase":true,"cart_quantity":'
+            echo qty_cart_quantity
+            echo ',"absolute_max":'
+            echo qty_max
+            echo '}'
+        endcapture
+    else
+        capture qty_constraints_json
+            echo '{'
+            echo '"min":'
+            echo qty_min
+            echo ',"max":null,"step":'
+            echo qty_step
+            echo ',"value":'
+            echo qty_value
+            echo ',"can_purchase":true,"cart_quantity":'
+            echo qty_cart_quantity
+            echo ',"absolute_max":null}'
+        endcapture
+    endif
+-%}
 
 <div
-    data-qty-value="{{ value | default: 1 }}"
-    data-qty-min="{{ min | default: 1 }}"
-    data-qty-max="{{ max | default: 'null' }}"
-    data-qty-step="{{ step | default: 1 }}"
+    {% unless qty_interactive %}
+        aria-hidden="true"
+    {% endunless %}
+    data-qty-constraints="{{ qty_constraints_json | strip | escape }}"
+    data-qty-surface="{{ qty_surface | escape }}"
+    data-qty-can-purchase="{% if qty_can_purchase %}true{% else %}false{% endif %}"
+    {% if qty_variant_id != blank %}
+        data-qty-variant-id="{{ qty_variant_id }}"
+    {% endif %}
     {% if section_id %}
         data-qty-section-id="{{ section_id }}"
     {% endif %}
@@ -34,15 +133,22 @@
     data-qty-msg-min="{{ 'toast.min_quantity' | t: min: '%%MIN%%' | escape }}"
     data-qty-msg-below-min="{{ 'toast.quantity_below_min' | t: min: '%%MIN%%' | escape }}"
     data-qty-msg-above-max="{{ 'toast.quantity_above_max' | t: max: '%%MAX%%' | escape }}"
-    x-data="QuantitySelector()"
-    class="{{ wrapper_class | default: 'flex items-center border border-theme-border-20 rounded-sm w-max' }}"
+    {% if qty_interactive %}
+        x-data="QuantitySelector()"
+    {% endif %}
+    class="quantity-selector{% unless qty_interactive %} quantity-selector--static{% endunless %} {{ wrapper_class }}"
 >
     <button
         type="button"
-        class="{{ button_class | default: 'flex h-10 w-10 cursor-pointer items-center justify-center text-current transition-opacity hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-30' }}"
-        aria-label="{{ 'accessibility.decrease_quantity' | t }}"
-        @click="decrement()"
-        :disabled="!canDecrement"
+        class="quantity-selector__button {{ button_class }}"
+        {% if qty_interactive %}
+            aria-label="{{ 'accessibility.decrease_quantity' | t }}"
+            @click="decrement()"
+            :disabled="!canDecrement"
+        {% else %}
+            disabled
+            tabindex="-1"
+        {% endif %}
     >
         {%- render 'icons', icon: 'icon-minus' -%}
     </button>
@@ -53,24 +159,45 @@
             id="{{ input_id }}"
         {% endif %}
         name="{{ name | default: 'quantity' }}"
-        class="{{ input_class | default: 'w-[4ch] appearance-none border-b border-current bg-transparent p-0 text-center body-sm font-medium text-current [-moz-appearance:textfield] focus:ring-0 focus:outline-none focus-ring [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none' }}"
-        x-model.number="qty"
-        :min="min"
-        :max="max"
-        :step="step"
+        class="quantity-selector__input {{ input_class }}"
+        value="{{ qty_value }}"
+        min="{{ qty_min }}"
+        {% if qty_has_max %}
+            max="{{ qty_max }}"
+        {% endif %}
+        step="{{ qty_step }}"
         {% if product_form_id %}
             form="{{ product_form_id }}"
         {% endif %}
-        @change="onInput()"
-        aria-label="{{ label | default: 'accessibility.quantity' | t }}"
+        {% if qty_interactive %}
+            x-model.number="qty"
+            :min="min"
+            :max="max === null ? undefined : max"
+            :step="step"
+            {% unless qty_can_purchase %}
+                readonly
+            {% endunless %}
+            @change="onInput()"
+            :readonly="!canPurchase"
+            :aria-invalid="(!canPurchase).toString()"
+            aria-label="{{ label | default: 'accessibility.quantity' | t }}"
+        {% else %}
+            disabled
+            tabindex="-1"
+        {% endif %}
     >
 
     <button
         type="button"
-        class="{{ button_class | default: 'flex h-10 w-10 cursor-pointer items-center justify-center text-current transition-opacity hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-30' }}"
-        aria-label="{{ 'accessibility.increase_quantity' | t }}"
-        @click="increment()"
-        :disabled="!canIncrement"
+        class="quantity-selector__button {{ button_class }}"
+        {% if qty_interactive %}
+            aria-label="{{ 'accessibility.increase_quantity' | t }}"
+            @click="increment()"
+            :disabled="!canIncrement"
+        {% else %}
+            disabled
+            tabindex="-1"
+        {% endif %}
     >
         {%- render 'icons', icon: 'icon-plus' -%}
     </button>

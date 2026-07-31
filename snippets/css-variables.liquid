@@ -1,42 +1,35 @@
 {% style %}
-    {%- comment -%} Heading Custom font --- @font-face {%- endcomment -%}
-    {% if settings.use_custom_heading_font and settings.custom_heading_font_url != blank %}
-        @font-face {
-            font-family: {{ settings.custom_heading_font_family | json }};
-            src: url({{ settings.custom_heading_font_url | json }}) format("woff2");
-            font-weight: 400;
-            font-style: normal;
-            font-display: swap;
-        }
-    {% endif %}
+    {% liquid
+        assign body_font_bold = settings.type_body_font | font_modify: 'weight', 'bold'
+        assign body_font_italic = settings.type_body_font | font_modify: 'style', 'italic'
+        assign body_font_bold_italic = body_font_bold | font_modify: 'style', 'italic'
 
-    {%- comment -%} Body Custom font --- @font-face {%- endcomment -%}
-    {% if settings.use_custom_body_font and settings.custom_body_font_url != blank %}
-        @font-face {
-            font-family: {{ settings.custom_body_font_family | json }};
-            src: url({{ settings.custom_body_font_url | json }}) format("woff2");
-            font-weight: 400;
-            font-style: normal;
-            font-display: swap;
-        }
-    {% endif %}
+        assign heading_font_bold = settings.type_header_font | font_modify: 'weight', 'bold'
+        assign heading_font_italic = settings.type_header_font | font_modify: 'style', 'italic'
+        assign heading_font_bold_italic = heading_font_bold | font_modify: 'style', 'italic'
+    %}
 
-    {% unless settings.use_custom_body_font and settings.custom_body_font_url != blank %}
-        {% liquid
-            assign body_font_bold = settings.type_body_font | font_modify: 'weight', 'bold'
-            assign body_font_italic = settings.type_body_font | font_modify: 'style', 'italic'
-            assign body_font_bold_italic = body_font_bold | font_modify: 'style', 'italic'
-        %}
-
-        {{ settings.type_body_font | font_face: font_display: 'swap' }}
+    {{ settings.type_body_font | font_face: font_display: 'swap' }}
+    {%- if body_font_bold -%}
         {{ body_font_bold | font_face: font_display: 'swap' }}
+    {%- endif -%}
+    {%- if body_font_italic -%}
         {{ body_font_italic | font_face: font_display: 'swap' }}
+    {%- endif -%}
+    {%- if body_font_bold_italic -%}
         {{ body_font_bold_italic | font_face: font_display: 'swap' }}
-    {% endunless %}
+    {%- endif -%}
 
-    {% unless settings.use_custom_heading_font and settings.custom_heading_font_url != blank %}
-        {{ settings.type_header_font | font_face: font_display: 'swap' }}
-    {% endunless %}
+    {{ settings.type_header_font | font_face: font_display: 'swap' }}
+    {%- if heading_font_bold -%}
+        {{ heading_font_bold | font_face: font_display: 'swap' }}
+    {%- endif -%}
+    {%- if heading_font_italic -%}
+        {{ heading_font_italic | font_face: font_display: 'swap' }}
+    {%- endif -%}
+    {%- if heading_font_bold_italic -%}
+        {{ heading_font_bold_italic | font_face: font_display: 'swap' }}
+    {%- endif -%}
 
     {% comment %} color schemes (last result: :root, .color-scheme-1{} .color-scheme-2{} ...) {% endcomment %}
     {% assign scheme_classes = '' %}
@@ -100,35 +93,40 @@
         {% comment %} layout Variables {% endcomment %}
         --page-width: {{ settings.page_width | divided_by: 10}}rem;
         --page-margin: {{ settings.page_margin | divided_by: 10 }}rem;
-        --section-margin-top: {{ settings.section_margin_top }}px;
-        --section-margin-bottom: {{ settings.section_margin_bottom }}px;
 
         {% comment %} font Variables {% endcomment %}
-        {% if settings.use_custom_body_font and settings.custom_body_font_url != blank %}
-            --font-body-family: {{ settings.custom_body_font_family | json }}, {{ settings.type_body_font.fallback_families }};
-            --font-body-style: normal;
-        {%- else -%}
-            --font-body-family: {{ settings.type_body_font.family }}, {{ settings.type_body_font.fallback_families }};
-            --font-body-style: {{ settings.type_body_font.style }};
-        {% endif %}
-        --font-body-weight: {{ settings.body_weight }};
+        --font-body-family: {{ settings.type_body_font.family }}, {{ settings.type_body_font.fallback_families }};
+        --font-body-style: {{ settings.type_body_font.style }};
+        {%- liquid
+            assign theme_body_font_size = settings.body_font_size | default: 16
+            assign theme_body_font_size_mobile = settings.body_font_size_mobile | default: 14
+        -%}
+        --font-body-size: {{ theme_body_font_size }}px;
+        --font-body-size-mobile: {{ theme_body_font_size_mobile }}px;
         --font-body-line-height: {{ settings.body_line_height }};
         --font-body-letter-spacing: {{ settings.body_letter_spacing }};
         --font-body-text-transform: {{ settings.body_text_transform }};
-        --font-body-scale: {{ settings.body_scale | divided_by: 100.0 }};
+        --font-body-scale: {{ settings.body_scale | default: 100 | divided_by: 100.0 }};
 
-        {% if settings.use_custom_heading_font and settings.custom_heading_font_url != blank %}
-            --font-heading-family: {{ settings.custom_heading_font_family | json }}, {{ settings.type_header_font.fallback_families }};
-            --font-heading-style: normal;
-        {% else %}
-            --font-heading-family: {{ settings.type_header_font.family }}, {{ settings.type_header_font.fallback_families }};
-            --font-heading-style: {{ settings.type_header_font.style }};
-        {% endif %}
+        --font-heading-family: {{ settings.type_header_font.family }}, {{ settings.type_header_font.fallback_families }};
+        --font-heading-style: {{ settings.type_header_font.style }};
         --font-heading-weight: {{ settings.heading_weight }};
         --font-heading-line-height: {{ settings.heading_line_height }};
         --font-heading-letter-spacing: {{ settings.heading_letter_spacing }};
         --font-heading-text-transform: {{ settings.heading_text_transform }};
         --font-heading-scale: {{ settings.heading_scale | divided_by: 100.0 }};
+
+        {% if settings.subtitle_font_source == 'body' %}
+            --font-subtitle-family: var(--font-body-family);
+            --font-subtitle-style: var(--font-body-style);
+        {% else %}
+            --font-subtitle-family: var(--font-heading-family);
+            --font-subtitle-style: var(--font-heading-style);
+        {% endif %}
+        --font-subtitle-weight: {{ settings.subtitle_weight }};
+        --font-subtitle-line-height: {{ settings.subtitle_line_height }};
+        --font-subtitle-letter-spacing: {{ settings.subtitle_letter_spacing }};
+        --font-subtitle-text-transform: {{ settings.subtitle_text_transform }};
 
         {% comment %} input Variables {% endcomment %}
         --input-radius: {{ settings.input_radius }}px;
@@ -181,29 +179,46 @@
         --toast-shadow-blur-radius: {{ settings.toast_shadow_blur }}px;
 
         {% comment %} Motion Variables {% endcomment %}
+        --motion-duration: 500ms;
+        --motion-duration-fast: 250ms;
+        --motion-duration-base: 400ms;
+        --motion-duration-slow: 500ms;
+
         {% case settings.motion_speed %}
             {% when 'slow' %}
-                --motion-duration: 700ms;
-                --motion-duration-fast: 350ms;
-                --motion-duration-base: 550ms;
-                --motion-duration-slow: 700ms;
+                --motion-reveal-duration: 1340ms;
+                --motion-reveal-duration-base: 1340ms;
+                --motion-reveal-opacity-duration: 760ms;
+                --motion-reveal-stagger: 210ms;
             {% when 'fast' %}
-                --motion-duration: 300ms;
-                --motion-duration-fast: 150ms;
-                --motion-duration-base: 250ms;
-                --motion-duration-slow: 300ms;
+                --motion-reveal-duration: 820ms;
+                --motion-reveal-duration-base: 820ms;
+                --motion-reveal-opacity-duration: 480ms;
+                --motion-reveal-stagger: 130ms;
             {% else %}
-                --motion-duration: 500ms;
-                --motion-duration-fast: 250ms;
-                --motion-duration-base: 400ms;
-                --motion-duration-slow: 500ms;
+                --motion-reveal-duration: 1080ms;
+                --motion-reveal-duration-base: 1080ms;
+                --motion-reveal-opacity-duration: 620ms;
+                --motion-reveal-stagger: 170ms;
         {% endcase %}
 
+        {% comment %} Style-owned reveal amplitude; motion_speed controls timing only. {% endcomment %}
+        --motion-reveal-rise-distance: clamp(40px, 5vw, 64px);
+        --motion-reveal-cascade-scale: 0.97;
+        --motion-reveal-zoom-scale: 0.92;
+        --motion-slide-content-distance-x: 0rem;
+        --motion-slide-content-distance-y: clamp(32px, 4vw, 52px);
+        --motion-slide-content-clip-from: inset(100% 0 0 0);
+        --motion-slide-media-distance-x: clamp(40px, 6vw, 80px);
+        --motion-slide-media-distance-y: 0rem;
+        --motion-slide-media-scale: 1.035;
+        --motion-slide-media-clip-from: inset(0 100% 0 0);
+
         --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+        --motion-ease-default: var(--motion-ease);
         --motion-ease-enter: cubic-bezier(0.22, 1, 0.36, 1);
         --motion-ease-exit: cubic-bezier(0.55, 0, 1, 0.45);
-        --motion-reveal-distance: 1.5rem;
-        --motion-reveal-stagger: 80ms;
+        --motion-reveal-ease: cubic-bezier(0.25, 0.4, 0.4, 1);
 
         {% comment %} Focus Ring {% endcomment %}
         --focus-ring-width: {{ settings.focus_ring_width | default: 2 }}px;

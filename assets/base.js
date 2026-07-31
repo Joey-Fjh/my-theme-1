@@ -477,8 +477,8 @@
                             } catch (_) {
                                 /* ignore parse errors */
                             }
-                            Stores.cart.init(initialCartData);
                             window.Alpine.store('cart', Stores.cart);
+                            window.Alpine.store('cart').hydrate(initialCartData);
                         }
                     }
 
@@ -500,6 +500,7 @@
                         Factory.register?.(Comps.COUNTDOWNTIMER, Comps.countdownTimer);
                         Factory.register?.(Comps.SECTIONPAGINATION, Comps.sectionPagination);
                         Factory.register?.(Comps.COLLECTIONFILTERS, Comps.collectionFilters);
+                        Factory.register?.(Comps.SEARCHFILTERS, Comps.searchFilters);
                         Factory.register?.(
                             Comps.COLLECTIONFILTERFIELD,
                             Comps.collectionFilterField,
@@ -507,14 +508,17 @@
                         Factory.register?.(Comps.PROGRESSIVELIST, Comps.progressiveList);
                         Factory.register?.(Comps.PRODUCTGALLERY, Comps.productGallery);
                         Factory.register?.(Comps.PRODUCTPRICE, Comps.ProductPrice);
+                        Factory.register?.(Comps.PRODUCTPAYMENTTERMS, Comps.ProductPaymentTerms);
                         Factory.register?.(Comps.VARIANTPICKER, Comps.VariantPicker);
                         Factory.register?.(Comps.QUANTITYSELECTOR, Comps.QuantitySelector);
                         Factory.register?.(Comps.BUYBUTTONS, Comps.BuyButtons);
+                        Factory.register?.(Comps.GIFTCARDRECIPIENT, Comps.GiftCardRecipient);
                         Factory.register?.(Comps.PICKUPAVAILABILITY, Comps.PickupAvailability);
                         Factory.register?.(Comps.PREDICTIVESEARCH, Comps.predictiveSearch);
                         Factory.register?.(Comps.RELATEDPRODUCTS, Comps.relatedProducts);
                         Factory.register?.(Comps.NEWSLETTERBANNER, Comps.newsletterBanner);
                         Factory.register?.(Comps.NEWSLETTEROVERLAY, Comps.newsletterOverlay);
+                        Factory.register?.(Comps.CARTPAGE, Comps.cartPage);
                         Factory.register?.(Comps.CARTOVERLAY, Comps.cartOverlay);
                         Factory.register?.(Comps.CARDGALLERY, Comps.cardGallery);
                         Factory.register?.(Comps.PRODUCTCARD, Comps.productCard);
@@ -526,6 +530,8 @@
                         Factory.register?.(Comps.FLIPDIGIT, Comps.flipDigit);
                         Factory.register?.(Comps.TOASTCONTAINER, Comps.toastContainer);
                         Factory.register?.(Comps.MOTIONREVEALSECTION, Comps.motionRevealSection);
+                        Factory.register?.(Comps.PRODUCTMEDIAMODAL, Comps.productMediaModal);
+                        Factory.register?.(Comps.MEDIAVIDEO, Comps.mediaVideo);
                     }
                 },
                 { once: true },

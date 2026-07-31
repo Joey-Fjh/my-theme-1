@@ -1,39 +1,36 @@
-# My Skeleton Theme
+# Ceylune Shopify Theme
 
-This Shopify theme is based on the [Skeleton](http://getskeleton.com/) framework.
+Ceylune is a custom Shopify Online Store 2.0 theme built with Liquid, Tailwind CSS v4, Alpine.js, and a small lifecycle-aware JavaScript runtime. The repository is maintained as a Shopify Theme Store candidate.
 
-Primary project rules and implementation guidance live in [AGENTS.md](AGENTS.md).
+Project rules and implementation constraints live in [AGENTS.md](AGENTS.md).
 
----
+## Setup
 
-## Repository Setup
+Requirements:
 
-From PowerShell, enter the project directory with:
+- Node.js and npm
+- Shopify CLI
+- Access to a Shopify development store
+
+From the repository root:
 
 ```powershell
-cd <project-path>
+npm.cmd install
+npm.cmd run dev
 ```
 
-From Command Prompt, use `/d` when switching drives:
-
-```cmd
-cd /d <project-path>
-```
-
-Replace `<project-path>` with the directory where you cloned this repository.
-
-This repository uses Git symlinks for agent adapter files:
+This repository tracks two symlink adapters:
 
 - `CLAUDE.md -> AGENTS.md`
-- `.claude\skills -> ..\.agents\skills`
+- `.claude/skills -> ../.agents/skills`
 
-On Windows, symlinks require NTFS/ReFS plus either Developer Mode, Administrator privileges, or the `Create symbolic links` user right. For a fresh clone, prefer enabling symlink checkout explicitly:
+On Windows, enable Developer Mode or use an account allowed to create symbolic links before cloning. Prefer:
 
-```bash
+```powershell
 git clone -c core.symlinks=true <repo-url>
 ```
 
-After cloning, verify the links from the repository root:
+Verify the adapters after cloning:
 
 ```powershell
 Get-Item CLAUDE.md
@@ -41,60 +38,44 @@ Get-Item .claude\skills
 git ls-files -s CLAUDE.md .claude/skills
 ```
 
-Expected: `Get-Item` reports `LinkType: SymbolicLink`, and `git ls-files -s` reports mode `120000` for both paths.
+The tracked entries should report Git mode `120000`. Do not copy rules or skills into adapter paths.
 
-If the links checkout as plain text files, enable Developer Mode or open the terminal as Administrator, then recreate them from the repository root. In PowerShell:
+## Commands
 
 ```powershell
-cmd /c mklink CLAUDE.md AGENTS.md
-cmd /c mklink /D .claude\skills ..\.agents\skills
+npm.cmd run dev          # Shopify theme dev and Tailwind watch
+npm.cmd run build:tw     # Rebuild generated Tailwind CSS
+npm.cmd run watch:tw     # Watch Tailwind sources
+npm.cmd run build:svg    # Regenerate assets/icon-*.svg from icons/
+npm.cmd run lint         # Repository lint and format checks
+npm.cmd test             # Shopify Theme Check
 ```
 
-In Command Prompt:
+Generated and vendor assets must not be edited manually. See `AGENTS.md` for the source and validation rules.
 
-```cmd
-mklink CLAUDE.md AGENTS.md
-mklink /D .claude\skills ..\.agents\skills
-```
+## Runtime
 
-Do not copy rule or skill files into adapter paths. `AGENTS.md` and `.agents\skills` remain the source files; `CLAUDE.md` and `.claude\skills` are only compatibility links for tools that expect Claude-style entry points.
-
----
-
-## Third-Party Libraries
-
-| Library       | Version | File(s)                                         | CDN / Source                                                                                                                           |
-| ------------- | ------- | ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| Alpine.js     | v3.15.3 | `vendor-alpine.min.js`                          | [jsDelivr](https://cdn.jsdelivr.net/npm/alpinejs@3.15.3/dist/cdn.min.js)                                                               |
-| Intersect.js  | v3.x.x  | `vendor-alpine-intersect.min.js`                | [jsDelivr](https://cdn.jsdelivr.net/npm/@alpinejs/intersect@3.x.x/dist/cdn.min.js)                                                     |
-| Swiper        | v12.0.3 | `vendor-swiper.min.js`, `vendor-swiper.min.css` | [CSS](https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.css), [JS](https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.js) |
-| GSAP          | v3.14.1 | `vendor-gsap.min.js`                            | [jsDelivr](https://cdn.jsdelivr.net/npm/gsap@3.14.1/dist/gsap.min.js)                                                                  |
-| ScrollTrigger | v3.14.1 | `vendor-gsap-scrolltrigger.min.js`              | [jsDelivr](https://cdn.jsdelivr.net/npm/gsap@3.14.1/dist/ScrollTrigger.min.js)                                                         |
-
-> Always update this table when replacing or upgrading a library.
-
----
-
-## Build Commands
-
-```bash
-npm run dev        # shopify theme dev + tailwind watch
-npm run build:tw   # production CSS build
-npm run watch:tw   # CSS watch mode
-npm run build:svg  # optimize SVG icons (icons/ -> assets/)
-npm run lint       # CSS, i18n, theme architecture, and format checks
-npm test           # shopify theme check
-```
-
----
+- Shopify Liquid sections, snippets, JSON templates, and locale files
+- Tailwind CSS v4 with CSS-based configuration
+- Alpine.js 3.15.3 and Alpine Intersect
+- Swiper 12.1.2
+- Project runtime: `Components.register()`, `ThemeEvents`, `ShopifyHttp`, and `ShopifySectionRefresher`
+- Flat files under `assets/`; no bundler or ESM runtime
 
 ## Documentation
 
-| Document                                                                               | Purpose                                                 |
-| -------------------------------------------------------------------------------------- | ------------------------------------------------------- |
-| [AGENTS.md](AGENTS.md)                                                                 | Canonical repository rules and architecture constraints |
-| [WORKFLOW.md](WORKFLOW.md)                                                             | Shared agent workflow and handoff protocol              |
-| [docs/README.md](docs/README.md)                                                       | Agent-readable docs and references index                |
-| [docs/agent/README.md](docs/agent/README.md)                                           | Current agent context index                             |
-| [.agents/skills/code-review/SKILL.md](.agents/skills/code-review/SKILL.md)             | Shared code review skill                                |
-| [.agents/skills/run-shopify-theme/SKILL.md](.agents/skills/run-shopify-theme/SKILL.md) | Validation command dispatcher                           |
+| Document                                                                 | Purpose                                       |
+| ------------------------------------------------------------------------ | --------------------------------------------- |
+| [AGENTS.md](AGENTS.md)                                                   | Canonical repository rules and task routing   |
+| [docs/README.md](docs/README.md)                                         | Agent-readable documentation index            |
+| [docs/agent/context.md](docs/agent/context.md)                           | Short current-state and cross-session handoff |
+| [JavaScript runtime](docs/references/architecture/javascript-runtime.md) | Runtime APIs, lifecycle, and script order     |
+| [Style-system index](docs/references/style-system/css-and-typography.md) | CSS sources, ownership, and build routing     |
+| [Launch gate](docs/references/code-review/launch-gate.md)                | Review and release checks                     |
+
+## Repository Boundaries
+
+- Do not edit `config/settings_data.json` or `templates/*.json` without explicit authorization.
+- Do not manually edit generated Tailwind output, generated icons, or minified vendor assets.
+- Use `npm.cmd` for project scripts in this Windows workspace.
+- Use the smallest relevant validation command while developing; run `npm.cmd run lint` and `npm.cmd test` after meaningful theme changes.

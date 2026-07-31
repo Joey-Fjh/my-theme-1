@@ -1,6 +1,6 @@
 <div
     data-section-id="{{ section.id }}"
-    class="testimonial-featured-section full-width color-{{ section.settings.color_scheme }} bg-scheme-surface"
+    class="testimonial-featured-section full-width color-{{ section.settings.color_scheme }} surface-section"
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
@@ -16,41 +16,49 @@
     <div class="layout container-page pc:h-full">
         <div class="flex flex-col gap-12 pc:h-screen pc:flex-row pc:gap-0">
             {% comment %} Left - Testimonial {% endcomment %}
-            <div class="swiper w-full flex-1 pc:h-full pc:w-1/2" data-motion-reveal="content">
+            <div class="swiper w-full flex-1 pc:h-full pc:w-1/2">
                 <div class="swiper-wrapper">
                     {% for block in section.blocks %}
+                        {%- liquid
+                            assign testimonial_author_name = block.settings.author_name
+                            if testimonial_author_name == blank
+                                assign testimonial_author_name = 'testimonial.defaults.author_name' | t
+                            endif
+
+                            assign testimonial_author_title = block.settings.author_title
+                            if testimonial_author_title == blank
+                                assign testimonial_author_title = 'testimonial.defaults.author_title' | t
+                            endif
+                        -%}
                         <div class="swiper-slide h-auto pc:h-full" {{ block.shopify_attributes }}>
                             <div
                                 class="
                                     flex flex-1 flex-col items-center justify-center
-                                    gap-10 py-16 text-center pc:h-full pc:gap-24 pc:py-0
+                                    py-16 text-center pc:h-full pc:py-0
                                 "
                             >
-                                {% render 'starts', rating: block.settings.rating, size: 'lg' %}
-
-                                <blockquote
-                                    class="rte rte--compact max-w-[90%] body-lg pc:max-w-[60%]"
+                                <div
+                                    class="flex w-full flex-col items-center gap-10 pc:gap-24"
+                                    {% if forloop.first %}
+                                        data-motion-reveal="content"
+                                    {% endif %}
                                 >
-                                    {{ block.settings.quote }}
-                                </blockquote>
+                                    {% render 'starts', rating: block.settings.rating, size: 'lg' %}
 
-                                <div class="flex flex-col gap-3">
-                                    <p
-                                        class="body-lg font-bold"
+                                    <blockquote
+                                        class="rte rte--compact max-w-[90%] body-3xl pc:max-w-[60%]"
                                     >
-                                        {{
-                                            block.settings.author_name
-                                            | default: 'Alexandria Maria'
-                                        }}
-                                    </p>
-                                    <p
-                                        class="body-lg"
-                                    >
-                                        {{
-                                            block.settings.author_title
-                                            | default: 'Beauty Influencer'
-                                        }}
-                                    </p>
+                                        {{ block.settings.quote }}
+                                    </blockquote>
+
+                                    <div class="flex flex-col gap-3">
+                                        <p class="body-3xl font-bold">
+                                            {{ testimonial_author_name }}
+                                        </p>
+                                        <p>
+                                            {{ testimonial_author_title }}
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -59,25 +67,31 @@
             </div>
 
             {% comment %} Right - Image  {% endcomment %}
-            <div class="relative flex-1 pc:w-1/2">
+            <div class="relative flex-1 pc:w-1/2" data-motion-bound>
                 {% render 'image',
-                    class: 'h-full w-full object-cover',
+                    class: 'h-full w-full',
                     image: section.settings.image,
+                    placeholder_key: 'lifestyle-2',
                     alt: section.settings.image.alt,
-                    width: section.settings.image.width
+                    width: section.settings.image.width,
+                    mode: 'frame',
+                    fit: 'cover'
                 %}
 
                 {% comment %} Floating Card {% endcomment %}
                 {% if section.settings.show_floating_card %}
                     <div
-                        class="absolute bottom-8 w-[90%] justify-self-center bg-theme-bg p-6 italic"
+                        class="absolute inset-x-0 bottom-8 mx-auto w-[90%]"
+                        data-motion-copy-bound
                     >
-                        <p class="mb-3 body-lg">
-                            {{ section.settings.card_label }}
-                        </p>
-                        <p class="body-lg font-bold">
-                            {{ section.settings.card_title }}
-                        </p>
+                        <div class="w-full bg-theme-bg p-6 italic" data-motion-copy>
+                            <p class="mb-3">
+                                {{ section.settings.card_label }}
+                            </p>
+                            <p class="body-3xl font-bold">
+                                {{ section.settings.card_title }}
+                            </p>
+                        </div>
                     </div>
                 {% endif %}
             </div>
@@ -97,6 +111,16 @@
                     const slides = el.querySelectorAll('.swiper-slide');
                     const autoSlide = el.getAttribute('data-auto-slide') === 'true';
                     const slideDelay = parseInt(el.getAttribute('data-slide-delay'), 10) || 5;
+                    const Utils = window.__Theme__?.Utils;
+                    const prefersReducedMotion =
+                        typeof Utils?.prefersReducedMotion === 'function'
+                            ? Utils.prefersReducedMotion()
+                            : window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ===
+                              true;
+                    const autoplayAllowed =
+                        autoSlide &&
+                        document.body?.dataset?.motionEnabled !== 'false' &&
+                        !prefersReducedMotion;
 
                     const swiperContainer = el.querySelector('.swiper');
 
@@ -105,7 +129,7 @@
                     const swiper = new Swiper(swiperContainer, {
                         loop: slides.length > 1,
                         autoHeight: true,
-                        autoplay: autoSlide
+                        autoplay: autoplayAllowed
                             ? {
                                   delay: slideDelay * 1000,
                                   disableOnInteraction: false,
@@ -149,7 +173,7 @@
             "type": "color_scheme",
             "id": "color_scheme",
             "label": "t:sections.testimonial-featured.settings.color_scheme",
-            "default": "scheme-1"
+            "default": "scheme-2"
         },
         {
             "type": "image_picker",
@@ -210,7 +234,7 @@
             "step": 4,
             "unit": "px",
             "label": "t:sections.testimonial-featured.settings.padding_top",
-            "default": 0
+            "default": 32
         },
         {
             "type": "range",
@@ -220,7 +244,7 @@
             "step": 4,
             "unit": "px",
             "label": "t:sections.testimonial-featured.settings.padding_bottom",
-            "default": 0
+            "default": 32
         }
     ],
     "blocks": [
@@ -260,7 +284,12 @@
     ],
     "presets": [
         {
-            "name": "t:sections.testimonial-featured.presets.testimonial_featured"
+            "name": "t:sections.testimonial-featured.presets.testimonial_featured",
+            "blocks": [
+                {
+                    "type": "testimonial"
+                }
+            ]
         }
     ]
 }

@@ -1,50 +1,62 @@
 <div
     data-section-id="{{ section.id }}"
-    class="404-section full-width color-{{ section.settings.color_scheme }} bg-scheme-surface"
+    class="404-section full-width color-{{ section.settings.color_scheme }} surface-section"
     style="
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
     "
-    data-component-kind="section"
-    data-component-type="404"
-    data-component-id="{{ section.id }}"
     x-data="motionRevealSection()"
     data-motion-section
 >
     <div class="layout container-page flex min-h-[60vh] flex-col justify-center pc:min-h-[80vh]">
+        {%- liquid
+            assign not_found_heading_class = section.settings.heading_size | default: 'heading-3xl'
+        -%}
         <div class="flex flex-col gap-40 overflow-hidden">
             {%- assign fallback_heading_line2 = '404.heading_line_2' | t -%}
             {%- assign fallback_description = '404.description_html' | t -%}
 
+            {%- assign heading_line1 = section.settings.heading_line1 -%}
+            {%- if heading_line1 == blank -%}
+                {%- assign heading_line1 = '404.title' | t -%}
+            {%- endif -%}
+
             {%- comment -%} Main Content {%- endcomment -%}
-            <div class="relative p-3" data-motion-reveal="content">
-                <h1
-                    class="heading-3xl pc:heading-4xl"
-                >
-                    {{ section.settings.heading_line1 | default: '404' -}}
+            <div class="relative p-3" data-motion-reveal="content" data-motion-critical>
+                <h1 class="{{ not_found_heading_class }}">
+                    {{ heading_line1 -}}
                     <br>
                     {{ section.settings.heading_line2 | default: fallback_heading_line2 }}
                 </h1>
-                <div
-                    class="rte rte--compact max-w-2/3 pc:max-w-1/3"
-                >
+                <div class="rte rte--compact max-w-2/3 body-xl pc:max-w-1/3">
                     {{ section.settings.description | default: fallback_description }}
                 </div>
 
                 {%- if section.settings.show_button -%}
+                    {%- liquid
+                        assign button_label = section.settings.button_text
+                        if button_label == blank
+                            assign button_label = '404.back_to_shopping' | t
+                        endif
+                    -%}
                     {%- capture button_content -%}
-                        {{ section.settings.button_text | default: 'Back to Home' }}
+                        {{ button_label }}
 
                         {% render 'icons',
                             icon: 'icon-arrow2',
-                            class: 'ml-3'
+                            class: 'ms-3'
                         %}
                     {%- endcapture -%}
 
-                    {%- assign link_href = section.settings.button_link | default: '/' -%}
+                    {%- liquid
+                        assign link_href = section.settings.button_link
+                        if link_href == blank or link_href == '/'
+                            assign link_href = routes.root_url
+                        endif
+                    -%}
                     {% render 'link',
                         href: link_href,
-                        class: 'mt-8 btn-primary',
+                        class: 'mt-8 btn-primary body-xl',
                         variant: 'plain',
                         content: button_content
                     %}
@@ -74,7 +86,59 @@
             "type": "color_scheme",
             "id": "color_scheme",
             "label": "t:sections.404.settings.color_scheme",
-            "default": "scheme-1"
+            "default": "scheme-2"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.slides-show.content.heading"
+        },
+        {
+            "type": "select",
+            "id": "heading_size",
+            "label": "t:sections.slides-show.settings.heading_size",
+            "options": [
+                {
+                    "value": "heading-4xl",
+                    "label": "t:sections.slides-show.options.heading_4xl"
+                },
+                {
+                    "value": "heading-3xl",
+                    "label": "t:sections.slides-show.options.heading_3xl"
+                },
+                {
+                    "value": "heading-2xl",
+                    "label": "t:sections.slides-show.options.heading_2xl"
+                },
+                {
+                    "value": "heading-xl",
+                    "label": "t:sections.slides-show.options.heading_xl"
+                },
+                {
+                    "value": "heading-h1",
+                    "label": "t:sections.slides-show.options.heading_h1"
+                },
+                {
+                    "value": "heading-h2",
+                    "label": "t:sections.slides-show.options.heading_h2"
+                },
+                {
+                    "value": "heading-h3",
+                    "label": "t:sections.slides-show.options.heading_h3"
+                },
+                {
+                    "value": "heading-h4",
+                    "label": "t:sections.slides-show.options.heading_h4"
+                },
+                {
+                    "value": "heading-h5",
+                    "label": "t:sections.slides-show.options.heading_h5"
+                },
+                {
+                    "value": "heading-h6",
+                    "label": "t:sections.slides-show.options.heading_h6"
+                }
+            ],
+            "default": "heading-3xl"
         },
         {
             "type": "inline_richtext",
@@ -130,7 +194,7 @@
             "step": 4,
             "unit": "px",
             "label": "t:sections.404.settings.padding_top",
-            "default": 0
+            "default": 32
         },
         {
             "type": "range",
@@ -140,7 +204,7 @@
             "step": 4,
             "unit": "px",
             "label": "t:sections.404.settings.padding_bottom",
-            "default": 0
+            "default": 32
         }
     ]
 }

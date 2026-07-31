@@ -1,0 +1,144 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://example.invalid/my-theme-1/agent-task.schema.json",
+    "title": "Project agent task capsule",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "task_id",
+        "parent_task_id",
+        "context_version",
+        "role",
+        "objective",
+        "scope",
+        "inputs",
+        "allowed_actions",
+        "prohibited_actions",
+        "acceptance_criteria",
+        "validation_commands",
+        "stop_conditions",
+        "output_contract",
+        "allow_nested_delegation",
+        "budget"
+    ],
+    "properties": {
+        "task_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"
+        },
+        "parent_task_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"
+        },
+        "context_version": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Commit, document revision, or other stable context identifier."
+        },
+        "role": {
+            "enum": ["scout", "implementer", "validator", "verifier", "docs-steward"]
+        },
+        "objective": {
+            "type": "string",
+            "minLength": 1
+        },
+        "scope": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["include", "exclude"],
+            "properties": {
+                "include": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "exclude": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "inputs": {
+            "type": "array",
+            "default": [],
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["reference", "purpose"],
+                "properties": {
+                    "reference": {
+                        "type": "string"
+                    },
+                    "purpose": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "allowed_actions": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+                "type": "string"
+            }
+        },
+        "prohibited_actions": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "acceptance_criteria": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+                "type": "string"
+            }
+        },
+        "validation_commands": {
+            "type": "array",
+            "default": [],
+            "items": {
+                "type": "string"
+            }
+        },
+        "stop_conditions": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+                "type": "string"
+            }
+        },
+        "output_contract": {
+            "enum": [
+                "evidence-report",
+                "implementation-result",
+                "validation-result",
+                "review-result",
+                "documentation-result"
+            ]
+        },
+        "allow_nested_delegation": {
+            "const": false,
+            "description": "Nested delegation is not supported by the initial project orchestration contract."
+        },
+        "budget": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["max_result_items", "max_result_words"],
+            "properties": {
+                "max_result_items": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "max_result_words": {
+                    "type": "integer",
+                    "minimum": 50
+                }
+            }
+        }
+    }
+}
