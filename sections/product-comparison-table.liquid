@@ -17,12 +17,14 @@
     {%- liquid
         assign comparison_heading_class = section.settings.heading_size | default: 'heading-2xl'
         assign comparison_products = section.settings.products
+        assign comparison_columns = comparison_products
         assign comparison_item_count = comparison_products.size
         assign has_comparison_products = false
         if comparison_item_count > 0
             assign has_comparison_products = true
         else
-            assign comparison_item_count = 6
+            assign comparison_columns = '1,2,3,4,5,6' | split: ','
+            assign comparison_item_count = comparison_columns.size
         endif
     -%}
     <div
@@ -86,9 +88,9 @@
                                 </th>
 
                                 {% comment %} Product data columns {% endcomment %}
-                                {% for column_index in (1..comparison_item_count) %}
+                                {% for item in comparison_columns %}
                                     {%- liquid
-                                        assign item = comparison_products[forloop.index0]
+                                        assign column_index = forloop.index
                                         assign is_placeholder = false
                                         unless has_comparison_products
                                             assign is_placeholder = true
