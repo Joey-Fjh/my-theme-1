@@ -80,16 +80,31 @@
 
                 _handleThumbnailKeydown(event) {
                     const tablist = event.currentTarget;
+                    const orientation = tablist.getAttribute('aria-orientation') || 'horizontal';
                     let nextIndex = null;
 
                     switch (event.key) {
                         case 'ArrowRight':
-                        case 'ArrowDown':
-                            nextIndex = (this.activeIndex + 1) % this.imageCount;
+                            if (orientation === 'horizontal') {
+                                nextIndex = (this.activeIndex + 1) % this.imageCount;
+                            }
                             break;
                         case 'ArrowLeft':
+                            if (orientation === 'horizontal') {
+                                nextIndex =
+                                    (this.activeIndex - 1 + this.imageCount) % this.imageCount;
+                            }
+                            break;
+                        case 'ArrowDown':
+                            if (orientation === 'vertical') {
+                                nextIndex = (this.activeIndex + 1) % this.imageCount;
+                            }
+                            break;
                         case 'ArrowUp':
-                            nextIndex = (this.activeIndex - 1 + this.imageCount) % this.imageCount;
+                            if (orientation === 'vertical') {
+                                nextIndex =
+                                    (this.activeIndex - 1 + this.imageCount) % this.imageCount;
+                            }
                             break;
                         case 'Home':
                             nextIndex = 0;
@@ -773,16 +788,24 @@
                     }
 
                     const onPlay = () => {
+                        const shouldMoveFocus = document.activeElement === this.$refs?.playButton;
                         const current = this._getVideo();
                         if (current && !current.paused) {
                             this.isPlaying = true;
                             this.hasPlayed = true;
+                            if (shouldMoveFocus) {
+                                this.$nextTick(() => this._focusPlaybackControl('pauseButton'));
+                            }
                         }
                     };
                     const onPause = () => {
+                        const shouldMoveFocus = document.activeElement === this.$refs?.pauseButton;
                         const current = this._getVideo();
                         if (current && current.paused) {
                             this.isPlaying = false;
+                            if (shouldMoveFocus) {
+                                this.$nextTick(() => this._focusPlaybackControl('playButton'));
+                            }
                         }
                     };
                     const onVolumeChange = () => {
@@ -830,6 +853,13 @@
                     videos.forEach((v) => {
                         if (v !== currentVideo && !v.paused) v.pause();
                     });
+                },
+
+                _focusPlaybackControl(refName) {
+                    const control = this.$refs?.[refName];
+                    if (!(control instanceof HTMLElement)) return;
+
+                    control.focus({ preventScroll: true });
                 },
 
                 play() {

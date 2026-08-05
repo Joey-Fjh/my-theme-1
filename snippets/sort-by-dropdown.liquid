@@ -32,7 +32,7 @@
 <div
     x-data="dropdown"
     @click.outside="close(0)"
-    @keydown.escape.window="close(0)"
+    @keydown.escape.window="if (openEls[0]) { close(0); $nextTick(() => $refs.sortTrigger?.focus()) }"
     {% if wrapper_class != blank %}
         class="{{ wrapper_class }}"
     {% endif %}
@@ -58,9 +58,11 @@
 
         <button
             type="button"
+            id="sort-trigger-{{ id_prefix | default: form_id | default: 'default' }}"
+            x-ref="sortTrigger"
             class="{{ trigger_class }}"
-            aria-haspopup="listbox"
             aria-controls="sort-listbox-{{ id_prefix | default: form_id | default: 'default' }}"
+            :aria-expanded="Boolean(openEls[0])"
             aria-label="{{ 'accessibility.sort_by' | t }}"
             @click.stop.prevent="toggle($el.parentElement)"
         >
@@ -70,8 +72,7 @@
 
         <div
             id="sort-listbox-{{ id_prefix | default: form_id | default: 'default' }}"
-            role="listbox"
-            aria-label="{{ 'accessibility.sort_options' | t }}"
+            aria-labelledby="sort-trigger-{{ id_prefix | default: form_id | default: 'default' }}"
             class="{{ panel_class }}"
             x-show="openEls[0]"
             x-cloak
@@ -79,14 +80,12 @@
             {%- for option in sort_options -%}
                 <div
                     class="px-4 py-2"
-                    role="option"
-                    data-option-value="{{ option.value | escape }}"
-                    :aria-selected="isSelected($el.dataset.optionValue)"
                 >
                     <button
                         type="button"
                         class="{{ option_class }}"
                         data-option-value="{{ option.value | escape }}"
+                        :aria-pressed="isSelected($el.dataset.optionValue)"
                         :class="isSelected($el.dataset.optionValue) ? optionActiveClass : optionInactiveClass"
                         @click="select($el.dataset.optionValue); close(0)"
                     >

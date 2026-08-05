@@ -10,7 +10,13 @@ const { parseLiquidAst, walk } = require('./lib/liquid-ast');
 
 const ROOT = process.cwd();
 
-const LIQUID_GLOBS = ['layout/**/*.liquid', 'sections/**/*.liquid', 'snippets/**/*.liquid'];
+const LIQUID_GLOBS = [
+    'layout/**/*.liquid',
+    'sections/**/*.liquid',
+    'snippets/**/*.liquid',
+    'blocks/**/*.liquid',
+    'templates/**/*.liquid',
+];
 const SECTION_GLOBS = ['sections/**/*.liquid'];
 const SNIPPET_GLOBS = ['snippets/**/*.liquid'];
 const SCHEMA_GLOBS = ['sections/**/*.liquid', 'blocks/**/*.liquid', 'config/settings_schema.json'];
@@ -371,6 +377,30 @@ async function checkLiquidArchitecture() {
                     for (const attr of node.attributes) {
                         if (!Array.isArray(attr.name)) continue;
                         const attrName = attr.name?.map((n) => n.value || '').join('');
+
+                        const isAlpineAttribute =
+                            attrName.startsWith('x-') ||
+                            attrName.startsWith('@') ||
+                            attrName.startsWith(':');
+                        if (isAlpineAttribute) {
+                            const rawAttribute = text.slice(
+                                attr.position.start,
+                                attr.position.end,
+                            );
+                            const embedsTranslation =
+                                /\{\{[\s\S]*?\|\s*t\b[\s\S]*?\}\}/.test(rawAttribute);
+                            const embedsQuotedLiquid =
+                                /(['"])\s*\{\{[\s\S]*?\}\}\s*\1/.test(rawAttribute);
+
+                            if (embedsTranslation || embedsQuotedLiquid) {
+                                report(
+                                    file,
+                                    lineAt(text, attr.position.start),
+                                    'Pass Liquid-driven Alpine string values through escaped data-* attributes instead of embedding them in JavaScript expressions.',
+                                );
+                            }
+                        }
+
                         if (attrName !== 'x-data') continue;
 
                         const rawValue = attr.value
@@ -769,6 +799,16 @@ function getHtmlAttributeValue(attributes, name) {
     return '';
 }
 
+function hasHtmlAttribute(attributes, names) {
+    const expected = new Set(Array.isArray(names) ? names : [names]);
+
+    return (attributes ?? []).some((attr) => {
+        if (!Array.isArray(attr.name)) return false;
+        const attrName = attr.name.map((part) => part.value || '').join('');
+        return expected.has(attrName);
+    });
+}
+
 function isAllowlistedTabNavClass(classValue, allowlist) {
     return allowlist.tabNavRoleTabClassAllowlist.some((allowed) =>
         new RegExp(`\\b${escapeRegExp(allowed)}\\b`).test(classValue),
@@ -786,7 +826,45 @@ async function checkLiquidTabNavProtocolAsync(allowlist) {
             if (!node.attributes) return;
 
             const role = getHtmlAttributeValue(node.attributes, 'role');
+
+            if (role === 'tabpanel') {
+                const missing = [];
+                if (!hasHtmlAttribute(node.attributes, ['id', ':id'])) missing.push('id');
+                if (!hasHtmlAttribute(node.attributes, ['aria-labelledby', ':aria-labelledby'])) {
+                    missing.push('aria-labelledby');
+                }
+
+                if (missing.length > 0) {
+                    report(
+                        file,
+                        lineAt(text, node.position?.start ?? 0),
+                        `role="tabpanel" is missing ${missing.join(', ')}.`,
+                    );
+                }
+                return;
+            }
+
             if (role !== 'tab') return;
+
+            const missing = [];
+            if (!hasHtmlAttribute(node.attributes, ['id', ':id'])) missing.push('id');
+            if (!hasHtmlAttribute(node.attributes, ['aria-controls', ':aria-controls'])) {
+                missing.push('aria-controls');
+            }
+            if (!hasHtmlAttribute(node.attributes, ['aria-selected', ':aria-selected'])) {
+                missing.push('aria-selected');
+            }
+            if (!hasHtmlAttribute(node.attributes, ['tabindex', ':tabindex'])) {
+                missing.push('tabindex');
+            }
+
+            if (missing.length > 0) {
+                report(
+                    file,
+                    lineAt(text, node.position?.start ?? 0),
+                    `role="tab" is missing ${missing.join(', ')}.`,
+                );
+            }
 
             const classValue = getHtmlAttributeValue(node.attributes, 'class');
             if (isAllowlistedTabNavClass(classValue, allowlist)) return;

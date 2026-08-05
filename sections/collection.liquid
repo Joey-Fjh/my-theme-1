@@ -20,20 +20,44 @@
             x-data="motionRevealSection()"
             data-motion-section
         >
-            <div class="flex items-start justify-between">
+            <div class="flex flex-col gap-10 pc:flex-row pc:items-start pc:justify-between">
                 <div data-motion-reveal="content" data-motion-critical>
                     {%- render 'listing-page-hero-copy',
                         setting_header: section.settings.header,
                         object_title: collection.title,
                         header_locale_key: 'collections.products',
                         setting_description: section.settings.description,
+                        object_description: collection.description,
                         description_locale_key: 'collections.description_html',
                         heading_class: collection_heading_class,
                         description_class: collection_subtitle_class
                     -%}
                 </div>
 
-                <div data-motion-reveal="media">
+                <div
+                    class="flex shrink-0 items-center gap-5 pc:gap-8"
+                    data-motion-reveal="media"
+                    data-motion-critical
+                >
+                    {%- if collection.image != blank -%}
+                        {%- assign collection_image_alt = collection.image.alt
+                            | default: collection.title
+                            | escape
+                        -%}
+                        {%- render 'image',
+                            image: collection.image,
+                            alt: collection_image_alt,
+                            width: collection.image.width,
+                            widths: '240,360,480,640',
+                            sizes: '(min-width: 48rem) 12rem, 8rem',
+                            loading: 'eager',
+                            fetchpriority: 'high',
+                            wrapper_class: 'h-32 w-32 shrink-0 overflow-hidden rounded-sm pc:h-48 pc:w-48',
+                            img_class: 'h-full w-full object-cover',
+                            motion_reveal: false
+                        -%}
+                    {%- endif -%}
+
                     {%- render 'rotating-badge',
                         classes: 'relative justify-self-center',
                         badge_class: 'text-theme-text',
@@ -121,7 +145,8 @@
                                 {%- render 'filter-horizontal',
                                     filter_source: collection,
                                     show_more_limit: section.settings.filter_visible_values_limit,
-                                    wrapper_class: 'min-w-0 flex-1'
+                                    wrapper_class: 'min-w-0 flex-1',
+                                    scope_id: section.id
                                 -%}
                             {%- else -%}
                                 <div></div>
@@ -237,10 +262,10 @@
                             role="tab"
                             x-data="{ index: null }"
                             x-init="index = registerTab($el);"
-                            :id="`tab-${index}`"
-                            aria-controls="collection-panel"
+                            :id="`collection-{{ section.id }}-tab-${index}`"
+                            aria-controls="collection-{{ section.id }}-panel"
                             @click.prevent="window.location.assign(buildCollectionTabUrl($el.href))"
-                            :tabindex="isActive(index) ? 0 : -1"
+                            :tabindex="isFocusable(index) ? 0 : -1"
                             :aria-selected="isActive(index)"
                             :class="isActive(index) && 'is-active'"
                             class="collection__tab tab-nav-item tab-nav-item--underline-opacity"
@@ -259,10 +284,10 @@
                                 role="tab"
                                 x-data="{ index: null }"
                                 x-init="index = registerTab($el);"
-                                :id="`tab-${index}`"
-                                aria-controls="collection-panel"
+                                :id="`collection-{{ section.id }}-tab-${index}`"
+                                aria-controls="collection-{{ section.id }}-panel"
                                 @click.prevent="window.location.assign(buildCollectionTabUrl($el.href))"
-                                :tabindex="isActive(index) ? 0 : -1"
+                                :tabindex="isFocusable(index) ? 0 : -1"
                                 :aria-selected="isActive(index)"
                                 :class="isActive(index) && 'is-active'"
                                 class="collection__tab tab-nav-item tab-nav-item--underline-opacity"
@@ -276,7 +301,8 @@
                     {% capture tab_content %}
                         <div 
                             role="tabpanel"
-                            id="collection-panel"
+                            id="collection-{{ section.id }}-panel"
+                            :aria-labelledby="`collection-{{ section.id }}-tab-${activeIndex}`"
                             x-data="{ index: null }"
                             x-init="index = registerPanel($el)"
                             class="relative w-full"

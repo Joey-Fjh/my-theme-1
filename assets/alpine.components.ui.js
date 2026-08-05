@@ -387,6 +387,7 @@
                 tabs: [],
                 panels: [],
                 activeIndex: 0,
+                focusIndex: 0,
                 mobileQuery: '(max-width: 47.99rem)',
                 scrollMode: options.scrollMode === 'always' ? 'always' : 'mobile',
                 scroller: null,
@@ -412,6 +413,7 @@
                         this.scroller = this.getTabScroller();
                         if (this.scroller) {
                             this.on(this.scroller, 'dragstart', this.onDragStart.bind(this));
+                            this.on(this.scroller, 'keydown', this.onTabKeydown.bind(this));
                             this.on(this.scroller, 'pointerdown', this.onPointerDown.bind(this));
                             this.on(this.scroller, 'touchstart', this.onTouchStart.bind(this), {
                                 passive: true,
@@ -452,6 +454,7 @@
                 setActive(index, options = {}) {
                     if (index < 0 || index >= this.tabs.length) return;
                     this.activeIndex = index;
+                    this.focusIndex = index;
 
                     this.$nextTick(() => {
                         this.scrollActiveTabIntoView(index, options);
@@ -462,12 +465,65 @@
                     return this.activeIndex === index;
                 },
 
+                isFocusable(index) {
+                    return this.focusIndex === index;
+                },
+
                 next() {
                     this.setActive((this.activeIndex + 1) % this.tabs.length);
                 },
 
                 prev() {
                     this.setActive((this.activeIndex - 1 + this.tabs.length) % this.tabs.length);
+                },
+
+                focusTab(index) {
+                    const tab = this.tabs[index];
+                    if (!(tab instanceof HTMLElement)) return;
+
+                    this.focusIndex = index;
+                    this.$nextTick(() => {
+                        tab.focus({ preventScroll: true });
+                        this.scrollActiveTabIntoView(index, { centerOnMobile: true });
+                    });
+                },
+
+                onTabKeydown(event) {
+                    const currentTab = event.target?.closest?.('[role="tab"]');
+                    const currentIndex = this.tabs.indexOf(currentTab);
+                    if (currentIndex < 0) return;
+
+                    if (
+                        (event.key === ' ' || event.key === 'Spacebar') &&
+                        currentTab instanceof HTMLAnchorElement
+                    ) {
+                        event.preventDefault();
+                        currentTab.click();
+                        return;
+                    }
+
+                    const orientation =
+                        this.scroller?.getAttribute('aria-orientation') || 'horizontal';
+                    let nextIndex = null;
+
+                    if (event.key === 'Home') {
+                        nextIndex = 0;
+                    } else if (event.key === 'End') {
+                        nextIndex = this.tabs.length - 1;
+                    } else if (orientation === 'vertical' && event.key === 'ArrowDown') {
+                        nextIndex = (currentIndex + 1) % this.tabs.length;
+                    } else if (orientation === 'vertical' && event.key === 'ArrowUp') {
+                        nextIndex = (currentIndex - 1 + this.tabs.length) % this.tabs.length;
+                    } else if (orientation !== 'vertical' && event.key === 'ArrowRight') {
+                        nextIndex = (currentIndex + 1) % this.tabs.length;
+                    } else if (orientation !== 'vertical' && event.key === 'ArrowLeft') {
+                        nextIndex = (currentIndex - 1 + this.tabs.length) % this.tabs.length;
+                    }
+
+                    if (nextIndex === null) return;
+
+                    event.preventDefault();
+                    this.focusTab(nextIndex);
                 },
 
                 isMobileViewport() {

@@ -5,6 +5,7 @@
     @param {string} [mode] - Optional. 'horizontal' | 'vertical' | 'drawer'. Default: 'horizontal'.
     @param {string} [ui_variant] - Optional. 'popover' | 'panel'. Default: popover for horizontal, panel otherwise.
     @param {string} [filter_index] - Optional index used by horizontal Alpine toggle state.
+    @param {string} [scope_id] - Optional unique scope used to generate form control IDs.
     @param {boolean} [is_first] - Optional. Adds left offset class to the first horizontal item.
     @param {string} [divider_class] - Optional divider class token.
     @param {string} [muted_text_class] - Optional helper text classes.
@@ -16,6 +17,7 @@
 
 {%- assign render_mode = mode | default: 'horizontal' -%}
 {%- assign field_index = filter_index | default: 0 -%}
+{%- assign field_scope_id = scope_id | default: render_mode -%}
 {%- assign field_is_first = is_first | default: false -%}
 {%- assign effective_ui_variant = ui_variant -%}
 
@@ -59,8 +61,10 @@
                         {%- if value.count == 0 and value.active == false -%}
                             {%- assign is_disabled = true -%}
                         {%- endif -%}
+                        {%- capture option_id -%}Filter-{{ field_scope_id }}-{{ field_index }}-{{ forloop.index0 }}{%- endcapture -%}
 
                         <label
+                            for="{{ option_id }}"
                             x-show="isVisible({{ forloop.index0 }})"
                             class="flex items-center gap-3 {% if is_disabled %}filters-field__option--disabled{% endif %}"
                             :class="{ 'hidden': !isVisible({{ forloop.index0 }}) }"
@@ -69,6 +73,7 @@
                             {% endif %}
                         >
                             <input
+                                id="{{ option_id }}"
                                 type="checkbox"
                                 class="filter-checkbox"
                                 name="{{ value.param_name }}"
@@ -91,10 +96,12 @@
                         <button
                             type="button"
                             @click.stop="canShowMore({{ sorted_values.size }}) ? showMore({{ sorted_values.size }}) : showLess()"
+                            data-show-more-label="{{ 'collections.filters.show_more' | t | escape }}"
+                            data-show-less-label="{{ 'collections.filters.show_less' | t | escape }}"
                             class="filters-field__show-more filters-field__show-more--panel"
                         >
                             {% render 'show-more-icon' %}
-                            <span x-text="canShowMore({{ sorted_values.size }}) ? '{{ 'collections.filters.show_more' | t }}' : '{{ 'collections.filters.show_less' | t }}'"></span>
+                            <span x-text="canShowMore({{ sorted_values.size }}) ? $el.parentElement.dataset.showMoreLabel : $el.parentElement.dataset.showLessLabel"></span>
                         </button>
                     {%- endif -%}
                 </div>
@@ -110,8 +117,10 @@
                         {%- if value.count == 0 and value.active == false -%}
                             {%- assign is_disabled = true -%}
                         {%- endif -%}
+                        {%- capture option_id -%}Filter-{{ field_scope_id }}-{{ field_index }}-{{ forloop.index0 }}{%- endcapture -%}
 
                         <label
+                            for="{{ option_id }}"
                             x-show="isVisible({{ forloop.index0 }})"
                             class="flex items-center gap-2"
                             :class="{ 'hidden': !isVisible({{ forloop.index0 }}) }"
@@ -120,6 +129,7 @@
                             {% endif %}
                         >
                             <input
+                                id="{{ option_id }}"
                                 type="checkbox"
                                 name="{{ value.param_name }}"
                                 value="{{ value.value }}"
@@ -142,10 +152,12 @@
                         <button
                             type="button"
                             @click.stop="canShowMore({{ sorted_values.size }}) ? showMore({{ sorted_values.size }}) : showLess()"
+                            data-show-more-label="{{ 'collections.filters.show_more' | t | escape }}"
+                            data-show-less-label="{{ 'collections.filters.show_less' | t | escape }}"
                             class="filters-field__show-more filters-field__show-more--horizontal"
                         >
                             {% render 'show-more-icon' %}
-                            <span x-text="canShowMore({{ sorted_values.size }}) ? '{{ 'collections.filters.show_more' | t }}' : '{{ 'collections.filters.show_less' | t }}'"></span>
+                            <span x-text="canShowMore({{ sorted_values.size }}) ? $el.parentElement.dataset.showMoreLabel : $el.parentElement.dataset.showLessLabel"></span>
                         </button>
                     {%- endif -%}
                 </div>
@@ -157,6 +169,10 @@
             {%- if effective_ui_variant == 'panel' -%}
                 {%- assign current_min = filter.min_value.value | default: 0 | plus: 0 -%}
                 {%- assign current_max = filter.max_value.value | default: range_max | plus: 0 -%}
+                {%- capture range_min_id -%}Filter-{{ field_scope_id }}-{{ field_index }}-Range-GTE{%- endcapture -%}
+                {%- capture range_max_id -%}Filter-{{ field_scope_id }}-{{ field_index }}-Range-LTE{%- endcapture -%}
+                {%- capture number_min_id -%}Filter-{{ field_scope_id }}-{{ field_index }}-GTE{%- endcapture -%}
+                {%- capture number_max_id -%}Filter-{{ field_scope_id }}-{{ field_index }}-LTE{%- endcapture -%}
 
                 <div
                     class="flex flex-col gap-3 pt-1"
@@ -174,7 +190,11 @@
                             class="absolute h-px rounded-full bg-theme-text"
                             :style="`left:${minPct()}%;right:${maxPct()}%`"
                         ></div>
+                        <label class="sr-only" for="{{ range_min_id }}">
+                            {{ 'collections.filters.min' | t }}
+                        </label>
                         <input
+                            id="{{ range_min_id }}"
                             type="range"
                             min="0"
                             :max="ceil"
@@ -185,7 +205,11 @@
                             :class="(min === max && max === ceil) ? 'z-30' : 'z-10'"
                             class="price-range-thumb pointer-events-none absolute inset-x-0 w-full appearance-none bg-transparent"
                         >
+                        <label class="sr-only" for="{{ range_max_id }}">
+                            {{ 'collections.filters.max' | t }}
+                        </label>
                         <input
+                            id="{{ range_max_id }}"
                             type="range"
                             min="0"
                             :max="ceil"
@@ -199,12 +223,12 @@
                     </div>
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="mb-1 block {{ muted_text_class }}" for="Filter-{{ filter.label | handleize }}-GTE">{{ 'collections.filters.from' | t }}</label>
+                            <label class="mb-1 block {{ muted_text_class }}" for="{{ number_min_id }}">{{ 'collections.filters.from' | t }}</label>
                             <div class="filters-field__range-input-wrapper {{ divider_class }}" :class="{ 'is-loading': isLoading }">
                                 <span class="me-1">$</span>
                                 <input
                                     x-ref="inputMin"
-                                    id="Filter-{{ filter.label | handleize }}-GTE"
+                                    id="{{ number_min_id }}"
                                     type="number"
                                     name="{{ filter.min_value.param_name }}"
                                     :value="min"
@@ -219,12 +243,12 @@
                             </div>
                         </div>
                         <div>
-                            <label class="mb-1 block {{ muted_text_class }}" for="Filter-{{ filter.label | handleize }}-LTE">{{ 'collections.filters.to' | t }}</label>
+                            <label class="mb-1 block {{ muted_text_class }}" for="{{ number_max_id }}">{{ 'collections.filters.to' | t }}</label>
                             <div class="filters-field__range-input-wrapper {{ divider_class }}" :class="{ 'is-loading': isLoading }">
                                 <span class="me-1">$</span>
                                 <input
                                     x-ref="inputMax"
-                                    id="Filter-{{ filter.label | handleize }}-LTE"
+                                    id="{{ number_max_id }}"
                                     type="number"
                                     name="{{ filter.max_value.param_name }}"
                                     :value="max"
@@ -241,10 +265,13 @@
                     </div>
                 </div>
             {%- else -%}
+                {%- capture fallback_min_id -%}Filter-{{ field_scope_id }}-{{ field_index }}-Fallback-GTE{%- endcapture -%}
+                {%- capture fallback_max_id -%}Filter-{{ field_scope_id }}-{{ field_index }}-Fallback-LTE{%- endcapture -%}
                 <div class="grid grid-cols-2 gap-3">
-                    <label class="flex flex-col gap-1">
+                    <label class="flex flex-col gap-1" for="{{ fallback_min_id }}">
                         <span>{{ 'collections.filters.min' | t }}</span>
                         <input
+                            id="{{ fallback_min_id }}"
                             type="number"
                             name="{{ filter.min_value.param_name }}"
                             value="{{ filter.min_value.value | default: '' }}"
@@ -256,9 +283,10 @@
                             class="field"
                         >
                     </label>
-                    <label class="flex flex-col gap-1">
+                    <label class="flex flex-col gap-1" for="{{ fallback_max_id }}">
                         <span>{{ 'collections.filters.max' | t }}</span>
                         <input
+                            id="{{ fallback_max_id }}"
                             type="number"
                             name="{{ filter.max_value.param_name }}"
                             value="{{ filter.max_value.value | default: '' }}"
@@ -289,6 +317,7 @@
         class="group {% if render_mode == 'horizontal' %}relative{% endif %}"
     >
         <summary
+            data-field-index="{{ field_index }}"
             class="
                 filters-field__summary
                 {% if render_mode == 'horizontal' %}
@@ -301,7 +330,7 @@
                 @click.prevent="
                     const details = $el.parentElement;
                     const shouldOpen = !details.open;
-                    activeFilter = shouldOpen ? '{{ field_index }}' : null;
+                    activeFilter = shouldOpen ? $el.dataset.fieldIndex : null;
                     $root.querySelectorAll('[data-filter-dropdown]').forEach((dropdown) => {
                         dropdown.open = dropdown === details && shouldOpen;
                     });

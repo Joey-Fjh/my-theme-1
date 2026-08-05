@@ -30,7 +30,8 @@
                     {%- assign image_alt_fallback = 'sections.main-page-contact.defaults.image_alt'
                         | t
                     -%}
-                    {%- assign image_alt = section.settings.image.image_alt
+                    {%- assign image_alt = section.settings.image_alt
+                        | default: section.settings.image.alt
                         | default: image_alt_fallback
                         | escape
                     -%}
@@ -109,7 +110,7 @@
                             | t
                         -%}
                         {%- if form.posted_successfully? -%}
-                            <div class="rounded p-4 text-center">
+                            <div class="rounded p-4 text-center" role="status">
                                 {{
                                     section.settings.success_message
                                     | default: success_message_fallback
@@ -118,7 +119,11 @@
                         {%- endif -%}
 
                         {%- if form.errors -%}
-                            <div class="rounded p-4 text-error-text">
+                            <div
+                                id="ContactFormErrors-{{ section.id }}"
+                                class="rounded p-4 text-error-text"
+                                role="alert"
+                            >
                                 {{ form.errors | default_errors }}
                             </div>
                         {%- endif -%}
@@ -127,13 +132,13 @@
                         <div class="grid grid-cols-1 gap-4 pc:grid-cols-2 pc:gap-5">
                             <div class="flex flex-col gap-1.5">
                                 <label
-                                    for="ContactFirstName"
+                                    for="ContactFirstName-{{ section.id }}"
                                 >
                                     {{- 'contact.first_name' | t -}}
                                 </label>
                                 <input
                                     type="text"
-                                    id="ContactFirstName"
+                                    id="ContactFirstName-{{ section.id }}"
                                     name="contact[first_name]"
                                     placeholder="{{ 'contact.first_name_placeholder' | t }}"
                                     autocomplete="given-name"
@@ -142,13 +147,13 @@
                             </div>
                             <div class="flex flex-col gap-1.5">
                                 <label
-                                    for="ContactLastName"
+                                    for="ContactLastName-{{ section.id }}"
                                 >
                                     {{- 'contact.last_name' | t -}}
                                 </label>
                                 <input
                                     type="text"
-                                    id="ContactLastName"
+                                    id="ContactLastName-{{ section.id }}"
                                     name="contact[last_name]"
                                     placeholder="{{ 'contact.last_name_placeholder' | t }}"
                                     autocomplete="family-name"
@@ -161,29 +166,33 @@
                         <div class="grid grid-cols-1 gap-4 pc:grid-cols-2 pc:gap-5">
                             <div class="flex flex-col gap-1.5">
                                 <label
-                                    for="ContactEmail"
+                                    for="ContactEmail-{{ section.id }}"
                                 >
                                     {{- 'contact.email' | t -}}
                                 </label>
                                 <input
                                     type="email"
-                                    id="ContactEmail"
+                                    id="ContactEmail-{{ section.id }}"
                                     name="contact[email]"
                                     placeholder="{{ 'contact.email_placeholder' | t }}"
                                     autocomplete="email"
                                     required
                                     class="field"
+                                    {% if form.errors contains 'email' %}
+                                        aria-invalid="true"
+                                        aria-describedby="ContactFormErrors-{{ section.id }}"
+                                    {% endif %}
                                 >
                             </div>
                             <div class="hidden flex-col gap-1.5 pc:flex">
                                 <label
-                                    for="ContactPhone"
+                                    for="ContactPhone-{{ section.id }}"
                                 >
                                     {{- 'contact.phone' | t -}}
                                 </label>
                                 <input
                                     type="tel"
-                                    id="ContactPhone"
+                                    id="ContactPhone-{{ section.id }}"
                                     name="contact[phone]"
                                     placeholder="{{ 'contact.phone_placeholder' | t }}"
                                     autocomplete="tel"
@@ -194,15 +203,19 @@
 
                         {%- comment -%} Message {%- endcomment -%}
                         <div class="flex flex-col gap-1.5">
-                            <label for="ContactMessage">
+                            <label for="ContactMessage-{{ section.id }}">
                                 {{- 'contact.message' | t -}}
                             </label>
                             <textarea
-                                id="ContactMessage"
+                                id="ContactMessage-{{ section.id }}"
                                 name="contact[body]"
                                 placeholder="{{ 'contact.message_placeholder' | t }}"
                                 rows="4"
                                 class="min-h-24 field resize-none pc:min-h-28"
+                                {% if form.errors contains 'body' %}
+                                    aria-invalid="true"
+                                    aria-describedby="ContactFormErrors-{{ section.id }}"
+                                {% endif %}
                             ></textarea>
                         </div>
 

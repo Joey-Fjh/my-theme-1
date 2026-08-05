@@ -35,6 +35,7 @@
     assign qty_can_purchase = true
     assign qty_cart_quantity = 0
     assign qty_variant_id = ''
+    assign qty_input_id = input_id
 
     if cart_quantity != blank
         assign qty_cart_quantity = cart_quantity | plus: 0
@@ -114,6 +115,15 @@
             echo ',"absolute_max":null}'
         endcapture
     endif
+
+    if qty_interactive and qty_input_id == blank and product_form_id != blank
+        assign qty_input_id = product_form_id | append: '-quantity'
+    endif
+
+    assign qty_input_label = label
+    if qty_input_label == blank
+        assign qty_input_label = 'accessibility.quantity' | t
+    endif
 -%}
 
 <div
@@ -153,10 +163,13 @@
         {%- render 'icons', icon: 'icon-minus' -%}
     </button>
 
+    {%- if qty_interactive and qty_input_id != blank -%}
+        <label class="sr-only" for="{{ qty_input_id }}">{{ qty_input_label }}</label>
+    {%- endif -%}
     <input
         type="number"
-        {% if input_id %}
-            id="{{ input_id }}"
+        {% if qty_input_id != blank %}
+            id="{{ qty_input_id }}"
         {% endif %}
         name="{{ name | default: 'quantity' }}"
         class="quantity-selector__input {{ input_class }}"
@@ -180,7 +193,7 @@
             @change="onInput()"
             :readonly="!canPurchase"
             :aria-invalid="(!canPurchase).toString()"
-            aria-label="{{ label | default: 'accessibility.quantity' | t }}"
+            aria-label="{{ qty_input_label | escape }}"
         {% else %}
             disabled
             tabindex="-1"

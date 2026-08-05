@@ -1,0 +1,25 @@
+{% doc %}
+    Renders a merchant-selectable decorative icon for theme content.
+
+    @param {string} icon - Icon asset name selected from a section schema. Use 'none' to render nothing.
+    @param {number} [size_px] - Icon size in pixels.
+    @param {string} [color] - Icon color.
+    @param {string} [class] - Optional extra classes for the wrapper.
+{% enddoc %}
+
+{%- liquid
+    assign icon_name = icon | default: 'none'
+    assign icon_size_px = size_px | default: 20 | plus: 0
+    assign icon_color = color | default: 'currentColor'
+    assign extra_class = class | default: ''
+-%}
+
+{%- unless icon_name == 'none' or icon_name == blank -%}
+    <span
+        class="content-icon inline-flex shrink-0 items-center justify-center text-current {{ extra_class }}"
+        style="--content-icon-size: {{ icon_size_px }}px; color: {{ icon_color }};"
+        aria-hidden="true"
+    >
+        {%- render 'icons', icon: icon_name -%}
+    </span>
+{%- endunless -%}

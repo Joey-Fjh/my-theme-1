@@ -254,8 +254,10 @@
                                 <a
                                     href="{{ item.url_to_remove }}"
                                     class="inline-flex items-center justify-center text-current opacity-50 transition-opacity hover:opacity-100"
-                                    aria-label="{{ 'accessibility.remove_item' | t: item: item.product.title }}"
-                                    @click.prevent="$store.cart.change('{{ item.key }}', 0, ['{{ section.id }}'])"
+                                    aria-label="{{ 'accessibility.remove_item' | t: item: item.product.title | escape }}"
+                                    data-item-key="{{ item.key | escape }}"
+                                    data-section-id="{{ section.id }}"
+                                    @click.prevent="$store.cart.change($el.dataset.itemKey, 0, [$el.dataset.sectionId])"
                                 >
                                     {% render 'icons', icon: 'icon-trash' %}
                                 </a>
@@ -265,12 +267,20 @@
                                     aria-hidden="true"
                                 ></span>
 
-                                <div @quantity:change="$store.cart.change('{{ item.key }}', $event.detail.value, ['{{ section.id }}'])">
+                                <div
+                                    data-item-key="{{ item.key | escape }}"
+                                    data-section-id="{{ section.id }}"
+                                    @quantity:change="$store.cart.change($el.dataset.itemKey, $event.detail.value, [$el.dataset.sectionId])"
+                                >
+                                    {%- capture cart_quantity_input_id -%}
+                                        CartQuantity-{{ section.id }}-{{ forloop.index0 }}
+                                    {%- endcapture -%}
                                     {%- render 'quantity-selector',
                                         variant: item.variant,
                                         surface: 'cart',
                                         value: item.quantity,
-                                        label: item.product.title
+                                        label: item.product.title,
+                                        input_id: cart_quantity_input_id
                                     -%}
                                 </div>
                             </div>
@@ -296,7 +306,11 @@
 
                     {%- comment -%} Accordion: Order Special Instruction + Estimate Shipping {%- endcomment -%}
                     {%- capture note_html -%}
+                        <label class="sr-only" for="Cart-note-{{ section.id }}">
+                            {{ 'cart.order_special_instruction' | t }}
+                        </label>
                         <textarea
+                            id="Cart-note-{{ section.id }}"
                             name="note"
                             class="min-h-20 field resize-y"
                             placeholder="{{ 'cart.note_placeholder' | t }}"
