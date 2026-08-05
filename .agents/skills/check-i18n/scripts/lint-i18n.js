@@ -12,7 +12,13 @@ const ROOT = process.cwd();
 const STOREFRONT_LOCALE = 'locales/en.default.json';
 const SCHEMA_LOCALE = 'locales/en.default.schema.json';
 
-const LIQUID_GLOBS = ['layout/**/*.liquid', 'sections/**/*.liquid', 'snippets/**/*.liquid'];
+const LIQUID_GLOBS = [
+    'layout/**/*.liquid',
+    'sections/**/*.liquid',
+    'snippets/**/*.liquid',
+    'blocks/**/*.liquid',
+    'templates/**/*.liquid',
+];
 const SCHEMA_GLOBS = ['sections/**/*.liquid', 'blocks/**/*.liquid', 'config/settings_schema.json'];
 const LOCALE_GLOBS = ['locales/**/*.json'];
 
@@ -21,6 +27,7 @@ const SCHEMA_KEY_RE = /"t:([a-z0-9_.-]+)"/g;
 
 const ALLOWED_TEXT_RE = [
     /^\s*$/,
+    /^(?:\s|\||&(?:nbsp|ndash|mdash|hellip|middot);)+$/i,
     /^[A-Z0-9_-]+$/,
     /^https?:\/\//,
     /^mailto:/,
@@ -370,8 +377,11 @@ async function checkHardcodedLiquidText() {
         // fall inside attribute values (including through Liquid branches).
         const attrRanges = [];
         const attrChecks = [];
+        const parentByNode = new Map();
 
-        walk(ast, (node) => {
+        walk(ast, (node, parent) => {
+            if (parent) parentByNode.set(node, parent);
+
             const isAttr =
                 node.type === 'AttrSingleQuoted' ||
                 node.type === 'AttrDoubleQuoted' ||
@@ -412,6 +422,34 @@ async function checkHardcodedLiquidText() {
             return false;
         }
 
+        function isVisibleHtmlText(node) {
+            const visibleFlowTags = new Set(['if', 'unless', 'case', 'for', 'tablerow']);
+            let ancestor = parentByNode.get(node);
+
+            while (ancestor) {
+                const isAttribute =
+                    ancestor.type === 'AttrSingleQuoted' ||
+                    ancestor.type === 'AttrDoubleQuoted' ||
+                    ancestor.type === 'AttrUnquoted' ||
+                    ancestor.type === 'AttrEmpty';
+                if (isAttribute) return false;
+                if (ancestor.type === 'HtmlRawNode' || ancestor.type === 'LiquidRawTag') {
+                    return false;
+                }
+                if (
+                    ancestor.type === 'LiquidTag' &&
+                    !visibleFlowTags.has(String(ancestor.name || ''))
+                ) {
+                    return false;
+                }
+                if (ancestor.type === 'HtmlElement') return true;
+
+                ancestor = parentByNode.get(ancestor);
+            }
+
+            return false;
+        }
+
         // Second walk: check visible TextNodes
         walk(ast, (node, parent) => {
             if (node.type !== 'TextNode') return;
@@ -420,13 +458,7 @@ async function checkHardcodedLiquidText() {
             // Skip text inside attribute values (including Liquid branches)
             if (isInsideAttribute(node.position.start)) return;
 
-            // Only HtmlElement and HtmlSelfClosingElement children are
-            // rendered as visible storefront text.  All other parents
-            // (RawMarkup, LiquidBranch, LiquidTag, LiquidDoc, etc.)
-            // represent non-visible contexts.
-            if (parent.type !== 'HtmlElement' && parent.type !== 'HtmlSelfClosingElement') {
-                return;
-            }
+            if (!isVisibleHtmlText(node)) return;
 
             // Skip tag names: HtmlElement.name[0] / HtmlSelfClosingElement.name[0]
             if (Array.isArray(parent.name) && parent.name[0] === node) {

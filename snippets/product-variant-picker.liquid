@@ -56,7 +56,8 @@
                     >
                         {{ option.name }}:
                         <span
-                            x-text="selectedOptions['{{ option_name_escaped }}']"
+                            data-option-name="{{ option_name_escaped }}"
+                            x-text="selectedOptions[$el.dataset.optionName]"
                             class="ms-1 font-medium text-theme-text"
                         >
                             {{- option.selected_value -}}
@@ -69,7 +70,8 @@
                             class="field-select"
                             name="options[{{ option_name_escaped }}]"
                             form="{{ product_form_id }}"
-                            x-model="selectedOptions['{{ option_name_escaped }}']"
+                            data-option-name="{{ option_name_escaped }}"
+                            x-model="selectedOptions[$el.dataset.optionName]"
                             @change="onVariantChange()"
                         >
                             {%- for value in option.values -%}
@@ -103,12 +105,13 @@
                 <fieldset
                     class="flex flex-col"
                     role="radiogroup"
-                    aria-label="{{ option.name }}"
+                    aria-label="{{ option.name | escape }}"
                 >
                     <legend>
                         {{ option.name }}:
                         <span
-                            x-text="selectedOptions['{{ option_name_escaped }}']"
+                            data-option-name="{{ option_name_escaped }}"
+                            x-text="selectedOptions[$el.dataset.optionName]"
                             class="ms-1 font-medium text-theme-text"
                         >
                             {{- option.selected_value -}}
@@ -147,7 +150,8 @@
                                         name="{{ option_name_escaped }}"
                                         value="{{ escaped_value }}"
                                         form="{{ product_form_id }}"
-                                        x-model="selectedOptions['{{ option_name_escaped }}']"
+                                        data-option-name="{{ option_name_escaped }}"
+                                        x-model="selectedOptions[$el.dataset.optionName]"
                                         @change="onVariantChange()"
                                         data-option-value-id="{{ value.id }}"
                                         {% if value == option.selected_value %}
@@ -156,7 +160,9 @@
                                     >
                                     <span
                                         class="variant-picker__swatch variant-picker__swatch--{{ swatch_shape }}"
-                                        :class="selectedOptions['{{ option_name_escaped }}'] === '{{ escaped_value }}' && 'is-selected'"
+                                        data-option-name="{{ option_name_escaped }}"
+                                        data-option-value="{{ escaped_value }}"
+                                        :class="selectedOptions[$el.dataset.optionName] === $el.dataset.optionValue && 'is-selected'"
                                         {%- if swatch_bg %}
                                             style="background: {{ swatch_bg }}; background-size: cover;"
                                         {%- elsif is_color %}
@@ -188,7 +194,8 @@
                                         name="{{ option_name_escaped }}"
                                         value="{{ escaped_value }}"
                                         form="{{ product_form_id }}"
-                                        x-model="selectedOptions['{{ option_name_escaped }}']"
+                                        data-option-name="{{ option_name_escaped }}"
+                                        x-model="selectedOptions[$el.dataset.optionName]"
                                         @change="onVariantChange()"
                                         data-option-value-id="{{ value.id }}"
                                         {% if value == option.selected_value %}
@@ -197,10 +204,12 @@
                                     >
                                     <span
                                         class="variant-picker__pill"
+                                        data-option-name="{{ option_name_escaped }}"
+                                        data-option-value="{{ escaped_value }}"
                                         :class="
                                             [
-                                              selectedOptions['{{ option_name_escaped }}'] === '{{ escaped_value }}' && 'is-selected',
-                                              !isValueAvailable('{{ option_name_escaped }}', '{{ escaped_value }}') && 'is-unavailable'
+                                              selectedOptions[$el.dataset.optionName] === $el.dataset.optionValue && 'is-selected',
+                                              !isValueAvailable($el.dataset.optionName, $el.dataset.optionValue) && 'is-unavailable'
                                             ]
                                         "
                                     >

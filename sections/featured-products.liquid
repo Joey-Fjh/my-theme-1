@@ -30,10 +30,10 @@
                     role="tab"
                     x-data="{ index: null }"
                     x-init="index = registerTab($el)"
-                    :id="`tab-${index}`"
-                    :aria-controls="`panel-${index}`"
+                    :id="`featured-products-{{ section.id }}-tab-${index}`"
+                    :aria-controls="`featured-products-{{ section.id }}-panel-${index}`"
                     @click="setActive(index)"
-                    :tabindex="isActive(index) ? 0 : -1"
+                    :tabindex="isFocusable(index) ? 0 : -1"
                     :aria-selected="isActive(index)"
                     :class="isActive(index) && 'is-active'"
                     class="featured-products__tab tab-nav-item tab-nav-item--opacity border-0 bg-transparent px-0 text-start text-theme-text"
@@ -63,8 +63,8 @@
                     role="tabpanel"
                     x-data="{ index: null }"
                     x-init="index = registerPanel($el)"
-                    :id="`panel-${index}`"
-                    :aria-labelledby="`tab-${index}`"
+                    :id="`featured-products-{{ section.id }}-panel-${index}`"
+                    :aria-labelledby="`featured-products-{{ section.id }}-tab-${index}`"
                     x-show="isActive(index)"
                     x-cloak
                     class="flex flex-col items-center gap-8"
@@ -144,7 +144,11 @@
                         <div class="mt-4 flex w-full items-center justify-between pc:mt-6">
                             <div class="flex items-center gap-4">
                                 {%- if section.settings.show_navigation -%}
-                                    <button class="swiper-button-prev featured-products__nav-button" aria-label="{{ 'accessibility.previous_slide' | t }}">
+                                    <button
+                                        type="button"
+                                        class="swiper-button-prev featured-products__nav-button"
+                                        aria-label="{{ 'accessibility.previous_slide' | t }}"
+                                    >
                                         {%- render 'icons', icon: 'icon-arrow2', class: 'rotate-180' -%}
                                     </button>
                                 {%- endif -%}
@@ -154,7 +158,11 @@
                                 {%- endif -%}
 
                                 {%- if section.settings.show_navigation -%}
-                                    <button class="swiper-button-next featured-products__nav-button" aria-label="{{ 'accessibility.next_slide' | t }}">
+                                    <button
+                                        type="button"
+                                        class="swiper-button-next featured-products__nav-button"
+                                        aria-label="{{ 'accessibility.next_slide' | t }}"
+                                    >
                                         {%- render 'icons', icon: 'icon-arrow2' -%}
                                     </button>
                                 {%- endif -%}
@@ -346,7 +354,7 @@
     "tag": "section",
     "class": "section",
     "disabled_on": {
-        "groups": ["header", "footer"]
+        "groups": ["header", "footer", "custom.overlay"]
     },
     "settings": [
         {

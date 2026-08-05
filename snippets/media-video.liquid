@@ -34,13 +34,16 @@
 {% enddoc %}
 
 {%- liquid
-    assign autoplay = autoplay | default: false
-    assign loop_enabled = loop | default: false
-    assign muted = muted | default: true
-    assign playsinline = playsinline | default: true
-    assign controls = controls | default: true
-    assign show_play_button = show_play_button | default: false
-    assign show_mute_button = show_mute_button | default: false
+    assign autoplay = autoplay | default: false, allow_false: true
+    assign loop_enabled = loop | default: false, allow_false: true
+    assign muted = muted | default: true, allow_false: true
+    assign playsinline = playsinline | default: true, allow_false: true
+    assign controls = controls | default: true, allow_false: true
+    assign show_play_button = show_play_button | default: false, allow_false: true
+    assign show_mute_button = show_mute_button | default: false, allow_false: true
+    if controls == false or controls == 'false'
+        assign show_play_button = true
+    endif
     assign class = class | default: ''
     assign aspect_ratio = aspect_ratio
     assign sizes = sizes | default: '100vw'
@@ -139,6 +142,7 @@
                 <button
                     type="button"
                     class="media-video__play-btn absolute inset-0 z-20 flex items-center justify-center"
+                    x-ref="playButton"
                     x-show="!isPlaying"
                     @click="play()"
                     aria-label="{{ 'accessibility.play_video' | t }}"
@@ -152,11 +156,12 @@
             {%- if show_play_button -%}
                 <button
                     type="button"
-                    class="media-video__pause-btn absolute inset-0 z-20"
+                    class="media-video__pause-btn absolute inset-0 z-20 focus-ring"
+                    x-ref="pauseButton"
                     x-show="isPlaying"
+                    x-cloak
                     @click="pause()"
                     aria-label="{{ 'accessibility.pause_video' | t }}"
-                    tabindex="-1"
                 ></button>
             {%- endif -%}
 

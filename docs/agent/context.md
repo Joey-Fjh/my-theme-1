@@ -5,10 +5,24 @@ This file is the short cross-session handoff for the current branch. `AGENTS.md`
 ## Current State
 
 - Branch: `feat/ai-test`.
-- Theme-code baseline before this documentation cleanup: `597e819 fix(theme): finalize section presets and editor previews`.
-- The branch was clean and synchronized with `origin/feat/ai-test` after that commit.
+- Theme-code baseline before the current uncommitted launch-audit package: `597e819 fix(theme): finalize section presets and editor previews`.
+- The working tree intentionally contains the user's authorized launch-audit changes. No commit or push has been made.
 - No known theme-code defect remains from the former `temp commit` preset work.
 - The user's Theme Editor QA passed for the corrected preset previews.
+
+## Current Launch-audit Package
+
+- Section placement now limits header, footer, and overlay groups to their intended section types.
+- Preset locale regressions, form-label wiring, filter IDs, quantity controls, and contrast-safe configured color schemes were repaired in the current working tree.
+- The latest pass added skip links, scoped tab IDs, complete manual-activation keyboard navigation for shared tabs, keyboard-accessible hosted-video controls with focus handoff, non-duplicated countdown announcements, contact-form status semantics, and filtered Organization `sameAs` data.
+- Search, header, collection, featured-product, and product-media tabs now share a complete tab/panel association contract. Anchor tabs support Space activation, thumbnail tabs expose orientation and localized media names, and inactive gallery media is removed from the accessibility tree.
+- Liquid-driven strings used by Alpine now travel through escaped `data-*` attributes, including variant names/values, dialog IDs, cart keys, filter labels, and translated button states. Sort and localization popovers return focus to their trigger on Escape.
+- Page-title suffixes are localized. The custom i18n and architecture linters now include `blocks/` and `templates/`, enforce the tab association contract, and reject translated or quoted Liquid strings embedded directly in Alpine expressions.
+- Collapsed accordions and inactive thumbnail-gallery overlays no longer expose focusable descendants. Product-card hover actions reveal on keyboard focus, and all Liquid buttons now declare an explicit type.
+- Collection pages retain the All/collection tab navigation while prioritizing the active `collection.title` and `collection.description` and rendering `collection.image` when present.
+- Product titles now link to `product.url`. Required resource titles no longer use truncation on product cards, the collection-list page, or the article hero; compact truncation remains owned by Predictive Search and other non-required contexts.
+- No global duplicate-H1 cleanup was pursued. The shared listing hero currently prioritizes native Shopify object titles for both collection and blog pages; schema/demo default copy and JavaScript loading architecture remain unchanged.
+- Fresh validation passed: Tailwind build, aggregate lint, Shopify Theme Check (137 files, 0 offenses), `git diff --check`, and targeted source assertions. The latest accessibility/i18n pass did not require another Tailwind rebuild.
 
 ## Latest Preset And i18n Decision
 
@@ -29,12 +43,13 @@ Project-wide audit after `597e819`:
 
 ## Remaining Work
 
-There is no currently identified project-code package to implement. The remaining launch work is external, release-oriented, or evidence-based:
+The current code package still needs storefront and Theme Editor visual QA before it is committed. Remaining launch work is external, release-oriented, or evidence-based:
 
 - Confirm public documentation and support operations outside this repository.
 - Complete asset and dependency provenance records.
 - Produce and smoke-test the final submission ZIP.
 - Capture the required Lighthouse performance and accessibility evidence.
+- Verify the collection hero with and without `collection.image`, long product/collection/article titles, shared-tab arrow/Space navigation, sort/localization Escape focus return, variants containing apostrophes, product-card and accordion focus behavior, thumbnail-gallery focus isolation and naming, video keyboard pause/play, skip-link focus, countdown screen-reader output, and contact-form success/error states in a real preview.
 - Finalize demo-store presentation, listing copy, screenshots, release notes, and reviewer instructions.
 - Submit to Shopify and address concrete reviewer feedback.
 
@@ -44,8 +59,7 @@ There is no currently identified project-code package to implement. The remainin
 
 Create a new code package only when a reproducible storefront or Theme Editor defect, a failed repository check, measured performance evidence, or Shopify reviewer feedback identifies a concrete issue. Do not restart the completed historical blocker packages from the old audit.
 
-Protected merchant-owned files remain unchanged unless the user explicitly authorizes them:
+Protected merchant-owned files remain unchanged unless the user explicitly authorizes them. `config/settings_data.json` was explicitly authorized and is part of the current package; `templates/*.json` remain unchanged:
 
-- `config/settings_data.json`
 - `templates/*.json`
 - merchant content, navigation, uploaded media, and color-scheme values

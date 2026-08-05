@@ -64,10 +64,11 @@
                     </h2>
 
                     {%- if show_clear and clear_url != blank -%}
+                        {%- assign effective_clear_label = clear_label | default: item_title -%}
                         <a
                             href="{{ clear_url }}"
                             class="inline-flex items-center justify-center opacity-80 transition-opacity hover:opacity-100"
-                            aria-label="{{ 'accessibility.clear_item' | t: item: clear_label | default: item_title }}"
+                            aria-label="{{ 'accessibility.clear_item' | t: item: effective_clear_label | escape }}"
                             @click.stop
                         >
                             {% render 'icons', icon: 'icon-close' %}
@@ -93,6 +94,8 @@
                 data-index="0"
                 class="accordion__panel"
                 :class="isActive($el.dataset.index) && 'is-active'"
+                :inert="!isActive($el.dataset.index)"
+                :aria-hidden="(!isActive($el.dataset.index)).toString()"
             >
                 <div class="accordion__panel-inner">
                     <div class="{{ content_class | default: 'pb-5 pe-8' }}">
@@ -144,6 +147,8 @@
                     data-index="{{ forloop.index0 }}"
                     class="accordion__panel"
                     :class="isActive($el.dataset.index) && 'is-active'"
+                    :inert="!isActive($el.dataset.index)"
+                    :aria-hidden="(!isActive($el.dataset.index)).toString()"
                 >
                     <div class="accordion__panel-inner">
                         <div class="{{ content_class | default: 'pb-5 pe-8' }}">
@@ -193,6 +198,8 @@
                     data-index="{{ forloop.index0 }}"
                     class="accordion__panel"
                     :class="isActive($el.dataset.index) && 'is-active'"
+                    :inert="!isActive($el.dataset.index)"
+                    :aria-hidden="(!isActive($el.dataset.index)).toString()"
                 >
                     <div class="accordion__panel-inner">
                         <div class="{{ content_class | default: 'pb-5 pe-8' }}">

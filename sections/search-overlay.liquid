@@ -32,6 +32,12 @@
                 <form @submit.prevent="performSearch()" role="search" class="w-full">
                     <div class="flex items-center gap-2 border-b border-theme-border pb-2">
                         {% render 'icons', icon: 'icon-search', class: 'shrink-0 opacity-80' %}
+                        <label
+                            class="sr-only"
+                            for="SearchOverlayInput-{{ section.id }}"
+                        >
+                            {{ 'search.search' | t }}
+                        </label>
                         <input
                             id="SearchOverlayInput-{{ section.id }}"
                             type="search"
@@ -84,6 +90,7 @@
                             x-init="index = registerTab($el)"
                             @click="setActive(index); activeTab = 'products'"
                             :aria-selected="isActive(index)"
+                            :tabindex="isFocusable(index) ? 0 : -1"
                             class="search-overlay__tab tab-nav-item tab-nav-item--search tab-nav-item--search-border-token"
                             :class="{ 'is-active': isActive(index) }"
                         >
@@ -99,6 +106,7 @@
                             x-init="index = registerTab($el)"
                             @click="setActive(index); activeTab = 'articles'"
                             :aria-selected="isActive(index)"
+                            :tabindex="isFocusable(index) ? 0 : -1"
                             class="search-overlay__tab tab-nav-item tab-nav-item--search tab-nav-item--search-border-token"
                             :class="{ 'is-active': isActive(index) }"
                         >
@@ -114,6 +122,7 @@
                             x-init="index = registerTab($el)"
                             @click="setActive(index); activeTab = 'pages'"
                             :aria-selected="isActive(index)"
+                            :tabindex="isFocusable(index) ? 0 : -1"
                             class="search-overlay__tab tab-nav-item tab-nav-item--search tab-nav-item--search-border-token"
                             :class="{ 'is-active': isActive(index) }"
                         >
@@ -239,6 +248,12 @@
                                     icon: 'icon-search',
                                     class: 'shrink-0 opacity-80'
                                 %}
+                                <label
+                                    class="sr-only"
+                                    for="SearchOverlayPreviewInput-{{ section.id }}"
+                                >
+                                    {{ 'search.search' | t }}
+                                </label>
                                 <input
                                     id="SearchOverlayPreviewInput-{{ section.id }}"
                                     type="search"
