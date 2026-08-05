@@ -32,10 +32,11 @@ Runtime constraints:
 
 - `AGENTS.md` is the source entry file. `CLAUDE.md` is a symlink adapter to `AGENTS.md`.
 - `.agents/skills/` is the single source of truth for project skills. `.claude/skills/` is a symlink adapter to `../.agents/skills`.
+- Cursor discovers `.agents/skills/` directly; do not add a duplicate `.cursor/skills/` tree or symlink.
 - `.agents/roles/` and `.agents/contracts/` are the vendor-neutral sources for multi-agent roles and structured handoffs.
-- Tool-specific agent definitions such as `.codex/agents/*.toml` are thin adapters to the canonical `.agents/` role files.
+- Tool-specific agent definitions such as `.codex/agents/*.toml` and `.cursor/agents/*.md` are thin adapters to the canonical `.agents/` role files.
 - Tool-specific entry points may use relative symlinks to source files or directories. Do not copy rule or skill files into adapter paths.
-- Tool-specific configuration, including MCP, permissions, local settings, and hooks, belongs in tool-owned directories such as `.claude/` or `.codex/`; it does not change the project skill source.
+- Tool-specific configuration, including MCP, permissions, local settings, and hooks, belongs in tool-owned directories such as `.claude/`, `.codex/`, or `.cursor/`; it does not change the project skill source.
 - `docs/` is the agent-readable knowledge layer. Read referenced docs only when the task needs them.
 - `docs/references/agent-workflow/` defines collaboration standards, task routing, third-party skill governance, and cross-session context rules. Read the matching reference for non-trivial agent work.
 
@@ -159,7 +160,7 @@ Use the smallest command that proves the change. In this Windows PowerShell work
 
 ```bash
 npm.cmd run lint          # i18n, theme architecture, agent orchestration, and format checks
-npm.cmd run lint:agents   # multi-agent skills, roles, contracts, and Codex adapters
+npm.cmd run lint:agents   # multi-agent skills, roles, contracts, hooks, and vendor adapters
 npm.cmd run test:agent-hooks # runtime result-schema hook acceptance and rejection cases
 npm.cmd run lint:theme    # Liquid, JS architecture, Alpine, HTTP/cart, heading rules
 npm.cmd run lint:i18n     # locale keys, translated strings, schema copy, ARIA copy

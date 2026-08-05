@@ -65,6 +65,9 @@ Hooks and MCP are adapters and enforcement layers:
 
 - Use hooks for deterministic lifecycle checks, safety gates, context injection, or post-edit validation.
 - The Codex `SubagentStop` adapter in `.codex/hooks.json` invokes the shared result validator after delegated roles finish. Its project configuration is shared, but each user must trust new or changed project hooks locally.
+- Cursor discovers `.agents/skills/` directly, so do not create a duplicate `.cursor/skills/` tree or symlink. Cursor-specific role metadata belongs in thin `.cursor/agents/*.md` adapters that point back to the canonical `.agents/roles/` files.
+- The Cursor `subagentStop` adapter in `.cursor/hooks.json` resolves project roles from the custom-agent type or parent task capsule, validates the returned summary, permits one `followup_message` format correction, and fails closed after a second invalid result. If the active Cursor runtime does not expose an unmodified JSON summary, the primary agent must validate the result explicitly or fall back to sequential execution.
+- When the active Cursor task API cannot address custom agents by name, include `[project-role:<role>]` in the delegated task description so the hook can enforce the same contract for a built-in subagent type.
 - Other vendor adapters should invoke `.agents/skills/orchestrate-agents/scripts/agent-result-validator.cjs` at their equivalent subagent-completion boundary instead of copying schema logic.
 - Use MCP for external tool/data access.
 - Do not store project rules or long references in hooks or MCP configuration.
@@ -73,7 +76,7 @@ Hooks and MCP are adapters and enforcement layers:
 ## Routing Update Requirements
 
 - New project skill: update this routing table and, if it becomes common, `.agents/skills/agent-router/SKILL.md`.
-- New or changed multi-agent role/contract: update `agent-workflow/multi-agent-architecture.md`, the matching `.agents/roles/` or `.agents/contracts/` source, and affected vendor adapters.
+- New or changed multi-agent role/contract: update `agent-workflow/multi-agent-architecture.md`, the matching `.agents/roles/` or `.agents/contracts/` source, and affected `.codex/agents/` and `.cursor/agents/` adapters.
 - Third-party skill: review external source, record adoption in `docs/references/agent-workflow/external-skills.md`, then install adapted skill in `.agents/skills/`.
 - Hook or MCP: document trigger, purpose, enforcement strength, and boundaries here before changing tool-specific config.
 - New long reference: add it under `docs/references/` and route it from `AGENTS.md` only when agents need to discover it.

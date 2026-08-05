@@ -10,6 +10,12 @@ This file is the short cross-session handoff for the current branch. `AGENTS.md`
 - No known theme-code defect remains from the former `temp commit` preset work.
 - The user's Theme Editor QA passed for the corrected preset previews.
 
+## Cursor Agent Adapter Status
+
+- Cursor now has five thin role adapters under `.cursor/agents/`; they reuse the canonical `.agents/roles/` and `.agents/contracts/` sources instead of copying skills or role rules.
+- The Cursor `subagentStop` hook adapter reuses the shared result validator. Static agent lint, hook unit tests, aggregate lint, and formatting checks pass.
+- A live `/scout` run confirmed custom-agent discovery and the Composer model mapping. Its hook log exposed a Windows temp-file payload missing the outer opening brace; the Cursor adapter now normalizes that observed fragment before validation. A fresh live run still needs to confirm a successful hook entry and the correction loop. Until then, the primary agent must validate delegated envelopes explicitly or run the workflow sequentially.
+
 ## Current Launch-audit Package
 
 - Section placement now limits header, footer, and overlay groups to their intended section types.
