@@ -9,6 +9,27 @@
 
     if (!AlpineComponentsFactory) return;
 
+    // Ignore synthetic clicks that land on +/X immediately after a scroll gesture.
+    const TOUCH_TOGGLE_SCROLL_GUARD_MS = 400;
+    let productCardTouchScrollAt = 0;
+    let productCardTouchScrollGuardBound = false;
+
+    function ensureProductCardTouchScrollGuard() {
+        if (productCardTouchScrollGuardBound || typeof window === 'undefined') return;
+        productCardTouchScrollGuardBound = true;
+        window.addEventListener(
+            'scroll',
+            () => {
+                productCardTouchScrollAt = Date.now();
+            },
+            { passive: true, capture: true },
+        );
+    }
+
+    function shouldIgnoreTouchToggleAfterScroll() {
+        return Date.now() - productCardTouchScrollAt < TOUCH_TOGGLE_SCROLL_GUARD_MS;
+    }
+
     ComponentGroups.productCards = {
         cardGallery({ imageCount = 1, enableImageNavigation = true, enableImagePagination } = {}) {
             if (enableImagePagination !== undefined && enableImageNavigation === true) {
@@ -213,6 +234,7 @@
                     this._toastAdded = dataset.toastAdded || '';
 
                     if (this.isTouchDevice) {
+                        ensureProductCardTouchScrollGuard();
                         this.on(document, 'pointerdown', (event) =>
                             this._handleTouchOutside(event),
                         );
@@ -255,12 +277,22 @@
                     if (!this.isTouchDevice || !this.canShowHoverActions) return;
                     event.preventDefault();
                     event.stopPropagation();
+                    if (shouldIgnoreTouchToggleAfterScroll()) return;
                     this.actionsPinned = !this.actionsPinned;
+                    if (!this.actionsPinned) this._blurHoverActionsFocus();
                 },
 
                 closeTouchActions() {
                     if (!this.isTouchDevice) return;
                     this.actionsPinned = false;
+                    this._blurHoverActionsFocus();
+                },
+
+                _blurHoverActionsFocus() {
+                    const active = document.activeElement;
+                    const panel = this.$el?.querySelector?.('.product-card__hover-actions');
+                    if (!panel || !active || !panel.contains(active)) return;
+                    if (typeof active.blur === 'function') active.blur();
                 },
 
                 _handleTouchOutside(event) {
@@ -273,6 +305,8 @@
                 },
 
                 openQuickView() {
+                    if (this.isTouchDevice && shouldIgnoreTouchToggleAfterScroll()) return;
+                    this.closeTouchActions();
                     if (!this.quickViewDialogId) return;
                     this.$store?.dialog?.open?.(this.quickViewDialogId);
                 },
@@ -285,6 +319,8 @@
                     ) {
                         return;
                     }
+
+                    this.closeTouchActions();
 
                     const cart = this.$store?.cart;
                     if (!cart?.add) return;

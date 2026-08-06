@@ -198,46 +198,38 @@
                     </h2>
 
                 {%- when 'form' -%}
-                    <form
-                        class="newsletter-form"
-                        action="{{ routes.root_url }}contact#newsletter_form_{{ section.id }}"
-                        method="post"
-                        accept-charset="UTF-8"
-                        @submit.prevent="submit($event)"
-                        {{ block.shopify_attributes }}
-                    >
-                        <input type="hidden" name="form_type" value="customer">
-                        <input type="hidden" name="utf8" value="✓">
-                        <input type="hidden" name="contact[tags]" value="newsletter">
+                    <div class="newsletter-form" {{ block.shopify_attributes }}>
+                        {%- form 'customer',
+                            return_to: 'back',
+                            data-shopify-captcha: 'true'
+                        -%}
+                            <input type="hidden" name="contact[tags]" value="newsletter">
 
-                        <label for="newsletter-email-{{ section.id }}" class="sr-only">
-                            {{ 'newsletter.email_address' | t }}
-                        </label>
+                            <label for="newsletter-email-{{ section.id }}" class="sr-only">
+                                {{ 'newsletter.email_address' | t }}
+                            </label>
 
-                        <div class="inline-submit-field">
-                            <input
-                                id="newsletter-email-{{ section.id }}"
-                                type="email"
-                                name="contact[email]"
-                                class="inline-submit-field__input"
-                                placeholder="{{ section.settings.placeholder | escape }}"
-                                required
-                            >
+                            <div class="inline-submit-field">
+                                <input
+                                    id="newsletter-email-{{ section.id }}"
+                                    type="email"
+                                    name="contact[email]"
+                                    class="inline-submit-field__input"
+                                    placeholder="{{ section.settings.placeholder | escape }}"
+                                    autocomplete="email"
+                                    required
+                                >
 
-                            <button
-                                type="submit"
-                                class="inline-submit-field__button inline-submit-field__button--icon"
-                                :disabled="isLoading"
-                                aria-label="{{ 'accessibility.submit_newsletter_form' | t }}"
-                            >
-                                <span x-show="!isLoading">
+                                <button
+                                    type="submit"
+                                    class="inline-submit-field__button inline-submit-field__button--icon"
+                                    aria-label="{{ 'accessibility.submit_newsletter_form' | t }}"
+                                >
                                     {%- render 'icons', icon: 'icon-arrow2' -%}
-                                </span>
-
-                                {% render 'loading', size: 'small', spinner_color: 'border-current' %}
-                            </button>
-                        </div>
-                    </form>
+                                </button>
+                            </div>
+                        {%- endform -%}
+                    </div>
             {%- endcase -%}
         {%- endfor -%}
         </div>

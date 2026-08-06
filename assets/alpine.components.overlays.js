@@ -9,64 +9,39 @@
 
     if (!AlpineComponentsFactory) return;
 
+    function toastNewsletterPostedSuccess(successMessage) {
+        if (!successMessage) return false;
+        try {
+            const url = new URL(window.location.href);
+            if (url.searchParams.get('customer_posted') !== 'true') return false;
+            window.Alpine?.store('toast')?.show?.(successMessage, 'success');
+            url.searchParams.delete('customer_posted');
+            // Drop Shopify form anchors so return does not re-scroll the homepage.
+            url.hash = '';
+            const next = `${url.pathname}${url.search}`;
+            window.history.replaceState({}, '', next);
+            return true;
+        } catch (_) {
+            return false;
+        }
+    }
+
     ComponentGroups.overlays = {
-        newsletterBanner({ successMessage = '', errorMessage = '' } = {}) {
+        newsletterBanner({ successMessage = '' } = {}) {
             return {
-                isLoading: false,
                 successMessage,
-                errorMessage,
 
                 _hydrateFromDataset() {
                     const ds = this.$el?.dataset;
                     if (!ds) return;
                     if (ds.newsletterSuccessMessage) {
-                        this.successMessage = JSON.parse(ds.newsletterSuccessMessage);
-                    }
-                    if (ds.newsletterErrorMessage) {
-                        this.errorMessage = JSON.parse(ds.newsletterErrorMessage);
+                        this.successMessage = ds.newsletterSuccessMessage;
                     }
                 },
 
                 init() {
                     this._hydrateFromDataset();
-                },
-
-                async submit(event) {
-                    if (this.isLoading) return;
-
-                    const form = event?.target;
-                    if (!(form instanceof HTMLFormElement)) return;
-
-                    const emailInput = form.querySelector('input[type="email"]');
-                    if (!emailInput || !emailInput.value) {
-                        if (this.errorMessage)
-                            window.Alpine?.store('toast')?.show?.(this.errorMessage, 'error');
-                        return;
-                    }
-
-                    this.isLoading = true;
-
-                    try {
-                        const formData = new FormData(form);
-                        const Http = window.ShopifyHttp;
-                        if (!Http?.request) throw new Error('Http client unavailable');
-
-                        await Http.request(form.action, {
-                            method: 'POST',
-                            body: formData,
-                            headers: { Accept: 'text/html' },
-                            credentials: 'same-origin',
-                        });
-
-                        if (this.successMessage)
-                            window.Alpine?.store('toast')?.show?.(this.successMessage, 'success');
-                        form.reset();
-                    } catch (_) {
-                        if (this.errorMessage)
-                            window.Alpine?.store('toast')?.show?.(this.errorMessage, 'error');
-                    } finally {
-                        this.isLoading = false;
-                    }
+                    toastNewsletterPostedSuccess(this.successMessage);
                 },
             };
         },
@@ -95,7 +70,6 @@
                 expired,
                 successMessage,
                 errorMessage,
-                isLoading: false,
                 timeId: null,
                 storageKey: 'newsletter-overlay-expired',
 
@@ -120,6 +94,9 @@
 
                 init() {
                     this._hydrateFromDataset();
+                    if (toastNewsletterPostedSuccess(this.successMessage)) {
+                        this._setExpired();
+                    }
                     if (this.displayMode === 'test') {
                         this._open();
                         return;
@@ -162,45 +139,6 @@
                     this.$store?.dialog?.close?.();
                     if (this.displayMode === 'enable') {
                         this._setExpired();
-                    }
-                },
-
-                async submit(event) {
-                    if (this.isLoading) return;
-
-                    const form = event?.target;
-                    if (!(form instanceof HTMLFormElement)) return;
-
-                    const emailInput = form.querySelector('input[type="email"]');
-                    if (!emailInput || !emailInput.value) {
-                        if (this.errorMessage)
-                            window.Alpine?.store('toast')?.show?.(this.errorMessage, 'error');
-                        return;
-                    }
-
-                    this.isLoading = true;
-
-                    try {
-                        const formData = new FormData(form);
-                        const Http = window.ShopifyHttp;
-                        if (!Http?.request) throw new Error('Http client unavailable');
-
-                        const response = await Http.request(form.action, {
-                            method: 'POST',
-                            body: formData,
-                            headers: { Accept: 'text/html' },
-                            credentials: 'same-origin',
-                        });
-
-                        if (this.successMessage)
-                            window.Alpine?.store('toast')?.show?.(this.successMessage, 'success');
-                        form.reset();
-                        this.hide();
-                    } catch (_) {
-                        if (this.errorMessage)
-                            window.Alpine?.store('toast')?.show?.(this.errorMessage, 'error');
-                    } finally {
-                        this.isLoading = false;
                     }
                 },
 

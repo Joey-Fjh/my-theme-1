@@ -44,33 +44,6 @@
                         loading: 'eager',
                         motion_reveal: false
                     %}
-
-                    {%- comment -%} hCaptcha Notice {%- endcomment -%}
-                    <p class="absolute right-4 bottom-4 left-4">
-                        {{ 'contact.hcaptcha_notice' | t -}}
-                        <br>
-
-                        {%- assign link_text = 'contact.privacy_policy' | t -%}
-                        {% render 'link',
-                            text: link_text,
-                            href: 'https://www.hcaptcha.com/privacy',
-                            variant: 'plain',
-                            class: 'underline',
-                            target: '_blank',
-                            attributes: 'rel="noopener"'
-                        %}
-                        {{ 'general.and' | t }}
-                        {%- assign link_text = 'contact.terms_of_service' | t -%}
-                        {% render 'link',
-                            text: link_text,
-                            href: 'https://www.hcaptcha.com/terms',
-                            variant: 'plain',
-                            class: 'underline',
-                            target: '_blank',
-                            attributes: 'rel="noopener"'
-                        %}
-                        {{ 'contact.apply' | t }}
-                    </p>
                 </div>
                 {%- comment -%} Right: Form {%- endcomment -%}
                 {%- assign form_bg = section.settings.form_background_color | default: '#ffffff' -%}
@@ -105,16 +78,33 @@
                         </div>
                     </div>
 
-                    {%- form 'contact', class: 'mt-6 flex flex-col gap-5 pc:mt-8 pc:gap-6' -%}
+                    {%- form 'contact',
+                        return_to: 'back',
+                        data-shopify-captcha: 'true',
+                        class: 'mt-6 flex flex-col gap-5 pc:mt-8 pc:gap-6'
+                    -%}
                         {%- assign success_message_fallback = 'sections.main-page-contact.defaults.success_message'
                             | t
                         -%}
+                        {%- assign success_message = section.settings.success_message
+                            | default: success_message_fallback
+                        -%}
                         {%- if form.posted_successfully? -%}
-                            <div class="rounded p-4 text-center" role="status">
-                                {{
-                                    section.settings.success_message
-                                    | default: success_message_fallback
-                                }}
+                            <div
+                                class="rounded p-4 text-center"
+                                role="status"
+                                data-success-message="{{ success_message | escape }}"
+                                x-data
+                                x-init="
+                                    const message = $el.dataset.successMessage;
+                                    if (!message || !$store.toast) return;
+                                    $nextTick(() => {
+                                        $store.toast.show(message, 'success');
+                                        $el.hidden = true;
+                                    });
+                                "
+                            >
+                                {{ success_message }}
                             </div>
                         {%- endif -%}
 
@@ -169,6 +159,8 @@
                                     for="ContactEmail-{{ section.id }}"
                                 >
                                     {{- 'contact.email' | t -}}
+                                    <span aria-hidden="true">*</span>
+                                    <span class="sr-only">{{ 'accessibility.required' | t }}</span>
                                 </label>
                                 <input
                                     type="email"
@@ -177,6 +169,7 @@
                                     placeholder="{{ 'contact.email_placeholder' | t }}"
                                     autocomplete="email"
                                     required
+                                    aria-required="true"
                                     class="field"
                                     {% if form.errors contains 'email' %}
                                         aria-invalid="true"

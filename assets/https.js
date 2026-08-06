@@ -8,6 +8,7 @@
             this.status = options.status ?? null;
             this.url = options.url ?? null;
             this.data = options.data ?? null;
+            this.response = options.response ?? null;
             this.isTimeout = !!options.isTimeout;
             this.isAbort = !!options.isAbort;
             this.isNetworkError = !!options.isNetworkError;
@@ -171,7 +172,8 @@
                 throw new HttpError(`HTTP Error ${response.status}`, {
                     status: response.status,
                     data: errorData,
-                    url,
+                    url: response.url || url,
+                    response,
                 });
             }
 

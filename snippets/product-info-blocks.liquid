@@ -457,7 +457,20 @@
                         assign tab_content = tab_page.content
                     endif
 
-                    assign icon_size = block.settings.collapsible_tab_icon_size | default: 20 | plus: 0
+                    assign tab_size = block.settings.collapsible_tab_size | default: 'md'
+                    assign icon_size = 20
+                    assign tab_heading_class = 'body-md'
+                    case tab_size
+                        when 'sm'
+                            assign icon_size = 16
+                            assign tab_heading_class = 'body-sm'
+                        when 'lg'
+                            assign icon_size = 24
+                            assign tab_heading_class = 'body-lg'
+                        when 'xl'
+                            assign icon_size = 28
+                            assign tab_heading_class = 'body-xl'
+                    endcase
                     assign image_width = block.settings.image_width | default: 1000 | plus: 0
                     assign has_tab_body = false
                     if tab_content != blank or block.settings.image != blank
@@ -487,8 +500,8 @@
                                 color: block.settings.icon_color,
                                 class: 'text-theme-text/80'
                             -%}
-                            <span class="min-w-0">
-                                {{ tab_heading }}
+                            <span class="min-w-0 {{ tab_heading_class }}">
+                                {{- tab_heading -}}
                             </span>
                         </span>
 

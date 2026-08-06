@@ -20,50 +20,70 @@
             x-data="motionRevealSection()"
             data-motion-section
         >
-            <div class="flex flex-col gap-10 pc:flex-row pc:items-start pc:justify-between">
-                <div data-motion-reveal="content" data-motion-critical>
-                    {%- render 'listing-page-hero-copy',
-                        setting_header: section.settings.header,
-                        object_title: collection.title,
-                        header_locale_key: 'collections.products',
-                        setting_description: section.settings.description,
-                        object_description: collection.description,
-                        description_locale_key: 'collections.description_html',
-                        heading_class: collection_heading_class,
-                        description_class: collection_subtitle_class
-                    -%}
-                </div>
-
+            <div class="relative flex flex-col gap-8 pc:flex-row pc:items-start pc:justify-between pc:gap-10">
                 <div
-                    class="flex shrink-0 items-center gap-5 pc:gap-8"
-                    data-motion-reveal="media"
+                    class="flex w-full shrink-0 flex-col gap-6 pc:w-fit"
+                    data-motion-reveal="content"
                     data-motion-critical
                 >
+                    <div class="pe-24 pc:pe-0">
+                        {%- render 'listing-page-hero-copy',
+                            setting_header: section.settings.header,
+                            object_title: collection.title,
+                            header_locale_key: 'collections.products',
+                            setting_description: section.settings.description,
+                            object_description: collection.description,
+                            description_locale_key: 'collections.description_html',
+                            heading_class: collection_heading_class,
+                            description_class: collection_subtitle_class
+                        -%}
+                    </div>
+
                     {%- if collection.image != blank -%}
                         {%- assign collection_image_alt = collection.image.alt
                             | default: collection.title
                             | escape
                         -%}
-                        {%- render 'image',
-                            image: collection.image,
-                            alt: collection_image_alt,
-                            width: collection.image.width,
-                            widths: '240,360,480,640',
-                            sizes: '(min-width: 48rem) 12rem, 8rem',
-                            loading: 'eager',
-                            fetchpriority: 'high',
-                            wrapper_class: 'h-32 w-32 shrink-0 overflow-hidden rounded-sm pc:h-48 pc:w-48',
-                            img_class: 'h-full w-full object-cover',
-                            motion_reveal: false
+                        {%- assign collection_hero_ratio = collection.image.width
+                            | append: ' / '
+                            | append: collection.image.height
                         -%}
+                        <div
+                            class="w-full overflow-hidden rounded-sm"
+                            style="aspect-ratio: {{ collection_hero_ratio }};"
+                            data-motion-reveal="media"
+                        >
+                            {%- render 'image',
+                                image: collection.image,
+                                alt: collection_image_alt,
+                                width: 800,
+                                widths: '320,480,640,800',
+                                sizes: '(min-width: 48rem) 32rem, 100vw',
+                                loading: 'eager',
+                                fetchpriority: 'high',
+                                mode: 'frame',
+                                aspect_ratio: collection_hero_ratio,
+                                fit: 'cover',
+                                wrapper_class: 'h-full w-full',
+                                img_class: 'h-full w-full',
+                                motion_reveal: false
+                            -%}
+                        </div>
                     {%- endif -%}
+                </div>
 
+                <div
+                    class="absolute end-0 top-0 z-10 shrink-0 pc:static"
+                    data-motion-reveal="media"
+                    data-motion-critical
+                >
                     {%- render 'rotating-badge',
                         classes: 'relative justify-self-center',
                         badge_class: 'text-theme-text',
                         center_class: 'text-theme-text',
                         unique_id: section.id,
                         size: 100,
+                        size_mobile: 72,
                         badge_text: section.settings.rotate_badge_text,
                         center_text: section.settings.rotate_badge_percent
                     -%}
@@ -343,7 +363,7 @@
                                                     hover_mode: 'variants',
                                                     scope_id: section.id,
                                                     color_scheme: section.settings.color_scheme
-                                                %}
+                                                -%}
                                             </div>
                                         {%- endif -%}
                                     {%- else -%}

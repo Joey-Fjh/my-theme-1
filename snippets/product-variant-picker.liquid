@@ -75,13 +75,19 @@
                             @change="onVariantChange()"
                         >
                             {%- for value in option.values -%}
+                                {%- assign escaped_value = value | escape -%}
                                 <option
                                     class="bg-theme-bg text-theme-text"
-                                    value="{{ value | escape }}"
+                                    value="{{ escaped_value }}"
+                                    data-option-name="{{ option_name_escaped }}"
+                                    data-option-value="{{ escaped_value }}"
+                                    data-sold-out-label="{{ 'products.product.sold_out' | t | escape }}"
+                                    data-option-value-id="{{ value.id }}"
                                     {% unless value.available %}
                                         disabled
                                     {% endunless %}
-                                    data-option-value-id="{{ value.id }}"
+                                    :disabled="!isValueAvailable($el.dataset.optionName, $el.dataset.optionValue)"
+                                    x-text="isValueAvailable($el.dataset.optionName, $el.dataset.optionValue) ? $el.dataset.optionValue : ($el.dataset.optionValue + ' — ' + $el.dataset.soldOutLabel)"
                                 >
                                     {%- if value.available -%}
                                         {{- value -}}
@@ -159,28 +165,33 @@
                                         {% endif %}
                                     >
                                     <span
-                                        class="variant-picker__swatch variant-picker__swatch--{{ swatch_shape }}"
+                                        class="variant-picker__swatch variant-picker__swatch--{{ swatch_shape }}{% unless value.available %} is-unavailable{% endunless %}"
                                         data-option-name="{{ option_name_escaped }}"
                                         data-option-value="{{ escaped_value }}"
-                                        :class="selectedOptions[$el.dataset.optionName] === $el.dataset.optionValue && 'is-selected'"
+                                        :class="
+                                            {
+                                                'is-selected': selectedOptions[$el.dataset.optionName] === $el.dataset.optionValue,
+                                                'is-unavailable': !isValueAvailable($el.dataset.optionName, $el.dataset.optionValue)
+                                            }
+                                        "
                                         {%- if swatch_bg %}
                                             style="background: {{ swatch_bg }}; background-size: cover;"
                                         {%- elsif is_color %}
                                             style="background-color: {{ value | handle }};"
                                         {%- endif %}
                                     ></span>
-                                    {%- unless value.available -%}
-                                        <span class="pointer-events-none absolute inset-0 flex items-center justify-center opacity-60">
-                                            <span
-                                                class="block h-10 w-1 -translate-y-1 rotate-45 bg-theme-text/70"
-                                            ></span>
-                                        </span>
-                                    {%- endunless -%}
                                     <span class="sr-only">
                                         {{ escaped_value }}
-                                        {%- unless value.available %}
+                                        <span
+                                            data-option-name="{{ option_name_escaped }}"
+                                            data-option-value="{{ escaped_value }}"
+                                            {% if value.available %}
+                                                hidden
+                                            {% endif %}
+                                            :hidden="isValueAvailable($el.dataset.optionName, $el.dataset.optionValue)"
+                                        >
                                             - {{ 'products.product.sold_out' | t }}
-                                        {%- endunless -%}
+                                        </span>
                                     </span>
                                 </label>
 
@@ -203,23 +214,29 @@
                                         {% endif %}
                                     >
                                     <span
-                                        class="variant-picker__pill"
+                                        class="variant-picker__pill{% unless value.available %} is-unavailable{% endunless %}"
                                         data-option-name="{{ option_name_escaped }}"
                                         data-option-value="{{ escaped_value }}"
                                         :class="
-                                            [
-                                              selectedOptions[$el.dataset.optionName] === $el.dataset.optionValue && 'is-selected',
-                                              !isValueAvailable($el.dataset.optionName, $el.dataset.optionValue) && 'is-unavailable'
-                                            ]
+                                            {
+                                                'is-selected': selectedOptions[$el.dataset.optionName] === $el.dataset.optionValue,
+                                                'is-unavailable': !isValueAvailable($el.dataset.optionName, $el.dataset.optionValue)
+                                            }
                                         "
                                     >
                                         {{ value }}
                                     </span>
-                                    {%- unless value.available -%}
-                                        <span class="sr-only">
-                                            {{- 'products.product.sold_out' | t -}}
-                                        </span>
-                                    {%- endunless -%}
+                                    <span
+                                        class="sr-only"
+                                        data-option-name="{{ option_name_escaped }}"
+                                        data-option-value="{{ escaped_value }}"
+                                        {% if value.available %}
+                                            hidden
+                                        {% endif %}
+                                        :hidden="isValueAvailable($el.dataset.optionName, $el.dataset.optionValue)"
+                                    >
+                                        {{- 'products.product.sold_out' | t -}}
+                                    </span>
                                 </label>
                             {%- endif -%}
                         {%- endfor -%}

@@ -95,14 +95,11 @@
                 <div
                     class="mt-4 w-full max-w-3xl pc:mt-0"
                     x-data="newsletterBanner()"
-                    data-newsletter-success-message="{{ 'newsletter.success_message' | t | json }}"
-                    data-newsletter-error-message="{{ 'newsletter.error_message' | t | json }}"
-                    @submit.prevent="submit($event)"
+                    data-newsletter-success-message="{{ 'newsletter.success_message' | t | escape }}"
                 >
                     {%- assign email_placeholder_fallback = 'newsletter.email_placeholder' | t -%}
-                    {%- form 'customer' -%}
-                        <input type="hidden" name="customer[accepts_marketing]" value="true">
-                        <input type="hidden" name="customer[tags]" value="newsletter">
+                    {%- form 'customer', return_to: 'back', data-shopify-captcha: 'true' -%}
+                        <input type="hidden" name="contact[tags]" value="newsletter">
 
                         <div class="inline-submit-field">
                             <label class="sr-only" for="NewsletterEmail-{{ section.id }}">
@@ -111,7 +108,7 @@
                             <input
                                 id="NewsletterEmail-{{ section.id }}"
                                 type="email"
-                                name="customer[email]"
+                                name="contact[email]"
                                 placeholder="{{ section.settings.placeholder | default: email_placeholder_fallback | escape }}"
                                 autocomplete="email"
                                 required
@@ -121,17 +118,8 @@
                                 type="submit"
                                 class="inline-submit-field__button inline-submit-field__button--icon"
                                 aria-label="{{ 'newsletter.subscribe' | t }}"
-                                :disabled="isLoading"
                             >
-                                <span x-show="!isLoading">
-                                    {%- render 'icons', icon: 'icon-arrow2' -%}
-                                </span>
-                                <span x-show="isLoading" x-cloak>
-                                    {% render 'loading',
-                                        size: 'small',
-                                        spinner_color: 'border-current'
-                                    %}
-                                </span>
+                                {%- render 'icons', icon: 'icon-arrow2' -%}
                             </button>
                         </div>
                     {%- endform -%}
