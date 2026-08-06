@@ -1399,6 +1399,7 @@
                 _frame: 0,
                 _desktopQuery: null,
                 _mediaTarget: null,
+                _mediaPanel: null,
                 _infoTarget: null,
                 _infoBlocks: null,
                 _descriptionBlock: null,
@@ -1407,6 +1408,7 @@
                 init() {
                     const el = this.$el;
                     this._mediaTarget = el.querySelector('[data-product-media-sticky-target]');
+                    this._mediaPanel = el.querySelector('[data-product-media-panel]');
                     this._infoTarget = el.querySelector('[data-product-info-sticky-target]');
                     this._infoBlocks = el.querySelector(
                         '[data-product-info-panel] [data-product-info-blocks]',
@@ -1426,12 +1428,15 @@
                     this._resizeObserver.observe(this._mediaTarget);
                     this._resizeObserver.observe(this._infoTarget);
                     if (this._infoBlocks) {
-                        Array.from(this._infoBlocks.children).forEach((child) =>
-                            this._resizeObserver.observe(child),
-                        );
+                        Array.from(this._infoBlocks.children).forEach((child) => {
+                            if (child !== this._descriptionBlock) {
+                                this._resizeObserver.observe(child);
+                            }
+                        });
                     }
 
                     this.on(window, 'resize', () => this._sync());
+                    this.on(window.visualViewport, 'resize', () => this._sync());
                     this.on(this._desktopQuery, 'change', () => this._sync());
                     this._sync();
                 },
@@ -1465,6 +1470,89 @@
                     this._infoBlocks?.style.removeProperty('max-height');
                     this._descriptionBlock?.style.removeProperty('max-height');
                     this._description?.style.removeProperty('max-height');
+                    this._description?.removeAttribute('data-product-description-scrollable');
+                    this._description?.removeAttribute('tabindex');
+                },
+
+                _setDescriptionLimit(maxHeight) {
+                    if (!this._description) return;
+
+                    this._descriptionBlock?.style.removeProperty('max-height');
+
+                    const hasLimit = Number.isFinite(maxHeight);
+                    const nextValue = hasLimit ? `${Math.max(0, Math.floor(maxHeight))}px` : '';
+                    if (hasLimit) {
+                        if (this._description.style.maxHeight !== nextValue) {
+                            this._description.style.maxHeight = nextValue;
+                        }
+                    } else {
+                        this._description.style.removeProperty('max-height');
+                    }
+
+                    const isScrollable =
+                        hasLimit &&
+                        this._description.scrollHeight > this._description.clientHeight + 1;
+                    this._description.toggleAttribute(
+                        'data-product-description-scrollable',
+                        isScrollable,
+                    );
+                    if (isScrollable) {
+                        this._description.setAttribute('tabindex', '0');
+                    } else {
+                        this._description.removeAttribute('tabindex');
+                    }
+                },
+
+                _syncDescription(availableViewport) {
+                    if (
+                        !this._mediaPanel ||
+                        !this._infoBlocks ||
+                        !this._descriptionBlock ||
+                        !this._description
+                    ) {
+                        this._resetDescription();
+                        return;
+                    }
+
+                    const mediaPanelHeight = this._mediaPanel.getBoundingClientRect().height;
+                    if (mediaPanelHeight <= 0 || availableViewport <= 0) {
+                        this._resetDescription();
+                        return;
+                    }
+
+                    const referenceHeight = Math.min(mediaPanelHeight, availableViewport);
+                    const styles = window.getComputedStyle(this._infoBlocks);
+                    const gap = parseFloat(styles.rowGap || styles.gap) || 0;
+                    const paddingY =
+                        (parseFloat(styles.paddingTop) || 0) +
+                        (parseFloat(styles.paddingBottom) || 0);
+                    const children = Array.from(this._infoBlocks.children).filter(
+                        (child) =>
+                            child instanceof HTMLElement &&
+                            window.getComputedStyle(child).display !== 'none',
+                    );
+                    const otherBlocksHeight = children.reduce((total, child) => {
+                        if (child === this._descriptionBlock) return total;
+                        return total + child.getBoundingClientRect().height;
+                    }, 0);
+                    const gapsHeight = gap * Math.max(children.length - 1, 0);
+                    const available = Math.floor(
+                        referenceHeight - paddingY - gapsHeight - otherBlocksHeight,
+                    );
+                    const naturalHeight = this._description.scrollHeight;
+                    const descriptionStyles = window.getComputedStyle(this._description);
+                    const lineHeight = parseFloat(descriptionStyles.lineHeight) || 24;
+                    const minimumScrollableHeight = Math.min(
+                        naturalHeight,
+                        Math.max(96, lineHeight * 4),
+                    );
+
+                    if (naturalHeight <= available + 1) {
+                        this._setDescriptionLimit(null);
+                        return;
+                    }
+
+                    this._setDescriptionLimit(Math.max(available, minimumScrollableHeight));
                 },
 
                 _resetSticky() {
@@ -1489,8 +1577,16 @@
                             return;
                         }
 
-                        const el = this.$el;
-                        const mediaPanel = el.querySelector('[data-product-media-panel]');
+                        const availableViewport = Math.max(0, this._getViewportHeight());
+                        if (availableViewport <= 0) {
+                            this._reset();
+                            return;
+                        }
+
+                        this._clearSticky(this._mediaTarget);
+                        this._clearSticky(this._infoTarget);
+                        this._syncDescription(availableViewport);
+
                         const mediaHeight = this._mediaTarget.getBoundingClientRect().height;
                         const infoHeight = this._infoTarget.getBoundingClientRect().height;
                         if (mediaHeight <= 0) {
@@ -1498,7 +1594,6 @@
                             return;
                         }
 
-                        const availableViewport = Math.max(0, this._getViewportHeight());
                         const heightTolerance = 24;
                         const nextStickySide =
                             mediaHeight + heightTolerance < infoHeight ? 'media' : 'info';
@@ -1506,50 +1601,11 @@
                             nextStickySide === 'media' ? this._mediaTarget : this._infoTarget;
                         const stickyHeight = nextStickySide === 'media' ? mediaHeight : infoHeight;
 
-                        this._clearSticky(this._mediaTarget);
-                        this._clearSticky(this._infoTarget);
-
                         if (stickyHeight <= availableViewport) {
                             this._applySticky(stickyTarget);
                             this.stickySide = nextStickySide;
                         } else {
                             this.stickySide = 'none';
-                        }
-
-                        if (
-                            mediaPanel &&
-                            this._infoBlocks &&
-                            this._descriptionBlock &&
-                            this._description
-                        ) {
-                            const maxReferenceHeight = Math.max(360, availableViewport);
-                            const referenceHeight = Math.min(
-                                mediaPanel.getBoundingClientRect().height,
-                                maxReferenceHeight,
-                            );
-
-                            const styles = window.getComputedStyle(this._infoBlocks);
-                            const gap = parseFloat(styles.rowGap || styles.gap) || 0;
-                            const paddingY =
-                                (parseFloat(styles.paddingTop) || 0) +
-                                (parseFloat(styles.paddingBottom) || 0);
-                            const children = Array.from(this._infoBlocks.children).filter(
-                                (child) => child instanceof HTMLElement,
-                            );
-                            const otherBlocksHeight = children.reduce((total, child) => {
-                                if (child === this._descriptionBlock) return total;
-                                return total + child.getBoundingClientRect().height;
-                            }, 0);
-                            const gapsHeight = gap * Math.max(children.length - 1, 0);
-                            const available = Math.max(
-                                0,
-                                referenceHeight - paddingY - gapsHeight - otherBlocksHeight,
-                            );
-
-                            this._descriptionBlock.style.maxHeight = `${Math.floor(available)}px`;
-                            this._description.style.maxHeight = `${Math.floor(available)}px`;
-                        } else {
-                            this._resetDescription();
                         }
                     });
                 },
