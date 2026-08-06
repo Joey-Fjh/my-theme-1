@@ -5402,6 +5402,12 @@ shopify-accelerated-checkout {
       z-index: var(--z-layer-dropdown);
       top: 100%;
       inset-inline-start: 0;
+      inset-inline-end: auto;
+      max-width: min(24rem, calc(100vw - 1rem));
+      &.localization-menu--align-end {
+        inset-inline-start: auto;
+        inset-inline-end: 0;
+      }
       .localization-item {
         border-top-style: var(--tw-border-style);
         border-top-width: 1px;
@@ -7698,45 +7704,43 @@ shopify-accelerated-checkout {
     }
     .product-card-shell__pagination-dot {
       position: relative;
+      display: inline-flex;
       flex-shrink: 0;
       cursor: pointer;
-      border-radius: calc(infinity * 1px);
+      align-items: center;
+      justify-content: center;
+      width: 1.5rem;
+      height: 1.5rem;
+      padding: 0;
+      border: none;
+      background: transparent;
+    }
+    .product-card-shell__pagination-dot::before {
+      content: '';
       width: var(--control-dot-size, 0.75rem);
       height: var(--control-dot-size, 0.75rem);
+      border-radius: 9999px;
       background-color: currentColor;
       @supports (color: color-mix(in lab, red, red)) {
         background-color: color-mix(in srgb, currentColor 20%, transparent);
       }
-      transition: width var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), height var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
-      @media (hover: hover) and (pointer: fine) {
-        &:hover:not(:disabled):not([aria-disabled='true']) {
-          background-color: currentColor;
-          @supports (color: color-mix(in lab, red, red)) {
-            background-color: color-mix(in srgb, currentColor 35%, transparent);
-          }
-        }
-      }
-      &:focus-visible {
-        outline: var(--focus-ring-width) solid rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
-        outline-offset: var(--focus-ring-offset);
-      }
-      &:active:not(:disabled):not([aria-disabled='true']) {
-        transform: scale(0.92);
-      }
-      &:disabled, &[aria-disabled='true'] {
-        cursor: not-allowed;
-        opacity: 0.4;
-        pointer-events: none;
-      }
-      @media (prefers-reduced-motion: reduce) {
-        &:active:not(:disabled):not([aria-disabled='true']) {
-          transform: none;
+      transition: width var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), height var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease), border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+    }
+    @media (hover: hover) and (pointer: fine) {
+      .product-card-shell__pagination-dot:hover:not(:disabled):not([aria-disabled='true'])::before {
+        background-color: currentColor;
+        @supports (color: color-mix(in lab, red, red)) {
+          background-color: color-mix(in srgb, currentColor 35%, transparent);
         }
       }
     }
-    .product-card-shell__pagination-dot.is-active {
-      height: calc(var(--spacing) * 4);
-      width: calc(var(--spacing) * 4);
+    .product-card-shell__pagination-dot:focus-visible {
+      outline: var(--focus-ring-width) solid rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+      outline-offset: var(--focus-ring-offset);
+    }
+    .product-card-shell__pagination-dot.is-active::before {
+      width: 1rem;
+      height: 1rem;
       background-color: transparent;
       border: 1px solid currentColor;
     }

@@ -878,12 +878,47 @@ Shared primitives (valid cross-snippet — not orphans):
             }
         }
 
+        /* 24px hit target; visual dot stays ~12px via ::before */
         .product-card-shell__pagination-dot {
-            @apply control-dot;
+            @apply relative inline-flex shrink-0 cursor-pointer items-center justify-center;
+            width: 1.5rem;
+            height: 1.5rem;
+            padding: 0;
+            border: none;
+            background: transparent;
         }
 
-        .product-card-shell__pagination-dot.is-active {
-            @apply h-4 w-4 bg-transparent;
+        .product-card-shell__pagination-dot::before {
+            content: '';
+            width: var(--control-dot-size, 0.75rem);
+            height: var(--control-dot-size, 0.75rem);
+            border-radius: 9999px;
+            background-color: color-mix(in srgb, currentColor 20%, transparent);
+            transition:
+                width var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+                height var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+                background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+                border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+        }
+
+        @media (hover: hover) and (pointer: fine) {
+            .product-card-shell__pagination-dot:hover:not(:disabled):not(
+                    [aria-disabled='true']
+                )::before {
+                background-color: color-mix(in srgb, currentColor 35%, transparent);
+            }
+        }
+
+        .product-card-shell__pagination-dot:focus-visible {
+            outline: var(--focus-ring-width) solid
+                rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+            outline-offset: var(--focus-ring-offset);
+        }
+
+        .product-card-shell__pagination-dot.is-active::before {
+            width: 1rem;
+            height: 1rem;
+            background-color: transparent;
             border: 1px solid currentColor;
         }
 

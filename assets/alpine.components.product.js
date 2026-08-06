@@ -19,6 +19,8 @@
                 currency,
                 unitPriceText: '',
                 unitPrices: {},
+                _variantPrice: 0,
+                _variantComparePrice: 0,
                 _eventScope: null,
 
                 _formatPrice(value) {
@@ -78,6 +80,8 @@
                     this.currency = dataset.currency || this.currency || 'USD';
                     this._parseUnitPrices(dataset.unitPrices);
                     this.unitPriceText = this._lookupUnitPrice(dataset.variantId);
+                    this._variantPrice = this.price;
+                    this._variantComparePrice = this.comparePrice;
 
                     const Events = window.__Theme__.Events;
                     const events = Events.events;
@@ -91,15 +95,29 @@
                             return;
                         }
                         if (typeof v.price === 'number') {
+                            this._variantPrice = v.price;
                             this.price = v.price;
                         }
                         if (v.compare_at_price == null || typeof v.compare_at_price === 'number') {
-                            this.comparePrice = Number(v.compare_at_price || 0);
+                            this._variantComparePrice = Number(v.compare_at_price || 0);
+                            this.comparePrice = this._variantComparePrice;
                         }
                         this.unitPriceText = this._lookupUnitPrice(v.id);
                     };
 
+                    const onSellingPlanChange = (e) => {
+                        if (e.detail?.sectionId !== this.sectionId) return;
+                        if (e.detail?.active && typeof e.detail.price === 'number') {
+                            this.price = e.detail.price;
+                            this.comparePrice = Number(e.detail.compareAtPrice || 0);
+                            return;
+                        }
+                        this.price = this._variantPrice;
+                        this.comparePrice = this._variantComparePrice;
+                    };
+
                     this._eventScope.on(events.PRODUCT_VARIANT_CHANGED, onVariantChange);
+                    this._eventScope.on(events.PRODUCT_SELLING_PLAN_CHANGED, onSellingPlanChange);
                 },
 
                 destroy() {
@@ -1134,6 +1152,15 @@
                     };
                     const properties = this._collectLineItemProperties();
                     if (properties) item.properties = properties;
+
+                    const sellingPlanInput = this.$el?.querySelector?.(
+                        'input[name="selling_plan"]:not(:disabled)',
+                    );
+                    const sellingPlanId = sellingPlanInput?.value;
+                    if (sellingPlanId) {
+                        item.selling_plan = Number(sellingPlanId) || sellingPlanId;
+                    }
+
                     return item;
                 },
 
@@ -1623,6 +1650,129 @@
                     if (this._frame) cancelAnimationFrame(this._frame);
                     if (this._resizeObserver) this._resizeObserver.disconnect();
                     this._reset();
+                    this.dispose();
+                },
+            };
+        },
+
+        SellingPlanPicker() {
+            return {
+                ...AlpineComponentsFactory.useDisposable(),
+                sectionId: '',
+                variantId: null,
+                requiresSellingPlan: false,
+                variants: {},
+                groups: [],
+                availablePlans: [],
+                selectedPlanId: '',
+                oneTimeLabel: '',
+                purchaseOptionsLabel: '',
+                _eventScope: null,
+
+                init() {
+                    const dataset = this.$el?.dataset || {};
+                    this.sectionId = dataset.sectionId || '';
+                    this.variantId = Number(dataset.variantId) || null;
+                    this.oneTimeLabel = dataset.oneTimeLabel || '';
+                    this.purchaseOptionsLabel = dataset.purchaseOptionsLabel || '';
+
+                    let payload = {};
+                    try {
+                        payload = dataset.sellingPlans ? JSON.parse(dataset.sellingPlans) : {};
+                    } catch (_) {
+                        payload = {};
+                    }
+
+                    this.requiresSellingPlan = Boolean(payload.requiresSellingPlan);
+                    this.variants =
+                        payload.variants && typeof payload.variants === 'object'
+                            ? payload.variants
+                            : {};
+                    this.groups = Array.isArray(payload.groups) ? payload.groups : [];
+
+                    const Events = window.__Theme__.Events;
+                    const events = Events.events;
+                    this._eventScope = Events.createScope();
+
+                    const onVariantChange = (e) => {
+                        if (e.detail?.sectionId !== this.sectionId) return;
+                        this.variantId = e.detail?.variant?.id || null;
+                        this._syncPlansForVariant({ preferCurrent: false });
+                    };
+
+                    this._eventScope.on(events.PRODUCT_VARIANT_CHANGED, onVariantChange);
+                    this._syncPlansForVariant({ preferCurrent: true });
+                },
+
+                groupName(groupId) {
+                    const group = this.groups.find((item) => String(item.id) === String(groupId));
+                    return group?.name || '';
+                },
+
+                selectOneTime() {
+                    this.selectedPlanId = '';
+                    this._emitPlanChange(null);
+                },
+
+                selectPlan(planId) {
+                    this.selectedPlanId = planId == null ? '' : String(planId);
+                    const plan = this.availablePlans.find(
+                        (item) => String(item.id) === String(this.selectedPlanId),
+                    );
+                    this._emitPlanChange(plan || null);
+                },
+
+                _plansForVariant(variantId) {
+                    if (variantId == null || variantId === '') return [];
+                    const plans = this.variants[String(variantId)];
+                    return Array.isArray(plans) ? plans : [];
+                },
+
+                _syncPlansForVariant({ preferCurrent = false } = {}) {
+                    this.availablePlans = this._plansForVariant(this.variantId);
+
+                    if (this.availablePlans.length === 0) {
+                        this.selectedPlanId = '';
+                        this._emitPlanChange(null);
+                        return;
+                    }
+
+                    const currentStillValid =
+                        preferCurrent &&
+                        this.selectedPlanId !== '' &&
+                        this.availablePlans.some(
+                            (plan) => String(plan.id) === String(this.selectedPlanId),
+                        );
+
+                    if (currentStillValid) {
+                        this.selectPlan(this.selectedPlanId);
+                        return;
+                    }
+
+                    if (this.requiresSellingPlan) {
+                        this.selectPlan(this.availablePlans[0].id);
+                        return;
+                    }
+
+                    this.selectOneTime();
+                },
+
+                _emitPlanChange(plan) {
+                    const Events = window.__Theme__?.Events;
+                    if (!Events?.emit || !Events.events?.PRODUCT_SELLING_PLAN_CHANGED) return;
+
+                    Events.emit(Events.events.PRODUCT_SELLING_PLAN_CHANGED, {
+                        sectionId: this.sectionId,
+                        active: Boolean(plan),
+                        sellingPlanId: plan?.id || null,
+                        price: plan?.price,
+                        compareAtPrice: plan?.compareAtPrice,
+                    });
+                },
+
+                destroy() {
+                    this._eventScope?.dispose?.();
+                    this._eventScope = null;
                     this.dispose();
                 },
             };
