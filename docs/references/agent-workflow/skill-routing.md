@@ -33,6 +33,7 @@ Read `docs/references/agent-workflow/collaboration-standard.md` for the definiti
 | Review diff or launch readiness | `code-review` | `code-review/pre-merge.md` or `launch-gate.md` | Review may run targeted checks |
 | Debugging or root-cause investigation | `implement-theme-pattern` | Matching architecture reference | Targeted validation of the fix |
 | Validate current state | `run-shopify-theme` | Command docs in `AGENTS.md` and relevant skill | Smallest proving command |
+| Browser compatibility audit | `check-theme-architecture` | `code-review/browser-compatibility.md` | `npm.cmd run lint:compat` or `scan:compat` after Tailwind changes |
 | i18n or user-facing copy | `check-i18n` | `code-review/i18n-checklist.md` | `npm.cmd run lint:i18n` |
 | Liquid/JS architecture | `check-theme-architecture` | Matching architecture/pattern reference | `npm.cmd run lint:theme` |
 | SVG icon pipeline | `build-svg-icons` | Icon rules in style-system reference | `npm.cmd run build:svg` when icons changed |

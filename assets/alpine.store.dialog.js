@@ -86,6 +86,19 @@
         return id.trim();
     }
 
+    function clearDialogMotionState(root) {
+        const motion = getDialogMotion(root);
+        if (!motion || !root || typeof motion.clearMotionState !== 'function') return;
+
+        const target =
+            root.querySelector('[data-dialog-motion-target]') ||
+            root.querySelector('[data-drawer-motion-target]');
+        const backdrop =
+            root.querySelector('[data-dialog-motion-backdrop]') ||
+            root.querySelector('[data-drawer-motion-backdrop]');
+        motion.clearMotionState(target, backdrop);
+    }
+
     StoreGroups.dialog = {
         active: null,
         closing: null,
@@ -103,11 +116,32 @@
             return Boolean(cleanId) && this.closing === cleanId;
         },
 
+        /**
+         * Drop another dialog without exit animation so scroll-lock accounting stays balanced
+         * when open() replaces the active layer (e.g. quick view → cart drawer).
+         */
+        _dismissReplacedDialog(id) {
+            const cleanId = normalizeDialogId(id);
+            if (!cleanId) return;
+            if (this.active !== cleanId && this.closing !== cleanId) return;
+
+            clearDialogMotionState(getDialogRoot(cleanId));
+            this.forceClose(cleanId);
+        },
+
         open(id) {
             const cleanId = normalizeDialogId(id);
             if (!cleanId) return;
 
-            if (this.active === cleanId) return;
+            if (this.active === cleanId && this.closing !== cleanId) return;
+
+            if (this.closing === cleanId) {
+                this.forceClose(cleanId);
+            } else if (this.active && this.active !== cleanId) {
+                this._dismissReplacedDialog(this.active);
+            } else if (this.closing && this.closing !== cleanId) {
+                this._dismissReplacedDialog(this.closing);
+            }
 
             this.closing = null;
             this._returnFocusTo = document.activeElement;

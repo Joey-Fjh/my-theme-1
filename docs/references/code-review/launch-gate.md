@@ -121,6 +121,8 @@ Some rules are enforced by tooling; others remain review-only. `AGENTS.md` is st
 | Heading text-size utilities               | `npm.cmd run lint:theme`               | Blocker                         |
 | Heading class on non-heading elements     | `npm.cmd run lint:theme`               | Blocker                         |
 | i18n key usage                            | `npm.cmd run lint:i18n` plus review    | Blocker for user-facing strings |
+| CSS and JS browser feature support        | `npm.cmd run lint:compat`               | Blocker for supported browsers  |
+| Known WebKit source regressions            | `npm.cmd run lint:theme`                | Blocker                         |
 | CSS syntax and common style issues        | Review only                        | Warning                         |
 | Redundant matching heading classes        | Review only                        | Warning                         |
 | Mismatched heading classes                | Review only                        | Warning; needs user decision    |
@@ -216,7 +218,7 @@ Before considering a task complete, verify all applicable items below.
 2. New reusable CSS is placed in the correct Tailwind layer source file.
 3. Empty `{% stylesheet %}` blocks are removed during cleanup.
 4. Motion changes follow Motion Architecture; repeated Alpine transition groups use named recipes when available.
-5. If Tailwind source changed, run `npm.cmd run build:tw`.
+5. If Tailwind source changed, run `npm.cmd run scan:compat`.
 6. If SVG source changed, run `npm.cmd run build:svg`.
 
 ### Validation
@@ -225,7 +227,7 @@ Before considering a task complete, verify all applicable items below.
 2. Update README/docs when architecture, vendor, or build expectations change.
 3. Run `npm.cmd run lint` after meaningful theme changes.
 4. Run `npm.cmd test` after meaningful theme changes.
-5. Run `npm.cmd run build:tw` when Tailwind source changed, then verify `assets/tailwind.output.css` is the only expected generated CSS output.
+5. Run `npm.cmd run scan:compat` when Tailwind source changed, then verify `assets/tailwind.output.css` is the only expected generated CSS output.
 6. Run `npm.cmd run build:svg` when files in `icons/` changed, then verify generated `assets/icon-*.svg` output before using the icon snippet.
 7. Keep the diff scoped to the task; avoid unrelated churn.
 8. For cleanup tasks, report the rule family cleaned and any remaining staged follow-up.

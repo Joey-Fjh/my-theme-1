@@ -937,22 +937,31 @@
                 isLoading: false,
                 canPurchaseQuantity: true,
                 _eventScope: null,
-                _buttonTextFallback: '',
+                _buttonLabels: {
+                    addToCart: '',
+                    soldOut: '',
+                    maximumInCart: '',
+                    unavailable: '',
+                },
 
                 get buttonText() {
-                    const dataset = this.$el?.dataset || {};
-                    const fallback = this._buttonTextFallback || '';
-                    if (!this.variantId) return dataset.unavailableText || fallback;
-                    if (!this.available) return dataset.soldOutText || fallback;
-                    if (!this.canPurchaseQuantity)
-                        return dataset.maximumInCartText || dataset.addToCartText || fallback;
-                    return dataset.addToCartText || fallback;
+                    const labels = this._buttonLabels || {};
+                    if (!this.variantId) return labels.unavailable || '';
+                    if (!this.available) return labels.soldOut || '';
+                    if (!this.canPurchaseQuantity) {
+                        return labels.maximumInCart || labels.addToCart || '';
+                    }
+                    return labels.addToCart || '';
                 },
 
                 init() {
                     const dataset = this.$el?.dataset || {};
-                    const label = this.$el?.querySelector('[data-add-to-cart-label]');
-                    this._buttonTextFallback = label?.textContent?.trim() || '';
+                    this._buttonLabels = {
+                        addToCart: dataset.addToCartText || '',
+                        soldOut: dataset.soldOutText || '',
+                        maximumInCart: dataset.maximumInCartText || '',
+                        unavailable: dataset.unavailableText || '',
+                    };
 
                     this.sectionId = this.sectionId || dataset.sectionId || '';
                     this.productFormId = this.productFormId || dataset.productFormId || '';
