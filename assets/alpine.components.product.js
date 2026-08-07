@@ -186,6 +186,8 @@
                 sectionId: '',
                 productId: null,
                 productFormId: '',
+                galleryId: '',
+                updateUrl: false,
                 variants: [],
                 selectedOptions: {},
                 currentVariant: null,
@@ -197,6 +199,8 @@
                     this.sectionId = dataset.sectionId || this.sectionId || '';
                     this.productId = Number(dataset.productId || this.productId || 0) || null;
                     this.productFormId = dataset.productFormId || this.productFormId || '';
+                    this.galleryId = dataset.galleryId || this.galleryId || '';
+                    this.updateUrl = dataset.updateUrl === 'true';
 
                     let variants = [];
                     if (dataset.variants) {
@@ -324,6 +328,9 @@
                         const galleryDetail = {
                             index: variant.featured_image.position - 1,
                         };
+                        if (this.galleryId) {
+                            galleryDetail.id = this.galleryId;
+                        }
                         Events.emit(events.PRODUCT_GALLERY_SLIDE_TO_REQUEST, galleryDetail);
                     }
 
@@ -331,7 +338,7 @@
                 },
 
                 _updateUrl(variant) {
-                    if (!variant) return;
+                    if (!variant || !this.updateUrl) return;
                     const url = new URL(window.location);
                     url.searchParams.set('variant', variant.id);
                     window.history.replaceState({}, '', url);

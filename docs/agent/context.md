@@ -25,7 +25,7 @@ This file is the short cross-session handoff for the current branch. `AGENTS.md`
 - Liquid-driven strings used by Alpine now travel through escaped `data-*` attributes, including variant names/values, dialog IDs, cart keys, filter labels, and translated button states. Sort and localization popovers return focus to their trigger on Escape.
 - Page-title suffixes are localized. The custom i18n and architecture linters now include `blocks/` and `templates/`, enforce the tab association contract, and reject translated or quoted Liquid strings embedded directly in Alpine expressions.
 - Collapsed accordions and inactive thumbnail-gallery overlays no longer expose focusable descendants. Product-card hover actions reveal on keyboard focus, and all Liquid buttons now declare an explicit type.
-- Collection pages retain the All/collection tab navigation while prioritizing the active `collection.title` and `collection.description` and rendering `collection.image` when present.
+- Collection pages retain the All/collection tab navigation while prioritizing the active `collection.title` and `collection.description`. The collection hero uses the collection image (or section fallback image) as a rounded cover background; height comes from centered copy + padding, with the rotating badge kept in the corner.
 - Product titles now link to `product.url`. Required resource titles no longer use truncation on product cards, the collection-list page, or the article hero; compact truncation remains owned by Predictive Search and other non-required contexts.
 - No global duplicate-H1 cleanup was pursued. The shared listing hero currently prioritizes native Shopify object titles for both collection and blog pages; schema/demo default copy and JavaScript loading architecture remain unchanged.
 - Fresh validation passed: Tailwind build, aggregate lint, Shopify Theme Check (137 files, 0 offenses), `git diff --check`, and targeted source assertions. The latest accessibility/i18n pass did not require another Tailwind rebuild.
@@ -49,13 +49,32 @@ Project-wide audit after `597e819`:
 
 ## Remaining Work
 
+### Open theme-code risks (2026-08-07 docs audit)
+
+Implemented in the current uncommitted working tree (this session package of 6):
+
+1. **Header super menu product-card scope** — per-series `scope_id` (`section.id-link.handle-series-i`); lite cards skip Quick View teleport.
+2. **VariantPicker URL mutation** — `data-update-url` / `_updateUrl` gated; PDP only by default; Quick View / featured pass `update_url: false` and scoped `gallery_id`.
+3. **Gallery / media-modal event scope** — slide-to emits gallery `id`; listeners ignore unscoped or mismatched ids; media-modal activate carries `dialogId`.
+4. **aria-hidden + focusables** — marquee duplicates use `inert` + non-linked copies; announcement Swiper syncs inert/`aria-hidden`; gallery carousel slides and inactive thumbnail overlays use inert.
+5. **Filter form/drawer ids** — `CollectionFiltersForm-{{ section.id }}` / `collection-filters-{{ section.id }}` threaded through collection + search Liquid and Alpine `formId`/`dialogId`.
+6. **product-card `scope_id` default** — falls back to `section.id`, then `card-{product.id}` (not bare `'card'`).
+
+Still deferred (not in the six):
+
+- **Multi-H1** — previously deferred intentionally; still Theme Store risk on about/home compositions.
+
+Already fixed earlier in this working tree: featured-products per-block `scope_id`, Quick View gallery id follows section scope, Share block checkbox-only (decoupled from `settings.social_*_link`).
+
+### Launch / release (non-theme or evidence)
+
 The current code package still needs storefront and Theme Editor visual QA before it is committed. Remaining launch work is external, release-oriented, or evidence-based:
 
 - Confirm public documentation and support operations outside this repository.
 - Complete asset and dependency provenance records.
 - Produce and smoke-test the final submission ZIP.
 - Capture the required Lighthouse performance and accessibility evidence.
-- Verify the collection hero with and without `collection.image`, long product/collection/article titles, shared-tab arrow/Space navigation, sort/localization Escape focus return, variants containing apostrophes, product-card and accordion focus behavior, thumbnail-gallery focus isolation and naming, video keyboard pause/play, skip-link focus, countdown screen-reader output, and contact-form success/error states in a real preview.
+- Verify the collection hero with and without `collection.image` / fallback image, long product/collection/article titles, shared-tab arrow/Space navigation, sort/localization Escape focus return, variants containing apostrophes, product-card and accordion focus behavior, thumbnail-gallery focus isolation and naming, video keyboard pause/play, skip-link focus, countdown screen-reader output, and contact-form success/error states in a real preview.
 - Finalize demo-store presentation, listing copy, screenshots, release notes, and reviewer instructions.
 - Submit to Shopify and address concrete reviewer feedback.
 

@@ -10,6 +10,7 @@
     if (!AlpineComponentsFactory) return;
 
     const COLLECTION_FILTERS_FORM_ID = 'CollectionFiltersForm';
+    const COLLECTION_FILTERS_DIALOG_ID = 'collection-filters';
 
     function buildRelativeUrlFromParams(pathname, params) {
         const qs = params.toString();
@@ -18,6 +19,14 @@
 
     function buildAbsoluteUrlFromParams(pathname, params) {
         return buildRelativeUrlFromParams(pathname, params);
+    }
+
+    function resolveFiltersFormId(instance) {
+        return instance?.formId || COLLECTION_FILTERS_FORM_ID;
+    }
+
+    function resolveFiltersDialogId(instance) {
+        return instance?.dialogId || COLLECTION_FILTERS_DIALOG_ID;
     }
 
     function getCollectionFilterControls(formId = COLLECTION_FILTERS_FORM_ID) {
@@ -224,6 +233,18 @@
         collectionFilters(sectionId = null, selectors = null) {
             return {
                 ...ComponentGroups.pagination.sectionPagination(sectionId, selectors),
+                formId: COLLECTION_FILTERS_FORM_ID,
+                dialogId: COLLECTION_FILTERS_DIALOG_ID,
+
+                init() {
+                    const baseInit = ComponentGroups.pagination.sectionPagination().init;
+                    if (typeof baseInit === 'function') {
+                        baseInit.call(this);
+                    }
+                    const ds = this.$el?.dataset;
+                    if (ds?.filtersFormId) this.formId = ds.filtersFormId;
+                    if (ds?.filtersDialogId) this.dialogId = ds.filtersDialogId;
+                },
 
                 _executeFetch(url, updateHistory) {
                     const Http = window.ShopifyHttp;
@@ -263,11 +284,11 @@
                 },
 
                 syncControlsFromUrl(url) {
-                    syncCollectionControlsFromUrl(url);
+                    syncCollectionControlsFromUrl(url, resolveFiltersFormId(this));
                 },
 
                 _getFormParams() {
-                    return readCollectionFormParams();
+                    return readCollectionFormParams(resolveFiltersFormId(this));
                 },
 
                 onChange() {
@@ -306,7 +327,6 @@
          * - reconciles dialog focus via public dialog store APIs / force-closes on type switches
          */
         searchFilters(sectionId = null, selectors = null) {
-            const SEARCH_FILTER_DIALOG_ID = 'collection-filters';
             const PRODUCT_REFRESH_SELECTORS = [
                 '[data-search-results-content]',
                 '[data-search-drawer-body]',
@@ -375,15 +395,13 @@
 
                 _isSearchFilterDialogOpen() {
                     const dialog = this._getSearchDialogStore();
-                    return Boolean(dialog?.isOpen?.(SEARCH_FILTER_DIALOG_ID));
+                    return Boolean(dialog?.isOpen?.(resolveFiltersDialogId(this)));
                 },
 
                 _hasSearchFilterDialogLifecycle() {
                     const dialog = this._getSearchDialogStore();
-                    return Boolean(
-                        dialog?.isOpen?.(SEARCH_FILTER_DIALOG_ID) ||
-                        dialog?.isClosing?.(SEARCH_FILTER_DIALOG_ID),
-                    );
+                    const dialogId = resolveFiltersDialogId(this);
+                    return Boolean(dialog?.isOpen?.(dialogId) || dialog?.isClosing?.(dialogId));
                 },
 
                 _getSearchFilterTrigger() {
@@ -391,8 +409,9 @@
                 },
 
                 _getSearchDialogPanel() {
+                    const dialogId = resolveFiltersDialogId(this);
                     return document.querySelector(
-                        `[data-dialog-root][data-dialog-id="${SEARCH_FILTER_DIALOG_ID}"] [data-dialog-panel]`,
+                        `[data-dialog-root][data-dialog-id="${dialogId}"] [data-dialog-panel]`,
                     );
                 },
 
@@ -435,7 +454,7 @@
 
                 _forceCloseSearchFilterDialog() {
                     const dialog = this._getSearchDialogStore();
-                    dialog?.forceClose?.(SEARCH_FILTER_DIALOG_ID);
+                    dialog?.forceClose?.(resolveFiltersDialogId(this));
                 },
 
                 _parkFocusBeforeTypeChange() {
@@ -504,13 +523,14 @@
                     if (!dialogWasOpen) return;
 
                     const dialog = this._getSearchDialogStore();
+                    const dialogId = resolveFiltersDialogId(this);
                     // User started closing (or closed) while the request was in flight — do not revive.
-                    if (!dialog?.isOpen?.(SEARCH_FILTER_DIALOG_ID)) return;
+                    if (!dialog?.isOpen?.(dialogId)) return;
 
                     const trigger = this._getSearchFilterTrigger();
                     const focusElement = this._findDrawerFocusTarget(focusIntent);
 
-                    dialog.refreshOpenContent(SEARCH_FILTER_DIALOG_ID, {
+                    dialog.refreshOpenContent(dialogId, {
                         returnFocusTo: trigger,
                         focusElement,
                     });

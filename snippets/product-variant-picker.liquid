@@ -7,6 +7,8 @@
     @param {string} [product_form_id] - Form ID to associate inputs with. Defaults to 'product-form-' + section_id.
     @param {string} [context] - Rendering context: 'product' (PDP) or 'featured' (home/quick-view). Default: 'featured'.
     @param {string} [section_id] - Section ID for Alpine sync and element IDs. Expected from caller.
+    @param {string} [gallery_id] - Optional product gallery element id for scoped slide-to requests.
+    @param {boolean} [update_url] - When true, sync selected variant into the page URL. Defaults true only for context 'product'.
 
     Usage: {% render 'product-variant-picker', product: product, block: block, product_form_id:
     product_form_id, section_id: section_id %}
@@ -14,6 +16,18 @@
 
 {%- assign context = context | default: 'featured' -%}
 {%- assign section_id = section_id | default: '' -%}
+{%- assign gallery_id = gallery_id | default: '' -%}
+{%- if update_url == null -%}
+    {%- if context == 'product' -%}
+        {%- assign update_url_enabled = true -%}
+    {%- else -%}
+        {%- assign update_url_enabled = false -%}
+    {%- endif -%}
+{%- elsif update_url == true or update_url == 'true' -%}
+    {%- assign update_url_enabled = true -%}
+{%- else -%}
+    {%- assign update_url_enabled = false -%}
+{%- endif -%}
 
 {%- unless product.has_only_default_variant -%}
     {%- assign product_form_id = product_form_id | default: 'product-form-' | append: section_id -%}
@@ -27,6 +41,8 @@
         data-section-id="{{ section_id }}"
         data-product-id="{{ product.id }}"
         data-product-form-id="{{ product_form_id }}"
+        data-gallery-id="{{ gallery_id | escape }}"
+        data-update-url="{% if update_url_enabled %}true{% else %}false{% endif %}"
         data-variants="{{ product.variants | json | escape }}"
         data-variants-quantity-meta="{{ variants_quantity_meta_json | strip | escape }}"
         x-data="VariantPicker()"

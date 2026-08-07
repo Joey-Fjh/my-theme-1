@@ -199,7 +199,15 @@
 
                 {%- when 'form' -%}
                     <div class="newsletter-form" {{ block.shopify_attributes }}>
+                        {%- comment -%}
+                          Unique id so homepage #contact_form (banner) is not stolen
+                          by this earlier-in-DOM popup form.
+                        {%- endcomment -%}
+                        {%- assign newsletter_overlay_form_id = 'newsletter_form_'
+                            | append: section.id
+                        -%}
                         {%- form 'customer',
+                            id: newsletter_overlay_form_id,
                             return_to: 'back',
                             data-shopify-captcha: 'true'
                         -%}

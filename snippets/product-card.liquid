@@ -96,7 +96,10 @@
         endcase
     endif
     assign pc_media_ratio = aspect_ratio
-    assign scope_id = scope_id | default: 'card'
+    assign scope_id = scope_id | default: ''
+    if scope_id == blank
+        assign scope_id = 'card-' | append: product.id
+    endif
     assign color_scheme = color_scheme | default: ''
     assign primary_image_loading = primary_image_loading | default: 'lazy'
     assign primary_image_fetchpriority = primary_image_fetchpriority | default: ''
@@ -428,7 +431,7 @@
     {%- endif -%}
 </div>
 
-{%- unless is_placeholder or request.visual_preview_mode -%}
+{%- unless is_placeholder or request.visual_preview_mode or card_mode == 'lite' -%}
     {%- capture quick_view_content -%}
         {%- render 'product-quick-view',
             product: product,

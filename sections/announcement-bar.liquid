@@ -117,11 +117,38 @@
                         navigation: false,
                     });
 
-                    return { swiper };
+                    function syncSlideAriaHidden() {
+                        swiperContainer.querySelectorAll('.swiper-slide').forEach(function (slide) {
+                            const isActive = slide.classList.contains('swiper-slide-active');
+                            slide.setAttribute('aria-hidden', isActive ? 'false' : 'true');
+                            if (isActive) {
+                                slide.removeAttribute('inert');
+                            } else {
+                                slide.setAttribute('inert', '');
+                            }
+                        });
+                    }
+
+                    function onSlideChange() {
+                        syncSlideAriaHidden();
+                    }
+
+                    swiper.on('slideChange', onSlideChange);
+                    syncSlideAriaHidden();
+
+                    return { swiper, onSlideChange };
                 },
 
                 destroy(el, state) {
                     if (!state) return;
+
+                    if (
+                        state.swiper &&
+                        typeof state.swiper.off === 'function' &&
+                        state.onSlideChange
+                    ) {
+                        state.swiper.off('slideChange', state.onSlideChange);
+                    }
 
                     if (state.swiper && typeof state.swiper.destroy === 'function') {
                         state.swiper.destroy(true, true);

@@ -30,6 +30,9 @@
     assign mobile_card_columns = mobile_card_columns | default: '2'
     assign is_product_results = false
     assign show_product_filters = false
+    assign filters_form_id = 'CollectionFiltersForm-' | append: section_id
+    assign filters_dialog_id = 'collection-filters-' | append: section_id
+    assign filters_dialog_title_id = 'dialog-title-' | append: filters_dialog_id
 
     if param_type == 'product'
         assign is_product_results = true
@@ -44,6 +47,8 @@
     data-pagination-section-id="{{ section_id }}"
     data-pagination-selectors='["[data-search-type-shell]","[data-search-drawer-shell]"]'
     data-search-result-type="{{ param_type | escape }}"
+    data-filters-form-id="{{ filters_form_id }}"
+    data-filters-dialog-id="{{ filters_dialog_id }}"
     x-data="searchFilters()"
 >
     <div
@@ -126,7 +131,7 @@
 
         <div data-search-chrome class="w-full">
             {%- if is_product_results and show_product_filters -%}
-                <form id="CollectionFiltersForm" class="hidden" @change="onChange()">
+                <form id="{{ filters_form_id }}" class="hidden" @change="onChange()">
                     <input type="hidden" name="q" value="{{ search.terms | escape }}">
                     <input type="hidden" name="type" value="product">
                     <input type="hidden" name="options[prefix]" value="last">
@@ -137,7 +142,8 @@
                         type="button"
                         data-search-filter-trigger
                         aria-haspopup="dialog"
-                        @click="$store.dialog.open('collection-filters')"
+                        data-dialog-id="{{ filters_dialog_id }}"
+                        @click="$store.dialog.open($el.dataset.dialogId)"
                         class="collection-toolbar__action flex shrink-0 cursor-pointer items-center gap-3"
                     >
                         {% render 'icons', icon: 'icon-filter' %}
@@ -278,14 +284,16 @@
                 <div data-search-drawer-body class="h-full min-h-0">
                     {%- render 'filters-drawer',
                         filter_source: search,
-                        scope_id: section_id
+                        scope_id: section_id,
+                        form_id: filters_form_id,
+                        dialog_title_id: filters_dialog_title_id
                     -%}
                 </div>
             {%- endcapture -%}
 
             {%- assign close_label = 'accessibility.close_filters_drawer' | t -%}
             {%- render 'ui-dialog',
-                id: 'collection-filters',
+                id: filters_dialog_id,
                 type: 'drawer',
                 layer: 'drawer',
                 position: 'left',

@@ -104,6 +104,13 @@
                             >
                                 <div class="swiper-wrapper">
                         {% endif %}
+                                    {%- comment -%}
+                                      Scope each tab block separately so the same product in multiple
+                                      tabs gets unique Quick View dialog/form ids (all panels stay mounted).
+                                    {%- endcomment -%}
+                                    {%- capture product_card_scope_id -%}
+                                        {{- section.id -}}-{{- block.id -}}
+                                    {%- endcapture -%}
                                     {%- for product in products limit: max_items -%}
                                         <div
                                             class="{% if use_slider %}swiper-slide h-auto{% else %}group{% endif %}"
@@ -113,7 +120,7 @@
                                                 product: product,
                                                 pc_items: section.settings.pc_items,
                                                 mobile_items: section.settings.mobile_items,
-                                                scope_id: section.id,
+                                                scope_id: product_card_scope_id,
                                                 color_scheme: section.settings.color_scheme
                                             -%}
                                         </div>
@@ -128,7 +135,7 @@
                                                     placeholder_index: placeholder_index,
                                                     pc_items: section.settings.pc_items,
                                                     mobile_items: section.settings.mobile_items,
-                                                    scope_id: section.id,
+                                                    scope_id: product_card_scope_id,
                                                     color_scheme: section.settings.color_scheme
                                                 -%}
                                             </div>

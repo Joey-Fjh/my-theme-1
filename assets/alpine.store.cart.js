@@ -215,50 +215,6 @@
         },
 
         /**
-         * Clear all items from cart.
-         * @param {string[]} [sections=[]] - Optional Section Rendering API target IDs.
-         * @returns {Promise<Object>}
-         */
-        clear(sections = []) {
-            const Http = this._getHttp();
-            if (!Http?.postJSON) return this._handleError(new Error('Http client unavailable'));
-            this.loading = true;
-            const bodyData = {};
-            const resolvedSections = this._resolveSections(sections);
-            if (resolvedSections.length > 0) {
-                bodyData.sections = resolvedSections.join(',');
-            }
-            return Http.postJSON('/cart/clear.js', bodyData, {
-                credentials: 'same-origin',
-            })
-                .then((data) => {
-                    if (
-                        data.sections &&
-                        typeof window.ShopifySectionRefresher?.render === 'function'
-                    ) {
-                        window.ShopifySectionRefresher.render(data.sections);
-                    }
-                    this.items = Array.isArray(data.items) ? data.items : [];
-                    this.item_count = typeof data.item_count === 'number' ? data.item_count : 0;
-                    this.total_price = typeof data.total_price === 'number' ? data.total_price : 0;
-                    this.total_discount =
-                        typeof data.total_discount === 'number' ? data.total_discount : 0;
-                    this.cart_level_discount_applications = Array.isArray(
-                        data.cart_level_discount_applications,
-                    )
-                        ? data.cart_level_discount_applications
-                        : [];
-                    this.hasFetched = true;
-                    this.fetchError = null;
-                    return data;
-                })
-                .catch((err) => this._handleError(err))
-                .finally(() => {
-                    this.loading = false;
-                });
-        },
-
-        /**
          * Update cart note or attributes via /cart/update.js
          * @param {Object} data - e.g., { note: 'xxx' } or { attributes: { Country: 'China' } }
          * @returns {Promise<Object>}

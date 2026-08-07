@@ -11,33 +11,51 @@
     {%- liquid
         assign brand_statement_heading_class = section.settings.heading_size | default: 'heading-2xl'
     -%}
-    {% comment %} Decorative brushstroke {% endcomment %}
+    {%- comment -%}
+        Decorative brushstroke is a true background layer: absolute inset-0 so it never
+        owns height. Section height comes only from statement copy + section padding.
+        Do not use max-pc:h-full + natural image — that vertically centers a fixed-aspect
+        band on mobile and lets text overflow above/below the media.
+    {%- endcomment -%}
     <div
-        class="pointer-events-none absolute inset-x-0 bottom-0 z-0 flex justify-center max-pc:h-full"
+        class="
+            pointer-events-none absolute inset-0 z-0
+            {% if section.settings.brushstroke_image == blank %}media-placeholder-frame{% endif %}
+        "
+        aria-hidden="true"
     >
         {%- if section.settings.brushstroke_image != blank -%}
-            {%- assign brushstroke_alt_fallback = 'sections.brand-statement.defaults.image_alt'
-                | t
-            -%}
-            {%- assign image_alt = section.settings.brushstroke_image.image_alt
-                | default: brushstroke_alt_fallback
-                | escape
-            -%}
             {%- render 'image',
                 image: section.settings.brushstroke_image,
-                alt: image_alt,
+                alt: '',
                 width: section.settings.brushstroke_image.width,
-                class: 'max-w-none w-full',
-                mode: 'natural',
-                fit: 'contain',
-                position: 'center'
+                widths: '750,1100,1500,2000',
+                sizes: '100vw',
+                mode: 'frame',
+                fit: 'cover',
+                position: 'center',
+                wrapper_class: '!absolute inset-0 h-full w-full',
+                img_class: 'h-full w-full object-cover',
+                motion_reveal: false
+            -%}
+        {%- else -%}
+            {%- render 'image',
+                image: blank,
+                alt: '',
+                placeholder_key: 'image',
+                placeholder_style: 'plain',
+                mode: 'frame',
+                fit: 'cover',
+                wrapper_class: '!absolute inset-0 h-full w-full',
+                img_class: 'h-full w-full object-cover opacity-50',
+                motion_reveal: false
             -%}
         {%- endif -%}
     </div>
 
     <div class="layout container-page relative z-10">
-        {% comment %} Statement Text {% endcomment %}
-        <div class="mx-auto flex min-h-96 items-center justify-center py-8 pc:min-h-120 pc:py-0">
+        {% comment %} Statement text — height owner {% endcomment %}
+        <div class="mx-auto flex items-center justify-center py-8">
             <div
                 class="rte rte--compact {{ brand_statement_heading_class }} text-center text-balance pc:max-w-5/6"
                 data-motion-reveal="content"

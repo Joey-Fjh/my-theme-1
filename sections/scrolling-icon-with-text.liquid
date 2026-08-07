@@ -98,7 +98,11 @@
                                         if pass == 1 and copy == 1
                                             assign is_primary_item = true
                                         endif
-                                        assign block_link = ''
+                                        # Duplicates stay visible for seamless marquee fill but must not
+                                        # expose interactive/focusable copies (launch-gate). inert removes
+                                        # them from tab order and the accessibility tree; links stay on
+                                        # the primary set only.
+                                        assign block_link = blank
                                         if is_primary_item
                                             assign block_link = block.settings.link
                                         endif
@@ -107,7 +111,7 @@
                                         <div
                                             class="scrolling-icon-with-text__item"
                                             {% unless is_primary_item %}
-                                                aria-hidden="true"
+                                                inert
                                             {% endunless %}
                                             {% if is_primary_item %}
                                                 {{ block.shopify_attributes }}

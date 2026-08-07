@@ -1,0 +1,109 @@
+{% doc %}
+    Product share links block for product-info-blocks.
+
+    Extracted so product-info-blocks stays under Theme Check LiquidComplexity.
+
+    @param {object} block - Share block
+    @param {product} product_data - Product used for share URL/title/image
+    @param {string} context - Rendering context: 'product' or 'featured'
+{% enddoc %}
+
+{%- liquid
+    assign show_share_facebook = false
+    assign show_share_x = false
+    assign show_share_pinterest = false
+    assign show_share_tumblr = false
+
+    if context == 'product' and block.settings.show_share_facebook
+        assign show_share_facebook = true
+    endif
+    if context == 'product' and block.settings.show_share_x
+        assign show_share_x = true
+    endif
+    if context == 'product' and block.settings.show_share_pinterest
+        assign show_share_pinterest = true
+    endif
+    if context == 'product' and block.settings.show_share_tumblr
+        assign show_share_tumblr = true
+    endif
+
+    assign has_share_links = false
+    if show_share_facebook or show_share_x or show_share_pinterest or show_share_tumblr
+        assign has_share_links = true
+    endif
+
+    assign share_alignment = block.settings.share_alignment | default: 'center'
+    assign share_alignment_class = 'justify-center'
+    if share_alignment == 'left'
+        assign share_alignment_class = 'justify-start'
+    elsif share_alignment == 'right'
+        assign share_alignment_class = 'justify-end'
+    endif
+
+    assign share_path = product_data.selected_variant.url | default: product_data.url | default: request.path
+    assign share_url = share_path | prepend: request.origin
+    assign encoded_share_url = share_url | url_encode
+    assign encoded_share_title = product_data.title | default: shop.name | url_encode
+    assign facebook_share_url = 'https://www.facebook.com/sharer/sharer.php?u=' | append: encoded_share_url
+    assign twitter_share_url = 'https://twitter.com/intent/tweet?url=' | append: encoded_share_url | append: '&text=' | append: encoded_share_title
+    assign pinterest_share_url = 'https://pinterest.com/pin/create/button/?url=' | append: encoded_share_url | append: '&description=' | append: encoded_share_title
+    if product_data.featured_image != blank
+        assign share_image_url = product_data.featured_image | image_url: width: 1200 | prepend: 'https:' | url_encode
+        assign pinterest_share_url = pinterest_share_url | append: '&media=' | append: share_image_url
+    endif
+    assign tumblr_share_url = 'https://www.tumblr.com/widgets/share/tool?canonicalUrl=' | append: encoded_share_url | append: '&posttype=link&title=' | append: encoded_share_title | append: '&content=' | append: encoded_share_url
+-%}
+{%- if has_share_links -%}
+    <div
+        class="product-info-blocks__share {{ share_alignment_class }}"
+        role="group"
+        aria-label="{{ 'products.product.share' | t }}"
+        {{ block.shopify_attributes }}
+    >
+        <span class="font-semibold text-theme-text">{{- 'products.product.share' | t }}:</span>
+        {%- if show_share_facebook -%}
+            <a
+                href="{{ facebook_share_url }}"
+                class="product-info-blocks__share-link"
+                target="_blank"
+                rel="noopener"
+                aria-label="{{ 'accessibility.share_on_facebook' | t }}"
+            >
+                {%- render 'icons', icon: 'icon-facebook' -%}
+            </a>
+        {%- endif -%}
+        {%- if show_share_x -%}
+            <a
+                href="{{ twitter_share_url }}"
+                class="product-info-blocks__share-link"
+                target="_blank"
+                rel="noopener"
+                aria-label="{{ 'accessibility.share_on_x' | t }}"
+            >
+                {%- render 'icons', icon: 'icon-twitter' -%}
+            </a>
+        {%- endif -%}
+        {%- if show_share_pinterest -%}
+            <a
+                href="{{ pinterest_share_url }}"
+                class="product-info-blocks__share-link"
+                target="_blank"
+                rel="noopener"
+                aria-label="{{ 'accessibility.share_on_pinterest' | t }}"
+            >
+                {%- render 'icons', icon: 'icon-pinterest' -%}
+            </a>
+        {%- endif -%}
+        {%- if show_share_tumblr -%}
+            <a
+                href="{{ tumblr_share_url }}"
+                class="product-info-blocks__share-link"
+                target="_blank"
+                rel="noopener"
+                aria-label="{{ 'accessibility.share_on_tumblr' | t }}"
+            >
+                {%- render 'icons', icon: 'icon-tumblr' -%}
+            </a>
+        {%- endif -%}
+    </div>
+{%- endif -%}

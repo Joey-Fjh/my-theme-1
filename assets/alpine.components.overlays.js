@@ -16,10 +16,16 @@
             if (url.searchParams.get('customer_posted') !== 'true') return false;
             window.Alpine?.store('toast')?.show?.(successMessage, 'success');
             url.searchParams.delete('customer_posted');
-            // Drop Shopify form anchors so return does not re-scroll the homepage.
-            url.hash = '';
-            const next = `${url.pathname}${url.search}`;
-            window.history.replaceState({}, '', next);
+
+            // Keep the Shopify form hash (native scroll target). Re-assign it after
+            // cleaning the query so the browser still jumps to the form — replaceState
+            // alone does not scroll, and a shared #contact_form often points at the
+            // overlay form near the top of the homepage.
+            const formHash = url.hash;
+            window.history.replaceState({}, '', `${url.pathname}${url.search}`);
+            if (formHash && formHash.length > 1) {
+                window.location.hash = formHash;
+            }
             return true;
         } catch (_) {
             return false;
@@ -924,11 +930,6 @@
                     const { max, step } = this.lineConstraints(item);
                     const next = Number(item.quantity || 0) + step;
                     this.onQtyChange(item, max === null ? next : Math.min(max, next));
-                },
-
-                clearCart() {
-                    if (this.cart.loading || this.isEmpty) return;
-                    this.cart.clear(this.sections);
                 },
 
                 goCheckout() {

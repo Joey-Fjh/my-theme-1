@@ -73,10 +73,21 @@
         </div>
 
         <div class="layout container-page relative h-full color-{{ section.settings.color_scheme }} bg-transparent!">
-            <div class="relative flex h-full flex-col gap-8 py-3 pc:block">
-                <div class="{{ product_position_class }} z-20 flex min-w-0 flex-col gap-5 pc:absolute pc:top-3 pc:bottom-3 pc:w-fit">
+            {%- comment -%}
+                Mobile matches slides-show: place content/badge on a full-bleed 3-row overlay
+                so they stay visible inside the h-screen frame. Do not stack them under the
+                product swiper in leftover flex space — that clips the panel via overflow-hidden.
+            {%- endcomment -%}
+            <div class="relative h-full">
+                <div
+                    class="
+                        {{ product_position_class }}
+                        absolute inset-x-0 top-3 z-20 flex min-w-0 flex-col gap-5
+                        pc:inset-x-auto pc:top-3 pc:bottom-3 pc:w-fit
+                    "
+                >
                     <div
-                        class="routine-showcase__swiper-wrap flex min-h-0 flex-row gap-3 max-pc:h-full pc:h-full pc:w-fit pc:flex-col pc:justify-between"
+                        class="routine-showcase__swiper-wrap flex min-h-0 flex-row gap-3 pc:h-full pc:w-fit pc:flex-col pc:justify-between"
                     >
                         <button
                             type="button"
@@ -205,9 +216,16 @@
                     </div>
                 </div>
 
-                <div class="grid flex-1 grid-cols-1 grid-rows-3 pc:absolute pc:inset-0 pc:grid-cols-3">
+                <div
+                    class="routine-showcase__overlay-grid absolute inset-0 z-10 grid grid-cols-1 grid-rows-3 gap-4 py-3 pc:grid-cols-3"
+                >
                     <div
-                        class="{{ content_position }} flex w-full flex-col gap-12 bg-theme-bg p-6 pc:p-8 {{ routine_content_surface_class }}"
+                        class="
+                            {{ content_position }}
+                            flex min-h-0 w-full flex-col gap-6 overflow-y-auto bg-theme-bg p-6
+                            pc:gap-12 pc:p-8
+                            {{ routine_content_surface_class }}
+                        "
                         data-motion-reveal="content"
                         data-motion-index="1"
                     >
@@ -245,11 +263,14 @@
                         {%- endif -%}
                     </div>
 
-                    <div class="{{ badge_position }} flex h-full w-full items-center justify-center max-pc:hidden">
+                    <div
+                        class="{{ badge_position }} flex h-full min-h-0 w-full items-center justify-center"
+                    >
                         {%- render 'rotating-badge',
                             classes: 'relative',
                             unique_id: section.id,
                             size: 100,
+                            size_mobile: 72,
                             badge_text: section.settings.rotate_badge_text,
                             center_text: section.settings.rotate_badge_percent
                         -%}
@@ -351,6 +372,111 @@
 
             &.is-ready {
                 visibility: visible;
+            }
+        }
+
+        .routine-showcase__overlay-grid {
+            grid-template-rows: repeat(3, minmax(0, 1fr));
+        }
+
+        .routine-showcase__overlay-grid .place-top-left,
+        .routine-showcase__overlay-grid .place-top-center,
+        .routine-showcase__overlay-grid .place-top-right {
+            grid-column: 1 / -1;
+            grid-row-start: 1;
+            align-self: start;
+            justify-self: stretch;
+        }
+
+        .routine-showcase__overlay-grid .place-center-left,
+        .routine-showcase__overlay-grid .place-center,
+        .routine-showcase__overlay-grid .place-center-right {
+            grid-column: 1 / -1;
+            grid-row-start: 2;
+            align-self: center;
+            justify-self: stretch;
+        }
+
+        .routine-showcase__overlay-grid .place-bottom-left,
+        .routine-showcase__overlay-grid .place-bottom-center,
+        .routine-showcase__overlay-grid .place-bottom-right {
+            grid-column: 1 / -1;
+            grid-row-start: 3;
+            align-self: end;
+            justify-self: stretch;
+        }
+
+        @media (width >= 48rem) {
+            .routine-showcase__overlay-grid .place-top-left {
+                grid-column: auto;
+                grid-column-start: 1;
+                grid-row-start: 1;
+                align-self: start;
+                justify-self: start;
+            }
+
+            .routine-showcase__overlay-grid .place-top-center {
+                grid-column: auto;
+                grid-column-start: 2;
+                grid-row-start: 1;
+                align-self: start;
+                justify-self: center;
+            }
+
+            .routine-showcase__overlay-grid .place-top-right {
+                grid-column: auto;
+                grid-column-start: 3;
+                grid-row-start: 1;
+                align-self: start;
+                justify-self: end;
+            }
+
+            .routine-showcase__overlay-grid .place-center-left {
+                grid-column: auto;
+                grid-column-start: 1;
+                grid-row-start: 2;
+                align-self: center;
+                justify-self: start;
+            }
+
+            .routine-showcase__overlay-grid .place-center {
+                grid-column: auto;
+                grid-column-start: 2;
+                grid-row-start: 2;
+                align-self: center;
+                justify-self: center;
+            }
+
+            .routine-showcase__overlay-grid .place-center-right {
+                grid-column: auto;
+                grid-column-start: 3;
+                grid-row-start: 2;
+                align-self: center;
+                justify-self: end;
+            }
+
+            .routine-showcase__overlay-grid .place-bottom-left {
+                grid-column: auto;
+                grid-column-start: 1;
+                grid-row-start: 3;
+                align-self: end;
+                justify-self: start;
+            }
+
+            .routine-showcase__overlay-grid .place-bottom-center {
+                grid-column: auto;
+                grid-column-start: 2;
+                grid-row-start: 3;
+                align-self: end;
+                justify-self: center;
+            }
+
+            .routine-showcase__overlay-grid .place-bottom-right {
+                grid-column: auto;
+                grid-column-start: 3;
+                grid-row-start: 3;
+                align-self: end;
+                justify-self: end;
             }
         }
     }
