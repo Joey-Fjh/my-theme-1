@@ -73,11 +73,23 @@
                 return finalAbsoluteUrl.toString();
             }
 
-            const basePath = String(baseURL || '/');
-            const normalizedBase = basePath.endsWith('/') ? basePath : `${basePath}/`;
-            const cleanUrl = String(url || '').startsWith('/') ? String(url).slice(1) : String(url);
-            const rawUrl = `${origin}${normalizedBase}${cleanUrl}`;
-            const finalUrl = new URL(rawUrl);
+            const base = new URL(String(baseURL || '/'), origin);
+            const normalizedBasePath = base.pathname.endsWith('/')
+                ? base.pathname
+                : `${base.pathname}/`;
+            const relativeUrl = new URL(String(url || ''), origin);
+            const baseRootPath = normalizedBasePath.slice(0, -1);
+            const isAlreadyRootedAtBase =
+                normalizedBasePath !== '/' &&
+                (relativeUrl.pathname === baseRootPath ||
+                    relativeUrl.pathname.startsWith(normalizedBasePath));
+            const finalPath = isAlreadyRootedAtBase
+                ? relativeUrl.pathname
+                : `${normalizedBasePath}${relativeUrl.pathname.replace(/^\//, '')}`;
+            const finalUrl = new URL(
+                `${finalPath}${relativeUrl.search}${relativeUrl.hash}`,
+                origin,
+            );
 
             if (params && typeof params === 'object') {
                 Object.keys(params).forEach((key) => {

@@ -950,10 +950,24 @@
                     return this.sortBy === value;
                 },
 
+                syncPeers(value) {
+                    document.querySelectorAll('[data-sort-by-dropdown]').forEach((dropdown) => {
+                        if (dropdown.dataset.formId !== this.formId) return;
+
+                        const data = window.Alpine?.$data?.(dropdown);
+                        if (data) data.sortBy = value;
+
+                        dropdown
+                            .querySelector('[data-sort-by-control]')
+                            ?.setAttribute('value', value);
+                    });
+                },
+
                 select(value) {
                     this.sortBy = value;
 
                     if (this.formId) {
+                        this.syncPeers(value);
                         this.$nextTick(() => {
                             document
                                 .getElementById(this.formId)

@@ -10,6 +10,13 @@
 
 {%- if product != blank and product.selling_plan_groups.size > 0 -%}
     {%- assign current_variant = product.selected_or_first_available_variant -%}
+    {%- assign initial_selling_plan_allocation = current_variant.selling_plan_allocations
+        | first
+    -%}
+    {%- assign initial_selling_plan_id = '' -%}
+    {%- if product.requires_selling_plan and initial_selling_plan_allocation != blank -%}
+        {%- assign initial_selling_plan_id = initial_selling_plan_allocation.selling_plan.id -%}
+    {%- endif -%}
     {%- capture selling_plans_payload -%}
         {
             "requiresSellingPlan": {{ product.requires_selling_plan | json }},
@@ -61,8 +68,12 @@
 
             <div class="flex flex-col gap-2">
                 <template x-if="!requiresSellingPlan">
-                    <label class="selling-plan-picker__option flex cursor-pointer items-start gap-3">
+                    <label
+                        class="selling-plan-picker__option flex cursor-pointer items-start gap-3"
+                        for="selling-plan-option-{{ section_id | escape }}-one-time"
+                    >
                         <input
+                            id="selling-plan-option-{{ section_id | escape }}-one-time"
                             type="radio"
                             class="mt-1"
                             name="selling-plan-option-{{ section_id | escape }}"
@@ -75,8 +86,12 @@
                 </template>
 
                 <template x-for="plan in availablePlans" :key="plan.id">
-                    <label class="selling-plan-picker__option flex cursor-pointer items-start gap-3">
+                    <label
+                        class="selling-plan-picker__option flex cursor-pointer items-start gap-3"
+                        :for="'selling-plan-option-{{ section_id | escape }}-' + String(plan.id)"
+                    >
                         <input
+                            :id="'selling-plan-option-{{ section_id | escape }}-' + String(plan.id)"
                             type="radio"
                             class="mt-1"
                             name="selling-plan-option-{{ section_id | escape }}"
@@ -102,7 +117,11 @@
             name="selling_plan"
             form="{{ product_form_id }}"
             x-ref="sellingPlanInput"
+            value="{{ initial_selling_plan_id | escape }}"
             :value="selectedPlanId"
+            {% if initial_selling_plan_id == blank %}
+                disabled
+            {% endif %}
             :disabled="!selectedPlanId"
         >
     </div>

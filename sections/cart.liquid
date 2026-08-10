@@ -16,6 +16,10 @@
 >
     {%- liquid
         assign cart_heading_class = section.settings.heading_size | default: 'heading-3xl'
+        assign cart_shop_more_link = section.settings.shop_more_link
+        if cart_shop_more_link == blank or cart_shop_more_link == '/'
+            assign cart_shop_more_link = routes.root_url
+        endif
     -%}
     <div class="layout container-page">
         <div class="grid grid-cols-1 gap-10 pc:grid-cols-[minmax(0,1fr)_auto]">
@@ -292,7 +296,7 @@
                     {%- assign link_text = 'cart.shop_more' | t -%}
                     {%- render 'link',
                         text: link_text,
-                        href: routes.root_url,
+                        href: cart_shop_more_link,
                         variant: 'underline',
                         class: 'body-xl'
                     -%}
@@ -556,6 +560,12 @@
                 }
             ],
             "default": "heading-3xl"
+        },
+        {
+            "type": "url",
+            "id": "shop_more_link",
+            "label": "t:sections.cart.settings.shop_more_link",
+            "default": "/"
         },
         {
             "type": "header",

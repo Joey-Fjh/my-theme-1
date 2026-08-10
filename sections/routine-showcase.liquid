@@ -37,7 +37,7 @@
     x-data="motionRevealSection()"
     data-motion-section
 >
-    <div class="relative h-screen overflow-hidden">
+    <div class="relative overflow-hidden pc:h-screen">
         {%- capture sizes -%}
             (min-width: 80rem) 100vw, (min-width: 48rem) 1280px, 100vw
         {%- endcapture -%}
@@ -72,18 +72,21 @@
             -%}
         </div>
 
-        <div class="layout container-page relative h-full color-{{ section.settings.color_scheme }} bg-transparent!">
+        <div class="layout container-page relative pc:h-full color-{{ section.settings.color_scheme }} bg-transparent!">
             {%- comment -%}
-                Mobile matches slides-show: place content/badge on a full-bleed 3-row overlay
-                so they stay visible inside the h-screen frame. Do not stack them under the
-                product swiper in leftover flex space — that clips the panel via overflow-hidden.
+                Mobile keeps products in normal flow, then collapses the overlay's
+                horizontal axis into a three-row grid. Content and badge preserve
+                their desktop row and same-cell overlap semantics.
+                Desktop keeps the full-bleed h-screen overlay with absolute product rail
+                and 3×3 content/badge grid.
             {%- endcomment -%}
-            <div class="relative h-full">
+            <div class="routine-showcase__layout relative flex flex-col gap-6 py-3 pc:block pc:h-full">
                 <div
                     class="
                         {{ product_position_class }}
-                        absolute inset-x-0 top-3 z-20 flex min-w-0 flex-col gap-5
-                        pc:inset-x-auto pc:top-3 pc:bottom-3 pc:w-fit
+                        routine-showcase__products
+                        relative z-20 flex w-full min-w-0 flex-col gap-5
+                        pc:absolute pc:inset-x-auto pc:top-3 pc:bottom-3 pc:w-fit
                     "
                 >
                     <div
@@ -95,7 +98,7 @@
                             aria-label="{{ 'accessibility.previous_slide' | t }}"
                         ></button>
                         <div
-                            class="swiper ms-0 min-w-0 flex-1 pc:h-full pc:min-h-0"
+                            class="swiper ms-0 w-full min-w-0 flex-1 pc:h-full pc:min-h-0"
                             data-motion-reveal="media"
                             role="region"
                             aria-label="{{ 'accessibility.routine_carousel' | t }}"
@@ -217,13 +220,13 @@
                 </div>
 
                 <div
-                    class="routine-showcase__overlay-grid absolute inset-0 z-10 grid grid-cols-1 grid-rows-3 gap-4 py-3 pc:grid-cols-3"
+                    class="routine-showcase__overlay-grid relative z-10 grid grid-cols-1 gap-6 pc:absolute pc:inset-0 pc:grid-cols-3 pc:gap-4 pc:py-3"
                 >
                     <div
                         class="
                             {{ content_position }}
-                            flex min-h-0 w-full flex-col gap-6 overflow-y-auto bg-theme-bg p-6
-                            pc:gap-12 pc:p-8
+                            flex w-full flex-col gap-6 bg-theme-bg p-6
+                            pc:min-h-0 pc:gap-12 pc:overflow-y-auto pc:p-8
                             {{ routine_content_surface_class }}
                         "
                         data-motion-reveal="content"
@@ -264,7 +267,7 @@
                     </div>
 
                     <div
-                        class="{{ badge_position }} flex h-full min-h-0 w-full items-center justify-center"
+                        class="{{ badge_position }} flex w-full items-center justify-center pc:h-full pc:min-h-0"
                     >
                         {%- render 'rotating-badge',
                             classes: 'relative',
@@ -305,6 +308,7 @@
                         state.swiper = new Swiper(swiperContainer, {
                             direction: isDesktop ? 'vertical' : 'horizontal',
                             slidesPerView: isDesktop ? 4 : 2,
+                            slidesPerGroup: isDesktop ? 1 : 2,
                             grid: isDesktop ? { rows: 1 } : { rows: 2, fill: 'row' },
                             autoHeight: false,
                             spaceBetween: 8,
@@ -375,35 +379,62 @@
             }
         }
 
-        .routine-showcase__overlay-grid {
-            grid-template-rows: repeat(3, minmax(0, 1fr));
+        @media (width < 48rem) {
+            .routine-showcase__swiper-wrap .swiper {
+                aspect-ratio: 1.7;
+                height: auto;
+            }
+
+            .routine-showcase__overlay-grid {
+                grid-template-rows: repeat(3, auto);
+            }
+
+            .routine-showcase__overlay-grid .place-top-left,
+            .routine-showcase__overlay-grid .place-top-center,
+            .routine-showcase__overlay-grid .place-top-right,
+            .routine-showcase__overlay-grid .place-center-left,
+            .routine-showcase__overlay-grid .place-center,
+            .routine-showcase__overlay-grid .place-center-right,
+            .routine-showcase__overlay-grid .place-bottom-left,
+            .routine-showcase__overlay-grid .place-bottom-center,
+            .routine-showcase__overlay-grid .place-bottom-right {
+                grid-column-start: 1;
+                justify-self: stretch;
+            }
+
+            .routine-showcase__overlay-grid .place-top-left,
+            .routine-showcase__overlay-grid .place-top-center,
+            .routine-showcase__overlay-grid .place-top-right {
+                grid-row-start: 1;
+                align-self: start;
+            }
+
+            .routine-showcase__overlay-grid .place-center-left,
+            .routine-showcase__overlay-grid .place-center,
+            .routine-showcase__overlay-grid .place-center-right {
+                grid-row-start: 2;
+                align-self: center;
+            }
+
+            .routine-showcase__overlay-grid .place-bottom-left,
+            .routine-showcase__overlay-grid .place-bottom-center,
+            .routine-showcase__overlay-grid .place-bottom-right {
+                grid-row-start: 3;
+                align-self: end;
+            }
         }
 
-        .routine-showcase__overlay-grid .place-top-left,
-        .routine-showcase__overlay-grid .place-top-center,
-        .routine-showcase__overlay-grid .place-top-right {
-            grid-column: 1 / -1;
-            grid-row-start: 1;
-            align-self: start;
-            justify-self: stretch;
+        @media (width >= 48rem) {
+            .routine-showcase__swiper-wrap .swiper {
+                aspect-ratio: auto;
+                height: 100%;
+            }
         }
 
-        .routine-showcase__overlay-grid .place-center-left,
-        .routine-showcase__overlay-grid .place-center,
-        .routine-showcase__overlay-grid .place-center-right {
-            grid-column: 1 / -1;
-            grid-row-start: 2;
-            align-self: center;
-            justify-self: stretch;
-        }
-
-        .routine-showcase__overlay-grid .place-bottom-left,
-        .routine-showcase__overlay-grid .place-bottom-center,
-        .routine-showcase__overlay-grid .place-bottom-right {
-            grid-column: 1 / -1;
-            grid-row-start: 3;
-            align-self: end;
-            justify-self: stretch;
+        @media (width >= 48rem) {
+            .routine-showcase__overlay-grid {
+                grid-template-rows: repeat(3, minmax(0, 1fr));
+            }
         }
 
         @media (width >= 48rem) {

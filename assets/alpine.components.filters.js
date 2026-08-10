@@ -57,6 +57,36 @@
         componentData.setMaxFromInput?.(nextValue);
     }
 
+    function syncCollectionControlPeers(source, formId = COLLECTION_FILTERS_FORM_ID) {
+        if (!source?.name) return;
+
+        const peers = getCollectionFilterControls(formId).filter(
+            (field) => field !== source && field?.name === source.name,
+        );
+
+        peers.forEach((field) => {
+            if (source.type === 'checkbox' || source.type === 'radio') {
+                if (field.type === source.type && field.value === source.value) {
+                    field.checked = source.checked;
+                }
+                return;
+            }
+
+            if (source.tagName === 'SELECT' && source.multiple) {
+                const selectedValues = new Set(
+                    Array.from(source.selectedOptions || []).map((option) => option.value),
+                );
+                Array.from(field.options || []).forEach((option) => {
+                    option.selected = selectedValues.has(option.value);
+                });
+                return;
+            }
+
+            field.value = source.value;
+            syncCollectionPriceComponentState(field.name, source.value, field);
+        });
+    }
+
     function syncCollectionControlsFromUrl(url, formId = COLLECTION_FILTERS_FORM_ID) {
         const targetUrl = new URL(url, window.location.origin);
         const searchParams = targetUrl.searchParams;
@@ -127,8 +157,15 @@
 
         const params = new URLSearchParams();
         const controls = getCollectionFilterControls(formId);
+        const appendedMultiValues = new Set();
         const isSingleValueField = (fieldName) =>
             fieldName === 'sort_by' || fieldName.endsWith('.gte') || fieldName.endsWith('.lte');
+        const appendMultiValue = (fieldName, value) => {
+            const key = `${fieldName}\u0000${value}`;
+            if (appendedMultiValues.has(key)) return;
+            appendedMultiValues.add(key);
+            params.append(fieldName, value);
+        };
 
         controls.forEach((field) => {
             if (
@@ -149,7 +186,7 @@
 
             if (field.tagName === 'SELECT' && field.multiple) {
                 Array.from(field.selectedOptions || []).forEach((option) => {
-                    params.append(field.name, option.value);
+                    appendMultiValue(field.name, option.value);
                 });
                 return;
             }
@@ -161,7 +198,7 @@
                 return;
             }
 
-            params.append(field.name, field.value);
+            appendMultiValue(field.name, field.value);
         });
 
         return params;
@@ -291,7 +328,9 @@
                     return readCollectionFormParams(resolveFiltersFormId(this));
                 },
 
-                onChange() {
+                onChange(source) {
+                    const field = source?.target || source;
+                    syncCollectionControlPeers(field, resolveFiltersFormId(this));
                     const params = this._getFormParams();
                     params.delete('page');
                     this.loadUrl(this._buildUrl(params));

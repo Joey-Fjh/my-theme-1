@@ -72,7 +72,6 @@
             {%- assign native_qty_blocked = true -%}
         {%- endif -%}
     {%- endif -%}
-
     {%- assign use_secondary_add_button = false -%}
     {%- if context == 'product' -%}
         {%- if show_buy_now == true or show_buy_now == 'true' -%}
@@ -116,6 +115,7 @@
                 type="hidden"
                 name="id"
                 x-ref="variantInput"
+                value="{{ current_variant.id | default: '' }}"
                 :value="variantId"
                 :disabled="!available"
             >
@@ -127,12 +127,14 @@
             -%}
 
             {%- if product.gift_card? -%}
-                {%- render 'gift-card-recipient-form',
-                    product: product,
-                    form: form,
-                    section_id: section_id,
-                    product_form_id: product_form_id
-                -%}
+                <div x-cloak>
+                    {%- render 'gift-card-recipient-form',
+                        product: product,
+                        form: form,
+                        section_id: section_id,
+                        product_form_id: product_form_id
+                    -%}
+                </div>
             {%- endif -%}
 
             <div
@@ -172,9 +174,7 @@
                             ? $el.dataset.availableClass
                             : $el.dataset.unavailableClass
                         "
-                        {% if current_variant.available == false or native_qty_blocked %}
-                            disabled
-                        {% endif %}
+                        disabled
                         :disabled="!available || !canPurchaseQuantity || isLoading"
                         :aria-busy="isLoading"
                         @click.prevent="addToCart()"
@@ -223,9 +223,8 @@
                 {%- if show_dynamic_checkout -%}
                     <div
                         class="shopify-payment-button-wrapper"
-                        {% if native_qty_blocked %}
-                            hidden
-                        {% endif %}
+                        hidden
+                        :hidden="!available || !canPurchaseQuantity"
                         :class="{ 'hidden': !available || !canPurchaseQuantity }"
                     >
                         {{ form | payment_button }}
@@ -233,6 +232,207 @@
                 {%- endif -%}
             </div>
         {%- endform -%}
+
+        <div x-show="false">
+            {%- if product.gift_card? -%}
+                {%- assign fallback_option_count = 0 -%}
+                <div class="flex flex-col gap-2">
+                    {%- for variant in product.variants -%}
+                        {%- unless variant.available -%}
+                            {%- continue -%}
+                        {%- endunless -%}
+                        {%- capture gift_card_variant_can_purchase -%}
+                            {%- render 'quantity-constraints',
+                                variant: variant,
+                                surface: 'product',
+                                output: 'can_purchase'
+                            -%}
+                        {%- endcapture -%}
+                        {%- assign gift_card_variant_can_purchase = gift_card_variant_can_purchase
+                            | strip
+                        -%}
+                        {%- unless gift_card_variant_can_purchase == 'true' -%}
+                            {%- continue -%}
+                        {%- endunless -%}
+                        {%- capture gift_card_variant_quantity -%}
+                            {%- render 'quantity-constraints',
+                                variant: variant,
+                                surface: 'product',
+                                output: 'min'
+                            -%}
+                        {%- endcapture -%}
+                        {%- assign gift_card_variant_quantity = gift_card_variant_quantity
+                            | strip
+                        -%}
+                        {%- assign fallback_option_count = fallback_option_count | plus: 1 -%}
+                        {%- capture gift_card_fallback_form_id -%}
+                            {{- product_form_id -}}-gift-card-fallback-{{- variant.id -}}
+                        {%- endcapture -%}
+                        {%- capture gift_card_fallback_section_id -%}
+                            {{- section_id -}}-gift-card-fallback-{{- variant.id -}}
+                        {%- endcapture -%}
+                        <details
+                            {% if variant.id == current_variant.id %}
+                                open
+                            {% endif %}
+                        >
+                            <summary
+                                class="cursor-pointer list-none body-md font-medium text-theme-text [&::-webkit-details-marker]:hidden"
+                            >
+                                {%- if product.has_only_default_variant -%}
+                                    {{ product.title | escape }}
+                                {%- else -%}
+                                    {{ variant.title | escape }}
+                                {%- endif -%}
+                            </summary>
+                            {%- form 'product', product, id: gift_card_fallback_form_id -%}
+                                <input type="hidden" name="id" value="{{ variant.id }}">
+                                <input
+                                    type="hidden"
+                                    name="quantity"
+                                    value="{{ gift_card_variant_quantity }}"
+                                >
+                                {%- render 'gift-card-recipient-form',
+                                    product: product,
+                                    form: form,
+                                    section_id: gift_card_fallback_section_id,
+                                    product_form_id: gift_card_fallback_form_id
+                                -%}
+                                <button type="submit" name="add" class="btn-primary w-full">
+                                    {{ 'products.product.add_to_cart' | t }}
+                                </button>
+                            {%- endform -%}
+                        </details>
+                    {%- endfor -%}
+                    {%- if fallback_option_count == 0 -%}
+                        <button
+                            type="button"
+                            class="buy-buttons__submit--unavailable w-full"
+                            disabled
+                        >
+                            {{ 'products.product.unavailable' | t }}
+                        </button>
+                    {%- endif -%}
+                </div>
+            {%- elsif product.requires_selling_plan -%}
+                {%- assign fallback_option_count = 0 -%}
+                <fieldset class="selling-plan-picker__fieldset m-0 border-0 p-0">
+                    <legend class="mb-3 body-sm font-medium text-theme-text">
+                        {{ 'products.product.selling_plan.purchase_options' | t }}
+                    </legend>
+                    <div class="flex flex-col gap-2">
+                        {%- for variant in product.variants -%}
+                            {%- unless variant.available -%}
+                                {%- continue -%}
+                            {%- endunless -%}
+                            {%- capture fallback_can_purchase -%}
+                                {%- render 'quantity-constraints',
+                                    variant: variant,
+                                    surface: 'product',
+                                    output: 'can_purchase'
+                                -%}
+                            {%- endcapture -%}
+                            {%- assign fallback_can_purchase = fallback_can_purchase | strip -%}
+                            {%- unless fallback_can_purchase == 'true' -%}
+                                {%- continue -%}
+                            {%- endunless -%}
+                            {%- capture fallback_quantity -%}
+                                {%- render 'quantity-constraints',
+                                    variant: variant,
+                                    surface: 'product',
+                                    output: 'min'
+                                -%}
+                            {%- endcapture -%}
+                            {%- assign fallback_quantity = fallback_quantity | strip -%}
+                            {%- for allocation in variant.selling_plan_allocations -%}
+                                {%- assign fallback_option_count = fallback_option_count
+                                    | plus: 1
+                                -%}
+                                {%- capture fallback_form_id -%}
+                                    {{- product_form_id -}}-fallback-{{- variant.id -}}-{{- allocation.selling_plan.id -}}
+                                {%- endcapture -%}
+                                {%- form 'product', product, id: fallback_form_id -%}
+                                    <input type="hidden" name="id" value="{{ variant.id }}">
+                                    <input
+                                        type="hidden"
+                                        name="quantity"
+                                        value="{{ fallback_quantity }}"
+                                    >
+                                    <input
+                                        type="hidden"
+                                        name="selling_plan"
+                                        value="{{ allocation.selling_plan.id }}"
+                                    >
+                                    <button type="submit" name="add" class="btn-primary w-full">
+                                        {{ variant.title | escape }} —
+                                        {{ allocation.selling_plan.name | escape }} —
+                                        {{ 'products.product.add_to_cart' | t }}
+                                    </button>
+                                {%- endform -%}
+                            {%- endfor -%}
+                        {%- endfor -%}
+                        {%- if fallback_option_count == 0 -%}
+                            <button
+                                type="button"
+                                class="buy-buttons__submit--unavailable w-full"
+                                disabled
+                            >
+                                {{ 'products.product.unavailable' | t }}
+                            </button>
+                        {%- endif -%}
+                    </div>
+                </fieldset>
+            {%- else -%}
+                {%- assign fallback_option_count = 0 -%}
+                <div class="flex flex-col gap-2">
+                    {%- for variant in product.variants -%}
+                        {%- unless variant.available -%}
+                            {%- continue -%}
+                        {%- endunless -%}
+                        {%- capture fallback_can_purchase -%}
+                            {%- render 'quantity-constraints',
+                                variant: variant,
+                                surface: 'product',
+                                output: 'can_purchase'
+                            -%}
+                        {%- endcapture -%}
+                        {%- assign fallback_can_purchase = fallback_can_purchase | strip -%}
+                        {%- unless fallback_can_purchase == 'true' -%}
+                            {%- continue -%}
+                        {%- endunless -%}
+                        {%- capture fallback_quantity -%}
+                            {%- render 'quantity-constraints',
+                                variant: variant,
+                                surface: 'product',
+                                output: 'min'
+                            -%}
+                        {%- endcapture -%}
+                        {%- assign fallback_quantity = fallback_quantity | strip -%}
+                        {%- assign fallback_option_count = fallback_option_count | plus: 1 -%}
+                        {%- capture fallback_form_id -%}
+                            {{- product_form_id -}}-fallback-{{- variant.id -}}
+                        {%- endcapture -%}
+                        {%- form 'product', product, id: fallback_form_id -%}
+                            <input type="hidden" name="id" value="{{ variant.id }}">
+                            <input type="hidden" name="quantity" value="{{ fallback_quantity }}">
+                            <button type="submit" name="add" class="btn-primary w-full">
+                                {{ variant.title | escape }} —
+                                {{ 'products.product.add_to_cart' | t }}
+                            </button>
+                        {%- endform -%}
+                    {%- endfor -%}
+                    {%- if fallback_option_count == 0 -%}
+                        <button
+                            type="button"
+                            class="buy-buttons__submit--unavailable w-full"
+                            disabled
+                        >
+                            {{ 'products.product.unavailable' | t }}
+                        </button>
+                    {%- endif -%}
+                </div>
+            {%- endif -%}
+        </div>
 
         {%- if context == 'product' and current_variant != blank -%}
             {%- render 'pickup-availability-inline',

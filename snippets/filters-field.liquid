@@ -77,13 +77,13 @@
                             <input
                                 id="{{ option_id }}"
                                 type="checkbox"
-                                class="filter-checkbox"
+                                class="filter-checkbox focus-ring focus-visible:relative focus-visible:z-1"
                                 name="{{ value.param_name }}"
                                 value="{{ value.value }}"
                                 form="{{ filters_form_id }}"
                                 {% if value.active %}checked{% endif %}
                                 {% if is_disabled %}disabled{% endif %}
-                                @change="onChange()"
+                                @change="onChange($event)"
                             >
                             <span class="{{ filter_label_class }}">
                                 {{ value.label }}
@@ -138,8 +138,8 @@
                                 form="{{ filters_form_id }}"
                                 {% if value.active %}checked{% endif %}
                                 {% if is_disabled %}disabled{% endif %}
-                                @change="onChange()"
-                                class="filter-checkbox"
+                                @change="onChange($event)"
+                                class="filter-checkbox focus-ring focus-visible:relative focus-visible:z-1"
                             >
                             <span>
                                 {{ value.label }}
@@ -202,7 +202,7 @@
                             :max="ceil"
                             x-model.number="min"
                             @input="clampMin()"
-                            @change.debounce.500ms="$refs.inputMin.value = min; onChange()"
+                            @change.debounce.500ms="$refs.inputMin.value = min; onChange($refs.inputMin)"
                             :disabled="isLoading"
                             :class="(min === max && max === ceil) ? 'z-30' : 'z-10'"
                             class="price-range-thumb pointer-events-none absolute inset-x-0 w-full appearance-none bg-transparent"
@@ -217,7 +217,7 @@
                             :max="ceil"
                             x-model.number="max"
                             @input="clampMax()"
-                            @change.debounce.500ms="$refs.inputMax.value = max; onChange()"
+                            @change.debounce.500ms="$refs.inputMax.value = max; onChange($refs.inputMax)"
                             :disabled="isLoading"
                             :class="(min === max && min === 0) ? 'z-30' : 'z-20'"
                             class="price-range-thumb pointer-events-none absolute inset-x-0 w-full appearance-none bg-transparent"
@@ -238,7 +238,7 @@
                                     max="{{ range_max }}"
                                     placeholder="0"
                                     form="{{ filters_form_id }}"
-                                    @input.debounce.500ms="setMinFromInput($el.value); $el.value = min; onChange()"
+                                    @input.debounce.500ms="setMinFromInput($el.value); $el.value = min; onChange($el)"
                                     :disabled="isLoading"
                                     class="w-full appearance-none bg-transparent focus-ring outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                 >
@@ -258,7 +258,7 @@
                                     max="{{ range_max }}"
                                     placeholder="{{ range_max }}"
                                     form="{{ filters_form_id }}"
-                                    @input.debounce.500ms="setMaxFromInput($el.value); $el.value = max; onChange()"
+                                    @input.debounce.500ms="setMaxFromInput($el.value); $el.value = max; onChange($el)"
                                     :disabled="isLoading"
                                     class="w-full appearance-none bg-transparent focus-ring outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                 >
@@ -281,7 +281,7 @@
                             max="{{ range_max }}"
                             placeholder="0"
                             form="{{ filters_form_id }}"
-                            @change="onChange()"
+                            @change="onChange($event)"
                             class="field"
                         >
                     </label>
@@ -296,7 +296,7 @@
                             max="{{ range_max }}"
                             placeholder="{{ range_max }}"
                             form="{{ filters_form_id }}"
-                            @change="onChange()"
+                            @change="onChange($event)"
                             class="field"
                         >
                     </label>

@@ -98,20 +98,22 @@
                                         if pass == 1 and copy == 1
                                             assign is_primary_item = true
                                         endif
-                                        # Duplicates stay visible for seamless marquee fill but must not
-                                        # expose interactive/focusable copies (launch-gate). inert removes
-                                        # them from tab order and the accessibility tree; links stay on
-                                        # the primary set only.
-                                        assign block_link = blank
-                                        if is_primary_item
-                                            assign block_link = block.settings.link
-                                        endif
+                                        # Marquee duplicates stay visible for seamless scroll fill and keep
+                                        # pointer/touch links on every copy. Duplicates are excluded from
+                                        # assistive tech and sequential Tab navigation via aria-hidden and
+                                        # tabindex="-1"; semantics and keyboard entry stay on the canonical
+                                        # primary set only.
+                                        assign block_link = block.settings.link
+                                        assign block_link_tabindex = blank
+                                        unless is_primary_item
+                                            assign block_link_tabindex = '-1'
+                                        endunless
                                     -%}
                                     {%- if block_title != blank -%}
                                         <div
                                             class="scrolling-icon-with-text__item"
                                             {% unless is_primary_item %}
-                                                inert
+                                                aria-hidden="true"
                                             {% endunless %}
                                             {% if is_primary_item %}
                                                 {{ block.shopify_attributes }}
@@ -122,6 +124,7 @@
                                                 icon: block_icon,
                                                 image_icon: block_image,
                                                 link: block_link,
+                                                link_tabindex: block_link_tabindex,
                                                 icon_size: scrolling_icon_size,
                                                 icon_size_mobile: scrolling_icon_size,
                                                 direction: block_layout,
