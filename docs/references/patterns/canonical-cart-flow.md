@@ -59,8 +59,8 @@ AlpineComponentsFactory.register('canonicalAddToCart', function () {
 
 ## Rules
 
-- Use `$store.cart.add()`, `change()`, `clear()`, `update()`, and `fetchCart()` for cart behavior.
+- Use `$store.cart.add()`, `change()`, `update()`, and `fetchCart()` for cart behavior.
 - Let `$store.cart` own cart endpoint calls, cart state hydration, error handling, and cart section rendering.
 - Use `ShopifySectionRefresher.render()` only inside store/infrastructure or dedicated section refresh flows.
-- Do not call `/cart/add.js`, `/cart/change.js`, `/cart/clear.js`, `/cart/update.js`, or `/cart.js` from section code.
+- Do not call `/cart/add.js`, `/cart/change.js`, `/cart/update.js`, or `/cart.js` from section code.
 - Define new translation keys in `locales/en.default.json`; if a component needs configurable text, pass it through `data-*`.

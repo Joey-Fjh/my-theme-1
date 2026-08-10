@@ -30,7 +30,8 @@
                     {%- assign image_alt_fallback = 'sections.main-page-contact.defaults.image_alt'
                         | t
                     -%}
-                    {%- assign image_alt = section.settings.image.image_alt
+                    {%- assign image_alt = section.settings.image_alt
+                        | default: section.settings.image.alt
                         | default: image_alt_fallback
                         | escape
                     -%}
@@ -43,33 +44,6 @@
                         loading: 'eager',
                         motion_reveal: false
                     %}
-
-                    {%- comment -%} hCaptcha Notice {%- endcomment -%}
-                    <p class="absolute right-4 bottom-4 left-4">
-                        {{ 'contact.hcaptcha_notice' | t -}}
-                        <br>
-
-                        {%- assign link_text = 'contact.privacy_policy' | t -%}
-                        {% render 'link',
-                            text: link_text,
-                            href: 'https://www.hcaptcha.com/privacy',
-                            variant: 'plain',
-                            class: 'underline',
-                            target: '_blank',
-                            attributes: 'rel="noopener"'
-                        %}
-                        {{ 'general.and' | t }}
-                        {%- assign link_text = 'contact.terms_of_service' | t -%}
-                        {% render 'link',
-                            text: link_text,
-                            href: 'https://www.hcaptcha.com/terms',
-                            variant: 'plain',
-                            class: 'underline',
-                            target: '_blank',
-                            attributes: 'rel="noopener"'
-                        %}
-                        {{ 'contact.apply' | t }}
-                    </p>
                 </div>
                 {%- comment -%} Right: Form {%- endcomment -%}
                 {%- assign form_bg = section.settings.form_background_color | default: '#ffffff' -%}
@@ -104,21 +78,42 @@
                         </div>
                     </div>
 
-                    {%- form 'contact', class: 'mt-6 flex flex-col gap-5 pc:mt-8 pc:gap-6' -%}
+                    {%- form 'contact',
+                        return_to: 'back',
+                        data-shopify-captcha: 'true',
+                        class: 'mt-6 flex flex-col gap-5 pc:mt-8 pc:gap-6'
+                    -%}
                         {%- assign success_message_fallback = 'sections.main-page-contact.defaults.success_message'
                             | t
                         -%}
+                        {%- assign success_message = section.settings.success_message
+                            | default: success_message_fallback
+                        -%}
                         {%- if form.posted_successfully? -%}
-                            <div class="rounded p-4 text-center">
-                                {{
-                                    section.settings.success_message
-                                    | default: success_message_fallback
-                                }}
+                            <div
+                                class="rounded p-4 text-center"
+                                role="status"
+                                data-success-message="{{ success_message | escape }}"
+                                x-data
+                                x-init="
+                                    const message = $el.dataset.successMessage;
+                                    if (!message || !$store.toast) return;
+                                    $nextTick(() => {
+                                        $store.toast.show(message, 'success');
+                                        $el.hidden = true;
+                                    });
+                                "
+                            >
+                                {{ success_message }}
                             </div>
                         {%- endif -%}
 
                         {%- if form.errors -%}
-                            <div class="rounded p-4 text-error-text">
+                            <div
+                                id="ContactFormErrors-{{ section.id }}"
+                                class="rounded p-4 text-error-text"
+                                role="alert"
+                            >
                                 {{ form.errors | default_errors }}
                             </div>
                         {%- endif -%}
@@ -127,13 +122,13 @@
                         <div class="grid grid-cols-1 gap-4 pc:grid-cols-2 pc:gap-5">
                             <div class="flex flex-col gap-1.5">
                                 <label
-                                    for="ContactFirstName"
+                                    for="ContactFirstName-{{ section.id }}"
                                 >
                                     {{- 'contact.first_name' | t -}}
                                 </label>
                                 <input
                                     type="text"
-                                    id="ContactFirstName"
+                                    id="ContactFirstName-{{ section.id }}"
                                     name="contact[first_name]"
                                     placeholder="{{ 'contact.first_name_placeholder' | t }}"
                                     autocomplete="given-name"
@@ -142,13 +137,13 @@
                             </div>
                             <div class="flex flex-col gap-1.5">
                                 <label
-                                    for="ContactLastName"
+                                    for="ContactLastName-{{ section.id }}"
                                 >
                                     {{- 'contact.last_name' | t -}}
                                 </label>
                                 <input
                                     type="text"
-                                    id="ContactLastName"
+                                    id="ContactLastName-{{ section.id }}"
                                     name="contact[last_name]"
                                     placeholder="{{ 'contact.last_name_placeholder' | t }}"
                                     autocomplete="family-name"
@@ -161,29 +156,36 @@
                         <div class="grid grid-cols-1 gap-4 pc:grid-cols-2 pc:gap-5">
                             <div class="flex flex-col gap-1.5">
                                 <label
-                                    for="ContactEmail"
+                                    for="ContactEmail-{{ section.id }}"
                                 >
                                     {{- 'contact.email' | t -}}
+                                    <span aria-hidden="true">*</span>
+                                    <span class="sr-only">{{ 'accessibility.required' | t }}</span>
                                 </label>
                                 <input
                                     type="email"
-                                    id="ContactEmail"
+                                    id="ContactEmail-{{ section.id }}"
                                     name="contact[email]"
                                     placeholder="{{ 'contact.email_placeholder' | t }}"
                                     autocomplete="email"
                                     required
+                                    aria-required="true"
                                     class="field"
+                                    {% if form.errors contains 'email' %}
+                                        aria-invalid="true"
+                                        aria-describedby="ContactFormErrors-{{ section.id }}"
+                                    {% endif %}
                                 >
                             </div>
                             <div class="hidden flex-col gap-1.5 pc:flex">
                                 <label
-                                    for="ContactPhone"
+                                    for="ContactPhone-{{ section.id }}"
                                 >
                                     {{- 'contact.phone' | t -}}
                                 </label>
                                 <input
                                     type="tel"
-                                    id="ContactPhone"
+                                    id="ContactPhone-{{ section.id }}"
                                     name="contact[phone]"
                                     placeholder="{{ 'contact.phone_placeholder' | t }}"
                                     autocomplete="tel"
@@ -194,15 +196,19 @@
 
                         {%- comment -%} Message {%- endcomment -%}
                         <div class="flex flex-col gap-1.5">
-                            <label for="ContactMessage">
+                            <label for="ContactMessage-{{ section.id }}">
                                 {{- 'contact.message' | t -}}
                             </label>
                             <textarea
-                                id="ContactMessage"
+                                id="ContactMessage-{{ section.id }}"
                                 name="contact[body]"
                                 placeholder="{{ 'contact.message_placeholder' | t }}"
                                 rows="4"
                                 class="min-h-24 field resize-none pc:min-h-28"
+                                {% if form.errors contains 'body' %}
+                                    aria-invalid="true"
+                                    aria-describedby="ContactFormErrors-{{ section.id }}"
+                                {% endif %}
                             ></textarea>
                         </div>
 

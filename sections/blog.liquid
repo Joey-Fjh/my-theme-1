@@ -88,11 +88,11 @@
                         role="tab"
                         x-data="{ index: null }"
                         x-init="index = registerTab($el);"
-                        :id="`tab-${index}`"
-                        aria-controls="blog-panel"
+                        :id="`blog-{{ section.id }}-tab-${index}`"
+                        aria-controls="blog-{{ section.id }}-panel"
                         @click.prevent="loadUrl($el.href); setActive(index)"
                         @popstate.window="isUrlMatch($el.href) && setActive(index)"
-                        :tabindex="isActive(index) ? 0 : -1"
+                        :tabindex="isFocusable(index) ? 0 : -1"
                         :aria-selected="isActive(index)"
                         :class="isActive(index) && 'is-active'"
                         class="blog__tab tab-nav-item tab-nav-item--underline-opacity tab-nav-item--hover-muted"
@@ -106,11 +106,11 @@
                             role="tab"
                             x-data="{ index: null }"
                             x-init="index = registerTab($el);"
-                            :id="`tab-${index}`"
-                            aria-controls="blog-panel"
+                            :id="`blog-{{ section.id }}-tab-${index}`"
+                            aria-controls="blog-{{ section.id }}-panel"
                             @click.prevent="loadUrl($el.href); setActive(index)"
                             @popstate.window="isUrlMatch($el.href) && setActive(index)"
-                            :tabindex="isActive(index) ? 0 : -1"
+                            :tabindex="isFocusable(index) ? 0 : -1"
                             :aria-selected="isActive(index)"
                             :class="isActive(index) && 'is-active'"
                             class="blog__tab tab-nav-item tab-nav-item--underline-opacity tab-nav-item--hover-muted"
@@ -123,7 +123,8 @@
                 {% capture tab_content %}
                     <div
                         role="tabpanel"
-                        id="blog-panel"
+                        id="blog-{{ section.id }}-panel"
+                        :aria-labelledby="`blog-{{ section.id }}-tab-${activeIndex}`"
                         x-data="{ index: null }"
                         x-init="index = registerPanel($el)"
                         class="relative w-full"
@@ -357,7 +358,7 @@
         {
             "type": "color_scheme",
             "id": "color_scheme",
-            "label": "t:sections.blog.settings.tab_control_color_scheme",
+            "label": "t:sections.blog.settings.content_color_scheme",
             "default": "scheme-2"
         },
         {

@@ -2,38 +2,51 @@
     Listing page hero copy with shared header and description fallback resolution.
 
     Resolution order for the heading:
-    1. section setting header
-    2. native Shopify object title (collection.title / blog.title)
+    1. native Shopify object title (collection.title / blog.title)
+    2. section setting header
     3. locale fallback key
 
-    Description uses section setting with locale HTML fallback.
+    Description uses the native Shopify object description when available, then the section
+    setting and locale HTML fallback.
 
     @param {string} setting_header - Section header setting value.
     @param {string} object_title - Native title from the listing Shopify object.
     @param {string} header_locale_key - Translation key when header and object title are blank.
     @param {string} setting_description - Section description setting (HTML).
+    @param {string} [object_description] - Native description from the listing Shopify object.
     @param {string} description_locale_key - Translation key for description HTML fallback.
     @param {string} [heading_class] - Optional heading tier class for the page title.
     @param {string} [description_class] - Optional body tier class for the description wrapper.
 {% enddoc %}
 
 {%- liquid
-    assign resolved_heading = setting_header
+    assign resolved_heading = object_title
     if resolved_heading == blank
-        assign resolved_heading = object_title
+        assign resolved_heading = setting_header
     endif
     if resolved_heading == blank
         assign resolved_heading = header_locale_key | t
     endif
 
-    assign description_fallback = description_locale_key | t
-    assign resolved_description = setting_description | default: description_fallback
+    assign resolved_description = object_description
+    if resolved_description == blank
+        assign resolved_description = setting_description
+    endif
+    if resolved_description == blank
+        assign resolved_description = description_locale_key | t
+    endif
     assign hero_heading_class = heading_class | default: 'heading-h1'
     assign hero_description_class = 'typo-subtitle'
     if description_class != blank
         assign hero_description_class = hero_description_class | append: ' ' | append: description_class
     endif
 -%}
+
+{%- if setting_header != blank and object_title != blank and setting_header != object_title -%}
+    <p class="mb-3 typo-subtitle">
+        {{ setting_header }}
+    </p>
+{%- endif -%}
 
 <h1 class="mb-10 {{ hero_heading_class }}">
     {{ resolved_heading }}

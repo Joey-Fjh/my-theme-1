@@ -37,7 +37,7 @@
     x-data="motionRevealSection()"
     data-motion-section
 >
-    <div class="relative h-screen overflow-hidden">
+    <div class="relative overflow-hidden pc:h-screen">
         {%- capture sizes -%}
             (min-width: 80rem) 100vw, (min-width: 48rem) 1280px, 100vw
         {%- endcapture -%}
@@ -72,11 +72,25 @@
             -%}
         </div>
 
-        <div class="layout container-page relative h-full color-{{ section.settings.color_scheme }} bg-transparent!">
-            <div class="relative flex h-full flex-col gap-8 py-3 pc:block">
-                <div class="{{ product_position_class }} z-20 flex min-w-0 flex-col gap-5 pc:absolute pc:top-3 pc:bottom-3 pc:w-fit">
+        <div class="layout container-page relative pc:h-full color-{{ section.settings.color_scheme }} bg-transparent!">
+            {%- comment -%}
+                Mobile keeps products in normal flow, then collapses the overlay's
+                horizontal axis into a three-row grid. Content and badge preserve
+                their desktop row and same-cell overlap semantics.
+                Desktop keeps the full-bleed h-screen overlay with absolute product rail
+                and 3×3 content/badge grid.
+            {%- endcomment -%}
+            <div class="routine-showcase__layout relative flex flex-col gap-6 py-3 pc:block pc:h-full">
+                <div
+                    class="
+                        {{ product_position_class }}
+                        routine-showcase__products
+                        relative z-20 flex w-full min-w-0 flex-col gap-5
+                        pc:absolute pc:inset-x-auto pc:top-3 pc:bottom-3 pc:w-fit
+                    "
+                >
                     <div
-                        class="routine-showcase__swiper-wrap flex min-h-0 flex-row gap-3 max-pc:h-full pc:h-full pc:w-fit pc:flex-col pc:justify-between"
+                        class="routine-showcase__swiper-wrap flex min-h-0 flex-row gap-3 pc:h-full pc:w-fit pc:flex-col pc:justify-between"
                     >
                         <button
                             type="button"
@@ -84,7 +98,7 @@
                             aria-label="{{ 'accessibility.previous_slide' | t }}"
                         ></button>
                         <div
-                            class="swiper ms-0 min-w-0 flex-1 pc:h-full pc:min-h-0"
+                            class="swiper ms-0 w-full min-w-0 flex-1 pc:h-full pc:min-h-0"
                             data-motion-reveal="media"
                             role="region"
                             aria-label="{{ 'accessibility.routine_carousel' | t }}"
@@ -205,9 +219,16 @@
                     </div>
                 </div>
 
-                <div class="grid flex-1 grid-cols-1 grid-rows-3 pc:absolute pc:inset-0 pc:grid-cols-3">
+                <div
+                    class="routine-showcase__overlay-grid relative z-10 grid grid-cols-1 gap-6 pc:absolute pc:inset-0 pc:grid-cols-3 pc:gap-4 pc:py-3"
+                >
                     <div
-                        class="{{ content_position }} flex w-full flex-col gap-12 bg-theme-bg p-6 pc:p-8 {{ routine_content_surface_class }}"
+                        class="
+                            {{ content_position }}
+                            flex w-full flex-col gap-6 bg-theme-bg p-6
+                            pc:min-h-0 pc:gap-12 pc:overflow-y-auto pc:p-8
+                            {{ routine_content_surface_class }}
+                        "
                         data-motion-reveal="content"
                         data-motion-index="1"
                     >
@@ -245,11 +266,14 @@
                         {%- endif -%}
                     </div>
 
-                    <div class="{{ badge_position }} flex h-full w-full items-center justify-center max-pc:hidden">
+                    <div
+                        class="{{ badge_position }} flex w-full items-center justify-center pc:h-full pc:min-h-0"
+                    >
                         {%- render 'rotating-badge',
                             classes: 'relative',
                             unique_id: section.id,
                             size: 100,
+                            size_mobile: 72,
                             badge_text: section.settings.rotate_badge_text,
                             center_text: section.settings.rotate_badge_percent
                         -%}
@@ -284,6 +308,7 @@
                         state.swiper = new Swiper(swiperContainer, {
                             direction: isDesktop ? 'vertical' : 'horizontal',
                             slidesPerView: isDesktop ? 4 : 2,
+                            slidesPerGroup: isDesktop ? 1 : 2,
                             grid: isDesktop ? { rows: 1 } : { rows: 2, fill: 'row' },
                             autoHeight: false,
                             spaceBetween: 8,
@@ -353,6 +378,138 @@
                 visibility: visible;
             }
         }
+
+        @media (width < 48rem) {
+            .routine-showcase__swiper-wrap .swiper {
+                aspect-ratio: 1.7;
+                height: auto;
+            }
+
+            .routine-showcase__overlay-grid {
+                grid-template-rows: repeat(3, auto);
+            }
+
+            .routine-showcase__overlay-grid .place-top-left,
+            .routine-showcase__overlay-grid .place-top-center,
+            .routine-showcase__overlay-grid .place-top-right,
+            .routine-showcase__overlay-grid .place-center-left,
+            .routine-showcase__overlay-grid .place-center,
+            .routine-showcase__overlay-grid .place-center-right,
+            .routine-showcase__overlay-grid .place-bottom-left,
+            .routine-showcase__overlay-grid .place-bottom-center,
+            .routine-showcase__overlay-grid .place-bottom-right {
+                grid-column-start: 1;
+                justify-self: stretch;
+            }
+
+            .routine-showcase__overlay-grid .place-top-left,
+            .routine-showcase__overlay-grid .place-top-center,
+            .routine-showcase__overlay-grid .place-top-right {
+                grid-row-start: 1;
+                align-self: start;
+            }
+
+            .routine-showcase__overlay-grid .place-center-left,
+            .routine-showcase__overlay-grid .place-center,
+            .routine-showcase__overlay-grid .place-center-right {
+                grid-row-start: 2;
+                align-self: center;
+            }
+
+            .routine-showcase__overlay-grid .place-bottom-left,
+            .routine-showcase__overlay-grid .place-bottom-center,
+            .routine-showcase__overlay-grid .place-bottom-right {
+                grid-row-start: 3;
+                align-self: end;
+            }
+        }
+
+        @media (width >= 48rem) {
+            .routine-showcase__swiper-wrap .swiper {
+                aspect-ratio: auto;
+                height: 100%;
+            }
+        }
+
+        @media (width >= 48rem) {
+            .routine-showcase__overlay-grid {
+                grid-template-rows: repeat(3, minmax(0, 1fr));
+            }
+        }
+
+        @media (width >= 48rem) {
+            .routine-showcase__overlay-grid .place-top-left {
+                grid-column: auto;
+                grid-column-start: 1;
+                grid-row-start: 1;
+                align-self: start;
+                justify-self: start;
+            }
+
+            .routine-showcase__overlay-grid .place-top-center {
+                grid-column: auto;
+                grid-column-start: 2;
+                grid-row-start: 1;
+                align-self: start;
+                justify-self: center;
+            }
+
+            .routine-showcase__overlay-grid .place-top-right {
+                grid-column: auto;
+                grid-column-start: 3;
+                grid-row-start: 1;
+                align-self: start;
+                justify-self: end;
+            }
+
+            .routine-showcase__overlay-grid .place-center-left {
+                grid-column: auto;
+                grid-column-start: 1;
+                grid-row-start: 2;
+                align-self: center;
+                justify-self: start;
+            }
+
+            .routine-showcase__overlay-grid .place-center {
+                grid-column: auto;
+                grid-column-start: 2;
+                grid-row-start: 2;
+                align-self: center;
+                justify-self: center;
+            }
+
+            .routine-showcase__overlay-grid .place-center-right {
+                grid-column: auto;
+                grid-column-start: 3;
+                grid-row-start: 2;
+                align-self: center;
+                justify-self: end;
+            }
+
+            .routine-showcase__overlay-grid .place-bottom-left {
+                grid-column: auto;
+                grid-column-start: 1;
+                grid-row-start: 3;
+                align-self: end;
+                justify-self: start;
+            }
+
+            .routine-showcase__overlay-grid .place-bottom-center {
+                grid-column: auto;
+                grid-column-start: 2;
+                grid-row-start: 3;
+                align-self: end;
+                justify-self: center;
+            }
+
+            .routine-showcase__overlay-grid .place-bottom-right {
+                grid-column: auto;
+                grid-column-start: 3;
+                grid-row-start: 3;
+                align-self: end;
+                justify-self: end;
+            }
+        }
     }
 
     .routine-showcase__product-info {
@@ -383,7 +540,7 @@
     "tag": "section",
     "class": "section",
     "disabled_on": {
-        "groups": ["header", "footer"]
+        "groups": ["header", "footer", "custom.overlay"]
     },
     "settings": [
         {

@@ -26,7 +26,13 @@
                     this._eventScope = Events.createScope();
 
                     const onSlideToRequest = (e) => {
-                        if (e.detail?.id && e.detail.id !== this.$el.id) return;
+                        const targetId = e.detail?.id;
+                        const galleryId = this.$el?.id || '';
+                        if (targetId) {
+                            if (targetId !== galleryId) return;
+                        } else if (galleryId) {
+                            return;
+                        }
                         if (typeof e.detail?.index === 'number') this.setActive(e.detail.index);
                     };
 
@@ -39,6 +45,7 @@
                     this._pauseActiveVideo();
                     this.activeIndex = index;
                     if (this._swiper) this._swiper.slideTo(index);
+                    this._syncSlideInert();
                 },
 
                 next() {
@@ -66,6 +73,7 @@
                             const Events = window.__Theme__.Events;
                             Events.emit(Events.events.PRODUCT_MEDIA_MODAL_ACTIVATE, {
                                 mediaId: Number(mediaId),
+                                dialogId,
                             });
                             window.Alpine.store('dialog').open(dialogId);
                         }
@@ -78,18 +86,47 @@
                     });
                 },
 
+                _syncSlideInert() {
+                    const swiperRoot = this.$el.querySelector('[data-gallery-swiper]');
+                    if (!swiperRoot) return;
+                    swiperRoot.querySelectorAll('.swiper-slide').forEach((slide, index) => {
+                        const isActive = index === this.activeIndex;
+                        slide.setAttribute('aria-hidden', isActive ? 'false' : 'true');
+                        if (isActive) {
+                            slide.removeAttribute('inert');
+                        } else {
+                            slide.setAttribute('inert', '');
+                        }
+                    });
+                },
+
                 _handleThumbnailKeydown(event) {
                     const tablist = event.currentTarget;
+                    const orientation = tablist.getAttribute('aria-orientation') || 'horizontal';
                     let nextIndex = null;
 
                     switch (event.key) {
                         case 'ArrowRight':
-                        case 'ArrowDown':
-                            nextIndex = (this.activeIndex + 1) % this.imageCount;
+                            if (orientation === 'horizontal') {
+                                nextIndex = (this.activeIndex + 1) % this.imageCount;
+                            }
                             break;
                         case 'ArrowLeft':
+                            if (orientation === 'horizontal') {
+                                nextIndex =
+                                    (this.activeIndex - 1 + this.imageCount) % this.imageCount;
+                            }
+                            break;
+                        case 'ArrowDown':
+                            if (orientation === 'vertical') {
+                                nextIndex = (this.activeIndex + 1) % this.imageCount;
+                            }
+                            break;
                         case 'ArrowUp':
-                            nextIndex = (this.activeIndex - 1 + this.imageCount) % this.imageCount;
+                            if (orientation === 'vertical') {
+                                nextIndex =
+                                    (this.activeIndex - 1 + this.imageCount) % this.imageCount;
+                            }
                             break;
                         case 'Home':
                             nextIndex = 0;
@@ -126,9 +163,11 @@
                         on: {
                             slideChange: (s) => {
                                 this.activeIndex = s.activeIndex;
+                                this._syncSlideInert();
                             },
                         },
                     });
+                    this._syncSlideInert();
                 },
 
                 destroy() {
@@ -730,12 +769,19 @@
             return {
                 ...AlpineComponentsFactory.useDisposable(),
                 activeMediaId: null,
+                dialogId: '',
                 _eventScope: null,
 
                 init() {
                     const Events = window.__Theme__.Events;
                     this._eventScope = Events.createScope();
+                    this.dialogId =
+                        this.$el?.dataset?.dialogId || this.$el?.dataset?.mediaModalId || '';
                     this._eventScope.on(Events.events.PRODUCT_MEDIA_MODAL_ACTIVATE, (e) => {
+                        const targetDialogId = e.detail?.dialogId;
+                        if (targetDialogId && this.dialogId && targetDialogId !== this.dialogId) {
+                            return;
+                        }
                         if (e.detail?.mediaId) {
                             this.activeMediaId = e.detail.mediaId;
                         }
@@ -773,16 +819,24 @@
                     }
 
                     const onPlay = () => {
+                        const shouldMoveFocus = document.activeElement === this.$refs?.playButton;
                         const current = this._getVideo();
                         if (current && !current.paused) {
                             this.isPlaying = true;
                             this.hasPlayed = true;
+                            if (shouldMoveFocus) {
+                                this.$nextTick(() => this._focusPlaybackControl('pauseButton'));
+                            }
                         }
                     };
                     const onPause = () => {
+                        const shouldMoveFocus = document.activeElement === this.$refs?.pauseButton;
                         const current = this._getVideo();
                         if (current && current.paused) {
                             this.isPlaying = false;
+                            if (shouldMoveFocus) {
+                                this.$nextTick(() => this._focusPlaybackControl('playButton'));
+                            }
                         }
                     };
                     const onVolumeChange = () => {
@@ -830,6 +884,13 @@
                     videos.forEach((v) => {
                         if (v !== currentVideo && !v.paused) v.pause();
                     });
+                },
+
+                _focusPlaybackControl(refName) {
+                    const control = this.$refs?.[refName];
+                    if (!(control instanceof HTMLElement)) return;
+
+                    control.focus({ preventScroll: true });
                 },
 
                 play() {

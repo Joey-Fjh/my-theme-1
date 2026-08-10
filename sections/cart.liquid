@@ -16,6 +16,10 @@
 >
     {%- liquid
         assign cart_heading_class = section.settings.heading_size | default: 'heading-3xl'
+        assign cart_shop_more_link = section.settings.shop_more_link
+        if cart_shop_more_link == blank or cart_shop_more_link == '/'
+            assign cart_shop_more_link = routes.root_url
+        endif
     -%}
     <div class="layout container-page">
         <div class="grid grid-cols-1 gap-10 pc:grid-cols-[minmax(0,1fr)_auto]">
@@ -254,8 +258,10 @@
                                 <a
                                     href="{{ item.url_to_remove }}"
                                     class="inline-flex items-center justify-center text-current opacity-50 transition-opacity hover:opacity-100"
-                                    aria-label="{{ 'accessibility.remove_item' | t: item: item.product.title }}"
-                                    @click.prevent="$store.cart.change('{{ item.key }}', 0, ['{{ section.id }}'])"
+                                    aria-label="{{ 'accessibility.remove_item' | t: item: item.product.title | escape }}"
+                                    data-item-key="{{ item.key | escape }}"
+                                    data-section-id="{{ section.id }}"
+                                    @click.prevent="$store.cart.change($el.dataset.itemKey, 0, [$el.dataset.sectionId])"
                                 >
                                     {% render 'icons', icon: 'icon-trash' %}
                                 </a>
@@ -265,12 +271,20 @@
                                     aria-hidden="true"
                                 ></span>
 
-                                <div @quantity:change="$store.cart.change('{{ item.key }}', $event.detail.value, ['{{ section.id }}'])">
+                                <div
+                                    data-item-key="{{ item.key | escape }}"
+                                    data-section-id="{{ section.id }}"
+                                    @theme:product:quantity:changed="$store.cart.change($el.dataset.itemKey, $event.detail.value, [$el.dataset.sectionId])"
+                                >
+                                    {%- capture cart_quantity_input_id -%}
+                                        CartQuantity-{{ section.id }}-{{ forloop.index0 }}
+                                    {%- endcapture -%}
                                     {%- render 'quantity-selector',
                                         variant: item.variant,
                                         surface: 'cart',
                                         value: item.quantity,
-                                        label: item.product.title
+                                        label: item.product.title,
+                                        input_id: cart_quantity_input_id
                                     -%}
                                 </div>
                             </div>
@@ -282,7 +296,7 @@
                     {%- assign link_text = 'cart.shop_more' | t -%}
                     {%- render 'link',
                         text: link_text,
-                        href: routes.root_url,
+                        href: cart_shop_more_link,
                         variant: 'underline',
                         class: 'body-xl'
                     -%}
@@ -296,14 +310,16 @@
 
                     {%- comment -%} Accordion: Order Special Instruction + Estimate Shipping {%- endcomment -%}
                     {%- capture note_html -%}
+                        <label class="sr-only" for="Cart-note-{{ section.id }}">
+                            {{ 'cart.order_special_instruction' | t }}
+                        </label>
                         <textarea
+                            id="Cart-note-{{ section.id }}"
                             name="note"
                             class="min-h-20 field resize-y"
                             placeholder="{{ 'cart.note_placeholder' | t }}"
                             @change="$store.cart.update({ note: $event.target.value })"
-                        >
-                            {{ cart.note }}
-                        </textarea>
+                        >{{- cart.note | escape -}}</textarea>
                     {%- endcapture -%}
 
                     {%- capture shipping_html -%}
@@ -544,6 +560,12 @@
                 }
             ],
             "default": "heading-3xl"
+        },
+        {
+            "type": "url",
+            "id": "shop_more_link",
+            "label": "t:sections.cart.settings.shop_more_link",
+            "default": "/"
         },
         {
             "type": "header",

@@ -15,7 +15,7 @@
         assign article_title_text = article.title | strip_html | strip
         assign article_heading_override = section.settings.heading | strip_html | strip
     -%}
-    <div class="article-hero relative overflow-hidden pc:max-h-200">
+    <div class="article-hero relative overflow-hidden color-{{ section.settings.header_color_scheme }} pc:max-h-200">
         {%- capture sizes -%}
             (min-width: 80rem) 100vw, (min-width: 48rem) 1280px, 768px
         {%- endcapture -%}
@@ -54,10 +54,7 @@
                     </p>
                 {%- endif -%}
 
-                <h1
-                    class="{{ article_heading_class }} line-clamp-3 max-w-full min-w-0"
-                    title="{{ article_title_text | escape }}"
-                >
+                <h1 class="{{ article_heading_class }} max-w-full min-w-0 break-words">
                     {{ article.title }}
                 </h1>
 
@@ -119,7 +116,7 @@
                 </div>
                 <div class="flex flex-col gap-3 border-t border-theme-border/20 pt-3">
                     {%- if section.settings.show_social -%}
-                        {%- render 'social-icons', type: 'name', class: 'body-xl self-end' -%}
+                        {%- render 'social-icons', type: 'icon', class: 'body-xl self-end' -%}
                     {%- endif -%}
                 </div>
 
@@ -475,8 +472,14 @@
     "settings": [
         {
             "type": "color_scheme",
+            "id": "header_color_scheme",
+            "label": "t:sections.article.settings.header_color_scheme",
+            "default": "scheme-2"
+        },
+        {
+            "type": "color_scheme",
             "id": "color_scheme",
-            "label": "t:sections.article.settings.color_scheme",
+            "label": "t:sections.article.settings.content_color_scheme",
             "default": "scheme-2"
         },
         {

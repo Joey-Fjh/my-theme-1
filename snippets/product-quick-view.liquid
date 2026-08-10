@@ -17,7 +17,11 @@
 <div class="product-quick-view{% if color_scheme != blank %} color-{{ color_scheme }}{% endif %}">
     <div class="product-quick-view__layout">
         <div class="product-quick-view__media">
-            {%- assign gallery_id = 'product-gallery-quick-view-' | append: product.id -%}
+            {%- comment -%}
+                Follow quick_view_section_id (not product.id alone) so each Quick View
+                instance keeps a unique gallery element id when the same product is mounted twice.
+            {%- endcomment -%}
+            {%- assign gallery_id = 'product-gallery-' | append: quick_view_section_id -%}
             {%- render 'product-gallery',
                 media: product.media,
                 id: gallery_id,
@@ -34,6 +38,7 @@
                 dialog_id: dialog_id,
                 section_id: quick_view_section_id,
                 product_form_id: product_form_id,
+                gallery_id: gallery_id,
                 details_href: product.url,
                 show_brand: true,
                 show_description: true,

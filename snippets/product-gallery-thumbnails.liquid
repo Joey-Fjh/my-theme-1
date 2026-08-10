@@ -3,6 +3,7 @@
     Internal sub-snippet; always rendered inside product-gallery.liquid's x-data scope.
 
     @param {array}   images          - Image or media objects
+    @param {string}  gallery_id      - Unique gallery id used to associate tabs and the active panel
     @param {string}  thumb_position  - 'left' | 'bottom'
     @param {number}  thumbnail_visible_count - Number of visible thumbnails in bottom thumbnail layout
     @param {boolean} zoom            - Enable click on main image
@@ -23,6 +24,7 @@
 
 {%- comment -%} Product pages pass a design ratio so uploaded image orientation cannot resize the gallery. {%- endcomment -%}
 {%- assign first_img = images.first -%}
+{%- assign gallery_scope_id = gallery_id | default: first_img.id | default: 'product-gallery' -%}
 {%- assign thumbnail_visible_count = thumbnail_visible_count | default: 4 | plus: 0 -%}
 {%- if thumbnail_visible_count < 3 -%}
     {%- assign thumbnail_visible_count = 3 -%}
@@ -59,6 +61,7 @@
         "
         role="tablist"
         aria-label="{{ 'accessibility.product_thumbnails' | t }}"
+        aria-orientation="{% if is_left %}vertical{% else %}horizontal{% endif %}"
         data-orientation="{% if is_left %}vertical{% else %}horizontal{% endif %}"
         @keydown="_handleThumbnailKeydown($event)"
     >
@@ -71,6 +74,9 @@
                 <button
                     type="button"
                     role="tab"
+                    id="{{ gallery_scope_id | escape }}-thumbnail-{{ forloop.index0 }}"
+                    aria-controls="{{ gallery_scope_id | escape }}-panel"
+                    aria-label="{{ 'accessibility.show_media' | t: index: forloop.index | escape }}"
                     data-gallery-thumbnail="{{ forloop.index0 }}"
                     :tabindex="activeIndex === {{ forloop.index0 }} ? 0 : -1"
                     :aria-selected="activeIndex === {{ forloop.index0 }}"
@@ -118,6 +124,9 @@
                 <button
                     type="button"
                     role="tab"
+                    id="{{ gallery_scope_id | escape }}-thumbnail-{{ forloop.index0 }}"
+                    aria-controls="{{ gallery_scope_id | escape }}-panel"
+                    aria-label="{{ 'accessibility.show_media' | t: index: forloop.index | escape }}"
                     data-gallery-thumbnail="{{ forloop.index0 }}"
                     :tabindex="activeIndex === {{ forloop.index0 }} ? 0 : -1"
                     :aria-selected="activeIndex === {{ forloop.index0 }}"
@@ -177,6 +186,9 @@
             {% endif %}
         "
         role="tabpanel"
+        id="{{ gallery_scope_id | escape }}-panel"
+        data-label-prefix="{{ gallery_scope_id | escape }}-thumbnail-"
+        :aria-labelledby="$el.dataset.labelPrefix + activeIndex"
     >
         {%- assign image_only_index = 0 -%}
         {%- for image in images -%}
@@ -189,6 +201,9 @@
                     aria-label="{{ 'accessibility.open_image_zoom' | t }}"
                     class="product-gallery__zoom-button"
                     :class="activeIndex === {{ forloop.index0 }} && 'is-active'"
+                    :tabindex="activeIndex === {{ forloop.index0 }} ? 0 : -1"
+                    :aria-hidden="(activeIndex !== {{ forloop.index0 }}).toString()"
+                    :inert="activeIndex !== {{ forloop.index0 }}"
                     @click="openLightbox({{ image_only_index }})"
                 >
                     {%- assign image_only_index = image_only_index | plus: 1 -%}
@@ -197,6 +212,9 @@
                     type="button"
                     class="product-gallery__zoom-button"
                     :class="activeIndex === {{ forloop.index0 }} && 'is-active'"
+                    :tabindex="activeIndex === {{ forloop.index0 }} ? 0 : -1"
+                    :aria-hidden="(activeIndex !== {{ forloop.index0 }}).toString()"
+                    :inert="activeIndex !== {{ forloop.index0 }}"
                     @click="activateMediaById({{ image.id }})"
                     data-media-id="{{ image.id }}"
                     data-media-type="{{ media_type }}"
@@ -210,6 +228,8 @@
                 <div
                     class="product-gallery__zoom-button"
                     :class="activeIndex === {{ forloop.index0 }} && 'is-active'"
+                    :aria-hidden="(activeIndex !== {{ forloop.index0 }}).toString()"
+                    :inert="activeIndex !== {{ forloop.index0 }}"
                 >
             {%- endif -%}
             {%- assign gallery_loading = 'lazy' -%}

@@ -11,6 +11,7 @@
     - Tab-control bindings exposed in parent scope: `registerTab`, `registerPanel`, `setActive`, `isActive`, `activeTab`
 
     @param {string} [mobile_card_columns] - Mobile product grid columns (`1` or `2`). Default: `2`.
+    @param {string} scope_id - Unique section scope used for tab and panel IDs.
 {% enddoc %}
 
 {%- liquid
@@ -86,9 +87,13 @@
                         <button
                             type="button"
                             role="tab"
+                            id="predictive-search-tab-products-{{ scope_id }}"
+                            aria-controls="predictive-search-panel-products-{{ scope_id }}"
                             x-data="{ index: null }"
                             x-init="index = registerTab($el)"
                             @click="setActive(index); activeTab = 'products'"
+                            :aria-selected="isActive(index)"
+                            :tabindex="isFocusable(index) ? 0 : -1"
                             class="search-predictive-panel__tab tab-nav-item tab-nav-item--search body-lg"
                             :class="{ 'is-active': isActive(index) }"
                         >
@@ -98,9 +103,13 @@
                         <button
                             type="button"
                             role="tab"
+                            id="predictive-search-tab-articles-{{ scope_id }}"
+                            aria-controls="predictive-search-panel-articles-{{ scope_id }}"
                             x-data="{ index: null }"
                             x-init="index = registerTab($el)"
                             @click="setActive(index); activeTab = 'articles'"
+                            :aria-selected="isActive(index)"
+                            :tabindex="isFocusable(index) ? 0 : -1"
                             class="search-predictive-panel__tab tab-nav-item tab-nav-item--search body-lg"
                             :class="{ 'is-active': isActive(index) }"
                         >
@@ -110,9 +119,13 @@
                         <button
                             type="button"
                             role="tab"
+                            id="predictive-search-tab-pages-{{ scope_id }}"
+                            aria-controls="predictive-search-panel-pages-{{ scope_id }}"
                             x-data="{ index: null }"
                             x-init="index = registerTab($el)"
                             @click="setActive(index); activeTab = 'pages'"
+                            :aria-selected="isActive(index)"
+                            :tabindex="isFocusable(index) ? 0 : -1"
                             class="search-predictive-panel__tab tab-nav-item tab-nav-item--search body-lg"
                             :class="{ 'is-active': isActive(index) }"
                         >
@@ -124,6 +137,8 @@
                 {% capture tab_content %}
                     <div
                         role="tabpanel"
+                        id="predictive-search-panel-products-{{ scope_id }}"
+                        aria-labelledby="predictive-search-tab-products-{{ scope_id }}"
                         x-data="{ index: null }"
                         x-init="index = registerPanel($el)"
                         x-show="activeTab === 'products'"
@@ -137,6 +152,8 @@
 
                     <div
                         role="tabpanel"
+                        id="predictive-search-panel-articles-{{ scope_id }}"
+                        aria-labelledby="predictive-search-tab-articles-{{ scope_id }}"
                         x-data="{ index: null }"
                         x-init="index = registerPanel($el)"
                         x-show="activeTab === 'articles'"
@@ -158,6 +175,8 @@
 
                     <div
                         role="tabpanel"
+                        id="predictive-search-panel-pages-{{ scope_id }}"
+                        aria-labelledby="predictive-search-tab-pages-{{ scope_id }}"
                         x-data="{ index: null }"
                         x-init="index = registerPanel($el)"
                         x-show="activeTab === 'pages'"

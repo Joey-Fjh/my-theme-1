@@ -387,6 +387,7 @@
                 tabs: [],
                 panels: [],
                 activeIndex: 0,
+                focusIndex: 0,
                 mobileQuery: '(max-width: 47.99rem)',
                 scrollMode: options.scrollMode === 'always' ? 'always' : 'mobile',
                 scroller: null,
@@ -412,6 +413,7 @@
                         this.scroller = this.getTabScroller();
                         if (this.scroller) {
                             this.on(this.scroller, 'dragstart', this.onDragStart.bind(this));
+                            this.on(this.scroller, 'keydown', this.onTabKeydown.bind(this));
                             this.on(this.scroller, 'pointerdown', this.onPointerDown.bind(this));
                             this.on(this.scroller, 'touchstart', this.onTouchStart.bind(this), {
                                 passive: true,
@@ -452,6 +454,7 @@
                 setActive(index, options = {}) {
                     if (index < 0 || index >= this.tabs.length) return;
                     this.activeIndex = index;
+                    this.focusIndex = index;
 
                     this.$nextTick(() => {
                         this.scrollActiveTabIntoView(index, options);
@@ -462,12 +465,65 @@
                     return this.activeIndex === index;
                 },
 
+                isFocusable(index) {
+                    return this.focusIndex === index;
+                },
+
                 next() {
                     this.setActive((this.activeIndex + 1) % this.tabs.length);
                 },
 
                 prev() {
                     this.setActive((this.activeIndex - 1 + this.tabs.length) % this.tabs.length);
+                },
+
+                focusTab(index) {
+                    const tab = this.tabs[index];
+                    if (!(tab instanceof HTMLElement)) return;
+
+                    this.focusIndex = index;
+                    this.$nextTick(() => {
+                        tab.focus({ preventScroll: true });
+                        this.scrollActiveTabIntoView(index, { centerOnMobile: true });
+                    });
+                },
+
+                onTabKeydown(event) {
+                    const currentTab = event.target?.closest?.('[role="tab"]');
+                    const currentIndex = this.tabs.indexOf(currentTab);
+                    if (currentIndex < 0) return;
+
+                    if (
+                        (event.key === ' ' || event.key === 'Spacebar') &&
+                        currentTab instanceof HTMLAnchorElement
+                    ) {
+                        event.preventDefault();
+                        currentTab.click();
+                        return;
+                    }
+
+                    const orientation =
+                        this.scroller?.getAttribute('aria-orientation') || 'horizontal';
+                    let nextIndex = null;
+
+                    if (event.key === 'Home') {
+                        nextIndex = 0;
+                    } else if (event.key === 'End') {
+                        nextIndex = this.tabs.length - 1;
+                    } else if (orientation === 'vertical' && event.key === 'ArrowDown') {
+                        nextIndex = (currentIndex + 1) % this.tabs.length;
+                    } else if (orientation === 'vertical' && event.key === 'ArrowUp') {
+                        nextIndex = (currentIndex - 1 + this.tabs.length) % this.tabs.length;
+                    } else if (orientation !== 'vertical' && event.key === 'ArrowRight') {
+                        nextIndex = (currentIndex + 1) % this.tabs.length;
+                    } else if (orientation !== 'vertical' && event.key === 'ArrowLeft') {
+                        nextIndex = (currentIndex - 1 + this.tabs.length) % this.tabs.length;
+                    }
+
+                    if (nextIndex === null) return;
+
+                    event.preventDefault();
+                    this.focusTab(nextIndex);
                 },
 
                 isMobileViewport() {
@@ -781,6 +837,98 @@
             };
         },
 
+        localizationSwitcher() {
+            return {
+                ...AlpineComponentsFactory.useDisposable(),
+                open: false,
+                alignEnd: false,
+                _viewportGap: 8,
+                _fitRetries: 0,
+                _maxFitRetries: 8,
+
+                init() {
+                    this.on(window, 'resize', () => {
+                        if (this.open) this.fitMenuToViewport();
+                    });
+                },
+
+                toggle() {
+                    if (this.open) {
+                        this.close();
+                        return;
+                    }
+
+                    // Predict before show so the first paint does not overflow and
+                    // create a one-frame horizontal scrollbar.
+                    this._fitRetries = 0;
+                    this.alignEnd = this.shouldPreferAlignEnd();
+                    this.open = true;
+                    this.scheduleFitMenuToViewport();
+                },
+
+                close() {
+                    this.open = false;
+                    this.alignEnd = false;
+                    this._fitRetries = 0;
+                },
+
+                shouldPreferAlignEnd() {
+                    const trigger = this.$refs.localizationTrigger;
+                    if (!trigger) return false;
+
+                    const triggerRect = trigger.getBoundingClientRect();
+                    const viewportWidth =
+                        document.documentElement.clientWidth || window.innerWidth || 0;
+                    return triggerRect.left > viewportWidth * 0.5;
+                },
+
+                scheduleFitMenuToViewport() {
+                    this.$nextTick(() => {
+                        requestAnimationFrame(() => this.fitMenuToViewport());
+                    });
+                },
+
+                /**
+                 * Prefer start alignment; flip to end when the panel would overflow the
+                 * viewport edge (same idea as image magnifier canPlaceRight).
+                 */
+                fitMenuToViewport() {
+                    const menu = this.$refs.localizationMenu;
+                    const trigger = this.$refs.localizationTrigger;
+                    if (!menu || !trigger || !this.open) return;
+
+                    const menuWidth = menu.offsetWidth || menu.getBoundingClientRect().width;
+                    if (menuWidth <= 0) {
+                        if (this._fitRetries >= this._maxFitRetries) return;
+                        this._fitRetries += 1;
+                        this.scheduleFitMenuToViewport();
+                        return;
+                    }
+
+                    this._fitRetries = 0;
+
+                    const triggerRect = trigger.getBoundingClientRect();
+                    const viewportWidth =
+                        document.documentElement.clientWidth || window.innerWidth || 0;
+                    const gap = this._viewportGap;
+                    const startRight = triggerRect.left + menuWidth;
+                    const endLeft = triggerRect.right - menuWidth;
+
+                    if (startRight <= viewportWidth - gap) {
+                        this.alignEnd = false;
+                        return;
+                    }
+
+                    if (endLeft >= gap) {
+                        this.alignEnd = true;
+                        return;
+                    }
+
+                    this.alignEnd = this.shouldPreferAlignEnd();
+                },
+            };
+        },
+
         sortByDropdown() {
             return {
                 sortBy: '',
@@ -802,10 +950,24 @@
                     return this.sortBy === value;
                 },
 
+                syncPeers(value) {
+                    document.querySelectorAll('[data-sort-by-dropdown]').forEach((dropdown) => {
+                        if (dropdown.dataset.formId !== this.formId) return;
+
+                        const data = window.Alpine?.$data?.(dropdown);
+                        if (data) data.sortBy = value;
+
+                        dropdown
+                            .querySelector('[data-sort-by-control]')
+                            ?.setAttribute('value', value);
+                    });
+                },
+
                 select(value) {
                     this.sortBy = value;
 
                     if (this.formId) {
+                        this.syncPeers(value);
                         this.$nextTick(() => {
                             document
                                 .getElementById(this.formId)

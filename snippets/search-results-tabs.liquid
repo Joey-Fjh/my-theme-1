@@ -30,6 +30,9 @@
     assign mobile_card_columns = mobile_card_columns | default: '2'
     assign is_product_results = false
     assign show_product_filters = false
+    assign filters_form_id = 'CollectionFiltersForm-' | append: section_id
+    assign filters_dialog_id = 'collection-filters-' | append: section_id
+    assign filters_dialog_title_id = 'dialog-title-' | append: filters_dialog_id
 
     if param_type == 'product'
         assign is_product_results = true
@@ -44,6 +47,8 @@
     data-pagination-section-id="{{ section_id }}"
     data-pagination-selectors='["[data-search-type-shell]","[data-search-drawer-shell]"]'
     data-search-result-type="{{ param_type | escape }}"
+    data-filters-form-id="{{ filters_form_id }}"
+    data-filters-dialog-id="{{ filters_dialog_id }}"
     x-data="searchFilters()"
 >
     <div
@@ -76,11 +81,11 @@
                     role="tab"
                     x-data="{ index: null }"
                     x-init="index = registerTab($el);"
-                    :id="`tab-${index}`"
-                    aria-controls="search-results-panel"
+                    :id="`search-{{ section_id }}-tab-${index}`"
+                    aria-controls="search-{{ section_id }}-results-panel"
                     @click.prevent="loadUrl($el.href); setActive(index)"
                     @popstate.window="isUrlMatch($el.href) && setActive(index)"
-                    :tabindex="isActive(index) ? 0 : -1"
+                    :tabindex="isFocusable(index) ? 0 : -1"
                     :aria-selected="isActive(index)"
                     class="search-results-tabs__tab tab-nav-item tab-nav-item--search whitespace-nowrap"
                     :class="{ 'is-active': isActive(index) }"
@@ -93,11 +98,11 @@
                     role="tab"
                     x-data="{ index: null }"
                     x-init="index = registerTab($el);"
-                    :id="`tab-${index}`"
-                    aria-controls="search-results-panel"
+                    :id="`search-{{ section_id }}-tab-${index}`"
+                    aria-controls="search-{{ section_id }}-results-panel"
                     @click.prevent="loadUrl($el.href); setActive(index)"
                     @popstate.window="isUrlMatch($el.href) && setActive(index)"
-                    :tabindex="isActive(index) ? 0 : -1"
+                    :tabindex="isFocusable(index) ? 0 : -1"
                     :aria-selected="isActive(index)"
                     class="search-results-tabs__tab tab-nav-item tab-nav-item--search whitespace-nowrap"
                     :class="{ 'is-active': isActive(index) }"
@@ -110,11 +115,11 @@
                     role="tab"
                     x-data="{ index: null }"
                     x-init="index = registerTab($el);"
-                    :id="`tab-${index}`"
-                    aria-controls="search-results-panel"
+                    :id="`search-{{ section_id }}-tab-${index}`"
+                    aria-controls="search-{{ section_id }}-results-panel"
                     @click.prevent="loadUrl($el.href); setActive(index)"
                     @popstate.window="isUrlMatch($el.href) && setActive(index)"
-                    :tabindex="isActive(index) ? 0 : -1"
+                    :tabindex="isFocusable(index) ? 0 : -1"
                     :aria-selected="isActive(index)"
                     class="search-results-tabs__tab tab-nav-item tab-nav-item--search whitespace-nowrap"
                     :class="{ 'is-active': isActive(index) }"
@@ -126,7 +131,7 @@
 
         <div data-search-chrome class="w-full">
             {%- if is_product_results and show_product_filters -%}
-                <form id="CollectionFiltersForm" class="hidden" @change="onChange()">
+                <form id="{{ filters_form_id }}" class="hidden" @change="onChange()">
                     <input type="hidden" name="q" value="{{ search.terms | escape }}">
                     <input type="hidden" name="type" value="product">
                     <input type="hidden" name="options[prefix]" value="last">
@@ -137,7 +142,8 @@
                         type="button"
                         data-search-filter-trigger
                         aria-haspopup="dialog"
-                        @click="$store.dialog.open('collection-filters')"
+                        data-dialog-id="{{ filters_dialog_id }}"
+                        @click="$store.dialog.open($el.dataset.dialogId)"
                         class="collection-toolbar__action flex shrink-0 cursor-pointer items-center gap-3"
                     >
                         {% render 'icons', icon: 'icon-filter' %}
@@ -164,7 +170,8 @@
 
             <div
                 role="tabpanel"
-                id="search-results-panel"
+                id="search-{{ section_id }}-results-panel"
+                :aria-labelledby="`search-{{ section_id }}-tab-${activeIndex}`"
                 x-data="{ index: null }"
                 x-init="index = registerPanel($el)"
                 class="relative mt-6 w-full"
@@ -277,14 +284,16 @@
                 <div data-search-drawer-body class="h-full min-h-0">
                     {%- render 'filters-drawer',
                         filter_source: search,
-                        scope_id: section_id
+                        scope_id: section_id,
+                        form_id: filters_form_id,
+                        dialog_title_id: filters_dialog_title_id
                     -%}
                 </div>
             {%- endcapture -%}
 
             {%- assign close_label = 'accessibility.close_filters_drawer' | t -%}
             {%- render 'ui-dialog',
-                id: 'collection-filters',
+                id: filters_dialog_id,
                 type: 'drawer',
                 layer: 'drawer',
                 position: 'left',

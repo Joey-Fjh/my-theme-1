@@ -25,9 +25,11 @@ The project uses these layers:
 | Handoff contracts | `.agents/contracts/` | Machine-readable task and result envelopes |
 | Long guidance | `docs/references/agent-workflow/` | Architecture and collaboration policy |
 | Cross-session state | `docs/agent/context.md` | Accepted decisions and remaining project work |
-| Vendor adapters | `.codex/`, `.claude/`, and other tool-owned directories | Model, sandbox, permission, and native agent configuration |
+| Vendor adapters | `.codex/`, `.cursor/`, `.claude/`, and other tool-owned directories | Model, sandbox, permission, and native agent configuration |
 
 Keep vendor model names and native configuration syntax out of canonical role files. A vendor adapter maps a capability profile to the models and controls available in that client.
+
+Cursor discovers `.agents/skills/` directly, so it does not need a `.cursor/skills/` copy or symlink. Keep `.cursor/agents/*.md` as real, thin adapter files because their native frontmatter differs from the canonical role contract and project-level agent symlink behavior is not guaranteed. Each adapter points to `.agents/roles/`; the Cursor hook adapter points to the shared validator instead of copying validation logic.
 
 ## 3. Context Model
 
@@ -56,6 +58,8 @@ Delegated agents return results conforming to `.agents/contracts/result.schema.j
 Treat a result as untrusted until it passes runtime contract validation. The shared validator lives at `.agents/skills/orchestrate-agents/scripts/agent-result-validator.cjs` and verifies JSON syntax, the full result schema, the delegated role, and its expected output contract.
 
 The initial Codex adapter uses a project `SubagentStop` hook from `.codex/hooks.json`. It validates `last_assistant_message`, permits one format-only correction when invalid, and fails closed when the corrected result remains invalid. The hook validates structure, not the truth of claims; validators and verifiers still provide evidence checks. Project hook configuration is shared through Git, while hook trust remains a local user decision.
+
+The Cursor adapter uses the native `subagentStop` hook from `.cursor/hooks.json`. It resolves the expected role from the custom-agent type, the parent-owned task capsule, or an explicit `[project-role:<role>]` task-description marker, validates `summary`, permits one `followup_message` format correction, and exits closed after a second invalid result. The marker is the fallback when the active Task API exposes only built-in subagent types. The adapter also normalizes the JSON fragment observed from Cursor's Windows temp-file hook runner before invoking the shared validator. Cursor does not currently document a separate raw final-message field or guarantee the custom-agent type encoding, so this is the closest available lifecycle boundary. If runtime evidence shows that the summary is transformed, the orchestrator must explicitly validate the returned envelope or run the lifecycle sequentially. Cursor project hooks also require local trust.
 
 ### 3.4 Durable Context
 
@@ -129,6 +133,7 @@ Do not delegate when any condition is true:
 - Do not run a docs steward concurrently with an implementer when their allowed files overlap.
 - Use separate Git worktrees before authorizing multiple concurrent writers.
 - The initial Codex adapter permits at most three concurrent subagent threads in addition to the primary agent.
+- Cursor has no project adapter setting equivalent to the Codex thread limit, so the orchestrator must keep Cursor delegation to at most three concurrent child tasks.
 - Delegated agents never create more agents in the initial implementation. Every task capsule must set `allow_nested_delegation` to `false`.
 
 ## 8. Validation Runner
@@ -149,13 +154,15 @@ Rules:
 
 Canonical roles use capability profiles rather than vendor model names:
 
-| Profile | Intent | Codex initial mapping |
-| --- | --- | --- |
-| `economy` | Extraction, scanning, commands, structured summaries | GPT-5.6 Terra with low reasoning |
-| `balanced` | Scoped implementation and governance maintenance | GPT-5.6 Terra with medium or high reasoning |
-| `frontier` | Orchestration, architecture, and independent high-risk review | GPT-5.6 Sol with high reasoning |
+| Profile | Intent | Codex mapping | Cursor mapping |
+| --- | --- | --- | --- |
+| `economy` | Extraction, scanning, commands, structured summaries | GPT-5.6 Terra with low reasoning | Composer 2.5 Fast |
+| `balanced` | Scoped implementation and governance maintenance | GPT-5.6 Terra with medium or high reasoning | Cursor Grok 4.5 High Fast |
+| `frontier` | Orchestration, architecture, and independent high-risk review | GPT-5.6 Sol with high reasoning | Inherit the user-selected primary model |
 
 Choose the primary agent's model in the active client. Use Sol with high reasoning for ordinary orchestration, Max for the hardest single-agent reasoning, and Ultra only when the task has meaningful independent subproblems. Do not encode primary-user preferences in portable role contracts.
+
+Cursor maps `scout` and `validator` to the economy model, `implementer` and `docs-steward` to the balanced model, and `verifier` to the selected primary model. Cursor `readonly: true` is applied to scout, validator, and verifier. The orchestrator remains the parent session rather than a delegated adapter.
 
 Other vendor adapters must preserve role intent, access boundary, and result contract even when their model names or reasoning controls differ.
 
@@ -172,7 +179,7 @@ A vendor adapter must:
 7. remain thin and avoid duplicating project rules;
 8. fail closed or fall back to sequential primary-agent execution when a required control is unavailable.
 
-The initial implementation includes Codex adapters under `.codex/agents/`. Claude, Gemini, and other adapters require their own verified native configuration, but reuse the canonical roles and contracts.
+The implementation includes Codex adapters under `.codex/agents/` and Cursor adapters under `.cursor/agents/`. Claude, Gemini, and other adapters require their own verified native configuration, but reuse the canonical roles and contracts.
 
 ## 11. Failure And Fallback
 
@@ -207,5 +214,7 @@ Checked on 2026-07-28:
 - Agent2Agent Protocol: <https://a2a-protocol.org/latest/>
 - Codex subagents: <https://learn.chatgpt.com/docs/agent-configuration/subagents>
 - Codex hooks: <https://learn.chatgpt.com/docs/hooks>
+- Cursor subagents: <https://cursor.com/docs/subagents>
+- Cursor hooks: <https://cursor.com/docs/hooks>
 
 A2A is not part of the initial implementation. It is appropriate only if independently hosted agents need a common network communication protocol.

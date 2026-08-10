@@ -45,8 +45,10 @@
         assign card_title = 'products.product.example_title_numbered' | t: index: card_placeholder_index
     endif
     assign product_card_media_tag = 'a'
+    assign product_card_title_tag = 'a'
     if is_placeholder
         assign product_card_media_tag = 'div'
+        assign product_card_title_tag = 'span'
     endif
 
     assign pc_items = pc_items | default: 4
@@ -94,7 +96,10 @@
         endcase
     endif
     assign pc_media_ratio = aspect_ratio
-    assign scope_id = scope_id | default: 'card'
+    assign scope_id = scope_id | default: ''
+    if scope_id == blank
+        assign scope_id = 'card-' | append: product.id
+    endif
     assign color_scheme = color_scheme | default: ''
     assign primary_image_loading = primary_image_loading | default: 'lazy'
     assign primary_image_fetchpriority = primary_image_fetchpriority | default: ''
@@ -179,7 +184,7 @@
     <div class="product-card__category product-card-shell__meta" data-motion-copy-bound>
         <div
             class="product-card__category-brand product-card-shell__brand"
-            title="{{ brand }}"
+            title="{{ brand | escape }}"
             data-motion-copy
         >
             {{ brand }}
@@ -338,7 +343,7 @@
         {%- if hover_mode == 'variants' -%}
             <button
                 type="button"
-                class="product-card__quick-view-trigger"
+                class="product-card__quick-view-trigger focus-ring"
                 :class="imageHover && 'is-visible'"
                 @click.prevent.stop="openQuickView()"
                 aria-label="{{ 'accessibility.quick_view' | t: product: product.title | escape }}"
@@ -362,63 +367,33 @@
                     @mouseenter="setImageHover(true)"
                     @mouseleave="setImageHover(false)"
                 >
-                    <div data-motion-copy-bound>
-                        <div class="product-card__variant-heading" data-motion-copy>
-                            <div
-                                class="product-card__variant-title product-card-shell__title"
-                                title="{{ product.title }}"
-                            >
-                                {{ product.title }}
-                            </div>
-                            <div class="product-card__variant-price product-card-shell__price">
-                                {%- render 'product-card-price', product: product -%}
-                            </div>
-                        </div>
-                    </div>
-
                     <div class="product-card__variant-body" x-data="dragScroll({ axis: 'y' })">
                         {% render 'product-card-variant-panel', product: product, limit: 8 %}
-                    </div>
-                </div>
-            {%- else -%}
-                <div class="product-card__variant-shell product-card__variant-shell--static is-visible">
-                    <div data-motion-copy-bound>
-                        <div class="product-card__variant-heading" data-motion-copy>
-                            <div
-                                class="product-card__variant-title product-card-shell__title"
-                                title="{{ product.title }}"
-                            >
-                                {{ product.title }}
-                            </div>
-                            <div class="product-card__variant-price product-card-shell__price">
-                                {%- render 'product-card-price', product: product -%}
-                            </div>
-                        </div>
                     </div>
                 </div>
             {%- endif -%}
         {%- endif -%}
     </div>
 
-    {%- unless hover_mode == 'variants' -%}
-        <div data-motion-copy-bound>
-            <div class="product-card__info product-card-shell__info" data-motion-copy>
-                <div
-                    class="product-card__info-title product-card-shell__title"
-                    title="{{ card_title | escape }}"
-                >
-                    {{- card_title -}}
-                </div>
-                <div class="product-card__info-price product-card-shell__price">
-                    {%- if is_placeholder -%}
-                        {{- 1999 | money -}}
-                    {%- else -%}
-                        {%- render 'product-card-price', product: product -%}
-                    {%- endif -%}
-                </div>
+    <div data-motion-copy-bound>
+        <div class="product-card__info product-card-shell__info" data-motion-copy>
+            <{{ product_card_title_tag }}
+                {% unless is_placeholder %}
+                    href="{{ product.url }}"
+                {% endunless %}
+                class="product-card__info-title product-card-shell__title"
+            >
+                {{- card_title -}}
+            </{{ product_card_title_tag }}>
+            <div class="product-card__info-price product-card-shell__price">
+                {%- if is_placeholder -%}
+                    {{- 1999 | money -}}
+                {%- else -%}
+                    {%- render 'product-card-price', product: product -%}
+                {%- endif -%}
             </div>
         </div>
-    {%- endunless -%}
+    </div>
 
     {%- if show_hover_actions_enabled -%}
         <div
@@ -428,6 +403,7 @@
             @mouseleave="setActionsHover(false)"
         >
             <button
+                type="button"
                 class="product-card__btn-primary"
                 data-product-handle="{{ product.handle }}"
                 @click.prevent.stop="openQuickView()"
@@ -435,6 +411,7 @@
                 {{ 'products.product.quick_view' | t }}
             </button>
             <button
+                type="button"
                 class="product-card__btn-secondary"
                 data-variant-id="{{ product.selected_or_first_available_variant.id }}"
                 :disabled="!primaryVariantAvailable || isAddingToCart"
@@ -454,7 +431,7 @@
     {%- endif -%}
 </div>
 
-{%- unless is_placeholder or request.visual_preview_mode -%}
+{%- unless is_placeholder or request.visual_preview_mode or card_mode == 'lite' -%}
     {%- capture quick_view_content -%}
         {%- render 'product-quick-view',
             product: product,

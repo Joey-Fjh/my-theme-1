@@ -18,6 +18,7 @@
 
 <header
     data-section-id="{{ section.id }}"
+    data-mobile-menu-popup-id="{{ mobile_menu_popup_id }}"
     class="
         header-section full-width color-{{ section.settings.color_scheme }} surface-section
         {% if is_homepage %}is-homepage{% else %}is-innerpage{% endif %}
@@ -29,7 +30,7 @@
           'is-hidden' : isHidden,
           'is-scrolled': !isTop,
           'is-menu-active': isMenuActive,
-          'is-mobile-menu-active': $store.dialog?.active === '{{ mobile_menu_popup_id }}'
+          'is-mobile-menu-active': $store.dialog?.active === $el.dataset.mobileMenuPopupId
         }
     "
 >
@@ -46,7 +47,8 @@
                     <button
                         type="button"
                         class="header-icon-button"
-                        @click="$store.dialog.open('{{ mobile_menu_popup_id }}')"
+                        data-dialog-id="{{ mobile_menu_popup_id }}"
+                        @click="$store.dialog.open($el.dataset.dialogId)"
                         aria-label="{{ 'accessibility.mobile_menu' | t }}"
                     >
                         {%- render 'icons', icon: 'icon-menu', class: 'ms-3' -%}
@@ -58,7 +60,8 @@
                 <button
                     type="button"
                     class="header-icon-button"
-                    @click="$store.dialog.open('{{ search_overlay_popup_id }}')"
+                    data-dialog-id="{{ search_overlay_popup_id }}"
+                    @click="$store.dialog.open($el.dataset.dialogId)"
                     aria-label="{{ 'accessibility.search' | t }}"
                 >
                     {% render 'icons', icon: 'icon-search', class: size_class %}
@@ -122,7 +125,8 @@
                 <button
                     type="button"
                     class="header-search__right header-icon-button"
-                    @click="$store.dialog.open('{{ search_overlay_popup_id }}')"
+                    data-dialog-id="{{ search_overlay_popup_id }}"
+                    @click="$store.dialog.open($el.dataset.dialogId)"
                     aria-label="{{ 'accessibility.search' | t }}"
                 >
                     {% render 'icons', icon: 'icon-search', class: size_class %}
@@ -132,7 +136,8 @@
                     <button
                         type="button"
                         class="header-icon-button relative"
-                        @click="$store.dialog.open('{{ cart_overlay_popup_id }}')"
+                        data-dialog-id="{{ cart_overlay_popup_id }}"
+                        @click="$store.dialog.open($el.dataset.dialogId)"
                         aria-label="{{ 'accessibility.cart' | t }}"
                     >
                         {% render 'icons', icon: 'icon-cart', class: size_class %}
@@ -354,8 +359,8 @@
             }
 
             .header-super-menu-columns {
-                display: flex;
-                flex-wrap: wrap;
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(min(11rem, 100%), 1fr));
                 width: 100%;
                 align-items: start;
                 gap: 2rem 3.2rem;
@@ -364,7 +369,7 @@
             .header-super-menu-column {
                 position: relative;
                 display: flex;
-                min-width: max-content;
+                min-width: 0;
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 1.2rem;
@@ -376,7 +381,8 @@
 
             .header-super-menu-child-link {
                 padding: 0;
-                white-space: nowrap;
+                text-wrap: pretty;
+                overflow-wrap: anywhere;
             }
 
             .header-super-menu-child-link--has-children {
@@ -458,9 +464,18 @@
                 }
 
                 .header-super-menu-layout--series-top-bottom .header-super-menu-columns {
+                    display: flex;
                     flex-direction: column;
                     flex-wrap: nowrap;
                     gap: 1.6rem;
+                }
+
+                .header-super-menu-layout--series-top-bottom .header-super-menu-column {
+                    min-width: max-content;
+                }
+
+                .header-super-menu-layout--series-top-bottom .header-super-menu-child-link {
+                    white-space: nowrap;
                 }
 
                 .header-super-menu-layout--series-top-bottom
@@ -510,6 +525,22 @@
     }
 {% endstylesheet %}
 
+{%- assign organization_social_setting_ids = 'social_twitter_link,social_facebook_link,social_pinterest_link,social_instagram_link,social_tiktok_link,social_tumblr_link,social_snapchat_link,social_youtube_link,social_vimeo_link'
+    | split: ','
+-%}
+{%- capture organization_same_as -%}
+    {%- assign organization_social_link_written = false -%}
+    {%- for organization_social_setting_id in organization_social_setting_ids -%}
+        {%- assign organization_social_url = settings[organization_social_setting_id] -%}
+        {%- if organization_social_url != blank -%}
+            {%- if organization_social_link_written -%},{%- endif -%}
+            {{- organization_social_url | json -}}
+            {%- assign organization_social_link_written = true -%}
+        {%- endif -%}
+    {%- endfor -%}
+{%- endcapture -%}
+{%- assign organization_same_as = organization_same_as | strip -%}
+
 <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -518,18 +549,10 @@
       {% if settings.logo %}
         "logo": {{ settings.logo | image_url: width: 500 | prepend: "https:" | json }},
       {% endif %}
-      "sameAs": [
-        {{ settings.social_twitter_link | json }},
-        {{ settings.social_facebook_link | json }},
-        {{ settings.social_pinterest_link | json }},
-        {{ settings.social_instagram_link | json }},
-        {{ settings.social_tiktok_link | json }},
-        {{ settings.social_tumblr_link | json }},
-        {{ settings.social_snapchat_link | json }},
-        {{ settings.social_youtube_link | json }},
-        {{ settings.social_vimeo_link | json }}
-      ],
-      "url": {{ request.origin | append: page.url | json }}
+      {% if organization_same_as != blank %}
+        "sameAs": [{{ organization_same_as }}],
+      {% endif %}
+      "url": {{ request.origin | append: routes.root_url | json }}
     }
 </script>
 

@@ -13,6 +13,7 @@ const requiredRoles = [
     'docs-steward',
 ];
 const codexAgents = requiredRoles.filter((role) => role !== 'orchestrator');
+const cursorAgents = requiredRoles.filter((role) => role !== 'orchestrator');
 const delegatedRoles = [...codexAgents];
 const codexHookMatcher = '^(scout|implementer|validator|verifier|docs_steward)$';
 const agentLintCommand =
@@ -47,6 +48,33 @@ const codexAgentExpectations = {
         model: 'gpt-5.6-terra',
         effort: 'medium',
         sandbox: 'workspace-write',
+    },
+};
+const cursorAgentExpectations = {
+    scout: {
+        name: 'scout',
+        model: 'composer-2.5-fast',
+        readonly: 'true',
+    },
+    implementer: {
+        name: 'implementer',
+        model: 'cursor-grok-4.5-high-fast',
+        readonly: 'false',
+    },
+    validator: {
+        name: 'validator',
+        model: 'composer-2.5-fast',
+        readonly: 'true',
+    },
+    verifier: {
+        name: 'verifier',
+        model: 'inherit',
+        readonly: 'true',
+    },
+    'docs-steward': {
+        name: 'docs-steward',
+        model: 'cursor-grok-4.5-high-fast',
+        readonly: 'false',
     },
 };
 
@@ -283,6 +311,54 @@ function validateCodexAgents() {
     });
 }
 
+function validateCursorAgents() {
+    const adapterDirectory = path.join(root, '.cursor/agents');
+    if (fs.existsSync(adapterDirectory)) {
+        const actualAdapters = fs
+            .readdirSync(adapterDirectory)
+            .filter((name) => name.endsWith('.md'))
+            .map((name) => name.replace(/\.md$/, ''))
+            .sort();
+        const expectedAdapters = [...cursorAgents].sort();
+        if (JSON.stringify(actualAdapters) !== JSON.stringify(expectedAdapters)) {
+            fail(
+                adapterDirectory,
+                `adapter set must be exactly: ${expectedAdapters.join(', ')}`,
+            );
+        }
+    }
+
+    cursorAgents.forEach((role) => {
+        const relativePath = `.cursor/agents/${role}.md`;
+        const filePath = path.join(root, relativePath);
+        const source = readRequired(relativePath);
+        if (!source) return;
+
+        const frontmatter = parseFrontmatter(filePath, source);
+        const expectation = cursorAgentExpectations[role];
+        Object.entries(expectation).forEach(([field, expected]) => {
+            if (frontmatter.get(field) !== expected) {
+                fail(filePath, `frontmatter ${field} must be ${expected}`);
+            }
+        });
+        if (!frontmatter.get('description')) {
+            fail(filePath, 'frontmatter description is required');
+        }
+        if (!source.includes(`.agents/roles/${role}.md`)) {
+            fail(filePath, `adapter must load .agents/roles/${role}.md`);
+        }
+        if (!source.includes('.agents/contracts/result.schema.json')) {
+            fail(filePath, 'adapter must reference the shared result contract');
+        }
+        if (!source.includes('do not create or delegate to another agent')) {
+            fail(filePath, 'adapter must prohibit nested delegation');
+        }
+        if (/^tools:/m.test(source)) {
+            fail(filePath, 'undocumented tools frontmatter is not allowed');
+        }
+    });
+}
+
 function validateCodexHooks() {
     const hookConfigPath = '.codex/hooks.json';
     const hookConfigFile = path.join(root, hookConfigPath);
@@ -337,6 +413,59 @@ function validateCodexHooks() {
     readRequired('.agents/skills/orchestrate-agents/scripts/test-agent-result-hook.cjs');
 }
 
+function validateCursorHooks() {
+    const hookConfigPath = '.cursor/hooks.json';
+    const hookConfigFile = path.join(root, hookConfigPath);
+    const hookConfigSource = readRequired(hookConfigPath);
+    if (hookConfigSource) {
+        try {
+            const hookConfig = JSON.parse(hookConfigSource);
+            if (hookConfig.version !== 1) {
+                fail(hookConfigFile, 'version must be 1');
+            }
+            const handlers = hookConfig.hooks?.subagentStop;
+            if (!Array.isArray(handlers) || handlers.length !== 1) {
+                fail(hookConfigFile, 'must define exactly one subagentStop handler');
+            } else {
+                const handler = handlers[0];
+                if (handler.type !== 'command') {
+                    fail(hookConfigFile, 'subagentStop handler must use command type');
+                }
+                if (!handler.command?.includes('.cursor/hooks/validate-agent-result.cjs')) {
+                    fail(hookConfigFile, 'subagentStop must invoke the Cursor result hook adapter');
+                }
+                if (handler.failClosed !== true) {
+                    fail(hookConfigFile, 'subagentStop result validation must fail closed');
+                }
+                if (handler.loop_limit !== 1) {
+                    fail(hookConfigFile, 'subagentStop must allow exactly one correction loop');
+                }
+                if ('matcher' in handler) {
+                    fail(
+                        hookConfigFile,
+                        'subagentStop must use script-side role filtering until custom-agent matcher values are documented',
+                    );
+                }
+            }
+        } catch (error) {
+            fail(hookConfigFile, `invalid JSON: ${error.message}`);
+        }
+    }
+
+    const hookAdapterPath = '.cursor/hooks/validate-agent-result.cjs';
+    const hookAdapter = readRequired(hookAdapterPath);
+    if (
+        hookAdapter &&
+        (!hookAdapter.includes('.agents') ||
+            !hookAdapter.includes('agent-result-validator.cjs'))
+    ) {
+        fail(path.join(root, hookAdapterPath), 'hook adapter must load the shared validator');
+    }
+    if (hookAdapter && !hookAdapter.includes('followup_message')) {
+        fail(path.join(root, hookAdapterPath), 'hook adapter must request one format correction');
+    }
+}
+
 function validateGovernanceRouting() {
     requiredGovernanceFiles.forEach((relativePath) => readRequired(relativePath));
 
@@ -362,11 +491,17 @@ function validateGovernanceRouting() {
     if (!routing.includes('.codex/hooks.json') || !routing.includes('agent-result-validator.cjs')) {
         fail(path.join(root, routingPath), 'skill routing is missing runtime result enforcement');
     }
+    if (!routing.includes('.cursor/hooks.json') || !routing.includes('.cursor/agents/')) {
+        fail(path.join(root, routingPath), 'skill routing is missing the Cursor adapter boundary');
+    }
 
     const architecturePath = 'docs/references/agent-workflow/multi-agent-architecture.md';
     const architecture = readRequired(architecturePath);
     if (!architecture.includes('SubagentStop') || !architecture.includes('hook trust')) {
         fail(path.join(root, architecturePath), 'architecture is missing Codex hook boundaries');
+    }
+    if (!architecture.includes('subagentStop') || !architecture.includes('.cursor/agents/')) {
+        fail(path.join(root, architecturePath), 'architecture is missing Cursor adapter boundaries');
     }
 
     const packagePath = 'package.json';
@@ -399,7 +534,9 @@ validateSkill();
 validateRoles();
 validateSchemas();
 validateCodexAgents();
+validateCursorAgents();
 validateCodexHooks();
+validateCursorHooks();
 validateGovernanceRouting();
 
 if (errors.length) {
@@ -409,5 +546,5 @@ if (errors.length) {
 }
 
 console.log(
-    `Agent orchestration lint passed (${requiredRoles.length} roles, ${codexAgents.length} Codex adapters, 2 contracts, 1 runtime hook).`,
+    `Agent orchestration lint passed (${requiredRoles.length} roles, ${codexAgents.length} Codex adapters, ${cursorAgents.length} Cursor adapters, 2 contracts, 2 runtime hooks).`,
 );

@@ -5,12 +5,16 @@
     @param {string} [wrapper_class] - Optional wrapper class override.
     @param {number} [show_more_limit] - Optional visible item count before progressive expansion. Default: 6.
     @param {number} [show_more_step] - Optional items added per click. Default: show_more_limit.
+    @param {string} [scope_id] - Optional unique section ID used to scope form control IDs.
+    @param {string} [form_id] - Optional external form id for filter controls.
 {% enddoc %}
 
 {%- assign filter_host = filter_source | default: collection | default: search -%}
 {%- assign wrapper_class = wrapper_class | default: '' -%}
 {%- assign show_more_limit = show_more_limit | default: 6 -%}
 {%- assign show_more_step = show_more_step | default: show_more_limit -%}
+{%- assign horizontal_scope_id = scope_id | default: 'filters' | append: '-horizontal' -%}
+{%- assign filters_form_id = form_id | default: 'CollectionFiltersForm' -%}
 
 <div
     x-data="{ activeFilter: null }"
@@ -39,7 +43,9 @@
                 show_more_limit: show_more_limit,
                 show_more_step: show_more_step,
                 filter_index: forloop.index0,
-                is_first: forloop.first
+                is_first: forloop.first,
+                scope_id: horizontal_scope_id,
+                form_id: filters_form_id
             -%}
         {%- endfor -%}
     </div>

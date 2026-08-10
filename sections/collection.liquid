@@ -7,43 +7,93 @@
     "
     data-pagination-section-id="{{ section.id }}"
     data-pagination-selectors='["[data-collection-dynamic-content]","[data-collection-drawer-shell]"]'
+    data-filters-form-id="CollectionFiltersForm-{{ section.id }}"
+    data-filters-dialog-id="collection-filters-{{ section.id }}"
     x-data="collectionFilters()"
 >
     {%- liquid
         assign collection_heading_class = section.settings.heading_size | default: 'heading-4xl'
         assign collection_subtitle_class = section.settings.subtitle_size | default: 'body-xl'
+        assign filters_form_id = 'CollectionFiltersForm-' | append: section.id
+        assign filters_dialog_id = 'collection-filters-' | append: section.id
+        assign filters_dialog_title_id = 'dialog-title-' | append: filters_dialog_id
     -%}
     <div class="layout layout-no-pb container-page pb-0">
-        {%- comment -%} Hero {%- endcomment -%}
+        {%- liquid
+            assign collection_hero_image = collection.image
+            if collection_hero_image == blank
+                assign collection_hero_image = section.settings.fallback_image
+            endif
+            assign collection_hero_has_media = false
+            if collection_hero_image != blank
+                assign collection_hero_has_media = true
+            endif
+        -%}
+        {%- comment -%} Hero: media as cover background; height from content + padding {%- endcomment -%}
         <div
-            class="relative py-20 pc:py-40"
+            class="relative mb-8 overflow-hidden rounded-sm color-{{ section.settings.header_color_scheme }} pc:mb-10"
             x-data="motionRevealSection()"
             data-motion-section
         >
-            <div class="flex items-start justify-between">
-                <div data-motion-reveal="content" data-motion-critical>
+            <div class="pointer-events-none absolute inset-0" aria-hidden="true">
+                {%- if collection_hero_has_media -%}
+                    {%- render 'image',
+                        image: collection_hero_image,
+                        alt: '',
+                        width: 2000,
+                        widths: '750,1100,1500,2000',
+                        sizes: '100vw',
+                        loading: 'eager',
+                        fetchpriority: 'high',
+                        mode: 'frame',
+                        fit: 'cover',
+                        wrapper_class: '!absolute inset-0 h-full w-full',
+                        img_class: 'h-full w-full object-cover',
+                        motion_reveal: false
+                    -%}
+                    <div class="absolute inset-0 bg-black/45"></div>
+                {%- else -%}
+                    <div class="absolute inset-0 bg-theme-bg"></div>
+                {%- endif -%}
+            </div>
+
+            <div
+                class="
+                    relative z-10 flex flex-col items-center justify-center px-6 py-16 text-center
+                    pc:px-10 pc:py-24
+                "
+                data-motion-reveal="content"
+                data-motion-critical
+            >
+                <div class="mx-auto w-full max-w-3xl">
                     {%- render 'listing-page-hero-copy',
                         setting_header: section.settings.header,
                         object_title: collection.title,
                         header_locale_key: 'collections.products',
                         setting_description: section.settings.description,
+                        object_description: collection.description,
                         description_locale_key: 'collections.description_html',
                         heading_class: collection_heading_class,
                         description_class: collection_subtitle_class
                     -%}
                 </div>
+            </div>
 
-                <div data-motion-reveal="media">
-                    {%- render 'rotating-badge',
-                        classes: 'relative justify-self-center',
-                        badge_class: 'text-theme-text',
-                        center_class: 'text-theme-text',
-                        unique_id: section.id,
-                        size: 100,
-                        badge_text: section.settings.rotate_badge_text,
-                        center_text: section.settings.rotate_badge_percent
-                    -%}
-                </div>
+            <div
+                class="absolute end-12 top-12 z-20 pc:end-6 pc:top-6"
+                data-motion-reveal="media"
+                data-motion-critical
+            >
+                {%- render 'rotating-badge',
+                    classes: 'relative',
+                    badge_class: 'text-theme-text',
+                    center_class: 'text-theme-text',
+                    unique_id: section.id,
+                    size: 100,
+                    size_mobile: 72,
+                    badge_text: section.settings.rotate_badge_text,
+                    center_text: section.settings.rotate_badge_percent
+                -%}
             </div>
         </div>
     </div>
@@ -79,7 +129,7 @@
 
         <div data-collection-dynamic-content class="flex flex-col gap-6 pc:gap-6">
             {%- comment -%} Hidden form all filter/sort controls {%- endcomment -%}
-            <form id="CollectionFiltersForm" class="hidden" @change="onChange()"></form>
+            <form id="{{ filters_form_id }}" class="hidden" @change="onChange()"></form>
 
             {%- comment -%}
                 Mobile-only (pc:hidden)
@@ -89,7 +139,8 @@
                     {%- if enable_filtering -%}
                         <button
                             type="button"
-                            @click="$store.dialog.open('collection-filters')"
+                            @click="$store.dialog.open($el.dataset.dialogId)"
+                            data-dialog-id="{{ filters_dialog_id }}"
                             class="collection-toolbar__action flex shrink-0 cursor-pointer items-center gap-3"
                         >
                             {% render 'icons', icon: 'icon-filter' %}
@@ -102,7 +153,7 @@
 
                         {%- render 'sort-by-dropdown',
                             results: collection,
-                            form_id: 'CollectionFiltersForm',
+                            form_id: filters_form_id,
                             class: 'shrink-0',
                             id_prefix: sort_id_prefix_mobile
                         -%}
@@ -121,7 +172,9 @@
                                 {%- render 'filter-horizontal',
                                     filter_source: collection,
                                     show_more_limit: section.settings.filter_visible_values_limit,
-                                    wrapper_class: 'min-w-0 flex-1'
+                                    wrapper_class: 'min-w-0 flex-1',
+                                    scope_id: section.id,
+                                    form_id: filters_form_id
                                 -%}
                             {%- else -%}
                                 <div></div>
@@ -131,7 +184,7 @@
                                 {%- capture sort_id_prefix_desktop_h -%}{{ section.id }}-desktop-h{%- endcapture -%}
                                 {%- render 'sort-by-dropdown',
                                     results: collection,
-                                    form_id: 'CollectionFiltersForm',
+                                    form_id: filters_form_id,
                                     class: 'shrink-0 self-start',
                                     id_prefix: sort_id_prefix_desktop_h
                                 -%}
@@ -157,7 +210,8 @@
                             {%- render 'filter-vertical',
                                 filter_source: collection,
                                 show_more_limit: section.settings.filter_visible_values_limit,
-                                scope_id: section.id
+                                scope_id: section.id,
+                                form_id: filters_form_id
                             -%}
                         </div>
                     </aside>
@@ -196,7 +250,8 @@
                             <div class="hidden pc:flex pc:items-center pc:pb-3">
                                 <button
                                     type="button"
-                                    @click="$store.dialog.open('collection-filters')"
+                                    @click="$store.dialog.open($el.dataset.dialogId)"
+                                    data-dialog-id="{{ filters_dialog_id }}"
                                     class="collection-toolbar__action flex shrink-0 cursor-pointer items-center gap-2.5"
                                 >
                                     {% render 'icons', icon: 'icon-filter' %}
@@ -216,7 +271,7 @@
                                 <div class="hidden pc:flex pc:items-center pc:justify-end pc:pb-3">
                                     {%- render 'sort-by-dropdown',
                                         results: collection,
-                                        form_id: 'CollectionFiltersForm',
+                                        form_id: filters_form_id,
                                         class: 'shrink-0',
                                         id_prefix: sort_id_prefix_desktop_v
                                     -%}
@@ -237,10 +292,10 @@
                             role="tab"
                             x-data="{ index: null }"
                             x-init="index = registerTab($el);"
-                            :id="`tab-${index}`"
-                            aria-controls="collection-panel"
+                            :id="`collection-{{ section.id }}-tab-${index}`"
+                            aria-controls="collection-{{ section.id }}-panel"
                             @click.prevent="window.location.assign(buildCollectionTabUrl($el.href))"
-                            :tabindex="isActive(index) ? 0 : -1"
+                            :tabindex="isFocusable(index) ? 0 : -1"
                             :aria-selected="isActive(index)"
                             :class="isActive(index) && 'is-active'"
                             class="collection__tab tab-nav-item tab-nav-item--underline-opacity"
@@ -259,10 +314,10 @@
                                 role="tab"
                                 x-data="{ index: null }"
                                 x-init="index = registerTab($el);"
-                                :id="`tab-${index}`"
-                                aria-controls="collection-panel"
+                                :id="`collection-{{ section.id }}-tab-${index}`"
+                                aria-controls="collection-{{ section.id }}-panel"
                                 @click.prevent="window.location.assign(buildCollectionTabUrl($el.href))"
-                                :tabindex="isActive(index) ? 0 : -1"
+                                :tabindex="isFocusable(index) ? 0 : -1"
                                 :aria-selected="isActive(index)"
                                 :class="isActive(index) && 'is-active'"
                                 class="collection__tab tab-nav-item tab-nav-item--underline-opacity"
@@ -276,7 +331,8 @@
                     {% capture tab_content %}
                         <div 
                             role="tabpanel"
-                            id="collection-panel"
+                            id="collection-{{ section.id }}-panel"
+                            :aria-labelledby="`collection-{{ section.id }}-tab-${activeIndex}`"
                             x-data="{ index: null }"
                             x-init="index = registerPanel($el)"
                             class="relative w-full"
@@ -317,7 +373,7 @@
                                                     hover_mode: 'variants',
                                                     scope_id: section.id,
                                                     color_scheme: section.settings.color_scheme
-                                                %}
+                                                -%}
                                             </div>
                                         {%- endif -%}
                                     {%- else -%}
@@ -368,14 +424,16 @@
             {%- render 'filters-drawer',
                 filter_source: collection,
                 show_more_limit: section.settings.filter_visible_values_limit,
-                scope_id: section.id
+                scope_id: section.id,
+                form_id: filters_form_id,
+                dialog_title_id: filters_dialog_title_id
             -%}
         {%- endcapture -%}
 
         <div data-collection-drawer-shell>
             {%- assign close_label = 'accessibility.close_filters_drawer' | t -%}
             {%- render 'ui-dialog',
-                id: 'collection-filters',
+                id: filters_dialog_id,
                 type: 'drawer',
                 layer: 'drawer',
                 position: 'left',
@@ -454,8 +512,14 @@
     "settings": [
         {
             "type": "color_scheme",
+            "id": "header_color_scheme",
+            "label": "t:sections.collection.settings.header_color_scheme",
+            "default": "scheme-2"
+        },
+        {
+            "type": "color_scheme",
             "id": "color_scheme",
-            "label": "t:sections.collection.settings.color_scheme",
+            "label": "t:sections.collection.settings.content_color_scheme",
             "default": "scheme-2"
         },
         {
@@ -521,6 +585,12 @@
             "id": "description",
             "default": "t:sections.collection.defaults.description",
             "label": "t:sections.collection.settings.description"
+        },
+        {
+            "type": "image_picker",
+            "id": "fallback_image",
+            "label": "t:sections.collection.settings.fallback_image",
+            "info": "t:sections.collection.info.fallback_image"
         },
         {
             "type": "header",

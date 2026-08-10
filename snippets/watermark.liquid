@@ -3,7 +3,7 @@
 
     Accessible only for visual decoration and hidden from assistive technologies.
 
-    @param {string} [text] - The watermark text to render. Defaults to brand name.
+    @param {string} [text] - The watermark text to render. Defaults to brand name. SVG output flattens rich text and promotes bold or italic formatting to the complete text node.
     @param {string} [variant] - Render mode: 'svg' (default) or 'marquee'.
     @param {string} [container_class] - Optional additional classes for the outer container.
     @param {string} [svg_class] - Optional additional classes for the SVG element (svg variant).
@@ -49,18 +49,19 @@
         assign watermark_text_source = text
     endif
 
-    assign watermark_text_markup = watermark_text_source
-    assign watermark_text_markup = watermark_text_markup | replace: '<strong>', '[[WATERMARK_STRONG_OPEN]]'
-    assign watermark_text_markup = watermark_text_markup | replace: '</strong>', '[[WATERMARK_STRONG_CLOSE]]'
-    assign watermark_text_markup = watermark_text_markup | replace: '<b>', '[[WATERMARK_STRONG_OPEN]]'
-    assign watermark_text_markup = watermark_text_markup | replace: '</b>', '[[WATERMARK_STRONG_CLOSE]]'
-    assign watermark_text_markup = watermark_text_markup | replace: '<em>', '[[WATERMARK_EM_OPEN]]'
-    assign watermark_text_markup = watermark_text_markup | replace: '</em>', '[[WATERMARK_EM_CLOSE]]'
-    assign watermark_text_markup = watermark_text_markup | replace: '<i>', '[[WATERMARK_EM_OPEN]]'
-    assign watermark_text_markup = watermark_text_markup | replace: '</i>', '[[WATERMARK_EM_CLOSE]]'
-    assign watermark_text_markup = watermark_text_markup | strip_html | escape
+    assign watermark_text_plain = watermark_text_source | strip_html | strip
 
     if watermark_variant == 'marquee'
+        assign watermark_text_markup = watermark_text_source
+        assign watermark_text_markup = watermark_text_markup | replace: '<strong>', '[[WATERMARK_STRONG_OPEN]]'
+        assign watermark_text_markup = watermark_text_markup | replace: '</strong>', '[[WATERMARK_STRONG_CLOSE]]'
+        assign watermark_text_markup = watermark_text_markup | replace: '<b>', '[[WATERMARK_STRONG_OPEN]]'
+        assign watermark_text_markup = watermark_text_markup | replace: '</b>', '[[WATERMARK_STRONG_CLOSE]]'
+        assign watermark_text_markup = watermark_text_markup | replace: '<em>', '[[WATERMARK_EM_OPEN]]'
+        assign watermark_text_markup = watermark_text_markup | replace: '</em>', '[[WATERMARK_EM_CLOSE]]'
+        assign watermark_text_markup = watermark_text_markup | replace: '<i>', '[[WATERMARK_EM_OPEN]]'
+        assign watermark_text_markup = watermark_text_markup | replace: '</i>', '[[WATERMARK_EM_CLOSE]]'
+        assign watermark_text_markup = watermark_text_markup | strip_html | escape
         assign watermark_text_markup = watermark_text_markup | replace: '[[WATERMARK_STRONG_OPEN]]', '<span class="font-bold">'
         assign watermark_text_markup = watermark_text_markup | replace: '[[WATERMARK_STRONG_CLOSE]]', '</span>'
         assign watermark_text_markup = watermark_text_markup | replace: '[[WATERMARK_EM_OPEN]]', '<span class="italic">'
@@ -103,10 +104,16 @@
         endif
         assign watermark_marquee_style = watermark_marquee_style | strip
     else
-        assign watermark_text_markup = watermark_text_markup | replace: '[[WATERMARK_STRONG_OPEN]]', '<tspan font-weight="700">'
-        assign watermark_text_markup = watermark_text_markup | replace: '[[WATERMARK_STRONG_CLOSE]]', '</tspan>'
-        assign watermark_text_markup = watermark_text_markup | replace: '[[WATERMARK_EM_OPEN]]', '<tspan font-style="italic">'
-        assign watermark_text_markup = watermark_text_markup | replace: '[[WATERMARK_EM_CLOSE]]', '</tspan>'
+        assign watermark_text_markup = watermark_text_plain | escape
+        assign watermark_svg_font_weight = ''
+        assign watermark_svg_font_style = ''
+
+        if watermark_text_source contains '<strong>' or watermark_text_source contains '<b>'
+            assign watermark_svg_font_weight = '700'
+        endif
+        if watermark_text_source contains '<em>' or watermark_text_source contains '<i>'
+            assign watermark_svg_font_style = 'italic'
+        endif
 
         assign watermark_view_box_width = view_box_width | default: 1200
         assign watermark_view_box_height = view_box_height | default: 200
@@ -188,6 +195,12 @@
                 font-size="{{ watermark_font_size }}"
                 textLength="{{ watermark_text_length }}"
                 lengthAdjust="{{ watermark_length_adjust }}"
+                {% if watermark_svg_font_weight != blank %}
+                    font-weight="{{ watermark_svg_font_weight }}"
+                {% endif %}
+                {% if watermark_svg_font_style != blank %}
+                    font-style="{{ watermark_svg_font_style }}"
+                {% endif %}
                 class="fill-current font-heading opacity-20 {{ text_class }}"
                 {% if text_attr != blank %}
                     {{- text_attr -}}

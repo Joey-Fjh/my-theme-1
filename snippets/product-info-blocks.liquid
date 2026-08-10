@@ -193,9 +193,8 @@
                 >
                     {%- if product_data != blank and product_data.description != blank -%}
                         <div
-                            class="product-info-blocks__description{% if context != 'featured' %} rte{% endif %}"
+                            class="product-info-blocks__description focus-ring{% if context != 'featured' %} rte{% endif %}"
                             data-product-description
-                            x-data="dragScroll({ axis: 'y' })"
                         >
                             {%- if context == 'featured' -%}
                                 {{ product_data.description | strip_html }}
@@ -205,7 +204,7 @@
                         </div>
                     {%- else -%}
                         <div
-                            class="product-info-blocks__description"
+                            class="product-info-blocks__description focus-ring"
                             data-product-description
                         >
                             {{ 'products.product.example_description' | t }}
@@ -222,44 +221,11 @@
                 </div>
 
             {%- when 'share' -%}
-                {%- liquid
-                    assign share_alignment = block.settings.share_alignment | default: 'center'
-                    assign share_alignment_class = 'justify-center'
-                    if share_alignment == 'left'
-                        assign share_alignment_class = 'justify-start'
-                    elsif share_alignment == 'right'
-                        assign share_alignment_class = 'justify-end'
-                    endif
-
-                    assign share_url = product_data.url | default: request.path | prepend: request.origin
-                    assign encoded_share_url = share_url | url_encode
-                    assign encoded_share_title = product_data.title | default: shop.name | url_encode
-                    assign facebook_share_url = 'https://www.facebook.com/sharer/sharer.php?u=' | append: encoded_share_url
-                    assign twitter_share_url = 'https://twitter.com/intent/tweet?url=' | append: encoded_share_url | append: '&text=' | append: encoded_share_title
+                {%- render 'product-info-share',
+                    block: block,
+                    product_data: product_data,
+                    context: context
                 -%}
-                <div
-                    class="product-info-blocks__share {{ share_alignment_class }}"
-                    {{ block.shopify_attributes }}
-                >
-                    <a
-                        href="{{ facebook_share_url }}"
-                        class="product-info-blocks__share-link"
-                        target="_blank"
-                        rel="noopener"
-                        aria-label="{{ 'accessibility.share_on_facebook' | t }}"
-                    >
-                        {%- render 'icons', icon: 'icon-facebook' -%}
-                    </a>
-                    <a
-                        href="{{ twitter_share_url }}"
-                        class="product-info-blocks__share-link"
-                        target="_blank"
-                        rel="noopener"
-                        aria-label="{{ 'accessibility.share_on_x' | t }}"
-                    >
-                        {%- render 'icons', icon: 'icon-twitter' -%}
-                    </a>
-                </div>
 
             {%- when 'callout' -%}
                 {%- liquid
@@ -278,9 +244,8 @@
                     style="--product-callout-bg: {{ block.settings.background_color }}; --product-callout-text: {{ block.settings.text_color }};"
                     {{ block.shopify_attributes }}
                 >
-                    {%- render 'product-block-icon',
+                    {%- render 'content-icon',
                         icon: block.settings.callout_icon,
-                        custom_svg: block.settings.callout_svg_icon_code,
                         size_px: callout_icon_size,
                         color: block.settings.text_color,
                         class: 'product-info-blocks__callout-icon'
@@ -396,7 +361,20 @@
                         assign tab_content = tab_page.content
                     endif
 
-                    assign icon_size = block.settings.collapsible_tab_icon_size | default: 20 | plus: 0
+                    assign tab_size = block.settings.collapsible_tab_size | default: 'md'
+                    assign icon_size = 20
+                    assign tab_heading_class = 'body-md'
+                    case tab_size
+                        when 'sm'
+                            assign icon_size = 16
+                            assign tab_heading_class = 'body-sm'
+                        when 'lg'
+                            assign icon_size = 24
+                            assign tab_heading_class = 'body-lg'
+                        when 'xl'
+                            assign icon_size = 28
+                            assign tab_heading_class = 'body-xl'
+                    endcase
                     assign image_width = block.settings.image_width | default: 1000 | plus: 0
                     assign has_tab_body = false
                     if tab_content != blank or block.settings.image != blank
@@ -420,15 +398,14 @@
                 >
                     <summary class="product-info-blocks__collapsible-summary">
                         <span class="product-info-blocks__collapsible-heading">
-                            {%- render 'product-block-icon',
+                            {%- render 'content-icon',
                                 icon: block.settings.collapsible_tab_icon,
-                                custom_svg: block.settings.collapsible_tab_svg_icon_code,
                                 size_px: icon_size,
                                 color: block.settings.icon_color,
                                 class: 'text-theme-text/80'
                             -%}
-                            <span class="min-w-0">
-                                {{ tab_heading }}
+                            <span class="min-w-0 {{ tab_heading_class }}">
+                                {{- tab_heading -}}
                             </span>
                         </span>
 
@@ -473,12 +450,24 @@
 
             {%- when 'variant_picker' -%}
                 {%- if product_data != blank -%}
+                    {%- liquid
+                        assign variant_gallery_id = ''
+                        assign variant_update_url = false
+                        if context == 'product'
+                            assign variant_gallery_id = 'product-gallery-' | append: section.id
+                            assign variant_update_url = true
+                        elsif context == 'featured'
+                            assign variant_gallery_id = 'product-gallery-featured-' | append: section.id
+                        endif
+                    -%}
                     {%- render 'product-variant-picker',
                         product: product_data,
                         block: block,
                         product_form_id: product_form_id,
                         section_id: section.id,
-                        context: context
+                        context: context,
+                        gallery_id: variant_gallery_id,
+                        update_url: variant_update_url
                     -%}
                 {%- endif -%}
 

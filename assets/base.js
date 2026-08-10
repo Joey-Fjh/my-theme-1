@@ -512,6 +512,7 @@
                         Factory.register?.(Comps.VARIANTPICKER, Comps.VariantPicker);
                         Factory.register?.(Comps.QUANTITYSELECTOR, Comps.QuantitySelector);
                         Factory.register?.(Comps.BUYBUTTONS, Comps.BuyButtons);
+                        Factory.register?.(Comps.SELLINGPLANPICKER, Comps.SellingPlanPicker);
                         Factory.register?.(Comps.GIFTCARDRECIPIENT, Comps.GiftCardRecipient);
                         Factory.register?.(Comps.PICKUPAVAILABILITY, Comps.PickupAvailability);
                         Factory.register?.(Comps.PREDICTIVESEARCH, Comps.predictiveSearch);
@@ -526,6 +527,7 @@
                         Factory.register?.(Comps.IMAGEMAGNIFIER, Comps.imageMagnifier);
                         Factory.register?.(Comps.PRODUCTLAYOUT, Comps.productLayout);
                         Factory.register?.(Comps.ACCORDION, Comps.accordion);
+                        Factory.register?.(Comps.LOCALIZATIONSWITCHER, Comps.localizationSwitcher);
                         Factory.register?.(Comps.SORTBYDROPDOWN, Comps.sortByDropdown);
                         Factory.register?.(Comps.FLIPDIGIT, Comps.flipDigit);
                         Factory.register?.(Comps.TOASTCONTAINER, Comps.toastContainer);

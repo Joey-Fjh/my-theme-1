@@ -10,7 +10,13 @@ const { parseLiquidAst, walk } = require('./lib/liquid-ast');
 
 const ROOT = process.cwd();
 
-const LIQUID_GLOBS = ['layout/**/*.liquid', 'sections/**/*.liquid', 'snippets/**/*.liquid'];
+const LIQUID_GLOBS = [
+    'layout/**/*.liquid',
+    'sections/**/*.liquid',
+    'snippets/**/*.liquid',
+    'blocks/**/*.liquid',
+    'templates/**/*.liquid',
+];
 const SECTION_GLOBS = ['sections/**/*.liquid'];
 const SNIPPET_GLOBS = ['snippets/**/*.liquid'];
 const SCHEMA_GLOBS = ['sections/**/*.liquid', 'blocks/**/*.liquid', 'config/settings_schema.json'];
@@ -371,6 +377,30 @@ async function checkLiquidArchitecture() {
                     for (const attr of node.attributes) {
                         if (!Array.isArray(attr.name)) continue;
                         const attrName = attr.name?.map((n) => n.value || '').join('');
+
+                        const isAlpineAttribute =
+                            attrName.startsWith('x-') ||
+                            attrName.startsWith('@') ||
+                            attrName.startsWith(':');
+                        if (isAlpineAttribute) {
+                            const rawAttribute = text.slice(
+                                attr.position.start,
+                                attr.position.end,
+                            );
+                            const embedsTranslation =
+                                /\{\{[\s\S]*?\|\s*t\b[\s\S]*?\}\}/.test(rawAttribute);
+                            const embedsQuotedLiquid =
+                                /(['"])\s*\{\{[\s\S]*?\}\}\s*\1/.test(rawAttribute);
+
+                            if (embedsTranslation || embedsQuotedLiquid) {
+                                report(
+                                    file,
+                                    lineAt(text, attr.position.start),
+                                    'Pass Liquid-driven Alpine string values through escaped data-* attributes instead of embedding them in JavaScript expressions.',
+                                );
+                            }
+                        }
+
                         if (attrName !== 'x-data') continue;
 
                         const rawValue = attr.value
@@ -769,6 +799,16 @@ function getHtmlAttributeValue(attributes, name) {
     return '';
 }
 
+function hasHtmlAttribute(attributes, names) {
+    const expected = new Set(Array.isArray(names) ? names : [names]);
+
+    return (attributes ?? []).some((attr) => {
+        if (!Array.isArray(attr.name)) return false;
+        const attrName = attr.name.map((part) => part.value || '').join('');
+        return expected.has(attrName);
+    });
+}
+
 function isAllowlistedTabNavClass(classValue, allowlist) {
     return allowlist.tabNavRoleTabClassAllowlist.some((allowed) =>
         new RegExp(`\\b${escapeRegExp(allowed)}\\b`).test(classValue),
@@ -786,7 +826,45 @@ async function checkLiquidTabNavProtocolAsync(allowlist) {
             if (!node.attributes) return;
 
             const role = getHtmlAttributeValue(node.attributes, 'role');
+
+            if (role === 'tabpanel') {
+                const missing = [];
+                if (!hasHtmlAttribute(node.attributes, ['id', ':id'])) missing.push('id');
+                if (!hasHtmlAttribute(node.attributes, ['aria-labelledby', ':aria-labelledby'])) {
+                    missing.push('aria-labelledby');
+                }
+
+                if (missing.length > 0) {
+                    report(
+                        file,
+                        lineAt(text, node.position?.start ?? 0),
+                        `role="tabpanel" is missing ${missing.join(', ')}.`,
+                    );
+                }
+                return;
+            }
+
             if (role !== 'tab') return;
+
+            const missing = [];
+            if (!hasHtmlAttribute(node.attributes, ['id', ':id'])) missing.push('id');
+            if (!hasHtmlAttribute(node.attributes, ['aria-controls', ':aria-controls'])) {
+                missing.push('aria-controls');
+            }
+            if (!hasHtmlAttribute(node.attributes, ['aria-selected', ':aria-selected'])) {
+                missing.push('aria-selected');
+            }
+            if (!hasHtmlAttribute(node.attributes, ['tabindex', ':tabindex'])) {
+                missing.push('tabindex');
+            }
+
+            if (missing.length > 0) {
+                report(
+                    file,
+                    lineAt(text, node.position?.start ?? 0),
+                    `role="tab" is missing ${missing.join(', ')}.`,
+                );
+            }
 
             const classValue = getHtmlAttributeValue(node.attributes, 'class');
             if (isAllowlistedTabNavClass(classValue, allowlist)) return;
@@ -1084,6 +1162,306 @@ async function checkCssLayerProtocol() {
     }
 }
 
+async function checkBrowserCompatibilityProtocol() {
+    const summaryMarkerClassRe =
+        /\b(?:dropdown-trigger|filters-field__summary|product-info-blocks__collapsible-summary)\b|\[&::-webkit-details-marker\]:hidden/;
+    const summaryTagRe = /<summary\b[\s\S]*?>/gi;
+    const svgTextLengthRe = /<text\b(?=[^>]*\btextLength\s*=)[^>]*>([\s\S]*?)<\/text>/gi;
+    const classArgumentRe = /\b[\w-]*(?:class|classes)\s*:\s*(["'])([\s\S]*?)\1/gi;
+    const standaloneClassAssignRe =
+        /{%-?\s*assign\s+([a-zA-Z_][\w]*)\s*=\s*([\s\S]*?)-?%}/gi;
+    const liquidTagRe = /{%-?\s*liquid\b([\s\S]*?)-?%}/gi;
+    const liquidClassAssignLineRe = /^\s*assign\s+([a-zA-Z_][\w]*)\s*=\s*(.*?)\s*$/gim;
+    const classCaptureRe =
+        /{%-?\s*capture\s+([a-zA-Z_][\w]*)\s*-?%}([\s\S]*?){%-?\s*endcapture\s*-?%}/gi;
+    const stylesheetBlockRe =
+        /{%-?\s*stylesheet\s*-?%}([\s\S]*?){%-?\s*endstylesheet\s*-?%}/gi;
+    const quotedStringRe = /(["'])([\s\S]*?)\1/g;
+    const riskyUtilityRe =
+        /\b(?:contents|mix-blend-[\w-]+|touch-(?:auto|manipulation|none|pan-[xy]|pinch-zoom)|columns-[\w-]+)\b/g;
+
+    function getClassAssignExpressions(source) {
+        const expressions = [];
+
+        for (const match of source.matchAll(standaloneClassAssignRe)) {
+            if (!/class(?:es)?/i.test(match[1])) continue;
+            const expression = match[2];
+            expressions.push({
+                expression,
+                offset: (match.index ?? 0) + match[0].indexOf(expression),
+            });
+        }
+
+        for (const liquidMatch of source.matchAll(liquidTagRe)) {
+            const liquidCode = liquidMatch[1];
+            const liquidOffset = (liquidMatch.index ?? 0) + liquidMatch[0].indexOf(liquidCode);
+
+            for (const assignMatch of liquidCode.matchAll(liquidClassAssignLineRe)) {
+                if (!/class(?:es)?/i.test(assignMatch[1])) continue;
+                const expression = assignMatch[2];
+                expressions.push({
+                    expression,
+                    offset:
+                        liquidOffset +
+                        (assignMatch.index ?? 0) +
+                        assignMatch[0].indexOf(expression),
+                });
+            }
+        }
+
+        return expressions;
+    }
+
+    function getRiskyUtilities(value) {
+        return [...value.matchAll(riskyUtilityRe)].map((match) => ({
+            utility: match[0],
+            offset: match.index ?? 0,
+        }));
+    }
+
+    function checkRiskyUtilityValue(file, text, classValue, valueOffset) {
+        for (const risk of getRiskyUtilities(classValue)) {
+            const utility = risk.utility;
+            const allowedFooterBlend =
+                file === 'sections/footer.liquid' && utility === 'mix-blend-lighten';
+            if (allowedFooterBlend) continue;
+
+            report(
+                file,
+                lineAt(text, valueOffset + risk.offset),
+                `Tailwind utility "${utility}" requires an explicit browser-compatibility review and allowlist entry.`,
+            );
+        }
+    }
+
+    function checkClassAssignExpression(file, text, expression, expressionOffset) {
+        for (const quoteMatch of expression.matchAll(quotedStringRe)) {
+            const classValue = quoteMatch[2];
+            const valueOffset =
+                expressionOffset + (quoteMatch.index ?? 0) + quoteMatch[0].indexOf(classValue);
+            checkRiskyUtilityValue(file, text, classValue, valueOffset);
+        }
+    }
+
+    function checkEmbeddedCssDeclarations(file, text, css, cssOffset) {
+        for (const match of css.matchAll(/\btouch-action\s*:/g)) {
+            report(
+                file,
+                lineAt(text, cssOffset + (match.index ?? 0)),
+                'First-party touch-action requires an explicit browser-compatibility review and allowlist entry.',
+            );
+        }
+
+        for (const match of css.matchAll(
+            /(?<![\w-])(?:columns|column-count|column-width)\s*:/g,
+        )) {
+            report(
+                file,
+                lineAt(text, cssOffset + (match.index ?? 0)),
+                'CSS multi-column layout requires an explicit browser-compatibility review and allowlist entry.',
+            );
+        }
+
+        for (const match of css.matchAll(/::marker\b/g)) {
+            report(
+                file,
+                lineAt(text, cssOffset + (match.index ?? 0)),
+                '::marker styling requires an explicit browser-compatibility review and allowlist entry.',
+            );
+        }
+
+        for (const applyMatch of css.matchAll(/@apply\s+([^;]+);/g)) {
+            checkRiskyUtilityValue(
+                file,
+                text,
+                applyMatch[1],
+                cssOffset + (applyMatch.index ?? 0),
+            );
+        }
+    }
+
+    const assignGuardProbes = [
+        {
+            source: "{% assign probe_class = 'contents' | append: suffix %}",
+            utility: 'contents',
+        },
+        {
+            source: "{% liquid\n    assign probe_classes = 'touch-none'\n%}",
+            utility: 'touch-none',
+        },
+    ];
+
+    for (const probe of assignGuardProbes) {
+        const detected = getClassAssignExpressions(probe.source).some(({ expression }) =>
+            [...expression.matchAll(quotedStringRe)].some((match) =>
+                getRiskyUtilities(match[2]).some(({ utility }) => utility === probe.utility),
+            ),
+        );
+        if (!detected) {
+            throw new Error(
+                `Browser compatibility assign guard self-test failed for ${probe.utility}.`,
+            );
+        }
+    }
+
+    for (const file of await getFiles(LIQUID_GLOBS)) {
+        const text = await readText(file);
+        const hasFileLevelMarkerReset =
+            /summary\s*::\-webkit-details-marker\s*\{[\s\S]*?display\s*:\s*none/i.test(text);
+
+        for (const match of text.matchAll(summaryTagRe)) {
+            if (hasFileLevelMarkerReset || summaryMarkerClassRe.test(match[0])) continue;
+
+            report(
+                file,
+                lineAt(text, match.index ?? 0),
+                'Custom <summary> controls must hide the Safari disclosure marker through an approved shared class or ::-webkit-details-marker reset.',
+            );
+        }
+
+        for (const match of text.matchAll(svgTextLengthRe)) {
+            if (!/<tspan\b/i.test(match[1])) continue;
+
+            report(
+                file,
+                lineAt(text, match.index ?? 0),
+                'Do not nest <tspan> inside SVG <text textLength>; WebKit can ignore the requested text length. Apply whole-text styling on <text>.',
+            );
+        }
+
+        for (const classRe of [CLASS_ATTR_RE, classArgumentRe]) {
+            for (const match of text.matchAll(classRe)) {
+                const classValue = match[2];
+                const valueOffset = (match.index ?? 0) + match[0].indexOf(classValue);
+                checkRiskyUtilityValue(file, text, classValue, valueOffset);
+            }
+        }
+
+        for (const assignment of getClassAssignExpressions(text)) {
+            checkClassAssignExpression(file, text, assignment.expression, assignment.offset);
+        }
+
+        for (const match of text.matchAll(classCaptureRe)) {
+            if (!/class(?:es)?/i.test(match[1])) continue;
+            const classValue = match[2];
+            const valueOffset = (match.index ?? 0) + match[0].indexOf(classValue);
+            checkRiskyUtilityValue(file, text, classValue, valueOffset);
+        }
+
+        for (const match of text.matchAll(stylesheetBlockRe)) {
+            const css = match[1];
+            const cssOffset = (match.index ?? 0) + match[0].indexOf(css);
+            checkEmbeddedCssDeclarations(file, text, css, cssOffset);
+        }
+
+        if (file !== 'sections/before-after-comparison.liquid') {
+            for (const match of text.matchAll(/\bclip-path\s*:/g)) {
+                report(
+                    file,
+                    lineAt(text, match.index ?? 0),
+                    'Inline or embedded clip-path requires an explicit browser-compatibility review and allowlist entry.',
+                );
+            }
+        }
+    }
+
+    const markerStyleChecks = [
+        {
+            file: COMPONENTS_CSS_FILE,
+            selector: '.dropdown-trigger',
+            pattern:
+                /\.dropdown-trigger\s*\{[\s\S]{0,400}&::\-webkit-details-marker\s*\{[\s\S]{0,120}display\s*:\s*none/,
+        },
+        {
+            file: SNIPPETS_CSS_FILE,
+            selector: '.filters-field__summary',
+            pattern:
+                /\.filters-field__summary\s*\{[\s\S]{0,400}&::\-webkit-details-marker\s*\{[\s\S]{0,120}display\s*:\s*none/,
+        },
+        {
+            file: SNIPPETS_CSS_FILE,
+            selector: '.product-info-blocks__collapsible-summary',
+            pattern:
+                /\.product-info-blocks__collapsible-summary\s*\{[\s\S]{0,500}&::\-webkit-details-marker\s*\{[\s\S]{0,120}display\s*:\s*none/,
+        },
+    ];
+
+    for (const check of markerStyleChecks) {
+        const text = await readText(check.file);
+        if (check.pattern.test(text)) continue;
+
+        report(
+            check.file,
+            lineAt(text, Math.max(text.indexOf(check.selector), 0)),
+            `${check.selector} must retain the Safari ::-webkit-details-marker display:none reset.`,
+        );
+    }
+
+    const snippetsText = await readText(SNIPPETS_CSS_FILE);
+    const categoryGridItemRe =
+        /\.category-grid__item\s*\{\s*@apply[^;]*\bw-full\b[^;]*;/;
+    if (!categoryGridItemRe.test(snippetsText)) {
+        report(
+            SNIPPETS_CSS_FILE,
+            lineAt(snippetsText, Math.max(snippetsText.indexOf('.category-grid__item'), 0)),
+            '.category-grid__item must retain a definite full width for WebKit grid intrinsic sizing.',
+        );
+    }
+
+    for (const file of await getFiles(['tailwind/*.css', 'assets/base.css', 'assets/gift-card.css'])) {
+        const text = await readText(file);
+
+        for (const match of text.matchAll(/\btouch-action\s*:/g)) {
+            report(
+                file,
+                lineAt(text, match.index ?? 0),
+                'First-party touch-action requires an explicit browser-compatibility review and allowlist entry.',
+            );
+        }
+
+        for (const match of text.matchAll(/(?<![\w-])(?:columns|column-count|column-width)\s*:/g)) {
+            report(
+                file,
+                lineAt(text, match.index ?? 0),
+                'CSS multi-column layout requires an explicit browser-compatibility review and allowlist entry.',
+            );
+        }
+
+        if (file !== 'tailwind/tailwind.animates.css') {
+            for (const match of text.matchAll(/\bclip-path\s*:/g)) {
+                report(
+                    file,
+                    lineAt(text, match.index ?? 0),
+                    'clip-path requires an explicit browser-compatibility review and allowlist entry.',
+                );
+            }
+        }
+
+        for (const match of text.matchAll(/::marker\b/g)) {
+            const context = text.slice(Math.max(0, (match.index ?? 0) - 80), (match.index ?? 0) + 9);
+            const allowedRteMarker =
+                file === COMPONENTS_CSS_FILE && /\.rte\s+li::marker\b/.test(context);
+            if (allowedRteMarker) continue;
+
+            report(
+                file,
+                lineAt(text, match.index ?? 0),
+                '::marker styling requires an explicit browser-compatibility review and allowlist entry.',
+            );
+        }
+
+        for (const applyMatch of text.matchAll(/@apply\s+([^;]+);/g)) {
+            for (const risk of getRiskyUtilities(applyMatch[1])) {
+                report(
+                    file,
+                    lineAt(text, (applyMatch.index ?? 0) + risk.offset),
+                    `Tailwind utility "${risk.utility}" requires an explicit browser-compatibility review and allowlist entry.`,
+                );
+            }
+        }
+    }
+}
+
 async function main() {
     await Promise.all([
         checkSchemaIds(),
@@ -1097,6 +1475,7 @@ async function main() {
         checkCustomEventBoundary(),
         checkAlpineTeardownHeuristics(),
         checkCssLayerProtocol(),
+        checkBrowserCompatibilityProtocol(),
     ]);
 
     if (warnings.length > 0) {

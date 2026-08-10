@@ -19,6 +19,8 @@
                 currency,
                 unitPriceText: '',
                 unitPrices: {},
+                _variantPrice: 0,
+                _variantComparePrice: 0,
                 _eventScope: null,
 
                 _formatPrice(value) {
@@ -78,6 +80,8 @@
                     this.currency = dataset.currency || this.currency || 'USD';
                     this._parseUnitPrices(dataset.unitPrices);
                     this.unitPriceText = this._lookupUnitPrice(dataset.variantId);
+                    this._variantPrice = this.price;
+                    this._variantComparePrice = this.comparePrice;
 
                     const Events = window.__Theme__.Events;
                     const events = Events.events;
@@ -91,15 +95,29 @@
                             return;
                         }
                         if (typeof v.price === 'number') {
+                            this._variantPrice = v.price;
                             this.price = v.price;
                         }
                         if (v.compare_at_price == null || typeof v.compare_at_price === 'number') {
-                            this.comparePrice = Number(v.compare_at_price || 0);
+                            this._variantComparePrice = Number(v.compare_at_price || 0);
+                            this.comparePrice = this._variantComparePrice;
                         }
                         this.unitPriceText = this._lookupUnitPrice(v.id);
                     };
 
+                    const onSellingPlanChange = (e) => {
+                        if (e.detail?.sectionId !== this.sectionId) return;
+                        if (e.detail?.active && typeof e.detail.price === 'number') {
+                            this.price = e.detail.price;
+                            this.comparePrice = Number(e.detail.compareAtPrice || 0);
+                            return;
+                        }
+                        this.price = this._variantPrice;
+                        this.comparePrice = this._variantComparePrice;
+                    };
+
                     this._eventScope.on(events.PRODUCT_VARIANT_CHANGED, onVariantChange);
+                    this._eventScope.on(events.PRODUCT_SELLING_PLAN_CHANGED, onSellingPlanChange);
                 },
 
                 destroy() {
@@ -168,6 +186,8 @@
                 sectionId: '',
                 productId: null,
                 productFormId: '',
+                galleryId: '',
+                updateUrl: false,
                 variants: [],
                 selectedOptions: {},
                 currentVariant: null,
@@ -179,6 +199,8 @@
                     this.sectionId = dataset.sectionId || this.sectionId || '';
                     this.productId = Number(dataset.productId || this.productId || 0) || null;
                     this.productFormId = dataset.productFormId || this.productFormId || '';
+                    this.galleryId = dataset.galleryId || this.galleryId || '';
+                    this.updateUrl = dataset.updateUrl === 'true';
 
                     let variants = [];
                     if (dataset.variants) {
@@ -306,6 +328,9 @@
                         const galleryDetail = {
                             index: variant.featured_image.position - 1,
                         };
+                        if (this.galleryId) {
+                            galleryDetail.id = this.galleryId;
+                        }
                         Events.emit(events.PRODUCT_GALLERY_SLIDE_TO_REQUEST, galleryDetail);
                     }
 
@@ -313,7 +338,7 @@
                 },
 
                 _updateUrl(variant) {
-                    if (!variant) return;
+                    if (!variant || !this.updateUrl) return;
                     const url = new URL(window.location);
                     url.searchParams.set('variant', variant.id);
                     window.history.replaceState({}, '', url);
@@ -937,22 +962,31 @@
                 isLoading: false,
                 canPurchaseQuantity: true,
                 _eventScope: null,
-                _buttonTextFallback: '',
+                _buttonLabels: {
+                    addToCart: '',
+                    soldOut: '',
+                    maximumInCart: '',
+                    unavailable: '',
+                },
 
                 get buttonText() {
-                    const dataset = this.$el?.dataset || {};
-                    const fallback = this._buttonTextFallback || '';
-                    if (!this.variantId) return dataset.unavailableText || fallback;
-                    if (!this.available) return dataset.soldOutText || fallback;
-                    if (!this.canPurchaseQuantity)
-                        return dataset.maximumInCartText || dataset.addToCartText || fallback;
-                    return dataset.addToCartText || fallback;
+                    const labels = this._buttonLabels || {};
+                    if (!this.variantId) return labels.unavailable || '';
+                    if (!this.available) return labels.soldOut || '';
+                    if (!this.canPurchaseQuantity) {
+                        return labels.maximumInCart || labels.addToCart || '';
+                    }
+                    return labels.addToCart || '';
                 },
 
                 init() {
                     const dataset = this.$el?.dataset || {};
-                    const label = this.$el?.querySelector('[data-add-to-cart-label]');
-                    this._buttonTextFallback = label?.textContent?.trim() || '';
+                    this._buttonLabels = {
+                        addToCart: dataset.addToCartText || '',
+                        soldOut: dataset.soldOutText || '',
+                        maximumInCart: dataset.maximumInCartText || '',
+                        unavailable: dataset.unavailableText || '',
+                    };
 
                     this.sectionId = this.sectionId || dataset.sectionId || '';
                     this.productFormId = this.productFormId || dataset.productFormId || '';
@@ -1125,6 +1159,15 @@
                     };
                     const properties = this._collectLineItemProperties();
                     if (properties) item.properties = properties;
+
+                    const sellingPlanInput = this.$el?.querySelector?.(
+                        'input[name="selling_plan"]:not(:disabled)',
+                    );
+                    const sellingPlanId = sellingPlanInput?.value;
+                    if (sellingPlanId) {
+                        item.selling_plan = Number(sellingPlanId) || sellingPlanId;
+                    }
+
                     return item;
                 },
 
@@ -1399,6 +1442,7 @@
                 _frame: 0,
                 _desktopQuery: null,
                 _mediaTarget: null,
+                _mediaPanel: null,
                 _infoTarget: null,
                 _infoBlocks: null,
                 _descriptionBlock: null,
@@ -1407,6 +1451,7 @@
                 init() {
                     const el = this.$el;
                     this._mediaTarget = el.querySelector('[data-product-media-sticky-target]');
+                    this._mediaPanel = el.querySelector('[data-product-media-panel]');
                     this._infoTarget = el.querySelector('[data-product-info-sticky-target]');
                     this._infoBlocks = el.querySelector(
                         '[data-product-info-panel] [data-product-info-blocks]',
@@ -1426,12 +1471,15 @@
                     this._resizeObserver.observe(this._mediaTarget);
                     this._resizeObserver.observe(this._infoTarget);
                     if (this._infoBlocks) {
-                        Array.from(this._infoBlocks.children).forEach((child) =>
-                            this._resizeObserver.observe(child),
-                        );
+                        Array.from(this._infoBlocks.children).forEach((child) => {
+                            if (child !== this._descriptionBlock) {
+                                this._resizeObserver.observe(child);
+                            }
+                        });
                     }
 
                     this.on(window, 'resize', () => this._sync());
+                    this.on(window.visualViewport, 'resize', () => this._sync());
                     this.on(this._desktopQuery, 'change', () => this._sync());
                     this._sync();
                 },
@@ -1465,6 +1513,89 @@
                     this._infoBlocks?.style.removeProperty('max-height');
                     this._descriptionBlock?.style.removeProperty('max-height');
                     this._description?.style.removeProperty('max-height');
+                    this._description?.removeAttribute('data-product-description-scrollable');
+                    this._description?.removeAttribute('tabindex');
+                },
+
+                _setDescriptionLimit(maxHeight) {
+                    if (!this._description) return;
+
+                    this._descriptionBlock?.style.removeProperty('max-height');
+
+                    const hasLimit = Number.isFinite(maxHeight);
+                    const nextValue = hasLimit ? `${Math.max(0, Math.floor(maxHeight))}px` : '';
+                    if (hasLimit) {
+                        if (this._description.style.maxHeight !== nextValue) {
+                            this._description.style.maxHeight = nextValue;
+                        }
+                    } else {
+                        this._description.style.removeProperty('max-height');
+                    }
+
+                    const isScrollable =
+                        hasLimit &&
+                        this._description.scrollHeight > this._description.clientHeight + 1;
+                    this._description.toggleAttribute(
+                        'data-product-description-scrollable',
+                        isScrollable,
+                    );
+                    if (isScrollable) {
+                        this._description.setAttribute('tabindex', '0');
+                    } else {
+                        this._description.removeAttribute('tabindex');
+                    }
+                },
+
+                _syncDescription(availableViewport) {
+                    if (
+                        !this._mediaPanel ||
+                        !this._infoBlocks ||
+                        !this._descriptionBlock ||
+                        !this._description
+                    ) {
+                        this._resetDescription();
+                        return;
+                    }
+
+                    const mediaPanelHeight = this._mediaPanel.getBoundingClientRect().height;
+                    if (mediaPanelHeight <= 0 || availableViewport <= 0) {
+                        this._resetDescription();
+                        return;
+                    }
+
+                    const referenceHeight = Math.min(mediaPanelHeight, availableViewport);
+                    const styles = window.getComputedStyle(this._infoBlocks);
+                    const gap = parseFloat(styles.rowGap || styles.gap) || 0;
+                    const paddingY =
+                        (parseFloat(styles.paddingTop) || 0) +
+                        (parseFloat(styles.paddingBottom) || 0);
+                    const children = Array.from(this._infoBlocks.children).filter(
+                        (child) =>
+                            child instanceof HTMLElement &&
+                            window.getComputedStyle(child).display !== 'none',
+                    );
+                    const otherBlocksHeight = children.reduce((total, child) => {
+                        if (child === this._descriptionBlock) return total;
+                        return total + child.getBoundingClientRect().height;
+                    }, 0);
+                    const gapsHeight = gap * Math.max(children.length - 1, 0);
+                    const available = Math.floor(
+                        referenceHeight - paddingY - gapsHeight - otherBlocksHeight,
+                    );
+                    const naturalHeight = this._description.scrollHeight;
+                    const descriptionStyles = window.getComputedStyle(this._description);
+                    const lineHeight = parseFloat(descriptionStyles.lineHeight) || 24;
+                    const minimumScrollableHeight = Math.min(
+                        naturalHeight,
+                        Math.max(96, lineHeight * 4),
+                    );
+
+                    if (naturalHeight <= available + 1) {
+                        this._setDescriptionLimit(null);
+                        return;
+                    }
+
+                    this._setDescriptionLimit(Math.max(available, minimumScrollableHeight));
                 },
 
                 _resetSticky() {
@@ -1489,8 +1620,16 @@
                             return;
                         }
 
-                        const el = this.$el;
-                        const mediaPanel = el.querySelector('[data-product-media-panel]');
+                        const availableViewport = Math.max(0, this._getViewportHeight());
+                        if (availableViewport <= 0) {
+                            this._reset();
+                            return;
+                        }
+
+                        this._clearSticky(this._mediaTarget);
+                        this._clearSticky(this._infoTarget);
+                        this._syncDescription(availableViewport);
+
                         const mediaHeight = this._mediaTarget.getBoundingClientRect().height;
                         const infoHeight = this._infoTarget.getBoundingClientRect().height;
                         if (mediaHeight <= 0) {
@@ -1498,7 +1637,6 @@
                             return;
                         }
 
-                        const availableViewport = Math.max(0, this._getViewportHeight());
                         const heightTolerance = 24;
                         const nextStickySide =
                             mediaHeight + heightTolerance < infoHeight ? 'media' : 'info';
@@ -1506,50 +1644,11 @@
                             nextStickySide === 'media' ? this._mediaTarget : this._infoTarget;
                         const stickyHeight = nextStickySide === 'media' ? mediaHeight : infoHeight;
 
-                        this._clearSticky(this._mediaTarget);
-                        this._clearSticky(this._infoTarget);
-
                         if (stickyHeight <= availableViewport) {
                             this._applySticky(stickyTarget);
                             this.stickySide = nextStickySide;
                         } else {
                             this.stickySide = 'none';
-                        }
-
-                        if (
-                            mediaPanel &&
-                            this._infoBlocks &&
-                            this._descriptionBlock &&
-                            this._description
-                        ) {
-                            const maxReferenceHeight = Math.max(360, availableViewport);
-                            const referenceHeight = Math.min(
-                                mediaPanel.getBoundingClientRect().height,
-                                maxReferenceHeight,
-                            );
-
-                            const styles = window.getComputedStyle(this._infoBlocks);
-                            const gap = parseFloat(styles.rowGap || styles.gap) || 0;
-                            const paddingY =
-                                (parseFloat(styles.paddingTop) || 0) +
-                                (parseFloat(styles.paddingBottom) || 0);
-                            const children = Array.from(this._infoBlocks.children).filter(
-                                (child) => child instanceof HTMLElement,
-                            );
-                            const otherBlocksHeight = children.reduce((total, child) => {
-                                if (child === this._descriptionBlock) return total;
-                                return total + child.getBoundingClientRect().height;
-                            }, 0);
-                            const gapsHeight = gap * Math.max(children.length - 1, 0);
-                            const available = Math.max(
-                                0,
-                                referenceHeight - paddingY - gapsHeight - otherBlocksHeight,
-                            );
-
-                            this._descriptionBlock.style.maxHeight = `${Math.floor(available)}px`;
-                            this._description.style.maxHeight = `${Math.floor(available)}px`;
-                        } else {
-                            this._resetDescription();
                         }
                     });
                 },
@@ -1558,6 +1657,129 @@
                     if (this._frame) cancelAnimationFrame(this._frame);
                     if (this._resizeObserver) this._resizeObserver.disconnect();
                     this._reset();
+                    this.dispose();
+                },
+            };
+        },
+
+        SellingPlanPicker() {
+            return {
+                ...AlpineComponentsFactory.useDisposable(),
+                sectionId: '',
+                variantId: null,
+                requiresSellingPlan: false,
+                variants: {},
+                groups: [],
+                availablePlans: [],
+                selectedPlanId: '',
+                oneTimeLabel: '',
+                purchaseOptionsLabel: '',
+                _eventScope: null,
+
+                init() {
+                    const dataset = this.$el?.dataset || {};
+                    this.sectionId = dataset.sectionId || '';
+                    this.variantId = Number(dataset.variantId) || null;
+                    this.oneTimeLabel = dataset.oneTimeLabel || '';
+                    this.purchaseOptionsLabel = dataset.purchaseOptionsLabel || '';
+
+                    let payload = {};
+                    try {
+                        payload = dataset.sellingPlans ? JSON.parse(dataset.sellingPlans) : {};
+                    } catch (_) {
+                        payload = {};
+                    }
+
+                    this.requiresSellingPlan = Boolean(payload.requiresSellingPlan);
+                    this.variants =
+                        payload.variants && typeof payload.variants === 'object'
+                            ? payload.variants
+                            : {};
+                    this.groups = Array.isArray(payload.groups) ? payload.groups : [];
+
+                    const Events = window.__Theme__.Events;
+                    const events = Events.events;
+                    this._eventScope = Events.createScope();
+
+                    const onVariantChange = (e) => {
+                        if (e.detail?.sectionId !== this.sectionId) return;
+                        this.variantId = e.detail?.variant?.id || null;
+                        this._syncPlansForVariant({ preferCurrent: false });
+                    };
+
+                    this._eventScope.on(events.PRODUCT_VARIANT_CHANGED, onVariantChange);
+                    this._syncPlansForVariant({ preferCurrent: true });
+                },
+
+                groupName(groupId) {
+                    const group = this.groups.find((item) => String(item.id) === String(groupId));
+                    return group?.name || '';
+                },
+
+                selectOneTime() {
+                    this.selectedPlanId = '';
+                    this._emitPlanChange(null);
+                },
+
+                selectPlan(planId) {
+                    this.selectedPlanId = planId == null ? '' : String(planId);
+                    const plan = this.availablePlans.find(
+                        (item) => String(item.id) === String(this.selectedPlanId),
+                    );
+                    this._emitPlanChange(plan || null);
+                },
+
+                _plansForVariant(variantId) {
+                    if (variantId == null || variantId === '') return [];
+                    const plans = this.variants[String(variantId)];
+                    return Array.isArray(plans) ? plans : [];
+                },
+
+                _syncPlansForVariant({ preferCurrent = false } = {}) {
+                    this.availablePlans = this._plansForVariant(this.variantId);
+
+                    if (this.availablePlans.length === 0) {
+                        this.selectedPlanId = '';
+                        this._emitPlanChange(null);
+                        return;
+                    }
+
+                    const currentStillValid =
+                        preferCurrent &&
+                        this.selectedPlanId !== '' &&
+                        this.availablePlans.some(
+                            (plan) => String(plan.id) === String(this.selectedPlanId),
+                        );
+
+                    if (currentStillValid) {
+                        this.selectPlan(this.selectedPlanId);
+                        return;
+                    }
+
+                    if (this.requiresSellingPlan) {
+                        this.selectPlan(this.availablePlans[0].id);
+                        return;
+                    }
+
+                    this.selectOneTime();
+                },
+
+                _emitPlanChange(plan) {
+                    const Events = window.__Theme__?.Events;
+                    if (!Events?.emit || !Events.events?.PRODUCT_SELLING_PLAN_CHANGED) return;
+
+                    Events.emit(Events.events.PRODUCT_SELLING_PLAN_CHANGED, {
+                        sectionId: this.sectionId,
+                        active: Boolean(plan),
+                        sellingPlanId: plan?.id || null,
+                        price: plan?.price,
+                        compareAtPrice: plan?.compareAtPrice,
+                    });
+                },
+
+                destroy() {
+                    this._eventScope?.dispose?.();
+                    this._eventScope = null;
                     this.dispose();
                 },
             };

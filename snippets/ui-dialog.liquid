@@ -117,8 +117,6 @@
     if drawer_motion_sheet
         assign drawer_motion_sheet_enabled = true
     endif
-
-    assign dialog_visible_expr = "$store.dialog.active === '" | append: id | append: "' || $store.dialog.closing === '" | append: id | append: "'"
 -%}
 
 {%- capture dialog_close_button_markup -%}
@@ -136,7 +134,7 @@
 
 <div
     x-data="{}"
-    x-show="{{ dialog_visible_expr }}"
+    x-show="$store.dialog.active === $el.dataset.dialogId || $store.dialog.closing === $el.dataset.dialogId"
     x-cloak
     class="fixed inset-0 {{ backdrop_z_class }} {{ root_classes }}"
     @keydown.escape.window="$store.dialog.close()"

@@ -10,6 +10,7 @@
     if (!AlpineComponentsFactory) return;
 
     const COLLECTION_FILTERS_FORM_ID = 'CollectionFiltersForm';
+    const COLLECTION_FILTERS_DIALOG_ID = 'collection-filters';
 
     function buildRelativeUrlFromParams(pathname, params) {
         const qs = params.toString();
@@ -18,6 +19,14 @@
 
     function buildAbsoluteUrlFromParams(pathname, params) {
         return buildRelativeUrlFromParams(pathname, params);
+    }
+
+    function resolveFiltersFormId(instance) {
+        return instance?.formId || COLLECTION_FILTERS_FORM_ID;
+    }
+
+    function resolveFiltersDialogId(instance) {
+        return instance?.dialogId || COLLECTION_FILTERS_DIALOG_ID;
     }
 
     function getCollectionFilterControls(formId = COLLECTION_FILTERS_FORM_ID) {
@@ -46,6 +55,36 @@
         }
 
         componentData.setMaxFromInput?.(nextValue);
+    }
+
+    function syncCollectionControlPeers(source, formId = COLLECTION_FILTERS_FORM_ID) {
+        if (!source?.name) return;
+
+        const peers = getCollectionFilterControls(formId).filter(
+            (field) => field !== source && field?.name === source.name,
+        );
+
+        peers.forEach((field) => {
+            if (source.type === 'checkbox' || source.type === 'radio') {
+                if (field.type === source.type && field.value === source.value) {
+                    field.checked = source.checked;
+                }
+                return;
+            }
+
+            if (source.tagName === 'SELECT' && source.multiple) {
+                const selectedValues = new Set(
+                    Array.from(source.selectedOptions || []).map((option) => option.value),
+                );
+                Array.from(field.options || []).forEach((option) => {
+                    option.selected = selectedValues.has(option.value);
+                });
+                return;
+            }
+
+            field.value = source.value;
+            syncCollectionPriceComponentState(field.name, source.value, field);
+        });
     }
 
     function syncCollectionControlsFromUrl(url, formId = COLLECTION_FILTERS_FORM_ID) {
@@ -118,8 +157,15 @@
 
         const params = new URLSearchParams();
         const controls = getCollectionFilterControls(formId);
+        const appendedMultiValues = new Set();
         const isSingleValueField = (fieldName) =>
             fieldName === 'sort_by' || fieldName.endsWith('.gte') || fieldName.endsWith('.lte');
+        const appendMultiValue = (fieldName, value) => {
+            const key = `${fieldName}\u0000${value}`;
+            if (appendedMultiValues.has(key)) return;
+            appendedMultiValues.add(key);
+            params.append(fieldName, value);
+        };
 
         controls.forEach((field) => {
             if (
@@ -140,7 +186,7 @@
 
             if (field.tagName === 'SELECT' && field.multiple) {
                 Array.from(field.selectedOptions || []).forEach((option) => {
-                    params.append(field.name, option.value);
+                    appendMultiValue(field.name, option.value);
                 });
                 return;
             }
@@ -152,7 +198,7 @@
                 return;
             }
 
-            params.append(field.name, field.value);
+            appendMultiValue(field.name, field.value);
         });
 
         return params;
@@ -224,6 +270,18 @@
         collectionFilters(sectionId = null, selectors = null) {
             return {
                 ...ComponentGroups.pagination.sectionPagination(sectionId, selectors),
+                formId: COLLECTION_FILTERS_FORM_ID,
+                dialogId: COLLECTION_FILTERS_DIALOG_ID,
+
+                init() {
+                    const baseInit = ComponentGroups.pagination.sectionPagination().init;
+                    if (typeof baseInit === 'function') {
+                        baseInit.call(this);
+                    }
+                    const ds = this.$el?.dataset;
+                    if (ds?.filtersFormId) this.formId = ds.filtersFormId;
+                    if (ds?.filtersDialogId) this.dialogId = ds.filtersDialogId;
+                },
 
                 _executeFetch(url, updateHistory) {
                     const Http = window.ShopifyHttp;
@@ -263,14 +321,16 @@
                 },
 
                 syncControlsFromUrl(url) {
-                    syncCollectionControlsFromUrl(url);
+                    syncCollectionControlsFromUrl(url, resolveFiltersFormId(this));
                 },
 
                 _getFormParams() {
-                    return readCollectionFormParams();
+                    return readCollectionFormParams(resolveFiltersFormId(this));
                 },
 
-                onChange() {
+                onChange(source) {
+                    const field = source?.target || source;
+                    syncCollectionControlPeers(field, resolveFiltersFormId(this));
                     const params = this._getFormParams();
                     params.delete('page');
                     this.loadUrl(this._buildUrl(params));
@@ -306,7 +366,6 @@
          * - reconciles dialog focus via public dialog store APIs / force-closes on type switches
          */
         searchFilters(sectionId = null, selectors = null) {
-            const SEARCH_FILTER_DIALOG_ID = 'collection-filters';
             const PRODUCT_REFRESH_SELECTORS = [
                 '[data-search-results-content]',
                 '[data-search-drawer-body]',
@@ -375,15 +434,13 @@
 
                 _isSearchFilterDialogOpen() {
                     const dialog = this._getSearchDialogStore();
-                    return Boolean(dialog?.isOpen?.(SEARCH_FILTER_DIALOG_ID));
+                    return Boolean(dialog?.isOpen?.(resolveFiltersDialogId(this)));
                 },
 
                 _hasSearchFilterDialogLifecycle() {
                     const dialog = this._getSearchDialogStore();
-                    return Boolean(
-                        dialog?.isOpen?.(SEARCH_FILTER_DIALOG_ID) ||
-                        dialog?.isClosing?.(SEARCH_FILTER_DIALOG_ID),
-                    );
+                    const dialogId = resolveFiltersDialogId(this);
+                    return Boolean(dialog?.isOpen?.(dialogId) || dialog?.isClosing?.(dialogId));
                 },
 
                 _getSearchFilterTrigger() {
@@ -391,8 +448,9 @@
                 },
 
                 _getSearchDialogPanel() {
+                    const dialogId = resolveFiltersDialogId(this);
                     return document.querySelector(
-                        `[data-dialog-root][data-dialog-id="${SEARCH_FILTER_DIALOG_ID}"] [data-dialog-panel]`,
+                        `[data-dialog-root][data-dialog-id="${dialogId}"] [data-dialog-panel]`,
                     );
                 },
 
@@ -435,7 +493,7 @@
 
                 _forceCloseSearchFilterDialog() {
                     const dialog = this._getSearchDialogStore();
-                    dialog?.forceClose?.(SEARCH_FILTER_DIALOG_ID);
+                    dialog?.forceClose?.(resolveFiltersDialogId(this));
                 },
 
                 _parkFocusBeforeTypeChange() {
@@ -504,13 +562,14 @@
                     if (!dialogWasOpen) return;
 
                     const dialog = this._getSearchDialogStore();
+                    const dialogId = resolveFiltersDialogId(this);
                     // User started closing (or closed) while the request was in flight — do not revive.
-                    if (!dialog?.isOpen?.(SEARCH_FILTER_DIALOG_ID)) return;
+                    if (!dialog?.isOpen?.(dialogId)) return;
 
                     const trigger = this._getSearchFilterTrigger();
                     const focusElement = this._findDrawerFocusTarget(focusIntent);
 
-                    dialog.refreshOpenContent(SEARCH_FILTER_DIALOG_ID, {
+                    dialog.refreshOpenContent(dialogId, {
                         returnFocusTo: trigger,
                         focusElement,
                     });

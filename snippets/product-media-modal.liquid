@@ -32,14 +32,15 @@
         data-dialog-motion-mode="origin"
     >
         <div
-            x-show="$store.dialog.active === '{{ id }}' || $store.dialog.closing === '{{ id }}'"
+            data-dialog-id="{{ id | escape }}"
+            x-show="$store.dialog.active === $el.dataset.dialogId || $store.dialog.closing === $el.dataset.dialogId"
             x-cloak
             class="ui-dialog-modal-shell--origin z-layer-lightbox fixed inset-0 flex items-center justify-center"
             role="dialog"
             aria-modal="true"
             aria-label="{{ 'accessibility.product_media_viewer' | t }}"
             tabindex="-1"
-            @keydown.escape.window="($store.dialog.active === '{{ id }}' || $store.dialog.closing === '{{ id }}') && $store.dialog.close()"
+            @keydown.escape.window="($store.dialog.active === $el.dataset.dialogId || $store.dialog.closing === $el.dataset.dialogId) && $store.dialog.close()"
             data-dialog-panel
         >
             <div
@@ -62,6 +63,7 @@
                 class="product-media-modal__content relative z-10 max-h-[90vh] max-w-[90vw] overflow-hidden"
                 data-dialog-motion-target
                 data-dialog-motion-mode="origin"
+                data-dialog-id="{{ id | escape }}"
                 x-data="productMediaModal()"
             >
                 {%- for media_item in media_items -%}

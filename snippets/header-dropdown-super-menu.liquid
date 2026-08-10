@@ -157,12 +157,13 @@
                                                         <button
                                                             type="button"
                                                             role="tab"
-                                                            id="super-tab-{{ section.id }}-{{ i }}"
-                                                            aria-controls="super-panel-{{ section.id }}-{{ i }}"
+                                                            id="super-tab-{{ section.id }}-{{ link.handle }}-{{ i }}"
+                                                            aria-controls="super-panel-{{ section.id }}-{{ link.handle }}-{{ i }}"
                                                             x-data="{ index: null }"
                                                             x-init="index = registerTab($el)"
                                                             @click="setActive(index)"
                                                             :aria-selected="isActive(index)"
+                                                            :tabindex="isFocusable(index) ? 0 : -1"
                                                             class="header-dropdown-super-menu__tab tab-nav-item tab-nav-item--underline-opacity"
                                                             :class="{ 'is-active': isActive(index) }"
                                                         >
@@ -180,8 +181,8 @@
                                                     {%- if collection_item != blank -%}
                                                         <div
                                                             role="tabpanel"
-                                                            id="super-panel-{{ section.id }}-{{ i }}"
-                                                            aria-labelledby="super-tab-{{ section.id }}-{{ i }}"
+                                                            id="super-panel-{{ section.id }}-{{ link.handle }}-{{ i }}"
+                                                            aria-labelledby="super-tab-{{ section.id }}-{{ link.handle }}-{{ i }}"
                                                             x-data="{ index: null }"
                                                             x-init="index = registerPanel($el)"
                                                             x-show="isActive(index)"
@@ -194,12 +195,15 @@
                                                                 {% # theme-check-disable-next-line LiquidHTMLSyntaxError %}
                                                                 {%- for product in collection_item.products limit: section.settings.super_series_products_limit -%}
                                                                     {%- if product != blank -%}
+                                                                        {%- capture super_card_scope_id -%}
+                                                                            {{- section.id -}}-{{- link.handle -}}-series-{{- i -}}
+                                                                        {%- endcapture -%}
                                                                         {% render 'product-card',
                                                                             product: product,
                                                                             class: 'w-100 shrink-0',
                                                                             card_mode: 'lite',
                                                                             show_image_navigation: true,
-                                                                            scope_id: section.id,
+                                                                            scope_id: super_card_scope_id,
                                                                             color_scheme: section.settings.menu_color_scheme
                                                                         %}
                                                                     {%- else -%}

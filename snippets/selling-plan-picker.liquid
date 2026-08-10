@@ -1,0 +1,128 @@
+{% doc %}
+    Selling plan (subscription) purchase options for a product form.
+    Renders only when the product has selling_plan_groups.
+    Syncs a hidden name="selling_plan" input for native checkout buttons and AJAX ATC.
+
+    @param {product} product - Product object
+    @param {string} section_id - Section ID for Alpine / ThemeEvents sync
+    @param {string} product_form_id - Product form id
+{% enddoc %}
+
+{%- if product != blank and product.selling_plan_groups.size > 0 -%}
+    {%- assign current_variant = product.selected_or_first_available_variant -%}
+    {%- assign initial_selling_plan_allocation = current_variant.selling_plan_allocations
+        | first
+    -%}
+    {%- assign initial_selling_plan_id = '' -%}
+    {%- if product.requires_selling_plan and initial_selling_plan_allocation != blank -%}
+        {%- assign initial_selling_plan_id = initial_selling_plan_allocation.selling_plan.id -%}
+    {%- endif -%}
+    {%- capture selling_plans_payload -%}
+        {
+            "requiresSellingPlan": {{ product.requires_selling_plan | json }},
+            "variants": {
+                {%- assign variant_first = true -%}
+                {%- for variant in product.variants -%}
+                    {%- unless variant_first -%},{%- endunless -%}
+                    {%- assign variant_first = false -%}
+                    {{ variant.id | json }}: [
+                        {%- for allocation in variant.selling_plan_allocations -%}
+                            {%- unless forloop.first -%},{%- endunless -%}
+                            {
+                                "id": {{ allocation.selling_plan.id | json }},
+                                "groupId": {{ allocation.selling_plan_group_id | json }},
+                                "name": {{ allocation.selling_plan.name | json }},
+                                "price": {{ allocation.price | json }},
+                                "compareAtPrice": {{ allocation.compare_at_price | default: 0 | json }},
+                                "perDeliveryPrice": {{ allocation.per_delivery_price | json }}
+                            }
+                        {%- endfor -%}
+                    ]
+                {%- endfor -%}
+            },
+            "groups": [
+                {%- for group in product.selling_plan_groups -%}
+                    {%- unless forloop.first -%},{%- endunless -%}
+                    {
+                        "id": {{ group.id | json }},
+                        "name": {{ group.name | json }}
+                    }
+                {%- endfor -%}
+            ]
+        }
+    {%- endcapture -%}
+
+    <div
+        class="selling-plan-picker mb-6"
+        data-section-id="{{ section_id | escape }}"
+        data-variant-id="{{ current_variant.id | escape }}"
+        data-selling-plans="{{ selling_plans_payload | strip | escape }}"
+        data-one-time-label="{{ 'products.product.selling_plan.one_time_purchase' | t | escape }}"
+        data-purchase-options-label="{{ 'products.product.selling_plan.purchase_options' | t | escape }}"
+        x-data="SellingPlanPicker()"
+    >
+        <fieldset class="selling-plan-picker__fieldset m-0 border-0 p-0">
+            <legend class="mb-3 body-sm font-medium text-theme-text">
+                <span x-text="purchaseOptionsLabel"></span>
+            </legend>
+
+            <div class="flex flex-col gap-2">
+                <template x-if="!requiresSellingPlan">
+                    <label
+                        class="selling-plan-picker__option flex cursor-pointer items-start gap-3"
+                        for="selling-plan-option-{{ section_id | escape }}-one-time"
+                    >
+                        <input
+                            id="selling-plan-option-{{ section_id | escape }}-one-time"
+                            type="radio"
+                            class="mt-1"
+                            name="selling-plan-option-{{ section_id | escape }}"
+                            value=""
+                            :checked="selectedPlanId === ''"
+                            @change="selectOneTime()"
+                        >
+                        <span class="body-md text-theme-text" x-text="oneTimeLabel"></span>
+                    </label>
+                </template>
+
+                <template x-for="plan in availablePlans" :key="plan.id">
+                    <label
+                        class="selling-plan-picker__option flex cursor-pointer items-start gap-3"
+                        :for="'selling-plan-option-{{ section_id | escape }}-' + String(plan.id)"
+                    >
+                        <input
+                            :id="'selling-plan-option-{{ section_id | escape }}-' + String(plan.id)"
+                            type="radio"
+                            class="mt-1"
+                            name="selling-plan-option-{{ section_id | escape }}"
+                            :value="String(plan.id)"
+                            :checked="String(selectedPlanId) === String(plan.id)"
+                            @change="selectPlan(plan.id)"
+                        >
+                        <span class="min-w-0">
+                            <span class="block body-md text-theme-text" x-text="plan.name"></span>
+                            <span
+                                class="mt-0.5 block body-sm text-theme-text/70"
+                                x-show="groupName(plan.groupId)"
+                                x-text="groupName(plan.groupId)"
+                            ></span>
+                        </span>
+                    </label>
+                </template>
+            </div>
+        </fieldset>
+
+        <input
+            type="hidden"
+            name="selling_plan"
+            form="{{ product_form_id }}"
+            x-ref="sellingPlanInput"
+            value="{{ initial_selling_plan_id | escape }}"
+            :value="selectedPlanId"
+            {% if initial_selling_plan_id == blank %}
+                disabled
+            {% endif %}
+            :disabled="!selectedPlanId"
+        >
+    </div>
+{%- endif -%}
