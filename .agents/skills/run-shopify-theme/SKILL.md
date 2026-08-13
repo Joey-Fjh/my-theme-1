@@ -16,7 +16,8 @@ Use `npm.cmd` in this Windows workspace.
 - Static browser compatibility lint: `npm.cmd run lint:compat` via `check-theme-architecture`
 - Tailwind rebuild plus compatibility scan: `npm.cmd run scan:compat`
 - i18n lint: `npm.cmd run lint:i18n` via `check-i18n`
-- Shopify Theme Check: `npm.cmd test`
+- Liquid syntax guard plus Shopify Theme Check: `npm.cmd test`
+- Shopify Theme Check only: `npm.cmd run test:theme-check`
 - Tailwind build after Tailwind source changes: `npm.cmd run build:tw`
 - SVG build after `icons/` changes: `npm.cmd run build:svg` via `build-svg-icons`
 - Local development: `npm.cmd run dev`

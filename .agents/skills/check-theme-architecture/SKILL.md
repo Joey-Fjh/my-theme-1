@@ -13,6 +13,7 @@ Use this skill for repository-specific architecture validation. `AGENTS.md` is a
 ## Command
 
 - Run theme architecture lint: `npm.cmd run lint:theme`
+- Run strict Liquid output syntax guard: `npm.cmd run lint:liquid-syntax`
 - Run static browser compatibility lint: `npm.cmd run lint:compat`
 - Rebuild Tailwind and scan compatibility: `npm.cmd run scan:compat`
 - Aggregate gate that includes theme architecture lint: `npm.cmd run lint`
@@ -20,6 +21,7 @@ Use this skill for repository-specific architecture validation. `AGENTS.md` is a
 `npm.cmd run lint:theme` uses these skill resources:
 
 ```text
+.agents/skills/check-theme-architecture/scripts/lint-liquid-syntax.js
 .agents/skills/check-theme-architecture/scripts/lint-theme.js
 .agents/skills/check-theme-architecture/scripts/lint-embedded-compat.cjs
 .agents/skills/check-theme-architecture/scripts/lib/liquid-ast.js

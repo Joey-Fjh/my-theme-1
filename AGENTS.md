@@ -161,13 +161,15 @@ Use the smallest command that proves the change. In this Windows PowerShell work
 
 ```bash
 npm.cmd run lint          # i18n, theme architecture, agent orchestration, and format checks
+npm.cmd run lint:liquid-syntax # strict Liquid output parsing guard
 npm.cmd run lint:agents   # multi-agent skills, roles, contracts, hooks, and vendor adapters
 npm.cmd run test:agent-hooks # runtime result-schema hook acceptance and rejection cases
 npm.cmd run lint:theme    # Liquid, JS architecture, Alpine, HTTP/cart, heading rules
 npm.cmd run lint:i18n     # locale keys, translated strings, schema copy, ARIA copy
 npm.cmd run lint:compat   # CSS, JS, and embedded Liquid browser compatibility checks
 npm.cmd run scan:compat   # rebuild Tailwind output, then run compatibility checks
-npm.cmd test              # Shopify Theme Check
+npm.cmd test              # strict Liquid syntax guard, then Shopify Theme Check
+npm.cmd run test:theme-check # Shopify Theme Check only
 npm.cmd run build:tw      # rebuild Tailwind output after Tailwind source changes
 npm.cmd run build:svg     # regenerate SVG assets after icons/ changes
 npm.cmd run dev           # Shopify theme dev + Tailwind watch
