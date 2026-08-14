@@ -1,0 +1,46 @@
+{%- liquid
+    assign nav_batch_size = settings.collection_navigation_load_more_size | default: 12
+    assign nav_sort_by = collection.sort_by
+-%}
+
+{% paginate collections by nav_batch_size %}
+    <div
+        data-collection-navigation-batch
+        data-has-next-page="{% if paginate.next %}true{% else %}false{% endif %}"
+    >
+        {%- for nav_collection in collections -%}
+            {%- if nav_collection == blank or nav_collection.handle == 'all' -%}
+                {%- continue -%}
+            {%- endif -%}
+
+            <a
+                href="{% if nav_sort_by != blank %}{{ nav_collection.url }}?sort_by={{ nav_sort_by | url_param_escape }}{% else %}{{ nav_collection.url }}{% endif %}"
+                class="block py-2 body-md text-theme-text"
+                data-collection-navigation-item
+                data-collection-handle="{{ nav_collection.handle }}"
+                data-collection-navigation-base-path="{{ nav_collection.url }}"
+                {% if nav_collection.handle == collection.handle %}
+                    aria-current="page"
+                {% endif %}
+            >
+                <span class="text-pretty break-words">
+                    <span
+                        {% if nav_collection.handle == collection.handle %}
+                            class="border-b border-current"
+                        {% endif %}
+                    >
+                        {{- nav_collection.title | escape -}}</span
+                    ><sup class="sup-badge"
+                        >({{ nav_collection.all_products_count | default: 0 }})</sup
+                    >
+                </span>
+            </a>
+        {%- endfor -%}
+    </div>
+{% endpaginate %}
+
+{% schema %}
+{
+    "name": "t:sections.collection-navigation-items.name"
+}
+{% endschema %}

@@ -502,6 +502,10 @@
                         Factory.register?.(Comps.COLLECTIONFILTERS, Comps.collectionFilters);
                         Factory.register?.(Comps.SEARCHFILTERS, Comps.searchFilters);
                         Factory.register?.(
+                            Comps.COLLECTIONNAVIGATIONCATALOG,
+                            Comps.collectionNavigationCatalog,
+                        );
+                        Factory.register?.(
                             Comps.COLLECTIONFILTERFIELD,
                             Comps.collectionFilterField,
                         );

@@ -6,7 +6,7 @@
     @param {array}   images          - Array of image objects (legacy). Used when `media` is not provided.
     @param {string}  layout          - 'thumbnails' | 'carousel' | 'stacked' | 'grid' (default: thumbnails)
     @param {string}  thumb_position  - 'left' | 'bottom' (default: left, only for thumbnails layout)
-    @param {number}  thumbnail_visible_count - Number of visible thumbnails in bottom thumbnail layout (default: 4)
+    @param {string}  thumbnail_size - Shared thumbnail size: 'compact' | 'standard' | 'large' (default: standard)
     @param {boolean} zoom            - Enable click-to-zoom lightbox for images (default: false)
     @param {boolean} magnifier       - Enable desktop hover magnifier on gallery images (default: false)
     @param {number}  magnifier_zoom_scale - Background scale multiplier for magnifier (default: 2)
@@ -24,7 +24,7 @@
 
 {%- assign layout = layout | default: 'thumbnails' -%}
 {%- assign thumb_position = thumb_position | default: 'left' -%}
-{%- assign thumbnail_visible_count = thumbnail_visible_count | default: 4 -%}
+{%- assign thumbnail_size = thumbnail_size | default: 'standard' -%}
 {%- assign gallery_motion_reveal = motion_reveal | default: true, allow_false: true -%}
 {%- assign zoom_enabled = false -%}
 {%- if zoom == true or zoom == 'true' -%}
@@ -73,7 +73,7 @@
 
 <div
     x-data="productGallery"
-    data-image-count="{{ image_count }}"
+    data-media-count="{{ image_count }}"
     class="h-full w-full min-w-0 {% if class %}{{ class }}{% endif %}"
     {% if id %}
         id="{{ id }}"
@@ -95,7 +95,7 @@
         {%- liquid
             case layout
                 when 'thumbnails'
-                    render 'product-gallery-thumbnails', images: gallery_items, gallery_id: id, thumb_position: thumb_position, thumbnail_visible_count: thumbnail_visible_count, zoom: zoom_enabled, magnifier: magnifier_enabled, magnifier_zoom_scale: magnifier_zoom_scale, magnifier_preview_width: magnifier_preview_width, magnifier_preview_height: magnifier_preview_height, magnifier_preview_max_width: magnifier_preview_max_width, aspect_ratio: aspect_ratio, max_height: max_height, motion_reveal: gallery_motion_reveal
+                    render 'product-gallery-thumbnails', images: gallery_items, gallery_id: id, thumb_position: thumb_position, thumbnail_size: thumbnail_size, zoom: zoom_enabled, magnifier: magnifier_enabled, magnifier_zoom_scale: magnifier_zoom_scale, magnifier_preview_width: magnifier_preview_width, magnifier_preview_height: magnifier_preview_height, magnifier_preview_max_width: magnifier_preview_max_width, aspect_ratio: aspect_ratio, max_height: max_height, motion_reveal: gallery_motion_reveal
                 when 'carousel'
                     render 'product-gallery-carousel', images: gallery_items, zoom: zoom_enabled, magnifier: magnifier_enabled, magnifier_zoom_scale: magnifier_zoom_scale, magnifier_preview_width: magnifier_preview_width, magnifier_preview_height: magnifier_preview_height, magnifier_preview_max_width: magnifier_preview_max_width, aspect_ratio: aspect_ratio, max_height: max_height, motion_reveal: gallery_motion_reveal
                 when 'stacked'

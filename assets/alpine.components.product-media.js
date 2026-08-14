@@ -14,12 +14,20 @@
             return {
                 ...AlpineComponentsFactory.useDisposable(),
                 activeIndex: 0,
-                imageCount: 0,
+                mediaCount: 0,
+                _galleryRoot: null,
+                _thumbnailMediaQuery: null,
                 _swiper: null,
                 _eventScope: null,
 
                 init() {
-                    this.imageCount = Number(this.$el.dataset.imageCount) || 0;
+                    this._galleryRoot = this.$el;
+                    this.mediaCount = Number(this._galleryRoot.dataset.mediaCount) || 0;
+                    this._thumbnailMediaQuery = window.matchMedia('(min-width: 48rem)');
+                    this.on(this._thumbnailMediaQuery, 'change', () =>
+                        this._syncThumbnailOrientation(),
+                    );
+                    this._syncThumbnailOrientation();
                     this.$nextTick(() => this._initSwiper());
                     const Events = window.__Theme__.Events;
                     const events = Events.events;
@@ -27,7 +35,7 @@
 
                     const onSlideToRequest = (e) => {
                         const targetId = e.detail?.id;
-                        const galleryId = this.$el?.id || '';
+                        const galleryId = this._galleryRoot?.id || '';
                         if (targetId) {
                             if (targetId !== galleryId) return;
                         } else if (galleryId) {
@@ -40,8 +48,8 @@
                 },
 
                 setActive(index) {
-                    if (this.imageCount === 0) return;
-                    index = Math.max(0, Math.min(index, this.imageCount - 1));
+                    if (this.mediaCount === 0) return;
+                    index = Math.max(0, Math.min(index, this.mediaCount - 1));
                     this._pauseActiveVideo();
                     this.activeIndex = index;
                     if (this._swiper) this._swiper.slideTo(index);
@@ -49,16 +57,18 @@
                 },
 
                 next() {
-                    this.setActive((this.activeIndex + 1) % this.imageCount);
+                    this.setActive((this.activeIndex + 1) % this.mediaCount);
+                    this.$nextTick(() => this._revealActiveThumbnail());
                 },
 
                 prev() {
-                    this.setActive((this.activeIndex - 1 + this.imageCount) % this.imageCount);
+                    this.setActive((this.activeIndex - 1 + this.mediaCount) % this.mediaCount);
+                    this.$nextTick(() => this._revealActiveThumbnail());
                 },
 
                 activateMediaById(mediaId) {
-                    if (!mediaId) return;
-                    const item = this.$el.querySelector(
+                    if (!mediaId || !this._galleryRoot) return;
+                    const item = this._galleryRoot.querySelector(
                         '[data-media-id="' + CSS.escape(String(mediaId)) + '"]',
                     );
                     if (!item) return;
@@ -68,7 +78,7 @@
                         mediaType === 'external_video' ||
                         mediaType === 'video'
                     ) {
-                        const dialogId = this.$el.dataset.mediaModalId;
+                        const dialogId = this._galleryRoot.dataset.mediaModalId;
                         if (dialogId) {
                             const Events = window.__Theme__.Events;
                             Events.emit(Events.events.PRODUCT_MEDIA_MODAL_ACTIVATE, {
@@ -81,13 +91,13 @@
                 },
 
                 _pauseActiveVideo() {
-                    this.$el.querySelectorAll('video').forEach((video) => {
+                    this._galleryRoot?.querySelectorAll('video').forEach((video) => {
                         if (!video.paused) video.pause();
                     });
                 },
 
                 _syncSlideInert() {
-                    const swiperRoot = this.$el.querySelector('[data-gallery-swiper]');
+                    const swiperRoot = this._galleryRoot?.querySelector('[data-gallery-swiper]');
                     if (!swiperRoot) return;
                     swiperRoot.querySelectorAll('.swiper-slide').forEach((slide, index) => {
                         const isActive = index === this.activeIndex;
@@ -100,6 +110,25 @@
                     });
                 },
 
+                _revealActiveThumbnail() {
+                    const thumbnail = this._galleryRoot?.querySelector(
+                        `[data-gallery-thumbnail="${this.activeIndex}"]`,
+                    );
+                    thumbnail?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+                },
+
+                _syncThumbnailOrientation() {
+                    const tablist = this._galleryRoot?.querySelector('[data-gallery-thumbnails]');
+                    if (!tablist) return;
+
+                    const desktopOrientation = tablist.dataset.desktopOrientation || 'horizontal';
+                    const orientation = this._thumbnailMediaQuery?.matches
+                        ? desktopOrientation
+                        : 'horizontal';
+
+                    tablist.setAttribute('aria-orientation', orientation);
+                },
+
                 _handleThumbnailKeydown(event) {
                     const tablist = event.currentTarget;
                     const orientation = tablist.getAttribute('aria-orientation') || 'horizontal';
@@ -108,31 +137,31 @@
                     switch (event.key) {
                         case 'ArrowRight':
                             if (orientation === 'horizontal') {
-                                nextIndex = (this.activeIndex + 1) % this.imageCount;
+                                nextIndex = (this.activeIndex + 1) % this.mediaCount;
                             }
                             break;
                         case 'ArrowLeft':
                             if (orientation === 'horizontal') {
                                 nextIndex =
-                                    (this.activeIndex - 1 + this.imageCount) % this.imageCount;
+                                    (this.activeIndex - 1 + this.mediaCount) % this.mediaCount;
                             }
                             break;
                         case 'ArrowDown':
                             if (orientation === 'vertical') {
-                                nextIndex = (this.activeIndex + 1) % this.imageCount;
+                                nextIndex = (this.activeIndex + 1) % this.mediaCount;
                             }
                             break;
                         case 'ArrowUp':
                             if (orientation === 'vertical') {
                                 nextIndex =
-                                    (this.activeIndex - 1 + this.imageCount) % this.imageCount;
+                                    (this.activeIndex - 1 + this.mediaCount) % this.mediaCount;
                             }
                             break;
                         case 'Home':
                             nextIndex = 0;
                             break;
                         case 'End':
-                            nextIndex = this.imageCount - 1;
+                            nextIndex = this.mediaCount - 1;
                             break;
                     }
 
@@ -150,7 +179,7 @@
                 _initSwiper() {
                     if (typeof Swiper === 'undefined') return;
 
-                    const mainEl = this.$el.querySelector('[data-gallery-swiper]');
+                    const mainEl = this._galleryRoot?.querySelector('[data-gallery-swiper]');
                     if (!mainEl) return;
 
                     this._swiper = new Swiper(mainEl, {
@@ -174,6 +203,8 @@
                     this._eventScope?.dispose?.();
                     this._eventScope = null;
                     if (this._swiper?.destroy) this._swiper.destroy(true, true);
+                    this._thumbnailMediaQuery = null;
+                    this._galleryRoot = null;
                     this.dispose();
                 },
             };
@@ -770,31 +801,142 @@
                 ...AlpineComponentsFactory.useDisposable(),
                 activeMediaId: null,
                 dialogId: '',
+                _rootEl: null,
+                _dialogUnwatch: null,
                 _eventScope: null,
+                _modelViewerUIs: [],
 
                 init() {
+                    this._rootEl = this.$el;
                     const Events = window.__Theme__.Events;
                     this._eventScope = Events.createScope();
                     this.dialogId =
-                        this.$el?.dataset?.dialogId || this.$el?.dataset?.mediaModalId || '';
+                        this._rootEl?.dataset?.dialogId ||
+                        this._rootEl?.dataset?.mediaModalId ||
+                        '';
                     this._eventScope.on(Events.events.PRODUCT_MEDIA_MODAL_ACTIVATE, (e) => {
                         const targetDialogId = e.detail?.dialogId;
                         if (targetDialogId && this.dialogId && targetDialogId !== this.dialogId) {
                             return;
                         }
                         if (e.detail?.mediaId) {
-                            this.activeMediaId = e.detail.mediaId;
+                            this.setMedia(e.detail.mediaId);
                         }
                     });
+
+                    if (typeof this.$watch === 'function') {
+                        this._dialogUnwatch = this.$watch(
+                            () => {
+                                const dialog = window.Alpine?.store?.('dialog');
+                                return `${dialog?.active || ''}:${dialog?.closing || ''}`;
+                            },
+                            () => {
+                                const dialog = window.Alpine?.store?.('dialog');
+                                const isOpen =
+                                    dialog?.active === this.dialogId &&
+                                    dialog?.closing !== this.dialogId;
+                                if (!isOpen) this.stopMedia();
+                            },
+                        );
+                    }
+
+                    this._loadModelViewerUI();
                 },
 
                 setMedia(mediaId) {
-                    this.activeMediaId = mediaId;
+                    const nextMediaId = Number(mediaId);
+                    if (!Number.isFinite(nextMediaId) || nextMediaId <= 0) return;
+
+                    this.stopMedia();
+                    this.activeMediaId = nextMediaId;
+                    this.$nextTick(() => this._mountExternalVideo(nextMediaId));
+                },
+
+                stopMedia() {
+                    if (!this._rootEl) return;
+
+                    this._rootEl.querySelectorAll('video').forEach((video) => {
+                        video.pause();
+                        try {
+                            video.currentTime = 0;
+                        } catch (_) {}
+                    });
+
+                    this._rootEl.querySelectorAll('[data-external-video-host]').forEach((host) => {
+                        while (host.firstChild) host.removeChild(host.firstChild);
+                    });
+
+                    this._modelViewerUIs.forEach(({ ui }) => ui?.pause?.());
+                    this._rootEl
+                        .querySelectorAll('model-viewer')
+                        .forEach((modelViewer) => modelViewer.pause?.());
+                    this.activeMediaId = null;
+                },
+
+                _mountExternalVideo(mediaId) {
+                    if (!this._rootEl || this.activeMediaId !== mediaId) return;
+
+                    const mediaRoot = this._rootEl.querySelector(
+                        '[data-product-media-id="' + CSS.escape(String(mediaId)) + '"]',
+                    );
+                    const template = mediaRoot?.querySelector('[data-external-video-template]');
+                    const host = mediaRoot?.querySelector('[data-external-video-host]');
+                    if (!template || !host) return;
+
+                    while (host.firstChild) host.removeChild(host.firstChild);
+                    host.appendChild(template.content.cloneNode(true));
+                },
+
+                _loadModelViewerUI() {
+                    const modelViewers = this._rootEl?.querySelectorAll('model-viewer');
+                    if (!modelViewers?.length) return;
+
+                    const styleId = 'shopify-model-viewer-ui-styles';
+                    if (!document.getElementById(styleId)) {
+                        const stylesheet = document.createElement('link');
+                        stylesheet.id = styleId;
+                        stylesheet.rel = 'stylesheet';
+                        stylesheet.href =
+                            'https://cdn.shopify.com/shopifycloud/model-viewer-ui/assets/v1.0/model-viewer-ui.css';
+                        document.head.appendChild(stylesheet);
+                    }
+
+                    const Shopify = window.Shopify;
+                    if (!Shopify?.loadFeatures) return;
+
+                    Shopify.loadFeatures([
+                        {
+                            name: 'model-viewer-ui',
+                            version: '1.0',
+                            onLoad: (errors) => {
+                                if (errors || !this._rootEl?.isConnected) return;
+                                const ModelViewerUI = window.Shopify?.ModelViewerUI;
+                                if (!ModelViewerUI) return;
+
+                                const initialized = new Set(
+                                    this._modelViewerUIs.map(({ element }) => element),
+                                );
+                                this._rootEl.querySelectorAll('model-viewer').forEach((element) => {
+                                    if (initialized.has(element)) return;
+                                    this._modelViewerUIs.push({
+                                        element,
+                                        ui: new ModelViewerUI(element),
+                                    });
+                                });
+                            },
+                        },
+                    ]);
                 },
 
                 destroy() {
+                    this.stopMedia();
+                    if (typeof this._dialogUnwatch === 'function') this._dialogUnwatch();
+                    this._dialogUnwatch = null;
                     this._eventScope?.dispose?.();
                     this._eventScope = null;
+                    this._modelViewerUIs.forEach(({ ui }) => ui?.destroy?.());
+                    this._modelViewerUIs = [];
+                    this._rootEl = null;
                     this.dispose();
                 },
             };

@@ -94,9 +94,6 @@
                     event.stopPropagation();
 
                     this.cancelHoverOpen();
-
-                    if (!this.isDesktopClickTrigger()) return;
-
                     this.toggle(trigger.parentElement);
                 },
 
