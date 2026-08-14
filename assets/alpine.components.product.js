@@ -1325,7 +1325,10 @@
 
                     const onVariantChange = (e) => {
                         if (e.detail?.sectionId !== this.sectionId) return;
-                        this.variantId = e.detail?.variant?.id || null;
+                        const nextVariantId = Number(e.detail?.variant?.id || 0) || null;
+                        if (nextVariantId === this.variantId) return;
+
+                        this.variantId = nextVariantId;
                         this.load();
                     };
 
@@ -1366,8 +1369,22 @@
                 },
 
                 load() {
-                    if (!this.requestUrl) {
+                    const requestUrl = this.requestUrl;
+                    if (!requestUrl) {
+                        if (this._abortController) this._abortController.abort();
+                        this._abortController = null;
+                        this.isLoading = false;
                         this.clearContent();
+                        return;
+                    }
+
+                    const Http = window.ShopifyHttp;
+                    const SectionRefresher = window.ShopifySectionRefresher;
+                    if (!Http?.request || !SectionRefresher) {
+                        if (this._abortController) this._abortController.abort();
+                        this._abortController = null;
+                        this.isLoading = false;
+                        this.showError = true;
                         return;
                     }
 
@@ -1378,21 +1395,15 @@
                     this.isLoading = true;
                     this.showError = false;
 
-                    const Http = window.ShopifyHttp;
-                    const SectionRefresher = window.ShopifySectionRefresher;
-                    if (!Http?.request || !SectionRefresher) {
-                        this.isLoading = false;
-                        this.showError = true;
-                        return;
-                    }
-
-                    Http.request(this.requestUrl, {
+                    Http.request(requestUrl, {
                         method: 'GET',
                         headers: { Accept: 'text/html' },
                         signal: ctrl.signal,
                     })
                         .then((res) => res.text())
                         .then((html) => {
+                            if (this._abortController !== ctrl || ctrl.signal.aborted) return;
+
                             const doc = new DOMParser().parseFromString(html, 'text/html');
                             const rendered = doc.querySelector(
                                 '[data-pickup-availability-content]',
@@ -1413,13 +1424,15 @@
                         })
                         .catch((err) => {
                             if (err?.isAbort || err?.name === 'AbortError') return;
+                            if (this._abortController !== ctrl) return;
+
                             console.error('Pickup availability load failed:', err);
                             this.showError = true;
                         })
                         .finally(() => {
-                            if (this._abortController === ctrl) {
-                                this._abortController = null;
-                            }
+                            if (this._abortController !== ctrl) return;
+
+                            this._abortController = null;
                             this.isLoading = false;
                         });
                 },
@@ -1429,6 +1442,7 @@
                     this._eventScope = null;
                     if (this._abortController) this._abortController.abort();
                     this._abortController = null;
+                    this.isLoading = false;
                     this.dispose();
                 },
             };

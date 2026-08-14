@@ -72,6 +72,8 @@
                             <div
                                 x-show="activeMediaId === {{ media_item.id }}"
                                 class="flex items-center justify-center"
+                                data-product-media-id="{{ media_item.id }}"
+                                data-product-media-type="model"
                             >
                                 {{
                                     media_item
@@ -86,34 +88,41 @@
                             <div
                                 x-show="activeMediaId === {{ media_item.id }}"
                                 class="flex items-center justify-center"
+                                data-product-media-id="{{ media_item.id }}"
+                                data-product-media-type="external_video"
                             >
-                                {%- if media_item.host == 'youtube' -%}
-                                    {{
-                                        media_item
-                                        | external_video_url: autoplay: '1', muted: '1'
-                                        | external_video_tag:
-                                            class: 'w-[80vw] aspect-video pc:w-[70vw]'
-                                    }}
-                                {%- elsif media_item.host == 'vimeo' -%}
-                                    {{
-                                        media_item
-                                        | external_video_url: autoplay: '1', muted: '1'
-                                        | external_video_tag:
-                                            class: 'w-[80vw] aspect-video pc:w-[70vw]'
-                                    }}
-                                {%- else -%}
-                                    {{
-                                        media_item
-                                        | external_video_tag:
-                                            class: 'w-[80vw] aspect-video pc:w-[70vw]'
-                                    }}
-                                {%- endif -%}
+                                <template data-external-video-template>
+                                    {%- if media_item.host == 'youtube' -%}
+                                        {{
+                                            media_item
+                                            | external_video_url: autoplay: '1', muted: '1'
+                                            | external_video_tag:
+                                                class: 'w-[80vw] aspect-video pc:w-[70vw]'
+                                        }}
+                                    {%- elsif media_item.host == 'vimeo' -%}
+                                        {{
+                                            media_item
+                                            | external_video_url: autoplay: '1', muted: '1'
+                                            | external_video_tag:
+                                                class: 'w-[80vw] aspect-video pc:w-[70vw]'
+                                        }}
+                                    {%- else -%}
+                                        {{
+                                            media_item
+                                            | external_video_tag:
+                                                class: 'w-[80vw] aspect-video pc:w-[70vw]'
+                                        }}
+                                    {%- endif -%}
+                                </template>
+                                <div data-external-video-host></div>
                             </div>
 
                         {%- when 'video' -%}
                             <div
                                 x-show="activeMediaId === {{ media_item.id }}"
                                 class="flex items-center justify-center"
+                                data-product-media-id="{{ media_item.id }}"
+                                data-product-media-type="video"
                             >
                                 {{
                                     media_item

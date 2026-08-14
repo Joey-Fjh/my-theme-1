@@ -107,6 +107,7 @@
         SECTIONPAGINATION: 'sectionPagination',
         COLLECTIONFILTERS: 'collectionFilters',
         SEARCHFILTERS: 'searchFilters',
+        COLLECTIONNAVIGATIONCATALOG: 'collectionNavigationCatalog',
         COLLECTIONFILTERFIELD: 'collectionFilterField',
         PROGRESSIVELIST: 'progressiveList',
         PRODUCTGALLERY: 'productGallery',

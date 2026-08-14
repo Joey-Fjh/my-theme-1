@@ -17,7 +17,116 @@
         assign filters_form_id = 'CollectionFiltersForm-' | append: section.id
         assign filters_dialog_id = 'collection-filters-' | append: section.id
         assign filters_dialog_title_id = 'dialog-title-' | append: filters_dialog_id
+        assign collection_nav_dialog_id = 'collection-navigation-' | append: section.id
+        assign collection_nav_dialog_title_id = 'dialog-title-' | append: collection_nav_dialog_id
+        assign collection_nav_batch_size = settings.collection_navigation_batch_size | default: 8
+        assign collection_nav_load_more_size = settings.collection_navigation_load_more_size | default: 12
+        assign all_products_collection = collections.all
+        assign collection_nav_sort_by = collection.sort_by
+        assign is_all_products_collection = false
+        if all_products_collection != blank and collection.handle == all_products_collection.handle
+            assign is_all_products_collection = true
+        endif
     -%}
+    {%- capture all_products_nav_href -%}
+        {%- if collection_nav_sort_by != blank -%}
+            {{ all_products_collection.url | default: routes.all_products_collection_url }}?sort_by={{ collection_nav_sort_by | url_param_escape }}
+        {%- else -%}
+            {{ all_products_collection.url | default: routes.all_products_collection_url }}
+        {%- endif -%}
+    {%- endcapture -%}
+    {%- unless is_all_products_collection -%}
+        {%- capture current_collection_nav_href -%}
+            {%- if collection_nav_sort_by != blank -%}
+                {{ collection.url }}?sort_by={{ collection_nav_sort_by | url_param_escape }}
+            {%- else -%}
+                {{ collection.url }}
+            {%- endif -%}
+        {%- endcapture -%}
+    {%- endunless -%}
+    {%- liquid
+        assign nav_sequence_index = 0
+        assign current_in_first_n = false
+        assign collection_nav_initial_source_offset = 0
+        assign collection_nav_initial_has_more = false
+
+        for nav_collection in collections
+            if nav_collection == blank or nav_collection.handle == 'all'
+                continue
+            endif
+
+            assign nav_sequence_index = nav_sequence_index | plus: 1
+
+            if nav_sequence_index > collection_nav_batch_size
+                assign collection_nav_initial_has_more = true
+                break
+            endif
+
+            assign collection_nav_initial_source_offset = forloop.index
+
+            if nav_collection.handle == collection.handle
+                assign current_in_first_n = true
+            endif
+        endfor
+    -%}
+    {%- capture collection_quick_nav_links -%}
+        {%- assign nav_sequence_index = 0 -%}
+        {%- for nav_collection in collections -%}
+            {%- if nav_collection == blank or nav_collection.handle == 'all' -%}
+                {%- continue -%}
+            {%- endif -%}
+
+            {%- assign nav_sequence_index = nav_sequence_index | plus: 1 -%}
+
+            {%- if nav_sequence_index > collection_nav_batch_size -%}
+                {%- break -%}
+            {%- endif -%}
+
+            <a
+                href="{% if collection_nav_sort_by != blank %}{{ nav_collection.url }}?sort_by={{ collection_nav_sort_by | url_param_escape }}{% else %}{{ nav_collection.url }}{% endif %}"
+                class="collection__nav-link tab-nav-item tab-nav-item--underline-opacity flex shrink-0 items-start whitespace-nowrap{% if nav_collection.handle == collection.handle %} is-active{% endif %}"
+                {% if nav_collection.handle == collection.handle %}
+                    aria-current="page"
+                {% endif %}
+            >
+                <span>
+                    {{- nav_collection.title | escape -}}
+                    <sup class="sup-badge">({{ nav_collection.all_products_count | default: 0 }})</sup>
+                </span>
+            </a>
+        {%- endfor -%}
+    {%- endcapture -%}
+    {%- capture collection_drawer_initial_links -%}
+        {%- assign nav_sequence_index = 0 -%}
+        {%- for nav_collection in collections -%}
+            {%- if nav_collection == blank or nav_collection.handle == 'all' -%}
+                {%- continue -%}
+            {%- endif -%}
+
+            {%- assign nav_sequence_index = nav_sequence_index | plus: 1 -%}
+
+            {%- if nav_sequence_index > collection_nav_batch_size -%}
+                {%- break -%}
+            {%- endif -%}
+
+            <a
+                href="{% if collection_nav_sort_by != blank %}{{ nav_collection.url }}?sort_by={{ collection_nav_sort_by | url_param_escape }}{% else %}{{ nav_collection.url }}{% endif %}"
+                class="block py-2 body-md text-theme-text"
+                data-collection-navigation-item
+                data-collection-handle="{{ nav_collection.handle }}"
+                data-collection-navigation-base-path="{{ nav_collection.url }}"
+                {% if nav_collection.handle == collection.handle %}
+                    aria-current="page"
+                {% endif %}
+            >
+                <span class="text-pretty break-words">
+                    <span{% if nav_collection.handle == collection.handle %} class="border-b border-current"{% endif %}>
+                        {{- nav_collection.title | escape -}}
+                    </span><sup class="sup-badge">({{ nav_collection.all_products_count | default: 0 }})</sup>
+                </span>
+            </a>
+        {%- endfor -%}
+    {%- endcapture -%}
     <div class="layout layout-no-pb container-page pb-0">
         {%- liquid
             assign collection_hero_image = collection.image
@@ -161,6 +270,58 @@
                 </div>
             {%- endif -%}
 
+            <nav
+                aria-label="{{ 'accessibility.collection_navigation' | t }}"
+                class="collection-toolbar-nav border-b border-theme-border/20 body-3xl pc:hidden"
+            >
+                <div class="flex min-w-0 flex-nowrap items-end gap-4 pb-3">
+                    <a
+                        href="{{ all_products_nav_href }}"
+                        class="collection__nav-link tab-nav-item tab-nav-item--underline-opacity flex shrink-0 items-start{% if is_all_products_collection %} is-active{% endif %}"
+                        {% if is_all_products_collection %}
+                            aria-current="page"
+                        {% endif %}
+                    >
+                        <span>
+                            {{- 'collections.all' | t -}}
+                            <sup class="sup-badge"
+                                >(
+                                {{- all_products_collection.all_products_count | default: 0 -}}
+                                )</sup
+                            >
+                        </span>
+                    </a>
+
+                    {%- unless is_all_products_collection -%}
+                        <a
+                            href="{{ current_collection_nav_href }}"
+                            class="collection__nav-link tab-nav-item tab-nav-item--underline-opacity is-active flex min-w-0 flex-1 items-start"
+                            aria-current="page"
+                        >
+                            <span class="flex min-w-0 items-start">
+                                <span class="min-w-0 truncate">
+                                    {{- collection.title | escape -}}
+                                </span>
+                                <sup class="sup-badge shrink-0"
+                                    >({{ collection.all_products_count | default: 0 }})</sup
+                                >
+                            </span>
+                        </a>
+                    {%- endunless -%}
+
+                    <button
+                        type="button"
+                        class="collection-toolbar__action collection__nav-more shrink-0 cursor-pointer"
+                        data-dialog-id="{{ collection_nav_dialog_id | escape }}"
+                        @click="$store.dialog.open($el.dataset.dialogId)"
+                        aria-haspopup="dialog"
+                        aria-label="{{ 'collections.navigation.more' | t }}"
+                    >
+                        {{ 'collections.navigation.more' | t }}
+                    </button>
+                </div>
+            </nav>
+
             {%- comment -%}
                 Desktop horizontal (max-pc:hidden)
             {%- endcomment -%}
@@ -218,125 +379,101 @@
                 {%- endif -%}
 
                 <div class="min-w-0">
-                    {% comment %} Tab Control {% endcomment %}
                     {%- liquid
-                        assign active_tab_index = 0
-                        assign all_products_collection = collections.all
-
-                        if all_products_collection != blank and collection.handle == all_products_collection.handle
-                            assign active_tab_index = 0
+                        assign toolbar_outer_class = 'w-full pc:grid pc:grid-cols-[max-content_minmax(0,1fr)_max-content_max-content] pc:items-end pc:gap-12'
+                        assign toolbar_nav_class = 'body-3xl gap-6 pc:gap-12 max-pc:border-b max-pc:border-theme-border/20'
+                        if is_horizontal_filter == false
+                            assign toolbar_outer_class = toolbar_outer_class | append: ' pc:border-b pc:border-theme-border/20'
                         else
-                            assign rendered_tab_index = 0
-                            assign rendered_tab_index = 1
-
-                            for tab_collection in collections
-                                if tab_collection == blank or tab_collection.handle == 'all'
-                                    continue
-                                endif
-
-                                if tab_collection.handle == collection.handle
-                                    assign active_tab_index = rendered_tab_index
-                                    break
-                                endif
-
-                                assign rendered_tab_index = rendered_tab_index | plus: 1
-                            endfor
+                            assign toolbar_nav_class = toolbar_nav_class | append: ' pc:border-0'
                         endif
                     -%}
 
-                    {% capture desktop_filter %}
-                        {%- comment -%} Tab header left slot: desktop Filter button when filter_type Drawer and enable_filtering; else spacer (grid column still reserved). {%- endcomment -%}
-                        {%- if enable_filtering and is_drawer_filter -%}
-                            <div class="hidden pc:flex pc:items-center pc:pb-3">
+                    <div class="collection-toolbar flex w-full flex-col items-start gap-6 pc:gap-6">
+                        <div class="{{ toolbar_outer_class }}">
+                            <div class="shrink-0">
+                                {%- if enable_filtering and is_drawer_filter -%}
+                                    <div class="hidden pc:flex pc:items-center pc:pb-3">
+                                        <button
+                                            type="button"
+                                            @click="$store.dialog.open($el.dataset.dialogId)"
+                                            data-dialog-id="{{ filters_dialog_id }}"
+                                            class="collection-toolbar__action flex shrink-0 cursor-pointer items-center gap-2.5"
+                                        >
+                                            {% render 'icons', icon: 'icon-filter' %}
+                                            <span>{{ 'collections.filter' | t }}</span>
+                                        </button>
+                                    </div>
+                                {%- else -%}
+                                    <div class="hidden pc:block"></div>
+                                {%- endif -%}
+                            </div>
+
+                            <div
+                                class="no-scrollbar min-w-0 overflow-x-auto overscroll-x-contain"
+                                x-data="dragScroll({ axis: 'x' })"
+                            >
+                                <nav
+                                    aria-label="{{ 'accessibility.collection_navigation' | t }}"
+                                    class="collection-toolbar-nav hidden min-w-max pc:block"
+                                >
+                                    <div class="flex min-w-max flex-nowrap items-end pt-2 pb-3 {{ toolbar_nav_class }}">
+                                        <a
+                                            href="{{ all_products_nav_href }}"
+                                            class="collection__nav-link tab-nav-item tab-nav-item--underline-opacity flex shrink-0 items-start whitespace-nowrap{% if is_all_products_collection %} is-active{% endif %}"
+                                            {% if is_all_products_collection %}
+                                                aria-current="page"
+                                            {% endif %}
+                                        >
+                                            <span>
+                                                {{- 'collections.all' | t -}}
+                                                <sup class="sup-badge"
+                                                    >(
+                                                    {{-
+                                                        all_products_collection.all_products_count
+                                                        | default: 0
+                                                    -}}
+                                                    )</sup
+                                                >
+                                            </span>
+                                        </a>
+
+                                        {{ collection_quick_nav_links }}
+                                    </div>
+                                </nav>
+                            </div>
+
+                            <div class="hidden shrink-0 pc:flex pc:items-center pc:pb-3">
                                 <button
                                     type="button"
+                                    class="collection-toolbar__action collection__nav-more tab-nav-item tab-nav-item--underline-opacity shrink-0 cursor-pointer whitespace-nowrap{% unless is_all_products_collection or current_in_first_n %} is-active{% endunless %}"
+                                    data-dialog-id="{{ collection_nav_dialog_id | escape }}"
                                     @click="$store.dialog.open($el.dataset.dialogId)"
-                                    data-dialog-id="{{ filters_dialog_id }}"
-                                    class="collection-toolbar__action flex shrink-0 cursor-pointer items-center gap-2.5"
+                                    aria-haspopup="dialog"
+                                    aria-label="{{ 'collections.navigation.more' | t }}"
                                 >
-                                    {% render 'icons', icon: 'icon-filter' %}
-                                    <span>{{ 'collections.filter' | t }}</span>
+                                    {{ 'collections.navigation.more' | t }}
                                 </button>
                             </div>
-                        {%- else -%}
-                            <div class="hidden pc:block"></div>
-                        {%- endif -%}
-                    {% endcapture %}
 
-                    {% capture desktop_sort %}
-                        {%- comment -%} Tab header right slot: sort when enable_sorting and desktop is not Horizontal (horizontal row above already renders sort). Vertical/Drawer use this slot. {%- endcomment -%}
-                        {%- if enable_sorting -%}
-                            {%- if is_horizontal_filter == false -%}
-                                {%- capture sort_id_prefix_desktop_v -%}{{ section.id }}-desktop-v{%- endcapture -%}
-                                <div class="hidden pc:flex pc:items-center pc:justify-end pc:pb-3">
-                                    {%- render 'sort-by-dropdown',
-                                        results: collection,
-                                        form_id: filters_form_id,
-                                        class: 'shrink-0',
-                                        id_prefix: sort_id_prefix_desktop_v
-                                    -%}
-                                </div>
-                            {%- else -%}
-                                <div class="hidden pc:block"></div>
-                            {%- endif -%}
-                        {%- else -%}
-                            <div class="hidden pc:block"></div>
-                        {%- endif -%}
-                    {% endcapture %}
+                            <div class="shrink-0">
+                                {%- if enable_sorting and is_horizontal_filter == false -%}
+                                    {%- capture sort_id_prefix_desktop_v -%}{{ section.id }}-desktop-v{%- endcapture -%}
+                                    <div class="hidden pc:flex pc:items-center pc:justify-end pc:pb-3">
+                                        {%- render 'sort-by-dropdown',
+                                            results: collection,
+                                            form_id: filters_form_id,
+                                            class: 'shrink-0',
+                                            id_prefix: sort_id_prefix_desktop_v
+                                        -%}
+                                    </div>
+                                {%- else -%}
+                                    <div class="hidden pc:block"></div>
+                                {%- endif -%}
+                            </div>
+                        </div>
 
-                    {% capture tab_header %}
-                        <span class="hidden" x-init="$nextTick(() => { setActive({{ active_tab_index }}) })"></span>
-
-                        <a
-                            href="{{ all_products_collection.url | default: routes.all_products_collection_url }}"
-                            role="tab"
-                            x-data="{ index: null }"
-                            x-init="index = registerTab($el);"
-                            :id="`collection-{{ section.id }}-tab-${index}`"
-                            aria-controls="collection-{{ section.id }}-panel"
-                            @click.prevent="window.location.assign(buildCollectionTabUrl($el.href))"
-                            :tabindex="isFocusable(index) ? 0 : -1"
-                            :aria-selected="isActive(index)"
-                            :class="isActive(index) && 'is-active'"
-                            class="collection__tab tab-nav-item tab-nav-item--underline-opacity"
-                        >
-                            {{ 'collections.all' | t }}
-                            <sup class="sup-badge">({{ all_products_collection.all_products_count | default: 0 }})</sup>
-                        </a>
-
-                        {%- for tab_collection in collections -%}
-                            {%- if tab_collection == blank or tab_collection.handle == 'all' -%}
-                                {%- continue -%}
-                            {%- endif -%}
-
-                            <a
-                                href="{{ tab_collection.url }}"
-                                role="tab"
-                                x-data="{ index: null }"
-                                x-init="index = registerTab($el);"
-                                :id="`collection-{{ section.id }}-tab-${index}`"
-                                aria-controls="collection-{{ section.id }}-panel"
-                                @click.prevent="window.location.assign(buildCollectionTabUrl($el.href))"
-                                :tabindex="isFocusable(index) ? 0 : -1"
-                                :aria-selected="isActive(index)"
-                                :class="isActive(index) && 'is-active'"
-                                class="collection__tab tab-nav-item tab-nav-item--underline-opacity"
-                            >
-                                {{ tab_collection.title }}
-                                <sup class="sup-badge">({{ tab_collection.all_products_count | default: 0 }})</sup>
-                            </a>
-                        {%- endfor -%}
-                    {% endcapture %}
-
-                    {% capture tab_content %}
-                        <div 
-                            role="tabpanel"
-                            id="collection-{{ section.id }}-panel"
-                            :aria-labelledby="`collection-{{ section.id }}-tab-${activeIndex}`"
-                            x-data="{ index: null }"
-                            x-init="index = registerPanel($el)"
-                            class="relative w-full"
-                        >
+                        <div class="collection-toolbar-products relative w-full">
                             {% render 'loading', overlay: true, size: 'large' %}
 
                             {%- liquid
@@ -391,28 +528,7 @@
                                 </div>
                             {% endpaginate %}
                         </div>
-                    {% endcapture %}
-
-                    {%- comment -%} Tab strip chrome: full-width bottom border on desktop when filter_type is not Horizontal (horizontal filters live in their own row); horizontal mode removes pc border from the tab row. {%- endcomment -%}
-                    {%- liquid
-                        assign header_outer_class_value = 'w-full pc:grid pc:grid-cols-[max-content_minmax(0,1fr)_max-content] pc:items-end pc:gap-12'
-                        assign header_class_value = 'body-3xl gap-6 pc:gap-12 max-pc:border-b max-pc:border-theme-border/20'
-                        if is_horizontal_filter == false
-                            assign header_outer_class_value = header_outer_class_value | append: ' pc:border-b pc:border-theme-border/20'
-                        else
-                            assign header_class_value = header_class_value | append: ' pc:border-0'
-                        endif
-                    -%}
-
-                    {%- render 'tab-control',
-                        custom_class: 'items-start gap-6 pc:gap-6',
-                        header_outer_class: header_outer_class_value,
-                        header_before: desktop_filter,
-                        tab_header: tab_header,
-                        header_class: header_class_value,
-                        header_after: desktop_sort,
-                        tab_content: tab_content
-                    -%}
+                    </div>
                 </div>
             </div>
         </div>
@@ -448,6 +564,133 @@
             -%}
         </div>
     {%- endif -%}
+
+    {%- capture collection_nav_drawer_content -%}
+        <div
+            data-collection-navigation-root
+            data-endpoint-path="{{ request.path }}"
+            data-section-id="collection-navigation-items"
+            data-dialog-id="{{ collection_nav_dialog_id }}"
+            data-sort-by="{{ collection_nav_sort_by | escape }}"
+            data-load-size="{{ collection_nav_load_more_size }}"
+            data-initial-source-offset="{{ collection_nav_initial_source_offset }}"
+            data-initial-has-more="{{ collection_nav_initial_has_more }}"
+            x-data="collectionNavigationCatalog()"
+            class="flex h-full min-h-0 flex-col"
+        >
+            <div class="ui-dialog-overlay-header">
+                <h2 id="{{ collection_nav_dialog_title_id }}">
+                    {{ 'collections.navigation.drawer_title' | t }}
+                </h2>
+            </div>
+
+            <div class="ui-dialog-overlay-body flex flex-col gap-6 overflow-hidden">
+                <nav
+                    aria-label="{{ 'accessibility.collection_navigation' | t }}"
+                    class="flex min-h-0 flex-1 flex-col gap-6"
+                >
+                    {%- unless is_all_products_collection or current_in_first_n -%}
+                        <div class="shrink-0">
+                            <p class="mb-2 body-sm tracking-wide uppercase opacity-60">
+                                {{ 'collections.navigation.current_collection' | t }}
+                            </p>
+                            <a
+                                href="{{ current_collection_nav_href }}"
+                                class="block py-2 body-lg text-theme-text"
+                                data-collection-navigation-item
+                                data-collection-handle="{{ collection.handle }}"
+                                data-collection-navigation-base-path="{{ collection.url }}"
+                                aria-current="page"
+                            >
+                                <span class="text-pretty break-words">
+                                    <span class="border-b border-current">
+                                        {{- collection.title | escape -}}
+                                    </span><sup class="sup-badge">({{ collection.all_products_count | default: 0 }})</sup>
+                                </span>
+                            </a>
+                        </div>
+                    {%- endunless -%}
+
+                    <div class="flex min-h-0 flex-1 flex-col gap-3{% unless is_all_products_collection or current_in_first_n %} border-t border-theme-border/20 pt-5{% endunless %}">
+                        <h3 class="shrink-0 body-sm tracking-wide uppercase opacity-60">
+                            {{ 'collections.navigation.all_collections' | t }}
+                        </h3>
+                        <div class="no-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-y-contain pe-1 pt-2">
+                            <div
+                                data-collection-navigation-list
+                                class="grid grid-cols-1 gap-x-8 gap-y-1 pc:grid-cols-2"
+                            >
+                                {{ collection_drawer_initial_links }}
+                            </div>
+                        </div>
+                    </div>
+                </nav>
+            </div>
+
+            <div
+                class="ui-dialog-overlay-footer flex flex-col gap-3"
+                x-show="!done || error || loading"
+            >
+                <p
+                    x-show="error"
+                    x-cloak
+                    class="body-sm text-theme-text"
+                    role="status"
+                >
+                    {{ 'collections.navigation.error' | t }}
+                </p>
+
+                <p
+                    x-show="loading"
+                    x-cloak
+                    class="body-sm opacity-80"
+                    role="status"
+                    aria-live="polite"
+                >
+                    {{ 'collections.navigation.loading' | t }}
+                </p>
+
+                <button
+                    type="button"
+                    class="btn-primary w-full cursor-pointer surface-inverted hover:opacity-90"
+                    x-show="error"
+                    x-cloak
+                    @click="retry()"
+                >
+                    {{ 'collections.navigation.retry' | t }}
+                </button>
+
+                <button
+                    type="button"
+                    class="btn-primary w-full cursor-pointer surface-inverted hover:opacity-90"
+                    x-show="!done && !error"
+                    x-cloak
+                    :disabled="loading"
+                    @click="loadMore()"
+                >
+                    {{ 'collections.navigation.load_more' | t }}
+                </button>
+            </div>
+        </div>
+    {%- endcapture -%}
+
+    {%- assign collection_nav_close_label = 'accessibility.close_collection_navigation_drawer'
+        | t
+    -%}
+    {%- render 'ui-dialog',
+        id: collection_nav_dialog_id,
+        type: 'drawer',
+        layer: 'drawer',
+        position: 'right',
+        top_class: 'top-[var(--announcement-bar-height)] pc:top-0',
+        color_scheme: section.settings.color_scheme,
+        drawer_motion_sheet: true,
+        mobile_layout: 'inset',
+        drawer_desktop_layout: true,
+        show_close_button: true,
+        close_label: collection_nav_close_label,
+        content: collection_nav_drawer_content
+    -%}
 </div>
 
 {% stylesheet %}

@@ -5,7 +5,7 @@
     @param {array}   images          - Image or media objects
     @param {string}  gallery_id      - Unique gallery id used to associate tabs and the active panel
     @param {string}  thumb_position  - 'left' | 'bottom'
-    @param {number}  thumbnail_visible_count - Number of visible thumbnails in bottom thumbnail layout
+    @param {string}  thumbnail_size - Shared thumbnail size: 'compact' | 'standard' | 'large'
     @param {boolean} zoom            - Enable click on main image
     @param {boolean} magnifier       - Enable desktop hover magnifier on main image
     @param {number}  magnifier_zoom_scale - Background scale multiplier for magnifier
@@ -25,12 +25,23 @@
 {%- comment -%} Product pages pass a design ratio so uploaded image orientation cannot resize the gallery. {%- endcomment -%}
 {%- assign first_img = images.first -%}
 {%- assign gallery_scope_id = gallery_id | default: first_img.id | default: 'product-gallery' -%}
-{%- assign thumbnail_visible_count = thumbnail_visible_count | default: 4 | plus: 0 -%}
-{%- if thumbnail_visible_count < 3 -%}
-    {%- assign thumbnail_visible_count = 3 -%}
-{%- elsif thumbnail_visible_count > 6 -%}
-    {%- assign thumbnail_visible_count = 6 -%}
-{%- endif -%}
+{%- assign media_count = images | size -%}
+{%- assign thumbnail_size = thumbnail_size | default: 'standard' -%}
+{%- case thumbnail_size -%}
+    {%- when 'compact' -%}
+        {%- assign thumbnail_width_class = 'w-16 pc:w-18' -%}
+        {%- assign thumbnail_grid_class = 'pc:grid-cols-[4.5rem_minmax(0,1fr)]' -%}
+        {%- assign thumbnail_image_sizes = '(min-width: 48rem) 72px, 64px' -%}
+    {%- when 'large' -%}
+        {%- assign thumbnail_width_class = 'w-20 pc:w-26' -%}
+        {%- assign thumbnail_grid_class = 'pc:grid-cols-[6.5rem_minmax(0,1fr)]' -%}
+        {%- assign thumbnail_image_sizes = '(min-width: 48rem) 104px, 80px' -%}
+    {%- else -%}
+        {%- assign thumbnail_width_class = 'w-18 pc:w-22' -%}
+        {%- assign thumbnail_grid_class = 'pc:grid-cols-[5.5rem_minmax(0,1fr)]' -%}
+        {%- assign thumbnail_image_sizes = '(min-width: 48rem) 88px, 72px' -%}
+{%- endcase -%}
+{%- assign thumbnail_image_widths = '64,80,104,144,176,208,264,312' -%}
 {%- assign gallery_aspect = aspect_ratio -%}
 {%- if gallery_aspect == blank and first_img.width != blank and first_img.height != blank -%}
     {%- assign gallery_aspect = first_img.width | append: '/' | append: first_img.height -%}
@@ -40,132 +51,116 @@
 <div
     class="
         {% if is_left %}
-          flex flex-col pc:grid pc:grid-cols-[minmax(auto,10%)_minmax(0,1fr)] gap-4 pc:gap-2 min-w-0 w-full h-full
+          flex flex-col pc:grid {{ thumbnail_grid_class }} gap-4 pc:gap-2 min-w-0 w-full h-full
         {% else %}
           flex flex-col gap-3 min-w-0 w-full
         {% endif %}
     "
 >
     <div
-        style="--thumbnail-visible-count: {{ thumbnail_visible_count }};"
-        {% unless is_left %}
-            x-data="dragScroll({ axis: 'x' })"
-        {% endunless %}
-        class="
-            relative z-0 shrink-0
-            {% if is_left %}
-              no-scrollbar order-last w-full flex flex-nowrap gap-2 overflow-x-auto pc:order-first pc:w-full pc:self-stretch pc:flex-col pc:overflow-y-auto pc:overflow-x-hidden
-            {% else %}
-              no-scrollbar order-last w-full min-w-0 flex flex-nowrap gap-2 overflow-x-auto pc:min-h-0 pc:flex-[1_0_0%]
-            {% endif %}
-        "
-        role="tablist"
-        aria-label="{{ 'accessibility.product_thumbnails' | t }}"
-        aria-orientation="{% if is_left %}vertical{% else %}horizontal{% endif %}"
-        data-orientation="{% if is_left %}vertical{% else %}horizontal{% endif %}"
-        @keydown="_handleThumbnailKeydown($event)"
+        class="order-last w-full min-w-0{% if is_left %} pc:relative pc:order-first pc:min-h-0{% endif %}"
     >
-        {%- if is_left -%}
-            {%- for image in images -%}
-                {%- assign media_image = image.preview_image | default: image -%}
-                {%- assign media_type = image.media_type | default: 'image' -%}
-                {%- assign thumb_sizes = '(min-width: 48rem) clamp(104px, 10vw, 136px), 80px' -%}
-                {%- assign thumb_widths = '80,160,240,320,400' -%}
+        <div class="flex w-full min-w-0 items-center gap-2{% if is_left %} pc:absolute pc:inset-0 pc:min-h-0 pc:flex-col{% endif %}">
+            {%- if media_count > 1 -%}
                 <button
                     type="button"
-                    role="tab"
-                    id="{{ gallery_scope_id | escape }}-thumbnail-{{ forloop.index0 }}"
+                    class="control-icon product-gallery__thumbnail-nav-button{% if is_left %} hidden pc:inline-flex{% endif %}"
+                    aria-label="{{ 'accessibility.previous_image' | t }}"
                     aria-controls="{{ gallery_scope_id | escape }}-panel"
-                    aria-label="{{ 'accessibility.show_media' | t: index: forloop.index | escape }}"
-                    data-gallery-thumbnail="{{ forloop.index0 }}"
-                    :tabindex="activeIndex === {{ forloop.index0 }} ? 0 : -1"
-                    :aria-selected="activeIndex === {{ forloop.index0 }}"
-                    @click="setActive({{ forloop.index0 }})"
-                    class="product-gallery__thumbnail media-interaction-subtle relative block w-20 shrink-0 pc:w-full"
-                    style="aspect-ratio: {{ gallery_aspect }};"
-                    :class="activeIndex === {{ forloop.index0 }} && 'is-active'"
+                    @click="prev()"
                 >
-                    {%- render 'image',
-                        image: media_image,
-                        width: 400,
-                        img_class: 'w-full h-full object-cover overflow-hidden rounded-[inherit]',
-                        alt: media_image.alt,
-                        sizes: thumb_sizes,
-                        widths: thumb_widths,
-                        loading: 'lazy',
-                        aspect_ratio: gallery_aspect,
-                        motion_reveal: false
-                    -%}
-                    {%- if media_type != 'image' -%}
-                        <span class="pointer-events-none absolute inset-0 flex items-center justify-center">
-                            {%- if media_type == 'video' or media_type == 'external_video' -%}
-                                <span class="flex h-7 w-7 items-center justify-center rounded-full bg-theme-bg/80 text-theme-text shadow backdrop-blur-sm">
-                                    {%- render 'icons',
-                                        icon: 'icon-play',
-                                        class: 'ms-0.5',
-                                        size: 'xs'
-                                    -%}
-                                </span>
-                            {%- elsif media_type == 'model' -%}
-                                <span class="flex h-7 w-7 items-center justify-center rounded-full bg-theme-bg/80 text-theme-text shadow backdrop-blur-sm">
-                                    {%- render 'icons', icon: 'icon-3d-model', size: 'xs' -%}
-                                </span>
-                            {%- endif -%}
-                        </span>
+                    {%- if is_left -%}
+                        {%- render 'icons', icon: 'icon-chevron-up', size: 'fill' -%}
+                    {%- else -%}
+                        {%- render 'icons', icon: 'icon-chevron-left', size: 'fill' -%}
                     {%- endif -%}
                 </button>
-            {%- endfor -%}
-        {%- else -%}
-            {%- for image in images -%}
-                {%- assign media_image = image.preview_image | default: image -%}
-                {%- assign media_type = image.media_type | default: 'image' -%}
-                {%- assign thumb_sizes = '(min-width: 1024px) 80px, (min-width: 768px) 72px, 64px' -%}
-                {%- assign thumb_widths = '80,160,240' -%}
+            {%- endif -%}
+
+            <div
+                {% unless is_left %}
+                    x-data="dragScroll({ axis: 'x' })"
+                {% endunless %}
+                data-gallery-thumbnails
+                class="
+                    relative z-0 min-w-0 flex-1
+                    {% if is_left %}
+                      no-scrollbar flex flex-nowrap gap-2 overflow-x-auto pc:min-h-0 pc:w-full pc:flex-col pc:overflow-y-auto pc:overflow-x-hidden
+                    {% else %}
+                      no-scrollbar flex flex-nowrap gap-2 overflow-x-auto
+                    {% endif %}
+                "
+                role="tablist"
+                aria-label="{{ 'accessibility.product_thumbnails' | t }}"
+                aria-orientation="{% if is_left %}vertical{% else %}horizontal{% endif %}"
+                data-desktop-orientation="{% if is_left %}vertical{% else %}horizontal{% endif %}"
+                @keydown="_handleThumbnailKeydown($event)"
+            >
+                {%- for image in images -%}
+                    {%- assign media_image = image.preview_image | default: image -%}
+                    {%- assign media_type = image.media_type | default: 'image' -%}
+                    <button
+                        type="button"
+                        role="tab"
+                        id="{{ gallery_scope_id | escape }}-thumbnail-{{ forloop.index0 }}"
+                        aria-controls="{{ gallery_scope_id | escape }}-panel"
+                        aria-label="{{ 'accessibility.show_media' | t: index: forloop.index | escape }}"
+                        data-gallery-thumbnail="{{ forloop.index0 }}"
+                        :tabindex="activeIndex === {{ forloop.index0 }} ? 0 : -1"
+                        :aria-selected="activeIndex === {{ forloop.index0 }}"
+                        @click="setActive({{ forloop.index0 }})"
+                        class="product-gallery__thumbnail media-interaction-subtle relative block {{ thumbnail_width_class }} shrink-0"
+                        style="aspect-ratio: {{ gallery_aspect }};"
+                        :class="activeIndex === {{ forloop.index0 }} && 'is-active'"
+                    >
+                        {%- render 'image',
+                            image: media_image,
+                            width: 320,
+                            img_class: 'w-full h-full object-cover overflow-hidden rounded-[inherit]',
+                            alt: media_image.alt,
+                            sizes: thumbnail_image_sizes,
+                            widths: thumbnail_image_widths,
+                            loading: 'lazy',
+                            aspect_ratio: gallery_aspect,
+                            motion_reveal: false
+                        -%}
+                        {%- if media_type != 'image' -%}
+                            <span class="pointer-events-none absolute inset-0 flex items-center justify-center">
+                                {%- if media_type == 'video' or media_type == 'external_video' -%}
+                                    <span class="flex h-7 w-7 items-center justify-center rounded-full bg-theme-bg/80 text-theme-text shadow backdrop-blur-sm">
+                                        {%- render 'icons',
+                                            icon: 'icon-play',
+                                            class: 'ms-0.5',
+                                            size: 'xs'
+                                        -%}
+                                    </span>
+                                {%- elsif media_type == 'model' -%}
+                                    <span class="flex h-7 w-7 items-center justify-center rounded-full bg-theme-bg/80 text-theme-text shadow backdrop-blur-sm">
+                                        {%- render 'icons', icon: 'icon-3d-model', size: 'xs' -%}
+                                    </span>
+                                {%- endif -%}
+                            </span>
+                        {%- endif -%}
+                    </button>
+                {%- endfor -%}
+            </div>
+
+            {%- if media_count > 1 -%}
                 <button
                     type="button"
-                    role="tab"
-                    id="{{ gallery_scope_id | escape }}-thumbnail-{{ forloop.index0 }}"
+                    class="control-icon product-gallery__thumbnail-nav-button{% if is_left %} hidden pc:inline-flex{% endif %}"
+                    aria-label="{{ 'accessibility.next_image' | t }}"
                     aria-controls="{{ gallery_scope_id | escape }}-panel"
-                    aria-label="{{ 'accessibility.show_media' | t: index: forloop.index | escape }}"
-                    data-gallery-thumbnail="{{ forloop.index0 }}"
-                    :tabindex="activeIndex === {{ forloop.index0 }} ? 0 : -1"
-                    :aria-selected="activeIndex === {{ forloop.index0 }}"
-                    @click="setActive({{ forloop.index0 }})"
-                    class="product-gallery__thumbnail media-interaction-subtle relative block w-20 shrink-0 pc:w-[calc((100%-((var(--thumbnail-visible-count)-1)*0.5rem))/var(--thumbnail-visible-count))]"
-                    style="aspect-ratio: {{ gallery_aspect }};"
-                    :class="activeIndex === {{ forloop.index0 }} && 'is-active'"
+                    @click="next()"
                 >
-                    {%- render 'image',
-                        image: media_image,
-                        width: 400,
-                        img_class: 'w-full h-full object-cover overflow-hidden rounded-[inherit]',
-                        alt: media_image.alt,
-                        sizes: thumb_sizes,
-                        widths: thumb_widths,
-                        loading: 'lazy',
-                        aspect_ratio: gallery_aspect,
-                        motion_reveal: false
-                    -%}
-                    {%- if media_type != 'image' -%}
-                        <span class="pointer-events-none absolute inset-0 flex items-center justify-center">
-                            {%- if media_type == 'video' or media_type == 'external_video' -%}
-                                <span class="flex h-7 w-7 items-center justify-center rounded-full bg-theme-bg/80 text-theme-text shadow backdrop-blur-sm">
-                                    {%- render 'icons',
-                                        icon: 'icon-play',
-                                        class: 'ms-0.5',
-                                        size: 'xs'
-                                    -%}
-                                </span>
-                            {%- elsif media_type == 'model' -%}
-                                <span class="flex h-7 w-7 items-center justify-center rounded-full bg-theme-bg/80 text-theme-text shadow backdrop-blur-sm">
-                                    {%- render 'icons', icon: 'icon-3d-model', size: 'xs' -%}
-                                </span>
-                            {%- endif -%}
-                        </span>
+                    {%- if is_left -%}
+                        {%- render 'icons', icon: 'icon-chevron-down', size: 'fill' -%}
+                    {%- else -%}
+                        {%- render 'icons', icon: 'icon-chevron-right', size: 'fill' -%}
                     {%- endif -%}
                 </button>
-            {%- endfor -%}
-        {%- endif -%}
+            {%- endif -%}
+        </div>
     </div>
 
     <div
@@ -175,9 +170,6 @@
             {% if max_height != blank %}
               pc:max-h-(--product-gallery-max-height)
             {% endif %}
-            {% unless is_left %}
-              pc:min-h-0 pc:flex-[4_1_0%]
-            {% endunless %}
         "
         style="
             aspect-ratio: {{ gallery_aspect }};
