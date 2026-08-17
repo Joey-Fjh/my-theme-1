@@ -915,6 +915,10 @@
     z-index: 10;
     inset-inline-end: calc(var(--spacing) * 3);
   }
+  .sticky-viewport-panel {
+    position: sticky;
+    top: var(--sticky-viewport-top, 1rem);
+  }
   .container-page {
     position: relative;
     display: grid;
@@ -1004,9 +1008,6 @@
   }
   .top-12 {
     top: calc(var(--spacing) * 12);
-  }
-  .top-20 {
-    top: calc(var(--spacing) * 20);
   }
   .top-\[calc\(100\%\+1\.5rem\)\] {
     top: calc(100% + 1.5rem);
@@ -2043,6 +2044,9 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+  .overflow-clip\! {
+    overflow: clip !important;
   }
   .overflow-hidden {
     overflow: hidden;
@@ -3403,6 +3407,12 @@
       box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
     }
   }
+  .pc\:sticky-viewport-panel {
+    @media (width >= 48rem) {
+      position: sticky;
+      top: var(--sticky-viewport-top, 1rem);
+    }
+  }
   .pc\:absolute {
     @media (width >= 48rem) {
       position: absolute;
@@ -3416,11 +3426,6 @@
   .pc\:static {
     @media (width >= 48rem) {
       position: static;
-    }
-  }
-  .pc\:sticky {
-    @media (width >= 48rem) {
-      position: sticky;
     }
   }
   .pc\:inset-0 {
@@ -5149,9 +5154,19 @@
   }
   html {
     scrollbar-gutter: stable;
+    --sticky-viewport-gap: 1rem;
+    --sticky-viewport-top: calc(
+        var(--announcement-bar-height, 0px) + var(--header-height, 0px) +
+            var(--sticky-viewport-gap)
+    );
   }
   html:has(dialog[scroll-lock][open], details[scroll-lock][open]) {
     overflow: hidden;
+  }
+  html:has(.site-header > header.is-hidden) {
+    --sticky-viewport-top: calc(
+        var(--announcement-bar-height, 0px) + var(--sticky-viewport-gap)
+    );
   }
   img, picture, video, canvas, svg {
     display: block;
