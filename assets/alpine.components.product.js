@@ -1509,18 +1509,87 @@
                     target.style.removeProperty('transition');
                 },
 
-                _applySticky(target) {
+                _applySticky(
+                    target,
+                    top = 'var(--product-sticky-top, var(--sticky-viewport-top, 1rem))',
+                ) {
                     if (!target) return;
                     // Do not set align-self. Media sticky targets live in a flex-col
                     // column; align-self:start shrinks them on the cross axis and
                     // collapses gallery width when the info column grows.
                     target.style.position = 'sticky';
-                    target.style.top = 'var(--product-sticky-top, 0px)';
+                    target.style.top = top;
                     target.style.transition = 'top 120ms ease-out';
                 },
 
+                _resolveStickySide(mediaHeight, infoHeight, availableViewport) {
+                    const mediaFits = mediaHeight <= availableViewport;
+                    const infoFits = infoHeight <= availableViewport;
+
+                    // Preserve the existing tolerance when both columns fit. If only
+                    // one fits, prefer it even when the heights are nearly equal.
+                    if (mediaFits !== infoFits) return mediaFits ? 'media' : 'info';
+
+                    // When both columns are taller than the viewport, use the actual
+                    // shorter column so it has the largest sticky runway.
+                    if (!mediaFits && !infoFits) {
+                        return mediaHeight <= infoHeight ? 'media' : 'info';
+                    }
+
+                    const heightTolerance = 24;
+                    return mediaHeight + heightTolerance < infoHeight ? 'media' : 'info';
+                },
+
+                _getStickyTop(stickyHeight) {
+                    // Prefer the visible header offset while the target fits. For a
+                    // tall target, the second value wins so its bottom can still
+                    // settle inside the viewport after the full column scrolls past.
+                    return `min(
+                        var(--product-sticky-top, var(--sticky-viewport-top, 1rem)),
+                        calc(100dvh - ${Math.ceil(stickyHeight)}px - var(--sticky-viewport-gap, 1rem))
+                    )`;
+                },
+
                 _setStickyOffset() {
-                    this.$el.style.setProperty('--product-sticky-top', '0px');
+                    this.$el.style.setProperty(
+                        '--product-sticky-top',
+                        'var(--sticky-viewport-top, 1rem)',
+                    );
+                },
+
+                _getAvailableViewportHeight() {
+                    const viewportHeight = this._getViewportHeight();
+                    const rootStyles = window.getComputedStyle(document.documentElement);
+                    const announcementBarHeight =
+                        parseFloat(rootStyles.getPropertyValue('--announcement-bar-height')) || 0;
+                    const headerHeight =
+                        parseFloat(rootStyles.getPropertyValue('--header-height')) || 0;
+                    const stickyGapValue = rootStyles
+                        .getPropertyValue('--sticky-viewport-gap')
+                        .trim();
+                    const stickyGapNumber = parseFloat(stickyGapValue) || 0;
+                    const stickyGap = stickyGapValue.endsWith('rem')
+                        ? stickyGapNumber * (parseFloat(rootStyles.fontSize) || 16)
+                        : stickyGapNumber;
+                    const stickyStart = announcementBarHeight + headerHeight + stickyGap;
+                    const targetTop = Math.min(
+                        this._mediaTarget.getBoundingClientRect().top,
+                        this._infoTarget.getBoundingClientRect().top,
+                    );
+                    const reservedAnnouncementBarHeight =
+                        announcementBarHeight > 0 && targetTop <= stickyStart + 1
+                            ? announcementBarHeight
+                            : 0;
+
+                    // Reserve the header's shown state, plus the announcement bar only
+                    // when the product can actually become sticky while it is visible.
+                    return Math.max(
+                        0,
+                        viewportHeight -
+                            reservedAnnouncementBarHeight -
+                            headerHeight -
+                            stickyGap * 2,
+                    );
                 },
 
                 _resetDescription() {
@@ -1634,7 +1703,7 @@
                             return;
                         }
 
-                        const availableViewport = Math.max(0, this._getViewportHeight());
+                        const availableViewport = this._getAvailableViewportHeight();
                         if (availableViewport <= 0) {
                             this._reset();
                             return;
@@ -1646,24 +1715,23 @@
 
                         const mediaHeight = this._mediaTarget.getBoundingClientRect().height;
                         const infoHeight = this._infoTarget.getBoundingClientRect().height;
-                        if (mediaHeight <= 0) {
+                        if (mediaHeight <= 0 || infoHeight <= 0) {
                             this._reset();
                             return;
                         }
 
-                        const heightTolerance = 24;
-                        const nextStickySide =
-                            mediaHeight + heightTolerance < infoHeight ? 'media' : 'info';
+                        const nextStickySide = this._resolveStickySide(
+                            mediaHeight,
+                            infoHeight,
+                            availableViewport,
+                        );
                         const stickyTarget =
                             nextStickySide === 'media' ? this._mediaTarget : this._infoTarget;
                         const stickyHeight = nextStickySide === 'media' ? mediaHeight : infoHeight;
+                        const stickyTop = this._getStickyTop(stickyHeight);
 
-                        if (stickyHeight <= availableViewport) {
-                            this._applySticky(stickyTarget);
-                            this.stickySide = nextStickySide;
-                        } else {
-                            this.stickySide = 'none';
-                        }
+                        this._applySticky(stickyTarget, stickyTop);
+                        this.stickySide = nextStickySide;
                     });
                 },
 
