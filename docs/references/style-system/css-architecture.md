@@ -1,8 +1,8 @@
 # CSS Architecture Contract
 
-This reference is the current CSS layer, token, bridge, and consumption contract. `AGENTS.md` remains the rule source.
+This reference is the current CSS layer, token, typography, color/surface, bridge, and consumption contract. `AGENTS.md` remains the rule source.
 
-Read this file when auditing CSS placement, token sources, bridge use, or layer migrations. Image rendering rules live in `docs/references/style-system/image-display-contract.md`. Completed CSS migration history belongs in Git history.
+Read this file when auditing CSS placement, typography tiers, color ownership, token sources, bridge use, or layer migrations. Image rendering rules live in `docs/references/style-system/image-display-contract.md`. Completed CSS migration history belongs in Git history.
 
 ## Pipeline
 
@@ -58,6 +58,38 @@ Do not bridge variables that are only consumed inside CSS layer rules. Examples 
 | 3+ stable repeated copies | same structural UI repeated with different BEM prefixes | consolidate into one shared component API when worthwhile |
 
 These thresholds are complementary. A pattern can be promoted to the components layer before a full shared API consolidation is justified.
+
+## Typography
+
+Typography tier CSS lives in `tailwind/tailwind.typography.css`. Native heading defaults live in `assets/base.css`. Liquid must not use Tailwind `text-*` utilities for headings.
+
+- Semantic `h1`–`h6` level is chosen for document outline; visual `heading-h*` tier is chosen independently for design size. Example: `<h3 class="heading-h2">` when outline needs `h3` but the visual target is a larger tier.
+- `heading-h*` classes remain restricted to semantic heading elements; lint bans them on non-heading elements only.
+- Display tiers such as `heading-4xl` through `heading-xl` and `typo-subtitle` plus size-tier composition remain valid where intended.
+- `body-*` tiers are for non-heading body semantics only; do not put them on headings.
+- Default body copy inherits global body settings; do not add section-level body text-size settings for ordinary paragraphs.
+- `heading-size-custom` and `body-size-custom` require their scoped CSS variables.
+- Component-owned typography exceptions may live in component/snippet CSS when part of a reusable API. If a component overrides body size, it must not imply body sliders still control it unless wired to its own scoped API.
+- `.rte h1` through `.rte h6` map rich-text/merchant HTML headings and are independent from page outline semantics.
+
+Exact tier ratios, token math, and lint exceptions live in source and `lint:theme`.
+
+## Color, Surface, And Inline Style
+
+- Merchant color schemes produce RGB custom properties through `snippets/css-variables.liquid`.
+- The first configured color scheme is the `:root` token fallback; it is not the implicit visible page-canvas decision.
+- `settings.page_canvas_color_scheme` explicitly owns the visible `<body>` canvas behind sections, during overscroll, and in areas without their own color-scheme scope.
+- Section, overlay, drawer, modal, and component color-scheme scopes override the body canvas normally.
+- Use one surface role per node: `color-{{ section.settings.color_scheme }}`, `surface-section`, `surface-component`, `surface-inverted`, or local opacity effects.
+- Use semantic tokens or scheme utilities for theme UI; avoid hardcoded brand colors unless documented as a platform bridge or local effect.
+- Allowed inline styles: scoped CSS custom properties from Liquid, platform-required media values, and per-render geometry that static utilities cannot express.
+- Use semantic z-index utilities or variables for layered UI.
+
+## SVG Icons
+
+- Source SVGs live in `icons/`; generated assets live in `assets/icon-*.svg`.
+- Regenerate with `npm.cmd run build:svg`; never manually edit generated icon assets.
+- Render icons through the `icons` snippet from Liquid.
 
 ## Platform Bridge Exceptions
 

@@ -81,7 +81,6 @@ const cursorAgentExpectations = {
 const requiredGovernanceFiles = [
     'AGENTS.md',
     '.agents/skills/agent-router/SKILL.md',
-    'docs/references/agent-workflow/collaboration-standard.md',
     'docs/references/agent-workflow/skill-routing.md',
     'docs/references/agent-workflow/multi-agent-architecture.md',
 ];

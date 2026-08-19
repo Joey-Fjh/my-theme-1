@@ -1,67 +1,41 @@
 # JavaScript Runtime Reference
 
-This reference stores JavaScript runtime details that are too long for `AGENTS.md`. `AGENTS.md` remains the rule source. Read this file only when implementing or reviewing JavaScript runtime behavior, lifecycle code, Alpine components or stores, ThemeEvents, ShopifyHttp, SectionRefresher, Swiper, explicitly approved narrative motion runtime, or script load order.
+This reference stores JavaScript runtime public contracts that are too long for `AGENTS.md`. `AGENTS.md` remains the rule source. Read this file only when implementing or reviewing JavaScript runtime behavior, lifecycle code, Alpine components or stores, ThemeEvents, ShopifyHttp, SectionRefresher, Swiper, explicitly approved narrative motion runtime, or script load order.
+
+Inspect current source for exact method lists, tuning constants, and implementation internals.
 
 ## Namespace
 
 All theme runtime objects live under `window.__Theme__`:
 
-| Property                            | Module                 | Purpose                         |
-| ----------------------------------- | ---------------------- | ------------------------------- |
-| `__Theme__.Events`                  | `events.js`                 | Typed event bus (`ThemeEvents`) |
-| `__Theme__.Components`              | `base.js`                   | Section/block lifecycle engine  |
-| `__Theme__.ThemePerformance`        | `performance.js`            | Debug-only CWV monitoring       |
-| `__Theme__.AlpineComponentsFactory` | `alpine.components.js`      | Alpine component registry       |
-| `__Theme__.QuantityConstraints`     | `quantity-constraints.js`   | Pure quantity min/max/step math |
-| `__Theme__.DialogMotion`            | `dialog-motion.js`          | Shared dialog transition helper |
-| `__Theme__.DrawerMotion`            | `drawer-motion.js`          | Shared drawer transition helper |
+| Property | Module | Purpose |
+| --- | --- | --- |
+| `__Theme__.Events` | `events.js` | Typed event bus (`ThemeEvents`) |
+| `__Theme__.Components` | `base.js` | Section/block lifecycle engine |
+| `__Theme__.ThemePerformance` | `performance.js` | Debug-only CWV monitoring |
+| `__Theme__.AlpineComponentsFactory` | `alpine.components.js` | Alpine component registry |
+| `__Theme__.QuantityConstraints` | `quantity-constraints.js` | Pure quantity min/max/step math |
+| `__Theme__.DialogMotion` | `dialog-motion.js` | Shared dialog transition helper |
+| `__Theme__.DrawerMotion` | `drawer-motion.js` | Shared drawer transition helper |
 
 Additional globals:
 
-| Global                           | Module     | Purpose                |
-| -------------------------------- | ---------- | ---------------------- |
-| `window.ShopifyHttp`             | `https.js` | HTTP client singleton  |
-| `window.ShopifyHttpError`        | `https.js` | Error constructor      |
+| Global | Module | Purpose |
+| --- | --- | --- |
+| `window.ShopifyHttp` | `https.js` | HTTP client singleton |
+| `window.ShopifyHttpError` | `https.js` | Error constructor |
 | `window.ShopifySectionRefresher` | `https.js` | Section HTML rendering |
 
 ## Script Load Order
 
-```text
- 1.  vendor-swiper.min.js
- 2.  utils.js
- 3.  quantity-constraints.js
- 4.  events.js
- 5.  alpine.components.js
- 6.  alpine.components.ui.js
- 7.  alpine.components.header.js
- 8.  alpine.components.pagination.js
- 9.  alpine.components.filters.js
-10.  alpine.components.product.js
-11.  alpine.components.product-media.js
-12.  alpine.components.product-cards.js
-13.  alpine.components.search.js
-14.  alpine.components.overlays.js
-15.  alpine.components.registry.js      <- merges groups into window.__Theme__.AlpineComponents
-16.  performance.js
-17.  https.js
-18.  base.js
-19.  alpine.store.js
-20.  alpine.store.toast.js
-21.  dialog-motion.js
-22.  drawer-motion.js
-23.  alpine.store.dialog.js
-24.  alpine.store.cart.js
-25.  alpine.store.registry.js           <- merges/registers stores
-26.  vendor-alpine-intersect.min.js
-27.  vendor-alpine.min.js               <- MUST be last
-```
-
-Constraints:
+`layout/theme.liquid` loads deferred scripts in dependency order. Invariants:
 
 - `vendor-alpine.min.js` MUST be last.
 - Registry files (`*.registry.js`) load after their respective groups.
 - `base.js` loads after `https.js` and component definitions.
 - Store files load before `vendor-alpine.min.js`.
+
+Inspect `layout/theme.liquid` for the current ordered list.
 
 ## ThemeEvents API
 
@@ -79,19 +53,7 @@ scope.on('click', handler);
 scope.dispose();
 ```
 
-Predefined events:
-
-| Constant                           | Value                                    | Description                          |
-| ---------------------------------- | ---------------------------------------- | ------------------------------------ |
-| `COMPONENT_UNMOUNTED`              | `theme:component:unmounted`              | Component DOM node removed           |
-| `HEADER_MENU_ACTIVE_CHANGED`       | `theme:header:menu:active-changed`       | Mega-menu open/close                 |
-| `PRODUCT_VARIANT_SET_REQUEST`      | `theme:product:variant:request:set`      | Request to set a variant externally  |
-| `PRODUCT_VARIANT_CHANGED`          | `theme:product:variant:changed`          | Variant selection changed            |
-| `PRODUCT_GALLERY_SLIDE_TO_REQUEST` | `theme:product-gallery:request:slide-to` | Request gallery to slide to an index |
-| `PRODUCT_QUANTITY_CHANGED`         | `theme:product:quantity:changed`         | Quantity input changed               |
-| `PRODUCT_MEDIA_MODAL_ACTIVATE`     | `theme:product-media-modal:activate`   | Request product media modal focus    |
-
-When adding new cross-component events, add them to `ThemeEvents.events` in `events.js`.
+Predefined events live in `events.js`. When adding new cross-component events, add them to `ThemeEvents.events`.
 
 ## ShopifyHttp API
 
@@ -99,17 +61,10 @@ When adding new cross-component events, add them to `ThemeEvents.events` in `eve
 const http = window.ShopifyHttp;
 
 const data = await http.getJSON('/cart.js');
-
 const result = await http.postJSON('/cart/add.js', { items: [...] });
-
-const response = await http.request('/some-url', {
-    method: 'POST',
-    timeout: 5000,
-    params: { section_id: 'cart' },
-});
 ```
 
-Features: timeout handling, abort support, request/response interceptors, structured `ShopifyHttpError`.
+Application HTTP must use `window.ShopifyHttp`; raw `fetch()` belongs only in `assets/https.js` or vendor files.
 
 ## SectionRefresher API
 
@@ -124,48 +79,15 @@ window.ShopifySectionRefresher.render(sectionHtmlMap, {
 window.ShopifySectionRefresher.updateText([{ selector: '.cart-count', text: '3' }]);
 ```
 
-## Data Attribute Example
+Shopify section HTML replacement must use `window.ShopifySectionRefresher.render()`.
 
-Pass Liquid values through `data-*`, then read `this.$el.dataset` inside a registered component.
+## Data Attribute Contract
 
-```html
-<div
-    data-product-url="{{ product.url }}"
-    data-variant-id="{{ current_variant.id }}"
-    data-section-id="{{ section.id }}"
-    x-data="VariantPicker()"
-></div>
-```
+Pass Liquid values through `data-*`, then read `this.$el.dataset` inside a registered component. Do not embed Liquid JSON or quote-heavy values directly in `x-data`.
 
-Do not embed Liquid JSON or strings directly in `x-data`.
+## Component Engine
 
-```html
-<div x-data="VariantPicker('{{ product.url }}', {{ product | json }})"></div>
-```
-
-## Component Engine Pattern
-
-Every section needing JS must follow this pattern in a `{%- javascript -%}` block:
-
-```javascript
-(function () {
-    const Components = window.__Theme__?.Components;
-    if (!Components) return;
-
-    Components.register(
-        'my-section',
-        {
-            init(el) {
-                return {};
-            },
-            destroy(el, state) {
-                // Clean up listeners, observers, timers, Swiper, GSAP contexts, etc.
-            },
-        },
-        { lazy: true },
-    );
-})();
-```
+JS behavior needing lifecycle management must use `Components.register()` inside `{%- javascript -%}`.
 
 Required DOM attributes on the component root:
 
@@ -179,150 +101,53 @@ Required DOM attributes on the component root:
 
 `Components.register(type, handlers, options)`:
 
-| Param               | Type                    | Required | Description                                   |
-| ------------------- | ----------------------- | -------- | --------------------------------------------- |
-| `type`              | `string`                | yes      | Matches `data-component-type` in the DOM      |
-| `handlers.init`     | `(el) => state \| void` | yes      | Setup and return cleanup state                |
-| `handlers.destroy`  | `(el, state) => void`   | yes      | Teardown side effects                         |
-| `handlers.select`   | `(el, state) => void`   | no       | Theme editor select hook                      |
-| `handlers.deselect` | `(el, state) => void`   | no       | Theme editor deselect hook                    |
-| `options.lazy`      | `boolean`               | no       | If true, init waits for viewport intersection |
+| Param | Type | Required | Description |
+| --- | --- | --- | --- |
+| `type` | `string` | yes | Matches `data-component-type` in the DOM |
+| `handlers.init` | `(el) => state \| void` | yes | Setup and return cleanup state |
+| `handlers.destroy` | `(el, state) => void` | yes | Teardown side effects |
+| `handlers.select` | `(el, state) => void` | no | Theme editor select hook |
+| `handlers.deselect` | `(el, state) => void` | no | Theme editor deselect hook |
+| `options.lazy` | `boolean` | no | If true, init waits for viewport intersection |
 
-## Alpine Component Pattern
+Inspect `assets/base.js` and existing sections for the current registration pattern.
 
-Reusable Alpine behaviors are defined in `alpine.components.js` (base factory) and grouped files (`alpine.components.*.js`). `alpine.components.registry.js` merges all groups into `window.__Theme__.AlpineComponents`.
+## Alpine Components And Stores
 
-```javascript
-AlpineComponentsFactory.register('myComponent', function () {
-    return {
-        init() {
-            const config = this.$el.dataset;
-        },
-        dispose() {
-            // Called automatically on unmount.
-        },
-    };
-});
-```
+Reusable Alpine behavior must be registered via `AlpineComponentsFactory.register()` in the appropriate `alpine.components.*.js` file. `alpine.components.registry.js` merges groups into `window.__Theme__.AlpineComponents`.
 
-`AlpineComponentsFactory.useDisposable()` provides listener and observer cleanup helpers for side-effectful components.
+Global stores are defined in `alpine.store.*.js` and registered through `alpine.store.registry.js`. Storefront cart mutations and cart UI state must go through `$store.cart`.
 
-### Ordinary Motion Reveal Pattern
+Inspect the grouped `alpine.components.*.js` and `alpine.store.*.js` files for current APIs instead of copying historical examples.
 
-Ordinary content/media reveal should be implemented as an Alpine behavior plus CSS rules, not as GSAP and not as `x-intersect` scattered across every target.
-
-Preferred shape:
-
-- Register a reusable Alpine behavior such as `motionRevealSection` in an appropriate `alpine.components.*.js` group.
-- Each `x-data="motionRevealSection()"` instance is independent on the section root (`data-motion-section`), but the implementation should use a module-level shared `IntersectionObserver` singleton.
-- Use shared registries such as `WeakMap` instances to map observed stable bounds to their ordinary/cascade enter and `always` exit callbacks. If several ordinary targets share one bound, aggregate them behind that bound's single registry callback; never overwrite an existing callback with the last target registered.
-- The section root owns lifecycle only. Each visible `[data-motion-reveal]` or `[data-motion-copy]` target is owned by its nearest `[data-motion-section]` and is registered independently unless it belongs to a cascade row batch.
-- Mark ordinary targets with `data-motion-reveal="content"` / `"media"`. Use `data-motion-copy` only when copy after tall media must wait for its own viewport position; give it a tight transform-free `data-motion-copy-bound` when needed.
-- `data-motion-bound` separates stable observation/row geometry from a transforming target. Putting bound and reveal on the same node does not create a stable boundary.
-- Optional `data-motion-cascade` groups visible targets by current visual row and assigns row-local `--motion-index`; `data-motion-sequence` assigns compact ordinary copy targets DOM-order indices.
-- The Alpine component sets per-target `data-motion-state="pending"` / `"revealed"`, uses `data-motion-resetting` / `data-motion-staging` for silent `always` replay, handles page-load double-rAF registration, and reads `body[data-reveal-behavior]` for once vs always.
-- On the first registration, actual viewport-visible and clip-visible targets receive `data-motion-critical-runtime`. CSS must keep them opaque and unclipped while allowing the selected transform entrance; fixed critical heroes may use explicit `data-motion-critical`. Do not infer criticality from DOM order or the first section selector.
-- Scroll-settle recovery keeps the normal bottom inset except at the true document end, where it may use the full viewport so Footer targets cannot remain pending without further scroll distance.
-- `tailwind/tailwind.animates.css` owns body setting selectors, target styles, keyframes, duration/ease variables, reduced-motion, and motion-disabled behavior.
-- Do not reuse `base.js`'s component lazy-init `IntersectionObserver` for visual reveal; component lifecycle and visual reveal are separate concerns.
-
-`x-intersect` is available through the Alpine Intersect plugin and may be used for isolated simple cases. It is not the preferred architecture for broad ordinary reveal coverage because motion policy, cleanup, and performance are easier to control through one shared observer behind the Alpine behavior.
-
-## Alpine Store Pattern
-
-Global stores are defined in `alpine.store.js` and grouped files (`alpine.store.*.js`). `alpine.store.registry.js` merges and registers all stores into Alpine. Stores are initialized in `base.js`.
-
-```javascript
-this.$store.toast.show('Message', 'success');
-this.$store.dialog.open('cart-overlay');
-this.$store.cart.add([{ id: variantId, quantity: 1 }]);
-```
-
-Available stores:
-
-| Store           | Purpose          | API                                                       |
-| --------------- | ---------------- | --------------------------------------------------------- |
-| `$store.toast`  | Notifications    | `show(message, type, duration)`, `remove(id)`             |
-| `$store.dialog` | Modal management | `open(id)`, `close()`                                     |
-| `$store.cart`   | Cart state       | `add()`, `change()`, `clear()`, `fetchCart()`, `update()` |
-
-## Utils Pattern
-
-```javascript
-const Utils = window.__Theme__.Utils;
-
-const throttledFn = Utils.rafThrottle(callback);
-throttledFn.dispose();
-
-const debouncedFn = Utils.debounce(callback, 500);
-debouncedFn.dispose();
-```
-
-Available utilities:
-
-| Function              | Purpose             | Usage                            |
-| --------------------- | ------------------- | -------------------------------- |
-| `rafThrottle(fn)`     | RAF-based throttle  | Scroll handlers, resize handlers |
-| `throttle(fn, delay)` | Time-based throttle | Event handlers                   |
-| `debounce(fn, wait)`  | Debounce            | Search input, resize handlers    |
-
-Always call `.dispose()` in component `destroy()` to prevent memory leaks.
-
-## Custom JS File Ownership
-
-| File                            | Type        | Purpose                                                                                                                              |
-| ------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `vendor-*.min.js`               | Third-party | DO NOT EDIT                                                                                                                          |
-| `utils.js`                      | Custom      | Utility functions                                                                                                                    |
-| `events.js`                     | Custom      | ThemeEvents event bus                                                                                                                |
-| `alpine.components.js`          | Custom      | Base Alpine component factory                                                                                                        |
-| `alpine.components.*.js`        | Custom      | Grouped Alpine component definition files                                                                                            |
-| `alpine.components.registry.js` | Custom      | Merges component groups into `window.__Theme__.AlpineComponents`                                                                     |
-| `performance.js`                | Custom      | Debug CWV monitoring                                                                                                                 |
-| `https.js`                      | Custom      | HTTP client and SectionRefresher                                                                                                     |
-| `base.js`                       | Custom      | Component engine and Alpine init                                                                                                     |
-| `alpine.store.js`               | Custom      | Base Alpine store definitions                                                                                                        |
-| `alpine.store.*.js`             | Custom      | Grouped Alpine store definitions                                                                                                     |
-| `alpine.store.registry.js`      | Custom      | Merges/registers stores into Alpine                                                                                                  |
-
-## Motion Runtime
-
-The current theme has no active GSAP runtime, no `motion.js`, and no `__Theme__.Motion` namespace.
+## Motion Runtime Boundary
 
 Ordinary motion uses semantic `data-motion-*` hooks, Alpine components such as `motionRevealSection()`, and CSS rules in `tailwind/tailwind.animates.css`.
 
-Do not add GSAP, `data-gsap-*`, `Motion.*`, or a new motion runtime during ordinary Motion cleanup. If complex narrative GSAP is explicitly approved later, document that runtime in a dedicated future change.
+The current theme has no active GSAP runtime or `__Theme__.Motion` namespace. Do not add GSAP during ordinary motion cleanup. Read `docs/references/architecture/motion-architecture.md` for classification and ownership.
 
-## Swiper Pattern
+## Swiper Ownership
 
-```javascript
-init(el) {
-    const swiperContainer = el.querySelector('.swiper');
-    if (!swiperContainer || typeof Swiper === 'undefined') return;
-    const swiper = new Swiper(swiperContainer, {
-        loop: true,
-        slidesPerView: 1,
-        effect: 'fade',
-        fadeEffect: { crossFade: true },
-    });
-    return { swiper };
-},
-destroy(el, state) {
-    if (state?.swiper?.destroy) state.swiper.destroy(true, true);
-}
-```
+Swiper instances created in `Components.register()` must be destroyed in `destroy()`. Inspect existing carousel sections for the current pattern.
 
-## Anti-Patterns
+## CSS / Alpine / GSAP Boundary
 
-| Bad                                                  | Correct                                                                                     |
-| ---------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| Inline `<script>` with DOM listeners                 | `Components.register()` inside `{%- javascript -%}`                                         |
-| `document.addEventListener('DOMContentLoaded', ...)` | Component `init()` -- the engine handles timing                                             |
-| `document.querySelector(...)` at top level           | `el.querySelector(...)` scoped inside `init(el)`                                            |
-| Raw `fetch()` in application code                    | `window.ShopifyHttp.getJSON()` / `.postJSON()`                                              |
-| Manual section `innerHTML` after AJAX                | `window.ShopifySectionRefresher.render()`                                                   |
-| Custom CSS in `<style>` tags                         | Tailwind utility classes                                                                    |
-| Liquid values directly in `x-data="..."`             | `data-*` attributes + `this.$el.dataset`                                                    |
-| Cross-component event via `new CustomEvent(...)`     | `ThemeEvents.emit(type, detail)`                                                            |
-| Raw `<svg>` pasted in Liquid                         | `{%- render 'icons', icon: 'icon-name' -%}` via icon pipeline                               |
-| Manually editing `assets/icon-*.svg`                 | Generate from `icons/` via `npm.cmd run build:svg` after checking for existing equivalent icons |
+- Alpine owns state and trigger behavior.
+- `tailwind.animates.css` owns animation capability and reveal CSS.
+- GSAP is optional narrative choreography only and must not share `opacity` or `transform` ownership with Alpine/CSS on the same element.
+
+## File Ownership
+
+| Area | Location |
+| --- | --- |
+| Vendor runtime | `vendor-*.min.js` (never edit) |
+| Utilities | `utils.js` |
+| Events | `events.js` |
+| Alpine components | `alpine.components.js`, `alpine.components.*.js`, `alpine.components.registry.js` |
+| Alpine stores | `alpine.store.js`, `alpine.store.*.js`, `alpine.store.registry.js` |
+| HTTP and section refresh | `https.js` |
+| Component engine and Alpine init | `base.js` |
+
+## Inspection Rule
+
+For section lifecycle, cart flow, HTTP refresh, events, accessibility semantics, and CSS layering, inspect current `sections/`, `snippets/`, and `assets/` implementations instead of deleted cookbook examples.

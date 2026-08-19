@@ -38,14 +38,14 @@ Runtime constraints:
 - Tool-specific entry points may use relative symlinks to source files or directories. Do not copy rule or skill files into adapter paths.
 - Tool-specific configuration, including MCP, permissions, local settings, and hooks, belongs in tool-owned directories such as `.claude/`, `.codex/`, or `.cursor/`; it does not change the project skill source.
 - `docs/` is the agent-readable knowledge layer. Read referenced docs only when the task needs them.
-- `docs/references/agent-workflow/` defines collaboration standards, task routing, third-party skill governance, and cross-session context rules. Read the matching reference for non-trivial agent work.
+- `docs/references/agent-workflow/` defines task routing and multi-agent collaboration policy. Read the matching reference for non-trivial agent work.
 
 Important paths:
 
 - `.agents/skills/`: project skills
 - `.agents/roles/`: portable multi-agent role contracts
 - `.agents/contracts/`: task and result schemas
-- `docs/references/`: long references, examples, checklists
+- `docs/references/`: on-demand architecture explanations and decision boundaries
 - `docs/agent/`: short current-state and cross-session handoff
 - `sections/`, `snippets/`, `assets/`, `tailwind/`, `locales/`: theme implementation
 - `config/settings_data.json` and `templates/*.json`: merchant-owned configuration
@@ -101,7 +101,11 @@ Hard implementation rules:
 - Above-the-fold critical content must render usable and visible without JavaScript or animation completion. Do not hide critical first-viewport content behind GSAP, Alpine, Swiper initialization, delayed transitions, `opacity-0`, `hidden`, `x-show="false"`, off-screen transforms, or callbacks.
 - `motion_enabled` / `body[data-motion-enabled='false']` is the merchant-facing page and brand motion gate for reveal, media reveal, scroll, and narrative motion. Do not use it as a blanket kill switch for hover, focus, dropdown, dialog, drawer, loading, or other state/micro interactions; those interactions must instead respect `prefers-reduced-motion`.
 - Tailwind utility classes first; no ad-hoc `<style>` blocks in Liquid templates.
-- Do not use Tailwind text-size utilities for headings; use project typography tiers.
+- Do not use Tailwind text-size utilities for headings; use project typography tiers from `tailwind/tailwind.typography.css`.
+- Choose semantic `h1`–`h6` level for document outline and visual `heading-h*` tier independently for design size; `heading-h*` classes belong only on semantic heading elements; use display tiers or `typo-subtitle` plus size tiers where the design requires non-default sizing.
+- Use `body-*` tiers only for non-heading body semantics; default body copy inherits global body settings instead of section-level text-size settings.
+- Inspect existing snippets, components, and utilities before adding another; reuse only when semantics, invariants, lifecycle, and ownership match.
+- Do not create renamed duplicate wrappers or add mode/branch parameters to force divergent behavior into shared abstractions.
 - User-visible strings, schema labels, ARIA copy, placeholders, and editor text must use locale keys.
 - Use semantic interactive elements, keyboard access, visible focus, accessible names, and minimal ARIA.
 
@@ -121,19 +125,12 @@ Read only the matching reference for the current task:
 - JS runtime, lifecycle, events, HTTP, SectionRefresher, Alpine stores/components, Swiper, GSAP setup: `docs/references/architecture/javascript-runtime.md`
 - Motion policy, choreography, reduced motion, animation ownership, duplication: `docs/references/architecture/motion-architecture.md`
 - Shared abstraction boundaries and whether to extend an existing utility/component: `docs/references/architecture/abstraction-boundaries.md`
-- CSS layer ownership, token/bridge contract, placement audits: `docs/references/style-system/css-architecture.md`
+- CSS layer ownership, typography tiers, color/surface rules, token/bridge contract, placement audits: `docs/references/style-system/css-architecture.md`
 - Image snippet display behavior and `image.liquid` mode/fit contract: `docs/references/style-system/image-display-contract.md`
-- Style-system index and build commands: `docs/references/style-system/css-and-typography.md`
-- Typography tiers and consumption rules: `docs/references/style-system/typography-reference.md`
-- Color, surface, inline style, z-index, and ownership rules: `docs/references/style-system/color-surface-reference.md`
-- SVG icon pipeline: `docs/references/style-system/svg-icon-pipeline.md`
-- Section lifecycle, Alpine, events, HTTP refresh, cart, Swiper, GSAP, motion transitions, CSS layering, accessibility examples: `docs/references/patterns/`
 - i18n keys, locale structure, schema translation, hardcoded copy review: `docs/references/code-review/i18n-checklist.md`
 - Shopify browser matrix, Tailwind build boundary, static compatibility checks, progressive enhancement, and WebKit guardrails: `docs/references/code-review/browser-compatibility.md`
-- Launch readiness, Lighthouse classification, accessibility details, rule coverage, cleanup safety, repo safety, pre-merge self-check: `docs/references/code-review/launch-gate.md`
-- General pre-merge review checklist: `docs/references/code-review/pre-merge.md`
-- Daily collaboration standard, non-trivial task definition, user overrides, and complex task framing: `docs/references/agent-workflow/collaboration-standard.md`
-- Skill/docs routing: `docs/references/agent-workflow/skill-routing.md`. Third-party adoption history: `docs/references/agent-workflow/external-skills.md`
+- Launch readiness, Lighthouse ownership classification, cleanup safety, ignore-file boundaries, review output, and gate validation: `docs/references/code-review/launch-gate.md`
+- Skill/docs routing, non-trivial task definition, and user overrides: `docs/references/agent-workflow/skill-routing.md`
 - Multi-agent context isolation, role boundaries, task/result contracts, concurrency, and vendor adapters: `docs/references/agent-workflow/multi-agent-architecture.md`
 
 Use `agent-router` for broad, ambiguous, multi-step, cleanup, Lighthouse, architecture, rule-setting, third-party skill, governance, or cross-session work.
@@ -147,9 +144,10 @@ Project skills live in `.agents/skills/`.
 - Use `agent-router` first for non-trivial tasks, broad requests, cross-session continuation, third-party skill evaluation, or when multiple skills/docs might apply.
 - Use `orchestrate-agents` after routing when independent delegation materially improves context isolation, verification, or latency.
 - User skill names are optional overrides. If the user states intent without naming a skill, `agent-router` chooses the route.
-- Use the routed project skill for implementation, review, validation, i18n, architecture, or icon work.
+- Remaining project skills: `agent-router`, `orchestrate-agents`, `build-svg-icons`, `check-theme-architecture`, and `check-i18n`.
+- Use the routed project skill for validation, i18n, or icon work; for implementation, inspect current source and the matching architecture reference.
 - If automatic skill triggering is unavailable, follow `docs/references/agent-workflow/skill-routing.md` and manually open only the routed skill.
-- Some project skills are adapted from external sources. See `docs/references/agent-workflow/external-skills.md` for adoption history. External skills must be reviewed and adapted before installation; they are not project rule sources until installed in `.agents/skills/`.
+- External skills are not project rule sources until reviewed, adapted, and installed in `.agents/skills/`.
 
 Do not create, install, or approve skills during ordinary theme work. Discuss skill changes only when the user explicitly asks or when `agent-router` classifies the task as skills/governance work.
 
@@ -157,7 +155,7 @@ Do not create, install, or approve skills during ordinary theme work. Discuss sk
 
 ## Validation Commands
 
-Use the smallest command that proves the change. In this Windows PowerShell workspace, run scripts through `npm.cmd`.
+Default to the smallest command that proves the change. Reserve full `npm.cmd run lint` and `npm.cmd test` for explicit user request or PR, version/release, and Theme Store submission gates. In this Windows PowerShell workspace, run scripts through `npm.cmd`.
 
 ```bash
 npm.cmd run lint          # i18n, theme architecture, agent orchestration, and format checks
@@ -175,7 +173,14 @@ npm.cmd run build:svg     # regenerate SVG assets after icons/ changes
 npm.cmd run dev           # Shopify theme dev + Tailwind watch
 ```
 
-Run `npm.cmd run lint` and `npm.cmd test` after meaningful theme changes. Run `npm.cmd run scan:compat` after Tailwind source changes; it rebuilds `assets/tailwind.output.css` before the compatibility scan. Use `npm.cmd run build:tw` only for intermediate Tailwind iteration. Run `npm.cmd run build:svg` only when `icons/` source changed. Do not run rewriting formatters unless the user asks.
+During development, choose the narrowest command for the changed surface. Examples:
+
+- Liquid, JS, or theme architecture changes: `npm.cmd run lint:theme` or `npm.cmd run test:theme-check`
+- Locale or i18n changes: `npm.cmd run lint:i18n`
+- Tailwind source changes: `npm.cmd run scan:compat` (rebuilds `assets/tailwind.output.css` first)
+- Agent skills, roles, or contracts: `npm.cmd run lint:agents`
+
+Run `npm.cmd run lint` and `npm.cmd test` only when the user explicitly asks, or before opening a PR, cutting a version/release, or submitting to the Theme Store. Use `npm.cmd run build:tw` only for intermediate Tailwind iteration. Run `npm.cmd run build:svg` only when `icons/` source changed. Do not run rewriting formatters unless the user asks.
 
 ---
 
