@@ -32,7 +32,7 @@ Use this skill for repository-specific architecture validation. `AGENTS.md` is a
 1. Run `npm.cmd run lint:theme` after Liquid, schema, theme JavaScript, Alpine, HTTP/cart, section refresh, heading typography, or project WebKit guardrail changes.
 2. Run `npm.cmd run lint:compat` after first-party CSS, JavaScript, or embedded Liquid stylesheet/javascript changes. Use `scan:compat` when Tailwind source changed.
 3. Treat failures in touched code as blockers unless the user explicitly scopes them out.
-4. Use `docs/references/patterns/canonical-*.md` only when implementation guidance is needed; do not bulk-load all examples for lint-only work.
+4. Inspect current source and the matching architecture reference when implementation guidance is needed; do not bulk-load unrelated docs for lint-only work.
 5. Do not auto-fix merchant-owned configuration or content while resolving lint failures.
 
 ## Reporting

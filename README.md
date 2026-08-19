@@ -64,18 +64,15 @@ Generated and vendor assets must not be edited manually. See `AGENTS.md` for the
 
 ## Documentation
 
-| Document                                                                 | Purpose                                       |
-| ------------------------------------------------------------------------ | --------------------------------------------- |
-| [AGENTS.md](AGENTS.md)                                                   | Canonical repository rules and task routing   |
-| [docs/README.md](docs/README.md)                                         | Agent-readable documentation index            |
-| [docs/agent/context.md](docs/agent/context.md)                           | Short current-state and cross-session handoff |
-| [JavaScript runtime](docs/references/architecture/javascript-runtime.md) | Runtime APIs, lifecycle, and script order     |
-| [Style-system index](docs/references/style-system/css-and-typography.md) | CSS sources, ownership, and build routing     |
-| [Launch gate](docs/references/code-review/launch-gate.md)                | Review and release checks                     |
+- [AGENTS.md](AGENTS.md): canonical repository rules and task routing.
+- [Current context](docs/agent/context.md): short current-state and cross-session handoff.
+- [JavaScript runtime](docs/references/architecture/javascript-runtime.md): runtime APIs, lifecycle, and script order.
+- [CSS architecture](docs/references/style-system/css-architecture.md): CSS layers, typography, color/surface, and build routing.
+- [Launch gate](docs/references/code-review/launch-gate.md): review and release checks.
 
 ## Repository Boundaries
 
 - Do not edit `config/settings_data.json` or `templates/*.json` without explicit authorization.
 - Do not manually edit generated Tailwind output, generated icons, or minified vendor assets.
 - Use `npm.cmd` for project scripts in this Windows workspace.
-- Use the smallest relevant validation command while developing; run `npm.cmd run lint` and `npm.cmd test` after meaningful theme changes.
+- Default to the smallest relevant validation command while developing; run full `npm.cmd run lint` and `npm.cmd test` before PR, version/release, or Theme Store submission, or when explicitly requested.
