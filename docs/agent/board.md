@@ -6,7 +6,7 @@ Last updated: 2026-09-28.
 
 ## Open decisions
 
-Active: none. Batch 3A is done (`2a3c331`); the 3B plan is drafted next, then 3C and 3D, per `docs/project.md`.
+Active: none. Batches 3A (`2a3c331`) and 3B are done; the 3C plan is drafted next, then 3D, per `docs/project.md`.
 
 Queued (decide before the phase that needs them):
 
@@ -17,11 +17,13 @@ Queued (decide before the phase that needs them):
 
 ## Evidence
 
+- CSS debt from batch 3B (2026-09-28), to clear before the phase 4 exit: (1) six skeleton `@theme inline` namespace resets not adopted (`--font-weight-*`, `--leading-*`, `--tracking-*`, `--color-*` break the build because theme CSS `@apply`s default utilities; `--ease-*`, `--animate-*` drop referenced classes); adopt each once the slices remove the default Tailwind classes (`lint:theme` reports them as token-chain bypasses). (2) Skeleton rules withheld because they would change current rendering, each to adopt with the markup that owns it: `.section` (section wrappers), `body > main`, global `:focus-visible` (`assets/base.css`); `.gift-card-page main`, `.gift-card-page [data-gift-card-qr] svg` (`assets/gift-card.css`). Details: the rule 3 conflict table in the 3B commit's `docs/agent/context.md`. (3) The user's detailed 3B browser comparison is deferred to phase 5.
+
 - Pre-existing i18n failures (found in 3A review, 2026-09-28; identical on `HEAD`): `lint:i18n` reports hardcoded schema text in `sections/article.liquid`, `sections/before-after-comparison.liquid` (2), `sections/newsletter-overlay.liquid`, `sections/product-comparison-table.liquid`, and 34 unused locale keys. Each section's slice clears its own; any left must be zero before the release gate (lint failures are launch blockers). Batches until then check "no new findings against `HEAD`".
 
 - Skeleton source access (2026-09-28): this checkout had no `skeleton` remote, and the sibling clone `../My-skeleton-theme` stops at `e96aedd`, behind `5191a50`. Added remote `skeleton` → `https://github.com/Joey-Fjh/my-skeleton-theme.git` and fetched; `skeleton/main` = `5191a50`, matching the recorded source. Older docs cite `d:\fjh\shopify\...` paths from another machine.
 
-- Old CSS structure conventions resolved (user, 2026-09-28): do not restore `css-layer-allowlist.json`; after the phase 3 Tailwind merge, add a theme-only exception list to the new validators for the rules still valid (motion exclusions, WebKit guards, newsletter scoping); `tailwind/tailwind.snippets.css` is slice 5 debt. The exact list is written in phase 3.
+- Old CSS structure conventions resolved (user, 2026-09-28): do not restore `css-layer-allowlist.json`; after the phase 3 Tailwind merge, add a theme-only exception list to the new validators for the rules still valid (motion exclusions, WebKit guards, newsletter scoping); `tailwind/tailwind.snippets.css` is slice 5 debt. The exact list was due in phase 3; deferred from 3B (2026-09-28) to the first slice whose migrated files would otherwise fail on those rules, because until then `lint:theme` carries hundreds of unmigrated findings and an exception list proves nothing.
 - Phase 2 decisions (user, 2026-09-28): add slice 0 for shared UI primitives; slices are computed by rule. Refined the same day after the first computation put 62 files, including the product purchase core, into slice 0: slice 0 holds only domain-neutral files carried by CAP-21 and CAP-01; every other file follows its earliest consumer slice, since slices run in order and later slices reuse earlier work. Swiper loading: first decided as the 12.1.2 ESM browser build, reversed the same day because no self-contained ESM file exists; final: the classic build behind an on-demand `carousel-swiper.js` adapter.
 - Swiper resolved (user, 2026-09-28): keep Swiper as the skeleton's selected carousel library (skeleton `AGENTS.md:11`). The earlier open question rested on a wrong premise (the skeleton ships no Swiper asset but had already selected it). How carousels mount under the module model is settled in phases 2-3 per `docs/references/architecture/javascript-runtime.md`.
 - Phase 0a (2026-09-28): capability inventory, merchant references, runtime dependencies, sizes, and browser checklist under `docs/migration/phase0/`. Review 1 found three defects (CAP-15 too coarse, CAP-22 cited a nonexistent Swiper decision, Swiper section miscount); all corrected and re-verified. Notable: section type `promo-bannder` is a typo fixed in merchant JSON and must not be renamed; theme-owned JS+CSS on every page is about 1.03 MB raw / 184 KB gzip.
