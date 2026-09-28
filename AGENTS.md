@@ -85,8 +85,8 @@ Agent behavior rules:
 - For complex, risky, cross-session, or broad cleanup work, classify purpose, ownership, risk, and allowed action before editing.
 - If the user asks for review, orientation, or a prompt, do not refactor or implement unless they explicitly ask for implementation.
 - Facts discoverable from the repository must be inspected before asking the user. Ask before editing when the unknown is merchant-owned configuration, product/design preference, architecture direction, or launch-risk tradeoff.
-- Persist durable decisions and cross-session notes in `docs/agent/context.md` or the matching docs reference, not only in chat.
-- When the user asks to continue previous work, review outstanding tasks, or prepare next-session context, read `docs/agent/context.md`.
+- Skeleton migration in progress (temporary until this file is replaced by the skeleton `AGENTS.md`): records follow the skeleton convention. `docs/project.md` holds identity, accepted direction, and status; `docs/agent/board.md` holds open decisions and evidence; `docs/agent/context.md` holds only the plan under execution. Discuss on the board, write a plan to `context.md` only after the user accepts it, and execute only after the user authorizes it.
+- When the user asks to continue previous work, review outstanding tasks, or prepare next-session context, read `docs/project.md`, `docs/agent/board.md`, then `docs/agent/context.md`.
 
 Hard implementation rules:
 
