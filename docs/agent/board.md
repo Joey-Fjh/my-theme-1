@@ -6,7 +6,7 @@ Last updated: 2026-09-28.
 
 ## Open decisions
 
-Active: none. Batches 3A (`2a3c331`) and 3B (`dcbac9f`) are done; the 3C plan is drafted next, then 3D, per `docs/project.md`.
+Active: none. 3A (`2a3c331`) and 3B (`dcbac9f`) done; 3C runs as 3C-1, 3C-2, 3C-3 per `docs/project.md`; 3C-1 is planned in `docs/agent/context.md`.
 
 Queued (decide before the phase that needs them):
 
@@ -33,6 +33,8 @@ Queued (decide before the phase that needs them):
 - External review (GPT, 2026-09-28), points adopted: capability inventory with merchant JSON references as the definition of "preserve business logic"; freeze a behavior baseline before old validators are replaced; per-file ownership for mixed directories; `npm ci` early; Theme Editor section load/unload and block select as acceptance items; a stop-loss point. Not adopted: design first, compatibility layer, a single end-of-migration acceptance.
 
 ## Deferred ideas
+
+- Phase 5 design rework: the DesignSync tool (user-started `/design-sync`) syncs a local component library with a claude.ai/design design-system project (token and component preview cards). It does not build CSS; it could host the token and key-component previews while iterating on the visual direction the Theme Store review asked for.
 
 - Backport the merchant JSON `.prettierignore` exclusion to the skeleton once settled here.
 - When the skeleton `lint:doc-paths` arrives in phase 1, decide whether `docs/migration/` is scanned; the reports cite skeleton-only paths.
