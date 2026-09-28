@@ -6,7 +6,7 @@ Last updated: 2026-09-28.
 
 ## Open decisions
 
-Active: none. 3A (`2a3c331`) and 3B (`dcbac9f`) done; 3C runs as 3C-1, 3C-2, 3C-3 per `docs/project.md`; 3C-1 is planned in `docs/agent/context.md`.
+Active: none. 3A (`2a3c331`), 3B (`dcbac9f`), 3C-1 (`099ad3b`) done; 3C-2 is planned next, then 3C-3 and 3D, per `docs/project.md`.
 
 Queued (decide before the phase that needs them):
 
@@ -16,6 +16,8 @@ Queued (decide before the phase that needs them):
 
 
 ## Evidence
+
+- Process calibration from 3B and 3C-1 (2026-09-28): 3B needed three GPT rounds (look checks missed schema classes, then judged visibility instead of computed style); 3C-1 needed four, all on the dropdown Escape path, because the coordinator changed interactive behavior without running it. With browser passes deferred to phase 5, plans that change interactive JavaScript include a runnable harness check (module under stubbed imports and a minimal DOM, with a mutation check) before review, covering the interaction states the markup can reach.
 
 - CSS debt from batch 3B (2026-09-28), to clear before the phase 4 exit: (1) six skeleton `@theme inline` namespace resets not adopted (`--font-weight-*`, `--leading-*`, `--tracking-*`, `--color-*` break the build because theme CSS `@apply`s default utilities; `--ease-*`, `--animate-*` drop referenced classes); adopt each once the slices remove the default Tailwind classes (`lint:theme` reports them as token-chain bypasses). (2) Skeleton rules withheld because they would change current rendering, each to adopt with the markup that owns it: `.section` (section wrappers), `body > main`, global `:focus-visible` (`assets/base.css`); `.gift-card-page main`, `.gift-card-page [data-gift-card-qr] svg` (`assets/gift-card.css`). Details: the rule 3 conflict table in the 3B commit's `docs/agent/context.md`. (3) The user's detailed 3B browser comparison is deferred to phase 5.
 
