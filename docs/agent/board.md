@@ -6,7 +6,7 @@ Last updated: 2026-09-28.
 
 ## Open decisions
 
-Active: none while phase 1 is planned or executing (see `docs/agent/context.md`).
+Active: phase 2 plan (file ownership map for mixed directories), to draft next.
 
 Queued (decide before the phase that needs them):
 

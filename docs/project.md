@@ -25,7 +25,7 @@ Ceylune, a custom Shopify theme maintained as a multi-industry Shopify Theme Sto
 Phases:
 
 0. Baseline and capability inventory (read-only), done 2026-09-28: `docs/migration/phase0/`. No separate browser baseline or screenshots: `main` and the current theme stay untouched, so the current theme is the live baseline.
-1. Outer framework: Agent layer, docs, validators, configs, CI (see `docs/migration/step1-outer-files.md`). `npm ci` runs right after the `package.json`/lock merge; a review gate follows the mechanical directory replacement.
+1. Outer framework, done 2026-09-28 (`1bf75c6`): Agent layer, docs, validators, configs, CI (see `docs/migration/step1-outer-files.md`). `npm ci` runs right after the `package.json`/lock merge; a review gate follows the mechanical directory replacement.
 2. File ownership map for mixed directories (`layout/`, `assets/`, `tailwind/`, `snippets/`, `locales/`): framework file, business file to rewrite, or delete.
 3. Import framework files (runtime, layout, Tailwind layer). The branch storefront is expected to break from here until phase 4 completes.
 4. Rewrite capabilities in slices. Each slice is verified side by side: the matching `docs/migration/phase0/browser-checklist.md` rows run on the current theme and on the development theme with the same store data; a row that fails on both is a pre-existing defect, a row that fails only on the development theme is a migration regression. Slices: product and cart; navigation and search; collection filters; carousels and display sections; the rest. Section-level style adaptation happens inside each slice.
