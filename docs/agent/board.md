@@ -6,7 +6,7 @@ Last updated: 2026-09-28.
 
 ## Open decisions
 
-Active: none. Batches 3A (`2a3c331`) and 3B are done; the 3C plan is drafted next, then 3D, per `docs/project.md`.
+Active: none. Batches 3A (`2a3c331`) and 3B (`dcbac9f`) are done; the 3C plan is drafted next, then 3D, per `docs/project.md`.
 
 Queued (decide before the phase that needs them):
 
