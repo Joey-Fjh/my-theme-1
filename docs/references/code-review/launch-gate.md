@@ -1,5 +1,7 @@
 # Launch Gate And Review Reference
 
+Read when: classifying Lighthouse findings, changing ignore files, planning Theme Store submission, or deciding cleanup safety.
+
 Launch-readiness decision boundaries that are too long for `AGENTS.md`. `AGENTS.md` remains the rule source.
 
 ## Lighthouse Issue Classification
@@ -21,7 +23,7 @@ Color scheme contrast, merchant copy, collection/product content, uploaded media
 
 ## Accessibility Review Boundary
 
-Accessibility is a hard Theme Store requirement. `AGENTS.md` already requires semantic interactive elements, keyboard access, visible focus, accessible names, and minimal ARIA.
+Accessibility is a project quality requirement for every retained or explicitly added interaction; it does not depend on Theme Store submission scope. `AGENTS.md` already requires semantic interactive elements, keyboard access, visible focus, accessible names, and minimal ARIA.
 
 During launch review, verify user-facing controls, navigation, forms, dialogs, drawers, filters, search, cart, product media, and checkout-adjacent flows remain keyboard-operable, named, and understandable. Icon-only controls need translated accessible names. Dynamic status updates need appropriate live-region semantics when needed. Hidden UI must not retain reachable focus. Content access must not depend on animation, hover-only interaction, pointer dragging, or mouse-only controls.
 
@@ -40,27 +42,19 @@ Do not redesign sections, rename schema identifiers, change business logic while
 
 ## Repo Safety And Ignore Boundaries
 
-- Never edit minified vendor files, `assets/tailwind.output.css`, or generated `assets/icon-*.svg`.
+- Never edit minified vendor files, `assets/tailwind.output.css`, or optimized `assets/icon-*.svg` directly.
 - Prefer minimal diffs; separate structural refactors from behavior changes.
 - `.shopifyignore` controls Shopify CLI upload scope.
 - `.gitignore` controls version-control scope.
 - `.prettierignore` controls formatting scope only.
 
-Tracked governance files such as `AGENTS.md` and `docs/references/agent-workflow/` must remain in Git, must be excluded from Shopify upload, and should remain Prettier-formatted unless there is a specific formatting risk. Do not add broad ignore patterns that hide source files, runtime files, schemas, locales, sections, snippets, templates, or config from review.
+Tracked governance files such as `AGENTS.md`, `.agents/`, and `docs/references/` must remain in Git and must be excluded from Shopify upload. Formatting scope for these files follows `.prettierignore`; do not add broad ignore patterns that hide source files, runtime files, schemas, locales, sections, snippets, templates, or config from review. The one formatting exception is merchant-owned JSON that the Shopify GitHub integration writes back (`templates/*.json`, `config/settings_data.json`, `sections/*-group.json`): Shopify controls its formatting, so `.prettierignore` excludes it, while it stays tracked in Git and in review.
 
 ## Review Output
 
-When reporting a review, use:
-
-- **Blockers:** Critical issues that make the change unsafe to merge. If none, output `None`.
-- **Warnings:** Non-blocking issues, edge cases, or consistency problems.
-- **Suggestions:** Actionable improvements for maintainability, UX, accessibility, or performance.
-- **Conclusion:** Output exactly `APPROVE` or `REQUEST CHANGES`.
+Reviews use the output format in the Output section of `.agents/roles/verifier.md`.
 
 ## Gate Validation
 
-- During development, run the smallest command that proves each change; see `AGENTS.md`.
+- Commands per change surface and for release gates: `AGENTS.md` Validation. Icon import: `css-architecture.md` "SVG Icons".
 - Tooling enforces many architecture, i18n, and compatibility rules; review-only gaps remain launch blockers when user-facing.
-- Before PR, version/release, or Theme Store submission, run `npm.cmd run lint` and `npm.cmd test`.
-- Run `npm.cmd run scan:compat` when Tailwind source changed.
-- Run `npm.cmd run build:svg` when files in `icons/` changed.

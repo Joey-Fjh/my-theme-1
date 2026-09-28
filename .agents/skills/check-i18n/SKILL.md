@@ -1,33 +1,22 @@
 ---
 name: check-i18n
-description: Validate Shopify theme internationalization and locale keys. Use when user-facing text, locales, or schema labels change.
+description: Validate Shopify theme internationalization and locale keys. Use when user-visible copy, locale JSON files, schema labels, or translated Liquid strings change.
 when_to_use: >
   Locale JSON files, translated Liquid strings, schema translation keys, duplicate keys,
-  hardcoded copy, ARIA labels, alt text, placeholders, or npm.cmd run lint:i18n.
+  hardcoded copy, ARIA labels, alt text, or placeholders changed.
 ---
 
 # Check I18n
 
-Use this skill for translation and locale validation. Read `docs/references/code-review/i18n-checklist.md` when the task involves user-facing copy, schema text, accessibility labels, or launch-readiness review.
+Use this skill for project-level i18n validation. Read `docs/references/code-review/i18n-checklist.md` for locale ownership, classification, and review boundaries.
 
-## Command
+## Commands
 
-- Run i18n lint: `npm.cmd run lint:i18n`
-- Aggregate gate that includes i18n lint: `npm.cmd run lint`
+- `npm.cmd run lint:i18n` after the changes listed in the checklist's "Read when" line; `npm.cmd run test:i18n` after validator changes.
+- Merchant-owned content, product data, and runtime variables are out of scope. Do not rewrite theme files just to satisfy the linter.
 
-`npm.cmd run lint:i18n` uses this skill resource:
-
-```text
-.agents/skills/check-i18n/scripts/lint-i18n.js
-```
-
-## Selection Rules
-
-1. Run `npm.cmd run lint:i18n` after changes to `locales/**/*.json`, Liquid visible text, schema labels/defaults, `aria-label`, `alt`, `placeholder`, or `title` text.
-2. Update locale files when adding user-facing strings.
-3. Classify hardcoded copy findings through `AGENTS.md`; do not silently change merchant-owned content.
-4. Use the checklist reference for review context, not as a replacement for the lint command.
+Shopify Theme Check remains the platform authority. This validator supplements Theme Check with duplicate keys, missing project locale keys, unused locale keys (`lint-i18n-unused.js`; intentional keeps go in its `ALLOWLISTED_PREFIXES` with a reason), hardcoded user-visible copy, and schema/preset boundary checks.
 
 ## Reporting
 
-Report missing keys, duplicate keys, and hardcoded text findings with file and line. State whether failures are new, touched, or pre-existing when that is clear.
+Report missing keys, duplicate keys, hardcoded text, and preset/default instance `t:` misuse with file and line. State whether failures are new, touched, or pre-existing when that is clear.

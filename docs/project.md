@@ -11,7 +11,7 @@ Ceylune, a custom Shopify theme maintained as a multi-industry Shopify Theme Sto
 - Theme Store: submitted as tag `v1.0.0-submitted` (`3da19aa`). The first review was rejected because the design had no distinctive strength. Three submissions are allowed in total; exceeding them means a 90-day wait, which is not acceptable, so the next submission must answer the design feedback.
 - `main` (`926dddb`) and the store's current theme stay untouched, including Theme Editor saves, until the migration and the design rework are complete; the current theme is the behavior baseline. `main` differs from `v1.0.0-submitted` only in Agent/tooling files; theme code is identical. `main` is connected to the store's current theme through the GitHub integration.
 - Migration work happens on `refactor/skeleton-shell`, developed with local `shopify theme dev` only (a temporary development theme, not a GitHub-connected store theme). On success it merges back into `main` with a new tag; on failure the branch is abandoned.
-- The Agent layer, validators, and runtime contracts are not yet migrated. Until step 1 below lands, `AGENTS.md` still describes the old runtime (`Components.register()`, `AlpineComponentsFactory`); only the record flow (`board.md` / `context.md`) follows the skeleton convention.
+- Phase 1 outer framework (Agent layer, validators, configs, CI) landed on `refactor/skeleton-shell` from skeleton `5191a50`. Storefront runtime (`assets/`, `layout/`) still follows the pre-migration implementation until phases 3–4.
 
 ## Migration Direction (accepted)
 
@@ -31,6 +31,21 @@ Phases:
 4. Rewrite capabilities in slices. Each slice is verified side by side: the matching `docs/migration/phase0/browser-checklist.md` rows run on the current theme and on the development theme with the same store data; a row that fails on both is a pre-existing defect, a row that fails only on the development theme is a migration regression. Slices: product and cart; navigation and search; collection filters; carousels and display sections; the rest. Section-level style adaptation happens inside each slice.
 5. Full integration acceptance, then design rework.
 
+## Theme-Specific Contracts
+
+Knowledge the old Agent layer held and the skeleton leaves to derived themes; source: `docs/migration/step1/retention-audit.md` (class C/D). The skeleton rules describe the target architecture; these contracts describe what this theme's rewrite must keep.
+
+- **Merchant motion settings.** `motion_enabled`, `content_reveal_style`, `media_reveal_style`, `motion_speed`, and `reveal_behavior` (`once` / `always`) in `config/settings_schema.json` are merchant-facing and keep their meaning. `motion_enabled` off (`body[data-motion-enabled='false']`) gates page and brand motion only: section reveal, media reveal, scroll motion, and narrative choreography. It is not a kill switch for hover, focus, dropdown, dialog, drawer, loading, or other state/micro interactions; those respect `prefers-reduced-motion`. `motion_speed` scopes to reveal timing only.
+- **Ordinary reveal pattern.** The current implementation is `motionRevealSection()` on the section root with `data-motion-section`, targets marked `data-motion-reveal="content"` / `"media"`, and body policy attributes `data-motion-enabled`, `data-content-reveal-style`, `data-media-reveal-style`, `data-reveal-behavior`. The rewrite may change the mechanism under the skeleton module model; the merchant-visible behavior and the settings above may not change. Content stays visible without JavaScript.
+- **WebKit guards.** `.category-grid__item` keeps a definite full width for WebKit grid intrinsic sizing; custom `<summary>` controls hide the Safari disclosure marker. The skeleton validators do not check these; they are browser checklist rows.
+- **Acceptance, phase 0.** `docs/migration/phase0/capabilities.md` (CAP-01 motion settings contract) and `docs/migration/phase0/browser-checklist.md` (Retained theme contracts) carry the checks.
+- **Acceptance, phase 3 (guards the skeleton validators dropped).** Cross-component events go through ThemeEvents; `new CustomEvent` appears only in the events module. Section HTML replacement goes through the SectionRefresher; no `innerHTML =`, `outerHTML =`, or `replaceWith(` on section markup outside it. Each phase 3 plan lists both as acceptance checks with a search command.
+
 ## Deviations From The Skeleton
 
-- No theme blocks: this theme keeps section blocks. Converting them would change block types referenced by merchant JSON and change the Theme Editor workflow; Shopify does not require theme blocks. The skeleton's `blocks/` and `docs/references/architecture/theme-blocks.md` are not imported, and rules routing to them are adjusted.
+- **No Theme Blocks:** this theme keeps **section** blocks only. The skeleton `blocks/` directory and Theme Blocks architecture reference were not imported; `AGENTS.md` routes section-block questions here instead.
+- **`shopify.theme.toml`:** untracked in git (skeleton `.gitignore` pattern) but kept locally for `shopify theme dev -e development`.
+- **`npm run shopify:dev`:** uses `-e development` (theme environment in local `shopify.theme.toml`); skeleton default omits `-e`.
+- **`package.json` `name` / `description`:** identify Ceylune (`my-theme-1`), not the mother template.
+- **Storefront runtime (phases 3–4):** until migration completes, `assets/` and `layout/` still implement `Components.register()` / `AlpineComponentsFactory` while `docs/references/architecture/javascript-runtime.md` describes the skeleton target (import-map modules). Do not treat the reference alone as current behavior.
+- **Carousel library:** not a deviation. Swiper stays, as the skeleton selects it; the vendored files remain until phase 3 mounts them under the module model.

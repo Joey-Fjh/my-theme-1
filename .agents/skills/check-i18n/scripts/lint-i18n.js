@@ -20,15 +20,16 @@ const LIQUID_GLOBS = [
     'templates/**/*.liquid',
 ];
 const SCHEMA_GLOBS = ['sections/**/*.liquid', 'blocks/**/*.liquid', 'config/settings_schema.json'];
+// Section group JSON (header-group, footer-group) can carry `t:` names; check their keys exist.
+const SCHEMA_KEY_GLOBS = [...SCHEMA_GLOBS, 'sections/*.json'];
 const LOCALE_GLOBS = ['locales/**/*.json'];
 
-const ENGLISH_TEXT_RE = /\b[A-Za-z][A-Za-z0-9'.,:;!?&()[\]\/+\-\s]{2,}\b/;
+const UNICODE_LETTER_RE = /\p{L}/u;
 const SCHEMA_KEY_RE = /"t:([a-z0-9_.-]+)"/g;
 
 const ALLOWED_TEXT_RE = [
     /^\s*$/,
     /^(?:\s|\||&(?:nbsp|ndash|mdash|hellip|middot);)+$/i,
-    /^[A-Z0-9_-]+$/,
     /^https?:\/\//,
     /^mailto:/,
     /^tel:/,
@@ -36,6 +37,34 @@ const ALLOWED_TEXT_RE = [
     /^\{\{.*\}\}$/,
     /^\{%.*%\}$/,
 ];
+
+const SCHEMA_ROUTE_RE = /^\//;
+const SCHEMA_UNIT_RE = /^(px|em|rem|%|vh|vw|s|ms|deg)$/;
+
+const USER_VISIBLE_TEXT_DEFAULT_SETTING_TYPES = new Set([
+    'html',
+    'inline_richtext',
+    'richtext',
+    'text',
+    'textarea',
+]);
+
+const INSTANCE_SETTINGS_CONTEXTS = new Set([
+    'preset_settings',
+    'preset_block_settings',
+    'section_default_settings',
+    'section_default_block_settings',
+]);
+
+const SETTING_SCHEMA_PROPERTIES = new Set([
+    'label',
+    'info',
+    'placeholder',
+    'content',
+    'group',
+    'unit',
+    'default',
+]);
 
 const failures = [];
 
@@ -52,6 +81,16 @@ function formatPath(file) {
     return file.replaceAll('\\', '/');
 }
 
+function containsUserVisibleText(value) {
+    const text = String(value).trim();
+
+    if (!text || !UNICODE_LETTER_RE.test(text)) {
+        return false;
+    }
+
+    return !isAllowedLiteral(text);
+}
+
 function isAllowedLiteral(value) {
     const text = String(value).trim();
 
@@ -62,7 +101,31 @@ function isAllowedLiteral(value) {
     return ALLOWED_TEXT_RE.some((re) => re.test(text));
 }
 
-// --- Liquid AST helpers -------------------------------------------------------
+function isSchemaUrlDefault(value) {
+    const text = String(value).trim();
+
+    if (/^https?:\/\//.test(text)) return true;
+    if (/^mailto:/.test(text)) return true;
+    if (/^tel:/.test(text)) return true;
+    if (SCHEMA_ROUTE_RE.test(text)) return true;
+
+    return false;
+}
+
+function getSettingType(props) {
+    const typeNode = props.get('type');
+    const type = getNodeValue(typeNode);
+    return typeof type === 'string' ? type : '';
+}
+
+function isNonVisibleSchemaUnit(property, value) {
+    return property === 'unit' && SCHEMA_UNIT_RE.test(String(value).trim());
+}
+
+function isThemeInfoGroup(props) {
+    const nameNode = props.get('name');
+    return getNodeValue(nameNode) === 'theme_info';
+}
 
 const USER_VISIBLE_ATTRS = new Set(['aria-label', 'alt', 'placeholder', 'title']);
 
@@ -72,35 +135,6 @@ function parseLiquidAst(source) {
     } catch (error) {
         return { error: { message: error.message, line: error.loc?.start?.line ?? 1 } };
     }
-}
-
-// --- schema default helpers ---------------------------------------------------
-
-const SCHEMA_ROUTE_RE = /^\//;
-const SCHEMA_ENUM_RE =
-    /^(left|right|center|top|bottom|justify|inherit|auto|none|enable|disable|enabled|disabled|true|false|yes|no|show|hide|visible|hidden|always|never|inline|block|grid|flex|cover|contain|small|medium|large|day|week|month|year|related|newest|price-asc|price-desc|best-selling|manual|alphabetical|title-ascending|title-descending|created-ascending|created-descending|date|standard|compact|minimal|default|classic|modern|bold|subtle)$/;
-const SCHEMA_HANDLE_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const SCHEMA_ICON_ID_RE = /^icon-[a-z0-9-]+$/;
-const SCHEMA_COLOR_SCHEME_RE = /^(?:color-)?scheme-\d+$/;
-const SCHEMA_PLACE_RE = /^place-(?:top|bottom)-(?:left|right|center)$/;
-const SCHEMA_NUMERIC_RE = /^[\d.]+(?:px|%|rem|em|vh|vw)?$/;
-
-/**
- * Returns true when a schema "default" value is a machine/config token
- * that is not merchant-facing storefront copy.
- */
-function isNonVisibleSchemaDefault(value) {
-    const text = String(value).trim();
-
-    if (SCHEMA_ROUTE_RE.test(text)) return true;
-    if (SCHEMA_COLOR_SCHEME_RE.test(text)) return true;
-    if (SCHEMA_ICON_ID_RE.test(text)) return true;
-    if (SCHEMA_PLACE_RE.test(text)) return true;
-    if (SCHEMA_ENUM_RE.test(text)) return true;
-    if (SCHEMA_NUMERIC_RE.test(text)) return true;
-    if (SCHEMA_HANDLE_RE.test(text)) return true;
-
-    return false;
 }
 
 function flattenLocaleKeys(node, prefix = '', keys = new Set()) {
@@ -120,6 +154,239 @@ function flattenLocaleKeys(node, prefix = '', keys = new Set()) {
     }
 
     return keys;
+}
+
+function buildPropertyMap(node) {
+    const props = new Map();
+
+    if (node?.type !== 'object') {
+        return props;
+    }
+
+    for (const propertyNode of node.children ?? []) {
+        const keyNode = propertyNode.children?.[0];
+        const valueNode = propertyNode.children?.[1];
+        const key = getNodeValue(keyNode);
+
+        if (typeof key === 'string' && valueNode) {
+            props.set(key, valueNode);
+        }
+    }
+
+    return props;
+}
+
+function getSchemaContextKind(contextStack) {
+    return contextStack.at(-1) ?? 'unknown';
+}
+
+function getOptionValues(props) {
+    const optionsNode = props.get('options');
+    if (!optionsNode || optionsNode.type !== 'array') {
+        return [];
+    }
+
+    const values = [];
+
+    for (const child of optionsNode.children ?? []) {
+        const optionProps = buildPropertyMap(child);
+        const valueNode = optionProps.get('value');
+        const value = getNodeValue(valueNode);
+
+        if (value !== undefined && value !== null) {
+            values.push(String(value));
+        }
+    }
+
+    return values;
+}
+
+function shouldRequireSchemaTranslation(contextStack, property, props) {
+    const context = getSchemaContextKind(contextStack);
+
+    if (INSTANCE_SETTINGS_CONTEXTS.has(context)) {
+        return false;
+    }
+
+    if (context === 'section_default' || context === 'section_default_block_item') {
+        return false;
+    }
+
+    if (context === 'theme_setting_group' && isThemeInfoGroup(props)) {
+        return false;
+    }
+
+    if (context === 'preset_item') {
+        return property === 'name' || property === 'category';
+    }
+
+    if (context === 'section_root' || context === 'block_item' || context === 'theme_setting_group') {
+        return property === 'name';
+    }
+
+    if (context === 'setting_item' || context === 'option_item') {
+        return SETTING_SCHEMA_PROPERTIES.has(property);
+    }
+
+    return false;
+}
+
+function shouldSkipSchemaDefault(property, value, props) {
+    if (property !== 'default') {
+        return false;
+    }
+
+    const settingType = getSettingType(props);
+    const text = String(value).trim();
+
+    if (getOptionValues(props).includes(text)) {
+        return true;
+    }
+
+    if (settingType === 'url' && isSchemaUrlDefault(value)) {
+        return true;
+    }
+
+    if (settingType === 'liquid') {
+        return true;
+    }
+
+    if (USER_VISIBLE_TEXT_DEFAULT_SETTING_TYPES.has(settingType)) {
+        return false;
+    }
+
+    return true;
+}
+
+function walkSchemaNode(node, contextStack, callbacks) {
+    if (!node) return;
+
+    if (node.type === 'array') {
+        const parentContext = getSchemaContextKind(contextStack);
+
+        for (const child of node.children ?? []) {
+            if (parentContext === 'theme_settings_root') {
+                walkSchemaNode(child, [...contextStack, 'theme_setting_group'], callbacks);
+                continue;
+            }
+
+            if (parentContext === 'settings_list') {
+                walkSchemaNode(child, [...contextStack, 'setting_item'], callbacks);
+                continue;
+            }
+
+            if (parentContext === 'blocks_list') {
+                walkSchemaNode(child, [...contextStack, 'block_item'], callbacks);
+                continue;
+            }
+
+            if (parentContext === 'presets_list') {
+                walkSchemaNode(child, [...contextStack, 'preset_item'], callbacks);
+                continue;
+            }
+
+            if (parentContext === 'preset_blocks_list') {
+                walkSchemaNode(child, [...contextStack, 'preset_block_item'], callbacks);
+                continue;
+            }
+
+            if (parentContext === 'section_default_blocks_list') {
+                walkSchemaNode(child, [...contextStack, 'section_default_block_item'], callbacks);
+                continue;
+            }
+
+            if (parentContext === 'options_list') {
+                walkSchemaNode(child, [...contextStack, 'option_item'], callbacks);
+                continue;
+            }
+
+            walkSchemaNode(child, contextStack, callbacks);
+        }
+
+        return;
+    }
+
+    if (node.type !== 'object') {
+        return;
+    }
+
+    const props = buildPropertyMap(node);
+    const context = getSchemaContextKind(contextStack);
+
+    if (INSTANCE_SETTINGS_CONTEXTS.has(context)) {
+        for (const [settingId, valueNode] of props) {
+            callbacks.onInstanceSettingValue?.({
+                contextStack,
+                settingId,
+                valueNode,
+            });
+        }
+        return;
+    }
+
+    for (const [property, valueNode] of props) {
+        if (property === 'default' && valueNode.type === 'object' && context === 'section_root') {
+            walkSchemaNode(valueNode, [...contextStack, 'section_default'], callbacks);
+            continue;
+        }
+
+        if (property === 'settings' && valueNode.type === 'array') {
+            walkSchemaNode(valueNode, [...contextStack, 'settings_list'], callbacks);
+            continue;
+        }
+
+        if (property === 'settings' && valueNode.type === 'object') {
+            if (context === 'preset_item' || context === 'preset_block_item') {
+                const nextContext =
+                    context === 'preset_block_item'
+                        ? 'preset_block_settings'
+                        : 'preset_settings';
+                walkSchemaNode(valueNode, [...contextStack, nextContext], callbacks);
+                continue;
+            }
+
+            if (context === 'section_default' || context === 'section_default_block_item') {
+                const nextContext =
+                    context === 'section_default_block_item'
+                        ? 'section_default_block_settings'
+                        : 'section_default_settings';
+                walkSchemaNode(valueNode, [...contextStack, nextContext], callbacks);
+                continue;
+            }
+        }
+
+        if (property === 'blocks' && valueNode.type === 'array') {
+            let nextContext = 'blocks_list';
+
+            if (context === 'preset_item') {
+                nextContext = 'preset_blocks_list';
+            } else if (context === 'section_default') {
+                nextContext = 'section_default_blocks_list';
+            }
+
+            walkSchemaNode(valueNode, [...contextStack, nextContext], callbacks);
+            continue;
+        }
+
+        if (property === 'presets' && valueNode.type === 'array') {
+            walkSchemaNode(valueNode, [...contextStack, 'presets_list'], callbacks);
+            continue;
+        }
+
+        if (property === 'options' && valueNode.type === 'array') {
+            walkSchemaNode(valueNode, [...contextStack, 'options_list'], callbacks);
+            continue;
+        }
+
+        callbacks.onSchemaProperty?.({
+            contextStack,
+            property,
+            valueNode,
+            props,
+        });
+
+        walkSchemaNode(valueNode, contextStack, callbacks);
+    }
 }
 
 async function readText(file) {
@@ -205,13 +472,11 @@ async function checkLiquidTranslationKeys(storefrontKeys) {
             const markup = node.markup;
             if (!markup || typeof markup !== 'object') return;
 
-            // Check for | t filter
             const hasTFilter =
                 Array.isArray(markup.filters) &&
-                markup.filters.some((f) => f.name === 't');
+                markup.filters.some((filter) => filter.name === 't');
             if (!hasTFilter) return;
 
-            // Extract the string key from the expression
             const expr = markup.expression;
             if (!expr || expr.type !== 'String') return;
 
@@ -230,7 +495,7 @@ async function checkLiquidTranslationKeys(storefrontKeys) {
 }
 
 async function checkSchemaTranslationKeys(schemaKeys) {
-    const files = await fg(SCHEMA_GLOBS, { cwd: ROOT, dot: false, onlyFiles: true });
+    const files = await fg(SCHEMA_KEY_GLOBS, { cwd: ROOT, dot: false, onlyFiles: true });
 
     for (const file of files.map(formatPath)) {
         const text = await readText(file);
@@ -259,19 +524,54 @@ function getSchemaBlocks(text) {
     return blocks;
 }
 
+function inspectSchemaProperty({ file, fullText, blockOffset, contextStack, property, valueNode, props }) {
+    const value = getNodeValue(valueNode);
+
+    if (typeof value !== 'string') {
+        return;
+    }
+
+    if (shouldRequireSchemaTranslation(contextStack, property, props)) {
+        if (value.startsWith('t:')) {
+            return;
+        }
+
+        if (isNonVisibleSchemaUnit(property, value)) {
+            return;
+        }
+
+        if (shouldSkipSchemaDefault(property, value, props)) {
+            return;
+        }
+
+        if (!containsUserVisibleText(value)) {
+            return;
+        }
+
+        report(
+            file,
+            toPos(fullText, blockOffset + valueNode.offset),
+            `Hardcoded schema text "${value}" should use a t: locale key.`,
+        );
+    }
+}
+
+function inspectInstanceSettingValue({ file, fullText, blockOffset, settingId, valueNode }) {
+    const value = getNodeValue(valueNode);
+
+    if (typeof value !== 'string' || !value.startsWith('t:')) {
+        return;
+    }
+
+    report(
+        file,
+        toPos(fullText, blockOffset + valueNode.offset),
+        `Instance setting "${settingId}" must not use a t: locale key; preset and default values are literal instance data.`,
+    );
+}
+
 async function checkHardcodedSchemaText() {
     const files = await fg(SCHEMA_GLOBS, { cwd: ROOT, dot: false, onlyFiles: true });
-    const translatableFields = new Set([
-        'category',
-        'content',
-        'default',
-        'group',
-        'info',
-        'label',
-        'name',
-        'placeholder',
-        'unit',
-    ]);
 
     for (const file of files.map(formatPath)) {
         const fullText = await readText(file);
@@ -284,79 +584,25 @@ async function checkHardcodedSchemaText() {
             const tree = parseTree(block.json);
             if (!tree) continue;
 
-            walkSchemaNode(tree, (property, valueNode, parentProps) => {
-                if (!translatableFields.has(property)) return;
+            const rootContext =
+                file === 'config/settings_schema.json' ? 'theme_settings_root' : 'section_root';
 
-                const value = getNodeValue(valueNode);
-
-                if (typeof value !== 'string') return;
-                if (
-                    value.startsWith('t:') ||
-                    !ENGLISH_TEXT_RE.test(value) ||
-                    isAllowedLiteral(value)
-                )
-                    return;
-
-                // Schema "default" values that are machine/config tokens
-                // (color schemes, icon IDs, alignment, enum handles, routes)
-                // are not merchant-facing copy and should not be flagged.
-                if (property === 'default' && isNonVisibleSchemaDefault(value)) return;
-
-                // Font family defaults (e.g. "Neue Montreal") are machine values,
-                // not merchant-facing text. Detect via sibling "id" containing "font".
-                if (property === 'default' && parentProps) {
-                    const idNode = parentProps.get('id');
-                    const idValue = idNode ? getNodeValue(idNode) : '';
-                    if (typeof idValue === 'string' && idValue.includes('font')) return;
-                }
-
-                // Metafield key defaults (e.g. "custom.ingredients") are machine paths.
-                // Detect via sibling "id" being "metafield_key" or "metafield_namespace".
-                if (property === 'default' && parentProps) {
-                    const idNode = parentProps.get('id');
-                    const idValue = idNode ? getNodeValue(idNode) : '';
-                    if (
-                        typeof idValue === 'string' &&
-                        (idValue === 'metafield_key' || idValue === 'metafield_namespace')
-                    )
-                        return;
-                }
-
-                report(
-                    file,
-                    toPos(fullText, block.offset + valueNode.offset),
-                    `Hardcoded schema text "${value}" should use a t: locale key.`,
-                );
+            walkSchemaNode(tree, [rootContext], {
+                onSchemaProperty: (payload) =>
+                    inspectSchemaProperty({
+                        file,
+                        fullText,
+                        blockOffset: block.offset,
+                        ...payload,
+                    }),
+                onInstanceSettingValue: (payload) =>
+                    inspectInstanceSettingValue({
+                        file,
+                        fullText,
+                        blockOffset: block.offset,
+                        ...payload,
+                    }),
             });
-        }
-    }
-}
-
-function walkSchemaNode(node, onProperty, parentProperties) {
-    if (!node) return;
-
-    if (node.type === 'object') {
-        const props = new Map();
-        for (const propertyNode of node.children ?? []) {
-            const keyNode = propertyNode.children?.[0];
-            const valueNode = propertyNode.children?.[1];
-            const key = getNodeValue(keyNode);
-            if (typeof key === 'string' && valueNode) {
-                props.set(key, valueNode);
-            }
-        }
-
-        for (const [property, valueNode] of props) {
-            onProperty(property, valueNode, props);
-            walkSchemaNode(valueNode, onProperty, props);
-        }
-
-        return;
-    }
-
-    if (node.type === 'array') {
-        for (const child of node.children ?? []) {
-            walkSchemaNode(child, onProperty, parentProperties);
         }
     }
 }
@@ -369,12 +615,9 @@ async function checkHardcodedLiquidText() {
         const { ast, error: parseError } = parseLiquidAst(text);
 
         if (parseError) {
-            // Parse error already reported by checkLiquidTranslationKeys
             continue;
         }
 
-        // Collect attribute position ranges so we can skip TextNodes that
-        // fall inside attribute values (including through Liquid branches).
         const attrRanges = [];
         const attrChecks = [];
         const parentByNode = new Map();
@@ -391,16 +634,14 @@ async function checkHardcodedLiquidText() {
 
             attrRanges.push([node.position.start, node.position.end]);
 
-            // Check user-visible attribute values at the attribute level
-            const attrName = (node.name || []).map((n) => n.value || '').join('');
+            const attrName = (node.name || []).map((part) => part.value || '').join('');
             if (!USER_VISIBLE_ATTRS.has(attrName)) return;
 
             for (const valueNode of node.value || []) {
                 if (valueNode.type !== 'TextNode') continue;
+
                 const literal = valueNode.value.trim();
-                if (!literal) continue;
-                if (!ENGLISH_TEXT_RE.test(literal)) continue;
-                if (isAllowedLiteral(literal)) continue;
+                if (!literal || !containsUserVisibleText(literal)) continue;
 
                 attrChecks.push({
                     line: toPos(text, valueNode.position.start),
@@ -409,12 +650,10 @@ async function checkHardcodedLiquidText() {
             }
         });
 
-        // Report attribute-level findings
         for (const { line, message } of attrChecks) {
             report(file, line, message);
         }
 
-        // Helper: check if offset falls inside any attribute range
         function isInsideAttribute(offset) {
             for (const [start, end] of attrRanges) {
                 if (offset >= start && offset < end) return true;
@@ -450,25 +689,18 @@ async function checkHardcodedLiquidText() {
             return false;
         }
 
-        // Second walk: check visible TextNodes
         walk(ast, (node, parent) => {
             if (node.type !== 'TextNode') return;
             if (!parent) return;
-
-            // Skip text inside attribute values (including Liquid branches)
             if (isInsideAttribute(node.position.start)) return;
-
             if (!isVisibleHtmlText(node)) return;
 
-            // Skip tag names: HtmlElement.name[0] / HtmlSelfClosingElement.name[0]
             if (Array.isArray(parent.name) && parent.name[0] === node) {
                 return;
             }
 
             const literal = node.value.trim();
-            if (!literal) return;
-            if (!ENGLISH_TEXT_RE.test(literal)) return;
-            if (isAllowedLiteral(literal)) return;
+            if (!literal || !containsUserVisibleText(literal)) return;
 
             report(
                 file,

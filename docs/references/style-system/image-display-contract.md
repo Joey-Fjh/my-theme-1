@@ -1,5 +1,7 @@
 # Image Display Contract
 
+Read when: changing `snippets/image.liquid`, image display modes, aspect ratio, placeholder behavior, or media callers.
+
 This file documents `snippets/image.liquid` display behavior. CSS layer/token contracts live in `docs/references/style-system/css-architecture.md`.
 
 ## Display Modes
@@ -9,9 +11,9 @@ This file documents `snippets/image.liquid` display behavior. CSS layer/token co
 | `frame` | fixed frame, aspect-ratio box, card image, gallery cell, full-bleed media | wrapper fills the frame | `object-cover` |
 | `natural` | logo, editorial image, decorative brush, content image preserving intrinsic ratio | wrapper follows natural image ratio | `object-contain` unless overridden |
 
-Calls without an explicit mode default to `frame` for backward compatibility.
+Calls without an explicit mode default to `frame`.
 
-Nil images default to the shared `framed` placeholder surface so adjacent empty media remains visually distinct. The shared frame uses an opaque token-mixed surface so underlying section or root colors cannot bleed through SVG transparency. Pass `placeholder_style: 'plain'` only when the media is intentionally unframed, such as the Slideshow background, or when a composite caller applies the shared frame to its complete empty-state surface to avoid a nested double border. The caller still owns the placeholder family, aspect ratio, and outer layout.
+Nil images default to the shared `framed` placeholder surface so adjacent empty media remains visually distinct. The shared frame uses an opaque token-mixed surface so underlying section or root colors cannot bleed through SVG transparency. Pass `placeholder_style: 'plain'` only when the media is intentionally unframed, such as a full-bleed background, or when a composite caller applies the shared frame to its complete empty-state surface to avoid a nested double border. The caller still owns the placeholder family, aspect ratio, and outer layout.
 
 ## Parameters
 
@@ -25,6 +27,14 @@ Nil images default to the shared `framed` placeholder surface so adjacent empty 
 | `class` / `wrapper_class` | wrapper classes; `wrapper_class` is preferred |
 | `img_class` | image element classes |
 | `sizes`, `widths`, `loading`, `fetchpriority`, `alt` | rendering and performance metadata |
+
+## Sizes and widths
+
+- `sizes` describes the width the image renders at in its layout. Derive it from the layout (for example the `grid-list` column count) across the `page_width` and `page_margin` setting ranges in `config/settings_schema.json`. At the browser's default font size it must never be smaller than the rendered width; a small overestimate is acceptable.
+- `widths` covers about twice the largest rendered width (for 2x displays) in a few steps; more steps add no quality.
+- `image.liquid` prefixes `auto, ` to the `sizes` of every lazy image, so browsers that support `sizes="auto"` pick from the laid-out width and other browsers use the given value (MDN, `<img>` `sizes`; `auto` is valid only with `loading="lazy"`). Eager images, such as the first card or the first gallery image, use the given value alone.
+- Known limitation: `grid-list` columns and page margins are in rem, so a larger browser default font widens columns; browsers without `sizes="auto"` support (Safari as of 2026-09) may then pick a source smaller than the rendered width. Declaring `100vw` below 1200px would avoid it at the cost of larger downloads for every visitor, so it is accepted.
+- Reference values for `grid-list` items: `sizes: '(min-width: 1200px) 33vw, (min-width: 800px) 50vw, 100vw'` and `widths: '400,700,1000,1200,1600'`.
 
 ## Object-position precedence
 
@@ -57,13 +67,12 @@ If `img_class` already contains an `object-*` utility, including responsive vari
 ## Current Contract
 
 - `image.liquid` is the base image primitive.
-- Frame-mode default preserves legacy product card, gallery, hero, slide, overlay, blog, and collection behavior.
-- Natural-mode is used for cases where preserving intrinsic ratio matters.
-- Focal points are owned by Shopify `image_tag` unless the caller passes an explicit whitelist `position`.
+- Frame mode is the default for current callers: product media, the product card, cart line items, collection and blog cards, and the article image. The header logo passes `mode: 'natural'`.
+- `placeholder_style: 'plain'` and `position` are available API with no current caller; keep them working when changing the snippet.
 
 ## Review Checklist
 
-- Do not bypass `image.liquid` with raw `<img>` unless explicitly justified.
+- Do not bypass `image.liquid` with raw `<img>` unless explicitly justified. Current exception: `templates/gift_card.liquid` renders without the main layout and outputs the shop logo with `image_tag` directly.
 - Do not use wrapper classes to express image fit; use `img_class`, `fit`, or `position`.
 - Do not default `position` before detecting whether the caller passed it.
 - Above-the-fold image changes require visual/performance review.

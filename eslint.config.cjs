@@ -8,15 +8,29 @@ module.exports = [
     {
         ...compat.configs['flat/recommended'],
         files: ['assets/*.js'],
+        ignores: ['assets/gift-card.js'],
+        languageOptions: {
+            ecmaVersion: 2022,
+            sourceType: 'module',
+            globals: {
+                ...globals.browser,
+                QRCode: 'readonly',
+                Shopify: 'readonly',
+            },
+        },
+        settings: {
+            lintAllEsApis: true,
+        },
+    },
+    {
+        ...compat.configs['flat/recommended'],
+        files: ['assets/gift-card.js'],
         languageOptions: {
             ecmaVersion: 2022,
             sourceType: 'script',
             globals: {
                 ...globals.browser,
-                Alpine: 'readonly',
                 QRCode: 'readonly',
-                Shopify: 'readonly',
-                Swiper: 'readonly',
             },
         },
         settings: {

@@ -1,60 +1,33 @@
 # Agent Entry Guide
 
-This file is the always-on entry point for agents working in this repository. Keep it lean: project identity, hard rules, routing, skills, validation commands, and gotchas only.
+This file is the always-on entry point and the canonical rule source for agents working in this repository. It holds only rules shared by every theme built from this codebase; keep it lean. **Before any task, read `docs/project.md`** for this repository's identity, inventory boundary, and accepted scope. Supporting docs under `docs/references/` provide details; if one conflicts with this file, follow this file.
 
-`AGENTS.md` is the canonical repository rule source. Supporting docs under `docs/references/` provide details and examples. If a supporting doc conflicts with this file, follow this file.
-
----
-
-## Project Context
-
-This is a custom Shopify theme maintained as a multi-industry, sellable Shopify Theme Store candidate.
-
-Tech stack:
+## Tech Stack
 
 - Shopify Liquid sections, snippets, JSON templates, and locale files
 - Tailwind CSS v4 with CSS-based config and `@theme inline`
 - Alpine.js v3 for reactive UI state
-- GSAP + ScrollTrigger (optional choreography tools for complex narrative motion, not the default for ordinary section reveal)
-- Swiper for carousels
-- Custom runtime: `Components.register()`, `ThemeEvents`, `ShopifyHttp`, `ShopifySectionRefresher`
-  See `docs/references/architecture/javascript-runtime.md` for API details and usage patterns.
+- GSAP + ScrollTrigger (optional, for complex narrative motion only)
+- Swiper as the selected carousel library
+- Custom runtime: import-map module graph, HTTP/section-refresh helpers, and the Alpine adapter (`define`, `defer`, `mount`, `unmount`, `store`, `data`). See `docs/references/architecture/javascript-runtime.md`.
 
 Runtime constraints:
 
-- No bundler is used.
-- Scripts load via `defer` in `layout/theme.liquid`.
-- Do not introduce React, Vue, TypeScript, ESM imports, or nested runtime asset structures unless the user explicitly approves an architecture change.
+- No bundler. `layout/theme.liquid` loads theme code as ES modules through an import map (entry `base.js`). Only the vendored Alpine script is a classic `defer` script, and it runs after the entry. Load order: `docs/references/architecture/javascript-runtime.md`.
+- Do not introduce React, Vue, TypeScript, or nested runtime asset structures unless the user explicitly approves an architecture change. Theme assets stay flat under `assets/`.
+- Do not add Vite, Autoprefixer, or broad polyfills without an explicit architecture decision. Browserslist drives static compatibility checks only, not Tailwind v4's build target.
 
----
+Third-party libraries are vendored files behind project adapters, not npm runtime packages. A selected library is vendored only when an accepted consumer exists. Every vendored library has an entry in `THIRD_PARTY_NOTICES.md`, updated in the same change that adds, replaces, or upgrades it.
 
-## Agent Entry Points
+## Agent Adapters
 
-- `AGENTS.md` is the source entry file. `CLAUDE.md` is a symlink adapter to `AGENTS.md`.
-- `.agents/skills/` is the single source of truth for project skills. `.claude/skills/` is a symlink adapter to `../.agents/skills`.
-- Cursor discovers `.agents/skills/` directly; do not add a duplicate `.cursor/skills/` tree or symlink.
-- `.agents/roles/` and `.agents/contracts/` are the vendor-neutral sources for multi-agent roles and structured handoffs.
-- Tool-specific agent definitions such as `.codex/agents/*.toml` and `.cursor/agents/*.md` are thin adapters to the canonical `.agents/` role files.
-- Tool-specific entry points may use relative symlinks to source files or directories. Do not copy rule or skill files into adapter paths.
-- Tool-specific configuration, including MCP, permissions, local settings, and hooks, belongs in tool-owned directories such as `.claude/`, `.codex/`, or `.cursor/`; it does not change the project skill source.
-- `docs/` is the agent-readable knowledge layer. Read referenced docs only when the task needs them.
-- `docs/references/agent-workflow/` defines task routing and multi-agent collaboration policy. Read the matching reference for non-trivial agent work.
-
-Important paths:
-
-- `.agents/skills/`: project skills
-- `.agents/roles/`: portable multi-agent role contracts
-- `.agents/contracts/`: task and result schemas
-- `docs/references/`: on-demand architecture explanations and decision boundaries
-- `docs/agent/`: short current-state and cross-session handoff
-- `sections/`, `snippets/`, `assets/`, `tailwind/`, `locales/`: theme implementation
-- `config/settings_data.json` and `templates/*.json`: merchant-owned configuration
-
----
+- `.agents/skills/` is the single source of project skills and `.agents/roles/` holds the canonical Implementer and Verifier roles. `CLAUDE.md` and `.claude/skills` are symlinks to them; Cursor reads `.agents/skills/` directly, so do not add `.cursor/skills/`.
+- The six files under `.claude/agents/`, `.cursor/agents/`, and `.codex/agents/` are per-client permission shims, not duplicates of the roles. Do not symlink them to the roles or merge them across clients.
+- Tool-specific configuration stays in `.claude/`, `.codex/`, or `.cursor/`. Never copy rule or skill files into adapter paths. If an adapter appears as a plain file, that is a local setup problem: run `npm.cmd run doctor:agent` and follow `README.md`.
 
 ## Core Rules
 
-Launch stability, Shopify Theme Store readiness, accessibility, SEO, maintainability, merchant configurability, and mobile reliability outrank visual novelty and Lighthouse micro-optimizations.
+Launch stability, accessibility, SEO, maintainability, merchant configurability, and mobile reliability outrank visual novelty and Lighthouse micro-optimizations.
 
 Treat these as launch blockers unless the user explicitly scopes them out:
 
@@ -70,126 +43,110 @@ Do not modify merchant-owned configuration or content unless explicitly authoriz
 
 - `config/settings_data.json`
 - `templates/*.json`
+- `sections/*-group.json` (section groups the theme editor writes)
 - color scheme values
 - product, collection, page, article, blog, metafield, uploaded media, merchant copy, and navigation/content composition
 
-Classify ambiguous issues before fixing them. If an issue could be code, configuration, content, uploaded asset, Shopify platform/vendor, or measurement noise, do not guess.
+Classify ambiguous issues before fixing them. If an issue could be code, configuration, content, uploaded asset, Shopify platform/vendor, or measurement noise, do not guess. Lighthouse findings are code-fixed only after code ownership is clear.
 
-Agent behavior rules:
+### Authority
 
-- Use Context7 MCP for Tailwind CSS documentation queries. Use Shopify Dev MCP for Shopify API, Liquid, and theme architecture queries. Do not guess framework behavior when MCP is available.
-- Users do not need to manually specify skills. For non-trivial tasks, use `agent-router` first to choose skills, docs, and validation.
-- Use `orchestrate-agents` only after `agent-router` selects it or the user explicitly requests delegation. Parallelize independent read-only work, keep one writer per shared worktree, and keep the primary agent responsible for decisions and user communication.
-- Delegated agents receive bounded task capsules and return structured evidence. They must not receive full conversation history by default, approve their own work, or create more agents; nested delegation is not supported by the initial contract.
-- Where the active client supports lifecycle hooks, validate delegated results against `.agents/contracts/result.schema.json` before accepting them. Permit one format-only correction attempt, then report the delegated task as blocked if its result remains invalid.
-- For complex, risky, cross-session, or broad cleanup work, classify purpose, ownership, risk, and allowed action before editing.
-- If the user asks for review, orientation, or a prompt, do not refactor or implement unless they explicitly ask for implementation.
-- Facts discoverable from the repository must be inspected before asking the user. Ask before editing when the unknown is merchant-owned configuration, product/design preference, architecture direction, or launch-risk tradeoff.
-- Skeleton migration in progress (temporary until this file is replaced by the skeleton `AGENTS.md`): records follow the skeleton convention. `docs/project.md` holds identity, accepted direction, and status; `docs/agent/board.md` holds open decisions and evidence; `docs/agent/context.md` holds only the plan under execution. Discuss on the board, write a plan to `context.md` only after the user accepts it, and execute only after the user authorizes it.
-- When the user asks to continue previous work, review outstanding tasks, or prepare next-session context, read `docs/project.md`, `docs/agent/board.md`, then `docs/agent/context.md`.
+- `docs/project.md` defines this repository's identity, inventory boundary, and accepted scope. Shopify best practices govern how retained code and approved additions are implemented.
+- Theme Store submission completeness is a gate only when the user scopes a batch or theme to submission; adopting its accessibility and browser baselines does not import its feature inventory. Shopify Horizon is a reference for organization only (section and block structure): do not copy its code or features. Storefront features and review standards come only from Shopify's official documentation via Shopify Dev MCP.
+- Project additions require an explicit accepted decision.
+- The agent rules (`AGENTS.md`, `docs/project.md`, `docs/references/`, `.agents/`, and the client adapters) and the validator wiring (`package.json` scripts and `.github/workflows/ci.yml`) are the harness that constrains agents, and the user owns them. Agents propose rule changes and wait for explicit approval; they never add, strengthen, weaken, or move a rule on their own. When a mistake recurs, propose a computational check (lint, test, or hook) before adding prose.
+- In this repository, **Platform Required** means a Shopify platform constraint necessary for a valid theme or for an already retained capability. It does not mean every feature required for Theme Store submission.
+- Keep one writer per shared worktree.
+- Do not retain code merely because it already exists.
+- The files under `docs/references/` cite paths and symbol names, never line numbers, and `lint:doc-paths` fails when a cited path is missing. They describe what exists; they are evidence, not authority over what should be built. Architecture is decided from Shopify's current official sources and the user's stated intent; references are rewritten to match accepted decisions.
 
 Hard implementation rules:
 
-- Do not write inline `<script>` tags or bare global DOM listeners in Liquid.
-- JS behavior needing lifecycle management must use `Components.register()` inside `{%- javascript -%}`.
-- Reusable Alpine behavior must be registered via `AlpineComponentsFactory.register()` in the appropriate `alpine.components.*.js` file.
-- Pass Liquid-driven runtime values through `data-*`; do not embed complex Liquid, JSON, or quote-heavy values directly in `x-data`.
-- Cross-section/component communication must use `ThemeEvents`.
-- Application HTTP must use `window.ShopifyHttp`; raw `fetch()` belongs only in `assets/https.js` or vendor files.
-- Shopify section HTML replacement must use `window.ShopifySectionRefresher.render()`.
-- Storefront cart mutations and cart UI state must go through `$store.cart`.
-- Above-the-fold critical content must render usable and visible without JavaScript or animation completion. Do not hide critical first-viewport content behind GSAP, Alpine, Swiper initialization, delayed transitions, `opacity-0`, `hidden`, `x-show="false"`, off-screen transforms, or callbacks.
-- `motion_enabled` / `body[data-motion-enabled='false']` is the merchant-facing page and brand motion gate for reveal, media reveal, scroll, and narrative motion. Do not use it as a blanket kill switch for hover, focus, dropdown, dialog, drawer, loading, or other state/micro interactions; those interactions must instead respect `prefers-reduced-motion`.
-- Tailwind utility classes first; no ad-hoc `<style>` blocks in Liquid templates.
-- Do not use Tailwind text-size utilities for headings; use project typography tiers from `tailwind/tailwind.typography.css`.
-- Choose semantic `h1`–`h6` level for document outline and visual `heading-h*` tier independently for design size; `heading-h*` classes belong only on semantic heading elements; use display tiers or `typo-subtitle` plus size tiers where the design requires non-default sizing.
-- Use `body-*` tiers only for non-heading body semantics; default body copy inherits global body settings instead of section-level text-size settings.
-- Inspect existing snippets, components, and utilities before adding another; reuse only when semantics, invariants, lifecycle, and ownership match.
-- Do not create renamed duplicate wrappers or add mode/branch parameters to force divergent behavior into shared abstractions.
+- Do not write inline executable `<script>` tags or bare global DOM listeners in Liquid. Data-only blocks with `type="importmap"` or `type="application/ld+json"` are allowed.
+- Pass Liquid-driven runtime values to JavaScript through `data-*`.
+- Keep Alpine attributes to simple expressions (method calls, state reads, binding objects or ternaries); put logic in the registered component. `lint:theme` enforces this.
+- Critical first-viewport content must render usable and visible without JavaScript or animation completion.
 - User-visible strings, schema labels, ARIA copy, placeholders, and editor text must use locale keys.
 - Use semantic interactive elements, keyboard access, visible focus, accessible names, and minimal ARIA.
+- Do not manually edit vendor, generated, or optimized icon assets.
 
-Generated/vendor file rules:
+## Batch SOP
 
-- Never edit `vendor-*.min.js` or `vendor-*.min.css`.
-- Never manually edit `assets/tailwind.output.css`.
-- Never manually edit `assets/icon-*.svg`; regenerate from `icons/` with `npm.cmd run build:svg`.
-- Never paste raw SVG into Liquid; render through the `icons` snippet.
+The coordinator (the agent the user is talking to) owns steps 1–6 unless execution is delegated. Delegation does not transfer execution authority; one-writer and independent-review rules still apply.
 
----
+The coordinator does not spawn subagents on its own, because each one rebuilds context and multiplies token use. When a step would benefit from one (step 7 independent review, a broad read-only search, a large batch), propose the role, client, and model (default: inherit the main model) and wait for the user's decision.
+
+| Step | Owner | Action | Stop condition |
+| --- | --- | --- | --- |
+| 1 | Coordinator | Read `docs/project.md` and `docs/agent/board.md`, then `docs/agent/context.md` if continuing work. Read `docs/references/` only when task routing or the plan requires it. | Facts gathered; no implementation yet. |
+| 2 | Coordinator + user | Discuss on `board.md`. One decision at a time. Update the board when discussion produces a conclusion, disagreement, or new pending decision. Record evidence, alternatives, disagreements, and pending decisions. If the user asks for review, orientation, or a prompt only, do not implement unless they explicitly authorize implementation. | A single direction is ready for the user to accept or reject. |
+| 3 | Coordinator | When the user accepts a direction, remove resolved discussion from the board and write the plan into `context.md` with outcome, dependencies, **implementation surface**, a **review tier** (below), and acceptance checks written as verifiable checks, not claims. | Plan recorded. **Recording is not authorization.** |
+| 4 | User | Authorize the batch explicitly. Resolve every dependency listed in the plan first. | User grants execution authority for this batch only. |
+| 5 | Implementer (coordinator or delegated `.agents/roles/implementer.md`) | Execute inside the surface, following the working method in `.agents/roles/implementer.md`. Validate and correct until checks pass or a genuine blocker needs user authority. Deliver an external execution prompt (template in `.agents/roles/implementer.md`) only when the user requests it or work must run in another session or client. **Delivering a prompt is not completion.** | Implementation matches acceptance checks or a documented blocker remains. |
+| 6 | Implementer | Record progress, validation output, blockers, and material corrections in `context.md`, not only in chat. | `context.md` reflects current execution state. |
+| 7 | Per the plan's review tier: Verifier for Ask (someone other than the implementer; `.agents/roles/verifier.md`, including its reviewer checklist), user for Show, coordinator for Ship (the validator output recorded at step 6 is the review) | Review the diff and evidence against the plan's acceptance checks. | Review findings recorded; defects returned to step 5 or accepted with evidence. |
+| 8 | User | Browser pass and explicit acceptance when the plan requires runtime verification. | User accepts or requests another correction cycle. |
+| 9 | Coordinator | Commit when the user asks. Migrate durable contracts to `AGENTS.md`, a reference, code, or configuration. **Clear `context.md`.** | Plan removed from `context.md`; git holds history. |
+
+**Review tiers (set at step 3, applied at step 7):**
+
+- **Ask** when any of these holds: the batch changes the agent rules or validator wiring listed under Authority; it deletes or renames a file, symbol, setting, class, event, or locale key; it changes Liquid markup or schema (any `.liquid` file under `layout/`, `sections/`, `snippets/`, `blocks/`, or `templates/`, outside its `{% stylesheet %}` block; or `config/settings_schema.json`) or any `assets/*.js`; or it ran from an external execution prompt. The coordinator hands the user a review prompt (template in `.agents/roles/verifier.md`) to run in a separate session, preferably another client or model. The batch is complete only when that review reports PASS.
+- **Show** when no Ask trigger holds, for example changes limited to CSS (`tailwind/`, `assets/*.css`, `{% stylesheet %}` blocks), locale string values, or documents outside the agent rules: the coordinator runs the plan's validators and reports the diff and their output; the user's look is the review.
+- **Ship** for record files and formatting-only changes: the validators are the review.
+- The coordinator may raise a tier, never lower it below its triggers. The user may set any tier when authorizing.
+
+**Record-layer checks (apply at steps 3, 6, and 9):**
+
+- `docs/project.md` holds identity, scope, and overall status; `board.md` holds what has not yet become a plan; `context.md` holds **only the plan under execution and its status**. Unexecuted plans, queued plans, and plans waiting on work the agent could finish stay out of it. **One exception:** extra plans may coexist only when each is executed and waiting on verification the agent cannot perform (browser pass or human review), naming who verifies.
+- While `context.md` holds a plan that is not fully executed and reviewed, do not start other work; finish it, or ask the user to drop it.
+- A batch's acceptance boundary names its **implementation surface**. Changing the record files is never a scope violation.
+- Chat history and commit messages are evidence, never a substitute for the current execution record.
+
+**Sources:**
+
+- Use Shopify Dev MCP for Shopify platform claims. Use Context7 for third-party library docs when current-version sources matter, resolving the library ID at call time. Do not guess framework behavior when the appropriate MCP should be available.
+- If an expected MCP is missing, troubleshoot per `README.md` ("MCP servers") before falling back to the official website, and state that degraded source explicitly.
 
 ## Task Routing
 
 Read only the matching reference for the current task:
 
-- JS runtime, lifecycle, events, HTTP, SectionRefresher, Alpine stores/components, Swiper, GSAP setup: `docs/references/architecture/javascript-runtime.md`
+- JS runtime, lifecycle, events, HTTP, SectionRefresher, `{% block %}` / `{% partial %}` adoption, Alpine stores/components, Swiper/GSAP adoption: `docs/references/architecture/javascript-runtime.md`
 - Motion policy, choreography, reduced motion, animation ownership, duplication: `docs/references/architecture/motion-architecture.md`
-- Shared abstraction boundaries and whether to extend an existing utility/component: `docs/references/architecture/abstraction-boundaries.md`
+- Shared abstraction boundaries, snippet parameter API, and whether to extend an existing utility/component: `docs/references/architecture/abstraction-boundaries.md`
+- Section block composition (this theme uses section blocks, not skeleton Theme Blocks): `docs/project.md` (Deviations From The Skeleton)
 - CSS layer ownership, typography tiers, color/surface rules, token/bridge contract, placement audits: `docs/references/style-system/css-architecture.md`
 - Image snippet display behavior and `image.liquid` mode/fit contract: `docs/references/style-system/image-display-contract.md`
 - i18n keys, locale structure, schema translation, hardcoded copy review: `docs/references/code-review/i18n-checklist.md`
 - Shopify browser matrix, Tailwind build boundary, static compatibility checks, progressive enhancement, and WebKit guardrails: `docs/references/code-review/browser-compatibility.md`
 - Launch readiness, Lighthouse ownership classification, cleanup safety, ignore-file boundaries, review output, and gate validation: `docs/references/code-review/launch-gate.md`
-- Skill/docs routing, non-trivial task definition, and user overrides: `docs/references/agent-workflow/skill-routing.md`
-- Multi-agent context isolation, role boundaries, task/result contracts, concurrency, and vendor adapters: `docs/references/agent-workflow/multi-agent-architecture.md`
-
-Use `agent-router` for broad, ambiguous, multi-step, cleanup, Lighthouse, architecture, rule-setting, third-party skill, governance, or cross-session work.
-
----
+- Theme Store submission, or judging whether a theme's features are complete: no local copy; query the current official pages through Shopify Dev MCP — [requirements](https://shopify.dev/docs/storefronts/themes/store/requirements), [review stages](https://shopify.dev/docs/storefronts/themes/store/review-process/submit-theme), and [testing checklist](https://shopify.dev/docs/storefronts/themes/store/test-theme/checklist)
 
 ## Agent Skills
 
-Project skills live in `.agents/skills/`.
+Project skills in `.agents/skills/`: the executable validators `check-i18n` and `check-theme-architecture`, and the vendored GreenSock documentation skills `gsap-core`, `gsap-timeline`, `gsap-scrolltrigger`, and `gsap-performance` (MIT; agent documentation only, no storefront payload). Read the GSAP skills only after the motion reference classifies work as complex choreography.
 
-- Use `agent-router` first for non-trivial tasks, broad requests, cross-session continuation, third-party skill evaluation, or when multiple skills/docs might apply.
-- Use `orchestrate-agents` after routing when independent delegation materially improves context isolation, verification, or latency.
-- User skill names are optional overrides. If the user states intent without naming a skill, `agent-router` chooses the route.
-- Remaining project skills: `agent-router`, `orchestrate-agents`, `build-svg-icons`, `check-theme-architecture`, and `check-i18n`.
-- Use the routed project skill for validation, i18n, or icon work; for implementation, inspect current source and the matching architecture reference.
-- If automatic skill triggering is unavailable, follow `docs/references/agent-workflow/skill-routing.md` and manually open only the routed skill.
-- External skills are not project rule sources until reviewed, adapted, and installed in `.agents/skills/`.
+Do not create, install, or approve skills during ordinary theme work. Discuss skill changes only when the user explicitly asks.
 
-Do not create, install, or approve skills during ordinary theme work. Discuss skill changes only when the user explicitly asks or when `agent-router` classifies the task as skills/governance work.
+## Validation
 
----
+Run scripts through `npm.cmd` in this Windows PowerShell workspace. Default to the smallest command that proves the change. Reserve `npm.cmd run lint` and `npm.cmd test` for explicit user request, PR, version/release, or Theme Store submission gates.
 
-## Validation Commands
+| Change surface | Commands |
+| --- | --- |
+| Liquid, schema, architecture guardrails | `npm.cmd run lint:theme` and/or `npm.cmd run test:theme-check` |
+| Locales, translated strings, schema copy | `npm.cmd run lint:i18n` |
+| `tailwind/**`, `assets/base.css`, `assets/gift-card.css` | `npm.cmd run scan:compat` + `npm.cmd run lint:theme` |
+| `assets/*.js`, embedded Liquid blocks | `npm.cmd run lint:compat` + `npm.cmd run lint:theme` |
+| Strict Liquid output parsing (filter-arg guard) | `npm.cmd run lint:liquid-syntax` |
+| Agent rules, skills, roles, adapters, references | Link/syntax check on changed files + `npm.cmd run lint:doc-paths` + `npm.cmd run doctor:agent` |
+| Release / PR / Theme Store gate | `npm.cmd run lint` and `npm.cmd run test` |
 
-Default to the smallest command that proves the change. Reserve full `npm.cmd run lint` and `npm.cmd test` for explicit user request or PR, version/release, and Theme Store submission gates. In this Windows PowerShell workspace, run scripts through `npm.cmd`.
-
-```bash
-npm.cmd run lint          # i18n, theme architecture, agent orchestration, and format checks
-npm.cmd run lint:liquid-syntax # strict Liquid output parsing guard
-npm.cmd run lint:agents   # multi-agent skills, roles, contracts, hooks, and vendor adapters
-npm.cmd run test:agent-hooks # runtime result-schema hook acceptance and rejection cases
-npm.cmd run lint:theme    # Liquid, JS architecture, Alpine, HTTP/cart, heading rules
-npm.cmd run lint:i18n     # locale keys, translated strings, schema copy, ARIA copy
-npm.cmd run lint:compat   # CSS, JS, and embedded Liquid browser compatibility checks
-npm.cmd run scan:compat   # rebuild Tailwind output, then run compatibility checks
-npm.cmd test              # strict Liquid syntax guard, then Shopify Theme Check
-npm.cmd run test:theme-check # Shopify Theme Check only
-npm.cmd run build:tw      # rebuild Tailwind output after Tailwind source changes
-npm.cmd run build:svg     # regenerate SVG assets after icons/ changes
-npm.cmd run dev           # Shopify theme dev + Tailwind watch
-```
-
-During development, choose the narrowest command for the changed surface. Examples:
-
-- Liquid, JS, or theme architecture changes: `npm.cmd run lint:theme` or `npm.cmd run test:theme-check`
-- Locale or i18n changes: `npm.cmd run lint:i18n`
-- Tailwind source changes: `npm.cmd run scan:compat` (rebuilds `assets/tailwind.output.css` first)
-- Agent skills, roles, or contracts: `npm.cmd run lint:agents`
-
-Run `npm.cmd run lint` and `npm.cmd test` only when the user explicitly asks, or before opening a PR, cutting a version/release, or submitting to the Theme Store. Use `npm.cmd run build:tw` only for intermediate Tailwind iteration. Run `npm.cmd run build:svg` only when `icons/` source changed. Do not run rewriting formatters unless the user asks.
-
----
+Build helpers: `npm.cmd run build:tw` (Tailwind iteration), `npm.cmd run build:svg` (staged icons in `icons/`). Do not run rewriting formatters unless the user asks.
 
 ## Gotchas
 
-- Shopify theme assets are flat under `assets/`; do not create nested runtime asset directories.
-- Do not code-fix Lighthouse findings until code ownership is clear.
-- Browserslist config drives static compatibility checks, not Tailwind v4's build target. Do not add Vite, Autoprefixer, or broad polyfills without an explicit architecture decision.
-- Do not extend shared abstractions by adding mode flags or branching parameters for divergent behavior. Read `docs/references/architecture/abstraction-boundaries.md`.
+- `icons/` is intentionally Git-ignored and may not exist in a clean checkout. Create it only as temporary input for `npm.cmd run build:svg`; committed optimized icons live in `assets/`.
 - Do not mix visual redesign, architecture cleanup, Lighthouse fixes, and configuration changes in one batch.
 - Preserve schema IDs, block types, section types, preset names, template references, and storefront behavior during cleanup.
 - `.shopifyignore`, `.gitignore`, and `.prettierignore` have different scopes. Read `docs/references/code-review/launch-gate.md` before changing ignore rules.

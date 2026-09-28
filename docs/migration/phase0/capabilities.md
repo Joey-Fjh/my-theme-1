@@ -41,6 +41,7 @@ Commit `926dddb`. User-visible behavior is what a shopper or merchant experience
 | **Theme Editor** | `Base.onShopifySectionLayout` rebinds resize targets on section load/reorder/unload (`base.js:32–34`). |
 | **No-JS** | Main content, header, and footer HTML render; skip link works (`theme.liquid:84–86`). Motion classes may not animate. |
 | **Proposal** | **rewrite** — replace with skeleton import-map runtime and token layer while preserving merchant motion settings semantics. |
+| **Motion settings contract** (added from `docs/migration/step1/retention-audit.md`) | Merchant settings `motion_enabled`, `content_reveal_style`, `media_reveal_style`, `motion_speed`, `reveal_behavior` (`config/settings_schema.json`) keep their meaning; see `docs/project.md` (Theme-Specific Contracts). Acceptance: with `motion_enabled` off, no section reveal, media reveal, or scroll motion plays and content shows immediately, while hover, focus, dropdown, dialog, drawer, and loading transitions still run and respect `prefers-reduced-motion`; `motion_speed` changes reveal timing only; `reveal_behavior` `once` vs `always` is honored. |
 
 ### CAP-02 — Announcement bar
 

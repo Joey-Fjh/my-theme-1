@@ -2,7 +2,9 @@
 
 This reference stores motion decision boundaries that are too long for `AGENTS.md`. `AGENTS.md` remains the rule source. Read this file only when changing animation, transitions, GSAP choreography, motion policy, motion tokens or presets, reduced-motion behavior, or motion cleanup.
 
-Inspect current source for exact selectors, timing values, observer tuning, and runtime internals.
+Inspect current source for exact selectors, timing values, and runtime internals.
+
+The mother template ships one loading recipe: `.spinner` / `.spinner-lg` in `tailwind/tailwind.animates.css`, used by `snippets/buy-buttons.liquid` and `snippets/loading.liquid`. Derived themes add further recipes under this policy.
 
 ## Motion Goals
 
@@ -15,68 +17,36 @@ Inspect current source for exact selectors, timing values, observer tuning, and 
 
 | Layer | Owns | Does not own |
 | --- | --- | --- |
-| CSS capability (`tailwind.animates.css`) | Tokens, keyframes, animation classes, reveal behavior, reduced-motion and motion-disabled kill rules | Section business structure, trigger logic, state management |
-| Alpine components | UI state, trigger behavior, open/close/show/hide/active/loading visibility, ordinary reveal state changes | Animation keyframes, animation values |
-| GSAP / ScrollTrigger | Complex narrative choreography: timeline, parallax, scrub, split text, coordinated storytelling | Ordinary content/media reveal, simple fade/rise/zoom, card entrance |
+| CSS capability (`tailwind.animates.css`) | Tokens, keyframes, animation classes, reduced-motion rules | Section business structure, trigger logic, state management |
+| Alpine components | UI state, trigger behavior, open/close/show/hide/active/loading visibility | Animation keyframes, animation values |
+| GSAP / ScrollTrigger | Complex narrative choreography: timeline, parallax, scrub, split text, coordinated storytelling | Ordinary storefront motion unless explicitly classified |
 
 ## Decision Rules
 
 | Motion need | Default path | Do not |
 | --- | --- | --- |
 | Hover/focus, loader, decorative loop, pause/running | CSS capability utility | GSAP |
-| Open/close, show/hide, active/inactive, loading visibility | Alpine state + direct CSS/state classes when needed | GSAP, restored `motion-transition` |
-| Ordinary content/media reveal across sections | Alpine component with shared `IntersectionObserver` + CSS rules in `tailwind.animates.css` | GSAP |
+| Open/close, show/hide, active/inactive, loading visibility | Alpine state + direct CSS/state classes when needed | GSAP, `x-transition` (`lint:theme`) |
+| Section or media reveal | Derived theme defines it under this policy | GSAP unless classified as complex choreography |
 | Complex narrative choreography | GSAP only after explicit classification and approval | — |
-
-## Motion Setting Boundary
-
-`motion_enabled` and `body[data-motion-enabled='false']` gate page and brand motion: section reveal, media reveal, scroll motion, and approved narrative choreography.
-
-Do not use `body[data-motion-enabled='false']` as a blanket kill switch for hover, focus, dropdown, dialog, drawer, loading, or other state/micro interactions. Those interactions must respect `prefers-reduced-motion`.
-
-`motion_speed` is scoped to page and brand reveal timing. Do not wire it to hover, focus, panel, drawer, dialog, loading, or other state/micro interaction timings.
-
-State and micro interactions must still respect `@media (prefers-reduced-motion: reduce)`.
 
 ## Conflict Rule
 
 Alpine/CSS and GSAP must not control `opacity` or `transform` on the same element. Choose one ownership path per element.
 
-## Ordinary Reveal Contract
+## Drawer And Overlay Motion
 
-Ordinary section content/media reveal uses:
-
-- section root: `x-data="motionRevealSection()"` + `data-motion-section`
-- targets: `data-motion-reveal="content"` / `"media"` and optional `data-motion-copy`
-- stable geometry: `data-motion-bound` / `data-motion-copy-bound` when transforms would destabilize observation
-- repeated layouts: `data-motion-cascade` and optional `data-motion-sequence`
-- state: `data-motion-state`, `data-motion-resetting`, `data-motion-staging`
-- policy: `body[data-motion-enabled]`, `body[data-content-reveal-style]`, `body[data-media-reveal-style]`, `body[data-reveal-behavior]`
-
-Rules:
-
-- HTML renders visible by default; do not hide critical first-viewport content behind animation completion.
-- Do not restore `snippets/motion-transition.liquid` or scattered `x-transition:*` recipes for ordinary state motion.
-- `x-intersect` may be used for isolated simple cases; the preferred architecture is one shared observer behind the Alpine behavior.
-- Inspect `assets/alpine.components.ui.js` and `tailwind/tailwind.animates.css` for current runtime behavior.
-
-## Motion Hook Ownership
-
-- Media primitives such as `snippets/image.liquid` may own `data-motion-reveal="media"` internally by default.
-- Stable content components may own internal `data-motion-reveal="content"` hooks for their own stable regions.
-- Layout, control, form, drawer, dialog, filter, search, cart, pagination, and button/link primitives should not output reveal hooks by default.
-- Sections own the reveal root and broad content grouping hooks.
-- Conversion-critical controls and merchant-owned custom content should not be reveal targets by default.
+The mother template ships no drawer or dialog overlay. Derived themes that add one own its motion under the existing `prefers-reduced-motion` policy and must not rely on removed drawer infrastructure from this repository.
 
 ## GSAP Boundary
 
 The current theme has no active GSAP runtime or project consumers. Do not reintroduce GSAP during ordinary motion cleanup.
 
-GSAP remains an explicitly approved future option only for complex narrative choreography. If approved again, use `Components.register()`, scope triggers to the component root, clean up in `destroy()`, respect reduced motion, and keep no-JS critical content visible.
+GSAP remains an explicitly approved future option only for complex narrative choreography. If approved again, register factories through `define()` on a `data-module-id` entry module, scope triggers to the component root, clean up in `destroy()`, respect reduced motion, and keep no-JS critical content visible.
 
 ## Page-Type Policy
 
-Conversion pages such as product, collection, search, cart, and checkout-adjacent flows should use restrained motion: state transitions, interaction feedback, media controls, and below-the-fold reveal only.
+Conversion pages such as product, collection, search, cart, and checkout-adjacent flows should use restrained motion: state transitions, interaction feedback, media controls, and below-the-fold motion only when a derived theme adds it.
 
 Home, brand, editorial, campaign, and storytelling pages may use richer choreography when no critical first-viewport content is hidden before JavaScript, no LCP candidate waits for animation, reduced motion is respected, and keyboard and screen-reader access remain intact.
 
@@ -86,21 +56,12 @@ Do not over-tokenize motion. Tokens are for shared foundation values reused acro
 
 Merchant-facing motion settings should control policy, not low-level implementation details such as GSAP easing names, ScrollTrigger start/end positions, or raw stagger amounts.
 
-## Migration And Duplication
-
-Motion cleanup must be staged:
-
-1. Audit current motion usage before refactoring.
-2. Group findings as CSS capabilities, Alpine/state recipes, GSAP/choreography, and mixed-ownership risks.
-3. Keep `motion-transition` removed.
-4. Build ordinary content/media reveal around data hooks, a shared-observer Alpine component, and CSS rules in `tailwind.animates.css`.
-5. Preserve visual behavior unless the task explicitly asks to redesign motion.
-
-Before adding another copy of a motion pattern, inspect whether an existing capability utility, reveal hook, or approved runtime contract already owns it.
+Before adding another copy of a motion pattern, inspect whether an existing capability utility or approved runtime contract already owns it.
 
 ## Performance And Reduced Motion
 
 - Prefer opacity and transform for visual motion; avoid layout-changing animation properties.
 - Critical first-viewport content must render visible without JavaScript or animation completion.
-- Reduced motion and `body[data-motion-enabled='false']` must leave content visible and must not break UI state such as `x-show`.
+- Do not hide critical first-viewport content behind GSAP, Alpine, Swiper initialization, delayed transitions, `opacity-0`, `hidden`, `x-show="false"`, off-screen transforms, or callbacks.
+- Reduced motion must leave content visible and must not break UI state such as `x-show`.
 - Shared observers, timers, listeners, or animation runtimes must be cleaned up through the owning component lifecycle.
