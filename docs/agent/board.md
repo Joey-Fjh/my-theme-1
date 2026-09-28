@@ -6,7 +6,7 @@ Last updated: 2026-09-28.
 
 ## Open decisions
 
-Active: none. Phase 3 batch 3A is executed in the worktree (see `docs/agent/context.md` Progress); coordinator + GPT verifier review pending. Batches 3B–3D follow per `docs/project.md`.
+Active: none. Batch 3A is done (`2a3c331`); the 3B plan is drafted next, then 3C and 3D, per `docs/project.md`.
 
 Queued (decide before the phase that needs them):
 
