@@ -6,16 +6,20 @@ Last updated: 2026-09-28.
 
 ## Open decisions
 
-Active: phase 3 plan (framework import), to draft next from `docs/migration/phase2/phase3-import.md`.
+Active: none. Phase 3 batch 3A is executed in the worktree (see `docs/agent/context.md` Progress); coordinator + GPT verifier review pending. Batches 3B–3D follow per `docs/project.md`.
 
 Queued (decide before the phase that needs them):
 
-- **Theme-only settings (before phase 3 step 5).** 54 setting IDs exist only in this theme, most referenced by Liquid or merchant JSON: which stay global and which move to section settings. Renaming or removing a referenced ID needs the user. Evidence: `docs/migration/phase2/settings-schema.md`.
-- **Schema locale merge timing (before phase 3 step 5).** Merge `locales/en.default.schema.json` with the skeleton keys in phase 3, or per slice as each section schema is rewritten. Evidence: `docs/migration/phase2/locales.md`.
+- **Theme-only settings (before phase 3 batch 3D).** 54 setting IDs exist only in this theme, most referenced by Liquid or merchant JSON: which stay global and which move to section settings. Renaming or removing a referenced ID needs the user. Evidence: `docs/migration/phase2/settings-schema.md`.
+- **Schema locale merge timing (before phase 3 batch 3D).** Merge `locales/en.default.schema.json` with the skeleton keys in phase 3, or per slice as each section schema is rewritten. Evidence: `docs/migration/phase2/locales.md`.
 - **Migration stop-loss point (before phase 4).** The latest date, or the capability threshold, at which the migration stops expanding and design rework starts, given the three-submission / 90-day constraint in `docs/project.md`. Owner: user (with the business owner).
 
 
 ## Evidence
+
+- Pre-existing i18n failures (found in 3A review, 2026-09-28; identical on `HEAD`): `lint:i18n` reports hardcoded schema text in `sections/article.liquid`, `sections/before-after-comparison.liquid` (2), `sections/newsletter-overlay.liquid`, `sections/product-comparison-table.liquid`, and 34 unused locale keys. Each section's slice clears its own; any left must be zero before the release gate (lint failures are launch blockers). Batches until then check "no new findings against `HEAD`".
+
+- Skeleton source access (2026-09-28): this checkout had no `skeleton` remote, and the sibling clone `../My-skeleton-theme` stops at `e96aedd`, behind `5191a50`. Added remote `skeleton` → `https://github.com/Joey-Fjh/my-skeleton-theme.git` and fetched; `skeleton/main` = `5191a50`, matching the recorded source. Older docs cite `d:\fjh\shopify\...` paths from another machine.
 
 - Old CSS structure conventions resolved (user, 2026-09-28): do not restore `css-layer-allowlist.json`; after the phase 3 Tailwind merge, add a theme-only exception list to the new validators for the rules still valid (motion exclusions, WebKit guards, newsletter scoping); `tailwind/tailwind.snippets.css` is slice 5 debt. The exact list is written in phase 3.
 - Phase 2 decisions (user, 2026-09-28): add slice 0 for shared UI primitives; slices are computed by rule. Refined the same day after the first computation put 62 files, including the product purchase core, into slice 0: slice 0 holds only domain-neutral files carried by CAP-21 and CAP-01; every other file follows its earliest consumer slice, since slices run in order and later slices reuse earlier work. Swiper loading: first decided as the 12.1.2 ESM browser build, reversed the same day because no self-contained ESM file exists; final: the classic build behind an on-demand `carousel-swiper.js` adapter.

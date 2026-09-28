@@ -1,12 +1,25 @@
-(function () {
-    'use strict';
+const MIRRORED_KEYS = [
+    'items',
+    'item_count',
+    'total_price',
+    'total_discount',
+    'cart_level_discount_applications',
+    'loading',
+    'hasFetched',
+    'fetchError',
+];
 
-    window.__Theme__ = window.__Theme__ || {};
-    window.__Theme__.AlpineStoreGroups = window.__Theme__.AlpineStoreGroups || {};
-
-    const StoreGroups = window.__Theme__.AlpineStoreGroups;
-
-    StoreGroups.cart = {
+/**
+ * UI bridge over the Skeleton-owned cart contract.
+ *
+ * The contract owns platform cart state and every Cart API mutation. This store only
+ * mirrors that state into reactive UI properties and owns merchant-facing error copy.
+ * Callers render normalized errors beside their own controls.
+ *
+ * @param {object} contract - Instance returned by `createCartContract()`.
+ */
+export function createCartUiStore(contract) {
+    return {
         items: [],
         total_price: 0,
         total_discount: 0,
@@ -15,7 +28,6 @@
         loading: false,
         hasFetched: false,
         fetchError: null,
-        _registeredSectionIds: [],
 
         _errorMessages: {
             generic: '',
@@ -25,215 +37,62 @@
             networkError: '',
         },
 
+        _unsubscribe: null,
+
         configure(options) {
             if (options?.errorMessages) {
                 Object.assign(this._errorMessages, options.errorMessages);
             }
         },
 
-        _getHttp() {
-            return window.ShopifyHttp;
+        init() {
+            if (!contract) return;
+
+            this._unsubscribe = contract.subscribe((state) => {
+                MIRRORED_KEYS.forEach((key) => {
+                    this[key] = state[key];
+                });
+            });
         },
 
-        init() {},
-
         /**
-         * Hydrate store from initial payload (pure function, no DOM coupling).
-         * @param {Object} data - Initial cart state
+         * Re-read platform state. Kept so existing callers keep working; the contract
+         * hydrates itself from `body.dataset.initialCart` during bootstrap.
          */
-        hydrate(data = {}) {
-            if (!data || typeof data !== 'object') return;
-
-            this.items = Array.isArray(data.items) ? data.items : [];
-            this.item_count = typeof data.item_count === 'number' ? data.item_count : 0;
-            this.total_price = typeof data.total_price === 'number' ? data.total_price : 0;
-            this.total_discount = typeof data.total_discount === 'number' ? data.total_discount : 0;
-            this.cart_level_discount_applications = Array.isArray(
-                data.cart_level_discount_applications,
-            )
-                ? data.cart_level_discount_applications
-                : [];
-            this.hasFetched =
-                Array.isArray(data.items) ||
-                typeof data.item_count === 'number' ||
-                typeof data.total_price === 'number';
-            this.fetchError = null;
+        hydrate(data) {
+            if (!contract) return;
+            contract.hydrate(data);
         },
 
         registerSection(sectionId) {
-            const normalized = typeof sectionId === 'string' ? sectionId.trim() : '';
-            if (!normalized) return () => {};
-
-            if (!this._registeredSectionIds.includes(normalized)) {
-                this._registeredSectionIds.push(normalized);
-            }
-
-            return () => {
-                this._registeredSectionIds = this._registeredSectionIds.filter(
-                    (id) => id !== normalized,
-                );
-            };
+            if (!contract) return () => {};
+            return contract.registerSection(sectionId);
         },
 
-        _resolveSections(sections = []) {
-            const requested = Array.isArray(sections) ? sections : [];
-            return [...new Set([...requested, ...this._registeredSectionIds])].filter(
-                (sectionId) => typeof sectionId === 'string' && sectionId.trim(),
-            );
-        },
-
-        /**
-         * Fetch current cart from /cart.js and update store state.
-         * @returns {Promise<Object>} Resolved with cart data or rejects on failure.
-         */
         fetchCart() {
-            const Http = this._getHttp();
-
-            if (!Http?.getJSON) return Promise.reject(new Error('Http client unavailable'));
-
-            this.loading = true;
-            this.fetchError = null;
-
-            return Http.getJSON('/cart.js', {
-                credentials: 'same-origin',
-            })
-                .then((data) => {
-                    this.items = Array.isArray(data.items) ? data.items : [];
-                    this.item_count = typeof data.item_count === 'number' ? data.item_count : 0;
-                    this.total_price = typeof data.total_price === 'number' ? data.total_price : 0;
-                    this.total_discount =
-                        typeof data.total_discount === 'number' ? data.total_discount : 0;
-                    this.cart_level_discount_applications = Array.isArray(
-                        data.cart_level_discount_applications,
-                    )
-                        ? data.cart_level_discount_applications
-                        : [];
-                    this.hasFetched = true;
-                    this.fetchError = null;
-
-                    return data;
-                })
-                .catch((err) => {
-                    this.fetchError = err;
-                    throw err;
-                })
-                .finally(() => {
-                    this.loading = false;
-                });
+            if (!contract) return Promise.reject(new Error('Cart contract unavailable'));
+            return contract.fetchCart().catch((err) => this._handleError(err));
         },
 
-        /**
-         * Add items via /cart/add.js. On success, renders sections if returned and refetches cart.
-         * @param {Array<{id: string|number, quantity: number, [key: string]: *}>} items - Line items (id = variant id).
-         * @param {string[]} [sections=[]] - Section IDs to request for Section Rendering API (e.g. ['cart-drawer']).
-         * @returns {Promise<Object>} Resolved with add response or rejects on failure.
-         */
         add(items, sections = []) {
-            const Http = this._getHttp();
-
-            if (!Http?.postJSON) return this._handleError(new Error('Http client unavailable'));
-
-            if (!Array.isArray(items) || items.length === 0)
-                return this._handleError(new Error('items required'));
-
-            this.loading = true;
-            const body = { items };
-
-            const resolvedSections = this._resolveSections(sections);
-            if (resolvedSections.length > 0) {
-                body.sections = resolvedSections.join(',');
-            }
-
-            return Http.postJSON('/cart/add.js', body, {
-                credentials: 'same-origin',
-            })
-                .then((data) => {
-                    if (
-                        data.sections &&
-                        typeof window.ShopifySectionRefresher?.render === 'function'
-                    ) {
-                        window.ShopifySectionRefresher.render(data.sections);
-                    }
-                    return this.fetchCart().then(() => data);
-                })
-                .catch((err) =>
-                    this.fetchCart()
-                        .catch(() => {})
-                        .then(() => this._handleError(err)),
-                )
-                .finally(() => {
-                    this.loading = false;
-                });
+            if (!contract) return Promise.reject(new Error('Cart contract unavailable'));
+            return contract.add(items, sections).catch((err) => this._handleError(err));
         },
 
         change(lineOrId, quantity, sections = []) {
-            const Http = this._getHttp();
-            if (!Http?.postJSON) return this._handleError(new Error('Http client unavailable'));
-            this.loading = true;
-            const bodyData = { quantity: Number(quantity) };
-            if (typeof lineOrId === 'string') {
-                bodyData.id = lineOrId;
-            } else {
-                bodyData.line = Number(lineOrId);
-            }
-            const resolvedSections = this._resolveSections(sections);
-            if (resolvedSections.length > 0) {
-                bodyData.sections = resolvedSections.join(',');
-            }
-            return Http.postJSON('/cart/change.js', bodyData, {
-                credentials: 'same-origin',
-            })
-                .then((parsedState) => {
-                    if (
-                        parsedState.sections &&
-                        typeof window.ShopifySectionRefresher?.render === 'function'
-                    ) {
-                        window.ShopifySectionRefresher.render(parsedState.sections);
-                    }
-                    this.items = Array.isArray(parsedState.items) ? parsedState.items : [];
-                    this.item_count =
-                        typeof parsedState.item_count === 'number' ? parsedState.item_count : 0;
-                    this.total_price =
-                        typeof parsedState.total_price === 'number' ? parsedState.total_price : 0;
-                    this.total_discount =
-                        typeof parsedState.total_discount === 'number'
-                            ? parsedState.total_discount
-                            : 0;
-                    this.cart_level_discount_applications = Array.isArray(
-                        parsedState.cart_level_discount_applications,
-                    )
-                        ? parsedState.cart_level_discount_applications
-                        : [];
-                    this.hasFetched = true;
-                    this.fetchError = null;
-                    return parsedState;
-                })
-                .catch((err) => this._handleError(err))
-                .finally(() => {
-                    this.loading = false;
-                });
+            if (!contract) return Promise.reject(new Error('Cart contract unavailable'));
+            return contract
+                .change(lineOrId, quantity, sections)
+                .catch((err) => this._handleError(err));
         },
 
-        /**
-         * Update cart note or attributes via /cart/update.js
-         * @param {Object} data - e.g., { note: 'xxx' } or { attributes: { Country: 'China' } }
-         * @returns {Promise<Object>}
-         */
         update(data) {
-            const Http = this._getHttp();
-            if (!Http?.postJSON) return this._handleError(new Error('Http client unavailable'));
-            this.loading = true;
-            return Http.postJSON('/cart/update.js', data, {
-                credentials: 'same-origin',
-            })
-                .catch((err) => this._handleError(err))
-                .finally(() => {
-                    this.loading = false;
-                });
+            if (!contract) return Promise.reject(new Error('Cart contract unavailable'));
+            return contract.update(data).catch((err) => this._handleError(err));
         },
 
         /**
-         * Centralized error interceptor — shows toast and re-throws.
+         * Normalize a cart mutation failure and rethrow with `displayMessage` for callers.
          * @param {Object|Error} err - Shopify API error or native Error
          * @returns {Promise<never>}
          */
@@ -261,13 +120,23 @@
                 finalMsg = msgs.generic;
             }
 
-            if (finalMsg) {
-                const toast = window.Alpine?.store('toast');
-                if (toast) {
-                    toast.show(finalMsg, 'error');
-                }
+            if (finalMsg && err && typeof err === 'object') {
+                err.displayMessage = finalMsg;
             }
+
             return Promise.reject(err);
         },
+
+        /**
+         * Read a caller-facing message from a rejected cart mutation.
+         * @param {Object|Error} err
+         * @returns {string}
+         */
+        messageFromError(err) {
+            if (typeof err?.displayMessage === 'string' && err.displayMessage.trim()) {
+                return err.displayMessage.trim();
+            }
+            return this._errorMessages.generic || '';
+        },
     };
-})();
+}
