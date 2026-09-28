@@ -6,16 +6,19 @@ Last updated: 2026-09-28.
 
 ## Open decisions
 
-Active: phase 2 plan (file ownership map for mixed directories), to draft next.
+Active: phase 3 plan (framework import), to draft next from `docs/migration/phase2/phase3-import.md`.
 
 Queued (decide before the phase that needs them):
 
-- **Old CSS structure conventions (before phase 2 ends).** The deleted `css-layer-allowlist.json` and old `lint:theme` held theme CSS rules the skeleton validators do not check: the `tab-nav-item` class on `role="tab"` (with the `product-gallery__thumbnail` exception), promoted snippet prefixes (`tab-nav-item`, `accordion__`, `icon-with-text-item`, `buy-buttons__`), the `components.css` ban on `*-section` roots, and `tailwind.animates.css` excluded from motion lint; also the newsletter overlay stylesheet scoping note. Options once the phase 2 Tailwind ownership map exists: a theme-only lint allowlist in the new validators, manual review, or drop with the old CSS structure. Evidence: `docs/migration/step1/retention-audit.md` (C3–C5, C10).
+- **Theme-only settings (before phase 3 step 5).** 54 setting IDs exist only in this theme, most referenced by Liquid or merchant JSON: which stay global and which move to section settings. Renaming or removing a referenced ID needs the user. Evidence: `docs/migration/phase2/settings-schema.md`.
+- **Schema locale merge timing (before phase 3 step 5).** Merge `locales/en.default.schema.json` with the skeleton keys in phase 3, or per slice as each section schema is rewritten. Evidence: `docs/migration/phase2/locales.md`.
 - **Migration stop-loss point (before phase 4).** The latest date, or the capability threshold, at which the migration stops expanding and design rework starts, given the three-submission / 90-day constraint in `docs/project.md`. Owner: user (with the business owner).
 
 
 ## Evidence
 
+- Old CSS structure conventions resolved (user, 2026-09-28): do not restore `css-layer-allowlist.json`; after the phase 3 Tailwind merge, add a theme-only exception list to the new validators for the rules still valid (motion exclusions, WebKit guards, newsletter scoping); `tailwind/tailwind.snippets.css` is slice 5 debt. The exact list is written in phase 3.
+- Phase 2 decisions (user, 2026-09-28): add slice 0 for shared UI primitives; slices are computed by rule. Refined the same day after the first computation put 62 files, including the product purchase core, into slice 0: slice 0 holds only domain-neutral files carried by CAP-21 and CAP-01; every other file follows its earliest consumer slice, since slices run in order and later slices reuse earlier work. Swiper loading: first decided as the 12.1.2 ESM browser build, reversed the same day because no self-contained ESM file exists; final: the classic build behind an on-demand `carousel-swiper.js` adapter.
 - Swiper resolved (user, 2026-09-28): keep Swiper as the skeleton's selected carousel library (skeleton `AGENTS.md:11`). The earlier open question rested on a wrong premise (the skeleton ships no Swiper asset but had already selected it). How carousels mount under the module model is settled in phases 2-3 per `docs/references/architecture/javascript-runtime.md`.
 - Phase 0a (2026-09-28): capability inventory, merchant references, runtime dependencies, sizes, and browser checklist under `docs/migration/phase0/`. Review 1 found three defects (CAP-15 too coarse, CAP-22 cited a nonexistent Swiper decision, Swiper section miscount); all corrected and re-verified. Notable: section type `promo-bannder` is a typo fixed in merchant JSON and must not be renamed; theme-owned JS+CSS on every page is about 1.03 MB raw / 184 KB gzip.
 - Process calibration: write acceptance counts from commands, not by hand; execution prompts must state that open board decisions may be cited but not decided.

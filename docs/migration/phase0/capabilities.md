@@ -394,6 +394,7 @@ Commit `926dddb`. User-visible behavior is what a shopper or merchant experience
 | product-card.liquid | CAP-12, CAP-13 |
 | product-gallery-carousel.liquid | CAP-09 |
 | product-gallery-grid.liquid | CAP-09 |
+| product-gallery-stacked.liquid | CAP-09 |
 | product-gallery-thumbnails.liquid | CAP-09 |
 | product-gallery.liquid | CAP-09 |
 | product-info-blocks.liquid | CAP-08, CAP-10 |

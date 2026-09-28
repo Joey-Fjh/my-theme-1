@@ -11,7 +11,7 @@ Ceylune, a custom Shopify theme maintained as a multi-industry Shopify Theme Sto
 - Theme Store: submitted as tag `v1.0.0-submitted` (`3da19aa`). The first review was rejected because the design had no distinctive strength. Three submissions are allowed in total; exceeding them means a 90-day wait, which is not acceptable, so the next submission must answer the design feedback.
 - `main` (`926dddb`) and the store's current theme stay untouched, including Theme Editor saves, until the migration and the design rework are complete; the current theme is the behavior baseline. `main` differs from `v1.0.0-submitted` only in Agent/tooling files; theme code is identical. `main` is connected to the store's current theme through the GitHub integration.
 - Migration work happens on `refactor/skeleton-shell`, developed with local `shopify theme dev` only (a temporary development theme, not a GitHub-connected store theme). On success it merges back into `main` with a new tag; on failure the branch is abandoned.
-- Phase 1 outer framework (Agent layer, validators, configs, CI) landed on `refactor/skeleton-shell` from skeleton `5191a50`. Storefront runtime (`assets/`, `layout/`) still follows the pre-migration implementation until phases 3–4.
+- Progress (2026-09-28): phases 0–2 done. Phase 1 outer framework (Agent layer, validators, configs, CI) landed from skeleton `5191a50`; phase 2 produced the per-file plan for phases 3–4. Storefront code (`assets/`, `layout/`, `sections/`, `snippets/`, `tailwind/`) is still the pre-migration implementation. Next: draft the phase 3 plan (framework import). Open decisions are on `docs/agent/board.md`; the stop-loss point must be settled before phase 4.
 
 ## Migration Direction (accepted)
 
@@ -26,9 +26,9 @@ Phases:
 
 0. Baseline and capability inventory (read-only), done 2026-09-28: `docs/migration/phase0/`. No separate browser baseline or screenshots: `main` and the current theme stay untouched, so the current theme is the live baseline.
 1. Outer framework, done 2026-09-28 (`1bf75c6`): Agent layer, docs, validators, configs, CI (see `docs/migration/step1-outer-files.md`). `npm ci` runs right after the `package.json`/lock merge; a review gate follows the mechanical directory replacement.
-2. File ownership map for mixed directories (`layout/`, `assets/`, `tailwind/`, `snippets/`, `locales/`): framework file, business file to rewrite, or delete.
+2. File ownership map for mixed directories, done 2026-09-28: `docs/migration/phase2/` (per-file classes F/FX/F+/R/D/V/K/M, logic migration, phase 3 import plan, derived slices and D-file deletion gates via `scripts/derive-slices.js`).
 3. Import framework files (runtime, layout, Tailwind layer). The branch storefront is expected to break from here until phase 4 completes.
-4. Rewrite capabilities in slices. Each slice is verified side by side: the matching `docs/migration/phase0/browser-checklist.md` rows run on the current theme and on the development theme with the same store data; a row that fails on both is a pre-existing defect, a row that fails only on the development theme is a migration regression. Slices: product and cart; navigation and search; collection filters; carousels and display sections; the rest. Section-level style adaptation happens inside each slice.
+4. Rewrite capabilities in slices. Each slice is verified side by side: the matching `docs/migration/phase0/browser-checklist.md` rows run on the current theme and on the development theme with the same store data; a row that fails on both is a pre-existing defect, a row that fails only on the development theme is a migration regression. Slices: 0 shared UI primitives (domain-neutral files carried by CAP-21 and CAP-01, done right after phase 3; every other file follows its earliest consumer slice, and later slices reuse it); product and cart; navigation and search; collection filters; carousels and display sections; the rest. Section-level style adaptation happens inside each slice.
 5. Full integration acceptance, then design rework.
 
 ## Theme-Specific Contracts
@@ -48,4 +48,4 @@ Knowledge the old Agent layer held and the skeleton leaves to derived themes; so
 - **`npm run shopify:dev`:** uses `-e development` (theme environment in local `shopify.theme.toml`); skeleton default omits `-e`.
 - **`package.json` `name` / `description`:** identify Ceylune (`my-theme-1`), not the mother template.
 - **Storefront runtime (phases 3–4):** until migration completes, `assets/` and `layout/` still implement `Components.register()` / `AlpineComponentsFactory` while `docs/references/architecture/javascript-runtime.md` describes the skeleton target (import-map modules). Do not treat the reference alone as current behavior.
-- **Carousel library:** not a deviation. Swiper stays, as the skeleton selects it; the vendored files remain until phase 3 mounts them under the module model.
+- **Carousel library:** not a deviation. Swiper stays, as the skeleton selects it. Loading (decided 2026-09-28, the skeleton rule applied): the vendored classic `vendor-swiper.min.js` stays unchanged behind a `carousel-swiper.js` adapter that loads it on demand, so Alpine remains the only classic script in the layout. Swiper 12.1.2 ships no self-contained ES module, so an ESM build is not an option without a bundling step.
