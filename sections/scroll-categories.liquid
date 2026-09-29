@@ -5,6 +5,7 @@
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
     "
+    data-module-id="motion-reveal"
     x-data="motionRevealSection()"
     data-motion-section
 >
@@ -66,12 +67,13 @@
                         href="{{ product.url }}"
                         title="{{ product.title | escape }}"
                         data-motion-bound
-                        x-data="{hover:false}"
-                        @mouseenter="hover = true"
-                        @mouseleave="hover = false"
-                        @focus="hover = true"
-                        @blur="hover = false"
-                        :class="{ 'is-hovered': hover }"
+                        data-module-id="hover-card"
+                        x-data="hoverCard()"
+                        @mouseenter="enter()"
+                        @mouseleave="leave()"
+                        @focus="enter()"
+                        @blur="leave()"
+                        :class="hoverClass()"
                     >
                         <div
                             class="flex w-full flex-col gap-3 pc:flex-row pc:items-center pc:justify-between"
@@ -102,7 +104,7 @@
                                         opacity-0
                                         pc:block
                                     "
-                                    :class="hover ? 'opacity-100 scale-100' : ''"
+                                    :class="overlayVisibleClass()"
                                 >
                                     {%- if product.featured_image != blank -%}
                                         {%- assign alt = product.featured_image.alt
@@ -152,10 +154,13 @@
                         <div
                             class="scroll-categories__item block py-8 text-theme-text/80 pc:p-8"
                             data-motion-bound
-                            x-data="{hover:false}"
-                            @mouseenter="hover = true"
-                            @mouseleave="hover = false"
-                            :class="{ 'is-hovered': hover }"
+                            data-module-id="hover-card"
+                            x-data="hoverCard()"
+                            @mouseenter="enter()"
+                            @mouseleave="leave()"
+                            @focus="enter()"
+                            @blur="leave()"
+                            :class="hoverClass()"
                         >
                             <div
                                 class="flex w-full flex-col gap-3 pc:flex-row pc:items-center pc:justify-between"
@@ -185,7 +190,7 @@
                                             opacity-0
                                             pc:block
                                         "
-                                        :class="hover ? 'opacity-100 scale-100' : ''"
+                                        :class="overlayVisibleClass()"
                                     >
                                         {%- render 'image-magnifier',
                                             class: 'h-full w-full',

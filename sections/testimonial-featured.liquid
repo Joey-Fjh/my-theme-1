@@ -8,13 +8,20 @@
     data-component-kind="section"
     data-component-type="testimonial-featured"
     data-component-id="{{ section.id }}"
-    data-auto-slide="{{ section.settings.is_auto_slide }}"
-    data-slide-delay="{{ section.settings.slide_delay }}"
+    data-module-id="motion-reveal"
     x-data="motionRevealSection()"
     data-motion-section
 >
     <div class="layout container-page pc:h-full">
-        <div class="flex flex-col gap-12 pc:h-screen pc:flex-row pc:gap-0">
+        <div
+            class="flex flex-col gap-12 pc:h-screen pc:flex-row pc:gap-0"
+            data-module-id="testimonial-featured"
+            x-data="testimonialFeatured()"
+            data-auto-slide="{{ section.settings.is_auto_slide }}"
+            data-slide-delay="{{ section.settings.slide_delay }}"
+            data-swiper-src="{{ 'vendor-swiper.min.js' | asset_url }}"
+            data-swiper-css="{{ 'vendor-swiper.min.css' | asset_url }}"
+        >
             {% comment %} Left - Testimonial {% endcomment %}
             <div class="swiper w-full flex-1 pc:h-full pc:w-1/2">
                 <div class="swiper-wrapper">
@@ -52,7 +59,7 @@
                                     </blockquote>
 
                                     <div class="flex flex-col gap-3">
-                                        <p class="body-3xl font-bold">
+                                        <p class="heading-2xl">
                                             {{ testimonial_author_name }}
                                         </p>
                                         <p>
@@ -88,7 +95,7 @@
                             <p class="mb-3">
                                 {{ section.settings.card_label }}
                             </p>
-                            <p class="body-3xl font-bold">
+                            <p class="heading-2xl">
                                 {{ section.settings.card_title }}
                             </p>
                         </div>
@@ -98,67 +105,6 @@
         </div>
     </div>
 </div>
-
-{% javascript %}
-    (function () {
-        const Components = window.__Theme__?.Components;
-        if (!Components) return;
-
-        Components.register(
-            'testimonial-featured',
-            {
-                init(el) {
-                    const slides = el.querySelectorAll('.swiper-slide');
-                    const autoSlide = el.getAttribute('data-auto-slide') === 'true';
-                    const slideDelay = parseInt(el.getAttribute('data-slide-delay'), 10) || 5;
-                    const Utils = window.__Theme__?.Utils;
-                    const prefersReducedMotion =
-                        typeof Utils?.prefersReducedMotion === 'function'
-                            ? Utils.prefersReducedMotion()
-                            : window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ===
-                              true;
-                    const autoplayAllowed =
-                        autoSlide &&
-                        document.body?.dataset?.motionEnabled !== 'false' &&
-                        !prefersReducedMotion;
-
-                    const swiperContainer = el.querySelector('.swiper');
-
-                    if (!swiperContainer || typeof Swiper === 'undefined') return;
-
-                    const swiper = new Swiper(swiperContainer, {
-                        loop: slides.length > 1,
-                        autoHeight: true,
-                        autoplay: autoplayAllowed
-                            ? {
-                                  delay: slideDelay * 1000,
-                                  disableOnInteraction: false,
-                              }
-                            : false,
-                        slidesPerView: 1,
-                        effect: 'fade',
-                        fadeEffect: {
-                            crossFade: true,
-                        },
-                        pagination: false,
-                        navigation: false,
-                    });
-
-                    return { swiper };
-                },
-
-                destroy(el, state) {
-                    if (!state || !state.swiper) return;
-
-                    if (typeof state.swiper.destroy === 'function') {
-                        state.swiper.destroy(true, true);
-                    }
-                },
-            },
-            { lazy: true },
-        );
-    })();
-{% endjavascript %}
 
 {% schema %}
 {

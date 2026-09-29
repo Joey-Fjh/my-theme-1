@@ -34,6 +34,7 @@
     data-component-kind="section"
     data-component-type="routine-showcase"
     data-component-id="{{ section.id }}"
+    data-module-id="motion-reveal"
     x-data="motionRevealSection()"
     data-motion-section
 >
@@ -82,6 +83,10 @@
             {%- endcomment -%}
             <div class="routine-showcase__layout relative flex flex-col gap-6 py-3 pc:block pc:h-full">
                 <div
+                    data-module-id="routine-showcase"
+                    x-data="routineShowcase()"
+                    data-swiper-src="{{ 'vendor-swiper.min.js' | asset_url }}"
+                    data-swiper-css="{{ 'vendor-swiper.min.css' | asset_url }}"
                     class="
                         {{ product_position_class }}
                         routine-showcase__products
@@ -123,11 +128,12 @@
                                         <a
                                             class="routine-showcase__product-link media-interaction relative block h-full overflow-hidden {{ routine_product_surface_class }}"
                                             href="{{ product.url }}"
-                                            x-data="{ hover: false }"
-                                            @mouseenter="hover = true"
-                                            @mouseleave="hover = false"
-                                            @focus="hover = true"
-                                            @blur="hover = false"
+                                            data-module-id="hover-card"
+                                            x-data="hoverCard()"
+                                            @mouseenter="enter()"
+                                            @mouseleave="leave()"
+                                            @focus="enter()"
+                                            @blur="leave()"
                                         >
                                             {%- render 'image',
                                                 aspect_ratio: '342/198',
@@ -146,7 +152,7 @@
                                                     absolute right-0 bottom-0 left-0
                                                     flex items-center justify-between p-2 pc:p-4
                                                 "
-                                                :class="{ 'is-hovered': hover }"
+                                                :class="hoverClass()"
                                             >
                                                 <p class="truncate body-lg text-theme-text">
                                                     {{ product.title }}
@@ -177,9 +183,10 @@
                                         <div class="swiper-slide pc:w-136">
                                             <div
                                                 class="routine-showcase__product-link media-placeholder-frame relative block h-full overflow-hidden"
-                                                x-data="{ hover: false }"
-                                                @mouseenter="hover = true"
-                                                @mouseleave="hover = false"
+                                                data-module-id="hover-card"
+                                                x-data="hoverCard()"
+                                                @mouseenter="enter()"
+                                                @mouseleave="leave()"
                                             >
                                                 {%- render 'image',
                                                     image: blank,
@@ -193,7 +200,7 @@
 
                                                 <div
                                                     class="routine-showcase__product-info absolute right-0 bottom-0 left-0 flex items-center justify-between p-2 pc:p-4"
-                                                    :class="{ 'is-hovered': hover }"
+                                                    :class="hoverClass()"
                                                 >
                                                     <p class="truncate body-lg text-theme-text">
                                                         {{-
@@ -283,72 +290,6 @@
         </div>
     </div>
 </div>
-
-{%- javascript -%}
-    (function () {
-        const Components = window.__Theme__?.Components;
-        if (!Components) return;
-
-        Components.register(
-            'routine-showcase',
-            {
-                init(el) {
-                    const swiperContainer = el.querySelector('.swiper');
-
-                    if (!swiperContainer || typeof Swiper === 'undefined') return;
-
-                    const mql = window.matchMedia('(min-width: 768px)');
-                    const state = { swiper: null, mql: mql, handler: null };
-
-                    function createSwiper() {
-                        if (state.swiper) state.swiper.destroy(true, true);
-
-                        const isDesktop = mql.matches;
-
-                        state.swiper = new Swiper(swiperContainer, {
-                            direction: isDesktop ? 'vertical' : 'horizontal',
-                            slidesPerView: isDesktop ? 4 : 2,
-                            slidesPerGroup: isDesktop ? 1 : 2,
-                            grid: isDesktop ? { rows: 1 } : { rows: 2, fill: 'row' },
-                            autoHeight: false,
-                            spaceBetween: 8,
-                            speed: 300,
-                            loop: false,
-                            allowTouchMove: true,
-                            navigation: {
-                                nextEl: el.querySelector('.swiper-button-next'),
-                                prevEl: el.querySelector('.swiper-button-prev'),
-                            },
-                        });
-                    }
-
-                    state.handler = () => createSwiper();
-
-                    const swiperWrap = el.querySelector('.routine-showcase__swiper-wrap');
-
-                    createSwiper();
-                    if (swiperWrap) swiperWrap.classList.add('is-ready');
-                    mql.addEventListener('change', state.handler);
-
-                    return state;
-                },
-
-                destroy(el, state) {
-                    if (!state) return;
-
-                    if (state.mql && state.handler) {
-                        state.mql.removeEventListener('change', state.handler);
-                    }
-
-                    if (state.swiper?.destroy) {
-                        state.swiper.destroy(true, true);
-                    }
-                },
-            },
-            { lazy: true },
-        );
-    })();
-{%- endjavascript -%}
 
 {% stylesheet %}
     .routine-showcase-section {

@@ -22,14 +22,21 @@
     data-component-kind="section"
     data-component-type="icon-with-text"
     data-component-id="{{ section.id }}"
-    data-enable-carousel="{{ enable_carousel }}"
-    data-desktop-columns="{{ desktop_columns }}"
-    data-mobile-columns="{{ mobile_columns }}"
-    data-item-gap="{{ item_gap }}"
+    data-module-id="motion-reveal"
     x-data="motionRevealSection()"
     data-motion-section
 >
-    <div class="layout container-page">
+    <div
+        class="layout container-page"
+        data-module-id="icon-with-text"
+        x-data="iconWithText()"
+        data-swiper-src="{{ 'vendor-swiper.min.js' | asset_url }}"
+        data-swiper-css="{{ 'vendor-swiper.min.css' | asset_url }}"
+        data-enable-carousel="{{ enable_carousel }}"
+        data-desktop-columns="{{ desktop_columns }}"
+        data-mobile-columns="{{ mobile_columns }}"
+        data-item-gap="{{ item_gap }}"
+    >
         {%- if enable_carousel -%}
             <div class="icon-with-text-section__carousel-header">
                 <div
@@ -61,7 +68,7 @@
                                     gap: icon_text_gap,
                                     alignment: 'center',
                                     class: 'icon-with-text-section__item',
-                                    title_class: 'body-xl font-medium'
+                                    title_class: 'body-xl'
                                 -%}
                             </div>
                         {%- endif -%}
@@ -96,63 +103,6 @@
         {%- endif -%}
     </div>
 </div>
-
-{%- javascript -%}
-    (function () {
-        const Components = window.__Theme__?.Components;
-        if (!Components) return;
-
-        Components.register(
-            'icon-with-text',
-            {
-                init(el) {
-                    if (el.getAttribute('data-enable-carousel') !== 'true') return {};
-
-                    const swiperEl = el.querySelector('[data-icon-with-text-swiper]');
-                    if (!swiperEl || typeof Swiper === 'undefined') return {};
-
-                    const desktopColumns =
-                        parseInt(el.getAttribute('data-desktop-columns'), 10) || 3;
-                    const mobileColumns = parseInt(el.getAttribute('data-mobile-columns'), 10) || 1;
-                    const itemGap = parseInt(el.getAttribute('data-item-gap'), 10) || 32;
-                    const paginationEl = el.querySelector('[data-icon-with-text-pagination]');
-
-                    const swiper = new Swiper(swiperEl, {
-                        initialSlide: 0,
-                        slidesPerView: mobileColumns,
-                        slidesPerGroup: mobileColumns,
-                        spaceBetween: itemGap,
-                        autoHeight: true,
-                        observer: true,
-                        observeParents: true,
-                        resizeObserver: true,
-                        watchOverflow: true,
-                        pagination: paginationEl
-                            ? {
-                                  el: paginationEl,
-                                  clickable: true,
-                              }
-                            : false,
-                        breakpoints: {
-                            768: {
-                                slidesPerView: desktopColumns,
-                                slidesPerGroup: desktopColumns,
-                                spaceBetween: itemGap,
-                            },
-                        },
-                    });
-
-                    return { swiper };
-                },
-
-                destroy(_el, state) {
-                    state?.swiper?.destroy?.(true, true);
-                },
-            },
-            { lazy: true },
-        );
-    })();
-{%- endjavascript -%}
 
 {% schema %}
 {

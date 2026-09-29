@@ -167,7 +167,8 @@ define('productGallery', () => ({
         if (!scriptUrl) return;
 
         try {
-            await loadSwiper(scriptUrl);
+            const cssUrl = this._galleryRoot?.dataset?.swiperCss;
+            await loadSwiper(scriptUrl, cssUrl);
             // The script loads asynchronously; skip creation if the gallery was destroyed meanwhile.
             if (!this._galleryRoot) return;
             this._swiper = await createSwiper(mainEl, {

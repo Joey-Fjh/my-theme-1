@@ -91,9 +91,7 @@ define('SellingPlanPicker', () => ({
         const currentStillValid =
             preferCurrent &&
             this.selectedPlanId !== '' &&
-            this.availablePlans.some(
-                (plan) => String(plan.id) === String(this.selectedPlanId),
-            );
+            this.availablePlans.some((plan) => String(plan.id) === String(this.selectedPlanId));
 
         if (currentStillValid) {
             this.selectPlan(this.selectedPlanId);

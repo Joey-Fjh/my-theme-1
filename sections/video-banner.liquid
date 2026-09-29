@@ -59,6 +59,7 @@
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
     "
+    data-module-id="motion-reveal"
     x-data="motionRevealSection()"
     data-motion-section
 >
@@ -81,7 +82,8 @@
             {%- elsif has_external_video -%}
                 {%- comment -%} External video (YouTube/Vimeo) with click-to-play. {%- endcomment -%}
                 <div
-                    x-data="{ playing: false }"
+                    data-module-id="video-banner-external"
+                    x-data="videoBannerExternal()"
                     class="video-banner__external relative h-full w-full bg-theme-bg/20"
                 >
                     <div x-show="!playing" class="absolute inset-0 z-10">
@@ -102,7 +104,7 @@
                         <button
                             type="button"
                             class="video-banner__play-button"
-                            @click="playing = true"
+                            @click="startPlay()"
                             aria-label="{{ 'accessibility.play_video' | t }}"
                         >
                             <span class="video-banner__play-icon">
@@ -149,7 +151,7 @@
         width: 100%;
         overflow: hidden;
         border-radius: var(--container-radius, 0.75rem);
-        background: rgb(var(--color-background) / 0.15);
+        background: rgba(var(--color-background), 0.15);
     }
 
     .video-banner__play-button {

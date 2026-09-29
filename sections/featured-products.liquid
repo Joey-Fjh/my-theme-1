@@ -8,6 +8,7 @@
         --section-padding-top: {{ section.settings.padding_top }}px;
         --section-padding-bottom: {{ section.settings.padding_bottom }}px;
     "
+    data-module-id="motion-reveal"
     x-data="motionRevealSection()"
     data-motion-section
 >
@@ -28,14 +29,13 @@
                 <button
                     type="button"
                     role="tab"
-                    x-data="{ index: null }"
-                    x-init="index = registerTab($el)"
-                    :id="`featured-products-{{ section.id }}-tab-${index}`"
-                    :aria-controls="`featured-products-{{ section.id }}-panel-${index}`"
-                    @click="setActive(index)"
-                    :tabindex="isFocusable(index) ? 0 : -1"
-                    :aria-selected="isActive(index)"
-                    :class="isActive(index) && 'is-active'"
+                    id="featured-products-{{ section.id }}-tab-{{ forloop.index0 }}"
+                    aria-controls="featured-products-{{ section.id }}-panel-{{ forloop.index0 }}"
+                    x-init="registerTab($el)"
+                    @click="setActive(tabIndexFor($el))"
+                    :tabindex="isFocusable(tabIndexFor($el)) ? 0 : -1"
+                    :aria-selected="isActive(tabIndexFor($el))"
+                    :class="isActive(tabIndexFor($el)) && 'is-active'"
                     class="featured-products__tab tab-nav-item tab-nav-item--opacity border-0 bg-transparent px-0 text-start text-theme-text"
                     {{ block.shopify_attributes }}
                 >
@@ -61,11 +61,10 @@
             {%- for block in section.blocks -%}
                 <div
                     role="tabpanel"
-                    x-data="{ index: null }"
-                    x-init="index = registerPanel($el)"
-                    :id="`featured-products-{{ section.id }}-panel-${index}`"
-                    :aria-labelledby="`featured-products-{{ section.id }}-tab-${index}`"
-                    x-show="isActive(index)"
+                    id="featured-products-{{ section.id }}-panel-{{ forloop.index0 }}"
+                    aria-labelledby="featured-products-{{ section.id }}-tab-{{ forloop.index0 }}"
+                    x-init="registerPanel($el)"
+                    x-show="isActive(panelIndexFor($el))"
                     x-cloak
                     class="flex flex-col items-center gap-8"
                     {{ block.shopify_attributes }}
@@ -186,13 +185,20 @@
             {% endfor %}
         {%- endcapture -%}
 
-        {%- render 'tab-control',
-            initialTabStrategy: 'middle',
-            scroll_mode: tab_scroll_mode,
-            tab_header: tab_header,
-            header_class: tab_header_class,
-            tab_content: tab_content
-        %}
+        <div
+            data-module-id="featured-products"
+            x-data="featuredProducts()"
+            data-swiper-src="{{ 'vendor-swiper.min.js' | asset_url }}"
+            data-swiper-css="{{ 'vendor-swiper.min.css' | asset_url }}"
+        >
+            {%- render 'tab-control',
+                initialTabStrategy: 'middle',
+                scroll_mode: tab_scroll_mode,
+                tab_header: tab_header,
+                header_class: tab_header_class,
+                tab_content: tab_content
+            %}
+        </div>
 
         {%- if section.settings.brand_name != blank -%}
             {% render 'watermark',
@@ -293,67 +299,6 @@
         }
     }
 {% endstylesheet %}
-
-{%- javascript -%}
-    (function () {
-        const Components = window.__Theme__?.Components;
-        if (!Components) return;
-
-        Components.register(
-            'featured-products',
-            {
-                init(el) {
-                    const swipers = [];
-                    const swiperEls = el.querySelectorAll('.swiper');
-
-                    if (swiperEls.length > 0 && typeof Swiper !== 'undefined') {
-                        swiperEls.forEach((swiperEl) => {
-                            const mobileItems =
-                                parseInt(swiperEl.getAttribute('data-mobile-items')) || 2;
-                            const pcItems = parseInt(swiperEl.getAttribute('data-pc-items')) || 4;
-
-                            const options = {
-                                slidesPerView: mobileItems,
-                                spaceBetween: 3,
-                                observer: true,
-                                observeParents: true,
-                                breakpoints: {
-                                    768: {
-                                        slidesPerView: pcItems,
-                                        spaceBetween: 8,
-                                    },
-                                },
-                            };
-
-                            // Link navigation and pagination to the panel's DOM controls
-                            const panel = swiperEl.closest('[role="tabpanel"]');
-                            const nextEl = panel?.querySelector('.swiper-button-next');
-                            const prevEl = panel?.querySelector('.swiper-button-prev');
-                            const paginationEl = panel?.querySelector('.swiper-pagination');
-
-                            if (nextEl && prevEl) {
-                                options.navigation = { nextEl, prevEl };
-                            }
-                            if (paginationEl) {
-                                options.pagination = { el: paginationEl, clickable: true };
-                            }
-
-                            swipers.push(new Swiper(swiperEl, options));
-                        });
-                    }
-
-                    return { swipers };
-                },
-                destroy(el, state) {
-                    if (state?.swipers) {
-                        state.swipers.forEach((s) => s.destroy(true, true));
-                    }
-                },
-            },
-            { lazy: true },
-        );
-    })();
-{%- endjavascript -%}
 
 {% schema %}
 {

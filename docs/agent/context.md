@@ -327,3 +327,72 @@ Run as two prompts and two checkpoint commits (coordinator, 2026-09-29; 32 files
 - `snippets/search-results-tabs.liquid:179` — `tracking-[0.16em]` on results meta (unchanged vs `7a0f6d3`).
 
 **Risks:** Search tab `popstate` sync depends on tab href matching `isUrlMatch`; verify back/forward across product/article/page in phase 5. Collection navigation fetch assumes `collection-navigation-items` section HTML shape unchanged.
+
+**Coordinator checkpoint check, slice 3 (2026-09-29, scope and record only):** the harness `mutation()` helper keeps the slice 2 design (a throwing mutated module is not caught; anchors checked). Two items:
+
+- **Misclassified stop items:** the three `tracking-*` classes (`sections/collection.liquid` twice, `snippets/search-results-tabs.liquid` once) and the `snippets/rotating-badge.liquid` typography classes are rule 4 replacements (nearest tier or token utility), not decisions for the user; they move to slice 5's style cleanup. The `rotating-badge` raw SVG joins the `watermark` one (icon pipeline, `npm.cmd run build:svg`).
+- **Pending:** the scope diff and the `lint:theme` set comparison against the slice 2 set could not run (the coordinator's command runner returned no verdict); they run at the slice 4 checkpoint against the slice 2 set, with slice 3 and slice 4 findings attributed by file.
+
+#### Slice 4 — carousels and display sections
+
+**Status:** executed; committed (see report hash). **Checkpoint:** `3b4f612`.
+
+**New modules:** `before-after-comparison.js`, `countdown-timer.js`, `flip-digit.js`, `media-video.js`, `hover-card.js`, `about-stats-images.js`, `slides-show.js`, `featured-products.js`, `routine-showcase.js`, `testimonial-featured.js`, `icon-with-text.js`, `video-banner-external.js`.
+
+**Also changed:** `assets/carousel-swiper.js` (`loadSwiper` on-demand CSS), `assets/announcement-bar.js`, `assets/product-gallery.js`, `layout/theme.liquid` (import map), `tailwind/tailwind.input.css` (removed bundled Swiper CSS), `assets/tailwind.output.css` (rebuilt), slice 4 Liquid/snippet files (`data-module-id`, removed section `{% javascript %}`, Swiper `data-swiper-src` / `data-swiper-css`).
+
+**Deleted D files:** `assets/alpine.components.product-media.js`, `assets/alpine.components.ui.js`.
+
+**Pre-delete `git grep` (recorded):** product-media gate lists `sections/before-after-comparison.liquid`, `snippets/media-video.liquid`, `snippets/image-lightbox.liquid`, `snippets/image-magnifier.liquid`, `snippets/product-gallery.liquid`, `snippets/product-media-modal.liquid` — each mount uses `data-module-id` on the new module (or P3 modules for gallery/lightbox). UI gate lists all prior `countdownTimer` / `flipDigit` / `motionRevealSection` / `tabControl` mounts; slice 4 roots now declare matching `data-module-id`. No mount relies on the D-file script.
+
+**Ported members (theme source → module):**
+
+| Module | Members | Theme source |
+| --- | --- | --- |
+| `beforeAfterComparison` | drag/keyboard, clamp, sweep animation, document listeners | `assets/alpine.components.product-media.js` (beforeAfterComparison) |
+| `countdownTimer` | tick, expiry, `clear`/`destroy` | `assets/alpine.components.ui.js` (countdownTimer) |
+| `flipDigit` | `updateDigit`, flip layers | `assets/alpine.components.ui.js` (flipDigit) |
+| `mediaVideo` | play/pause/mute, `_pauseOthers`, IntersectionObserver out-of-view pause | `assets/alpine.components.product-media.js` (mediaVideo) + slice 4 visibility guard |
+| `slidesShow` | fade Swiper, ARIA sync, keyboard arrows | `sections/slides-show.liquid` `{% javascript %}` |
+| `featuredProducts` | per-tab Swipers, nav/pagination | `sections/featured-products.liquid` `{% javascript %}` |
+| `routineShowcase` | responsive create/destroy via `matchMedia` | `sections/routine-showcase.liquid` `{% javascript %}` |
+| `testimonialFeatured` | autoplay + reduced motion | `sections/testimonial-featured.liquid` `{% javascript %}` |
+| `iconWithText` | conditional carousel + pagination | `sections/icon-with-text.liquid` `{% javascript %}` |
+| `hoverCard` | hover/focus preview state | inline `{ hover: false }` in scroll-categories / routine-showcase |
+| `aboutStatsImages` | dual-image desktop toggle | inline `{ activeImage }` in about-stats |
+| `videoBannerExternal` | click-to-play embed | inline `{ playing }` in video-banner |
+| `carousel-swiper` | `loadSwiper` CSS+JS once per URL | phase 3C + slice 4 decision |
+
+**Style (rule 4):**
+
+| File | Old | New |
+| --- | --- | --- |
+| `sections/testimonial-featured.liquid` | `body-3xl font-bold` | `heading-2xl` (author + card title) |
+| `sections/video-banner.liquid` | `rgb(var(--color-background) / 0.15)` | `rgba(var(--color-background), 0.15)` |
+| `snippets/grid-feature-card.liquid` | `body-lg font-medium` | `body-lg` |
+| `sections/icon-with-text.liquid` | `body-xl font-medium` (carousel branch) | `body-xl` |
+
+**Validators (checkpoint `3b4f612` → HEAD):**
+
+| Check | Result |
+| --- | --- |
+| `lint:theme` | **112** findings total (was **156** at slice 3 end); **0** in slice 4 Liquid/snippets and new/changed slice 4 modules |
+| `lint:compat` | pass |
+| `scan:compat` | pass |
+| `lint:liquid-syntax` | pass |
+| `lint:i18n` | **2** pre-existing (`sections/article.liquid`, `sections/newsletter-overlay.liquid`); slice 4 `before-after-comparison` schema defaults fixed |
+| `test:theme-check` | **0** warnings |
+| `prettier --check` | pass on changed files except generated `assets/tailwind.output.css` |
+
+**Harness:** `C:\Users\admin\AppData\Local\Temp\phase4-slice4-harness.mjs` — **14/14** pass. Mutations: before-after **caught**; countdown/flip **caught**; media video **caught**; slides-show **caught**; featured-products **caught**; routine-showcase **caught**; testimonial-featured **caught**; icon-with-text **caught**; loadSwiper CSS **caught**. None **not caught**.
+
+**Guards:** `window.__Theme__` / `window.Alpine` only in remaining D files, vendor, and `alpine.adapter.js` bridge (unchanged allowance).
+
+**Merchant configuration:** section types and schema setting IDs for changed sections unchanged vs `3b4f612`; only default locale strings added for before/after labels.
+
+**Browser (phase 5):** hero slides fade + keyboard; featured-products tab carousels; routine showcase vertical/horizontal Swiper; testimonial autoplay + reduced motion; icon-with-text carousel; promotion countdown + flip digits; before/after drag; hosted/external video banner; scroll-categories hover preview; about-stats dual image (CAP-15 / display sections).
+
+**Stop items:** none.
+
+**Risks:** `mediaVideo` IntersectionObserver pauses when off-screen (verify with multiple players). `routine-showcase.js` rapid breakpoint changes may race async `createSwiper`. Featured-products initializes all tab Swipers when slider mode is on (parity with prior `Components.register`).
+
