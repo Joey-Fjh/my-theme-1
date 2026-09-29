@@ -72,4 +72,53 @@ Authorized by the user on 2026-09-29 ("继续干吧"), for phase 4 slices 0–5,
 
 #### Slice 0 — shared UI (dialog, toast, motion reveal)
 
-Not started.
+**Status:** executed; checkpoint committed.
+
+**Checkpoint:** `c1e4640` → slice commit (see report hash).
+
+**Changed:** `assets/base.js`, `assets/dialog.js`, `assets/dialog-root.js`, `assets/dialog-motion.js` (ESM), `assets/drawer-motion.js` (ESM), `assets/toast.js`, `assets/toast-container.js`, `assets/motion-reveal.js`, `assets/image-lightbox.js`, `layout/theme.liquid`, `snippets/ui-dialog.liquid`, `snippets/ui-toast.liquid`, `docs/agent/context.md`.
+
+**Deleted D files:** `assets/alpine.store.dialog.js`, `assets/alpine.store.toast.js`. `assets/dialog-motion.js` and `assets/drawer-motion.js` retained as destination ESM modules (converted in place, not removed).
+
+**Pre-delete `git grep` (recorded):**
+
+- `alpine.store.dialog.js`: lists 9 Liquid files using `$store.dialog` (expected; store now from `createDialogStore` in `base.js`).
+- `alpine.store.toast.js`: `sections/main-page-contact.liquid`, `snippets/ui-toast.liquid`.
+- `dialogMotion` / `drawerMotion` x-data mounts: none.
+
+**Ported members (theme source → module):**
+
+| Module | Members | Theme source |
+| --- | --- | --- |
+| `dialog.js` | `createDialogStore` → `isOpen`, `isClosing`, `open`, `close`, `forceClose`, `refreshOpenContent`, focus trap helpers | `assets/alpine.store.dialog.js` (full store) |
+| `dialog-motion.js` | `shouldReduceMotion`, `hasMotion`, `lockScroll`, `unlockScroll`, `playEnter`, `playExit`, `getEnterDurationMs`, `getExitDurationMs`, `clearMotionState` | `assets/dialog-motion.js` |
+| `drawer-motion.js` | `shouldReduceMotion`, `hasMotion`, `resolveEdge`, `lockScroll`, `unlockScroll`, `playEnter`, `playExit`, `getEnterDurationMs`, `getExitDurationMs`, `clearMotionState` | `assets/drawer-motion.js` |
+| `toast.js` | `createToastStore` → `configure`, `show`, `remove` | `assets/alpine.store.toast.js` |
+| `toast-container.js` | `toastContainer` `init` | `assets/alpine.components.ui.js:1058` |
+| `motion-reveal.js` | `motionRevealSection` (+ shared registries) | `assets/alpine.components.ui.js:1144–2642` |
+| `image-lightbox.js` | `getDialogMotionAdapter` → `dialog-motion` import | hook at `assets/image-lightbox.js:8` |
+
+**Style (rule 4):** `snippets/ui-toast.liquid` — `border-[rgba(var(--color-foreground),0.08)]` → `border-foreground/10`.
+
+**Validators (checkpoint `c1e4640` → HEAD):**
+
+| Check | Result |
+| --- | --- |
+| `lint:theme` | 320 → **319** findings (slice snippet files **0**); sets compared without line numbers |
+| `lint:compat` | pass |
+| `lint:liquid-syntax` | pass |
+| `lint:i18n` | no new findings in slice files (repo pre-existing unchanged) |
+| `test:theme-check` | 3 warnings (pre-existing; `ui-dialog` optional params) |
+| `prettier --check` | pass on changed files |
+
+**Harness:** `C:\Users\admin\AppData\Local\Temp\phase4-slice0-harness.mjs` — **14/14** pass. Mutations caught: dialog store (`active = cleanId` noop), dialog motion (`hasMotion` false), toast (`push` removed), toast container (`defaultDuration` broken), motion reveal (`motionEnabled` gate inverted), lightbox (`return undefined`).
+
+**Guards:** no `window.__Theme__` / `window.Alpine` / forbidden DOM patterns in new slice modules.
+
+**Merchant configuration:** slice Liquid unchanged schema IDs (`ui-dialog`, `ui-toast`, `link` snippets only).
+
+**Browser (phase 5):** dialog open/close + focus, drawer motion, toast show/dismiss + Theme Editor preview, motion reveal with `motion_enabled` / `reveal_behavior`, product lightbox motion.
+
+**Stop items:** none.
+
+**Risks:** `motion-reveal.js` is a large generated port; later slices should add `data-module-id="motion-reveal"` on section roots (currently eager-loaded from `base.js` for parity with pre-migration mounts).

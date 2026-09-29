@@ -1,12 +1,9 @@
 import { define } from 'alpine-adapter';
 import { useDisposable } from 'utils';
+import * as DialogMotion from 'dialog-motion';
 
-/**
- * Slice 0 dialog motion: return the dialog motion adapter when the slice lands.
- * Until then this stays undefined and the no-motion open/close path runs.
- */
 function getDialogMotionAdapter() {
-    return undefined;
+    return DialogMotion;
 }
 
 define('imageLightbox', () => ({

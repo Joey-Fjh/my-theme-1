@@ -1,42 +1,36 @@
-(function () {
-    'use strict';
+import * as DialogMotion from './dialog-motion.js';
+import * as DrawerMotion from './drawer-motion.js';
 
-    window.__Theme__ = window.__Theme__ || {};
-    window.__Theme__.AlpineStoreGroups = window.__Theme__.AlpineStoreGroups || {};
-
-    const StoreGroups = window.__Theme__.AlpineStoreGroups;
-    const DialogMotion = () => window.__Theme__.DialogMotion;
-    const DrawerMotion = () => window.__Theme__.DrawerMotion;
-
+/**
+ * Global dialog layer store (modal and drawer shells).
+ * @see assets/alpine.store.dialog.js (theme source)
+ */
+export function createDialogStore() {
     function getDialogMotion(root) {
         if (!root) return null;
 
-        const drawerMotion = DrawerMotion();
-        if (drawerMotion && drawerMotion.hasMotion(root)) {
-            return drawerMotion;
+        if (DrawerMotion.hasMotion(root)) {
+            return DrawerMotion;
         }
 
-        const dialogMotion = DialogMotion();
-        if (dialogMotion && dialogMotion.hasMotion(root)) {
-            return dialogMotion;
+        if (DialogMotion.hasMotion(root)) {
+            return DialogMotion;
         }
 
         return null;
     }
 
     function lockPageScroll() {
-        const motion = DialogMotion();
-        if (motion && typeof motion.lockScroll === 'function') {
-            motion.lockScroll();
+        if (typeof DialogMotion.lockScroll === 'function') {
+            DialogMotion.lockScroll();
             return;
         }
         document.body.style.overflow = 'hidden';
     }
 
     function unlockPageScroll() {
-        const motion = DialogMotion();
-        if (motion && typeof motion.unlockScroll === 'function') {
-            motion.unlockScroll();
+        if (typeof DialogMotion.unlockScroll === 'function') {
+            DialogMotion.unlockScroll();
             return;
         }
         document.body.style.overflow = '';
@@ -99,7 +93,7 @@
         motion.clearMotionState(target, backdrop);
     }
 
-    StoreGroups.dialog = {
+    return {
         active: null,
         closing: null,
         _returnFocusTo: null,
@@ -116,10 +110,6 @@
             return Boolean(cleanId) && this.closing === cleanId;
         },
 
-        /**
-         * Drop another dialog without exit animation so scroll-lock accounting stays balanced
-         * when open() replaces the active layer (e.g. quick view → cart drawer).
-         */
         _dismissReplacedDialog(id) {
             const cleanId = normalizeDialogId(id);
             if (!cleanId) return;
@@ -225,11 +215,6 @@
             finish();
         },
 
-        /**
-         * Immediate cleanup when dialog DOM was removed or replaced out from under the store
-         * (e.g. SectionRefresher on search type switches). Does not animate or move focus.
-         * Invalidates any in-flight close animation finish callback.
-         */
         forceClose(id) {
             const cleanId = normalizeDialogId(id);
             if (!cleanId) return;
@@ -243,11 +228,6 @@
             unlockPageScroll();
         },
 
-        /**
-         * After open-dialog content was refreshed in place: retarget return focus and
-         * restore focus inside the live panel. No-ops if the dialog is not still open
-         * (including when the user has already started closing it).
-         */
         refreshOpenContent(id, { returnFocusTo = null, focusElement = null } = {}) {
             const cleanId = normalizeDialogId(id);
             if (!cleanId || this.active !== cleanId || this.closing === cleanId) return false;
@@ -341,4 +321,4 @@
             }
         },
     };
-})();
+}

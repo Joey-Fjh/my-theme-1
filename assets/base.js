@@ -3,6 +3,9 @@ import ThemeEvents from 'events';
 import * as adapter from 'alpine-adapter';
 import { createCartContract } from 'cart-contract';
 import { createCartUiStore } from './alpine.store.cart.js';
+import { createDialogStore } from './dialog.js';
+import { createToastStore } from './toast.js';
+import './motion-reveal.js';
 
 /**
  * Coalesce repeated calls into one animation frame.
@@ -357,6 +360,8 @@ function setupStores() {
 
     contract.hydrate();
     adapter.store('cart', cartStore);
+    adapter.store('dialog', createDialogStore());
+    adapter.store('toast', createToastStore());
 }
 
 function main() {

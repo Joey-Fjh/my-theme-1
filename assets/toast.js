@@ -1,12 +1,9 @@
-(function () {
-    'use strict';
-
-    window.__Theme__ = window.__Theme__ || {};
-    window.__Theme__.AlpineStoreGroups = window.__Theme__.AlpineStoreGroups || {};
-
-    const StoreGroups = window.__Theme__.AlpineStoreGroups;
-
-    StoreGroups.toast = {
+/**
+ * Toast notification store.
+ * @see assets/alpine.store.toast.js (theme source)
+ */
+export function createToastStore() {
+    return {
         messages: [],
         config: {
             defaultDuration: 3000,
@@ -51,4 +48,4 @@
             this.messages = this.messages.filter((msg) => msg.id !== id);
         },
     };
-})();
+}
