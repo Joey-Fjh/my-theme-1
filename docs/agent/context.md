@@ -409,7 +409,77 @@ Run as two prompts and two checkpoint commits (coordinator, 2026-09-29). Startin
 - **5a markup and modules:** the slice 5 sections (`404`, `article`, `blog`, `footer`, `main-page-about`, `main-page-contact`, `newsletter-banner`, `newsletter-overlay`, `password-footer`, `password-header`, `password`); modules `newsletterBanner`, `newsletterOverlay`, `sectionPagination` (skeleton `assets/section-pagination.js` as base); the six remaining D files (`assets/alpine.components.js`, whose gate was phase 3 and which was never deleted, `alpine.components.overlays.js`, `alpine.components.pagination.js`, `alpine.components.registry.js`, `alpine.store.js`, `alpine.store.registry.js`); the Liquid findings earlier slices left (`snippets/search-predictive-panel.liquid` 14, a slice 3 file reported as clean; `snippets/rotating-badge.liquid` 4; `sections/collection.liquid` 3; `snippets/search-results-tabs.liquid` 1; `snippets/buy-buttons.liquid` 2 and `snippets/product-variant-picker.liquid` 2, held by 3C look preservation and now rule 4 replacements; the `watermark` and `rotating-badge` raw SVGs through the icon pipeline); `lint:i18n` to zero; the `loadSwiper` script cache keyed by script URL alone.
 - **5b CSS and phase exit:** the 3B CSS debt (board Evidence: namespace resets, withheld skeleton rules), the findings in `tailwind/*.css` and `assets/gift-card.css`, the theme-only validator exception list proposed for the user (not applied), and the phase exit gates (`npm.cmd run lint`, `npm.cmd test`).
 
-5a: **executed** (commit below). 5b: pending.
+5a: **executed** (commit `1984a10`). 5b: **executed** (commit below).
+
+#### 5b — CSS debt, namespace resets, exception proposal, phase exit gates
+
+**Outcome:** Cleared **52** `lint:theme` findings in `tailwind/*.css` (45) and `assets/gift-card.css` (7). Remaining **4** match the proposed validator exceptions (watermark + rotating-badge). Adopted `--ease-*` and `--animate-*` namespace resets; four other resets still break `build:tw`. Withheld skeleton base/gift-card rules not adopted (computed-style conflicts unchanged from 3B). Rebuilt `assets/tailwind.output.css`.
+
+**Checkpoint:** `867b386` → this commit.
+
+**Color / typography replacements (summary):**
+
+| Area | Change |
+| --- | --- |
+| `tailwind/tailwind.components.css`, `.elements.css`, `.snippets.css` | All `rgb(var(--color-*) / α)` → `rgba(var(--color-*), α)` (21 declarations: scrollbars, tab-nav, variant swatches, filters, pagination hovers, etc.) |
+| `tailwind/tailwind.components.css` | `font-weight: 500/700` → `var(--font-body-weight)` / `var(--font-heading-weight)`; RTE `line-height: 1.25` → `var(--font-body-line-height)`; monospace stack → `var(--font-body-family)`; pagination `var(--pagination-font-size)` → `var(--font-pagination-size)` |
+| `tailwind/tailwind.elements.css` | Button `line-height: 1.2` → `var(--font-body-line-height)`; badge `line-height: 1` → `inherit`; badge sizes `0.65–0.75rem` → `em` |
+| `tailwind/tailwind.typography.css` | `heading-size-custom` / `body-size-custom` PC rules single-line `calc(... * var(--font-heading-scale|body-scale))` |
+| `tailwind/tailwind.utilities.css` | `sup-badge` → `calc(var(--font-body-scale) * 0.75em)` |
+| `tailwind/tailwind.snippets.css` | `--font-scrolling-icon-title-size`; `--font-watermark-marquee-size`; flip-digit ratio includes `var(--font-body-scale)`; swatch strike `rgba(var(--color-foreground), 0.7)` + `rgb(var(--color-background))` |
+| `snippets/css-variables.liquid` | `--font-body-weight`; `--font-pagination-size` from settings + body scale |
+| `assets/gift-card.css` | `font-weight: 500` → `var(--font-body-weight)`; card/visual/QR whites → `rgba(var(--color-primary-button-text), α)` / `rgb(var(--color-primary-button-text))`; print `background: white` → `rgb(var(--color-primary-button-text))` |
+
+**Namespace resets (`tailwind/tailwind.input.css`):**
+
+| Reset | Result |
+| --- | --- |
+| `--ease-*: initial` | **Adopted** — `npm.cmd run build:tw` pass; `animate-spin-slow` / custom easing utilities still in output |
+| `--animate-*: initial` | **Adopted** — build pass |
+| `--font-weight-*: initial` | **Not adopted** — build error: `Cannot apply unknown utility class font-medium` (and similar weight utilities in `@apply`) |
+| `--leading-*: initial` | **Not adopted** — build fails (Tailwind `@apply` uses default leading utilities) |
+| `--tracking-*: initial` | **Not adopted** — build fails |
+| `--color-*: initial` | **Not adopted** — build fails; requires replacing default color `@apply`s across theme CSS |
+
+**Withheld skeleton rules (not adopted — stop items for design/section work):**
+
+| Rule | Evidence |
+| --- | --- |
+| `assets/base.css` `.section` padding/gradient | 43/45 section schemas use `"class": "section"` on Shopify wrapper → would add horizontal padding + gradient site-wide |
+| `assets/base.css` `body > main { flex-grow: 1 }` | Computed `flex-grow` on `<main>` changes 0 → 1 (grid body; no visible shift today) |
+| `assets/base.css` global `:focus-visible` outline | Would override component-level rings in `tailwind.elements.css` / components |
+| `assets/gift-card.css` `.gift-card-page main` | Specificity 0,1,1 beats `.gift-card-page__main` → max-width/padding change on gift card |
+| `assets/gift-card.css` `.gift-card-page [data-gift-card-qr] svg` | Would force 8rem vs theme `.gift-card-page__qr svg` 9rem at `>= 48rem` |
+
+**Validator exception list (proposal only — not wired):**
+
+1. **Motion exclusions** — Files/layers using `prefers-reduced-motion`, `data-motion-*`, and `tailwind/tailwind.animates.css` choreography; allow literal timing where tied to `--motion-duration-*` / merchant motion settings (`docs/project.md` motion contract). Form: path allowlist or `CHECK.SETTINGS_CHAIN_CSS_*` suppress with reason `motion-exclusion`.
+2. **WebKit guards** — `.category-grid__item { width: 100% }` (and related grid border rules); `summary::-webkit-details-marker { display: none }` in elements/snippets. Form: allowlist selectors under `tailwind/tailwind.snippets.css` / `tailwind.elements.css` with check `browser-guard`.
+3. **Newsletter scoping** — Section-local `-webkit-backdrop-filter` / `-webkit-mask-image` on newsletter banner blur (`sections/newsletter-banner.liquid` + scoped CSS). Form: allow `settings-chain-css` on those declaration lines with reason `newsletter-scoping`.
+4. **`snippets/watermark.liquid:182`** — `CHECK.RAW_SVG` (or equivalent raw SVG rule); merchant/dynamic SVG text; exception: `{ file: 'snippets/watermark.liquid', check: 'raw-svg', reason: 'dynamic merchant watermark' }`.
+5. **`snippets/rotating-badge.liquid:55,91`** — `CHECK.RAW_SVG` + `CHECK.SETTINGS_CHAIN_LIQUID` for `leading-none`, `text-[calc(...)]`; Liquid-driven badge copy/path; exception per finding with reason `dynamic rotating badge`.
+
+**Validators (exact):**
+
+| Command | Result |
+| --- | --- |
+| `lint:theme` | **4** — only `snippets/rotating-badge.liquid` (×3), `snippets/watermark.liquid` (×1) |
+| `lint:compat` | pass (incl. stylelint) |
+| `scan:compat` | pass |
+| `lint:liquid-syntax` | pass |
+| `lint:i18n` | `lint-i18n.js` pass; **`lint-i18n-unused.js` exit 1 — 34 unused keys** (pre-existing, not introduced in 5b) |
+| `test:theme-check` | **0** warnings |
+| `lint:doc-paths` | pass |
+| `prettier --check` | pass on changed sources (excl. generated `assets/tailwind.output.css`) |
+| **`npm.cmd run lint`** | **fail** — `lint:i18n-unused` (34 keys) then stops; `lint:theme` would fail on the 4 exception rows if reached after i18n fix |
+| **`npm.cmd run test`** | **pass** — theme-architecture **105/105**, section-stylesheet **3/3**, doc-paths **7/7**, theme-check **0** warnings |
+
+**Browser (phase 5):** focus-visible rings on buttons/inputs/pagination; color schemes on section frames; typography tiers after token chain fixes; gift card page surfaces/QR; WebKit category-grid width + custom summary markers.
+
+**Stop items:** withheld skeleton rules (table above); watermark/rotating-badge markup exceptions; four namespace resets until default Tailwind utilities are removed from `@apply`.
+
+**Risks:** `--font-pagination-size` on `:root` replaces per-nav inline `--pagination-font-size` for CSS (inline radius unchanged); gift card frosted surfaces now use `--color-primary-button-text` triplet instead of pure white literals (slight tint shift).
+
 
 #### 5a — remaining sections, D-file removal, markup cleanup
 
