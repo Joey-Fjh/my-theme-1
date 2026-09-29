@@ -19,6 +19,7 @@
 <div
     class="product-card-shell {{ predictive_card_class }}"
     x-data="cardGallery"
+    data-module-id="card-gallery"
 >
     <div class="product-card-shell__meta">
         <span
@@ -90,13 +91,16 @@
                         x-show="activeImageIndex === imageIndex"
                     >
                         <div class="product-card-shell__media-frame {{ predictive_frame_class }}">
-                            <img
-                                class="product-card-shell__image"
-                                :src="image.url"
-                                :alt="image.alt || product.title"
-                                width="120"
-                                height="120"
-                            >
+                            {% render 'image',
+                                width: 120,
+                                height: 120,
+                                fit: 'contain',
+                                mode: 'frame',
+                                img_class: 'product-card-shell__image',
+                                placeholder_key: 'product-1',
+                                motion_reveal: false,
+                                extra_attributes: 'x-bind:src="image.url" x-bind:alt="image.alt || product.title"'
+                            %}
                         </div>
                     </div>
                 </template>
@@ -104,13 +108,16 @@
 
             <template x-if="!product.images || !product.images.length">
                 <div class="product-card-shell__media-frame {{ predictive_frame_class }}">
-                    <img
-                        class="product-card-shell__image"
-                        :src="product.image"
-                        :alt="product.title"
-                        width="120"
-                        height="120"
-                    >
+                    {% render 'image',
+                        width: 120,
+                        height: 120,
+                        fit: 'contain',
+                        mode: 'frame',
+                        img_class: 'product-card-shell__image',
+                        placeholder_key: 'product-1',
+                        motion_reveal: false,
+                        extra_attributes: 'x-bind:src="product.image" x-bind:alt="product.title"'
+                    %}
                 </div>
             </template>
         </div>

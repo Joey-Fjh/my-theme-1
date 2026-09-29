@@ -1,104 +1,12 @@
 import { define } from 'alpine-adapter';
 import { useDisposable } from 'utils';
+import { createCardGalleryState } from './card-gallery.js';
 
 const TOUCH_TOGGLE_SCROLL_GUARD_MS = 400;
 let productCardTouchScrollAt = 0;
 
 function shouldIgnoreTouchToggleAfterScroll() {
     return Date.now() - productCardTouchScrollAt < TOUCH_TOGGLE_SCROLL_GUARD_MS;
-}
-
-function createCardGalleryState(initial = {}) {
-    let imageCount = Math.max(1, Number(initial.imageCount) || 1);
-    let enableImageNavigation = initial.enableImageNavigation !== false;
-    let activeImageIndex = 0;
-
-    return {
-        get imageCount() {
-            return imageCount;
-        },
-        set imageCount(value) {
-            imageCount = Math.max(1, Number(value) || 1);
-        },
-        get enableImageNavigation() {
-            return enableImageNavigation;
-        },
-        set enableImageNavigation(value) {
-            enableImageNavigation = value !== false;
-        },
-        get activeImageIndex() {
-            return activeImageIndex;
-        },
-        set activeImageIndex(value) {
-            activeImageIndex = value;
-        },
-
-        _hydrateFromDataset(el) {
-            const dataset = el?.dataset || {};
-            if (dataset.imageCount !== undefined && dataset.imageCount !== '') {
-                imageCount = Math.max(1, Number(dataset.imageCount) || 1);
-            }
-            if (
-                dataset.enableImageNavigation !== undefined &&
-                dataset.enableImageNavigation !== ''
-            ) {
-                enableImageNavigation = dataset.enableImageNavigation !== 'false';
-            }
-        },
-
-        _syncNavigationState(el) {
-            this._hydrateFromDataset(el);
-            const slideCount = el?.querySelectorAll?.(
-                '[data-product-card-carousel-slide][data-index]',
-            ).length;
-            if (slideCount > 1) {
-                imageCount = Math.max(imageCount, slideCount);
-            }
-        },
-
-        get hasMultipleImages() {
-            return imageCount > 1;
-        },
-
-        get canNavigateImages() {
-            return enableImageNavigation && imageCount > 1;
-        },
-
-        get canPaginateImages() {
-            return this.canNavigateImages;
-        },
-
-        get imageNavigationLabel() {
-            return `${activeImageIndex + 1}/${imageCount}`;
-        },
-
-        get paginationLabel() {
-            return this.imageNavigationLabel;
-        },
-
-        setActiveImage(index, el) {
-            this._syncNavigationState(el);
-            if (!this.canNavigateImages) return;
-            activeImageIndex = this._normalizeIndex(index);
-        },
-
-        nextImage(el) {
-            this._syncNavigationState(el);
-            if (!this.canNavigateImages) return;
-            this.setActiveImage(activeImageIndex + 1, el);
-        },
-
-        prevImage(el) {
-            this._syncNavigationState(el);
-            if (!this.canNavigateImages) return;
-            this.setActiveImage(activeImageIndex - 1, el);
-        },
-
-        _normalizeIndex(index) {
-            const total = imageCount;
-            return ((Number(index) % total) + total) % total;
-        },
-    };
 }
 
 define('productCard', (options = {}) => {

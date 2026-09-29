@@ -7,8 +7,10 @@
     {%- capture drawer_content -%}
         <div
             class="flex h-full flex-col"
-            data-search-limit="{{ section.settings.search_result_limit | json }}"
             x-data="predictiveSearch()"
+            data-module-id="predictive-search"
+            data-predictive-search-root
+            data-search-limit="{{ section.settings.search_result_limit | json }}"
             data-predictive-search-enabled="{{ settings.predictive_search_enabled }}"
             data-search-url="{{ routes.search_url | escape }}"
             data-predictive-search-url="{{ routes.predictive_search_url | escape }}"
@@ -49,6 +51,7 @@
                             @input="onInput($event.target.value)"
                             @compositionend="onInput($event.target.value)"
                             @focus="openPanel()"
+                            @keydown="onSearchInputKeydown($event)"
                             @keydown.enter.prevent="performSearch()"
                         >
                     </div>
@@ -86,13 +89,12 @@
                             role="tab"
                             id="search-tab-products-{{ section.id }}"
                             aria-controls="search-panel-products-{{ section.id }}"
-                            x-data="{ index: null }"
-                            x-init="index = registerTab($el)"
-                            @click="setActive(index); activeTab = 'products'"
-                            :aria-selected="isActive(index)"
-                            :tabindex="isFocusable(index) ? 0 : -1"
+                            x-init="registerTab($el)"
+                            @click="setSearchTab(tabIndexFor($el), 'products')"
+                            :aria-selected="isActive(tabIndexFor($el))"
+                            :tabindex="isFocusable(tabIndexFor($el)) ? 0 : -1"
                             class="search-overlay__tab tab-nav-item tab-nav-item--search tab-nav-item--search-border-token"
-                            :class="{ 'is-active': isActive(index) }"
+                            :class="{ 'is-active': isActive(tabIndexFor($el)) }"
                         >
                             {{ 'search.products' | t }}
                         </button>
@@ -102,13 +104,12 @@
                             role="tab"
                             id="search-tab-articles-{{ section.id }}"
                             aria-controls="search-panel-articles-{{ section.id }}"
-                            x-data="{ index: null }"
-                            x-init="index = registerTab($el)"
-                            @click="setActive(index); activeTab = 'articles'"
-                            :aria-selected="isActive(index)"
-                            :tabindex="isFocusable(index) ? 0 : -1"
+                            x-init="registerTab($el)"
+                            @click="setSearchTab(tabIndexFor($el), 'articles')"
+                            :aria-selected="isActive(tabIndexFor($el))"
+                            :tabindex="isFocusable(tabIndexFor($el)) ? 0 : -1"
                             class="search-overlay__tab tab-nav-item tab-nav-item--search tab-nav-item--search-border-token"
-                            :class="{ 'is-active': isActive(index) }"
+                            :class="{ 'is-active': isActive(tabIndexFor($el)) }"
                         >
                             {{ 'search.articles' | t }}
                         </button>
@@ -118,13 +119,12 @@
                             role="tab"
                             id="search-tab-pages-{{ section.id }}"
                             aria-controls="search-panel-pages-{{ section.id }}"
-                            x-data="{ index: null }"
-                            x-init="index = registerTab($el)"
-                            @click="setActive(index); activeTab = 'pages'"
-                            :aria-selected="isActive(index)"
-                            :tabindex="isFocusable(index) ? 0 : -1"
+                            x-init="registerTab($el)"
+                            @click="setSearchTab(tabIndexFor($el), 'pages')"
+                            :aria-selected="isActive(tabIndexFor($el))"
+                            :tabindex="isFocusable(tabIndexFor($el)) ? 0 : -1"
                             class="search-overlay__tab tab-nav-item tab-nav-item--search tab-nav-item--search-border-token"
-                            :class="{ 'is-active': isActive(index) }"
+                            :class="{ 'is-active': isActive(tabIndexFor($el)) }"
                         >
                             {{ 'search.pages' | t }}
                         </button>
@@ -135,8 +135,7 @@
                             role="tabpanel"
                             id="search-panel-products-{{ section.id }}"
                             aria-labelledby="search-tab-products-{{ section.id }}"
-                            x-data="{ index: null }"
-                            x-init="index = registerPanel($el)"
+                            x-init="registerPanel($el)"
                             x-show="activeTab === 'products'"
                             class="h-full overflow-y-auto pe-1"
                         >
@@ -152,8 +151,7 @@
                             role="tabpanel"
                             id="search-panel-articles-{{ section.id }}"
                             aria-labelledby="search-tab-articles-{{ section.id }}"
-                            x-data="{ index: null }"
-                            x-init="index = registerPanel($el)"
+                            x-init="registerPanel($el)"
                             x-show="activeTab === 'articles'"
                             class="h-full overflow-y-auto pe-1"
                         >
@@ -171,8 +169,7 @@
                             role="tabpanel"
                             id="search-panel-pages-{{ section.id }}"
                             aria-labelledby="search-tab-pages-{{ section.id }}"
-                            x-data="{ index: null }"
-                            x-init="index = registerPanel($el)"
+                            x-init="registerPanel($el)"
                             x-show="activeTab === 'pages'"
                             class="h-full overflow-y-auto pe-1"
                         >
@@ -293,7 +290,7 @@
     }
 
     .search-overlay__tab:not(:hover):not(:focus-visible):not(.is-active) {
-        color: rgb(var(--color-foreground) / 0.5);
+        color: rgba(var(--color-foreground), 0.5);
     }
 {% endstylesheet %}
 

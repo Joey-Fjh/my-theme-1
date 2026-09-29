@@ -23,6 +23,12 @@ define('dropdown', () => {
             this.onHeaderEnter();
         },
 
+        onSuperMenuPanelMouseEnter() {
+            this.cancelHoverClose();
+            this.cancelHoverOpen();
+            this.onHeaderEnter();
+        },
+
         onNestedDropdownPanelMouseEnter() {
             this.cancelHoverClose();
             this.onHeaderEnter();

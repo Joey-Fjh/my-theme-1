@@ -210,3 +210,62 @@ Run as two prompts and two checkpoint commits (coordinator, 2026-09-29; 32 files
 **Stop items:** none.
 
 **Coordinator checkpoint check, 1b (2026-09-29, scope and record only):** scope clean (`git diff --stat f99c9bf f38b2a5`: no record file other than this one, no merchant JSON; worktree clean). `lint:theme` **238**; against the coordinator's own 255-finding set at `9aed579` (sets without line numbers), **no new finding**. The executor's saved baseline (`lint-before-1b.txt`) cannot be compared: PowerShell wrapped its long lines, so later prompts leave the baseline comparison to the coordinator. The slice 0 `JS_DOCUMENT_OUTLET` findings in `assets/dialog.js` and `assets/motion-reveal.js` are cleared. Open for the phase review: the 1b harness checks mutation anchors, but its `mutation()` helper still records a mutation as caught when the mutated module throws (the `catch` branch sets `caught` to true), against check 4; 15 assertions and one mutation per behavior group otherwise.
+
+#### Slice 2 — navigation, search entry, localization
+
+**Status:** executed; checkpoint committed (see report hash).
+
+**Checkpoint:** `d526e4d` → slice commit.
+
+**New modules:** `sticky-header.js`, `mobile-menu-drawer.js`, `predictive-search.js`, `card-gallery.js`, `tab-control.js`, `announcement-bar.js`.
+
+**Also changed:** `layout/theme.liquid` (import map), `assets/dropdown.js` (`onSuperMenuPanelMouseEnter`), `assets/product-card.js` (imports `createCardGalleryState` from `card-gallery.js`), slice 2 Liquid/snippet files (`data-module-id`, lint fixes).
+
+**Deleted D files:** `assets/alpine.components.header.js`, `assets/alpine.components.search.js`, `assets/alpine.components.product-cards.js`.
+
+**Pre-delete `git grep` (recorded):**
+
+- `alpine.components.header.js`: `sections/header.liquid`, `snippets/header-mobile-menu-drawer.liquid` — both carry `data-module-id`.
+- `alpine.components.search.js`: `sections/search-overlay.liquid`, `sections/search.liquid`, `snippets/search-predictive-panel.liquid` (doc only), `snippets/predictive-search-product-card.liquid` — overlay and card have `data-module-id`; **`sections/search.liquid` still mounts `predictiveSearch` without `data-module-id` (slice 3)**; D file removed because ESM module replaces registry; listing page activation completes in slice 3.
+- `alpine.components.product-cards.js`: `snippets/predictive-search-product-card.liquid`, `snippets/product-card.liquid`, `snippets/product-recommendations-section.liquid` — all have `data-module-id`.
+
+**Ported members (theme source → module):**
+
+| Module | Members | Theme source |
+| --- | --- | --- |
+| `stickyHeader` | `init`, `onScroll`, `destroy`, state `lastY`, `isHidden`, `isTop`, `isMenuActive` | `assets/alpine.components.header.js:60–105` |
+| `mobileMenuDrawer` | `init`, `openTop`, `openThirdLevel`, `openThirdLevelFromButton`, `backToSecondLevel` | `assets/alpine.components.header.js:13–57` |
+| `predictiveSearch` | full store from D file + `onSearchInputKeydown` for overlay keyboard | `assets/alpine.components.search.js:13–397` |
+| `cardGallery` | gallery navigation getters/methods + `createCardGalleryState` export | `assets/alpine.components.product-cards.js:34–130` |
+| `tabControl` | full tab control from UI group + `setSearchTab`, `tabIndexFor`, `panelIndexFor` | `assets/alpine.components.ui.js:420–761` |
+| `announcementBar` | Swiper via `carousel-swiper`, ARIA/`inert` sync, editor block select reinit, `destroy` | `sections/announcement-bar.liquid:94–160` (Components.register) |
+| `dropdown` | `onSuperMenuPanelMouseEnter` | `snippets/header-dropdown-super-menu.liquid:64` (panel `@mouseenter`) |
+
+**Style (rule 4):** `sections/search-overlay.liquid` — `rgb(var(--color-foreground) / 0.5)` → `rgba(var(--color-foreground), 0.5)`.
+
+**Validators (checkpoint `d526e4d` → HEAD):**
+
+| Check | Result |
+| --- | --- |
+| `lint:theme` | **238 → 217** findings (slice 2 Liquid/modules **0** except stop item below); coordinator set comparison pending |
+| `lint:compat` | pass |
+| `lint:liquid-syntax` | pass |
+| `lint:i18n` | no new findings; repo pre-existing **4** unchanged |
+| `test:theme-check` | **1** warning (`filters-field` only) |
+| `prettier --check` | pass on changed files after write |
+
+**Harness:** `C:\Users\admin\AppData\Local\Temp\phase4-slice2-harness.mjs` — **24/24** pass. Mutations: sticky header **caught**; mobile menu drawer **caught**; predictive search **caught**; card gallery **caught**; tab control **caught**; announcement bar **caught**; super-menu dropdown **caught**. Exceptions during mutation load recorded as **not caught** (helper fixed per check 4).
+
+**Guards:** no forbidden patterns in new/changed slice modules.
+
+**Merchant configuration:** section types `announcement-bar`, `header`, `search-overlay` and schema IDs unchanged vs `d526e4d`.
+
+**Browser (phase 5):** CAP-03 header/mobile menu/sticky; CAP-04 search overlay Escape and predictive entry; CAP-02 announcement bar; CAP-20 localization in announcement bar; super-menu series tabs; predictive product cards in overlay.
+
+**Stop items:**
+
+- `snippets/watermark.liquid:182` — decorative inline SVG (pre-existing `lint:theme` finding; unchanged markup).
+- `sections/search.liquid` — `predictiveSearch` root gains `data-module-id` in slice 3 (explicit out-of-surface).
+
+**Risks:** Predictive product card media uses `image.liquid` placeholder + `x-bind:src` for Shopify CDN URLs from the predictive API; verify visually in phase 5. `card-gallery.js` exports `createCardGalleryState` for `product-card.js` (shared helper, not a new public Alpine name).
+

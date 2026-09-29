@@ -10,6 +10,7 @@
     class="header-dropdown-super-menu"
     data-desktop-menu-trigger="{{ desktop_menu_trigger }}"
     x-data="dropdown"
+    data-module-id="dropdown"
     @mouseenter="onHeaderEnter()"
     @click.capture="onMenuTriggerClickEvent($event)"
     @mouseover="openOnHoverEvent($event)"
@@ -17,7 +18,7 @@
     @focusin="onHeaderFocusIn()"
     @focusout="onHeaderFocusOut($event)"
     @click.outside="closeAndDeactivate()"
-    @keydown.escape.window="closeAndDeactivate()"
+    @keydown.escape.window="onMenuKeydown($event)"
 >
     {%- assign super_menu_series_layout = section.settings.super_menu_series_layout
         | default: 'left-right'
@@ -61,7 +62,7 @@
                                 color-{{ section.settings.menu_color_scheme }}
                                 surface-component
                             "
-                            @mouseenter="cancelHoverClose(); cancelHoverOpen(); onHeaderEnter()"
+                            @mouseenter="onSuperMenuPanelMouseEnter()"
                         >
                             <div class="panel-motion-shell">
                                 <div class="panel-motion-content">
@@ -160,13 +161,12 @@
                                                             role="tab"
                                                             id="super-tab-{{ section.id }}-{{ link.handle }}-{{ i }}"
                                                             aria-controls="super-panel-{{ section.id }}-{{ link.handle }}-{{ i }}"
-                                                            x-data="{ index: null }"
-                                                            x-init="index = registerTab($el)"
-                                                            @click="setActive(index)"
-                                                            :aria-selected="isActive(index)"
-                                                            :tabindex="isFocusable(index) ? 0 : -1"
+                                                            x-init="registerTab($el)"
+                                                            @click="setActive(tabIndexFor($el))"
+                                                            :aria-selected="isActive(tabIndexFor($el))"
+                                                            :tabindex="isFocusable(tabIndexFor($el)) ? 0 : -1"
                                                             class="header-dropdown-super-menu__tab tab-nav-item tab-nav-item--underline-opacity"
-                                                            :class="{ 'is-active': isActive(index) }"
+                                                            :class="{ 'is-active': isActive(tabIndexFor($el)) }"
                                                         >
                                                             {{ collection_item.title | escape }}
                                                         </button>
@@ -184,14 +184,14 @@
                                                             role="tabpanel"
                                                             id="super-panel-{{ section.id }}-{{ link.handle }}-{{ i }}"
                                                             aria-labelledby="super-tab-{{ section.id }}-{{ link.handle }}-{{ i }}"
-                                                            x-data="{ index: null }"
-                                                            x-init="index = registerPanel($el)"
-                                                            x-show="isActive(index)"
+                                                            x-init="registerPanel($el)"
+                                                            x-show="isActive(panelIndexFor($el))"
                                                             x-cloak
                                                         >
                                                             <div
                                                                 class="no-scrollbar flex items-start gap-3 overflow-x-auto"
                                                                 x-data="dragScroll({ axis: 'x' })"
+                                                                data-module-id="drag-scroll"
                                                             >
                                                                 {% # theme-check-disable-next-line LiquidHTMLSyntaxError %}
                                                                 {%- for product in collection_item.products limit: section.settings.super_series_products_limit -%}
