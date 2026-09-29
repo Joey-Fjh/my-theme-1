@@ -74,7 +74,11 @@ git ls-files -s CLAUDE.md .claude/skills
 
 ### MCP servers
 
-Agents use Shopify Dev MCP and Context7. If an expected MCP is missing, check client configuration, project trust, client restart, Node/npm, and network before falling back to official documentation.
+Agents use Shopify Dev MCP and Context7 for documentation, and Chrome DevTools MCP (`chrome-devtools`) to drive a browser against `shopify theme dev`: console messages, network requests, script evaluation, and performance traces. It needs a local Chrome (stable channel) and starts it with `--isolated`, so every session begins with a clean profile and an empty cache. Each client keeps its own config: `.mcp.json` (Claude Code), `.cursor/mcp.json` (Cursor), and `.codex/config.toml` (Codex); `npm.cmd run doctor:agent` fails when their server lists differ.
+
+A client loads MCP servers when a session starts, so restart it after a config change. Claude Code asks once to approve project servers from `.mcp.json`; Cursor may need the project servers switched on under Settings → MCP.
+
+If an expected MCP is missing, check client configuration, project trust, client restart, Node/npm, and network before falling back to official documentation.
 
 ## Commands
 
@@ -88,7 +92,7 @@ npm.cmd run lint                # Repository lint and format checks
 npm.cmd run test:validators     # Project validator fixture tests
 npm.cmd test                    # Validators, Liquid syntax guard, Theme Check
 npm.cmd run test:theme-check    # Shopify Theme Check only
-npm.cmd run doctor:agent        # Verify CLAUDE.md / .claude/skills symlinks
+npm.cmd run doctor:agent        # Verify CLAUDE.md / .claude/skills symlinks and matching MCP lists
 ```
 
 Use `npm.cmd` for project scripts in this Windows workspace. Default to the smallest relevant validation command while developing; run full `npm.cmd run lint` and `npm.cmd test` before PR, version/release, or Theme Store submission, or when explicitly requested.

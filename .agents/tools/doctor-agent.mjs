@@ -23,8 +23,47 @@ for (const adapter of adapters) {
     }
 }
 
-function formatFailures() {
-    return failures.map((failure) => `- ${failure.path}: ${failure.reason}`).join('\n');
+// Each client keeps its own MCP config format, so the server lists can drift; CLI mode checks they match.
+const mcpConfigs = [
+    { relative: '.mcp.json', format: 'json' },
+    { relative: '.cursor/mcp.json', format: 'json' },
+    { relative: '.codex/config.toml', format: 'toml' },
+];
+
+function readMcpServerNames(config, parseToml) {
+    const text = fs.readFileSync(path.join(repoRoot, config.relative), 'utf8');
+    if (config.format === 'json') {
+        return Object.keys(JSON.parse(text).mcpServers ?? {});
+    }
+    return Object.keys(parseToml(text).mcp_servers ?? {});
+}
+
+function collectMcpFailures(parseToml) {
+    const mcpFailures = [];
+    const namesByConfig = new Map();
+
+    for (const config of mcpConfigs) {
+        try {
+            namesByConfig.set(config.relative, new Set(readMcpServerNames(config, parseToml)));
+        } catch (error) {
+            const reason = error && error.code === 'ENOENT' ? 'missing' : `could not be parsed (${error?.message ?? 'unknown error'})`;
+            mcpFailures.push({ path: config.relative, reason });
+        }
+    }
+
+    const allNames = new Set([...namesByConfig.values()].flatMap((names) => [...names]));
+    for (const [relative, names] of namesByConfig) {
+        const missing = [...allNames].filter((name) => !names.has(name)).sort();
+        if (missing.length > 0) {
+            mcpFailures.push({ path: relative, reason: `missing MCP server(s): ${missing.join(', ')}` });
+        }
+    }
+
+    return mcpFailures;
+}
+
+function formatFailures(list = failures) {
+    return list.map((failure) => `- ${failure.path}: ${failure.reason}`).join('\n');
 }
 
 function buildCliRemediation() {
@@ -67,14 +106,24 @@ Tell the user they must repair the local symlink setup before using this mother 
 Do not copy, synchronise, or replace these adapters with duplicated rules or Skills.`;
 }
 
-if (failures.length === 0) {
-    process.exit(0);
-}
-
 if (hookMode) {
-    process.stdout.write(buildHookRemediation());
+    if (failures.length > 0) process.stdout.write(buildHookRemediation());
     process.exit(0);
 }
 
-console.error(buildCliRemediation());
-process.exit(1);
+// Hook mode exits above, so a session start never depends on installed tooling.
+const { parse: parseToml } = await import('smol-toml');
+const mcpFailures = collectMcpFailures(parseToml);
+
+if (failures.length > 0) console.error(buildCliRemediation());
+
+if (mcpFailures.length > 0) {
+    console.error(`MCP client configuration check failed:
+
+${formatFailures(mcpFailures)}
+
+Declare the same servers in .mcp.json, .cursor/mcp.json, and .codex/config.toml. See README.md ("MCP servers").
+`);
+}
+
+process.exit(failures.length > 0 || mcpFailures.length > 0 ? 1 : 0);
