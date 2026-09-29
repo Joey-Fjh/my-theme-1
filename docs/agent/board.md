@@ -6,7 +6,7 @@ Last updated: 2026-09-29.
 
 ## Open decisions
 
-Active: none. Phase 3 complete; the stop-loss point and the phase 4 review cadence are decided (`docs/project.md`, phase 4). Phase 4 runs from the plan in `docs/agent/context.md`.
+Active: none. Phase 4 complete (`c1e4640..9d6499d`, `docs/project.md`). Next: the phase 5 browser pass by the user.
 
 ## Evidence
 
