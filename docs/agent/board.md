@@ -2,11 +2,11 @@
 
 This board holds only what is not yet decided: the one active decision, evidence that has not become a plan, and deferred ideas. `docs/agent/context.md` holds exactly one accepted plan during execution, or no plan. Recording a plan does not authorize implementation. Project identity, scope, accepted direction, and overall status belong in `docs/project.md`; completed execution history belongs in Git.
 
-Last updated: 2026-09-28.
+Last updated: 2026-09-29.
 
 ## Open decisions
 
-Active: none. 3A (`2a3c331`), 3B (`dcbac9f`), 3C-1 (`099ad3b`) done; 3C-2 is planned next, then 3C-3 and 3D, per `docs/project.md`.
+Active: none. 3C-2 accepted and authorized (2026-09-29); its plan is in `docs/agent/context.md`. 3C-3 and 3D follow, per `docs/project.md`.
 
 Queued (decide before the phase that needs them):
 
@@ -17,7 +17,10 @@ Queued (decide before the phase that needs them):
 
 ## Evidence
 
+- Pre-existing `lint:doc-paths` failure (found 2026-09-29; identical on `HEAD`): `docs/references/architecture/javascript-runtime.md` cites `assets/section-pagination.js` twice, a skeleton module this theme lands in slice 5. The reference belongs to the user-owned harness; fix, ignore marker, or wait for slice 5 is the user's call before the release gate.
+
 - Process calibration from 3B and 3C-1 (2026-09-28): 3B needed three GPT rounds (look checks missed schema classes, then judged visibility instead of computed style); 3C-1 needed four, all on the dropdown Escape path, because the coordinator changed interactive behavior without running it. With browser passes deferred to phase 5, plans that change interactive JavaScript include a runnable harness check (module under stubbed imports and a minimal DOM, with a mutation check) before review, covering the interaction states the markup can reach.
+- Process calibration from 3C-2 (2026-09-29): the executor's harness stubbed `store` as a value captured at import and ran its "mutations" on test objects, so half its checks could not fail; and its `git stash` comparison against `HEAD` reverted `docs/agent/board.md`. Execution prompts now require store stubs read at call time, mutations applied to module source, and `HEAD` comparisons through `git show` or a separate worktree, never stash or checkout.
 
 - CSS debt from batch 3B (2026-09-28), to clear before the phase 4 exit: (1) six skeleton `@theme inline` namespace resets not adopted (`--font-weight-*`, `--leading-*`, `--tracking-*`, `--color-*` break the build because theme CSS `@apply`s default utilities; `--ease-*`, `--animate-*` drop referenced classes); adopt each once the slices remove the default Tailwind classes (`lint:theme` reports them as token-chain bypasses). (2) Skeleton rules withheld because they would change current rendering, each to adopt with the markup that owns it: `.section` (section wrappers), `body > main`, global `:focus-visible` (`assets/base.css`); `.gift-card-page main`, `.gift-card-page [data-gift-card-qr] svg` (`assets/gift-card.css`). Details: the rule 3 conflict table in the 3B commit's `docs/agent/context.md`. (3) The user's detailed 3B browser comparison is deferred to phase 5.
 
