@@ -396,3 +396,8 @@ Run as two prompts and two checkpoint commits (coordinator, 2026-09-29; 32 files
 
 **Risks:** `mediaVideo` IntersectionObserver pauses when off-screen (verify with multiple players). `routine-showcase.js` rapid breakpoint changes may race async `createSwiper`. Featured-products initializes all tab Swipers when slider mode is on (parity with prior `Components.register`).
 
+
+**Coordinator checkpoint check, slices 3 and 4 (2026-09-29, scope and record only; completes the slice 3 check):** scope clean (`git diff --stat 7a0f6d3 09c12e8`: no record file other than this one, no merchant JSON; worktree clean). `lint:theme` **112**; against the coordinator's slice 2 set (sets without line numbers), **no new finding** across slices 3 and 4. Open for the phase review:
+
+- `assets/carousel-swiper.js` now caches `loadSwiper` by the script and stylesheet URL pair, so two concurrent calls with the same script URL but different or missing stylesheet URLs would inject the script twice, against the one-script-per-URL contract GPT enforced in 3C-3 (G1). Unreachable today (all seven callers pass both URLs); fix by caching the script promise by script URL alone, and update the 3C-3 harness anchors.
+- `assets/media-video.js` pauses playback when the video leaves the viewport, which the theme did not do (rule 2); the phase review decides whether it stays, with the user.
