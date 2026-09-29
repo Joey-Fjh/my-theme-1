@@ -30,14 +30,16 @@
 -%}
 
 <div
+    data-module-id="dropdown"
     x-data="dropdown"
-    @click.outside="close(0)"
-    @keydown.escape.window="if (openEls[0]) { close(0); $nextTick(() => $refs.sortTrigger?.focus()) }"
+    @click.outside="onSortByClickOutside()"
+    @keydown.escape.window="onSortByEscapeWindow($event)"
     {% if wrapper_class != blank %}
         class="{{ wrapper_class }}"
     {% endif %}
 >
     <div
+        data-module-id="sort-by-dropdown"
         x-data="sortByDropdown"
         data-current-sort="{{ current_sort | escape }}"
         data-form-id="{{ form_id | default: '' | escape }}"
@@ -89,7 +91,7 @@
                         data-option-value="{{ option.value | escape }}"
                         :aria-pressed="isSelected($el.dataset.optionValue)"
                         :class="isSelected($el.dataset.optionValue) ? optionActiveClass : optionInactiveClass"
-                        @click="select($el.dataset.optionValue); close(0)"
+                        @click="selectAndClose($el.dataset.optionValue, 0)"
                     >
                         {{ option.name | escape }}
                     </button>

@@ -17,6 +17,8 @@ define('tabControl', (initialStrategy = 'first', options = {}) => ({
     _startScrollLeft: 0,
     _suppressClickUntil: 0,
     _initialStrategy: initialStrategy,
+    _initialTabIndex: null,
+    _sectionScope: '',
 
     _hydrateFromDataset() {
         const ds = this.$el?.dataset;
@@ -25,6 +27,10 @@ define('tabControl', (initialStrategy = 'first', options = {}) => ({
         if (ds.tabScrollMode) {
             this.scrollMode = ds.tabScrollMode === 'always' ? 'always' : 'mobile';
         }
+        if (ds.tabInitialIndex !== undefined && ds.tabInitialIndex !== '') {
+            this._initialTabIndex = Number(ds.tabInitialIndex);
+        }
+        if (ds.sectionScope) this._sectionScope = ds.sectionScope;
     },
 
     init() {
@@ -55,19 +61,40 @@ define('tabControl', (initialStrategy = 'first', options = {}) => ({
             const count = this.tabs.length;
             if (count === 0) return;
 
-            const nextIndex = this._initialStrategy === 'first' ? 0 : Math.floor(count / 2);
+            let nextIndex =
+                Number.isFinite(this._initialTabIndex) && this._initialTabIndex >= 0
+                    ? this._initialTabIndex
+                    : this._initialStrategy === 'first'
+                      ? 0
+                      : Math.floor(count / 2);
+            if (nextIndex >= count) nextIndex = 0;
             this.setActive(nextIndex, { centerOnMobile: true, behavior: 'auto' });
         });
     },
 
     registerTab(tab) {
+        const index = this.tabs.length;
         this.tabs.push(tab);
-        return this.tabs.length - 1;
+        if (tab instanceof HTMLElement) {
+            tab.dataset.tabIndex = String(index);
+        }
+        return index;
     },
 
     registerPanel(panel) {
+        const index = this.panels.length;
         this.panels.push(panel);
-        return this.panels.length - 1;
+        if (panel instanceof HTMLElement) {
+            panel.dataset.tabIndex = String(index);
+        }
+        return index;
+    },
+
+    tabIndexFor(el) {
+        if (!(el instanceof HTMLElement)) return -1;
+        const fromDataset = Number(el.dataset.tabIndex);
+        if (Number.isFinite(fromDataset)) return fromDataset;
+        return this.tabs.indexOf(el);
     },
 
     setActive(index, options = {}) {
@@ -90,12 +117,16 @@ define('tabControl', (initialStrategy = 'first', options = {}) => ({
         }
     },
 
-    tabIndexFor(el) {
-        return this.tabs.indexOf(el);
+    panelIndexFor(el) {
+        if (!(el instanceof HTMLElement)) return -1;
+        const fromDataset = Number(el.dataset.tabIndex);
+        if (Number.isFinite(fromDataset)) return fromDataset;
+        return this.panels.indexOf(el);
     },
 
-    panelIndexFor(el) {
-        return this.panels.indexOf(el);
+    panelAriaLabelledBy() {
+        if (!this._sectionScope) return '';
+        return `search-${this._sectionScope}-tab-${this.activeIndex}`;
     },
 
     isActive(index) {

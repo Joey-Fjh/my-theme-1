@@ -271,3 +271,59 @@ Run as two prompts and two checkpoint commits (coordinator, 2026-09-29; 32 files
 
 
 **Coordinator checkpoint check, slice 2 (2026-09-29, scope and record only):** scope clean (`git diff --stat d526e4d c088871`: no record file other than this one, no merchant JSON; worktree clean). `lint:theme` **214** by the coordinator's count (the executor reports 217); against the coordinator's 1b set, **no new finding**. The one remaining finding in a slice 2 file, `snippets/watermark.liquid` raw SVG, was already present; it stays a stop item for the phase review (moving the SVG into the icon pipeline needs `npm.cmd run build:svg`). The harness `mutation()` helper now records a throwing mutated module as not caught, with the error, and checks anchors: check 4 met for the first time.
+
+#### Slice 3 — collection and search listing, filters
+
+**Status:** executed; committed (see report hash). **Checkpoint:** `7a0f6d3`.
+
+**New modules:** `collection-filters.js`, `collection-filters-helpers.js`, `collection-filter-field.js` (import shim), `search-filters.js`, `collection-navigation-catalog.js`, `progressive-list.js`, `sort-by-dropdown.js`, `sticky-viewport-panel.js`, `rotating-badge.js`.
+
+**Also changed:** `layout/theme.liquid` (import map), `assets/dropdown.js` (`onSortByClickOutside`, `onSortByEscapeWindow`), `assets/tab-control.js` (`data-tab-initial-index`, `panelAriaLabelledBy`, `tabIndexFor` dataset), slice 3 Liquid/snippet files (`data-module-id`, Alpine lint fixes).
+
+**Deleted D file:** `assets/alpine.components.filters.js`.
+
+**Pre-delete `git grep` (recorded):** `sections/collection.liquid`, `snippets/filters-field.liquid`, `snippets/search-results-tabs.liquid` — each `x-data` root for filter components carries matching `data-module-id`.
+
+**Ported members (theme source → module):**
+
+| Module | Members | Theme source |
+| --- | --- | --- |
+| `collectionFilters` | pagination mixin, `onChange`, `loadFilterAction`, `buildFilterActionUrl`, `buildCollectionTabUrl`, horizontal filter toggles, `syncControlsFromUrl`, `_executeFetch` (section HTML) | `assets/alpine.components.filters.js:311–397`, `:327–357` |
+| `searchFilters` | extends collection base; product/type selector boundaries; dialog reconcile; `_executeFetch` override; tab/pagination helpers | `assets/alpine.components.filters.js:409–681` |
+| `collectionNavigationCatalog` | `loadMore`, batch queue, dialog `$watch`, sort href sync | `assets/alpine.components.filters.js:684–851` |
+| `collectionFilterField` | price clamp/setters, range/number commit → parent `onChange` | `assets/alpine.components.filters.js:854–919` |
+| helpers (ESM) | form/URL/sync/HTTP helpers | `assets/alpine.components.filters.js:15–308` |
+| `progressiveList` | `isVisible`, show more/less, dataset-driven labels | `assets/alpine.components.ui.js:829–873` |
+| `sortByDropdown` | `select`, `syncPeers` via `data()` | `assets/alpine.components.ui.js:968–1016` |
+| `stickyViewportPanel` | `_sync`, `ResizeObserver`, `useDisposable` | `assets/alpine.components.ui.js:13–49` |
+| `rotatingBadge` | `inView`, `onIntersect` | `snippets/rotating-badge.liquid` (inline state) |
+| `dropdown` | sort-by outside/escape handlers | `snippets/sort-by-dropdown.liquid` (formerly inline) |
+
+**Style (rule 4):** none changed vs `7a0f6d3` (typography findings below are stop items).
+
+**Validators (checkpoint `7a0f6d3` → HEAD):**
+
+| Check | Result |
+| --- | --- |
+| `lint:theme` | **156** findings total (was **217** at slice 2 end); **0** in new/changed slice 3 modules; slice 3 Liquid stop items only (below) |
+| `lint:compat` | pass |
+| `lint:liquid-syntax` | pass |
+| `lint:i18n` | **4** pre-existing (unchanged); none in slice 3 files |
+| `test:theme-check` | **0** warnings |
+| `prettier --check` | pass on all changed files |
+
+**Harness:** `C:\Users\admin\AppData\Local\Temp\phase4-slice3-harness.mjs` — **18/18** pass. Mutations: collection filters **caught**; URL/history/SectionRefresher **caught**; active filter removal **caught**; search filters/tabs **caught**; collection navigation catalog **caught**; filter field **caught**; progressive list **caught**; sort-by dropdown **caught**; sticky viewport panel **caught**. None **not caught**.
+
+**Guards:** no `window.Alpine` in new slice modules.
+
+**Merchant configuration:** `collection_navigation_batch_size` / `collection_navigation_load_more_size` setting IDs unchanged; section schemas for `collection`, `search`, `collections` unchanged vs `7a0f6d3`.
+
+**Browser (phase 5):** collection facet drawer/horizontal/vertical + sort + pagination SectionRefresher; search tabs type switch + product facets drawer + back/forward; collection navigation drawer load-more; price range sliders; progressive show-more in filters.
+
+**Stop items:**
+
+- `sections/collection.liquid:603`, `:624` — `tracking-wide` on nav drawer copy (unchanged vs `7a0f6d3`; `:624` `h3` + `body-sm` tier pairing pre-existing).
+- `snippets/rotating-badge.liquid` — raw SVG + decorative typography (unchanged parity).
+- `snippets/search-results-tabs.liquid:179` — `tracking-[0.16em]` on results meta (unchanged vs `7a0f6d3`).
+
+**Risks:** Search tab `popstate` sync depends on tab href matching `isUrlMatch`; verify back/forward across product/article/page in phase 5. Collection navigation fetch assumes `collection-navigation-items` section HTML shape unchanged.

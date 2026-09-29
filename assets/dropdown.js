@@ -305,5 +305,20 @@ define('dropdown', () => {
 
             this.openEls.length = from;
         },
+
+        onSortByClickOutside() {
+            this.close(0);
+        },
+
+        onSortByEscapeWindow(event) {
+            if (event?.key !== 'Escape') return;
+            if (!this.openEls[0]) return;
+
+            this.close(0);
+            this.$nextTick(() => {
+                const trigger = this.$el.querySelector('[x-ref="sortTrigger"]');
+                trigger?.focus?.();
+            });
+        },
     };
 });

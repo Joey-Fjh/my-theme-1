@@ -7,7 +7,6 @@
     @param {string} [filter_index] - Optional index used by horizontal Alpine toggle state.
     @param {string} [scope_id] - Optional unique scope used to generate form control IDs.
     @param {string} [form_id] - Optional external form id for filter controls. Default: CollectionFiltersForm.
-    @param {boolean} [is_first] - Optional. Adds left offset class to the first horizontal item.
     @param {string} [divider_class] - Optional divider class token.
     @param {string} [muted_text_class] - Optional helper text classes.
     @param {string} [filter_label_class] - Optional label text classes.
@@ -20,7 +19,6 @@
 {%- assign field_index = filter_index | default: 0 -%}
 {%- assign field_scope_id = scope_id | default: render_mode -%}
 {%- assign filters_form_id = form_id | default: 'CollectionFiltersForm' -%}
-{%- assign field_is_first = is_first | default: false -%}
 {%- assign effective_ui_variant = ui_variant -%}
 
 {%- if effective_ui_variant == blank -%}
@@ -53,9 +51,11 @@
 
             {%- if effective_ui_variant == 'panel' -%}
                 <div
+                    data-module-id="progressive-list"
                     x-data="progressiveList()"
                     data-visible-count="{{ show_more_limit }}"
                     data-step-count="{{ show_more_step }}"
+                    data-total-count="{{ sorted_values.size }}"
                     class="flex flex-col gap-3 pt-1"
                 >
                     {%- for value in sorted_values -%}
@@ -67,9 +67,10 @@
 
                         <label
                             for="{{ option_id }}"
-                            x-show="isVisible({{ forloop.index0 }})"
+                            data-item-index="{{ forloop.index0 }}"
+                            x-show="isVisibleFor($el)"
                             class="flex items-center gap-3 {% if is_disabled %}filters-field__option--disabled{% endif %}"
-                            :class="{ 'hidden': !isVisible({{ forloop.index0 }}) }"
+                            :class="visibilityClassFor($el)"
                             {% if is_disabled %}
                                 aria-disabled="true"
                             {% endif %}
@@ -97,21 +98,23 @@
                     {%- if sorted_values.size > show_more_limit -%}
                         <button
                             type="button"
-                            @click.stop="canShowMore({{ sorted_values.size }}) ? showMore({{ sorted_values.size }}) : showLess()"
+                            @click.stop="toggleShowMoreFromDataset()"
                             data-show-more-label="{{ 'collections.filters.show_more' | t | escape }}"
                             data-show-less-label="{{ 'collections.filters.show_less' | t | escape }}"
                             class="filters-field__show-more filters-field__show-more--panel"
                         >
                             {% render 'show-more-icon' %}
-                            <span x-text="canShowMore({{ sorted_values.size }}) ? $el.parentElement.dataset.showMoreLabel : $el.parentElement.dataset.showLessLabel"></span>
+                            <span x-text="showMoreToggleLabelFromDataset()"></span>
                         </button>
                     {%- endif -%}
                 </div>
             {%- else -%}
                 <div
+                    data-module-id="progressive-list"
                     x-data="progressiveList()"
                     data-visible-count="{{ show_more_limit }}"
                     data-step-count="{{ show_more_step }}"
+                    data-total-count="{{ sorted_values.size }}"
                     class="flex flex-col gap-2"
                 >
                     {%- for value in sorted_values -%}
@@ -123,9 +126,10 @@
 
                         <label
                             for="{{ option_id }}"
-                            x-show="isVisible({{ forloop.index0 }})"
+                            data-item-index="{{ forloop.index0 }}"
+                            x-show="isVisibleFor($el)"
                             class="flex items-center gap-2"
-                            :class="{ 'hidden': !isVisible({{ forloop.index0 }}) }"
+                            :class="visibilityClassFor($el)"
                             {% if is_disabled %}
                                 aria-disabled="true"
                             {% endif %}
@@ -153,13 +157,13 @@
                     {%- if sorted_values.size > show_more_limit -%}
                         <button
                             type="button"
-                            @click.stop="canShowMore({{ sorted_values.size }}) ? showMore({{ sorted_values.size }}) : showLess()"
+                            @click.stop="toggleShowMoreFromDataset()"
                             data-show-more-label="{{ 'collections.filters.show_more' | t | escape }}"
                             data-show-less-label="{{ 'collections.filters.show_less' | t | escape }}"
                             class="filters-field__show-more filters-field__show-more--horizontal"
                         >
                             {% render 'show-more-icon' %}
-                            <span x-text="canShowMore({{ sorted_values.size }}) ? $el.parentElement.dataset.showMoreLabel : $el.parentElement.dataset.showLessLabel"></span>
+                            <span x-text="showMoreToggleLabelFromDataset()"></span>
                         </button>
                     {%- endif -%}
                 </div>
@@ -181,6 +185,7 @@
                     data-filter-min="{{ current_min }}"
                     data-filter-max="{{ current_max }}"
                     data-filter-ceil="{{ range_max }}"
+                    data-module-id="collection-filter-field"
                     x-data="collectionFilterField()"
                 >
                     <div
@@ -202,7 +207,7 @@
                             :max="ceil"
                             x-model.number="min"
                             @input="clampMin()"
-                            @change.debounce.500ms="$refs.inputMin.value = min; onChange($refs.inputMin)"
+                            @change.debounce.500ms="onRangeMinCommit()"
                             :disabled="isLoading"
                             :class="(min === max && max === ceil) ? 'z-30' : 'z-10'"
                             class="price-range-thumb pointer-events-none absolute inset-x-0 w-full appearance-none bg-transparent"
@@ -217,7 +222,7 @@
                             :max="ceil"
                             x-model.number="max"
                             @input="clampMax()"
-                            @change.debounce.500ms="$refs.inputMax.value = max; onChange($refs.inputMax)"
+                            @change.debounce.500ms="onRangeMaxCommit()"
                             :disabled="isLoading"
                             :class="(min === max && min === 0) ? 'z-30' : 'z-20'"
                             class="price-range-thumb pointer-events-none absolute inset-x-0 w-full appearance-none bg-transparent"
@@ -238,7 +243,7 @@
                                     max="{{ range_max }}"
                                     placeholder="0"
                                     form="{{ filters_form_id }}"
-                                    @input.debounce.500ms="setMinFromInput($el.value); $el.value = min; onChange($el)"
+                                    @input.debounce.500ms="onNumberMinInput()"
                                     :disabled="isLoading"
                                     class="w-full appearance-none bg-transparent focus-ring outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                 >
@@ -258,7 +263,7 @@
                                     max="{{ range_max }}"
                                     placeholder="{{ range_max }}"
                                     form="{{ filters_form_id }}"
-                                    @input.debounce.500ms="setMaxFromInput($el.value); $el.value = max; onChange($el)"
+                                    @input.debounce.500ms="onNumberMaxInput()"
                                     :disabled="isLoading"
                                     class="w-full appearance-none bg-transparent focus-ring outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                 >
@@ -311,10 +316,7 @@
     <details
         {% if render_mode == 'horizontal' %}
             data-filter-dropdown
-            @click.outside="
-                activeFilter = null;
-                $el.open = false;
-            "
+            @click.outside="closeHorizontalFilterOutside($event)"
         {% endif %}
         class="group {% if render_mode == 'horizontal' %}relative{% endif %}"
     >
@@ -329,14 +331,7 @@
                 {% endif %}
             "
             {% if render_mode == 'horizontal' %}
-                @click.prevent="
-                    const details = $el.parentElement;
-                    const shouldOpen = !details.open;
-                    activeFilter = shouldOpen ? $el.dataset.fieldIndex : null;
-                    $root.querySelectorAll('[data-filter-dropdown]').forEach((dropdown) => {
-                        dropdown.open = dropdown === details && shouldOpen;
-                    });
-                "
+                @click.prevent="toggleHorizontalFilterSummary($event)"
             {% endif %}
         >
             <span class="inline-flex items-center gap-3">

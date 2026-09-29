@@ -49,6 +49,7 @@
     data-search-result-type="{{ param_type | escape }}"
     data-filters-form-id="{{ filters_form_id }}"
     data-filters-dialog-id="{{ filters_dialog_id }}"
+    data-module-id="search-filters"
     x-data="searchFilters()"
 >
     <div
@@ -63,6 +64,9 @@
         data-search-type-shell
         data-tab-initial-strategy="first"
         data-tab-scroll-mode="always"
+        data-tab-initial-index="{{ active_tab_index }}"
+        data-section-scope="{{ section_id }}"
+        data-module-id="tab-control"
         x-data="tabControl()"
     >
         <div class="w-full">
@@ -71,24 +75,18 @@
                 aria-label="{{ 'accessibility.tab_control' | t }}"
                 class="tab-header-underlined mx-auto flex max-w-3xl flex-nowrap items-center justify-center gap-4 border-none body-lg text-theme-text uppercase pc:flex-nowrap pc:gap-6 pc:overflow-x-auto"
             >
-                <span
-                    class="hidden"
-                    x-init="$nextTick(() => { setActive({{ active_tab_index }}) })"
-                ></span>
-
                 <a
                     href="{{ products_url }}"
                     role="tab"
-                    x-data="{ index: null }"
-                    x-init="index = registerTab($el);"
-                    :id="`search-{{ section_id }}-tab-${index}`"
+                    id="search-{{ section_id }}-tab-0"
+                    x-init="registerTab($el)"
                     aria-controls="search-{{ section_id }}-results-panel"
-                    @click.prevent="loadUrl($el.href); setActive(index)"
-                    @popstate.window="isUrlMatch($el.href) && setActive(index)"
-                    :tabindex="isFocusable(index) ? 0 : -1"
-                    :aria-selected="isActive(index)"
+                    @click.prevent="onSearchResultTabClick($event)"
+                    @popstate.window="onSearchResultTabPopstate($el.href)"
+                    :tabindex="isFocusable(tabIndexFor($el)) ? 0 : -1"
+                    :aria-selected="isActive(tabIndexFor($el))"
                     class="search-results-tabs__tab tab-nav-item tab-nav-item--search whitespace-nowrap"
-                    :class="{ 'is-active': isActive(index) }"
+                    :class="{ 'is-active': isActive(tabIndexFor($el)) }"
                 >
                     {{ 'search.products' | t }}
                 </a>
@@ -96,16 +94,15 @@
                 <a
                     href="{{ articles_url }}"
                     role="tab"
-                    x-data="{ index: null }"
-                    x-init="index = registerTab($el);"
-                    :id="`search-{{ section_id }}-tab-${index}`"
+                    id="search-{{ section_id }}-tab-1"
+                    x-init="registerTab($el)"
                     aria-controls="search-{{ section_id }}-results-panel"
-                    @click.prevent="loadUrl($el.href); setActive(index)"
-                    @popstate.window="isUrlMatch($el.href) && setActive(index)"
-                    :tabindex="isFocusable(index) ? 0 : -1"
-                    :aria-selected="isActive(index)"
+                    @click.prevent="onSearchResultTabClick($event)"
+                    @popstate.window="onSearchResultTabPopstate($el.href)"
+                    :tabindex="isFocusable(tabIndexFor($el)) ? 0 : -1"
+                    :aria-selected="isActive(tabIndexFor($el))"
                     class="search-results-tabs__tab tab-nav-item tab-nav-item--search whitespace-nowrap"
-                    :class="{ 'is-active': isActive(index) }"
+                    :class="{ 'is-active': isActive(tabIndexFor($el)) }"
                 >
                     {{ 'search.articles' | t }}
                 </a>
@@ -113,16 +110,15 @@
                 <a
                     href="{{ pages_url }}"
                     role="tab"
-                    x-data="{ index: null }"
-                    x-init="index = registerTab($el);"
-                    :id="`search-{{ section_id }}-tab-${index}`"
+                    id="search-{{ section_id }}-tab-2"
+                    x-init="registerTab($el)"
                     aria-controls="search-{{ section_id }}-results-panel"
-                    @click.prevent="loadUrl($el.href); setActive(index)"
-                    @popstate.window="isUrlMatch($el.href) && setActive(index)"
-                    :tabindex="isFocusable(index) ? 0 : -1"
-                    :aria-selected="isActive(index)"
+                    @click.prevent="onSearchResultTabClick($event)"
+                    @popstate.window="onSearchResultTabPopstate($el.href)"
+                    :tabindex="isFocusable(tabIndexFor($el)) ? 0 : -1"
+                    :aria-selected="isActive(tabIndexFor($el))"
                     class="search-results-tabs__tab tab-nav-item tab-nav-item--search whitespace-nowrap"
-                    :class="{ 'is-active': isActive(index) }"
+                    :class="{ 'is-active': isActive(tabIndexFor($el)) }"
                 >
                     {{ 'search.pages' | t }}
                 </a>
@@ -171,9 +167,8 @@
             <div
                 role="tabpanel"
                 id="search-{{ section_id }}-results-panel"
-                :aria-labelledby="`search-{{ section_id }}-tab-${activeIndex}`"
-                x-data="{ index: null }"
-                x-init="index = registerPanel($el)"
+                :aria-labelledby="panelAriaLabelledBy()"
+                x-init="registerPanel($el)"
                 class="relative mt-6 w-full"
                 data-search-tabs-panel
             >
@@ -201,6 +196,7 @@
                             {%- when 'product' -%}
                                 <div
                                     class="product-grid"
+                                    data-module-id="motion-reveal"
                                     x-data="motionRevealSection()"
                                     data-motion-section
                                     data-motion-cascade
@@ -262,13 +258,7 @@
 
                         <div
                             class="mt-10"
-                            @click="
-                                let link = $event.target.closest('[data-pagination-nav] a');
-                                if (link) {
-                                    $event.preventDefault();
-                                    loadUrl(link.href);
-                                }
-                            "
+                            @click="onPaginationNavClick($event)"
                         >
                             {% render 'pagination', paginate_obj: paginate %}
                         </div>
