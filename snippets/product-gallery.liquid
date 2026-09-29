@@ -1,26 +1,26 @@
-{% comment %}
+{% doc %}
     Product media gallery - reusable across sections and pages.
     Supports multiple layout modes, an optional lightbox overlay, and rich media types.
 
-    @param {array}   media           - Array of product.media objects (preferred). Falls back to `images`.
-    @param {array}   images          - Array of image objects (legacy). Used when `media` is not provided.
-    @param {string}  layout          - 'thumbnails' | 'carousel' | 'stacked' | 'grid' (default: thumbnails)
-    @param {string}  thumb_position  - 'left' | 'bottom' (default: left, only for thumbnails layout)
-    @param {string}  thumbnail_size - Shared thumbnail size: 'compact' | 'standard' | 'large' (default: standard)
-    @param {boolean} zoom            - Enable click-to-zoom lightbox for images (default: false)
-    @param {boolean} magnifier       - Enable desktop hover magnifier on gallery images (default: false)
-    @param {number}  magnifier_zoom_scale - Background scale multiplier for magnifier (default: 2)
-    @param {number}  magnifier_preview_width - Optional fixed magnifier preview width in pixels
-    @param {number}  magnifier_preview_height - Optional fixed magnifier preview height in pixels
-    @param {number}  magnifier_preview_max_width - Maximum magnifier preview width in pixels
-    @param {string}  zoom_overlay_color   - Lightbox overlay color (default: '#000000')
-    @param {number}  zoom_overlay_opacity - Lightbox overlay opacity in percent 0-100 (default: 90)
-    @param {string}  aspect_ratio    - CSS aspect-ratio for main images (e.g. '1/1', '4/3'; default: natural)
-    @param {string}  max_height      - Optional desktop max height for the main gallery media box
-    @param {string}  class           - Optional CSS classes for the outermost wrapper
-    @param {string}  id              - Optional HTML id for event-targeting (variant mapping)
-    @param {boolean} motion_reveal   - Allow layout images to own ordinary media reveal (default: true)
-{% endcomment %}
+    @param {object} media - Product media list (preferred). Falls back to `images`.
+    @param {object} [images] - Image list (legacy). Used when `media` is not provided.
+    @param {string} [layout] - 'thumbnails' | 'carousel' | 'stacked' | 'grid' (default: thumbnails)
+    @param {string} [thumb_position] - 'left' | 'bottom' (default: left, only for thumbnails layout)
+    @param {string} [thumbnail_size] - Shared thumbnail size: 'compact' | 'standard' | 'large' (default: standard)
+    @param {boolean} [zoom] - Enable click-to-zoom lightbox for images (default: false)
+    @param {boolean} [magnifier] - Enable desktop hover magnifier on gallery images (default: false)
+    @param {number} [magnifier_zoom_scale] - Background scale multiplier for magnifier (default: 2)
+    @param {number} [magnifier_preview_width] - Optional fixed magnifier preview width in pixels
+    @param {number} [magnifier_preview_height] - Optional fixed magnifier preview height in pixels
+    @param {number} [magnifier_preview_max_width] - Maximum magnifier preview width in pixels
+    @param {string} [zoom_overlay_color] - Lightbox overlay color (default: '#000000')
+    @param {number} [zoom_overlay_opacity] - Lightbox overlay opacity in percent 0-100 (default: 90)
+    @param {string} [aspect_ratio] - CSS aspect-ratio for main images (e.g. '1/1', '4/3'; default: natural)
+    @param {string} [max_height] - Optional desktop max height for the main gallery media box
+    @param {string} [class] - Optional CSS classes for the outermost wrapper
+    @param {string} [id] - Optional HTML id for event-targeting (variant mapping)
+    @param {boolean} [motion_reveal] - Allow layout images to own ordinary media reveal (default: true)
+{% enddoc %}
 
 {%- assign layout = layout | default: 'thumbnails' -%}
 {%- assign thumb_position = thumb_position | default: 'left' -%}
@@ -73,10 +73,14 @@
 
 <div
     x-data="productGallery"
+    data-module-id="product-gallery"
     data-media-count="{{ image_count }}"
     class="h-full w-full min-w-0 {% if class %}{{ class }}{% endif %}"
     {% if id %}
         id="{{ id }}"
+    {% endif %}
+    {% if layout == 'carousel' %}
+        data-swiper-src="{{ 'vendor-swiper.min.js' | asset_url }}"
     {% endif %}
     {% if media_dialog_id != blank %}
         data-media-modal-id="{{ media_dialog_id }}"
@@ -87,6 +91,7 @@
         {% if zoom_enabled %}
             data-lightbox-image-count="{{ lightbox_image_count }}"
             x-data="imageLightbox()"
+            data-module-id="image-lightbox"
             @keydown.escape.window="lightboxOpen && closeLightbox()"
             @keydown.right.window="lightboxOpen && nextLightbox()"
             @keydown.left.window="lightboxOpen && prevLightbox()"
