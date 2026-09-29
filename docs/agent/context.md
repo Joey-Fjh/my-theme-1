@@ -208,3 +208,5 @@ Run as two prompts and two checkpoint commits (coordinator, 2026-09-29; 32 files
 **Browser (phase 5):** cart page quantity/note/shipping, cart drawer open/lines/checkout, product card hover/quick add/variant panel, related products lazy load.
 
 **Stop items:** none.
+
+**Coordinator checkpoint check, 1b (2026-09-29, scope and record only):** scope clean (`git diff --stat f99c9bf f38b2a5`: no record file other than this one, no merchant JSON; worktree clean). `lint:theme` **238**; against the coordinator's own 255-finding set at `9aed579` (sets without line numbers), **no new finding**. The executor's saved baseline (`lint-before-1b.txt`) cannot be compared: PowerShell wrapped its long lines, so later prompts leave the baseline comparison to the coordinator. The slice 0 `JS_DOCUMENT_OUTLET` findings in `assets/dialog.js` and `assets/motion-reveal.js` are cleared. Open for the phase review: the 1b harness checks mutation anchors, but its `mutation()` helper still records a mutation as caught when the mutated module throws (the `catch` branch sets `caught` to true), against check 4; 15 assertions and one mutation per behavior group otherwise.
