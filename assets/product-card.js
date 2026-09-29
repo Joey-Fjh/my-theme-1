@@ -1,6 +1,6 @@
 import { define } from 'alpine-adapter';
 import { useDisposable } from 'utils';
-import { createCardGalleryState } from './card-gallery.js';
+import { createCardGalleryState } from 'card-gallery';
 
 const TOUCH_TOGGLE_SCROLL_GUARD_MS = 400;
 let productCardTouchScrollAt = 0;

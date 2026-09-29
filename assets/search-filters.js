@@ -1,5 +1,5 @@
 import { define, store, data } from 'alpine-adapter';
-import { createCollectionFiltersState } from './collection-filters.js';
+import { createCollectionFiltersState } from 'collection-filters';
 import {
     readCollectionFormParams,
     requestCollectionSectionHtml,

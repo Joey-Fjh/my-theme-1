@@ -1,6 +1,6 @@
 import { define } from 'alpine-adapter';
 import { useDisposable } from 'utils';
-import * as DialogMotion from 'dialog-motion';
+import * as DialogMotion from './dialog-motion.js';
 
 function getDialogMotionAdapter() {
     return DialogMotion;

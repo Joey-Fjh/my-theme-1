@@ -59,21 +59,6 @@ define('mediaVideo', () => ({
                 video.removeEventListener('volumechange', onVolumeChange);
             });
         });
-
-        if ('IntersectionObserver' in window) {
-            const observer = new IntersectionObserver(
-                (entries) => {
-                    entries.forEach((entry) => {
-                        if (!entry.isIntersecting) {
-                            this.pause();
-                        }
-                    });
-                },
-                { threshold: 0.15 },
-            );
-            observer.observe(this.$el);
-            this._videoCleanups.push(() => observer.disconnect());
-        }
     },
 
     _getAllVideos() {
