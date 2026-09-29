@@ -6,7 +6,7 @@ Last updated: 2026-09-29.
 
 ## Open decisions
 
-Active: none. 3C-3 accepted and authorized (2026-09-29; Swiper CSS stays bundled, lightbox without motion until slice 0); its plan is in `docs/agent/context.md`. 3D follows, per `docs/project.md`.
+Active: none. 3A (`2a3c331`), 3B (`dcbac9f`), 3C-1 (`099ad3b`), 3C-2 (`bfeb5f1`), 3C-3 (`d49e224`) done; 3D is next, after the two queued decisions below, per `docs/project.md`.
 
 Queued (decide before the phase that needs them):
 
