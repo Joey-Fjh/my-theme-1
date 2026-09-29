@@ -173,3 +173,38 @@ Run as two prompts and two checkpoint commits (coordinator, 2026-09-29; 32 files
 - **Eager `motion-reveal` import removed** from `assets/base.js`, against the 1a prompt. Effect until the owning slices add `data-module-id="motion-reveal"`: the 30 remaining `motionRevealSection` mounts (listed by `git grep -n motionRevealSection -- sections snippets`) animate only on pages that also carry a mounted module root; content stays visible because the pending state is set by the module. Accepted as interim; each slice adds the attribute to its mounts, and the phase review confirms zero mounts without it.
 - **1a harness below check 4:** 9 assertions and 2 mutations (`ProductPrice`, `GiftCardRecipient`) across ten modules; the executor calls it smoke-level. The phase review re-tests `PickupAvailability`, `ProductPaymentTerms`, `SellingPlanPicker` with buy buttons, `productLayout`, `productMediaModal`, `imageMagnifier`, `dragScroll`, and the comparison table.
 - Noted: the pre-delete command for `assets/alpine.components.product.js` still lists ten Liquid files that name the component factories; every one of those mounts now carries `data-module-id` (no `module-data-module-id` finding remains in them), so the gate holds.
+
+#### 1b — cart and product cards
+
+**Status:** executed; checkpoint committed (see report hash).
+
+**Checkpoint:** `f99c9bf` → slice commit.
+
+**New modules:** `cart-page.js`, `cart-overlay.js`, `product-card.js`, `related-products.js`.
+
+**Also changed:** `alpine.store.cart.js` (toast on mutation errors via `showMutationErrorToast` from `base.js`), `base.js`, `dialog.js` (focus trap via `ThemeEvents.on`), `motion-reveal.js` (per-instance `useDisposable` window listeners), `layout/theme.liquid` (import map), slice 1b Liquid/snippet files (`data-module-id`, rule 4 class fixes, cart-overlay line image without bare `<img>`, product-card `@mouseleave` → `onMouseLeave()`).
+
+**D files retained (later slice gates):** `assets/alpine.components.overlays.js`, `assets/alpine.components.product-cards.js`.
+
+**Style (rule 4):** `sections/cart.liquid` — `font-medium` → `body-lg` (discounts label); `sections/cart-overlay.liquid` — `font-medium` removed from discounts label (`body-sm` only); `snippets/cart-summary-accordion.liquid` — `body-xl` on `h2` → `heading-xl`.
+
+**Harness:** `C:\Users\admin\AppData\Local\Temp\phase4-slice1b-harness.mjs` — **15/15** pass. Mutations caught (all **true**): cart page (`changeLine` error mapping), cart overlay (`isOpen`), cart store (429 → rate-limited toast), product card (`showVariantPanel`), related products (`SectionRefresher.render`), dialog listener (`_attachTrap` / `forceClose`), motion reveal (resize listener on `destroy`).
+
+**Validators (checkpoint `f99c9bf` → HEAD):**
+
+| Check | Result |
+| --- | --- |
+| `lint:theme` | **255 → 238** findings (1b slice Liquid/module files **0**); cleared slice 0 `JS_DOCUMENT_OUTLET` in `dialog.js` and `motion-reveal.js` |
+| `lint:compat` | pass |
+| `lint:liquid-syntax` | pass |
+| `lint:i18n` | no new findings; repo pre-existing **4** unchanged |
+| `test:theme-check` | **1** warning (`filters-field` only) |
+| `prettier --check` | pass on changed files after write |
+
+**Guards:** no forbidden patterns in new slice modules (D files unchanged).
+
+**Merchant configuration:** section types `cart`, `cart-overlay`, `product-recommendations` and schema IDs unchanged vs `f99c9bf`.
+
+**Browser (phase 5):** cart page quantity/note/shipping, cart drawer open/lines/checkout, product card hover/quick add/variant panel, related products lazy load.
+
+**Stop items:** none.

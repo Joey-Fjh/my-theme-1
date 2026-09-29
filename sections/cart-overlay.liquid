@@ -41,6 +41,7 @@
             data-cart-sections='["{{ section.id }}"]'
             data-section-id="{{ section.id }}"
             x-data="cartOverlay()"
+            data-module-id="cart-overlay"
             @keydown.escape.window="$store.dialog.close()"
             :class="{ 'opacity-80': $store.cart.loading && showItems }"
         >
@@ -86,14 +87,12 @@
                                 :href="item.url"
                                 class="flex aspect-square w-full items-center justify-center overflow-hidden bg-theme-bg/50"
                             >
-                                <img
-                                    class="h-full w-full object-contain p-3"
-                                    :src="typeof item.image === 'string' ? item.image : (item.image?.url || item.featured_image?.url || '')"
-                                    :alt="item.product_title || item.title || $el.closest('li').dataset.cartProductAlt"
-                                    width="120"
-                                    height="120"
-                                    loading="lazy"
-                                >
+                                <span
+                                    class="block h-full w-full bg-contain bg-center bg-no-repeat p-3"
+                                    role="img"
+                                    :style="itemImageStyle(item)"
+                                    :aria-label="itemImageAlt(item, $el.closest('li').dataset.cartProductAlt)"
+                                ></span>
                             </a>
 
                             <div class="flex min-w-0 flex-col py-1">
@@ -257,7 +256,7 @@
             <div class="ui-dialog-overlay-footer mt-auto pc:px-6 pc:py-4">
                 <template x-if="$store.cart.cart_level_discount_applications && $store.cart.cart_level_discount_applications.length > 0">
                     <div class="mb-3">
-                        <p class="body-sm font-medium">{{ 'cart.discounts' | t }}</p>
+                        <p class="body-sm">{{ 'cart.discounts' | t }}</p>
                         <ul class="mt-2 space-y-1">
                             <template x-for="disc in $store.cart.cart_level_discount_applications" :key="disc.title">
                                 <li class="flex items-baseline justify-between gap-4 body-sm text-theme-text/80">

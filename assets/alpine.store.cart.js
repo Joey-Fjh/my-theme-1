@@ -38,10 +38,14 @@ export function createCartUiStore(contract) {
         },
 
         _unsubscribe: null,
+        _showMutationErrorToast: null,
 
         configure(options) {
             if (options?.errorMessages) {
                 Object.assign(this._errorMessages, options.errorMessages);
+            }
+            if (typeof options?.showMutationErrorToast === 'function') {
+                this._showMutationErrorToast = options.showMutationErrorToast;
             }
         },
 
@@ -120,8 +124,11 @@ export function createCartUiStore(contract) {
                 finalMsg = msgs.generic;
             }
 
-            if (finalMsg && err && typeof err === 'object') {
-                err.displayMessage = finalMsg;
+            if (finalMsg) {
+                this._showMutationErrorToast?.(finalMsg);
+                if (err && typeof err === 'object') {
+                    err.displayMessage = finalMsg;
+                }
             }
 
             return Promise.reject(err);

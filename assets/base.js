@@ -351,15 +351,19 @@ function readCartErrorMessages() {
 function setupStores() {
     const contract = createCartContract();
     const cartStore = createCartUiStore(contract);
+    const toastStore = createToastStore();
 
     cartStore.configure({
         errorMessages: readCartErrorMessages(),
+        showMutationErrorToast: (message) => {
+            if (message) toastStore.show(message, 'error');
+        },
     });
 
     contract.hydrate();
     adapter.store('cart', cartStore);
     adapter.store('dialog', createDialogStore());
-    adapter.store('toast', createToastStore());
+    adapter.store('toast', toastStore);
 }
 
 function main() {

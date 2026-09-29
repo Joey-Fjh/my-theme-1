@@ -79,111 +79,6 @@ const motionRevealExitRegistry = createMotionObserverRegistry(
     `${MOTION_REVEAL_EXIT_BUFFER_PX}px 0px ${MOTION_REVEAL_EXIT_BUFFER_PX}px 0px`,
 );
 
-/**
- * One shared window.resize listener for all motionRevealSection instances.
- * First add() attaches; last remove() detaches.
- */
-const motionRevealRelayoutRegistry = (() => {
-    const instances = new Set();
-    let listening = false;
-    let timerId = null;
-
-    function onResize() {
-        if (timerId) clearTimeout(timerId);
-        timerId = window.setTimeout(() => {
-            timerId = null;
-            instances.forEach((instance) => {
-                if (instance && typeof instance._registerTargets === 'function') {
-                    instance._registerTargets();
-                }
-            });
-        }, MOTION_RELAYOUT_DEBOUNCE_MS);
-    }
-
-    return {
-        add(instance) {
-            instances.add(instance);
-            if (!listening && typeof window !== 'undefined') {
-                window.addEventListener('resize', onResize, { passive: true });
-                listening = true;
-            }
-        },
-
-        remove(instance) {
-            instances.delete(instance);
-            if (instances.size === 0 && listening && typeof window !== 'undefined') {
-                window.removeEventListener('resize', onResize);
-                listening = false;
-                if (timerId) {
-                    clearTimeout(timerId);
-                    timerId = null;
-                }
-            }
-        },
-
-        size() {
-            return instances.size;
-        },
-
-        isListening() {
-            return listening;
-        },
-    };
-})();
-
-/**
- * One shared passive scroll listener for all motionRevealSection instances.
- * It runs only after scrolling settles and recovers visible pending targets that
- * fast scrolling or the document boundary prevented from crossing the inset line.
- */
-const motionRevealScrollSettleRegistry = (() => {
-    const instances = new Set();
-    let listening = false;
-    let timerId = null;
-
-    function onScroll() {
-        if (timerId) clearTimeout(timerId);
-        timerId = window.setTimeout(() => {
-            timerId = null;
-            instances.forEach((instance) => {
-                if (instance && typeof instance._flushPendingInViewport === 'function') {
-                    instance._flushPendingInViewport();
-                }
-            });
-        }, MOTION_SCROLL_SETTLE_MS);
-    }
-
-    return {
-        add(instance) {
-            instances.add(instance);
-            if (!listening && typeof window !== 'undefined') {
-                window.addEventListener('scroll', onScroll, { passive: true });
-                listening = true;
-            }
-        },
-
-        remove(instance) {
-            instances.delete(instance);
-            if (instances.size === 0 && listening && typeof window !== 'undefined') {
-                window.removeEventListener('scroll', onScroll);
-                listening = false;
-                if (timerId) {
-                    clearTimeout(timerId);
-                    timerId = null;
-                }
-            }
-        },
-
-        size() {
-            return instances.size;
-        },
-
-        isListening() {
-            return listening;
-        },
-    };
-})();
-
 define('motionRevealSection', () => {
     const enterRegistry = motionRevealEnterRegistry;
     const cascadeEnterRegistry = motionCascadeEnterRegistry;
@@ -206,8 +101,8 @@ define('motionRevealSection', () => {
         _relayoutTimer: null,
         _editorReplayTimers: new Set(),
         _editorViewportFlushFrame: null,
-        _relayoutBound: false,
-        _scrollSettleBound: false,
+        _windowResizeTimer: null,
+        _windowScrollSettleTimer: null,
         _registrationGeneration: 0,
         _criticalViewportPrepared: false,
         _destroyed: false,
@@ -1254,9 +1149,6 @@ define('motionRevealSection', () => {
                 batches: this._cascadeBatches.size,
                 enterBounds: this._observedBounds.size,
                 exitBounds: this._exitObservedBounds.size,
-                relayoutListeners: motionRevealRelayoutRegistry.size(),
-                scrollSettleInstances: motionRevealScrollSettleRegistry.size(),
-                scrollSettleListening: motionRevealScrollSettleRegistry.isListening(),
             });
 
             this._schedulePageLoadReveals(generation);
@@ -1338,10 +1230,31 @@ define('motionRevealSection', () => {
             this.$el.addEventListener('click', this._onSwiperRelayout);
             this.$el.addEventListener('transitionend', this._onSwiperRelayout);
 
-            motionRevealRelayoutRegistry.add(this);
-            this._relayoutBound = true;
-            motionRevealScrollSettleRegistry.add(this);
-            this._scrollSettleBound = true;
+            this.on(
+                window,
+                'resize',
+                () => {
+                    if (this._windowResizeTimer) clearTimeout(this._windowResizeTimer);
+                    this._windowResizeTimer = window.setTimeout(() => {
+                        this._windowResizeTimer = null;
+                        if (!this._destroyed) this._registerTargets();
+                    }, MOTION_RELAYOUT_DEBOUNCE_MS);
+                },
+                { passive: true },
+            );
+
+            this.on(
+                window,
+                'scroll',
+                () => {
+                    if (this._windowScrollSettleTimer) clearTimeout(this._windowScrollSettleTimer);
+                    this._windowScrollSettleTimer = window.setTimeout(() => {
+                        this._windowScrollSettleTimer = null;
+                        if (!this._destroyed) this._flushPendingInViewport();
+                    }, MOTION_SCROLL_SETTLE_MS);
+                },
+                { passive: true },
+            );
 
             this.$nextTick(() => {
                 if (this._destroyed) return;
@@ -1447,13 +1360,13 @@ define('motionRevealSection', () => {
             this._clearRelayoutTimer();
             this._unobserveAllBounds();
             this._unobserveAllCascadeBatches();
-            if (this._relayoutBound) {
-                motionRevealRelayoutRegistry.remove(this);
-                this._relayoutBound = false;
+            if (this._windowResizeTimer) {
+                clearTimeout(this._windowResizeTimer);
+                this._windowResizeTimer = null;
             }
-            if (this._scrollSettleBound) {
-                motionRevealScrollSettleRegistry.remove(this);
-                this._scrollSettleBound = false;
+            if (this._windowScrollSettleTimer) {
+                clearTimeout(this._windowScrollSettleTimer);
+                this._windowScrollSettleTimer = null;
             }
             if (this._onTabClick) {
                 this.$el.removeEventListener('click', this._onTabClick);

@@ -1,3 +1,4 @@
+import ThemeEvents from 'events';
 import * as DialogMotion from './dialog-motion.js';
 import * as DrawerMotion from './drawer-motion.js';
 
@@ -98,6 +99,7 @@ export function createDialogStore() {
         closing: null,
         _returnFocusTo: null,
         _trapHandler: null,
+        _trapOff: null,
         _openGeneration: 0,
 
         isOpen(id) {
@@ -311,14 +313,18 @@ export function createDialogStore() {
         _attachTrap() {
             this._detachTrap();
             this._trapHandler = this._trapFocus.bind(this);
-            document.addEventListener('keydown', this._trapHandler, true);
+            this._trapOff = ThemeEvents.on('keydown', this._trapHandler, {
+                target: document,
+                capture: true,
+            });
         },
 
         _detachTrap() {
-            if (this._trapHandler) {
-                document.removeEventListener('keydown', this._trapHandler, true);
-                this._trapHandler = null;
+            if (this._trapOff) {
+                this._trapOff();
+                this._trapOff = null;
             }
+            this._trapHandler = null;
         },
     };
 }
