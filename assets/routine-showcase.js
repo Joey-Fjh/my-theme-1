@@ -17,12 +17,8 @@ define('routineShowcase', () => ({
         });
     },
 
-    _readSwiperUrls() {
-        const ds = this._root?.dataset || {};
-        return {
-            scriptUrl: ds.swiperSrc || '',
-            cssUrl: ds.swiperCss || '',
-        };
+    _readSwiperScriptUrl() {
+        return this._root?.dataset?.swiperSrc || '';
     },
 
     async _initSwiper() {
@@ -30,13 +26,13 @@ define('routineShowcase', () => ({
         this._swiperContainer = swiperContainer;
         if (!swiperContainer) return;
 
-        const { scriptUrl, cssUrl } = this._readSwiperUrls();
+        const scriptUrl = this._readSwiperScriptUrl();
         if (!scriptUrl) return;
 
         this._mql = window.matchMedia('(min-width: 768px)');
 
         try {
-            await loadSwiper(scriptUrl, cssUrl);
+            await loadSwiper(scriptUrl);
             if (!this._root) return;
 
             const createResponsiveSwiper = () => {

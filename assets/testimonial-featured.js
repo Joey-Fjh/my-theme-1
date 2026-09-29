@@ -14,12 +14,8 @@ define('testimonialFeatured', () => ({
         });
     },
 
-    _readSwiperUrls() {
-        const ds = this._root?.dataset || {};
-        return {
-            scriptUrl: ds.swiperSrc || '',
-            cssUrl: ds.swiperCss || '',
-        };
+    _readSwiperScriptUrl() {
+        return this._root?.dataset?.swiperSrc || '';
     },
 
     _autoplayAllowed() {
@@ -38,13 +34,13 @@ define('testimonialFeatured', () => ({
         const swiperContainer = this._root?.querySelector('.swiper');
         if (!swiperContainer || !slides?.length) return;
 
-        const { scriptUrl, cssUrl } = this._readSwiperUrls();
+        const scriptUrl = this._readSwiperScriptUrl();
         if (!scriptUrl) return;
 
         const { autoplayAllowed, slideDelay } = this._autoplayAllowed();
 
         try {
-            await loadSwiper(scriptUrl, cssUrl);
+            await loadSwiper(scriptUrl);
             if (!this._root) return;
 
             this._swiper = await createSwiper(swiperContainer, {

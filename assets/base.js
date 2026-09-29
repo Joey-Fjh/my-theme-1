@@ -205,14 +205,9 @@ function activateModuleRoot(el) {
         });
 }
 
-function claimModuleRoot(el) {
-    if (!el || el.__themeModuleClaimed) return;
-
+function activateClaimedModuleRoot(el) {
     const moduleId = el.getAttribute(MODULE_ATTR);
     if (!moduleId) return;
-
-    el.__themeModuleClaimed = true;
-    adapter.defer(el);
 
     const observer =
         !loadedModules.has(moduleId) && el.hasAttribute(MODULE_LAZY_ATTR)
@@ -228,15 +223,47 @@ function claimModuleRoot(el) {
     activateModuleRoot(el);
 }
 
+function claimModuleRoot(el) {
+    if (!el || el.__themeModuleClaimed) return;
+
+    const moduleId = el.getAttribute(MODULE_ATTR);
+    if (!moduleId) return;
+
+    el.__themeModuleClaimed = true;
+    adapter.defer(el);
+    activateClaimedModuleRoot(el);
+}
+
 /**
  * Claim every module root inside `container` (and `container` itself). Idempotent.
  * @param {Document|Element} [container]
  */
 function scanModules(container) {
     const root = container || document;
+    const moduleRoots = [];
 
-    if (root.nodeType === 1 && root.matches?.(MODULE_SELECTOR)) claimModuleRoot(root);
-    root.querySelectorAll?.(MODULE_SELECTOR).forEach(claimModuleRoot);
+    if (root.nodeType === 1 && root.matches?.(MODULE_SELECTOR)) {
+        moduleRoots.push(root);
+    }
+
+    root.querySelectorAll?.(MODULE_SELECTOR).forEach((el) => {
+        moduleRoots.push(el);
+    });
+
+    const pendingActivation = [];
+
+    moduleRoots.forEach((el) => {
+        if (!el || el.__themeModuleClaimed) return;
+
+        const moduleId = el.getAttribute(MODULE_ATTR);
+        if (!moduleId) return;
+
+        el.__themeModuleClaimed = true;
+        adapter.defer(el);
+        pendingActivation.push(el);
+    });
+
+    pendingActivation.forEach((el) => activateClaimedModuleRoot(el));
 }
 
 /** Stop observing module roots that left the document. */

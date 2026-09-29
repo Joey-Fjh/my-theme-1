@@ -1,40 +1,6 @@
 /** @type {Map<string, Promise<typeof Swiper>>} */
 const scriptLoadPromises = new Map();
 
-/** @type {Map<string, Promise<void>>} */
-const cssLoadPromises = new Map();
-
-function loadStylesheet(cssUrl) {
-    if (!cssUrl) {
-        return Promise.resolve();
-    }
-
-    if (typeof document !== 'undefined') {
-        const existing = document.querySelector(
-            `link[data-swiper-css-url="${CSS.escape(cssUrl)}"]`,
-        );
-        if (existing) {
-            return Promise.resolve();
-        }
-    }
-
-    const cached = cssLoadPromises.get(cssUrl);
-    if (cached) return cached;
-
-    const loadPromise = new Promise((resolve, reject) => {
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = cssUrl;
-        link.dataset.swiperCssUrl = cssUrl;
-        link.onload = () => resolve();
-        link.onerror = () => reject(new Error('Failed to load Swiper CSS'));
-        document.head.appendChild(link);
-    });
-
-    cssLoadPromises.set(cssUrl, loadPromise);
-    return loadPromise;
-}
-
 function loadSwiperScript(scriptUrl) {
     let scriptPromise = scriptLoadPromises.get(scriptUrl);
     if (scriptPromise) return scriptPromise;
@@ -67,19 +33,15 @@ function loadSwiperScript(scriptUrl) {
 }
 
 /**
- * Load Swiper script and optional stylesheet once per URL.
+ * Load Swiper script once per URL.
  * @param {string} scriptUrl - Absolute URL from `data-swiper-src`.
- * @param {string} [cssUrl] - Absolute URL from `data-swiper-css`.
  */
-export function loadSwiper(scriptUrl, cssUrl) {
+export function loadSwiper(scriptUrl) {
     if (!scriptUrl) {
         return Promise.reject(new Error('loadSwiper requires a script URL'));
     }
 
-    return (async () => {
-        await loadStylesheet(cssUrl);
-        return loadSwiperScript(scriptUrl);
-    })();
+    return loadSwiperScript(scriptUrl);
 }
 
 /**

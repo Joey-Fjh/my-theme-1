@@ -37,7 +37,6 @@ define('announcementBar', () => ({
         if (!swiperContainer) return;
 
         const scriptUrl = this._root?.dataset?.swiperSrc;
-        const cssUrl = this._root?.dataset?.swiperCss;
         if (!scriptUrl) return;
 
         const slides = this._root.querySelectorAll('.swiper-slide');
@@ -45,7 +44,7 @@ define('announcementBar', () => ({
         if (slideCount === 0) return;
 
         try {
-            await loadSwiper(scriptUrl, cssUrl);
+            await loadSwiper(scriptUrl);
             if (!this._root) return;
 
             this._swiper = await createSwiper(swiperContainer, {

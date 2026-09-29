@@ -1,5 +1,6 @@
 import { define } from 'alpine-adapter';
 import { useDisposable } from 'utils';
+import 'flip-digit';
 
 define('countdownTimer', (endDate = null) => ({
     ...useDisposable(),

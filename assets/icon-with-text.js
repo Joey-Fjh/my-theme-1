@@ -14,12 +14,8 @@ define('iconWithText', () => ({
         });
     },
 
-    _readSwiperUrls() {
-        const ds = this._root?.dataset || {};
-        return {
-            scriptUrl: ds.swiperSrc || '',
-            cssUrl: ds.swiperCss || '',
-        };
+    _readSwiperScriptUrl() {
+        return this._root?.dataset?.swiperSrc || '';
     },
 
     async _initSwiper() {
@@ -28,7 +24,7 @@ define('iconWithText', () => ({
         const swiperEl = this._root.querySelector('[data-icon-with-text-swiper]');
         if (!swiperEl) return;
 
-        const { scriptUrl, cssUrl } = this._readSwiperUrls();
+        const scriptUrl = this._readSwiperScriptUrl();
         if (!scriptUrl) return;
 
         const desktopColumns = parseInt(this._root.getAttribute('data-desktop-columns'), 10) || 3;
@@ -37,7 +33,7 @@ define('iconWithText', () => ({
         const paginationEl = this._root.querySelector('[data-icon-with-text-pagination]');
 
         try {
-            await loadSwiper(scriptUrl, cssUrl);
+            await loadSwiper(scriptUrl);
             if (!this._root) return;
 
             this._swiper = await createSwiper(swiperEl, {

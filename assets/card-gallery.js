@@ -3,7 +3,6 @@ import { define } from 'alpine-adapter';
 export function createCardGalleryState(initial = {}) {
     let imageCount = Math.max(1, Number(initial.imageCount) || 1);
     let enableImageNavigation = initial.enableImageNavigation !== false;
-    let activeImageIndex = 0;
 
     return {
         get imageCount() {
@@ -17,12 +16,6 @@ export function createCardGalleryState(initial = {}) {
         },
         set enableImageNavigation(value) {
             enableImageNavigation = value !== false;
-        },
-        get activeImageIndex() {
-            return activeImageIndex;
-        },
-        set activeImageIndex(value) {
-            activeImageIndex = value;
         },
 
         _hydrateFromDataset(el) {
@@ -60,30 +53,31 @@ export function createCardGalleryState(initial = {}) {
             return this.canNavigateImages;
         },
 
-        get imageNavigationLabel() {
-            return `${activeImageIndex + 1}/${imageCount}`;
+        imageNavigationLabel(activeImageIndex) {
+            const index = Number(activeImageIndex) || 0;
+            return `${index + 1}/${imageCount}`;
         },
 
-        get paginationLabel() {
-            return this.imageNavigationLabel;
+        paginationLabel(activeImageIndex) {
+            return this.imageNavigationLabel(activeImageIndex);
         },
 
-        setActiveImage(index, el) {
+        setActiveImage(index, el, currentIndex = 0) {
             this._syncNavigationState(el);
-            if (!this.canNavigateImages) return;
-            activeImageIndex = this._normalizeIndex(index);
+            if (!this.canNavigateImages) return currentIndex;
+            return this._normalizeIndex(index);
         },
 
-        nextImage(el) {
+        nextImage(el, currentIndex = 0) {
             this._syncNavigationState(el);
-            if (!this.canNavigateImages) return;
-            this.setActiveImage(activeImageIndex + 1, el);
+            if (!this.canNavigateImages) return currentIndex;
+            return this._normalizeIndex(currentIndex + 1);
         },
 
-        prevImage(el) {
+        prevImage(el, currentIndex = 0) {
             this._syncNavigationState(el);
-            if (!this.canNavigateImages) return;
-            this.setActiveImage(activeImageIndex - 1, el);
+            if (!this.canNavigateImages) return currentIndex;
+            return this._normalizeIndex(currentIndex - 1);
         },
 
         _normalizeIndex(index) {
@@ -104,6 +98,8 @@ define('cardGallery', (options = {}) => {
     });
 
     return {
+        activeImageIndex: 0,
+
         get imageCount() {
             return gallery.imageCount;
         },
@@ -116,12 +112,6 @@ define('cardGallery', (options = {}) => {
         set enableImageNavigation(value) {
             gallery.enableImageNavigation = value;
         },
-        get activeImageIndex() {
-            return gallery.activeImageIndex;
-        },
-        set activeImageIndex(value) {
-            gallery.activeImageIndex = value;
-        },
         get hasMultipleImages() {
             return gallery.hasMultipleImages;
         },
@@ -132,10 +122,10 @@ define('cardGallery', (options = {}) => {
             return gallery.canPaginateImages;
         },
         get imageNavigationLabel() {
-            return gallery.imageNavigationLabel;
+            return gallery.imageNavigationLabel(this.activeImageIndex);
         },
         get paginationLabel() {
-            return gallery.paginationLabel;
+            return gallery.paginationLabel(this.activeImageIndex);
         },
 
         init() {
@@ -143,15 +133,15 @@ define('cardGallery', (options = {}) => {
         },
 
         setActiveImage(index) {
-            gallery.setActiveImage(index, this.$el);
+            this.activeImageIndex = gallery.setActiveImage(index, this.$el, this.activeImageIndex);
         },
 
         nextImage() {
-            gallery.nextImage(this.$el);
+            this.activeImageIndex = gallery.nextImage(this.$el, this.activeImageIndex);
         },
 
         prevImage() {
-            gallery.prevImage(this.$el);
+            this.activeImageIndex = gallery.prevImage(this.$el, this.activeImageIndex);
         },
     };
 });

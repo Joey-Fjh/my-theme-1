@@ -29,12 +29,8 @@ define('slidesShow', () => ({
         });
     },
 
-    _readSwiperUrls() {
-        const ds = this._root?.dataset || {};
-        return {
-            scriptUrl: ds.swiperSrc || '',
-            cssUrl: ds.swiperCss || '',
-        };
+    _readSwiperScriptUrl() {
+        return this._root?.dataset?.swiperSrc || '';
     },
 
     async _initSwiper() {
@@ -48,11 +44,11 @@ define('slidesShow', () => ({
             return;
         }
 
-        const { scriptUrl, cssUrl } = this._readSwiperUrls();
+        const scriptUrl = this._readSwiperScriptUrl();
         if (!scriptUrl) return;
 
         try {
-            await loadSwiper(scriptUrl, cssUrl);
+            await loadSwiper(scriptUrl);
             if (!this._root) return;
 
             this._swiper = await createSwiper(swiperContainer, {

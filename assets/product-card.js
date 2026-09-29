@@ -9,6 +9,58 @@ function shouldIgnoreTouchToggleAfterScroll() {
     return Date.now() - productCardTouchScrollAt < TOUCH_TOGGLE_SCROLL_GUARD_MS;
 }
 
+/**
+ * @param {ParentNode | null | undefined} root
+ * @returns {string[]}
+ */
+export function collectModuleIdsFromTemplateTree(root) {
+    const ids = new Set();
+    if (!root) return [];
+
+    const visit = (node) => {
+        if (!node) return;
+
+        if (node.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
+            node.childNodes.forEach(visit);
+            return;
+        }
+
+        if (node.nodeType !== Node.ELEMENT_NODE) return;
+
+        const el = node;
+        const moduleId = el.getAttribute?.('data-module-id');
+        if (moduleId) ids.add(moduleId);
+
+        if (el.tagName === 'TEMPLATE' && el.content) {
+            visit(el.content);
+        }
+
+        el.childNodes?.forEach(visit);
+    };
+
+    visit(root);
+    return [...ids];
+}
+
+/**
+ * @param {string} dialogId
+ * @returns {string[]}
+ */
+export function discoverQuickViewModuleIds(dialogId) {
+    if (!dialogId) return [];
+
+    const escapedId = typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(dialogId) : dialogId;
+    const selector = `template[data-quick-view-module-template="${escapedId}"]`;
+    const moduleTemplate = document.querySelector(selector);
+
+    if (!moduleTemplate) return [];
+
+    const contentRoot =
+        moduleTemplate instanceof HTMLTemplateElement ? moduleTemplate.content : moduleTemplate;
+
+    return collectModuleIdsFromTemplateTree(contentRoot);
+}
+
 define('productCard', (options = {}) => {
     const gallery = createCardGalleryState({
         imageCount: options.imageCount,
@@ -33,6 +85,9 @@ define('productCard', (options = {}) => {
         isAddingToCart: false,
         isTouchDevice: false,
         actionsPinned: false,
+        activeImageIndex: 0,
+        quickViewReady: false,
+        _isOpeningQuickView: false,
         _hoverLeaveTimer: null,
         _toastAdded: '',
 
@@ -48,12 +103,6 @@ define('productCard', (options = {}) => {
         set enableImageNavigation(value) {
             gallery.enableImageNavigation = value;
         },
-        get activeImageIndex() {
-            return gallery.activeImageIndex;
-        },
-        set activeImageIndex(value) {
-            gallery.activeImageIndex = value;
-        },
         get hasMultipleImages() {
             return gallery.hasMultipleImages;
         },
@@ -64,10 +113,10 @@ define('productCard', (options = {}) => {
             return gallery.canPaginateImages;
         },
         get imageNavigationLabel() {
-            return gallery.imageNavigationLabel;
+            return gallery.imageNavigationLabel(this.activeImageIndex);
         },
         get paginationLabel() {
-            return gallery.paginationLabel;
+            return gallery.paginationLabel(this.activeImageIndex);
         },
 
         get canShowHoverActions() {
@@ -167,15 +216,15 @@ define('productCard', (options = {}) => {
         },
 
         setActiveImage(index) {
-            gallery.setActiveImage(index, this.$el);
+            this.activeImageIndex = gallery.setActiveImage(index, this.$el, this.activeImageIndex);
         },
 
         nextImage() {
-            gallery.nextImage(this.$el);
+            this.activeImageIndex = gallery.nextImage(this.$el, this.activeImageIndex);
         },
 
         prevImage() {
-            gallery.prevImage(this.$el);
+            this.activeImageIndex = gallery.prevImage(this.$el, this.activeImageIndex);
         },
 
         toggleTouchActions(event) {
@@ -209,11 +258,30 @@ define('productCard', (options = {}) => {
             this.closeTouchActions();
         },
 
-        openQuickView() {
+        async openQuickView() {
             if (this.isTouchDevice && shouldIgnoreTouchToggleAfterScroll()) return;
             this.closeTouchActions();
             if (!this.quickViewDialogId) return;
-            this.$store?.dialog?.open?.(this.quickViewDialogId);
+            if (this._isOpeningQuickView) return;
+
+            const moduleIds = discoverQuickViewModuleIds(this.quickViewDialogId);
+            if (!moduleIds.length) {
+                console.error('[product-card] Quick view module template not found');
+                return;
+            }
+
+            this._isOpeningQuickView = true;
+
+            try {
+                await Promise.all(moduleIds.map((moduleId) => import(moduleId)));
+                this.quickViewReady = true;
+                await this.$nextTick();
+                this.$store?.dialog?.open?.(this.quickViewDialogId);
+            } catch (error) {
+                console.error('[product-card] Quick view modules failed to load', error);
+            } finally {
+                this._isOpeningQuickView = false;
+            }
         },
 
         addPrimaryVariantToCart() {
