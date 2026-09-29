@@ -109,7 +109,9 @@ define('tabControl', (initialStrategy = 'first', options = {}) => ({
 
     setSearchTab(index, tabKey) {
         this.setActive(index);
-        const host = this.$el.closest('[data-predictive-search-root]');
+        const host = this.$el.closest(
+            '[data-predictive-search-root], [data-module-id="predictive-search"]',
+        );
         if (!host) return;
         const scope = data(host);
         if (scope && Object.prototype.hasOwnProperty.call(scope, 'activeTab')) {

@@ -401,3 +401,64 @@ Run as two prompts and two checkpoint commits (coordinator, 2026-09-29; 32 files
 
 - `assets/carousel-swiper.js` now caches `loadSwiper` by the script and stylesheet URL pair, so two concurrent calls with the same script URL but different or missing stylesheet URLs would inject the script twice, against the one-script-per-URL contract GPT enforced in 3C-3 (G1). Unreachable today (all seven callers pass both URLs); fix by caching the script promise by script URL alone, and update the 3C-3 harness anchors.
 - `assets/media-video.js` pauses playback when the video leaves the viewport, which the theme did not do (rule 2); the phase review decides whether it stays, with the user.
+
+#### Slice 5 — the rest, and phase exit cleanup
+
+Run as two prompts and two checkpoint commits (coordinator, 2026-09-29). Starting point: `lint:theme` 112 at `5168986`.
+
+- **5a markup and modules:** the slice 5 sections (`404`, `article`, `blog`, `footer`, `main-page-about`, `main-page-contact`, `newsletter-banner`, `newsletter-overlay`, `password-footer`, `password-header`, `password`); modules `newsletterBanner`, `newsletterOverlay`, `sectionPagination` (skeleton `assets/section-pagination.js` as base); the six remaining D files (`assets/alpine.components.js`, whose gate was phase 3 and which was never deleted, `alpine.components.overlays.js`, `alpine.components.pagination.js`, `alpine.components.registry.js`, `alpine.store.js`, `alpine.store.registry.js`); the Liquid findings earlier slices left (`snippets/search-predictive-panel.liquid` 14, a slice 3 file reported as clean; `snippets/rotating-badge.liquid` 4; `sections/collection.liquid` 3; `snippets/search-results-tabs.liquid` 1; `snippets/buy-buttons.liquid` 2 and `snippets/product-variant-picker.liquid` 2, held by 3C look preservation and now rule 4 replacements; the `watermark` and `rotating-badge` raw SVGs through the icon pipeline); `lint:i18n` to zero; the `loadSwiper` script cache keyed by script URL alone.
+- **5b CSS and phase exit:** the 3B CSS debt (board Evidence: namespace resets, withheld skeleton rules), the findings in `tailwind/*.css` and `assets/gift-card.css`, the theme-only validator exception list proposed for the user (not applied), and the phase exit gates (`npm.cmd run lint`, `npm.cmd test`).
+
+5a: **executed** (commit below). 5b: pending.
+
+#### 5a — remaining sections, D-file removal, markup cleanup
+
+**Outcome:** Slice 5a sections use `data-module-id` on every Alpine root; `newsletterBanner`, `newsletterOverlay`, and `sectionPagination` load from import-map modules; six legacy D runtime files removed; leftover markup and rule 4 typography fixes applied in scope; `loadSwiper` script promise keyed by script URL only; `lint:i18n` schema defaults fixed.
+
+**Checkpoint:** `5168986` → this commit.
+
+**Modules (theme source → new file):**
+
+| Module | Members | Theme source |
+| --- | --- | --- |
+| `newsletter-banner.js` | `toastNewsletterPostedSuccess`, `newsletterBanner` (`_hydrateFromDataset`, `init`) | `assets/alpine.components.overlays.js` L12–52 |
+| `newsletter-overlay.js` | `newsletterOverlay` (`_hydrateFromDataset`, `init`, `_onWindowKeydown`, `_canShow`, `_isExpired`, `_setExpired`, `_open`, `hide`, `destroy`) | `assets/alpine.components.overlays.js` L55–160 |
+| `section-pagination.js` | Skeleton pagination + `onNavClick`, `onBlogTabClick`, `_syncBlogTabsFromUrl`, `_onTabControlClick`, `isUrlMatch`, blog tab initial index | `assets/alpine.components.pagination.js` L13–174 + skeleton `section-pagination.js` |
+| `contact-form-success.js` | `contactFormSuccess` (`init`) | `sections/main-page-contact.liquid` inline toast block |
+| `carousel-swiper.js` | `loadSwiper` script cache by script URL | coordinator note slice 4 checkpoint |
+
+**Class replacements (rule 4):**
+
+| File | Was | Now |
+| --- | --- | --- |
+| `snippets/search-predictive-panel.liquid` | `tracking-[0.16em]`, `font-medium` | `typo-subtitle`, `body-lg` |
+| `sections/collection.liquid` | `tracking-wide` on `p`/`h3` | `typo-subtitle`; `h3` → `p` with `role="heading"` |
+| `snippets/search-results-tabs.liquid` | `tracking-[0.16em]` | `typo-subtitle` |
+| `snippets/buy-buttons.liquid` | `font-medium` (×2) | tier-only `body-md` / `body-sm` |
+| `snippets/product-variant-picker.liquid` | `font-medium` (×2) | `body-md` |
+| `sections/article.liquid` | `h4` + `font-medium` | `heading-h4` |
+| `sections/password-header.liquid` | `font-medium` | `body-lg` |
+| `sections/password.liquid` | `tracking-[0.14em]` | `typo-subtitle` |
+| `snippets/rotating-badge.liquid` | `font-semibold`, `font-bold` on center | removed weight utilities |
+
+**Icon pipeline:** not run. **Stop items:** `snippets/watermark.liquid` SVG `<text>` uses merchant/Liquid copy (dynamic). `snippets/rotating-badge.liquid` SVG uses Liquid `badge_text`, circular path id `unique_id`, and HTML center copy — cannot vend as static icon without redesign.
+
+**Pre-delete (`git grep` file refs, layout/assets):** `alpine.components.overlays.js`, `alpine.components.pagination.js`, `alpine.components.registry.js`, `alpine.store.js`, `alpine.store.registry.js`, `alpine.components.js` — **no matches**. Overlay mount grep still lists `newsletter-*` and cart sections (expected `x-data` names on new modules).
+
+**Validators:**
+
+| Command | Result |
+| --- | --- |
+| `lint:theme` | **56** total; non–5b remainder: `snippets/rotating-badge.liquid` (3 typography/raw SVG), `snippets/watermark.liquid` (1 raw SVG) — stop items; else only `tailwind/*.css` + `assets/gift-card.css` |
+| `lint:compat` | pass |
+| `lint:liquid-syntax` | pass |
+| `lint:i18n` | pass (schema defaults fixed) |
+| `test:theme-check` | **0** warnings |
+| `lint:doc-paths` | pass |
+
+**Harness:** `C:\Users\admin\AppData\Local\Temp\phase4-slice5a-harness.mjs` — **8/8** pass. Mutations: newsletter banner **caught**; newsletter overlay **caught**; section pagination **caught**; blog/article/contact (contact toast) **caught**; loadSwiper script cache **caught**. None **not caught**.
+
+**Browser (phase 5):** blog tab pagination + history; newsletter overlay delay/dismiss/Escape; newsletter banner post redirect toast; contact form success toast; password layout; article sticky sidebar; predictive search panel tabs on `search.liquid`.
+
+**Risks:** Blog tab `aria-labelledby` is server-rendered from active tag until SectionRefresher replaces markup (brief mismatch possible before fetch). `tab-control.js` `setSearchTab` now resolves `[data-module-id="predictive-search"]` for search page panel tabs. Newsletter overlay Escape uses module listener (not Liquid `.window`).
+

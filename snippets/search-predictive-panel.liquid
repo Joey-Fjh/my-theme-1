@@ -5,7 +5,7 @@
     - Keep `sections/search.liquid` concise by moving dropdown panel markup here.
     - Render recommendation list + tabbed predictive results without changing Alpine behavior.
 
-    Required parent scope (from `x-data="predictiveSearch"`):
+    Required parent scope (predictive-search module):
     - State: `isOpen`, `isLoading`, `query`, `hasSearched`, `hasEmptyState`, `suggestions`, `products`, `articles`, `pages`
     - Methods: `onSuggestionClick`, `highlightSuggestion`, `performSearch`
     - Tab-control bindings exposed in parent scope: `registerTab`, `registerPanel`, `setActive`, `isActive`, `activeTab`
@@ -30,7 +30,7 @@
 >
     <div class="flex max-h-[min(80dvh,44rem)] min-h-100 flex-col pc:flex-row">
         <aside class="w-full shrink-0 border-b border-theme-border/20 px-6 py-6 pc:w-62.5 pc:border-e pc:border-b-0">
-            <p class="mb-8 body-lg tracking-[0.16em] text-theme-text/60 uppercase">
+            <p class="mb-8 body-lg typo-subtitle text-theme-text/60 uppercase">
                 {{ 'search.recommendation' | t }}
             </p>
 
@@ -73,7 +73,7 @@
                 x-show="!isLoading && hasEmptyState && query"
                 class="mt-10 flex h-full flex-col items-center justify-center text-center"
             >
-                <p class="font-medium text-theme-text">
+                <p class="body-lg text-theme-text">
                     {{ 'search.not_found' | t }} "<span x-text="query"></span>"
                 </p>
             </div>
@@ -83,19 +83,18 @@
                 class="flex w-full flex-1 flex-col"
             >
                 {% capture tab_header %}
-                    <div class="flex w-full gap-8 tracking-[0.16em] uppercase">
+                    <div class="flex w-full gap-8 typo-subtitle uppercase">
                         <button
                             type="button"
                             role="tab"
                             id="predictive-search-tab-products-{{ scope_id }}"
                             aria-controls="predictive-search-panel-products-{{ scope_id }}"
-                            x-data="{ index: null }"
-                            x-init="index = registerTab($el)"
-                            @click="setActive(index); activeTab = 'products'"
-                            :aria-selected="isActive(index)"
-                            :tabindex="isFocusable(index) ? 0 : -1"
+                            x-init="registerTab($el)"
+                            @click="setSearchTab(tabIndexFor($el), 'products')"
+                            :aria-selected="isActive(tabIndexFor($el))"
+                            :tabindex="isFocusable(tabIndexFor($el)) ? 0 : -1"
                             class="search-predictive-panel__tab tab-nav-item tab-nav-item--search body-lg"
-                            :class="{ 'is-active': isActive(index) }"
+                            :class="{ 'is-active': isActive(tabIndexFor($el)) }"
                         >
                             {{ 'search.products' | t }}
                         </button>
@@ -105,13 +104,12 @@
                             role="tab"
                             id="predictive-search-tab-articles-{{ scope_id }}"
                             aria-controls="predictive-search-panel-articles-{{ scope_id }}"
-                            x-data="{ index: null }"
-                            x-init="index = registerTab($el)"
-                            @click="setActive(index); activeTab = 'articles'"
-                            :aria-selected="isActive(index)"
-                            :tabindex="isFocusable(index) ? 0 : -1"
+                            x-init="registerTab($el)"
+                            @click="setSearchTab(tabIndexFor($el), 'articles')"
+                            :aria-selected="isActive(tabIndexFor($el))"
+                            :tabindex="isFocusable(tabIndexFor($el)) ? 0 : -1"
                             class="search-predictive-panel__tab tab-nav-item tab-nav-item--search body-lg"
-                            :class="{ 'is-active': isActive(index) }"
+                            :class="{ 'is-active': isActive(tabIndexFor($el)) }"
                         >
                             {{ 'search.articles' | t }}
                         </button>
@@ -121,13 +119,12 @@
                             role="tab"
                             id="predictive-search-tab-pages-{{ scope_id }}"
                             aria-controls="predictive-search-panel-pages-{{ scope_id }}"
-                            x-data="{ index: null }"
-                            x-init="index = registerTab($el)"
-                            @click="setActive(index); activeTab = 'pages'"
-                            :aria-selected="isActive(index)"
-                            :tabindex="isFocusable(index) ? 0 : -1"
+                            x-init="registerTab($el)"
+                            @click="setSearchTab(tabIndexFor($el), 'pages')"
+                            :aria-selected="isActive(tabIndexFor($el))"
+                            :tabindex="isFocusable(tabIndexFor($el)) ? 0 : -1"
                             class="search-predictive-panel__tab tab-nav-item tab-nav-item--search body-lg"
-                            :class="{ 'is-active': isActive(index) }"
+                            :class="{ 'is-active': isActive(tabIndexFor($el)) }"
                         >
                             {{ 'search.pages' | t }}
                         </button>
@@ -139,8 +136,7 @@
                         role="tabpanel"
                         id="predictive-search-panel-products-{{ scope_id }}"
                         aria-labelledby="predictive-search-tab-products-{{ scope_id }}"
-                        x-data="{ index: null }"
-                        x-init="index = registerPanel($el)"
+                        x-init="registerPanel($el)"
                         x-show="activeTab === 'products'"
                     >
                         <div class="grid {{ mobile_grid_class }} gap-6 pc:grid-cols-2">
@@ -154,8 +150,7 @@
                         role="tabpanel"
                         id="predictive-search-panel-articles-{{ scope_id }}"
                         aria-labelledby="predictive-search-tab-articles-{{ scope_id }}"
-                        x-data="{ index: null }"
-                        x-init="index = registerPanel($el)"
+                        x-init="registerPanel($el)"
                         x-show="activeTab === 'articles'"
                     >
                         <ul class="space-y-4">
@@ -177,8 +172,7 @@
                         role="tabpanel"
                         id="predictive-search-panel-pages-{{ scope_id }}"
                         aria-labelledby="predictive-search-tab-pages-{{ scope_id }}"
-                        x-data="{ index: null }"
-                        x-init="index = registerPanel($el)"
+                        x-init="registerPanel($el)"
                         x-show="activeTab === 'pages'"
                     >
                         <ul class="space-y-4">
@@ -212,7 +206,7 @@
                 x-show="query && hasSearched && !hasEmptyState"
             >
                 <span>
-                    {{ 'search.search_for' | t }} "<span class="font-medium" x-text="query"></span>"
+                    {{ 'search.search_for' | t }} "<span class="body-lg" x-text="query"></span>"
                 </span>
                 {%- render 'icons', icon: 'icon-arrow2' -%}
             </button>
