@@ -6,12 +6,10 @@ Last updated: 2026-09-29.
 
 ## Open decisions
 
-Active: none. 3A (`2a3c331`), 3B (`dcbac9f`), 3C-1 (`099ad3b`), 3C-2 (`bfeb5f1`), 3C-3 (`d49e224`) done; 3D is next, after the two queued decisions below, per `docs/project.md`.
+Active: none. Phase 3 complete (3A–3C-3 committed; 3D closed without a code change, `docs/project.md`). Next: the migration stop-loss point below, then phase 4 slice 0.
 
 Queued (decide before the phase that needs them):
 
-- **Theme-only settings (before phase 3 batch 3D).** 54 setting IDs exist only in this theme, most referenced by Liquid or merchant JSON: which stay global and which move to section settings. Renaming or removing a referenced ID needs the user. Evidence: `docs/migration/phase2/settings-schema.md`.
-- **Schema locale merge timing (before phase 3 batch 3D).** Merge `locales/en.default.schema.json` with the skeleton keys in phase 3, or per slice as each section schema is rewritten. Evidence: `docs/migration/phase2/locales.md`.
 - **Migration stop-loss point (before phase 4).** The latest date, or the capability threshold, at which the migration stops expanding and design rework starts, given the three-submission / 90-day constraint in `docs/project.md`. Owner: user (with the business owner).
 
 
