@@ -188,83 +188,74 @@ function importModule(moduleId) {
     return moduleRequests.get(moduleId);
 }
 
+/** Import a held root's module, then mount it. On failure the root stays held. */
 function activateModuleRoot(el) {
     const moduleId = el.getAttribute(MODULE_ATTR);
     if (!moduleId) return;
 
-    if (loadedModules.has(moduleId)) {
-        adapter.mount(el);
-        return;
-    }
-
     importModule(moduleId)
-        .then(() => adapter.mount(el))
-        .catch((error) => {
-            console.error(`[Theme] Failed to load module "${moduleId}"`, error);
+        .then(() => {
+            delete el.__themeModulePending;
             adapter.mount(el);
+        })
+        .catch((error) => {
+            // Mounting without the definition would only produce expression errors.
+            console.error(`[Theme] Failed to load module "${moduleId}"`, error);
         });
 }
 
-function activateClaimedModuleRoot(el) {
-    const moduleId = el.getAttribute(MODULE_ATTR);
-    if (!moduleId) return;
-
-    const observer =
-        !loadedModules.has(moduleId) && el.hasAttribute(MODULE_LAZY_ATTR)
-            ? getLazyObserver()
-            : null;
-
-    if (observer) {
-        observer.observe(el);
-        el.__themeModuleObserved = true;
-        return;
-    }
-
-    activateModuleRoot(el);
-}
-
-function claimModuleRoot(el) {
-    if (!el || el.__themeModuleClaimed) return;
-
-    const moduleId = el.getAttribute(MODULE_ATTR);
-    if (!moduleId) return;
-
-    el.__themeModuleClaimed = true;
-    adapter.defer(el);
-    activateClaimedModuleRoot(el);
+/**
+ * Module roots currently in `container` (and `container` itself), not inside template content.
+ * @param {Document|Element} container
+ * @returns {Element[]}
+ */
+function liveModuleRoots(container) {
+    const roots = [];
+    if (container.nodeType === 1 && container.matches?.(MODULE_SELECTOR)) roots.push(container);
+    container.querySelectorAll?.(MODULE_SELECTOR).forEach((el) => roots.push(el));
+    return roots;
 }
 
 /**
- * Claim every module root inside `container` (and `container` itself). Idempotent.
+ * Start downloading the modules of non-lazy roots so they are ready, or nearly, when the
+ * library reaches them. Performance only: correctness comes from `holdForModule`.
  * @param {Document|Element} [container]
  */
 function scanModules(container) {
-    const root = container || document;
-    const moduleRoots = [];
+    liveModuleRoots(container || document).forEach((el) => {
+        const moduleId = el.getAttribute(MODULE_ATTR);
+        if (!moduleId || loadedModules.has(moduleId) || el.hasAttribute(MODULE_LAZY_ATTR)) return;
+        importModule(moduleId).catch(() => {});
+    });
+}
 
-    if (root.nodeType === 1 && root.matches?.(MODULE_SELECTOR)) {
-        moduleRoots.push(root);
+/**
+ * Init interceptor: runs for every element the library is about to initialize, whatever
+ * created it. A module root whose module is not loaded yet is held, loaded (now, or when
+ * visible for `data-module-lazy`), then mounted.
+ * @param {Element} el
+ * @returns {boolean} true to hold the element
+ */
+function holdForModule(el) {
+    const moduleId = el.getAttribute?.(MODULE_ATTR);
+    if (!moduleId || loadedModules.has(moduleId)) return false;
+    if (el.__themeModulePending) return true;
+
+    el.__themeModulePending = true;
+    scanModules(el);
+
+    const observer = el.hasAttribute(MODULE_LAZY_ATTR) ? getLazyObserver() : null;
+    if (observer) {
+        observer.observe(el);
+        el.__themeModuleObserved = true;
+        return true;
     }
 
-    root.querySelectorAll?.(MODULE_SELECTOR).forEach((el) => {
-        moduleRoots.push(el);
-    });
-
-    const pendingActivation = [];
-
-    moduleRoots.forEach((el) => {
-        if (!el || el.__themeModuleClaimed) return;
-
-        const moduleId = el.getAttribute(MODULE_ATTR);
-        if (!moduleId) return;
-
-        el.__themeModuleClaimed = true;
-        adapter.defer(el);
-        pendingActivation.push(el);
-    });
-
-    pendingActivation.forEach((el) => activateClaimedModuleRoot(el));
+    activateModuleRoot(el);
+    return true;
 }
+
+adapter.holdUntilReady(holdForModule);
 
 /** Stop observing module roots that left the document. */
 function releaseModuleRoots(node) {

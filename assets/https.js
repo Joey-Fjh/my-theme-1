@@ -245,8 +245,9 @@ class SectionRefresher {
 
     /**
      * Replace a region through the adapter lifecycle: tear the old tree down, swap the
-     * markup, let the module runtime claim any component roots the new markup introduces,
-     * then initialize what remains.
+     * markup, start downloading the modules the new markup declares, then initialize it.
+     * Component roots whose modules are still loading are held by the runtime's init
+     * interceptor and mount when their module arrives.
      */
     static replaceRegion(target, updater) {
         if (!target || typeof updater !== 'function') return;

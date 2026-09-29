@@ -30,4 +30,20 @@ Status: authorized by the user (2026-09-30, "可以" to commit and execute 5-H);
 
 ## Progress
 
-Not started.
+Paused by the user (2026-09-30), to continue on the work machine. Uncommitted work in progress on this machine; nothing below is reviewed.
+
+Done:
+
+- `assets/alpine.adapter.js`: `holdUntilReady(shouldHold)` added over `alpine.interceptInit`; the unused `defer` export removed.
+- `assets/base.js`: the H spike as the implementation: `holdForModule` interceptor registered with `adapter.holdUntilReady`, `activateModuleRoot` imports then mounts and stays held on failure, `scanModules` download-ahead only (non-lazy live roots; also called on a held root's subtree), `liveModuleRoots` helper; `claimModuleRoot` / `activateClaimedModuleRoot` / `__themeModuleClaimed` removed.
+- `assets/https.js`: `replaceRegion` doc comment matches download-ahead plus interceptor hold (code unchanged).
+- `docs/references/architecture/javascript-runtime.md`: load order note, the Module Discovery Contract rewritten (interception on every path, download-ahead, `data-module-lazy`, failure stays held, the user's principle on scanning versus progressive enhancement), Adapter API row `defer` → `holdUntilReady`, lifecycle table rows.
+- H4 pass: no `claimModuleRoot` / `__themeModuleClaimed` in `assets`; `interceptInit` only in `assets/alpine.adapter.js`.
+- H5 pass: `lint:theme`, `lint:compat`, `lint:doc-paths`, `test:theme-check` (141 files, no offenses), Prettier on the four changed files.
+- H2 and H3 were run on the spike (board, H spike entry); the finalized code differs from the spike only by the removed unused `defer` export and a comment, so they are expected to hold. Rerun both before review.
+
+Remaining:
+
+- H1 in the browser through the MCP, on a page that does not load the fixture modules (planned: `/cart`): inject fixtures and check (1) a `cardGallery` root held (`x-ignore`, no `_x_dataStack`) right after insertion, then initialized; (2) an `x-for` clone of a `flipDigit` root initialized with no expression error; (3) a parent root and a nested child root, both unloaded, whose module requests start in parallel; (4) a `data-module-lazy` `hoverCard` root placed far below the fold not requested until scrolled near; (5) `data-module-id="does-not-exist"` stays held with only the `[Theme] Failed to load module` error. Negative control: serve the `HEAD` versions of `assets/base.js` and `assets/alpine.adapter.js` (via `git show`, then restore), rerun, and confirm (1), (2), (4), (5) fail. The MCP browser runs `--isolated`: restart `shopify theme dev` if needed and have the user enter the store password in the MCP window.
+- Rerun H2 and H3 on the final code; H6 by the user (Theme Editor reload and reorder).
+- Record results here, then GPT review (Ask tier).
