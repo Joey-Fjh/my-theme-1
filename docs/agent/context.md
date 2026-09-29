@@ -4,4 +4,72 @@ Holds the plan currently under execution and its status. Nothing else. Unresolve
 
 Last updated: 2026-09-29.
 
-No plan is under execution.
+## Plan: phase 4 — capability slices 0–5
+
+Status: **authorized; slice 0 awaiting execution from the external prompt.**
+
+### Outcome
+
+Every retained business capability runs under the skeleton architecture: each theme component and store listed in `docs/migration/phase2/logic-migration.md` becomes an ES module registered through `alpine-adapter` and mounted by `data-module-id`; the Liquid files of each slice meet the skeleton contracts; the 17 D files are deleted through their gates; the 3B CSS debt is cleared. Behavior matches the live theme (`main`); the side-by-side browser rows run in phase 5. No design rework.
+
+### Execution model (user, 2026-09-29; `docs/project.md`, phase 4)
+
+- Slices run in order 0 → 5, one external execution prompt per slice. Each slice's executor validates its slice and commits it as a checkpoint on `refactor/skeleton-shell` (no push).
+- Between slices the coordinator checks only scope and the record, then hands over the next prompt.
+- The full review runs once over the phase 4 commit range: coordinator, then GPT with `.agents/roles/verifier.md`. Browser rows run in phase 5.
+
+### Sources
+
+- Per-slice file list, components and stores, and D-file gates with their pre-delete commands: `docs/migration/phase2/phase4-slices.md`.
+- Destination module per component: `docs/migration/phase2/logic-migration.md`. Theme behavior source: the D files (read only until their gate).
+- Capabilities and browser rows: `docs/migration/phase0/capabilities.md`, `docs/migration/phase0/browser-checklist.md`. Theme-specific contracts (motion settings, reveal pattern, WebKit guards): `docs/project.md`.
+- Skeleton `5191a50` (`git show skeleton/main:<path>`) where a primitive exists; `docs/references/` for the target contracts.
+
+### Implementation surface
+
+Per slice: the files listed for that slice in `phase4-slices.md`, the new modules for its components and stores, `layout/theme.liquid` import-map entries and `assets/base.js` store registration (as the cart store is registered), the D files whose gate is that slice (deletion only), `locales/en.default.json` and `locales/en.default.schema.json` keys those files use, and that slice's Progress subsection in this file. Slice 0 may also wire the dialog motion into the `getDialogMotionAdapter()` hook of `assets/image-lightbox.js`. Slice 5 also owns the 3B CSS debt (`docs/agent/board.md`, Evidence) in `tailwind/`, `assets/base.css`, `assets/gift-card.css`, and the theme-only validator exception list.
+
+Never: `config/settings_data.json`, `templates/*.json`, `sections/*-group.json`, vendor files, `docs/agent/board.md`, `docs/project.md`, `docs/references/`, validators and their wiring (propose instead).
+
+### Rules
+
+1. **Modules:** `define`/`store`/`data` through `alpine-adapter`, `useDisposable` (document and window listeners through `this.on(...)`), cross-component events through `events`, HTTP through `https`, section HTML replacement only through the SectionRefresher. No `window.__Theme__`, `window.Alpine`, `new CustomEvent`, `innerHTML =`, `outerHTML =`, `replaceWith(` outside the allowed files.
+2. **Behavior parity:** the theme component is the behavior source; a skeleton primitive, where one exists, is the structural base. Where both define behavior the markup shows, the theme behavior wins. Every ported member is listed with its theme source line.
+3. **Markup:** every `x-data` root has `data-module-id`; Alpine attributes are simple expressions (logic in the module); Liquid values reach modules through `data-*`; user-visible strings, ARIA copy, and schema labels use locale keys; the section schema locale keys a rewritten section uses are merged into `locales/en.default.schema.json`.
+4. **Style adaptation, not redesign:** default Tailwind typography and color classes that `lint:theme` rejects are replaced with the nearest tier, scheme, or token utility; each replacement is listed per file (old class → new class). No other visual change.
+5. **Merchant configuration:** no section type, block type, schema setting ID, preset name, or template reference is renamed or removed. Checked per changed section against `HEAD`.
+6. **Later-slice dependencies:** a call into a store or module that lands in a later slice is a guarded no-op, not a stub of new behavior.
+7. **D files:** deleted only in their gate slice, after the pre-delete command in `phase4-slices.md` lists no remaining mount (output recorded).
+8. **Stop items:** anything that needs a user decision (a merchant-visible change, a rendering change beyond rule 4, a contract conflict) is recorded under the slice's Progress with evidence and skipped; the rest of the slice continues.
+9. **Worktree safety:** never `git stash`, `git checkout -- <path>`, `git restore`, `git reset`, or any other command that rewrites the worktree. Compare with the previous checkpoint through `git show <rev>:<path>` or a separate `git worktree add` in the OS temp directory.
+
+### Per-slice acceptance (executor, before its commit)
+
+1. The slice's Liquid and module files have zero `lint:theme` findings, except stop items named under Progress. The repo total is lower than at the previous checkpoint, and no finding absent at the previous checkpoint appears elsewhere (sets compared without line numbers).
+2. Each component and store assigned to the slice exists as a module; every mount in the slice's files carries `data-module-id`; the import map maps exactly the modules in use, each to an existing file; no `module-import-map-unused`.
+3. The D files gated to the slice are deleted, with the pre-delete command output recorded.
+4. Harness outside the repository for every interactive module of the slice: stubs read at call time, real `useDisposable` semantics, mutations applied to copies of the module source (never to stubs or test objects), one caught mutation per behavior group, no branch that records a pass without its assertion. Pass count and mutation results recorded.
+5. Guard searches with `git grep` (rule 1 patterns) hit only the allowed files and remaining D files.
+6. `lint:i18n`: no new finding; pre-existing findings in the slice's files cleared. `lint:compat`, `lint:liquid-syntax` pass; `test:theme-check` adds nothing; `npx prettier --check` passes on changed files.
+7. Merchant configuration check (rule 5) recorded per changed section.
+8. `git status --short` lists only the slice's surface and this file.
+9. The browser rows the slice affects are listed from `browser-checklist.md` for phase 5.
+10. Commit: `feat: migrate <slice name> (phase 4 slice <n>)`, body with the ported components, deleted D files, and validator counts, ending with the attribution line the executor's client requires.
+
+### Phase exit (checked in the phase review)
+
+All 17 D files deleted; every component in `logic-migration.md` has its destination module; `lint:theme` zero apart from recorded, user-accepted exceptions; `lint:i18n` zero; the 3B CSS debt cleared; `npm.cmd run lint` and `npm.cmd test` pass.
+
+### Review tier
+
+**Ask**, applied once to the phase 4 commit range (user, 2026-09-29): coordinator review, then GPT verifier; both must report PASS. Browser checks run in phase 5.
+
+### Authorization
+
+Authorized by the user on 2026-09-29 ("继续干吧"), for phase 4 slices 0–5, including one checkpoint commit per slice by its executor, under the standing preference to execute first and correct in review.
+
+### Progress
+
+#### Slice 0 — shared UI (dialog, toast, motion reveal)
+
+Not started.

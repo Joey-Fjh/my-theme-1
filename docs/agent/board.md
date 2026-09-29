@@ -6,12 +6,7 @@ Last updated: 2026-09-29.
 
 ## Open decisions
 
-Active: none. Phase 3 complete (3A–3C-3 committed; 3D closed without a code change, `docs/project.md`). Next: the migration stop-loss point below, then phase 4 slice 0.
-
-Queued (decide before the phase that needs them):
-
-- **Migration stop-loss point (before phase 4).** The latest date, or the capability threshold, at which the migration stops expanding and design rework starts, given the three-submission / 90-day constraint in `docs/project.md`. Owner: user (with the business owner).
-
+Active: none. Phase 3 complete; the stop-loss point and the phase 4 review cadence are decided (`docs/project.md`, phase 4). Phase 4 runs from the plan in `docs/agent/context.md`.
 
 ## Evidence
 
