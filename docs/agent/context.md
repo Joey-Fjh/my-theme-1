@@ -122,3 +122,9 @@ Authorized by the user on 2026-09-29 ("继续干吧"), for phase 4 slices 0–5,
 **Stop items:** none.
 
 **Risks:** `motion-reveal.js` is a large generated port; later slices should add `data-module-id="motion-reveal"` on section roots (currently eager-loaded from `base.js` for parity with pre-migration mounts).
+
+**Coordinator checkpoint check (2026-09-29, scope and record only):** scope clean (`git diff --stat c1e4640 5388ddf` touches only the slice 0 surface and this file; `docs/agent/board.md`, `docs/project.md`, merchant JSON, and `sections/` unchanged; worktree clean). Two items:
+
+- **Corrected:** converting `snippets/ui-dialog.liquid`'s header to `{% doc %}` made theme-check report two new `UndefinedObject` warnings (`show_close_button`, `close_label` read but not declared), against check 6. The two `@param` lines were added; `test:theme-check` is back to the one pre-existing warning; `lint:theme` 319.
+- **Open for the phase review:** the slice 0 harness mutation evidence is partly unconditional: its `mutation()` helper counts an exception as caught, does not check that the mutation anchor exists, and the `toast container` and `lightbox` mutations pass `() => false`, so they are caught whatever the module does (check 4 forbids both). The 14 base assertions and the dialog store, dialog motion, toast, and motion reveal mutations exercise module code. The phase review re-tests `toast-container.js` and the lightbox motion hook.
+- Noted: `assets/dialog-motion.js` and `assets/drawer-motion.js` were converted in place to ES modules rather than deleted (their D-file gate); acceptable as destination modules, so the D count drops by two, not four. `assets/motion-reveal.js` is imported eagerly from `assets/base.js` because the eight section mounts gain `data-module-id` only in their slices; the slice that adds the last mount removes the eager import.
