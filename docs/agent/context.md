@@ -555,3 +555,16 @@ Corrections applied by the coordinator:
 - Not re-tested by the coordinator: the slice 1a modules (`PickupAvailability`, `ProductPaymentTerms`, `SellingPlanPicker` with buy buttons, `productLayout`, `productMediaModal`, `imageMagnifier`, `dragScroll`, comparison table); handed to the GPT review.
 
 Gates after the corrections: `npm.cmd run build:tw` rebuilt `assets/tailwind.output.css`; `npm.cmd run scan:compat` pass; **`npm.cmd run lint` exit 0** (i18n and unused keys, `lint:theme` zero, compatibility, doc paths, Prettier); **`npm.cmd test` exit 0** (theme-check: no offenses). Verdict: **PASS**, pending the GPT review.
+
+### Independent GPT review, round 1 (2026-09-29)
+
+Verdict **FAIL** on two findings. Proven: all 17 class-D paths deleted or converted in place; merchant JSON untouched; no removed section setting IDs, block types, or preset names; import-map targets exist and every `data-module-id` mount is mapped; rule 1 guards clean; its independent slice 1a harness **17 of 17** (behaviour and source mutations); `npm.cmd run lint`, `npm.cmd test`, and every listed validator exit 0.
+
+- **G1 (high):** `assets/icon-with-text.js`, `assets/testimonial-featured.js`, `assets/slides-show.js`, `assets/featured-products.js`: `destroy()` left `_root` set, so the after-load `if (!this._root)` guards never fired; destroying before `loadSwiper()` resolved left one live Swiper instance each (featured products: one per tab).
+- **G2 (medium):** `assets/collection-filter-field.js` imported `./collection-filters.js` by relative path while `assets/search-filters.js` imports the mapped `collection-filters` specifier: two module URLs on Shopify.
+
+### Coordinator corrections after GPT round 1 (2026-09-29)
+
+- G1: `destroy()` now sets `this._root = null` in the four modules and in `assets/routine-showcase.js` (not reported: its `destroy()` already nulls `_mql`, so the delayed creation throws inside its `try` and leaves no instance; aligned for consistency). Coordinator test (`hswiper/run.mjs` in the session scratchpad; deferred `loadSwiper` stub records every instance; destroy while the load is pending, then release): all six Swiper section modules (the five plus `assets/announcement-bar.js`) end with **zero live instances**. Mutation: removing `this._root = null` from `destroy()` leaves a live instance in `icon-with-text`, `testimonial-featured`, `slides-show`, `featured-products` (two), and `announcement-bar`; `routine-showcase` stays clean for the reason above.
+- G2: `assets/collection-filter-field.js` now `import 'collection-filters'`. A rescan of every static relative import (`from` and side-effect forms) against the import map finds no module reachable under both a mapped and a relative URL; the one dynamic relative import (`import('./performance.js')` in `assets/base.js`) is unmapped, as in the skeleton. The coordinator's review scan missed this importer because it fixed only the `from` form it had listed.
+- Gates: `npm.cmd run lint` exit 0; `npm.cmd test` exit 0; Prettier pass on the six changed modules.

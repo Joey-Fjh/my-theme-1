@@ -1,1 +1,1 @@
-import './collection-filters.js';
+import 'collection-filters';

@@ -78,6 +78,7 @@ define('iconWithText', () => ({
     destroy() {
         destroySwiper(this._swiper);
         this._swiper = null;
+        this._root = null;
         this.dispose();
     },
 }));

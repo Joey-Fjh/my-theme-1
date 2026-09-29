@@ -89,6 +89,7 @@ define('routineShowcase', () => ({
         this._swiper = null;
         this._mql = null;
         this._mqlHandler = null;
+        this._root = null;
         this.dispose();
     },
 }));

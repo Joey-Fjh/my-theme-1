@@ -87,6 +87,7 @@ define('featuredProducts', () => ({
 
     destroy() {
         this._destroySwipers();
+        this._root = null;
         this.dispose();
     },
 }));

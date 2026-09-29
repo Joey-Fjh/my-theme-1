@@ -117,6 +117,7 @@ define('slidesShow', () => ({
 
     destroy() {
         this._teardownSwiper();
+        this._root = null;
         this.dispose();
     },
 }));
