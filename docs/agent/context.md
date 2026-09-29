@@ -269,3 +269,5 @@ Run as two prompts and two checkpoint commits (coordinator, 2026-09-29; 32 files
 
 **Risks:** Predictive product card media uses `image.liquid` placeholder + `x-bind:src` for Shopify CDN URLs from the predictive API; verify visually in phase 5. `card-gallery.js` exports `createCardGalleryState` for `product-card.js` (shared helper, not a new public Alpine name).
 
+
+**Coordinator checkpoint check, slice 2 (2026-09-29, scope and record only):** scope clean (`git diff --stat d526e4d c088871`: no record file other than this one, no merchant JSON; worktree clean). `lint:theme` **214** by the coordinator's count (the executor reports 217); against the coordinator's 1b set, **no new finding**. The one remaining finding in a slice 2 file, `snippets/watermark.liquid` raw SVG, was already present; it stays a stop item for the phase review (moving the SVG into the icon pipeline needs `npm.cmd run build:svg`). The harness `mutation()` helper now records a throwing mutated module as not caught, with the error, and checks anchors: check 4 met for the first time.
