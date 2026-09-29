@@ -6,7 +6,7 @@ Last updated: 2026-09-29.
 
 ## Open decisions
 
-Active: none. 3C-2 accepted and authorized (2026-09-29); its plan is in `docs/agent/context.md`. 3C-3 and 3D follow, per `docs/project.md`.
+Active: none. 3A (`2a3c331`), 3B (`dcbac9f`), 3C-1 (`099ad3b`), 3C-2 (`bfeb5f1`) done; 3C-3 is planned next, then 3D, per `docs/project.md`.
 
 Queued (decide before the phase that needs them):
 
