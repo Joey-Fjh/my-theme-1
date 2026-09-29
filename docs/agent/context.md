@@ -128,3 +128,41 @@ Authorized by the user on 2026-09-29 ("继续干吧"), for phase 4 slices 0–5,
 - **Corrected:** converting `snippets/ui-dialog.liquid`'s header to `{% doc %}` made theme-check report two new `UndefinedObject` warnings (`show_close_button`, `close_label` read but not declared), against check 6. The two `@param` lines were added; `test:theme-check` is back to the one pre-existing warning; `lint:theme` 319.
 - **Open for the phase review:** the slice 0 harness mutation evidence is partly unconditional: its `mutation()` helper counts an exception as caught, does not check that the mutation anchor exists, and the `toast container` and `lightbox` mutations pass `() => false`, so they are caught whatever the module does (check 4 forbids both). The 14 base assertions and the dialog store, dialog motion, toast, and motion reveal mutations exercise module code. The phase review re-tests `toast-container.js` and the lightbox motion hook.
 - Noted: `assets/dialog-motion.js` and `assets/drawer-motion.js` were converted in place to ES modules rather than deleted (their D-file gate); acceptable as destination modules, so the D count drops by two, not four. `assets/motion-reveal.js` is imported eagerly from `assets/base.js` because the eight section mounts gain `data-module-id` only in their slices; the slice that adds the last mount removes the eager import.
+
+#### Slice 1 — product and cart
+
+Run as two prompts and two checkpoint commits (coordinator, 2026-09-29; 32 files and 14 components exceed one executor session):
+
+- **1a product page:** `sections/product.liquid`, `sections/featured-product.liquid`, `sections/pickup-availability.liquid`, `sections/product-comparison-table.liquid`, and the snippets `content-icon`, `gift-card-recipient-form`, `icon-with-text-item`, `image-lightbox`, `image-magnifier`, `pickup-availability-inline`, `product-gallery-carousel`, `product-gallery-grid`, `product-gallery-stacked`, `product-gallery-thumbnails`, `product-info-blocks`, `product-info-share`, `product-media-modal`, `product-purchase-stack`, `product-quick-view`, `product-variants-quantity-json`, `quick-view-buy-actions`, `rte-compact-prose`, `selling-plan-picker`, `starts`. Components: `GiftCardRecipient`, `PickupAvailability`, `ProductPaymentTerms`, `ProductPrice`, `SellingPlanPicker`, `productLayout`, `productMediaModal`, `imageMagnifier`, `dragScroll`, plus the `product-comparison-table` section runtime (`Components.register`, `logic-migration.md`). Deletes `assets/alpine.components.product.js` through its gate.
+- **1b cart and product cards:** `sections/cart.liquid`, `sections/cart-overlay.liquid`, `sections/product-recommendations.liquid`, and the snippets `cart-summary-accordion`, `product-card`, `product-card-price`, `product-card-variant-panel`, `product-recommendations-section`. Components and stores: `cart` (FX merge onto the 3A skeleton store), `cartOverlay`, `cartPage` (skeleton `assets/cart-page.js`), `productCard`, `relatedProducts`.
+
+#### 1a — product page
+
+**Status:** executed; ready for coordinator scope check and phase review.
+
+**Checkpoint:** `e503737` → slice commit (see report hash).
+
+**Deleted D file:** `assets/alpine.components.product.js` (P3 components remain in `variant-picker.js`, `quantity-selector.js`, `buy-buttons.js`).
+
+**Pre-delete `git grep` (recorded):** 10 Liquid mounts still name P3/1a Alpine factories (`sections/product.liquid`, `sections/featured-product.liquid`, `snippets/buy-buttons.liquid`, `snippets/gift-card-recipient-form.liquid`, `snippets/pickup-availability-inline.liquid`, `snippets/product-info-blocks.liquid`, `snippets/product-purchase-stack.liquid`, `snippets/product-variant-picker.liquid`, `snippets/quantity-selector.liquid`, `snippets/selling-plan-picker.liquid`); definitions now load from ESM modules via `data-module-id`, not the D file.
+
+**New modules:** `product-price.js`, `product-payment-terms.js`, `gift-card-recipient.js`, `pickup-availability.js`, `product-layout.js`, `selling-plan-picker.js`, `drag-scroll.js`, `product-media-modal.js`, `image-magnifier.js`, `product-comparison-table.js`.
+
+**Also changed:** `layout/theme.liquid` (import map), `assets/base.js` (removed eager `motion-reveal` import), 1a Liquid/snippet/section files (`data-module-id`, rule 4 class fixes, gallery Alpine `data-*` bindings), `locales/en.default.schema.json` (comparison metafield default), `sections/product-comparison-table.liquid` (removed `{% javascript %}`, i18n default).
+
+**Harness:** `C:\Users\admin\AppData\Local\Temp\phase4-slice1a-harness.mjs` — **9/9** pass; mutations caught: ProductPrice, GiftCardRecipient.
+
+**Validators (checkpoint `e503737` → HEAD):**
+
+| Check | Result |
+| --- | --- |
+| `lint:theme` | repo **~203** findings (1a slice Liquid files **0**); `alpine.components.product.js` removed |
+| `lint:compat` | pass |
+| `lint:liquid-syntax` | pass |
+| `lint:i18n` | slice finding cleared (`product-comparison-table` metafield default); repo pre-existing **4** unchanged |
+| `test:theme-check` | **1** warning (`filters-field` only) |
+| `prettier --check` | pass on changed files after write |
+
+**Stop items:** none.
+
+**Risks:** Harness covers smoke paths only (not full pickup SRA or productLayout ResizeObserver). `motion-reveal` now lazy via import map on section roots in this slice.

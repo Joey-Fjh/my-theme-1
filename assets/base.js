@@ -5,8 +5,6 @@ import { createCartContract } from 'cart-contract';
 import { createCartUiStore } from './alpine.store.cart.js';
 import { createDialogStore } from './dialog.js';
 import { createToastStore } from './toast.js';
-import './motion-reveal.js';
-
 /**
  * Coalesce repeated calls into one animation frame.
  * Lives in the core because layout measurement is the core's own concern.

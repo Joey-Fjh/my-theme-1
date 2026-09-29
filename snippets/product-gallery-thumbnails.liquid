@@ -80,6 +80,7 @@
             <div
                 {% unless is_left %}
                     x-data="dragScroll({ axis: 'x' })"
+                    data-module-id="drag-scroll"
                 {% endunless %}
                 data-gallery-thumbnails
                 class="
@@ -106,12 +107,13 @@
                         aria-controls="{{ gallery_scope_id | escape }}-panel"
                         aria-label="{{ 'accessibility.show_media' | t: index: forloop.index | escape }}"
                         data-gallery-thumbnail="{{ forloop.index0 }}"
-                        :tabindex="activeIndex === {{ forloop.index0 }} ? 0 : -1"
-                        :aria-selected="activeIndex === {{ forloop.index0 }}"
-                        @click="setActive({{ forloop.index0 }})"
+                        data-gallery-index="{{ forloop.index0 }}"
+                        :tabindex="activeIndex === Number($el.dataset.galleryIndex) ? 0 : -1"
+                        :aria-selected="activeIndex === Number($el.dataset.galleryIndex)"
+                        @click="setActive(Number($el.dataset.galleryIndex))"
                         class="product-gallery__thumbnail media-interaction-subtle relative block {{ thumbnail_width_class }} shrink-0"
                         style="aspect-ratio: {{ gallery_aspect }};"
-                        :class="activeIndex === {{ forloop.index0 }} && 'is-active'"
+                        :class="activeIndex === Number($el.dataset.galleryIndex) && 'is-active'"
                     >
                         {%- render 'image',
                             image: media_image,
@@ -192,22 +194,25 @@
                     type="button"
                     aria-label="{{ 'accessibility.open_image_zoom' | t }}"
                     class="product-gallery__zoom-button"
-                    :class="activeIndex === {{ forloop.index0 }} && 'is-active'"
-                    :tabindex="activeIndex === {{ forloop.index0 }} ? 0 : -1"
-                    :aria-hidden="(activeIndex !== {{ forloop.index0 }}).toString()"
-                    :inert="activeIndex !== {{ forloop.index0 }}"
-                    @click="openLightbox({{ image_only_index }})"
+                    data-gallery-index="{{ forloop.index0 }}"
+                    data-lightbox-index="{{ image_only_index }}"
+                    :class="activeIndex === Number($el.dataset.galleryIndex) && 'is-active'"
+                    :tabindex="activeIndex === Number($el.dataset.galleryIndex) ? 0 : -1"
+                    :aria-hidden="(activeIndex !== Number($el.dataset.galleryIndex)).toString()"
+                    :inert="activeIndex !== Number($el.dataset.galleryIndex)"
+                    @click="openLightbox(Number($el.dataset.lightboxIndex))"
                 >
                     {%- assign image_only_index = image_only_index | plus: 1 -%}
             {%- elsif media_type != 'image' -%}
                 <button
                     type="button"
                     class="product-gallery__zoom-button"
-                    :class="activeIndex === {{ forloop.index0 }} && 'is-active'"
-                    :tabindex="activeIndex === {{ forloop.index0 }} ? 0 : -1"
-                    :aria-hidden="(activeIndex !== {{ forloop.index0 }}).toString()"
-                    :inert="activeIndex !== {{ forloop.index0 }}"
-                    @click="activateMediaById({{ image.id }})"
+                    data-gallery-index="{{ forloop.index0 }}"
+                    :class="activeIndex === Number($el.dataset.galleryIndex) && 'is-active'"
+                    :tabindex="activeIndex === Number($el.dataset.galleryIndex) ? 0 : -1"
+                    :aria-hidden="(activeIndex !== Number($el.dataset.galleryIndex)).toString()"
+                    :inert="activeIndex !== Number($el.dataset.galleryIndex)"
+                    @click="activateMediaById($el.dataset.mediaId)"
                     data-media-id="{{ image.id }}"
                     data-media-type="{{ media_type }}"
                     {% if media_type == 'model' %}
@@ -219,9 +224,10 @@
             {%- else -%}
                 <div
                     class="product-gallery__zoom-button"
-                    :class="activeIndex === {{ forloop.index0 }} && 'is-active'"
-                    :aria-hidden="(activeIndex !== {{ forloop.index0 }}).toString()"
-                    :inert="activeIndex !== {{ forloop.index0 }}"
+                    data-gallery-index="{{ forloop.index0 }}"
+                    :class="activeIndex === Number($el.dataset.galleryIndex) && 'is-active'"
+                    :aria-hidden="(activeIndex !== Number($el.dataset.galleryIndex)).toString()"
+                    :inert="activeIndex !== Number($el.dataset.galleryIndex)"
                 >
             {%- endif -%}
             {%- assign gallery_loading = 'lazy' -%}

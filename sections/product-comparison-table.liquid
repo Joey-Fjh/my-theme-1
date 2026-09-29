@@ -12,6 +12,7 @@
     data-component-type="product-comparison-table"
     data-component-id="{{ section.id }}"
     x-data="motionRevealSection()"
+    data-module-id="motion-reveal"
     data-motion-section
 >
     {%- liquid
@@ -33,6 +34,8 @@
             --comparison-table-width-mobile: {{ comparison_item_count | times: 140 | plus: 116 }}px;
             --comparison-table-width-pc: {{ comparison_item_count | times: 280 | plus: 156 }}px;
         "
+        x-data="productComparisonTable()"
+        data-module-id="product-comparison-table"
     >
         {% if section.settings.heading != blank %}
             <h1
@@ -63,9 +66,9 @@
                                     class="
                                         comparison-table__sticky-col
                                         comparison-table__row-header
-                                        sticky left-0 z-10
-                                        border border-theme-border/20 bg-theme-bg
-                                        px-4 py-5 align-middle whitespace-normal shadow-[2px_0_6px_-2px_rgba(0,0,0,0.06)]
+                                        comparison-table__sticky-col-shadow sticky left-0
+                                        z-10 border border-theme-border/20
+                                        bg-theme-bg px-4 py-5 align-middle whitespace-normal
                                         pc:px-6 pc:py-7
                                         {% unless block.type == 'metafield_text' %}body-lg{% endunless %}
                                     "
@@ -276,111 +279,6 @@
     </div>
 </section>
 
-{%- javascript -%}
-    (function () {
-        const Components = window.__Theme__?.Components;
-        if (!Components) return;
-
-        Components.register(
-            'product-comparison-table',
-            {
-                init(el) {
-                    const scrollEl = el.querySelector('[data-comparison-scroll]');
-                    if (!scrollEl) return {};
-
-                    var Events = window.__Theme__?.Events;
-                    if (!Events?.createScope) return {};
-
-                    var scope = Events.createScope({ target: window });
-                    var timeoutRef = { id: null };
-                    var showDelayMs = 1000;
-                    var dragThresholdPx = 5;
-
-                    function showScrollbar() {
-                        scrollEl.classList.add('is-scrolling');
-                        if (timeoutRef.id) clearTimeout(timeoutRef.id);
-                        timeoutRef.id = setTimeout(function () {
-                            scrollEl.classList.remove('is-scrolling');
-                            timeoutRef.id = null;
-                        }, showDelayMs);
-                    }
-
-                    function onScroll() {
-                        showScrollbar();
-                    }
-
-                    scrollEl.addEventListener('scroll', onScroll, { passive: true });
-
-                    var dragStartX = 0;
-                    var dragStartScrollLeft = 0;
-                    var isPointerDown = false;
-                    var didDrag = false;
-
-                    scope.on(
-                        'mousemove',
-                        function (e) {
-                            if (!isPointerDown) return;
-                            var dx = dragStartX - e.clientX;
-                            scrollEl.scrollLeft = dragStartScrollLeft + dx;
-                            if (Math.abs(e.clientX - dragStartX) >= dragThresholdPx) {
-                                didDrag = true;
-                                scrollEl.classList.add('is-dragging');
-                                showScrollbar();
-                            }
-                        },
-                        { passive: true },
-                    );
-
-                    scope.on('mouseup', function () {
-                        isPointerDown = false;
-                        scrollEl.classList.remove('is-dragging');
-                        setTimeout(function () {
-                            didDrag = false;
-                        }, 0);
-                    });
-
-                    function onPointerDown(e) {
-                        if (e.button !== 0) return;
-                        isPointerDown = true;
-                        didDrag = false;
-                        dragStartX = e.clientX;
-                        dragStartScrollLeft = scrollEl.scrollLeft;
-                    }
-
-                    scrollEl.addEventListener('mousedown', onPointerDown);
-
-                    function onLinkClick(e) {
-                        if (didDrag && e.target.closest('.comparison-table-product-link')) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                        }
-                    }
-
-                    scrollEl.addEventListener('click', onLinkClick, true);
-
-                    return {
-                        scope: scope,
-                        scrollEl: scrollEl,
-                        onScroll: onScroll,
-                        timeoutRef: timeoutRef,
-                        onPointerDown: onPointerDown,
-                        onLinkClick: onLinkClick,
-                    };
-                },
-                destroy(el, state) {
-                    if (!state?.scrollEl) return;
-                    state.scrollEl.removeEventListener('scroll', state.onScroll);
-                    if (state.timeoutRef?.id) clearTimeout(state.timeoutRef.id);
-                    state.scrollEl.removeEventListener('mousedown', state.onPointerDown);
-                    state.scrollEl.removeEventListener('click', state.onLinkClick, true);
-                    state?.scope?.dispose();
-                },
-            },
-            { lazy: true },
-        );
-    })();
-{%- endjavascript -%}
-
 {% stylesheet %}
     .product-comparison-table-section {
         .comparison-table {
@@ -405,21 +303,24 @@
         .comparison-table tbody tr:first-child .comparison-table__product-cell {
             height: 250px;
         }
+        .comparison-table__sticky-col-shadow {
+            box-shadow: 2px 0 6px -2px rgb(0 0 0 / 6%);
+        }
         .comparison-table__rating {
             max-width: 100%;
-            line-height: 1;
+            line-height: inherit;
         }
         .comparison-table__rating-stars {
             gap: 0.2rem;
             margin-bottom: 0;
-            line-height: 1;
+            line-height: inherit;
         }
         .comparison-table__rating .stars__icon {
             width: 1.35rem;
             height: 1.35rem;
         }
         .comparison-table__rating-value {
-            line-height: 1;
+            line-height: inherit;
         }
         @media (width >= 48rem) {
             .comparison-table {
@@ -665,7 +566,7 @@
                     "type": "text",
                     "id": "metafield_key",
                     "label": "t:sections.product-comparison-table.block_settings.metafield_key_namespace_key",
-                    "default": "custom.ingredients",
+                    "default": "t:sections.product-comparison-table.blocks_defaults.metafield_key",
                     "info": "t:sections.product-comparison-table.block_info.e_g_custom_ingredients"
                 }
             ]
