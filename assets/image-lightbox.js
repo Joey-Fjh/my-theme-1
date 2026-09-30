@@ -13,6 +13,7 @@ define('imageLightbox', () => ({
     lightboxClosing: false,
     lightboxIndex: 0,
     _previousBodyOverflow: null,
+    _lockedThroughMotion: false,
     _returnFocusTo: null,
     _trapHandler: null,
     _trapActive: false,
@@ -57,6 +58,8 @@ define('imageLightbox', () => ({
             this._attachTrap();
         });
 
+        this._lockedThroughMotion = usesMotion;
+
         if (!usesMotion) {
             this._lockBodyScroll();
             requestAnimationFrame(() => {
@@ -85,11 +88,17 @@ define('imageLightbox', () => ({
         this._detachTrap();
 
         const unlock = () => {
-            if (DialogMotion && typeof DialogMotion.unlockScroll === 'function') {
+            // Release through the same path that locked on open.
+            if (
+                this._lockedThroughMotion &&
+                DialogMotion &&
+                typeof DialogMotion.unlockScroll === 'function'
+            ) {
                 DialogMotion.unlockScroll();
             } else {
                 this._unlockBodyScroll();
             }
+            this._lockedThroughMotion = false;
         };
 
         const finish = () => {
@@ -97,6 +106,19 @@ define('imageLightbox', () => ({
             this.lightboxClosing = false;
             unlock();
             this._returnFocusTo = null;
+
+            if (DialogMotion && root && DialogMotion.hasMotion(root)) {
+                const target = root.querySelector('[data-dialog-motion-target]');
+                const backdrop = root.querySelector('[data-dialog-motion-backdrop]');
+                // Alpine hides x-show in the next frame; clear one frame after that, unless
+                // the lightbox reopened meanwhile.
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        if (this.lightboxOpen) return;
+                        DialogMotion.clearMotionState(target, backdrop);
+                    });
+                });
+            }
 
             if (
                 returnTo &&

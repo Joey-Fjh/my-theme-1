@@ -97,14 +97,55 @@ export function createDialogStore() {
     return {
         active: null,
         closing: null,
-        _returnFocusTo: null,
+        _levels: [],
+        _scrollLockHeld: false,
         _trapHandler: null,
         _trapOff: null,
         _openGeneration: 0,
 
-        isOpen(id) {
+        _syncActiveClosing() {
+            const top = this._levels[this._levels.length - 1];
+            if (!top) {
+                this.active = null;
+                this.closing = null;
+                return;
+            }
+            this.active = top.id;
+            this.closing = top.state === 'closing' ? top.id : null;
+        },
+
+        _findLevel(id) {
             const cleanId = normalizeDialogId(id);
-            return Boolean(cleanId) && this.active === cleanId && this.closing !== cleanId;
+            if (!cleanId) return null;
+            return this._levels.find((level) => level.id === cleanId) || null;
+        },
+
+        _topLevel() {
+            return this._levels[this._levels.length - 1] || null;
+        },
+
+        _ensureScrollLock() {
+            if (this._levels.length > 0 && !this._scrollLockHeld) {
+                lockPageScroll();
+                this._scrollLockHeld = true;
+            }
+        },
+
+        _releaseScrollLock() {
+            if (this._levels.length === 0 && this._scrollLockHeld) {
+                unlockPageScroll();
+                this._scrollLockHeld = false;
+            }
+        },
+
+        isShown(id) {
+            const level = this._findLevel(id);
+            return Boolean(level && (level.state === 'open' || level.state === 'closing'));
+        },
+
+        isOpen(id) {
+            const level = this._findLevel(id);
+            return Boolean(level && level.state === 'open');
         },
 
         isClosing(id) {
@@ -112,41 +153,132 @@ export function createDialogStore() {
             return Boolean(cleanId) && this.closing === cleanId;
         },
 
+        _removeLevelsFrom(index) {
+            if (index < 0 || index >= this._levels.length) return [];
+            return this._levels.splice(index);
+        },
+
+        /**
+         * Clear motion state only after the library has hidden the level. Alpine applies an
+         * x-show hide in the next animation frame, so clear one frame later; skip the clear
+         * when the level has been shown again meanwhile.
+         */
+        _clearMotionAfterHide(id) {
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    if (this.isShown(id)) return;
+                    clearDialogMotionState(getDialogRoot(id));
+                });
+            });
+        },
+
+        /** Move focus back to `returnTo` when usable, otherwise into the top level. */
+        _restoreFocus(returnTo) {
+            if (
+                returnTo &&
+                returnTo.isConnected &&
+                typeof returnTo.focus === 'function' &&
+                isElementVisible(returnTo)
+            ) {
+                returnTo.focus({ preventScroll: true });
+                return;
+            }
+
+            if (this._levels.length > 0) this._moveFocusIntoDialog();
+        },
+
+        /**
+         * Remove `index` and every level above it without exit motion. Focus returns to the
+         * lowest removed level's opener (or into the level that stays open), unless the caller
+         * opens a replacement right away and passes `restoreFocus: false`.
+         * @returns {Array<{ id: string, returnFocusTo: Element | null }>} removed levels
+         */
+        _dismissLevelsFrom(index, { restoreFocus = true } = {}) {
+            const removed = this._removeLevelsFrom(index);
+            if (!removed.length) return removed;
+
+            removed.forEach((level) => this._clearMotionAfterHide(level.id));
+            this._syncActiveClosing();
+            this._detachTrap();
+
+            if (this._levels.length > 0) {
+                // A lower level stays open: it owns the trap again.
+                this._attachTrap();
+            } else {
+                this._releaseScrollLock();
+            }
+
+            if (restoreFocus) this._restoreFocus(removed[0].returnFocusTo);
+            return removed;
+        },
+
         _dismissReplacedDialog(id) {
             const cleanId = normalizeDialogId(id);
             if (!cleanId) return;
-            if (this.active !== cleanId && this.closing !== cleanId) return;
-
-            clearDialogMotionState(getDialogRoot(cleanId));
-            this.forceClose(cleanId);
+            const index = this._levels.findIndex((level) => level.id === cleanId);
+            if (index === -1) return;
+            this._dismissLevelsFrom(index);
         },
 
-        open(id) {
+        _canStackOnto(cleanId) {
+            if (!this._levels.length || this.closing) return false;
+            const root = getDialogRoot(cleanId);
+            return Boolean(root && root.hasAttribute('data-dialog-stack'));
+        },
+
+        /**
+         * @param {string} id
+         * @param {{ opener?: Element | null }} [options] `opener`: the control that asked for
+         *   the dialog, when the call happens after focus has moved (for example after an
+         *   async request). Defaults to the focused element.
+         */
+        open(id, { opener = null } = {}) {
             const cleanId = normalizeDialogId(id);
             if (!cleanId) return;
 
-            if (this.active === cleanId && this.closing !== cleanId) return;
-
-            if (this.closing === cleanId) {
-                this.forceClose(cleanId);
-            } else if (this.active && this.active !== cleanId) {
-                this._dismissReplacedDialog(this.active);
-            } else if (this.closing && this.closing !== cleanId) {
-                this._dismissReplacedDialog(this.closing);
+            const existing = this._findLevel(cleanId);
+            if (existing && existing.state === 'open' && this._topLevel()?.id === cleanId) {
+                return;
             }
 
-            this.closing = null;
-            this._returnFocusTo = document.activeElement;
-            this.active = cleanId;
+            // Read before any dismissal below moves focus.
+            const trigger = opener && opener.isConnected ? opener : document.activeElement;
+            let returnFocusTo = trigger;
+
+            const removed = [];
+
+            if (existing && existing.state === 'closing') {
+                this._openGeneration += 1;
+                removed.push(
+                    ...this._dismissLevelsFrom(this._levels.indexOf(existing), {
+                        restoreFocus: false,
+                    }),
+                );
+            }
+
+            const stackOnto = this._canStackOnto(cleanId);
+
+            if (!stackOnto && this._levels.length) {
+                removed.unshift(...this._dismissLevelsFrom(0, { restoreFocus: false }));
+            }
+
+            // Opened from inside a dialog it removes (for example add to cart in quick view):
+            // return focus to the lowest removed dialog's opener, which stays on the page.
+            const openerInsideRemoved = removed.some((level) =>
+                getDialogRoot(level.id)?.contains(returnFocusTo),
+            );
+            if (openerInsideRemoved) returnFocusTo = removed[0].returnFocusTo;
+
+            this._levels.push({ id: cleanId, returnFocusTo, state: 'open' });
+            this._syncActiveClosing();
 
             const generation = ++this._openGeneration;
             const root = getDialogRoot(cleanId);
-            const trigger = this._returnFocusTo;
             const motion = getDialogMotion(root);
 
             const focusDialog = () => {
                 if (generation !== this._openGeneration) return;
-                if (this.active !== cleanId) return;
+                if (!this.isOpen(cleanId)) return;
 
                 this._moveFocusIntoDialog();
             };
@@ -154,16 +286,16 @@ export function createDialogStore() {
             const attachTrapWhenReady = () => {
                 requestAnimationFrame(() => {
                     if (generation !== this._openGeneration) return;
-                    if (this.active !== cleanId) return;
+                    if (!this.isShown(cleanId)) return;
 
                     this._attachTrap();
                 });
             };
 
             attachTrapWhenReady();
+            this._ensureScrollLock();
 
             if (!motion) {
-                lockPageScroll();
                 requestAnimationFrame(() => {
                     focusDialog();
                 });
@@ -172,45 +304,73 @@ export function createDialogStore() {
 
             motion.playEnter(root, {
                 trigger,
-                lockScroll: true,
+                lockScroll: false,
                 onEnterStart: focusDialog,
             });
         },
 
-        close() {
-            if (!this.active || this.closing) return;
+        close(id) {
+            const top = this._topLevel();
+            if (!top || top.state === 'closing') return;
 
-            const cleanId = this.active;
-            const returnTo = this._returnFocusTo;
+            const cleanId = normalizeDialogId(id);
+            if (cleanId && top.id !== cleanId) return;
+
+            const levelId = top.id;
+            const returnTo = top.returnFocusTo;
             const closeGeneration = ++this._openGeneration;
 
-            this.closing = cleanId;
+            top.state = 'closing';
+            this._syncActiveClosing();
             this._detachTrap();
 
-            const root = getDialogRoot(cleanId);
+            const root = getDialogRoot(levelId);
             const motion = getDialogMotion(root);
 
+            let closeSettled = false;
             const finish = () => {
+                if (closeSettled) return;
                 if (closeGeneration !== this._openGeneration) return;
-                if (this.closing !== cleanId) return;
-
-                this.active = null;
-                this.closing = null;
-                this._returnFocusTo = null;
-                unlockPageScroll();
-
-                if (
-                    returnTo &&
-                    returnTo.isConnected &&
-                    typeof returnTo.focus === 'function' &&
-                    isElementVisible(returnTo)
-                ) {
-                    returnTo.focus({ preventScroll: true });
+                const currentTop = this._topLevel();
+                if (!currentTop || currentTop.id !== levelId || currentTop.state !== 'closing') {
+                    return;
                 }
+
+                closeSettled = true;
+
+                this._levels.pop();
+                this._syncActiveClosing();
+                this._clearMotionAfterHide(levelId);
+
+                if (this._levels.length > 0) {
+                    this._attachTrap();
+                } else {
+                    this._releaseScrollLock();
+                }
+
+                this._restoreFocus(returnTo);
             };
 
             if (motion && root && motion.hasMotion(root)) {
-                motion.playExit(root, { trigger: returnTo }).then(finish);
+                const exitMs =
+                    typeof motion.getExitDurationMs === 'function'
+                        ? motion.getExitDurationMs(root)
+                        : 500;
+                // Safety net only: playExit settles on animationend or its own fallback timer.
+                // This fires when animation frames stall (for example a background tab), with
+                // enough margin not to cut a running exit animation short.
+                const exitTimer = window.setTimeout(finish, exitMs + 1000);
+                const settleExit = () => {
+                    window.clearTimeout(exitTimer);
+                    finish();
+                };
+
+                try {
+                    motion.playExit(root, { trigger: returnTo }).then(settleExit, settleExit);
+                } catch (error) {
+                    console.error('[DialogStore] playExit failed', error);
+                    settleExit();
+                }
                 return;
             }
 
@@ -220,22 +380,21 @@ export function createDialogStore() {
         forceClose(id) {
             const cleanId = normalizeDialogId(id);
             if (!cleanId) return;
-            if (this.active !== cleanId && this.closing !== cleanId) return;
+
+            const index = this._levels.findIndex((level) => level.id === cleanId);
+            if (index === -1) return;
 
             this._openGeneration += 1;
-            this._detachTrap();
-            this.active = null;
-            this.closing = null;
-            this._returnFocusTo = null;
-            unlockPageScroll();
+            this._dismissLevelsFrom(index);
         },
 
         refreshOpenContent(id, { returnFocusTo = null, focusElement = null } = {}) {
             const cleanId = normalizeDialogId(id);
-            if (!cleanId || this.active !== cleanId || this.closing === cleanId) return false;
+            const level = this._findLevel(cleanId);
+            if (!level || level.state !== 'open') return false;
 
             if (returnFocusTo && returnFocusTo.isConnected) {
-                this._returnFocusTo = returnFocusTo;
+                level.returnFocusTo = returnFocusTo;
             }
 
             if (!this._trapHandler) {
@@ -257,9 +416,9 @@ export function createDialogStore() {
         },
 
         _getActivePanel() {
-            const id = this.active || this.closing;
-            if (!id) return null;
-            const root = getDialogRoot(id);
+            const top = this._topLevel();
+            if (!top) return null;
+            const root = getDialogRoot(top.id);
             if (!root) return null;
             return root.querySelector('[data-dialog-panel]');
         },

@@ -189,8 +189,19 @@ The core registers stores during startup:
 | Store | Module | Role |
 | --- | --- | --- |
 | `cart` | `alpine.store.cart.js` | UI bridge over `createCartContract()` |
+| `dialog` | `dialog.js` | Global modal and drawer layer (`open`, `close`, stacking) |
 
 Inspect the store module for configure/init APIs instead of copying historical examples.
+
+### Dialog layer
+
+The `dialog` store in `dialog.js` owns every `ui-dialog` shell and shared media modal root. Call sites use `open(id)` and `close()` (or `close(id)` when the handler must target a specific root). Compatibility fields: `active` is the top level id; `closing` is the top level id while its exit animation runs.
+
+- **Replace by default.** Opening a dialog while another is open dismisses lower levels unless the new root declares `data-dialog-stack` and the current top is not already closing.
+- **Declared stacking.** Only roots with `data-dialog-stack` (for example `snippets/product-media-modal.liquid`) push onto the stack. Escape, backdrop, and close buttons dismiss the top level only; focus returns to the opener on the level below.
+- **Visibility helpers.** `isShown(id)` is true for open or closing levels (use in `x-show`). `isOpen(id)` is true for every open, non-closing level.
+- **Scroll lock.** One lock for the whole stack: lock when the stack becomes non-empty, unlock when it empties. The store passes `lockScroll: false` to `playEnter` in `dialog-motion.js` and `drawer-motion.js`, so store dialogs never lock through motion. `image-lightbox.js` is not a store dialog: it locks through `playEnter` and unlocks once on close, both through the counted `lockScroll` / `unlockScroll` in `dialog-motion.js` that the store also uses.
+- **Exit motion ownership.** `playExit` ends at animation completion without clearing motion attributes. The store removes the level from the stack; Alpine applies the `x-show` hide in the next animation frame, so the store clears the motion state one frame after that, and skips the clear when the level is shown again meanwhile. `image-lightbox.js` follows the same hide-then-clear order. A level removed without its exit animation (`forceClose`, or a replaced dialog) is cleared the same way. After `forceClose`, a lower level that stays open takes the focus trap back, and focus returns to the lowest removed level's opener, or into the remaining top level when that opener is gone. A dialog that replaces the one it was opened from (for example the cart drawer after add to cart in quick view) returns focus, when it closes, to the replaced dialog's opener on the page. A caller that opens a dialog after focus has moved (an async add to cart) passes the control that asked for it: `open(id, { opener })`; `buy-buttons.js` does.
 
 ## Shared Modules
 

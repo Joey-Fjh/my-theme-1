@@ -28,15 +28,9 @@ define('productMediaModal', () => ({
 
         if (typeof this.$watch === 'function') {
             this._dialogUnwatch = this.$watch(
-                () => {
-                    const dialog = store('dialog');
-                    return `${dialog?.active || ''}:${dialog?.closing || ''}`;
-                },
-                () => {
-                    const dialog = store('dialog');
-                    const isOpen =
-                        dialog?.active === this.dialogId && dialog?.closing !== this.dialogId;
-                    if (!isOpen) this.stopMedia();
+                () => store('dialog')?.isShown?.(this.dialogId),
+                (isShown) => {
+                    if (!isShown) this.stopMedia();
                 },
             );
         }

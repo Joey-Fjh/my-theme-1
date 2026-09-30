@@ -246,10 +246,8 @@ function playExit(rootOrId) {
             if (backdrop) backdrop.setAttribute('data-drawer-motion-state', 'exit');
             target.setAttribute('data-drawer-motion', 'exit');
 
+            // Resolves with the exit state still applied; the caller hides the panel, then clears it.
             return waitForAnimation(target, EXIT_ANIMATION_NAMES, getExitDurationMs());
-        })
-        .then(function () {
-            clearMotionState(target, backdrop);
         });
 }
 

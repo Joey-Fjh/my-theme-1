@@ -29,18 +29,19 @@
     <div
         data-dialog-root
         data-dialog-id="{{ id }}"
+        data-dialog-stack
         data-dialog-motion-mode="origin"
     >
         <div
             data-dialog-id="{{ id | escape }}"
-            x-show="$store.dialog.active === $el.dataset.dialogId || $store.dialog.closing === $el.dataset.dialogId"
+            x-show="$store.dialog.isShown($el.dataset.dialogId)"
             x-cloak
             class="ui-dialog-modal-shell--origin z-layer-lightbox fixed inset-0 flex items-center justify-center"
             role="dialog"
             aria-modal="true"
             aria-label="{{ 'accessibility.product_media_viewer' | t }}"
             tabindex="-1"
-            @keydown.escape.window="($store.dialog.active === $el.dataset.dialogId || $store.dialog.closing === $el.dataset.dialogId) && $store.dialog.close()"
+            @keydown.escape.window="$store.dialog.isShown($el.dataset.dialogId) && $store.dialog.close($el.dataset.dialogId)"
             data-dialog-panel
         >
             <div

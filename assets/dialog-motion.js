@@ -298,10 +298,8 @@ function playExit(rootOrId, options) {
             if (backdrop) backdrop.setAttribute('data-dialog-motion-state', 'exit');
             target.setAttribute('data-dialog-motion', 'exit');
 
+            // Resolves with the exit state still applied; the caller hides the panel, then clears it.
             return waitForAnimation(target, EXIT_ANIMATION_NAMES, getExitDurationMs(root));
-        })
-        .then(function () {
-            clearMotionState(target, backdrop);
         });
 }
 
