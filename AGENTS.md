@@ -9,7 +9,7 @@ This file is the always-on entry point and the canonical rule source for agents 
 - Alpine.js v3 for reactive UI state
 - GSAP + ScrollTrigger (optional, for complex narrative motion only)
 - Swiper as the selected carousel library
-- Custom runtime: import-map module graph, HTTP/section-refresh helpers, and the Alpine adapter (`define`, `defer`, `mount`, `unmount`, `store`, `data`). See `docs/references/architecture/javascript-runtime.md`.
+- Custom runtime: import-map module graph, HTTP/section-refresh helpers, and the Alpine adapter (`define`, `holdUntilReady`, `mount`, `releaseHold`, `unmount`, `store`, `data`). See `docs/references/architecture/javascript-runtime.md`.
 
 Runtime constraints:
 

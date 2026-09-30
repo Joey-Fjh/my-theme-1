@@ -11,7 +11,7 @@ The Skeleton runtime is a no-bundler ES module graph. Liquid markup declares beh
 | Layer | Files | Loading | Responsibility |
 | --- | --- | --- | --- |
 | Core | `base.js`, `events.js` | Static | Layout measurement, module scanning and lazy loading, DOM teardown coordination, Theme Editor event forwarding, store bootstrap |
-| Adapter | `alpine.adapter.js` | Static | Sole Alpine touchpoint: `define`, `defer`, `mount`, `unmount`, `store`, `data` |
+| Adapter | `alpine.adapter.js` | Static | Sole Alpine touchpoint: `define`, `holdUntilReady`, `mount`, `releaseHold`, `unmount`, `store`, `data` |
 | Platform state | `cart.contract.js`, `https.js` | Static | Cart API ownership hydrated from `body.dataset.initialCart`, and the HTTP / Section Rendering helpers it depends on |
 | UI state bridges | `alpine.store.cart.js` | Static | Cart UI store registered by the core through the adapter |
 | On-demand modules | `utils.js`, feature entry files (`accordion.js`, `buy-buttons.js`, …) | Dynamic | Shared utilities and Alpine factories, imported when markup asks for them |
@@ -75,6 +75,7 @@ Only `alpine.adapter.js` may call `window.Alpine` APIs.
 | `define(name, factory)` | Registers `alpine.data(name, factory)` before or during startup |
 | `holdUntilReady(shouldHold)` | Registers an `Alpine.interceptInit` callback; when `shouldHold(el)` returns true the element gets `x-ignore` and Alpine skips it and its subtree |
 | `mount(el)` | Removes the hold and calls `Alpine.initTree(el)` |
+| `releaseHold(el)` | Removes the hold without initializing, so Alpine meets the element again if it is reinserted |
 | `unmount(el)` | Calls `Alpine.destroyTree(el)` |
 | `store(name, value?)` | Registers or reads a global Alpine store |
 | `data(el)` | Reads reactive state bound to `el` |
@@ -112,7 +113,7 @@ The core coordinates module roots through Alpine's init interceptor, not a compo
 | Hold a root until its module is defined, then mount it | `holdForModule()` in `base.js`, registered through `adapter.holdUntilReady()` |
 | Download ahead on first load and on `shopify:section:load` / `:reorder` | `scanModules()` in `base.js` |
 | Lazy load when a root carries `data-module-lazy` | `IntersectionObserver` in `base.js`, started by `holdForModule()` |
-| Lazy observer release on DOM removal | One `MutationObserver` in `base.js` calls `releaseModuleRoots()` only |
+| Held-root release on DOM removal | One `MutationObserver` in `base.js` calls `releaseModuleRoots()` for removed nodes still detached when it runs (a root moved within one task stays held and observed); it stops the lazy observer and drops the hold through `adapter.releaseHold()`, so a root reinserted later is held again from a clean state |
 | Alpine teardown on owned DOM replacement | `SectionRefresher.replaceRegion()` calls `adapter.unmount()` before swapping markup, then `scanModules()` (download ahead) and `adapter.mount()`; roots whose modules are still loading are held by the interceptor |
 | Alpine teardown on Theme Editor section unload | `shopify:section:unload` handler in `base.js` calls `adapter.unmount()` on every module root in the unloaded section and `releaseModuleRoots()` |
 | Theme Editor select/deselect/reorder | In `Shopify.designMode` only, `base.js` listens for native Shopify events such as `shopify:section:select` and forwards them to affected `[data-module-id]` roots — including ancestor module roots when the selected block is nested inside the root — as project-owned `theme:editor:*` events through `ThemeEvents.emit(..., { target: root })` |

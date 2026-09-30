@@ -257,14 +257,22 @@ function holdForModule(el) {
 
 adapter.holdUntilReady(holdForModule);
 
-/** Stop observing module roots that left the document. */
+/**
+ * Release held module roots that left the document: stop observing them and drop the hold,
+ * so a reinserted root is met by the library and held again from a clean state.
+ */
 function releaseModuleRoots(node) {
-    if (!lazyObserver || !(node instanceof HTMLElement)) return;
+    if (!(node instanceof HTMLElement)) return;
 
     const stop = (el) => {
-        if (!el.__themeModuleObserved) return;
-        lazyObserver.unobserve(el);
-        delete el.__themeModuleObserved;
+        if (el.__themeModuleObserved) {
+            lazyObserver?.unobserve(el);
+            delete el.__themeModuleObserved;
+        }
+
+        if (!el.__themeModulePending) return;
+        delete el.__themeModulePending;
+        adapter.releaseHold(el);
     };
 
     if (node.matches?.(MODULE_SELECTOR)) stop(node);
@@ -280,7 +288,8 @@ function setupMutationObserver() {
     domObserver = new MutationObserver((mutations) => {
         mutations.forEach((m) => {
             m.removedNodes.forEach((node) => {
-                if (!(node instanceof HTMLElement)) return;
+                // A moved node is back in the document by now; keep observing it.
+                if (!(node instanceof HTMLElement) || node.isConnected) return;
 
                 releaseModuleRoots(node);
             });
