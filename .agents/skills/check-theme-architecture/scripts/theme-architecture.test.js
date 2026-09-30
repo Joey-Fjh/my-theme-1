@@ -706,17 +706,14 @@ test('valid rgba scheme color syntax passes rgb alpha lint', async () => {
     });
 });
 
+// The layout renders the entry scripts snippet, which holds the import map.
+function writeEntryScripts(root, importsJson) {
+    writeFile(root, 'layout/theme.liquid', `<head>\n{% render 'scripts' %}\n</head>\n`);
+    writeFile(root, 'snippets/scripts.liquid', `<script type="importmap">\n${importsJson}\n</script>\n`);
+}
+
 function writeMinimalImportMap(root) {
-    writeFile(
-        root,
-        'layout/theme.liquid',
-        [
-            '<script type="importmap">',
-            `{"imports":{"accordion":"{{ 'accordion.js' | asset_url }}"}}`,
-            '</script>',
-            '',
-        ].join('\n'),
-    );
+    writeEntryScripts(root, `{"imports":{"accordion":"{{ 'accordion.js' | asset_url }}"}}`);
 }
 
 test('settings chain liquid class font-medium fails', async () => {
@@ -1248,13 +1245,50 @@ test('module data-module-id before x-data on the same root passes', async () => 
     });
 });
 
+test('layout without the scripts render fails', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeMinimalImportMap(root);
+        writeFile(root, 'layout/theme.liquid', `<head></head>\n`);
+        writeFile(root, 'assets/accordion.js', `export const id = 'accordion';\n`);
+        writeFile(root, 'sections/fixture.liquid', `<div x-data="accordion" data-module-id="accordion"></div>\n`);
+        const failures = await runThemeLint(root);
+        assert.match(failureMessages(failures), /must render 'scripts'/);
+    });
+});
+
+test('missing entry scripts snippet fails', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(root, 'layout/theme.liquid', `<head>\n{% render 'scripts' %}\n</head>\n`);
+        const failures = await runThemeLint(root);
+        assert.match(failureMessages(failures), /snippets\/scripts\.liquid must exist and hold one parsable/);
+    });
+});
+
+test('entry scripts snippet without a parsable import map fails', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeEntryScripts(root, `{"imports":`);
+        const failures = await runThemeLint(root);
+        assert.match(failureMessages(failures), /snippets\/scripts\.liquid must exist and hold one parsable/);
+    });
+});
+
+test('entry scripts in the snippet pass', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeMinimalImportMap(root);
+        writeFile(root, 'assets/accordion.js', `export const id = 'accordion';\n`);
+        writeFile(root, 'sections/fixture.liquid', `<div x-data="accordion" data-module-id="accordion"></div>\n`);
+        const failures = await runThemeLint(root);
+        assert.equal(
+            failures.filter((failure) => failure.checkId === 'module-import-map').length,
+            0,
+            failureMessages(failures),
+        );
+    });
+});
+
 test('import map entry mapped to another file fails', async () => {
     await withTempThemeAsync(async (root) => {
-        writeFile(
-            root,
-            'layout/theme.liquid',
-            `<script type="importmap">\n{"imports":{"accordion":"{{ 'dropdown.js' | asset_url }}"}}\n</script>\n`,
-        );
+        writeEntryScripts(root, `{"imports":{"accordion":"{{ 'dropdown.js' | asset_url }}"}}`);
         writeFile(root, 'assets/accordion.js', `export const id = 'accordion';\n`);
         writeFile(root, 'assets/dropdown.js', `export const id = 'dropdown';\n`);
         writeFile(root, 'sections/fixture.liquid', `<div x-data="accordion" data-module-id="accordion"></div>\n`);
@@ -1265,11 +1299,7 @@ test('import map entry mapped to another file fails', async () => {
 
 test('import map entry pointing to a missing asset fails', async () => {
     await withTempThemeAsync(async (root) => {
-        writeFile(
-            root,
-            'layout/theme.liquid',
-            `<script type="importmap">\n{"imports":{"utils":"{{ 'missing.js' | asset_url }}"}}\n</script>\n`,
-        );
+        writeEntryScripts(root, `{"imports":{"utils":"{{ 'missing.js' | asset_url }}"}}`);
         const failures = await runThemeLint(root);
         assert.match(failureMessages(failures), /must map to an existing asset/);
     });
@@ -1277,11 +1307,7 @@ test('import map entry pointing to a missing asset fails', async () => {
 
 test('import map entry without a consumer fails', async () => {
     await withTempThemeAsync(async (root) => {
-        writeFile(
-            root,
-            'layout/theme.liquid',
-            `<script type="importmap">\n{"imports":{"utils":"{{ 'utils.js' | asset_url }}"}}\n</script>\n`,
-        );
+        writeEntryScripts(root, `{"imports":{"utils":"{{ 'utils.js' | asset_url }}"}}`);
         writeFile(root, 'assets/utils.js', `export const noop = () => {};\n`);
         const failures = await runThemeLint(root);
         assert.match(failureMessages(failures), /Import map entry "utils" is unused/);
@@ -1290,11 +1316,7 @@ test('import map entry without a consumer fails', async () => {
 
 test('import map entry used by an asset import passes', async () => {
     await withTempThemeAsync(async (root) => {
-        writeFile(
-            root,
-            'layout/theme.liquid',
-            `<script type="importmap">\n{"imports":{"utils":"{{ 'utils.js' | asset_url }}"}}\n</script>\n`,
-        );
+        writeEntryScripts(root, `{"imports":{"utils":"{{ 'utils.js' | asset_url }}"}}`);
         writeFile(root, 'assets/utils.js', `export const noop = () => {};\n`);
         writeFile(root, 'assets/feature.js', `import { noop } from 'utils';\nnoop();\n`);
         const failures = await runThemeLint(root);

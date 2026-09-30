@@ -1,0 +1,92 @@
+{% comment %}
+    Theme entry scripts. Rendered once by `layout/theme.liquid`, inside `<head>` and before
+    `content_for_header`. Keep the order: import map, then the `base.js` module entry, then
+    the classic Alpine script.
+{% endcomment %}
+
+{% comment %}
+    --- 1. Module graph ---
+    Every identifier below is a bare specifier. `data-module-id` in Liquid markup
+    names the component entry the core imports on demand; the core itself holds no
+    component manifest.
+{% endcomment %}
+<script type="importmap">
+    {
+        "imports": {
+            "base": "{{ 'base.js' | asset_url }}",
+            "events": "{{ 'events.js' | asset_url }}",
+            "utils": "{{ 'utils.js' | asset_url }}",
+            "https": "{{ 'https.js' | asset_url }}",
+            "alpine-adapter": "{{ 'alpine.adapter.js' | asset_url }}",
+            "cart-contract": "{{ 'cart.contract.js' | asset_url }}",
+            "accordion": "{{ 'accordion.js' | asset_url }}",
+            "dropdown": "{{ 'dropdown.js' | asset_url }}",
+            "localization-switcher": "{{ 'localization-switcher.js' | asset_url }}",
+            "variant-picker": "{{ 'variant-picker.js' | asset_url }}",
+            "quantity-selector": "{{ 'quantity-selector.js' | asset_url }}",
+            "buy-buttons": "{{ 'buy-buttons.js' | asset_url }}",
+            "product-gallery": "{{ 'product-gallery.js' | asset_url }}",
+            "image-lightbox": "{{ 'image-lightbox.js' | asset_url }}",
+            "carousel-swiper": "{{ 'carousel-swiper.js' | asset_url }}",
+            "toast-container": "{{ 'toast-container.js' | asset_url }}",
+            "dialog-root": "{{ 'dialog-root.js' | asset_url }}",
+            "motion-reveal": "{{ 'motion-reveal.js' | asset_url }}",
+            "product-price": "{{ 'product-price.js' | asset_url }}",
+            "product-payment-terms": "{{ 'product-payment-terms.js' | asset_url }}",
+            "gift-card-recipient": "{{ 'gift-card-recipient.js' | asset_url }}",
+            "pickup-availability": "{{ 'pickup-availability.js' | asset_url }}",
+            "product-layout": "{{ 'product-layout.js' | asset_url }}",
+            "selling-plan-picker": "{{ 'selling-plan-picker.js' | asset_url }}",
+            "drag-scroll": "{{ 'drag-scroll.js' | asset_url }}",
+            "product-media-modal": "{{ 'product-media-modal.js' | asset_url }}",
+            "image-magnifier": "{{ 'image-magnifier.js' | asset_url }}",
+            "product-comparison-table": "{{ 'product-comparison-table.js' | asset_url }}",
+            "cart-page": "{{ 'cart-page.js' | asset_url }}",
+            "cart-overlay": "{{ 'cart-overlay.js' | asset_url }}",
+            "product-card": "{{ 'product-card.js' | asset_url }}",
+            "related-products": "{{ 'related-products.js' | asset_url }}",
+            "sticky-header": "{{ 'sticky-header.js' | asset_url }}",
+            "mobile-menu-drawer": "{{ 'mobile-menu-drawer.js' | asset_url }}",
+            "predictive-search": "{{ 'predictive-search.js' | asset_url }}",
+            "card-gallery": "{{ 'card-gallery.js' | asset_url }}",
+            "tab-control": "{{ 'tab-control.js' | asset_url }}",
+            "announcement-bar": "{{ 'announcement-bar.js' | asset_url }}",
+            "collection-filters": "{{ 'collection-filters.js' | asset_url }}",
+            "collection-filter-field": "{{ 'collection-filter-field.js' | asset_url }}",
+            "search-filters": "{{ 'search-filters.js' | asset_url }}",
+            "collection-navigation-catalog": "{{ 'collection-navigation-catalog.js' | asset_url }}",
+            "progressive-list": "{{ 'progressive-list.js' | asset_url }}",
+            "sort-by-dropdown": "{{ 'sort-by-dropdown.js' | asset_url }}",
+            "sticky-viewport-panel": "{{ 'sticky-viewport-panel.js' | asset_url }}",
+            "rotating-badge": "{{ 'rotating-badge.js' | asset_url }}",
+            "about-stats-images": "{{ 'about-stats-images.js' | asset_url }}",
+            "before-after-comparison": "{{ 'before-after-comparison.js' | asset_url }}",
+            "countdown-timer": "{{ 'countdown-timer.js' | asset_url }}",
+            "back-to-top": "{{ 'back-to-top.js' | asset_url }}",
+            "flip-digit": "{{ 'flip-digit.js' | asset_url }}",
+            "media-video": "{{ 'media-video.js' | asset_url }}",
+            "hover-card": "{{ 'hover-card.js' | asset_url }}",
+            "slides-show": "{{ 'slides-show.js' | asset_url }}",
+            "featured-products": "{{ 'featured-products.js' | asset_url }}",
+            "routine-showcase": "{{ 'routine-showcase.js' | asset_url }}",
+            "testimonial-featured": "{{ 'testimonial-featured.js' | asset_url }}",
+            "icon-with-text": "{{ 'icon-with-text.js' | asset_url }}",
+            "video-banner-external": "{{ 'video-banner-external.js' | asset_url }}",
+            "section-pagination": "{{ 'section-pagination.js' | asset_url }}",
+            "newsletter-banner": "{{ 'newsletter-banner.js' | asset_url }}",
+            "newsletter-overlay": "{{ 'newsletter-overlay.js' | asset_url }}",
+            "contact-form-success": "{{ 'contact-form-success.js' | asset_url }}"
+        }
+    }
+</script>
+
+{% comment %}
+    --- 2. Core entry ---
+    Must execute before Alpine: Alpine v3 queues `start()` in a microtask as soon as
+    its own script runs, so the core has to register its init interceptor, which holds
+    component roots until their modules load, and queue store registration first.
+{% endcomment %}
+<script type="module" src="{{ 'base.js' | asset_url }}"></script>
+
+{% comment %} --- 3. Alpine.js framework initialization --- {% endcomment %}
+<script src="{{ 'vendor-alpine.min.js' | asset_url }}" defer></script>

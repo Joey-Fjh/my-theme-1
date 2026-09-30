@@ -21,7 +21,7 @@ This project adopts that browser matrix as a quality baseline only. It does not 
 
 ## Build Boundary
 
-The runtime architecture remains Liquid, Tailwind CSS v4 CLI, ES modules through an import map, and Alpine. In `layout/theme.liquid`, Alpine is the only classic `defer` script. `templates/gift_card.liquid` renders without that layout and loads Shopify's `qrcode.js` and `assets/gift-card.js` as classic `defer` scripts.
+The runtime architecture remains Liquid, Tailwind CSS v4 CLI, ES modules through an import map, and Alpine. In the layout's entry scripts (`snippets/scripts.liquid`, rendered by `layout/theme.liquid`), Alpine is the only classic `defer` script. `templates/gift_card.liquid` renders without that layout and loads Shopify's `qrcode.js` and `assets/gift-card.js` as classic `defer` scripts.
 
 Tailwind CSS v4 handles imports and vendor prefixes and targets modern browsers. Browserslist does not change Tailwind's compilation target. Do not add Vite, Autoprefixer, Babel, or broad polyfill bundles solely for this policy.
 

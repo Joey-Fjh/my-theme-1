@@ -18,11 +18,11 @@ The Skeleton runtime is a no-bundler ES module graph. Liquid markup declares beh
 
 Every file marked Static is reached from `base.js` through a static `import`, so it downloads and parses on every page regardless of what the page renders. Only the last row uses dynamic `import()`. Keep the static graph small; measure file sizes when a change adds a static import.
 
-The core does not import component names. It reads `data-module-id` on DOM roots, resolves the identifier through the import map in `layout/theme.liquid`, and calls dynamic `import()`.
+The core does not import component names. It reads `data-module-id` on DOM roots, resolves the identifier through the import map in `snippets/scripts.liquid`, and calls dynamic `import()`.
 
 ## Script Load Order
 
-`layout/theme.liquid` loads, in order:
+`layout/theme.liquid` renders `snippets/scripts.liquid` once in `<head>`, before `content_for_header`; the snippet loads, in order (`lint:theme` fails when the layout does not render it or the snippet has no parsable import map):
 
 1. Import map — bare specifiers such as `base`, `events`, `utils`, `https`, `alpine-adapter`, `cart-contract`, and one specifier per feature module (`accordion`, `buy-buttons`, `cart-page`, …).
 2. One module entry — `<script type="module" src="{{ 'base.js' | asset_url }}">`.

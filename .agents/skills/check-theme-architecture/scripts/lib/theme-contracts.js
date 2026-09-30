@@ -571,15 +571,16 @@ function collectJsCopyChainFailures(root, failures) {
     }
 }
 
-function parseImportMapEntries(themeLiquid) {
-    const match = themeLiquid.match(/<script\s+type=["']importmap["'][^>]*>([\s\S]*?)<\/script>/i);
-    if (!match) return new Map();
+// Returns null when the text holds no import map or its JSON does not parse.
+function parseImportMapEntries(liquid) {
+    const match = liquid.match(/<script\s+type=["']importmap["'][^>]*>([\s\S]*?)<\/script>/i);
+    if (!match) return null;
 
     try {
         const json = JSON.parse(match[1]);
         return new Map(Object.entries(json.imports ?? {}));
     } catch {
-        return new Map();
+        return null;
     }
 }
 
@@ -615,16 +616,40 @@ function openingTagAt(text, index) {
     return text.slice(start);
 }
 
+const ENTRY_SCRIPTS_SNIPPET = 'snippets/scripts.liquid';
+
 function collectModuleRegistrationFailures(root, failures) {
-    const themeLiquid = require('node:fs').readFileSync(path.join(root, 'layout/theme.liquid'), 'utf8');
-    const importMapEntries = parseImportMapEntries(themeLiquid);
+    const fsSync = require('node:fs');
+    const themeLiquid = fsSync.readFileSync(path.join(root, 'layout/theme.liquid'), 'utf8');
+    if (!/\{%-?\s*render\s+['"]scripts['"]\s*-?%\}/.test(themeLiquid)) {
+        failures.push({
+            file: 'layout/theme.liquid',
+            line: 1,
+            checkId: CHECK.MODULE_IMPORT_MAP,
+            message: `layout/theme.liquid must render 'scripts' (${ENTRY_SCRIPTS_SNIPPET}), which holds the import map and entry scripts.`,
+        });
+    }
+
+    const snippetFile = path.join(root, ENTRY_SCRIPTS_SNIPPET);
+    const scriptsLiquid = fsSync.existsSync(snippetFile) ? fsSync.readFileSync(snippetFile, 'utf8') : '';
+    const parsedImportMap = parseImportMapEntries(scriptsLiquid);
+    if (!parsedImportMap) {
+        failures.push({
+            file: ENTRY_SCRIPTS_SNIPPET,
+            line: 1,
+            checkId: CHECK.MODULE_IMPORT_MAP,
+            message: `${ENTRY_SCRIPTS_SNIPPET} must exist and hold one parsable <script type="importmap">.`,
+        });
+    }
+
+    const importMapEntries = parsedImportMap ?? new Map();
     const importMapKeys = new Set(importMapEntries.keys());
 
     for (const [key, target] of importMapEntries) {
         const assetFile = importMapAssetFile(target);
         if (!assetFile || !require('node:fs').existsSync(path.join(root, assetFile))) {
             failures.push({
-                file: 'layout/theme.liquid',
+                file: ENTRY_SCRIPTS_SNIPPET,
                 line: 1,
                 checkId: CHECK.MODULE_IMPORT_MAP,
                 message: `Import map entry "${key}" must map to an existing asset through asset_url.`,
@@ -666,7 +691,7 @@ function collectModuleRegistrationFailures(root, failures) {
     for (const moduleId of moduleIds) {
         if (!importMapKeys.has(moduleId)) {
             failures.push({
-                file: 'layout/theme.liquid',
+                file: ENTRY_SCRIPTS_SNIPPET,
                 line: 1,
                 checkId: CHECK.MODULE_IMPORT_MAP,
                 message: `data-module-id "${moduleId}" is missing from the import map.`,
@@ -676,7 +701,7 @@ function collectModuleRegistrationFailures(root, failures) {
         const expectedFile = `assets/${moduleId}.js`;
         if (importMapKeys.has(moduleId) && importMapAssetFile(importMapEntries.get(moduleId)) !== expectedFile) {
             failures.push({
-                file: 'layout/theme.liquid',
+                file: ENTRY_SCRIPTS_SNIPPET,
                 line: 1,
                 checkId: CHECK.MODULE_IMPORT_MAP,
                 message: `Import map entry "${moduleId}" must map to ${expectedFile}.`,
@@ -696,7 +721,7 @@ function collectModuleRegistrationFailures(root, failures) {
         const usedByImport = new RegExp(`from\\s+['"]${key}['"]`).test(jsSources);
         if (!usedByModuleId && !usedByImport) {
             failures.push({
-                file: 'layout/theme.liquid',
+                file: ENTRY_SCRIPTS_SNIPPET,
                 line: 1,
                 checkId: CHECK.MODULE_IMPORT_MAP_UNUSED,
                 message: `Import map entry "${key}" is unused by data-module-id or assets/*.js imports.`,
