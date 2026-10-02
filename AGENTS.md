@@ -124,7 +124,7 @@ Read only the matching reference for the current task:
 
 ## Agent Skills
 
-Project skills in `.agents/skills/`: the executable validators `check-i18n` and `check-theme-architecture`, and the vendored GreenSock documentation skills `gsap-core`, `gsap-timeline`, `gsap-scrolltrigger`, and `gsap-performance` (MIT; agent documentation only, no storefront payload). Read the GSAP skills only after the motion reference classifies work as complex choreography.
+Project skills in `.agents/skills/`: the executable validators `check-i18n` and `check-theme-architecture`, and the vendored GreenSock documentation skills `gsap-core`, `gsap-timeline`, `gsap-scrolltrigger`, and `gsap-performance` (MIT; agent documentation only, no storefront payload). Read the GSAP skills only after the motion reference classifies work as complex choreography. The vendored Anthropic skill `frontend-design` (Apache 2.0) is a design reference only: it ranks below Shopify's official sources and the project rules, is not read by default, and its suggestions are discussed with the user before adoption (`.agents/skills/frontend-design/UPSTREAM.md`).
 
 Do not create, install, or approve skills during ordinary theme work. Discuss skill changes only when the user explicitly asks.
 
