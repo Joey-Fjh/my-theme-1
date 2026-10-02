@@ -6,7 +6,7 @@ Last updated: 2026-09-30.
 
 ## Open decisions
 
-Dialog layer: direction accepted (user, 2026-09-30: declared stacking via `data-dialog-stack`, replace by default including add to cart from quick view, one visible dim); plan recorded in `docs/agent/context.md` as batch 5-D, authorized (2026-09-30); implemented and WIP-committed, review round 4 and D6 pending.
+Dialog layer: done (batch 5-D, `96c0f13`). JS close-out: batch 5-F recorded in `docs/agent/context.md`, authorized (2026-10-02).
 
 Pending the user: the static check proposed with 5-R1 (fail `lint:theme` on `data-module-id` inside `<template>` through `render` chains, and on `__Theme__` references). Under 5-H the template half no longer guards correctness (the interceptor does, and the user's principle rules out scan-plus-lint correctness), so the coordinator proposes dropping it; the `__Theme__` half is an independent leftover guard (validator change: user-owned).
 
