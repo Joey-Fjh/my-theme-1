@@ -34,21 +34,13 @@
                             id="HeaderMenu-{{ link.handle }}"
                             :aria-expanded="$el.parentElement.open"
                         >
-                            {% capture link_content %}
-                                <span>
-                                    {{ link.title | escape }}
-                                </span>
+                            <span class="link-with-icon-motion links-underline links flex items-center gap-3">
+                                <span>{{ link.title | escape }}</span>
                                 {% render 'icons',
                                     icon: 'icon-arrow',
                                     class: 'dropdown-icon dropdown-icon--down'
                                 %}
-                            {% endcapture %}
-
-                            {% render 'link',
-                                content: link_content,
-                                variant: 'underline',
-                                class: 'flex items-center gap-3'
-                            %}
+                            </span>
                         </summary>
 
                         <ul
@@ -57,6 +49,16 @@
                             tabindex="-1"
                             @mouseenter="onDropdownPanelMouseEnter()"
                         >
+                            {%- if link.url != blank -%}
+                                <li class="mb-2 border-b border-theme-border/20 pb-2">
+                                    {%- render 'link',
+                                        text: link.title,
+                                        href: link.url,
+                                        variant: 'underline',
+                                        class: 'block w-full whitespace-nowrap px-4 py-2 text-theme-text'
+                                    -%}
+                                </li>
+                            {%- endif -%}
                             {%- for childlink in link.links -%}
                                 <li class="w-full{% if childlink.links != blank %} relative{% endif %}">
                                     {%- if childlink.links == blank -%}

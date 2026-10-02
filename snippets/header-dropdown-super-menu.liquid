@@ -38,19 +38,13 @@
                             id="HeaderSuperMenu-{{ link.handle }}"
                             :aria-expanded="$el.parentElement.open"
                         >
-                            {% capture link_content %}
+                            <span class="link-with-icon-motion links-underline links flex items-center gap-3">
                                 <span>{{ link.title | escape }}</span>
                                 {% render 'icons',
                                     icon: 'icon-arrow',
                                     class: 'dropdown-icon dropdown-icon--down'
                                 %}
-                            {% endcapture %}
-
-                            {% render 'link',
-                                content: link_content,
-                                variant: 'underline',
-                                class: 'flex items-center gap-3'
-                            %}
+                            </span>
                         </summary>
 
                         <div
@@ -66,6 +60,16 @@
                         >
                             <div class="panel-motion-shell">
                                 <div class="panel-motion-content">
+                                    {%- if link.url != blank -%}
+                                        <div class="mb-4 px-1">
+                                            {%- render 'link',
+                                                text: link.title,
+                                                href: link.url,
+                                                variant: 'underline',
+                                                class: 'body-md'
+                                            -%}
+                                        </div>
+                                    {%- endif -%}
                                     {%- liquid
                                         assign super_menu_column_count = link.links.size
                                         if super_menu_column_count < 1

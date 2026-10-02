@@ -74,16 +74,47 @@
             {%- liquid
                 assign q = search.terms | default: '' | strip | url_encode
 
-                # Current result type comes from search.types (driven by the type query param),
-                # not request.params.type, which is unreliable after Section Rendering refreshes.
-                assign param_type = 'product'
-                for search_type in search.types
-                    assign type_candidate = search_type | downcase | strip
+                # A `type` query param narrows search.types to that one type (request.params does not
+                # exist in Liquid, and search.types survives Section Rendering refreshes). Without it,
+                # search.types lists every type, so pick the first type that has results.
+                assign param_type = ''
+                if search.types.size == 1
+                    assign type_candidate = search.types.first | downcase | strip
                     if type_candidate == 'product' or type_candidate == 'article' or type_candidate == 'page'
                         assign param_type = type_candidate
-                        break
                     endif
-                endfor
+                endif
+
+                if param_type == ''
+                    for item in search.results
+                        if item.object_type == 'product'
+                            assign param_type = 'product'
+                            break
+                        endif
+                    endfor
+                endif
+
+                if param_type == ''
+                    for item in search.results
+                        if item.object_type == 'article'
+                            assign param_type = 'article'
+                            break
+                        endif
+                    endfor
+                endif
+
+                if param_type == ''
+                    for item in search.results
+                        if item.object_type == 'page'
+                            assign param_type = 'page'
+                            break
+                        endif
+                    endfor
+                endif
+
+                if param_type == ''
+                    assign param_type = 'product'
+                endif
 
                 assign active_tab_index = 0
                 if param_type == 'article'

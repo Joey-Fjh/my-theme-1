@@ -45,19 +45,20 @@ define('progressiveList', () => ({
         else this.showLess();
     },
 
+    // The total lives on the component root; the labels on the toggle button. $el is the
+    // button (click) or its label span (x-text), so read both from there.
     toggleShowMoreFromDataset() {
-        this.toggleShowMore(this.$el.dataset.totalCount);
+        this.toggleShowMore(this.$root.dataset.totalCount);
     },
 
     showMoreToggleLabel(totalCount) {
         const total = Number(totalCount) || 0;
-        return this.canShowMore(total)
-            ? this.$el.dataset.showMoreLabel
-            : this.$el.dataset.showLessLabel;
+        const labels = this.$el.closest('[data-show-more-label]')?.dataset || {};
+        return this.canShowMore(total) ? labels.showMoreLabel : labels.showLessLabel;
     },
 
     showMoreToggleLabelFromDataset() {
-        return this.showMoreToggleLabel(this.$el.dataset.totalCount);
+        return this.showMoreToggleLabel(this.$root.dataset.totalCount);
     },
 
     isVisibleFor(el) {

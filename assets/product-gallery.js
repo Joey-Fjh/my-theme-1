@@ -18,6 +18,7 @@ define('productGallery', () => ({
         this._thumbnailMediaQuery = window.matchMedia('(min-width: 48rem)');
         this.on(this._thumbnailMediaQuery, 'change', () => this._syncThumbnailOrientation());
         this._syncThumbnailOrientation();
+        this._galleryRoot?.setAttribute('data-gallery-hydrated', '');
         this.$nextTick(() => {
             void this._initSwiper();
         });
