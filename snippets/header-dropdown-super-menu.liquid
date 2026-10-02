@@ -263,3 +263,116 @@
         {%- endfor -%}
     </ul>
 </nav>
+
+{% stylesheet %}
+    @layer components {
+        .panel-motion-layered {
+            --panel-motion-dur: var(--panel-motion-duration-layered);
+            --panel-motion-shell-dur: calc(var(--panel-motion-dur) * 0.85);
+            --panel-motion-layered-shell-scale: 0.45;
+            --panel-motion-layered-content-offset: 12px;
+            padding: 0;
+            overflow: hidden;
+            background: transparent;
+            border-color: transparent;
+            box-shadow: none;
+        }
+        .panel-motion-layered .panel-motion-shell {
+            overflow: hidden;
+            transform: scaleY(1);
+            transform-origin: top center;
+            animation: none;
+        }
+        .panel-motion-layered .panel-motion-content > * {
+            opacity: 1;
+            transform: translateY(0);
+            animation: none;
+        }
+        details:not([open]) > .panel-motion-layered .panel-motion-shell,
+        [data-dropdown]:not([open]) > .panel-motion-layered .panel-motion-shell {
+            transform: scaleY(var(--panel-motion-layered-shell-scale));
+            animation: none;
+        }
+        details:not([open]) .panel-motion-layered .panel-motion-content > *,
+        [data-dropdown]:not([open]) .panel-motion-layered .panel-motion-content > * {
+            animation: none;
+            opacity: 0;
+            transform: translateY(var(--panel-motion-layered-content-offset));
+        }
+        details[open] > .panel-motion-layered[data-panel-motion='enter'] .panel-motion-shell,
+        [data-dropdown][open]
+            > .panel-motion-layered[data-panel-motion='enter']
+            .panel-motion-shell {
+            animation: panel-motion-layered-shell-in var(--panel-motion-shell-dur)
+                var(--panel-motion-ease-enter) both;
+        }
+        details[open] > .panel-motion-layered[data-panel-motion='enter'],
+        [data-dropdown][open] > .panel-motion-layered[data-panel-motion='enter'] {
+            animation: panel-motion-layered-panel-in var(--panel-motion-dur)
+                var(--panel-motion-ease-enter) both;
+        }
+        details[open] .panel-motion-layered[data-panel-motion='enter'] .panel-motion-content > *,
+        [data-dropdown][open]
+            .panel-motion-layered[data-panel-motion='enter']
+            .panel-motion-content
+            > * {
+            animation: panel-motion-content-in var(--panel-motion-duration-item)
+                var(--panel-motion-ease-enter) both;
+        }
+        details[open]
+            .panel-motion-layered[data-panel-motion='enter']
+            .panel-motion-content
+            > *:nth-child(1),
+        [data-dropdown][open]
+            .panel-motion-layered[data-panel-motion='enter']
+            .panel-motion-content
+            > *:nth-child(1) {
+            animation-delay: var(--panel-motion-content-delay-layered);
+        }
+        details[open]
+            .panel-motion-layered[data-panel-motion='enter']
+            .panel-motion-content
+            > *:nth-child(2),
+        [data-dropdown][open]
+            .panel-motion-layered[data-panel-motion='enter']
+            .panel-motion-content
+            > *:nth-child(2) {
+            animation-delay: calc(
+                var(--panel-motion-content-delay-layered) + var(--panel-motion-stagger-step, 32ms)
+            );
+        }
+        details[open]
+            .panel-motion-layered[data-panel-motion='enter']
+            .panel-motion-content
+            > *:nth-child(3),
+        [data-dropdown][open]
+            .panel-motion-layered[data-panel-motion='enter']
+            .panel-motion-content
+            > *:nth-child(3) {
+            animation-delay: calc(
+                var(--panel-motion-content-delay-layered) + var(--panel-motion-stagger-step, 32ms) *
+                    2
+            );
+        }
+        details[open]
+            .panel-motion-layered[data-panel-motion='enter']
+            .panel-motion-content
+            > *:nth-child(4),
+        [data-dropdown][open]
+            .panel-motion-layered[data-panel-motion='enter']
+            .panel-motion-content
+            > *:nth-child(4) {
+            animation-delay: calc(
+                var(--panel-motion-content-delay-layered) + var(--panel-motion-stagger-step, 32ms) *
+                    3
+            );
+        }
+    }
+    @layer snippets {
+        .header-dropdown-super-menu__tab {
+            padding-bottom: calc(var(--spacing) * 2);
+            color: currentcolor;
+            opacity: 0.6;
+        }
+    }
+{% endstylesheet %}
