@@ -237,7 +237,11 @@ define('BuyButtons', () => ({
 
         // The cart opens after an async request, while this button is disabled and has lost
         // focus (a mouse click does not focus it in Safari either): pass it as the opener.
-        const opener = this.$el?.querySelector?.('button[name="add"]') || null;
+        // Called from the button's @click, $el is the button itself.
+        const el = this.$el;
+        const opener = el?.matches?.('button[name="add"]')
+            ? el
+            : el?.querySelector?.('button[name="add"]') || null;
         this.isLoading = true;
         const cart = store('cart');
         if (!cart) {

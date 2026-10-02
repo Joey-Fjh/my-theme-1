@@ -2,11 +2,11 @@
 
 Holds the plan currently under execution and its status. Nothing else. Unresolved discussion lives in `docs/agent/board.md`; identity, accepted direction, and overall status live in `docs/project.md`; durable contracts live in `AGENTS.md`, the matching reference, code, or configuration.
 
-Last updated: 2026-09-30.
+Last updated: 2026-10-02.
 
 ## Plan: dialog layer: declared stacking, close flash, scroll lock (batch 5-D)
 
-Status: authorized by the user (2026-09-30, "授权"); implemented; review round 4 and D6 pending. WIP committed on 2026-09-30 so work continues on the home machine. Review tier: **Ask** (`assets/*.js`, Liquid markup, the user-owned runtime reference). Implementer: external session with the browser MCP (execution prompt); reviewer: GPT.
+Status: **accepted** (2026-10-02, review round 5 runtime PASS, `docs/project.md` approval recorded). WIP committed on 2026-09-30 (`5d224eb`). D6 moves to the consolidated browser pass before the design rework (user, 2026-10-02: batch the JS work, no per-batch browser pass); the batch closes on review round 4. Review tier: **Ask** (`assets/*.js`, Liquid markup, the user-owned runtime reference). Implementer: external session with the browser MCP (execution prompt); reviewer: GPT.
 
 **Decisions (user, 2026-09-30).** The dialog store becomes a stack, but a dialog stacks only when it declares it: the media modal (`snippets/product-media-modal.liquid`) opened while another dialog is open stacks over it; every other open replaces the current dialog as today, including add to cart opening the cart drawer from quick view (quick view closes, as in Dawn). One visible dim only: the media modal is full screen with its own `bg-black/80`, so no second translucent layer shows.
 
@@ -144,3 +144,44 @@ Remaining (home machine):
 - Review round 4 (GPT): the add-to-cart focus path (quick view and product page, desktop and 390×844, keyboard and mouse), plus a D3 spot check in a foreground tab.
 - D6 (user): Theme Editor reload with a drawer; phone-size quick view → video → close; DevTools Rendering `prefers-reduced-motion: reduce` with a few drawers.
 - Then commit the acceptance, update `docs/project.md`, and clear this file.
+
+### Review round 4 (GPT, 2026-10-02): FAIL, two findings, and fixes
+
+- (1) `assets/buy-buttons.js` `addToCart()`: called from the add button's `@click`, `this.$el` is the button itself, so `querySelector('button[name="add"]')` returned `null` and the cart drawer still recorded `body` as its return target. Fixed: use `$el` when it matches `button[name="add"]`, otherwise query inside it. Coordinator MCP check (`/collections/all`, quick view "Black Leather Bag" → add → cart drawer → `close()`): desktop and mobile layout (window floor 500 px, below the 768 px breakpoint) both end with focus on the page's quick view trigger, 0 levels, `overflow` `""`/`""`; the served `buy-buttons.js` contains the fix. `node --check`, Prettier, `lint:compat`, `lint:theme`: pass.
+- (2) `docs/project.md` changed in `5d224eb` (Status progress line; `.shopifyignore` deviation entry) without approval recorded here. Both are coordinator record updates (status per the record-layer checks; the deviation entry per the user's skeleton sync policy). Approved by the user (2026-10-02, "批准").
+- Unproven by the reviewer: product page add with the cart drawer, because the store's buy buttons run with `openCartOnAdd=false` (merchant setting); goes to the consolidated browser pass.
+
+### Review round 5 (GPT, 2026-10-02) and close
+
+- Runtime checks all pass: quick view add to cart, Enter and mouse, desktop 1440×1000 and 390×844: focus returns to the page's quick view trigger, 0 levels, `overflow` `""`/`""`, `_scrollLockHeld=false`; D1 video stack, Escape twice, `2 → 1 → 0`, focus per level. `lint:theme`, `lint:compat`, Prettier, `git diff --check`: pass.
+- The only finding was the missing approval for `docs/project.md`, since recorded above. The batch closes without a sixth round (user, 2026-10-02). D6 stays in the consolidated browser pass.
+
+## Plan: JS close-out: interaction sweep and runtime fixes (batch 5-F)
+
+Status: direction from the user (2026-10-02: "可以继续js的…得加快速度，不能一个个，而是一批次"), recorded as authorized; runs after 5-D review round 4 so the reviewer's browser session and this batch's edits do not share the dev theme. Review tier: **Ask** (`assets/*.js`, Liquid markup). Implementer: external session with the browser MCP (execution prompt); reviewer: coordinator, then GPT. Browser checks beyond the executor's own MCP runs go to the consolidated pass.
+
+**Outcome.** Every interactive surface works under the new runtime with a clean console, and the known runtime defects are fixed in one batch, so the JS track is closed before the CSS architecture work.
+
+**Scope rule.** Fix in this batch: migration regressions, console errors, first-viewport (no-JS) failures, and accessibility defects in interactive controls, when the fix lives in JS or Liquid markup. Log, do not fix: pure styling or layout defects (CSS phase), pre-existing defects that are not accessibility or console errors, anything needing schema, setting, or merchant-config changes (stop and list).
+
+**Known items.**
+
+- S2 product page first load: gallery blank and the no-JS per-variant "Add to Cart" fallback visible until modules load. Diagnose first (compare with the live theme): which markup hides the gallery and shows the fallback before Alpine; fix so the first viewport renders the gallery's first media and one purchase control from Liquid, with no flash of the fallback when JS runs.
+- S6 predictive search cards show no product image: `snippets/predictive-search-product-card.liquid` passes `x-bind:src` through `{% render 'image' %}`, which emits a placeholder SVG with no `<img>` for JSON-driven results. Fix with a client-bound `<img>` in the card (width/height, `loading="lazy"`, alt binding), not a new `image` snippet mode.
+- S3 filter drawer: unlabeled chevron control under filter lists. Identify it; give it its locale-keyed label or remove the empty control.
+- S7 `/search?q=` without `type` selects the Articles tab and lists nothing while reporting product results. Confirm on the live theme; fix the tab derivation in `sections/search.liquid` so the default tab is the first type with results (products first when present).
+- Menu `<summary>` link: `snippets/header-dropdown-super-menu.liquid` (and any other menu snippet doing the same, `snippets/header-dropdown-menu.liquid` included) renders an interactive `<a>` inside `<summary>`. Keep the parent label as `<summary>` text; if the parent link must stay reachable, render it inside the panel.
+- Interaction sweep: every interactive surface on the `docs/migration/phase0/browser-checklist.md` pages (header, menus desktop/mobile, search overlay and page, localization, product purchase and media, quick view, cart drawer and page, filters and sorting, pagination, carousels, accordions/tabs, newsletter and contact forms, popups), desktop and 390×844, console as the floor. Each finding: classification (migration regression / pre-existing, checked on the live theme), cause, fixed or logged.
+
+**Implementation surface.** `assets/*.js` (not vendor or generated files), `sections/*.liquid` and `snippets/*.liquid` markup and their `{% stylesheet %}` blocks only where a fix needs it, `layout/theme.liquid`, `locales/*.json` (new keys for labels, English source plus every locale file the i18n lint requires). Forbidden: `config/settings_data.json`, `config/settings_schema.json`, `templates/*.json`, `sections/*-group.json`, `{% schema %}` blocks, vendor and generated assets, the agent rules and validator wiring.
+
+**Acceptance checks.**
+
+- F1 S2: with JavaScript disabled, the product page shows the first gallery media and the purchase form; with JavaScript enabled, per-frame or screenshot sampling from navigation to module ready shows no blank gallery and no per-variant fallback buttons.
+- F2 S6: predictive search for a term with product results shows an `<img>` with the product image URL in every product card; no placeholder SVG when the product has an image.
+- F3 S3: the control has an accessible name from a locale key, or no longer renders; Chrome accessibility tree shows no unnamed button in the filter drawer.
+- F4 S7: `/search?q=<term>` without `type` lists the results the count reports; with `type=article` and `type=page` the tabs behave as on `HEAD`.
+- F5 menu: no `<a>` (or other interactive element) inside any `<summary>` in `snippets/header-*.liquid` (search command recorded); Chrome reports no "Interactive element inside of a <summary> element" on the home page; every menu item stays reachable by keyboard.
+- F6 sweep: a findings table in this file (surface, viewport, finding, classification, cause, fixed / logged); console free of errors on every swept page after the fixes.
+- F7 static: `npm.cmd run lint:theme`, `lint:compat`, `test:theme-check`, `lint:liquid-syntax`, `lint:i18n`, `lint:doc-paths`, Prettier on changed files; ThemeEvents and SectionRefresher greps from `docs/project.md` (Theme-Specific Contracts) show no new matches.
+- Interactive JS changes carry a runnable check (MCP script or harness) recorded here; `HEAD` comparisons through `git show` or a separate worktree, never stash, checkout, restore, or reset.
