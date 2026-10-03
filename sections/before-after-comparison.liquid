@@ -12,38 +12,27 @@
 
     assign before_after_heading_class = section.settings.heading_size | default: 'heading-2xl'
     assign before_after_subtitle_size = section.settings.subtitle_size | default: 'body-3xl'
-    assign before_after_subtitle_class = 'typo-subtitle ' | append: before_after_subtitle_size
 -%}
 
-<div
-    data-section-id="{{ section.id }}"
-    class="before-after-comparison-section full-width color-{{ section.settings.color_scheme }} surface-section"
-    style="
-        --section-padding-top: {{ section.settings.padding_top }}px;
-        --section-padding-bottom: {{ section.settings.padding_bottom }}px;
-    "
-    data-module-id="motion-reveal"
-    x-data="motionRevealSection()"
-    data-motion-section
->
-    <div class="layout container-page">
+{%- capture before_after_children -%}
+    <div class="flex flex-col gap-10 pc:gap-25">
         <div class="flex flex-col gap-6 text-center" data-motion-sequence>
-            <p
-                class="{{ before_after_subtitle_class }}"
-                data-motion-reveal="content"
-            >
-                {{ section.settings.sub_heading }}
-            </p>
-            <h2
-                class="{{ before_after_heading_class }}"
-                data-motion-reveal="content"
-            >
-                {{ section.settings.heading }}
-            </h2>
+            {% render 'text',
+                tier: before_after_subtitle_size,
+                subtitle: true,
+                align: 'center',
+                content: section.settings.sub_heading
+            %}
+            {% render 'heading',
+                level: '2',
+                tier: before_after_heading_class,
+                align: 'center',
+                content: section.settings.heading
+            %}
         </div>
 
         {% comment %} Mobile Layout (Stacked) {% endcomment %}
-        <div class="mt-10 flex flex-col gap-6 pc:hidden">
+        <div class="flex flex-col gap-6 pc:hidden">
             <div data-motion-bound>
                 <div class="relative overflow-hidden rounded-lg" data-motion-reveal="media">
                     {%- assign image_alt = section.settings.before_img.alt
@@ -87,7 +76,7 @@
 
         {% comment %} Desktop Layout (Slider) {% endcomment %}
         <div
-            class="mt-25 hidden pc:block"
+            class="hidden pc:block"
             data-module-id="before-after-comparison"
             x-data="beforeAfterComparison()"
         >
@@ -180,7 +169,14 @@
             </div>
         </div>
     </div>
-</div>
+{%- endcapture -%}
+
+{% render 'section-frame',
+    section: section,
+    section_class: 'before-after-comparison-section',
+    motion: true,
+    children: before_after_children
+%}
 
 {% schema %}
 {

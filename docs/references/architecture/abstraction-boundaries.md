@@ -57,7 +57,7 @@ Snippets are the theme's reusable UI components. Their parameter contracts follo
 
 | Snippet | Parameters (semantic) | Notes |
 | --- | --- | --- |
-| `section-frame` | `section`, `children`, `background`, `width`, `height_kind`, `motion`, `safe_top`, `surface_section` | `motion: true` emits literal CAP-01 mount attributes only; padding via `--section-frame-padding-*` custom properties |
+| `section-frame` | `section`, `children`, `background`, `width`, `height_kind`, `motion`, `safe_top`, `surface_section`, `root_style`, `root_attrs` | `motion: true` emits literal CAP-01 mount attributes only; padding via `--section-frame-padding-*` custom properties. `root_attrs` is for static `data-component-*` (or similar) only — never `data-module-id`, `x-data`, or other Alpine attributes; those belong on an inner element in `children` so import-map and Alpine expression lints match `HEAD` mount topology. |
 | `heading` | `level`, `tier`, `align`, `content` | Visual tier separate from outline level |
 | `text` | `tier`, `rte`, `subtitle`, `align`, `measure`, `content` | Body tiers on `p` or `div` |
 | `button` | `href`, `style`, `size`, `label` / `content`, `new_tab`, `disabled` | Plain links stay on `link.liquid` |

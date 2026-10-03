@@ -1,4 +1,7 @@
 {%- if section.settings.show_map -%}
+    {%- liquid
+        assign google_map_root_style = '--map-height: ' | append: section.settings.map_height | append: 'px;'
+    -%}
     {%- if section.settings.map_embed_code != blank -%}
         {%- liquid
             assign map_embed_code = section.settings.map_embed_code
@@ -11,44 +14,44 @@
             endunless
         -%}
 
-        <div
-            data-section-id="{{ section.id }}"
-            class="google-map-section full-width"
-            style="
-                --map-height: {{ section.settings.map_height }}px;
-                --section-padding-top: {{ section.settings.padding_top }}px;
-                --section-padding-bottom: {{ section.settings.padding_bottom }}px;
-            "
-        >
-            <div class="layout">
-                <div class="google-map-section__embed">
-                    {{ map_embed_code }}
-                </div>
+        {%- capture google_map_children -%}
+            <div class="google-map-section__embed">
+                {{ map_embed_code }}
             </div>
-        </div>
+        {%- endcapture -%}
+
+        {% render 'section-frame',
+            section: section,
+            section_class: 'google-map-section',
+            width: 'full',
+            motion: false,
+            surface_section: false,
+            root_style: google_map_root_style,
+            children: google_map_children
+        %}
     {%- elsif request.visual_preview_mode -%}
-        <div
-            data-section-id="{{ section.id }}"
-            class="google-map-section full-width"
-            style="
-                --map-height: {{ section.settings.map_height }}px;
-                --section-padding-top: {{ section.settings.padding_top }}px;
-                --section-padding-bottom: {{ section.settings.padding_bottom }}px;
-            "
-        >
-            <div class="layout">
-                <div
-                    class="google-map-section__embed google-map-section__embed--preview flex flex-col items-center justify-center gap-3 bg-theme-bg/50 text-center"
-                    role="img"
-                    aria-label="{{ 'sections.google-map.visual_preview_label' | t | escape }}"
-                >
-                    {% render 'icons', icon: 'icon-info-circle', class: 'opacity-60' %}
-                    <p class="body-md text-theme-text/70">
-                        {{ 'sections.google-map.visual_preview_hint' | t }}
-                    </p>
-                </div>
+        {%- capture google_map_preview_children -%}
+            <div
+                class="google-map-section__embed google-map-section__embed--preview flex flex-col items-center justify-center gap-3 bg-theme-bg/50 text-center"
+                role="img"
+                aria-label="{{ 'sections.google-map.visual_preview_label' | t | escape }}"
+            >
+                {% render 'icons', icon: 'icon-info-circle', class: 'opacity-60' %}
+                <p class="body-md text-theme-text/70">
+                    {{ 'sections.google-map.visual_preview_hint' | t }}
+                </p>
             </div>
-        </div>
+        {%- endcapture -%}
+
+        {% render 'section-frame',
+            section: section,
+            section_class: 'google-map-section',
+            width: 'full',
+            motion: false,
+            surface_section: false,
+            root_style: google_map_root_style,
+            children: google_map_preview_children
+        %}
     {%- endif -%}
 {%- endif -%}
 

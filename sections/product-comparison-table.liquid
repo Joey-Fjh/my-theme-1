@@ -1,35 +1,29 @@
-<section
-    data-section-id="{{ section.id }}"
-    class="product-comparison-table-section full-width color-{{ section.settings.color_scheme }} surface-section"
-    style="
-        --section-padding-top: {{ section.settings.padding_top | default: 0 }}px;
-        --section-padding-bottom: {{ section.settings.padding_bottom | default: 0 }}px;
-        --comparison-column-bg-color: {{ section.settings.comparison_column_bg_color | default: '#F4F1E8' }};
-        --comparison-success-color: {{ section.settings.comparison_success_color | default: '#228E58' }};
-        --comparison-danger-color: {{ section.settings.comparison_danger_color | default: '#E04A4A' }};
-    "
-    data-component-kind="section"
-    data-component-type="product-comparison-table"
-    data-component-id="{{ section.id }}"
-    x-data="motionRevealSection()"
-    data-module-id="motion-reveal"
-    data-motion-section
->
-    {%- liquid
-        assign comparison_heading_class = section.settings.heading_size | default: 'heading-2xl'
-        assign comparison_products = section.settings.products
-        assign comparison_columns = comparison_products
-        assign comparison_item_count = comparison_products.size
-        assign has_comparison_products = false
-        if comparison_item_count > 0
-            assign has_comparison_products = true
-        else
-            assign comparison_columns = '1,2,3,4,5,6' | split: ','
-            assign comparison_item_count = comparison_columns.size
-        endif
-    -%}
+{%- liquid
+    assign comparison_heading_class = section.settings.heading_size | default: 'heading-2xl'
+    assign comparison_products = section.settings.products
+    assign comparison_columns = comparison_products
+    assign comparison_item_count = comparison_products.size
+    assign has_comparison_products = false
+    if comparison_item_count > 0
+        assign has_comparison_products = true
+    else
+        assign comparison_columns = '1,2,3,4,5,6' | split: ','
+        assign comparison_item_count = comparison_columns.size
+    endif
+    assign comparison_col_bg = section.settings.comparison_column_bg_color | default: '#F4F1E8'
+    assign comparison_success = section.settings.comparison_success_color | default: '#228E58'
+    assign comparison_danger = section.settings.comparison_danger_color | default: '#E04A4A'
+-%}
+{%- capture comparison_root_style -%}
+--comparison-column-bg-color: {{ comparison_col_bg }}; --comparison-success-color: {{ comparison_success }}; --comparison-danger-color: {{ comparison_danger }};
+{%- endcapture -%}
+{%- assign comparison_root_attrs = 'data-component-kind="section" data-component-type="product-comparison-table" data-component-id="'
+    | append: section.id
+    | append: '"'
+-%}
+{%- capture product_comparison_children -%}
     <div
-        class="layout container-page mx-auto pb-8"
+        class="mx-auto flex flex-col gap-10 pb-8 pc:gap-16"
         style="
             --comparison-table-width-mobile: {{ comparison_item_count | times: 140 | plus: 116 }}px;
             --comparison-table-width-pc: {{ comparison_item_count | times: 280 | plus: 156 }}px;
@@ -38,12 +32,12 @@
         data-module-id="product-comparison-table"
     >
         {% if section.settings.heading != blank %}
-            <h1
-                class="mb-10 text-center pc:mb-16 {{ comparison_heading_class }}"
-                data-motion-reveal="content"
-            >
-                {{ section.settings.heading }}
-            </h1>
+            {% render 'heading',
+                level: '1',
+                tier: comparison_heading_class,
+                align: 'center',
+                content: section.settings.heading
+            %}
         {% endif %}
         {% if section.blocks.size > 0 %}
             <div
@@ -115,8 +109,8 @@
                                         {% case block.type %}
                                             {% when 'header' %}
                                                 {%- if is_placeholder -%}
-                                                    <div class="flex w-full flex-col items-center text-inherit">
-                                                        <div class="mb-4 flex h-44 w-full items-center justify-center pc:mb-6 pc:h-[260px]">
+                                                    <div class="flex w-full flex-col items-center gap-4 text-inherit pc:gap-6">
+                                                        <div class="flex h-44 w-full items-center justify-center pc:h-[260px]">
                                                             <div class="h-full w-full max-w-[76%] pc:max-w-[74%]">
                                                                 {%- render 'image',
                                                                     image: blank,
@@ -139,9 +133,9 @@
                                                 {%- else -%}
                                                     <a
                                                         href="{{ item.url }}"
-                                                        class="comparison-table-product-link media-interaction flex w-full cursor-pointer flex-col items-center text-inherit no-underline"
+                                                        class="comparison-table-product-link media-interaction flex w-full cursor-pointer flex-col items-center gap-4 text-inherit no-underline pc:gap-6"
                                                     >
-                                                        <div class="mb-4 flex h-44 w-full items-center justify-center pc:mb-6 pc:h-[260px]">
+                                                        <div class="flex h-44 w-full items-center justify-center pc:h-[260px]">
                                                             <div class="h-full w-full max-w-[76%] pc:max-w-[74%]">
                                                                 {%- assign image_alt = item.featured_image.alt
                                                                     | default: item.title
@@ -277,7 +271,16 @@
             </div>
         {% endif %}
     </div>
-</section>
+{%- endcapture -%}
+
+{% render 'section-frame',
+    section: section,
+    section_class: 'product-comparison-table-section',
+    motion: true,
+    root_style: comparison_root_style,
+    root_attrs: comparison_root_attrs,
+    children: product_comparison_children
+%}
 
 {% stylesheet %}
     .product-comparison-table-section {

@@ -3,188 +3,182 @@
     assign about_stats_stat_subtitle_class = section.settings.stat_subtitle_size | default: 'heading-2xl'
     assign about_stats_stat_subtitle_class = 'typo-subtitle ' | append: about_stats_stat_subtitle_class
 -%}
-
-<div
-    data-section-id="{{ section.id }}"
-    class="about-stats-section full-width color-{{ section.settings.color_scheme }} surface-section"
-    style="
-        --section-padding-top: {{ section.settings.padding_top }}px;
-        --section-padding-bottom: {{ section.settings.padding_bottom }}px;
-    "
-    data-module-id="motion-reveal"
-    x-data="motionRevealSection()"
-    data-motion-section
->
-    <div class="layout container-page">
-        <div class="flex flex-col gap-12 pc:grid pc:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] pc:items-stretch pc:gap-20 fw:gap-28">
-            {% comment %} Image {% endcomment %}
-            {%- liquid
-                assign primary_image = section.settings.image
-                assign secondary_image = section.settings.image_secondary
-                assign display_image = primary_image | default: secondary_image
-                assign has_both_images = false
-                if primary_image != blank and secondary_image != blank
-                    assign has_both_images = true
-                endif
-            -%}
-            <div class="relative w-full shrink-0">
-                {%- if has_both_images -%}
-                    <div class="w-full pc:hidden" data-motion-reveal="media">
-                        <div class="aspect-square overflow-hidden">
-                            {%- render 'image',
-                                image: primary_image,
-                                placeholder_key: 'lifestyle-1',
-                                alt: primary_image.alt,
-                                width: primary_image.width,
-                                sizes: '100vw',
-                                motion_reveal: false
-                            -%}
-                        </div>
-                    </div>
-
-                    <div
-                        class="relative hidden aspect-square w-full pc:block"
-                        data-module-id="about-stats-images"
-                        x-data="aboutStatsImages()"
-                    >
-                        <button
-                            type="button"
-                            class="absolute top-0 left-0 aspect-square w-[62.5%] origin-center cursor-pointer overflow-hidden focus-ring transition-[transform,opacity,filter] duration-[520ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform motion-reduce:transition-none"
-                            :class="isPrimaryActive() ? 'z-20 opacity-100 brightness-100 [transform:translate3d(0,0,0)_scale(1)]' : 'z-10 opacity-70 brightness-90 [transform:translate3d(1rem,1rem,0)_scale(0.94)]'"
-                            @click="showPrimary()"
-                            :aria-pressed="String(isPrimaryActive())"
-                            aria-label="{{ 'accessibility.show_first_image' | t }}"
-                        >
-                            {%- render 'image',
-                                image: primary_image,
-                                placeholder_key: 'lifestyle-1',
-                                alt: primary_image.alt,
-                                width: primary_image.width,
-                                sizes: '(min-width: 1280px) 17vw, 16vw',
-                                motion_reveal: false
-                            -%}
-                        </button>
-
-                        <button
-                            type="button"
-                            class="absolute right-0 bottom-0 aspect-square w-[62.5%] origin-center cursor-pointer overflow-hidden focus-ring transition-[transform,opacity,filter] duration-[520ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform motion-reduce:transition-none"
-                            :class="isSecondaryActive() ? 'z-20 opacity-100 brightness-100 [transform:translate3d(0,0,0)_scale(1)]' : 'z-10 opacity-70 brightness-90 [transform:translate3d(-1rem,-1rem,0)_scale(0.94)]'"
-                            @click="showSecondary()"
-                            :aria-pressed="String(isSecondaryActive())"
-                            aria-label="{{ 'accessibility.show_second_image' | t }}"
-                        >
-                            {%- render 'image',
-                                image: secondary_image,
-                                placeholder_key: 'lifestyle-2',
-                                alt: secondary_image.alt,
-                                width: secondary_image.width,
-                                sizes: '(min-width: 1280px) 17vw, 16vw',
-                                motion_reveal: false
-                            -%}
-                        </button>
-                    </div>
-                {%- else -%}
-                    <div
-                        class="aspect-square w-full overflow-hidden pc:hidden"
-                        data-motion-reveal="media"
-                    >
+{%- capture about_stats_children -%}
+    <div class="flex flex-col gap-12 pc:grid pc:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] pc:items-stretch pc:gap-20 fw:gap-28">
+        {% comment %} Image {% endcomment %}
+        {%- liquid
+            assign primary_image = section.settings.image
+            assign secondary_image = section.settings.image_secondary
+            assign display_image = primary_image | default: secondary_image
+            assign has_both_images = false
+            if primary_image != blank and secondary_image != blank
+                assign has_both_images = true
+            endif
+        -%}
+        <div class="relative w-full shrink-0">
+            {%- if has_both_images -%}
+                <div class="w-full pc:hidden" data-motion-reveal="media">
+                    <div class="aspect-square overflow-hidden">
                         {%- render 'image',
-                            image: display_image,
+                            image: primary_image,
                             placeholder_key: 'lifestyle-1',
-                            alt: display_image.alt,
-                            width: display_image.width,
+                            alt: primary_image.alt,
+                            width: primary_image.width,
                             sizes: '100vw',
                             motion_reveal: false
                         -%}
                     </div>
-                    <div
-                        class="hidden aspect-square w-full overflow-hidden pc:block"
-                        data-motion-reveal="media"
-                    >
-                        {%- render 'image',
-                            image: display_image,
-                            placeholder_key: 'lifestyle-1',
-                            alt: display_image.alt,
-                            width: display_image.width,
-                            sizes: '(min-width: 1280px) 32vw, 40vw',
-                            motion_reveal: false
-                        -%}
-                    </div>
-                {%- endif -%}
-            </div>
-
-            {% comment %} Content {% endcomment %}
-            <div
-                class="flex flex-1 flex-col gap-12 pc:h-full pc:justify-between pc:gap-16"
-                data-motion-sequence
-            >
-                <p class="body-3xl" data-motion-reveal="content">
-                    {{ section.settings.year }}
-                </p>
-
-                <div
-                    class="rte rte--compact body-size-custom"
-                    style="--body-size-custom: 24px; --body-size-custom-pc: 40px;"
-                    data-motion-reveal="content"
-                >
-                    {{ section.settings.description }}
                 </div>
 
-                {%- if section.settings.link != blank -%}
-                    {%- capture link_content -%}
-                        <span>{{ section.settings.link_text }}</span>
-                        {% render 'icons', icon: 'icon-arrow2', class: 'ms-3' %}
-                    {%- endcapture -%}
-
-                    <div class="w-fit" data-motion-reveal="content">
-                        {%- render 'link',
-                            href: section.settings.link,
-                            content: link_content,
-                            variant: 'underline',
-                            class: 'body-xl'
-                        -%}
-                    </div>
-                {%- endif -%}
-
-                {% comment %} Stats {% endcomment %}
                 <div
-                    class="flex gap-12 pc:gap-16 fw:gap-24"
-                    data-motion-reveal="content"
+                    class="relative hidden aspect-square w-full pc:block"
+                    data-module-id="about-stats-images"
+                    x-data="aboutStatsImages()"
                 >
-                    {%- for block in section.blocks -%}
-                        <div
-                            class="mt-25"
-                            {{ block.shopify_attributes }}
-                        >
-                            <p class="mb-2 {{ about_stats_stat_title_class }}">
+                    <button
+                        type="button"
+                        class="absolute top-0 left-0 aspect-square w-[62.5%] origin-center cursor-pointer overflow-hidden focus-ring transition-[transform,opacity,filter] duration-[520ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform motion-reduce:transition-none"
+                        :class="isPrimaryActive() ? 'z-20 opacity-100 brightness-100 [transform:translate3d(0,0,0)_scale(1)]' : 'z-10 opacity-70 brightness-90 [transform:translate3d(1rem,1rem,0)_scale(0.94)]'"
+                        @click="showPrimary()"
+                        :aria-pressed="String(isPrimaryActive())"
+                        aria-label="{{ 'accessibility.show_first_image' | t }}"
+                    >
+                        {%- render 'image',
+                            image: primary_image,
+                            placeholder_key: 'lifestyle-1',
+                            alt: primary_image.alt,
+                            width: primary_image.width,
+                            sizes: '(min-width: 1280px) 17vw, 16vw',
+                            motion_reveal: false
+                        -%}
+                    </button>
+
+                    <button
+                        type="button"
+                        class="absolute right-0 bottom-0 aspect-square w-[62.5%] origin-center cursor-pointer overflow-hidden focus-ring transition-[transform,opacity,filter] duration-[520ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform motion-reduce:transition-none"
+                        :class="isSecondaryActive() ? 'z-20 opacity-100 brightness-100 [transform:translate3d(0,0,0)_scale(1)]' : 'z-10 opacity-70 brightness-90 [transform:translate3d(-1rem,-1rem,0)_scale(0.94)]'"
+                        @click="showSecondary()"
+                        :aria-pressed="String(isSecondaryActive())"
+                        aria-label="{{ 'accessibility.show_second_image' | t }}"
+                    >
+                        {%- render 'image',
+                            image: secondary_image,
+                            placeholder_key: 'lifestyle-2',
+                            alt: secondary_image.alt,
+                            width: secondary_image.width,
+                            sizes: '(min-width: 1280px) 17vw, 16vw',
+                            motion_reveal: false
+                        -%}
+                    </button>
+                </div>
+            {%- else -%}
+                <div
+                    class="aspect-square w-full overflow-hidden pc:hidden"
+                    data-motion-reveal="media"
+                >
+                    {%- render 'image',
+                        image: display_image,
+                        placeholder_key: 'lifestyle-1',
+                        alt: display_image.alt,
+                        width: display_image.width,
+                        sizes: '100vw',
+                        motion_reveal: false
+                    -%}
+                </div>
+                <div
+                    class="hidden aspect-square w-full overflow-hidden pc:block"
+                    data-motion-reveal="media"
+                >
+                    {%- render 'image',
+                        image: display_image,
+                        placeholder_key: 'lifestyle-1',
+                        alt: display_image.alt,
+                        width: display_image.width,
+                        sizes: '(min-width: 1280px) 32vw, 40vw',
+                        motion_reveal: false
+                    -%}
+                </div>
+            {%- endif -%}
+        </div>
+
+        {% comment %} Content {% endcomment %}
+        <div
+            class="flex flex-1 flex-col gap-12 pc:h-full pc:justify-between pc:gap-16"
+            data-motion-sequence
+        >
+            {% render 'text',
+                tier: 'body-3xl',
+                content: section.settings.year
+            %}
+
+            {% render 'text',
+                element: 'div',
+                rte: true,
+                class: 'body-size-custom',
+                style: '--body-size-custom: 24px; --body-size-custom-pc: 40px;',
+                content: section.settings.description
+            %}
+
+            {%- if section.settings.link != blank -%}
+                {%- capture link_content -%}
+                    <span>{{ section.settings.link_text }}</span>
+                    {% render 'icons', icon: 'icon-arrow2', class: 'ms-3' %}
+                {%- endcapture -%}
+
+                <div class="w-fit" data-motion-reveal="content">
+                    {%- render 'link',
+                        href: section.settings.link,
+                        content: link_content,
+                        variant: 'underline',
+                        class: 'body-xl'
+                    -%}
+                </div>
+            {%- endif -%}
+
+            {% comment %} Stats {% endcomment %}
+            <div
+                class="flex gap-12 pc:gap-16 fw:gap-24"
+                data-motion-reveal="content"
+            >
+                {%- for block in section.blocks -%}
+                    <div class="mt-25" {{ block.shopify_attributes }}>
+                        <div class="flex flex-col gap-tight">
+                            <p class="{{ about_stats_stat_title_class }}">
                                 {{ block.settings.label }}
                             </p>
                             <p class="{{ about_stats_stat_subtitle_class }}">
                                 {{ block.settings.value }}
                             </p>
                         </div>
-                    {%- endfor -%}
-                </div>
+                    </div>
+                {%- endfor -%}
             </div>
-
-            {%- if has_both_images -%}
-                <div
-                    class="aspect-square w-full overflow-hidden pc:hidden"
-                    data-motion-reveal="media"
-                >
-                    {%- render 'image',
-                        image: secondary_image,
-                        placeholder_key: 'lifestyle-2',
-                        alt: secondary_image.alt,
-                        width: secondary_image.width,
-                        sizes: '100vw',
-                        motion_reveal: false
-                    -%}
-                </div>
-            {%- endif -%}
         </div>
+
+        {%- if has_both_images -%}
+            <div
+                class="aspect-square w-full overflow-hidden pc:hidden"
+                data-motion-reveal="media"
+            >
+                {%- render 'image',
+                    image: secondary_image,
+                    placeholder_key: 'lifestyle-2',
+                    alt: secondary_image.alt,
+                    width: secondary_image.width,
+                    sizes: '100vw',
+                    motion_reveal: false
+                -%}
+            </div>
+        {%- endif -%}
     </div>
-</div>
+{%- endcapture -%}
+
+{% render 'section-frame',
+    section: section,
+    section_class: 'about-stats-section',
+    motion: true,
+    children: about_stats_children
+%}
 
 {% schema %}
 {

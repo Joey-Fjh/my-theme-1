@@ -1,24 +1,22 @@
-<div
-    data-section-id="{{ section.id }}"
-    class="custom-liquid-section full-width color-{{ section.settings.color_scheme }} surface-section"
-    style="
-        --section-padding-top: {{ section.settings.padding_top }}px;
-        --section-padding-bottom: {{ section.settings.padding_bottom }}px;
-    "
->
-    {%- liquid
-        assign wrapper_class = 'layout container-page '
-        if section.settings.section_width == 'full'
-            assign wrapper_class = ''
-        endif
-    -%}
-
-    <div class="{{ wrapper_class }}">
-        <div class="w-full px-4 pc:px-0">
-            {{ section.settings.custom_liquid }}
-        </div>
+{%- liquid
+    assign custom_liquid_width = 'page'
+    if section.settings.section_width == 'full'
+        assign custom_liquid_width = 'full'
+    endif
+-%}
+{%- capture custom_liquid_children -%}
+    <div class="w-full px-4 pc:px-0">
+        {{ section.settings.custom_liquid }}
     </div>
-</div>
+{%- endcapture -%}
+
+{% render 'section-frame',
+    section: section,
+    section_class: 'custom-liquid-section',
+    width: custom_liquid_width,
+    motion: false,
+    children: custom_liquid_children
+%}
 
 {% schema %}
 {

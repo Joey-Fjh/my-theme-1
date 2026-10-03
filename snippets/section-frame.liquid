@@ -13,6 +13,8 @@
     @param {boolean} [motion] - When true, outputs literal CAP-01 section-reveal mount attributes on the root (motion-reveal module)
     @param {boolean} [safe_top] - When false, adds `section-frame--no-safe-top` (skips first-section header offset)
     @param {string} [root_class] - Extra classes on the root element
+    @param {string} [root_style] - Extra inline declarations appended on the root `style` attribute
+    @param {string} [root_attrs] - Extra attributes on the root element (for example `data-component-kind="section"`). Must not include `data-module-id`, `x-data`, `x-on:*`, or other Alpine mount attributes; import-map and Alpine lints read literal markup on the section file and frame root.
     @param {string} [inner_class] - Extra classes on the page-width inner wrapper
     @param {boolean} [surface_section] - When true (default), adds `surface-section`
 {% enddoc %}
@@ -96,16 +98,18 @@
 
 <div
     data-section-id="{{ section.id }}"
-    class="section-frame color-{{ section.settings.color_scheme }} {{ root_classes }}"
+    class="section-frame{% if section.settings.color_scheme != blank %} color-{{ section.settings.color_scheme }}{% endif %} {{ root_classes }}"
     style="
         --section-frame-padding-top: {{ pad_top_clamp }};
         --section-frame-padding-bottom: {{ pad_bottom_clamp }};
+        {% if root_style != blank %}{{ root_style }}{% endif %}
     "
     {% if motion == true or motion == 'true' %}
         data-module-id="motion-reveal"
         x-data="motionRevealSection()"
         data-motion-section
     {% endif %}
+    {{ root_attrs }}
 >
     {%- if background != blank -%}
         <div class="section-frame__background">

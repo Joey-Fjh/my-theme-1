@@ -162,7 +162,14 @@ Don't use `animate-spin` or `x-transition:*` for ordinary loading or state motio
 | Tailwind build (`tailwind/tailwind.*.css`) | Tokens, typography tiers, surfaces, layout vocabulary, utilities with 2+ unrelated consumers |
 | `snippets/section-frame.liquid` | Section colour scheme, fluid merchant padding, width (`page` / full bleed), height kind (`content`, `media`, `stage`), first-section header offset |
 
-Move rules into a `{% stylesheet %}` block only when every class in the selector and nested selectors belongs to that file's render tree. Move a BEM block whole. JS- or vendor-generated classes stay shared.
+Move a rule into a file's `{% stylesheet %}` block only when every compound of its selector, nested selectors included, is anchored on a class that file owns. The other classes in the selector may be:
+
+- classes rendered inside that file's render tree, such as snippets it renders, even if other files also render those snippets;
+- classes that JavaScript or a vendored library (for example Swiper) generates inside that tree.
+
+This matches Shopify's own scope check (Theme Check `ValidScopedCSSClass`), and the anchor class keeps the rule from reaching elements outside the owner. Rules whose subject is a shared or generated class with no owned anchor stay in the Tailwind build. Move a BEM block whole.
+
+(User decision, 2026-10-03: this replaces the stricter "every class owned" rule from 5-C2.)
 
 Unmigrated sections keep `assets/base.css` `.layout` padding (`--section-padding-top` / `--section-padding-bottom`). Migrated section roots use `section-frame` instead.
 
@@ -190,11 +197,11 @@ Three relationship-named fluid gaps in `tailwind/tailwind.input.css`, consumed a
 
 | Token | Desktop target (dominant legacy utility) |
 | --- | --- |
-| `--spacing-gap-tight` | `gap-2` (8px) |
-| `--spacing-gap-related` | `gap-4` (16px) |
-| `--spacing-gap-group` | `gap-6` (24px) |
+| `--spacing-gap-tight` | `gap-2` (0.5rem, 5px on the 62.5% root) |
+| `--spacing-gap-related` | `gap-4` (1rem, 10px) |
+| `--spacing-gap-group` | `gap-6` (1.5rem, 15px) |
 
-Each token uses the same linear `clamp()` as section padding (0.6× at 375px viewport width to 1× at 1280px). Prefer `gap` utilities; margin and `space-y` are exceptions.
+Each token uses the same linear `clamp()` as section padding (0.6× at 375px viewport width to 1× at 1280px), written in `rem` so it stays on Tailwind's spacing unit (`--spacing: 0.25rem`, 2.5px on the 62.5% root set in `assets/base.css`). Convert Tailwind spacing to pixels with that unit, not 4px. Prefer `gap` utilities; margin and `space-y` are exceptions.
 
 **Section padding clamp** (merchant setting `v` in px, computed in `section-frame`):
 

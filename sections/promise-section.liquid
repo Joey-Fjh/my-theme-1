@@ -1,69 +1,77 @@
-<div
-    data-section-id="{{ section.id }}"
-    class="promise-section full-width color-{{ section.settings.color_scheme }} surface-section"
-    style="
-        --section-padding-top: {{ section.settings.padding_top }}px;
-        --section-padding-bottom: {{ section.settings.padding_bottom }}px;
-    "
-    data-module-id="motion-reveal"
-    x-data="motionRevealSection()"
-    data-motion-section
->
-    {%- liquid
-        assign promise_heading_class = section.settings.heading_size | default: 'heading-xl'
-    -%}
-    <div class="layout container-page text-theme-text">
-        <div class="grid grid-cols-1 gap-8 pc:grid-cols-2 pc:grid-rows-[auto_auto] pc:items-stretch pc:gap-10 fw:gap-16">
-            {% comment %} Right - Heading {% endcomment %}
-            <div
-                class="order-1 pc:order-2 pc:col-start-2 pc:row-start-1"
-                data-motion-reveal="content"
-            >
-                <p class="mb-4 typo-subtitle">{{ section.settings.subtitle }}</p>
-                <h1 class="{{ promise_heading_class }} text-balance">
-                    {{ section.settings.heading }}
-                </h1>
-            </div>
+{%- liquid
+    assign promise_heading_class = section.settings.heading_size | default: 'heading-xl'
+-%}
+{%- capture promise_children -%}
+    <div class="grid grid-cols-1 gap-8 text-theme-text pc:grid-cols-2 pc:grid-rows-[auto_auto] pc:items-stretch pc:gap-10 fw:gap-16">
+        {% comment %} Right - Heading {% endcomment %}
+        <div
+            class="order-1 pc:order-2 pc:col-start-2 pc:row-start-1"
+            data-motion-reveal="content"
+        >
+            {%- capture promise_heading_copy -%}
+                {% render 'text',
+                    subtitle: true,
+                    content: section.settings.subtitle,
+                    motion_reveal: false
+                %}
+                {% render 'heading',
+                    level: '1',
+                    tier: promise_heading_class,
+                    class: 'text-balance',
+                    content: section.settings.heading,
+                    motion_reveal: false
+                %}
+            {%- endcapture -%}
+            {% render 'content-group',
+                gap: 'related',
+                children: promise_heading_copy
+            %}
+        </div>
 
-            {% comment %} Left - Image {% endcomment %}
-            <div
-                class="order-2 min-h-80 overflow-hidden rounded-sm pc:order-1 pc:col-start-1 pc:row-span-2 pc:row-start-1 pc:h-full pc:min-h-0"
-            >
-                {%- assign image_alt_fallback = 'sections.promise-section.defaults.image_alt'
-                    | t
-                -%}
-                {%- assign promise_image_alt = section.settings.image.alt
-                    | default: image_alt_fallback
-                    | escape
-                -%}
-                {%- render 'image',
-                    image: section.settings.image,
-                    placeholder_key: 'lifestyle-1',
-                    alt: promise_image_alt,
-                    class: 'h-full',
-                    aspect_ratio: '1/1',
-                    width: section.settings.image.width
-                -%}
-            </div>
+        {% comment %} Left - Image {% endcomment %}
+        <div
+            class="order-2 min-h-80 overflow-hidden rounded-sm pc:order-1 pc:col-start-1 pc:row-span-2 pc:row-start-1 pc:h-full pc:min-h-0"
+        >
+            {%- assign image_alt_fallback = 'sections.promise-section.defaults.image_alt'
+                | t
+            -%}
+            {%- assign promise_image_alt = section.settings.image.alt
+                | default: image_alt_fallback
+                | escape
+            -%}
+            {%- render 'image',
+                image: section.settings.image,
+                placeholder_key: 'lifestyle-1',
+                alt: promise_image_alt,
+                class: 'h-full',
+                aspect_ratio: '1/1',
+                width: section.settings.image.width
+            -%}
+        </div>
 
-            {% comment %} Right - Accordion  {% endcomment %}
-            <div class="order-3 flex h-full flex-col gap-9 pc:order-3 pc:col-start-2 pc:row-start-2 pc:justify-start pc:gap-8">
-                {% comment %} Accordion {% endcomment %}
-                {%- render 'accordion',
-                    blocks: section.blocks,
-                    initial_active: 0,
-                    id_prefix: section.id,
-                    icon_type: 'chevron',
-                    wrapper_class: 'flex flex-col',
-                    item_class: 'border-t border-theme-border/20 first:border-t-0',
-                    title_active_class: 'text-theme-text',
-                    title_inactive_class: 'text-theme-text opacity-80',
-                    content_class: 'rte rte--compact pb-6 pe-8 text-theme-text opacity-80'
-                -%}
-            </div>
+        {% comment %} Right - Accordion  {% endcomment %}
+        <div class="order-3 flex h-full flex-col gap-9 pc:order-3 pc:col-start-2 pc:row-start-2 pc:justify-start pc:gap-8">
+            {%- render 'accordion',
+                blocks: section.blocks,
+                initial_active: 0,
+                id_prefix: section.id,
+                icon_type: 'chevron',
+                wrapper_class: 'flex flex-col',
+                item_class: 'border-t border-theme-border/20 first:border-t-0',
+                title_active_class: 'text-theme-text',
+                title_inactive_class: 'text-theme-text opacity-80',
+                content_class: 'rte rte--compact pb-6 pe-8 text-theme-text opacity-80'
+            -%}
         </div>
     </div>
-</div>
+{%- endcapture -%}
+
+{% render 'section-frame',
+    section: section,
+    section_class: 'promise-section',
+    motion: true,
+    children: promise_children
+%}
 
 {% schema %}
 {

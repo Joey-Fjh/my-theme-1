@@ -1,120 +1,132 @@
-<div
-    data-section-id="{{ section.id }}"
-    class="philosophy-section full-width color-{{ section.settings.color_scheme }} surface-section"
-    style="
-        --section-padding-top: {{ section.settings.padding_top }}px;
-        --section-padding-bottom: {{ section.settings.padding_bottom }}px;
-    "
-    data-module-id="motion-reveal"
-    x-data="motionRevealSection()"
-    data-motion-section
->
-    {%- liquid
-        assign philosophy_heading_class = section.settings.heading_size | default: 'heading-2xl'
-        assign philosophy_subtitle_size = section.settings.subtitle_size | default: 'body-xl'
-        assign philosophy_subtitle_class = 'typo-subtitle ' | append: philosophy_subtitle_size
-    -%}
-    <div class="layout container-page">
+{%- liquid
+    assign philosophy_heading_class = section.settings.heading_size | default: 'heading-2xl'
+    assign philosophy_subtitle_size = section.settings.subtitle_size | default: 'body-xl'
+-%}
+{%- capture philosophy_header_copy -%}
+    {% render 'text',
+        tier: philosophy_subtitle_size,
+        subtitle: true,
+        align: 'center',
+        content: section.settings.subtitle
+    %}
+    {% render 'heading',
+        level: '1',
+        tier: philosophy_heading_class,
+        align: 'center',
+        content: section.settings.heading
+    %}
+    {% render 'text',
+        element: 'div',
+        rte: true,
+        align: 'center',
+        measure: 'prose',
+        class: 'mx-auto',
+        content: section.settings.description
+    %}
+{%- endcapture -%}
+{%- capture philosophy_children -%}
+    <div class="flex flex-col gap-12 pc:gap-20">
         {%- comment -%} Header {%- endcomment -%}
-        <div class="mx-auto mb-12 text-center pc:mb-20" data-motion-sequence>
-            <p
-                data-motion-reveal="content"
-                class="{{ philosophy_subtitle_class }}"
-            >
-                {{ section.settings.subtitle }}
-            </p>
-            <h1
-                data-motion-reveal="content"
-                class="{{ philosophy_heading_class }} mt-3"
-            >
-                {{ section.settings.heading }}
-            </h1>
-            <div
-                data-motion-reveal="content"
-                class="rte rte--compact mx-auto mt-4 max-w-prose"
-            >
-                {{ section.settings.description }}
-            </div>
-        </div>
+        {% render 'content-group',
+            align: 'center',
+            gap: 'related',
+            class: 'mx-auto',
+            motion_attrs: 'data-motion-sequence',
+            children: philosophy_header_copy
+        %}
 
         {%- comment -%} Cards / link blocks {%- endcomment -%}
         <div class="grid grid-cols-1 gap-6 pc:grid-cols-3 pc:gap-8" data-motion-cascade>
-            {%- for block in section.blocks -%}
-                {%- case block.type -%}
-                    {%- when 'card' -%}
-                        <div
-                            data-motion-bound
-                            {{ block.shopify_attributes }}
-                        >
-                            {%- liquid
-                                assign card_link = block.settings.link
-                                assign card_title_class = block.settings.title_size | default: 'heading-h2'
-                                assign philosophy_placeholder_index = forloop.index0 | modulo: 2 | plus: 1
-                                assign philosophy_placeholder_key = 'lifestyle-' | append: philosophy_placeholder_index
-                            -%}
+        {%- for block in section.blocks -%}
+            {%- case block.type -%}
+                {%- when 'card' -%}
+                    <div data-motion-bound {{ block.shopify_attributes }}>
+                        {%- liquid
+                            assign card_link = block.settings.link
+                            assign card_title_class = block.settings.title_size | default: 'heading-h2'
+                            assign philosophy_placeholder_index = forloop.index0 | modulo: 2 | plus: 1
+                            assign philosophy_placeholder_key = 'lifestyle-' | append: philosophy_placeholder_index
+                        -%}
 
-                            <div data-motion-reveal="content">
-                                {%- capture philosophy_card_media -%}
-                                    <div class="group aspect-4/3 overflow-hidden rounded-sm">
-                                        {%- assign image_alt = block.settings.image.alt | default: block.settings.title | escape -%}
-                                        {%- render 'image',
-                                            wrapper: 'div',
-                                            image: block.settings.image,
-                                            placeholder_key: philosophy_placeholder_key,
-                                            alt: image_alt,
-                                            width: block.settings.image.width,
-                                            motion_reveal: false
-                                        -%}
-                                    </div>
-                                {%- endcapture -%}
-
-                                {%- if card_link != blank -%}
-                                    {%- render 'link',
-                                        href: card_link,
-                                        variant: 'plain',
-                                        class: 'media-interaction block rounded-sm',
-                                        content: philosophy_card_media,
-                                        aria_label: block.settings.title
+                        <div class="flex flex-col gap-related" data-motion-reveal="content">
+                            {%- capture philosophy_card_media -%}
+                                <div class="group aspect-4/3 overflow-hidden rounded-sm">
+                                    {%- assign image_alt = block.settings.image.alt | default: block.settings.title | escape -%}
+                                    {%- render 'image',
+                                        wrapper: 'div',
+                                        image: block.settings.image,
+                                        placeholder_key: philosophy_placeholder_key,
+                                        alt: image_alt,
+                                        width: block.settings.image.width,
+                                        motion_reveal: false
                                     -%}
-                                {%- else -%}
-                                    {{ philosophy_card_media }}
-                                {%- endif -%}
+                                </div>
+                            {%- endcapture -%}
 
-                                <div data-motion-copy-bound>
-                                    <div data-motion-copy>
-                                        <h3 class="{{ card_title_class }} mt-5">
-                                            {{ block.settings.title }}
-                                        </h3>
+                            {%- if card_link != blank -%}
+                                {%- render 'link',
+                                    href: card_link,
+                                    variant: 'plain',
+                                    class: 'media-interaction block rounded-sm',
+                                    content: philosophy_card_media,
+                                    aria_label: block.settings.title
+                                -%}
+                            {%- else -%}
+                                {{ philosophy_card_media }}
+                            {%- endif -%}
 
-                                        <div class="rte rte--compact mt-2">
-                                            {{ block.settings.text }}
-                                        </div>
+                            <div data-motion-copy-bound>
+                                {%- capture philosophy_card_copy -%}
+                                    {% render 'heading',
+                                        level: '3',
+                                        tier: card_title_class,
+                                        content: block.settings.title,
+                                        motion_reveal: false
+                                    %}
 
-                                        {%- if card_link != blank
-                                            and block.settings.link_text != blank
+                                    {% render 'text',
+                                        element: 'div',
+                                        rte: true,
+                                        content: block.settings.text,
+                                        motion_reveal: false
+                                    %}
+
+                                    {%- if card_link != blank
+                                        and block.settings.link_text != blank
+                                    -%}
+                                        {%- capture card_cta_content -%}
+                                            <span>{{ block.settings.link_text }}</span>
+                                            {% render 'icons', icon: 'icon-arrow2', class: 'ms-3' %}
+                                        {%- endcapture -%}
+
+                                        {%- render 'link',
+                                            href: card_link,
+                                            content: card_cta_content,
+                                            variant: 'underline'
                                         -%}
-                                            <div class="mt-4">
-                                                {%- capture card_cta_content -%}
-                                                    <span>{{ block.settings.link_text }}</span>
-                                                    {% render 'icons', icon: 'icon-arrow2', class: 'ms-3' %}
-                                                {%- endcapture -%}
-
-                                                {%- render 'link',
-                                                    href: card_link,
-                                                    content: card_cta_content,
-                                                    variant: 'underline'
-                                                -%}
-                                            </div>
-                                        {%- endif -%}
-                                    </div>
+                                    {%- endif -%}
+                                {%- endcapture -%}
+                                <div data-motion-copy>
+                                    {% render 'content-group',
+                                        gap: 'related',
+                                        children: philosophy_card_copy
+                                    %}
                                 </div>
                             </div>
                         </div>
-                {%- endcase -%}
-            {%- endfor -%}
+                    </div>
+            {%- endcase -%}
+        {%- endfor -%}
         </div>
     </div>
-</div>
+{%- endcapture -%}
+
+{% render 'section-frame',
+    section: section,
+    section_class: 'philosophy-section',
+    motion: true,
+    children: philosophy_children
+%}
 
 {% schema %}
 {
