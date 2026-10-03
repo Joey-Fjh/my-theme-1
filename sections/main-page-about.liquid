@@ -1,23 +1,9 @@
-<div
-    data-section-id="{{ section.id }}"
-    class="
-        main-page-about-section full-width relative overflow-hidden color-{{ section.settings.color_scheme }}
-        min-h-200 pc:min-h-0
-    "
-    style="
-        --section-padding-top: {{ section.settings.padding_top }}px;
-        --section-padding-bottom: {{ section.settings.padding_bottom }}px;
-    "
-    data-module-id="motion-reveal"
-    x-data="motionRevealSection()"
-    data-motion-section
-    data-motion-media="static"
->
-    {%- liquid
-        assign about_heading_class = section.settings.heading_size | default: 'heading-2xl'
-        assign about_subtitle_size = section.settings.subtitle_size | default: 'body-xl'
-        assign about_subtitle_class = 'typo-subtitle ' | append: about_subtitle_size
-    -%}
+{%- liquid
+    assign about_heading_class = section.settings.heading_size | default: 'heading-2xl'
+    assign about_subtitle_size = section.settings.subtitle_size | default: 'body-xl'
+    assign about_subtitle_class = 'typo-subtitle ' | append: about_subtitle_size
+-%}
+{%- capture about_children -%}
     <div
         class="absolute inset-0 h-full w-full pc:static pc:h-auto"
     >
@@ -43,7 +29,7 @@
         -%}
     </div>
 
-    <div class="layout container-page absolute inset-0">
+    <div class="section-frame__overlay-padding container-page absolute inset-0">
         <div
             class="mx-auto flex h-full w-full max-w-3xl flex-col items-center justify-start gap-3 px-6 pt-28 text-center pc:max-w-1/2 pc:justify-center pc:gap-5 pc:pt-0"
             data-motion-sequence
@@ -71,7 +57,22 @@
             </div>
         </div>
     </div>
-</div>
+{%- endcapture -%}
+
+{% render 'section-frame',
+    section: section,
+    section_class: 'main-page-about-section',
+    width: 'full',
+    height_kind: 'content',
+    padding_mode: 'overlay',
+    surface_section: false,
+    safe_top: false,
+    motion: true,
+    root_class: 'relative overflow-hidden min-h-200 pc:min-h-0',
+    inner_class: 'static!',
+    root_attrs: 'data-motion-media="static"',
+    children: about_children
+%}
 
 {% schema %}
 {

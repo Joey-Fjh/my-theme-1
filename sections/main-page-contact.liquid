@@ -1,18 +1,15 @@
-<div
-    data-section-id="{{ section.id }}"
-    class="main-page-contact-section full-width color-{{ section.settings.color_scheme }} surface-section"
-    style="
-        --section-padding-top: {{ section.settings.padding_top }}px;
-        --section-padding-bottom: {{ section.settings.padding_bottom }}px;
-    "
-    data-module-id="motion-reveal"
-    x-data="motionRevealSection()"
-    data-motion-section
->
-    {%- liquid
-        assign contact_heading_class = section.settings.heading_size | default: 'heading-xl'
-    -%}
-    <div class="layout container-page">
+{%- liquid
+    assign contact_heading_class = section.settings.heading_size | default: 'heading-xl'
+-%}
+{%- capture contact_watermark -%}
+    {% render 'watermark',
+        container_class: 'absolute left-0 bottom-0 right-0 z-0 overflow-hidden pointer-events-none select-none',
+        text_class: 'tracking-wide text-theme-text opacity-20',
+        html_attr: 'data-motion-reveal="media"',
+        text: section.settings.watermark_text
+    %}
+{%- endcapture -%}
+{%- capture contact_children -%}
         {%- comment -%} Main Content: Image + Form {%- endcomment -%}
         <div class="relative z-1 mx-auto w-full max-w-full pc:max-w-5/6">
             <div class="grid grid-cols-1 gap-0 overflow-hidden pc:grid-cols-2">
@@ -220,16 +217,17 @@
                 </div>
             </div>
         </div>
+{%- endcapture -%}
 
-        {%- comment -%} Brand Watermark {%- endcomment -%}
-        {% render 'watermark',
-            container_class: 'absolute left-0 bottom-0 right-0 z-0 overflow-hidden pointer-events-none select-none',
-            text_class: 'tracking-wide text-theme-text opacity-20',
-            html_attr: 'data-motion-reveal="media"',
-            text: section.settings.watermark_text
-        %}
-    </div>
-</div>
+{% render 'section-frame',
+    section: section,
+    section_class: 'main-page-contact-section',
+    width: 'page',
+    height_kind: 'content',
+    motion: true,
+    background: contact_watermark,
+    children: contact_children
+%}
 
 {% stylesheet %}
     .main-page-contact-section .rte :is(h1, h2, h3, h4, h5, h6) {
