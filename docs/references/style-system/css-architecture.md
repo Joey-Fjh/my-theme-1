@@ -32,7 +32,7 @@ Tailwind scans every token in the `@source` Liquid files, including `{% schema %
 
 Typography and color flow only through `config/settings_schema.json` → `snippets/css-variables.liquid` → tokens → tier or scheme classes. Do not bypass the chain with default Tailwind typography or palette utilities, arbitrary values (`text-[14px]`, `bg-[#fff]`), or literal typography/color properties in first-party CSS.
 
-`tailwind/tailwind.input.css` resets Tailwind default namespaces to `initial` for breakpoints, font family (`--font-*`), font size (`--text-*`), easing, and animation. The resets for font weight, line height, letter spacing, and palette colors are not adopted yet: theme CSS still uses those default utilities, and each reset lands with the CSS step 3 batch that removes its last consumer. When the palette reset lands, re-declare the keyword colors `transparent`, `current`, and `inherit` after it so utilities such as `text-current` keep working.
+`tailwind/tailwind.input.css` resets Tailwind default namespaces to `initial` for breakpoints, font family (`--font-*`), font size (`--text-*`), easing, and animation. The `--font-weight-*`, `--leading-*`, `--tracking-*`, and `--color-*` namespace resets are **not adopted**: Tailwind's default scales remain the project scales for local utility intent (batch 5-C3f). When a palette reset is adopted later, re-declare the keyword colors `transparent`, `current`, and `inherit` after it so utilities such as `text-current` keep working.
 
 A typography value passes when it derives from the chain or from the inherited, already-derived value: `var(--font-*)` alone or inside `calc()` / `max()` / `min()` / `clamp()`, `inherit`, `unset`, `bolder`, `lighter`, or an `em` / `%` size. Literals such as `bold`, `600`, `1rem`, or `14px` fail, because a settings change would not reach them.
 
@@ -77,7 +77,17 @@ Don't bridge motion duration or easing into `@theme`; use a recipe class instead
 
 | Layer/file | Owns | Does not own |
 | --- | --- | --- |
-| `assets/base.css` | document defaults, native elements, global `:focus-visible`, `[x-cloak]`, universal helpers | reusable component chrome |
+| `assets/base.css` | document defaults, native elements, global `:focus-visible`, `body > main { flex-grow: 1 }`, `[x-cloak]`, universal helpers | reusable component chrome |
+
+### Skeleton carry-over decisions (5-C3f)
+
+| Rule (skeleton `5191a50`) | Decision | Reason |
+| --- | --- | --- |
+| `.section { padding; background-image }` | **Not adopted** | Superseded by `section-frame`; 40 section schemas use `"class": "section"` and would double padding. |
+| `.gift-card-page main { … }` | **Not adopted** | Theme `gift-card-page__main` owns layout. |
+| `.gift-card-page [data-gift-card-qr] svg { … }` | **Not adopted** | Theme `gift-card-page__qr` owns sizing. |
+| `body > main { flex-grow: 1 }` | **Adopted** in `assets/base.css` | Matches the `<main>` in `layout/theme.liquid` and in `templates/gift_card.liquid`; both bodies use the base grid, so `flex-grow` has no effect today. `layout/password.liquid` has a `flex flex-col` body, but its `<main>` is rendered inside a `.shopify-section` wrapper, so the selector does not match. |
+| `:focus-visible { outline … }` | **Adopted** in `assets/base.css` (`@layer base` via import) | Any focus style in a higher layer still wins (`btn`, `field`, `links`, `focus-ring`, `skip-link`, component rings). Elements without one gain the outline, including component triggers with no ring (for example `accordion__trigger`, `dropdown-trigger`, `active-filter-chip`). A component that removes the outline on `:focus` must scope that to `:focus:not(:focus-visible)` so keyboard focus keeps a ring (`quantity-selector__input`, `sort-by-dropdown__trigger`). |
 | `tailwind.typography.css` | project typography tiers and custom size tiers | section-specific headings or Tailwind `text-*` heading shortcuts |
 | `tailwind.elements.css` | single-element base styles for native controls | composite layouts |
 | `tailwind.components.css` | reusable composite APIs with 2+ unrelated consumers | section-root scoped overrides |
@@ -93,6 +103,16 @@ Don't bridge motion duration or easing into `@theme`; use a recipe class instead
 | 3+ stable repeated copies | same structural UI repeated with different BEM prefixes | consolidate into one shared component API when worthwhile |
 
 These thresholds are complementary. A pattern can be promoted to the components layer before a full shared API consolidation is justified.
+
+## Style ownership (5-C3f)
+
+**Single source for look.** Buttons, fields, links, and controls are defined in `tailwind/tailwind.elements.css`. Typography tiers live in `tailwind/tailwind.typography.css`. Snippets and raw markup classes resolve to the same utilities, so a visual change edits one layer file.
+
+**Snippets carry structure and behaviour, not a forced style entry.** Primitives (`heading`, `text`, `button`, `link`, `image`, `content-group`, `section-frame`) hold shared tags, ARIA, link `rel`, image sizing, and motion attributes. They are the preferred entry for section-level composition; raw element classes remain valid for Alpine bindings, `<template>` contents, and component internals.
+
+**Local overrides.** Tailwind weight, leading, tracking, and `black` / `white` / `transparent` utilities may express one-off intent. An override that repeats across files becomes a variant in `tailwind.typography.css` or `tailwind.elements.css`.
+
+**Loaded font weights.** `snippets/css-variables.liquid` loads the base weight and `bold` via `font_modify` only. Weights without a face match by CSS font matching (`font-medium` / 500 uses the 400 face; `font-semibold` / 600 uses the 700 face). Loading additional weights is a design-phase decision.
 
 ## Typography
 

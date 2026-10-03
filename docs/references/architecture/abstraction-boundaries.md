@@ -53,6 +53,8 @@ Snippets are the theme's reusable UI components. Their parameter contracts follo
 
 4. **Parameter defaults must be safe.** Every snippet parameter with a default must render a correct, visible, accessible result when the consumer omits it. An omitted parameter must never produce broken HTML, invisible content, or missing ARIA.
 
+Visual appearance for storefront controls and typography tiers is owned by `tailwind/tailwind.elements.css` and `tailwind/tailwind.typography.css` (see **Style ownership** in `docs/references/style-system/css-architecture.md`). Primitives own structure and behaviour; they are preferred, not mandatory, entry points.
+
 ## Layout primitives (5-C3a)
 
 | Snippet | Parameters (semantic) | Notes |
