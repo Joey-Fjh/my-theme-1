@@ -1,17 +1,12 @@
-<div
-    data-section-id="{{ section.id }}"
-    class="collection-section full-width color-{{ section.settings.color_scheme }} surface-section"
-    style="
-        --section-padding-top: {{ section.settings.padding_top }}px;
-        --section-padding-bottom: {{ section.settings.padding_bottom }}px;
-    "
-    data-pagination-section-id="{{ section.id }}"
-    data-pagination-selectors='["[data-collection-dynamic-content]","[data-collection-drawer-shell]"]'
-    data-filters-form-id="CollectionFiltersForm-{{ section.id }}"
-    data-filters-dialog-id="collection-filters-{{ section.id }}"
-    data-module-id="collection-filters"
-    x-data="collectionFilters()"
->
+{%- capture collection_children -%}
+    <div
+        data-pagination-section-id="{{ section.id }}"
+        data-pagination-selectors='["[data-collection-dynamic-content]","[data-collection-drawer-shell]"]'
+        data-filters-form-id="CollectionFiltersForm-{{ section.id }}"
+        data-filters-dialog-id="collection-filters-{{ section.id }}"
+        data-module-id="collection-filters"
+        x-data="collectionFilters()"
+    >
     {%- liquid
         assign collection_heading_class = section.settings.heading_size | default: 'heading-4xl'
         assign collection_subtitle_class = section.settings.subtitle_size | default: 'body-xl'
@@ -128,7 +123,6 @@
             </a>
         {%- endfor -%}
     {%- endcapture -%}
-    <div class="layout layout-no-pb container-page pb-0">
         {%- liquid
             assign collection_hero_image = collection.image
             if collection_hero_image == blank
@@ -207,9 +201,8 @@
                 -%}
             </div>
         </div>
-    </div>
 
-    <div class="layout layout-no-pt container-page overflow-clip!">
+        <div class="overflow-clip!">
         {%- liquid
             assign mobile_grid_class = 'grid-cols-1'
             if section.settings.mobile_card_columns == '2'
@@ -540,7 +533,7 @@
                 </div>
             </div>
         </div>
-    </div>
+        </div>
 
     {%- comment -%} Filters drawer dialog: only when enable_filtering {%- endcomment -%}
     {%- if enable_filtering -%}
@@ -700,7 +693,17 @@
         close_label: collection_nav_close_label,
         content: collection_nav_drawer_content
     -%}
-</div>
+    </div>
+{%- endcapture -%}
+
+{% render 'section-frame',
+    section: section,
+    section_class: 'collection-section',
+    width: 'page',
+    height_kind: 'content',
+    clip: false,
+    children: collection_children
+%}
 
 {% stylesheet %}
     .price-range-thumb {

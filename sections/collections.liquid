@@ -1,41 +1,37 @@
-<div
-    data-section-id="{{ section.id }}"
-    class="collections-section full-width h-full color-{{ section.settings.color_scheme }} surface-section"
-    style="
-        --section-padding-top: {{ section.settings.padding_top }}px;
-        --section-padding-bottom: {{ section.settings.padding_bottom }}px;
-    "
-    data-module-id="motion-reveal"
-    x-data="motionRevealSection()"
-    data-motion-section
->
-    {%- liquid
-        assign collections_heading_class = section.settings.heading_size | default: 'heading-2xl'
-        assign collections_subtitle_size = section.settings.subtitle_size | default: 'body-xl'
-        assign collections_subtitle_class = 'typo-subtitle ' | append: collections_subtitle_size
-        assign collections_heading = section.settings.heading
-        if collections_heading == blank
-            assign collections_heading = 'collections.latest_brand' | t
-        endif
-        assign collections_description = section.settings.description
-        if collections_description == blank
-            assign collections_description = 'collections.latest_brand_description' | t
-        endif
-    -%}
-    <div class="layout container-page">
+{%- liquid
+    assign collections_heading_class = section.settings.heading_size | default: 'heading-2xl'
+    assign collections_subtitle_size = section.settings.subtitle_size | default: 'body-xl'
+    assign collections_heading = section.settings.heading
+    if collections_heading == blank
+        assign collections_heading = 'collections.latest_brand' | t
+    endif
+    assign collections_description = section.settings.description
+    if collections_description == blank
+        assign collections_description = 'collections.latest_brand_description' | t
+    endif
+-%}
+{%- capture collections_children -%}
         <div
             class="relative mb-8 pt-14 text-center pc:mb-10 pc:pt-25"
             data-motion-reveal="content"
             data-motion-critical
         >
             <div class="mx-auto flex flex-col gap-3 pc:gap-6">
-                <h1 class="{{ collections_heading_class }}">
-                    {{ collections_heading }}
-                </h1>
+                {% render 'heading',
+                    level: '1',
+                    tier: collections_heading_class,
+                    align: 'center',
+                    content: collections_heading,
+                    motion_reveal: false
+                %}
                 {%- if collections_description != blank -%}
-                    <p class="{{ collections_subtitle_class }}">
-                        {{ collections_description }}
-                    </p>
+                    {% render 'text',
+                        tier: collections_subtitle_size,
+                        subtitle: true,
+                        align: 'center',
+                        content: collections_description,
+                        motion_reveal: false
+                    %}
                 {%- endif -%}
             </div>
 
@@ -138,8 +134,17 @@
                 {%- render 'pagination', paginate_obj: paginate -%}
             </div>
         {% endpaginate %}
-    </div>
-</div>
+{%- endcapture -%}
+
+{% render 'section-frame',
+    section: section,
+    section_class: 'collections-section',
+    root_class: 'h-full',
+    width: 'page',
+    height_kind: 'content',
+    motion: true,
+    children: collections_children
+%}
 
 {% stylesheet %}
     @layer snippets {
