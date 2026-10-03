@@ -716,9 +716,129 @@ function writeMinimalImportMap(root) {
     writeEntryScripts(root, `{"imports":{"accordion":"{{ 'accordion.js' | asset_url }}"}}`);
 }
 
-test('settings chain liquid class font-medium fails', async () => {
+test('settings chain liquid class font-medium passes (default weight scale)', async () => {
     await withTempThemeAsync(async (root) => {
         writeFile(root, 'sections/fixture.liquid', `<p class="font-medium">Label</p>\n`);
+        const failures = await runThemeLint(root);
+        assert.equal(failures.length, 0, failureMessages(failures));
+    });
+});
+
+test('settings chain liquid class font-sans fails (default font family)', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(root, 'sections/fixture.liquid', `<p class="font-sans">Label</p>\n`);
+        const failures = await runThemeLint(root);
+        assert.match(failureMessages(failures), /settings typography\/color chain/);
+    });
+});
+
+test('settings chain liquid class leading-tight passes', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(root, 'sections/fixture.liquid', `<p class="leading-tight">Label</p>\n`);
+        const failures = await runThemeLint(root);
+        assert.equal(failures.length, 0, failureMessages(failures));
+    });
+});
+
+test('settings chain liquid class leading-[2rem] fails (arbitrary)', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(root, 'sections/fixture.liquid', `<p class="leading-[2rem]">Label</p>\n`);
+        const failures = await runThemeLint(root);
+        assert.match(failureMessages(failures), /settings typography\/color chain/);
+    });
+});
+
+test('settings chain liquid class tracking-wide passes', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(root, 'sections/fixture.liquid', `<p class="tracking-wide">Label</p>\n`);
+        const failures = await runThemeLint(root);
+        assert.equal(failures.length, 0, failureMessages(failures));
+    });
+});
+
+test('settings chain liquid class tracking-[0.2em] fails (arbitrary)', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(root, 'sections/fixture.liquid', `<p class="tracking-[0.2em]">Label</p>\n`);
+        const failures = await runThemeLint(root);
+        assert.match(failureMessages(failures), /settings typography\/color chain/);
+    });
+});
+
+test('settings chain liquid class text-white/80 passes', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(root, 'sections/fixture.liquid', `<p class="text-white/80">Label</p>\n`);
+        const failures = await runThemeLint(root);
+        assert.equal(failures.length, 0, failureMessages(failures));
+    });
+});
+
+test('settings chain liquid class text-white with non-numeric modifier fails', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(root, 'sections/fixture.liquid', `<p class="text-white/foo">Label</p>
+`);
+        const failures = await runThemeLint(root);
+        assert.match(failureMessages(failures), /settings typography\/color chain/);
+    });
+});
+
+test('settings chain liquid bare leading class fails', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(root, 'sections/fixture.liquid', `<p class="leading">Label</p>
+`);
+        const failures = await runThemeLint(root);
+        assert.match(failureMessages(failures), /settings typography\/color chain/);
+    });
+});
+
+test('settings chain liquid bare tracking class fails', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(root, 'sections/fixture.liquid', `<p class="tracking">Label</p>
+`);
+        const failures = await runThemeLint(root);
+        assert.match(failureMessages(failures), /settings typography\/color chain/);
+    });
+});
+
+test('settings chain css color rgb space syntax black passes', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(root, 'tailwind/fixture.css', `.x {
+    color: rgb(0 0 0 / 45%);
+}
+`);
+        const failures = await runThemeLint(root);
+        assert.equal(
+            failures.filter((failure) => failure.message.includes('Color property')).length,
+            0,
+            failureMessages(failures),
+        );
+    });
+});
+
+test('settings chain css color rgb space syntax non-black fails', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(root, 'tailwind/fixture.css', `.x {
+    color: rgb(0 0 1 / 45%);
+}
+`);
+        const failures = await runThemeLint(root);
+        assert.match(failureMessages(failures), /Color property/);
+    });
+});
+
+test('settings chain css typography malformed unitless line-height fails', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(root, 'tailwind/fixture.css', `.x {
+    line-height: 1.2.3;
+}
+`);
+        const failures = await runThemeLint(root);
+        assert.match(failureMessages(failures), /Typography property "line-height"/);
+    });
+});
+
+test('settings chain liquid class text-red-500 fails (palette colour)', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(root, 'sections/fixture.liquid', `<p class="text-red-500">Label</p>\n`);
         const failures = await runThemeLint(root);
         assert.match(failureMessages(failures), /settings typography\/color chain/);
     });
@@ -760,6 +880,147 @@ test('settings chain css color hex fails', async () => {
         writeFile(root, 'tailwind/fixture.css', `.bad {\n    color: #112233;\n}\n`);
         const failures = await runThemeLint(root);
         assert.match(failureMessages(failures), /Color property "color"/);
+    });
+});
+
+test('settings chain css color literal white passes', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(root, 'tailwind/fixture.css', `.ok {\n    color: #fff;\n}\n`);
+        const failures = await runThemeLint(root);
+        assert.equal(
+            failures.filter((failure) => failure.message.includes('Color property')).length,
+            0,
+            failureMessages(failures),
+        );
+    });
+});
+
+test('settings chain css color literal red keyword fails', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(root, 'tailwind/fixture.css', `.bad {\n    color: red;\n}\n`);
+        const failures = await runThemeLint(root);
+        assert.match(failureMessages(failures), /Color property "color"/);
+    });
+});
+
+test('settings chain css color white black color-mix passes', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(
+            root,
+            'tailwind/fixture.css',
+            `.ok { color: color-mix(in oklab, #fff 80%, transparent); }\n`,
+        );
+        const failures = await runThemeLint(root);
+        assert.equal(
+            failures.filter((failure) => failure.message.includes('Color property')).length,
+            0,
+            failureMessages(failures),
+        );
+    });
+});
+
+test('settings chain css typography literal font-weight 500 passes', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(root, 'tailwind/fixture.css', `.ok {\n    font-weight: 500;\n}\n`);
+        const failures = await runThemeLint(root);
+        assert.equal(
+            failures.filter((failure) => failure.message.includes('Typography property')).length,
+            0,
+            failureMessages(failures),
+        );
+    });
+});
+
+test('settings chain css typography literal font-family fails', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(root, 'tailwind/fixture.css', `.bad {\n    font-family: Georgia, serif;\n}\n`);
+        const failures = await runThemeLint(root);
+        assert.match(failureMessages(failures), /Typography property "font-family"/);
+    });
+});
+
+test('settings chain css typography unitless line-height passes', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(root, 'tailwind/fixture.css', `.ok {\n    line-height: 1.25;\n}\n`);
+        const failures = await runThemeLint(root);
+        assert.equal(
+            failures.filter((failure) => failure.message.includes('Typography property')).length,
+            0,
+            failureMessages(failures),
+        );
+    });
+});
+
+test('settings chain css typography px line-height fails', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(root, 'tailwind/fixture.css', `.bad {\n    line-height: 18px;\n}\n`);
+        const failures = await runThemeLint(root);
+        assert.match(failureMessages(failures), /Typography property "line-height"/);
+    });
+});
+
+test('settings chain css typography em letter-spacing passes', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(root, 'tailwind/fixture.css', `.ok {\n    letter-spacing: 0.05em;\n}\n`);
+        const failures = await runThemeLint(root);
+        assert.equal(
+            failures.filter((failure) => failure.message.includes('Typography property')).length,
+            0,
+            failureMessages(failures),
+        );
+    });
+});
+
+test('settings chain css typography negative em letter-spacing passes', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(root, 'tailwind/fixture.css', `.ok {
+    letter-spacing: -0.025em;
+}
+`);
+        const failures = await runThemeLint(root);
+        assert.equal(
+            failures.filter((failure) => failure.message.includes('Typography property')).length,
+            0,
+            failureMessages(failures),
+        );
+    });
+});
+
+test('settings chain css typography calc font token letter-spacing passes', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(
+            root,
+            'tailwind/fixture.css',
+            `.ok {
+    letter-spacing: calc(var(--font-heading-letter-spacing) * 2);
+}
+`,
+        );
+        const failures = await runThemeLint(root);
+        assert.equal(
+            failures.filter((failure) => failure.message.includes('Typography property')).length,
+            0,
+            failureMessages(failures),
+        );
+    });
+});
+
+test('settings chain css typography negative px letter-spacing fails', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(root, 'tailwind/fixture.css', `.bad {
+    letter-spacing: -1px;
+}
+`);
+        const failures = await runThemeLint(root);
+        assert.match(failureMessages(failures), /Typography property "letter-spacing"/);
+    });
+});
+
+test('settings chain css typography px letter-spacing fails', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(root, 'tailwind/fixture.css', `.bad {\n    letter-spacing: 2px;\n}\n`);
+        const failures = await runThemeLint(root);
+        assert.match(failureMessages(failures), /Typography property "letter-spacing"/);
     });
 });
 
@@ -1278,12 +1539,13 @@ test('embedded compat cli accepts --root without auto-running on import', () => 
     });
 });
 
-test('settings chain css typography rejects literal weight and rem size', async () => {
+test('settings chain css typography rejects literal rem font-size (weight literals allowed)', async () => {
     await withTempThemeAsync(async (root) => {
         writeFile(root, 'tailwind/fixture.css', `.bad {\n    font-weight: bold;\n    font-size: 1rem;\n}\n`);
         const failures = await runThemeLint(root);
         const typography = failures.filter((failure) => failure.message.includes('Typography property'));
-        assert.equal(typography.length, 2, failureMessages(failures));
+        assert.equal(typography.length, 1, failureMessages(failures));
+        assert.match(failureMessages(typography), /font-size/);
     });
 });
 

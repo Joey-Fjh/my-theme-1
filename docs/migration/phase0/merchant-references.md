@@ -174,4 +174,4 @@ Table columns: **Section key** → **type** → **block types** → **section-le
 
 1. **Typo-stable section type `promo-bannder`** appears in `templates/index.json` (`grep templates/index.json` → `"type": "promo-bannder"`). Renaming requires JSON migration.
 2. **Super menu** header settings reference `menu: "main-menu"` (`header-group.json:53`) — navigation content is merchant-owned, not in git.
-3. **`pickup-availability` and `collection-navigation-items`** are not template instances but are required for PDP/collection AJAX (`runtime-dependencies.md`).
+3. **`pickup-availability` and `collection-navigation-items`** are not template instances but are required for PDP/collection AJAX (Section Rendering API).

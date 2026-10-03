@@ -30,18 +30,18 @@ Tailwind scans every token in the `@source` Liquid files, including `{% schema %
 
 ## Global settings chain
 
-Typography and color flow only through `config/settings_schema.json` → `snippets/css-variables.liquid` → tokens → tier or scheme classes. Do not bypass the chain with default Tailwind typography or palette utilities, arbitrary values (`text-[14px]`, `bg-[#fff]`), or literal typography/color properties in first-party CSS.
+Typography and color flow through `config/settings_schema.json` → `snippets/css-variables.liquid` → tokens → tier or scheme classes. Prefer that chain for theme-linked copy. Local intent may use the Tailwind weight, leading, and tracking scales and black/white utilities in Liquid, and matching literals in first-party CSS (see **Style ownership** and `settings-chain-*` in `check-theme-architecture` SKILL.md). Still reject arbitrary values (`text-[14px]`, `bg-[#f00]`), default text sizes, default font families, other palette colours, and non-chain `font-size` / `font-family` literals.
 
 `tailwind/tailwind.input.css` resets Tailwind default namespaces to `initial` for breakpoints, font family (`--font-*`), font size (`--text-*`), easing, and animation. The `--font-weight-*`, `--leading-*`, `--tracking-*`, and `--color-*` namespace resets are **not adopted**: Tailwind's default scales remain the project scales for local utility intent (batch 5-C3f). When a palette reset is adopted later, re-declare the keyword colors `transparent`, `current`, and `inherit` after it so utilities such as `text-current` keep working.
 
-A typography value passes when it derives from the chain or from the inherited, already-derived value: `var(--font-*)` alone or inside `calc()` / `max()` / `min()` / `clamp()`, `inherit`, `unset`, `bolder`, `lighter`, or an `em` / `%` size. Literals such as `bold`, `600`, `1rem`, or `14px` fail, because a settings change would not reach them.
+A typography value passes when it derives from the chain or from the inherited, already-derived value: `var(--font-*)` alone or inside `calc()` / `max()` / `min()` / `clamp()`, `inherit`, `unset`, `bolder`, `lighter`, or an `em` / `%` size. `font-weight` may also use the numeric scale (`100`–`900`), `normal`, or `bold`. `line-height` may be unitless or `normal`. `font-size` literals such as `1rem` or `14px` still fail.
 
 ```css
-/* Don't: a literal that ignores the heading weight setting */
-.card__title { font-weight: 600; }
+/* Don't: a literal size bypasses body/heading sliders */
+.card__title { font-size: 1.125rem; }
 
-/* Do: take the value from the chain */
-.card__title { font-weight: var(--font-heading-weight); }
+/* Do: take the size from the chain */
+.card__title { font-size: calc(var(--font-heading-size) * var(--font-heading-scale)); }
 ```
 
 `lint:theme` enforces Liquid class usage and first-party CSS (`tailwind/**/*.css`, `assets/base.css`, `assets/gift-card.css`, and `{% stylesheet %}` blocks). Regenerate `assets/tailwind.output.css` with `npm.cmd run build:tw`; do not hand-edit it.
@@ -110,7 +110,7 @@ These thresholds are complementary. A pattern can be promoted to the components 
 
 **Snippets carry structure and behaviour, not a forced style entry.** Primitives (`heading`, `text`, `button`, `link`, `image`, `content-group`, `section-frame`) hold shared tags, ARIA, link `rel`, image sizing, and motion attributes. They are the preferred entry for section-level composition; raw element classes remain valid for Alpine bindings, `<template>` contents, and component internals.
 
-**Local overrides.** Tailwind weight, leading, tracking, and `black` / `white` / `transparent` utilities may express one-off intent. An override that repeats across files becomes a variant in `tailwind.typography.css` or `tailwind.elements.css`.
+**Local overrides.** Tailwind weight, leading, tracking, and `black` / `white` / `transparent` utilities may express one-off intent. An override that repeats across files becomes a variant in `tailwind.typography.css` or `tailwind.elements.css`. `lint:theme` (`settings-chain-liquid`, `settings-chain-css-typography`, `settings-chain-css-color`) allows the same scales and black/white literals in Liquid classes and first-party CSS; it still rejects default text sizes, font families, other palette colours, arbitrary `[…]` utilities, and non-chain `font-size` / `font-family` literals.
 
 **Loaded font weights.** `snippets/css-variables.liquid` loads the base weight and `bold` via `font_modify` only. Weights without a face match by CSS font matching (`font-medium` / 500 uses the 400 face; `font-semibold` / 600 uses the 700 face). Loading additional weights is a design-phase decision.
 

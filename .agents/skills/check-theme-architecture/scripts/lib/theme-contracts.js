@@ -119,6 +119,54 @@ const COLOR_UTILITY_PREFIXES = [
 
 const TYPOGRAPHY_UTILITY_PREFIXES = ['leading', 'tracking'];
 
+const DEFAULT_LEADING_SCALES = new Set([
+    'none',
+    'tight',
+    'snug',
+    'normal',
+    'relaxed',
+    'loose',
+]);
+
+const DEFAULT_TRACKING_SCALES = new Set([
+    'tighter',
+    'tight',
+    'normal',
+    'wide',
+    'wider',
+    'widest',
+]);
+
+const LIQUID_ARBITRARY_UTILITY_PREFIXES =
+    'text|font|leading|tracking|bg|border|fill|stroke|outline|ring|decoration|accent|caret|shadow|from|via|to';
+
+function liquidBlackOrWhiteSuffix(suffix) {
+    // `black` / `white`, optionally with a numeric opacity modifier (`white/80`).
+    return /^(black|white)(\/\d+)?$/.test(suffix);
+}
+
+function isAllowedLiteralWhiteBlackColor(value) {
+    const trimmed = value.trim();
+    if (/^#(?:fff|ffffff|000|000000)$/i.test(trimmed)) return true;
+    if (/^(white|black)$/i.test(trimmed)) return true;
+    // Pure black or white in comma syntax (`rgba(0, 0, 0, 0.6)`) or space syntax (`rgb(0 0 0 / 45%)`).
+    if (
+        /^rgba?\(\s*(0|255)(?:\s*,\s*|\s+)\1(?:\s*,\s*|\s+)\1(?:\s*[,/]\s*(?:\d+|\d*\.\d+)%?)?\s*\)$/i.test(
+            trimmed,
+        )
+    ) {
+        return true;
+    }
+    if (
+        /^color-mix\(\s*in\s+[\w-]+\s*,\s*(?:#(?:fff|ffffff|000|000000)|white|black)\s+[\d.]+%\s*,\s*transparent\s*\)$/i.test(
+            trimmed,
+        )
+    ) {
+        return true;
+    }
+    return false;
+}
+
 const JS_OUTLET_FILES = {
     alpine: new Set(['assets/alpine.adapter.js']),
     fetch: new Set(['assets/https.js']),
@@ -174,31 +222,43 @@ function getStaticClassValues(attributes) {
 function isSettingsChainLiquidViolation(token) {
     if (!token || token.includes('{{') || token.includes('{%')) return false;
 
-    if (/^(text|font|leading|tracking|bg|border|fill|stroke|outline|ring|decoration|accent|caret|shadow|from|via|to)-\[[^\]]+\]/.test(token)) {
+    if (new RegExp(`^(${LIQUID_ARBITRARY_UTILITY_PREFIXES})-\\[[^\\]]+\\]`).test(token)) {
         return true;
     }
 
     if (/^text-/.test(token)) {
         const suffix = token.slice(5);
         if (DEFAULT_TEXT_SIZES.has(suffix)) return true;
-        if (DEFAULT_PALETTE.has(suffix.split('-')[0])) return true;
+        if (liquidBlackOrWhiteSuffix(suffix)) return false;
+        if (DEFAULT_PALETTE.has(suffix.split(/[-/]/)[0])) return true;
     }
 
     if (/^font-/.test(token)) {
         const suffix = token.slice(5);
-        if (DEFAULT_FONT_WEIGHTS.has(suffix)) return true;
         if (DEFAULT_FONT_FAMILIES.has(suffix)) return true;
+        if (DEFAULT_FONT_WEIGHTS.has(suffix)) return false;
     }
 
     for (const prefix of TYPOGRAPHY_UTILITY_PREFIXES) {
-        if (token === prefix || token.startsWith(`${prefix}-`)) return true;
+        if (token === prefix) return true;
+        if (!token.startsWith(`${prefix}-`)) continue;
+        const scale = token.slice(prefix.length + 1);
+        if (prefix === 'leading') {
+            if (DEFAULT_LEADING_SCALES.has(scale) || /^\d+(\.\d+)?$/.test(scale)) return false;
+            return true;
+        }
+        if (prefix === 'tracking') {
+            if (DEFAULT_TRACKING_SCALES.has(scale)) return false;
+            return true;
+        }
     }
 
     for (const colorPrefix of COLOR_UTILITY_PREFIXES) {
         if (!token.startsWith(`${colorPrefix}-`)) continue;
         const suffix = token.slice(colorPrefix.length + 1);
         if (PROJECT_COLOR_SUFFIXES.has(suffix)) continue;
-        if (DEFAULT_PALETTE.has(suffix.split('-')[0])) return true;
+        if (liquidBlackOrWhiteSuffix(suffix)) continue;
+        if (DEFAULT_PALETTE.has(suffix.split(/[-/]/)[0])) return true;
     }
 
     return false;
@@ -247,13 +307,27 @@ function isColorProperty(property) {
     ].includes(property);
 }
 
-function isAllowedTypographyValue(value) {
+function isAllowedTypographyValue(property, value) {
     const trimmed = value.trim();
     if (!trimmed) return true;
-    // Derived from the settings chain: a --font-* token, alone or inside calc()/max()/min()/clamp().
+    const prop = property.toLowerCase();
+
+    if (prop === 'font-weight') {
+        if (/^(normal|bold|bolder|lighter)$/i.test(trimmed)) return true;
+        if (/^[1-9]00$/.test(trimmed)) return true;
+    }
+
+    if (prop === 'line-height') {
+        if (/^normal$/i.test(trimmed)) return true;
+        if (/^(\d+|\d*\.\d+)$/.test(trimmed)) return true;
+    }
+
+    // Tailwind's tracking scale includes negative em values (tracking-tight, tracking-tighter).
+    if (prop === 'letter-spacing' && /^-[\d.]+em$/.test(trimmed)) return true;
+
+    // Otherwise: settings chain and relative values only.
     if (/^var\(--font-/.test(trimmed)) return true;
     if (/^(calc|max|min|clamp)\(/i.test(trimmed) && /var\(--font-/.test(trimmed)) return true;
-    // Relative to the inherited, already-derived value.
     if (/^(inherit|unset|bolder|lighter)$/i.test(trimmed)) return true;
     if (/^[\d.]+(em|%)$/.test(trimmed)) return true;
     return false;
@@ -263,6 +337,7 @@ function isAllowedColorValue(value) {
     const trimmed = value.trim();
     if (!trimmed) return true;
     if (/^(transparent|currentColor|inherit)$/i.test(trimmed)) return true;
+    if (isAllowedLiteralWhiteBlackColor(trimmed)) return true;
     if (/^var\(--color-/.test(trimmed)) return true;
     if (/^rgb\(var\(--color-/.test(trimmed)) return true;
     if (/^rgba\(var\(--color-/.test(trimmed)) return true;
@@ -276,7 +351,11 @@ function isForbiddenColorValue(value) {
     if (/#[0-9a-f]{3,8}/i.test(trimmed)) return true;
     if (/^rgb(a)?\(\s*[\d.]/.test(trimmed)) return true;
     if (/^hsl(a)?\(/i.test(trimmed)) return true;
-    if (/^(white|black|red|blue|green|gray|grey|silver|navy|teal|aqua|fuchsia|lime|maroon|olive|purple|yellow)$/i.test(trimmed)) {
+    if (
+        /^(red|blue|green|gray|grey|silver|navy|teal|aqua|fuchsia|lime|maroon|olive|purple|yellow)$/i.test(
+            trimmed,
+        )
+    ) {
         return true;
     }
     return false;
@@ -294,7 +373,7 @@ function collectSettingsChainCssFailures(cssText, file, failures, allowsByLine, 
             const property = declMatch[1].toLowerCase();
             const value = declMatch[2];
 
-            if (isTypographyProperty(property) && !isAllowedTypographyValue(value)) {
+            if (isTypographyProperty(property) && !isAllowedTypographyValue(property, value)) {
                 pushFailure(
                     failures,
                     allowsByLine,
