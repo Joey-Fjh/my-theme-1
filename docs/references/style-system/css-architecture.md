@@ -187,7 +187,8 @@ Placement utilities (`place-top-left`, `place-center`, …) in `tailwind/tailwin
 | --- | --- |
 | `content` | No fixed height on copy boxes |
 | `media` | `aspect-ratio` minimum; image `object-cover`; content may grow the frame |
-| `stage` | Shared `min-height` from `--section-stage-min-height` (`100svh` minus `--announcement-bar-height` and `--header-height`) on `section-frame--height-stage` |
+| `stage` | `section-frame--height-stage`: `display: grid` with one `minmax(0, 1fr)` row and `min-height: var(--section-stage-min-height)` (`100svh`, padding included via `box-sizing: border-box` on `.section-frame`). `.section-frame__inner` is the sole grid item and stretches to that row; a stretched grid item has a **definite** block size (CSS Grid), so descendant `height: 100%` / `h-full` chains resolve as under former `h-screen`. `.section-frame__stage` sets only `height: 100%` and `min-height: 0`, so the inner wrapper keeps its own display (`container-page` stays a grid). `section-frame__stage--center` adds `display: flex; flex-direction: column; justify-content: center` for vertically centred copy (404). |
+| `stage-pc` | Same grid construction from `48rem` up only (`section-frame--height-stage-pc` inside the `pc` media query). Mobile stays content-sized. |
 
 Overlays cap with `dvh`. Do not use `vh` in new theme CSS. Controls and icons keep fixed sizes (24px touch-target floor).
 

@@ -760,12 +760,21 @@ function isSectionFrameRenderWithSection(node) {
     if (node.type !== 'LiquidTag' || node.name !== 'render') return false;
     const markup = node.markup;
     if (!markup || typeof markup !== 'object' || markup.snippet?.value !== 'section-frame') return false;
-    if (markup.alias?.value === 'section') return false;
+    // A `with`/`for … as <alias>` binding is applied after named arguments, so it can override either.
+    if (markup.alias?.value === 'section' || markup.alias?.value === 'scheme_target') return false;
 
     const sectionArgs = (markup.args || []).filter((arg) => arg.name === 'section');
     if (sectionArgs.length !== 1) return false;
     const value = sectionArgs[0].value;
-    return value?.type === 'VariableLookup' && value.name === 'section' && value.lookups.length === 0;
+    if (!(value?.type === 'VariableLookup' && value.name === 'section' && value.lookups.length === 0)) return false;
+
+    // The frame applies the class only when `scheme_target` is omitted or the literal 'root' / 'inner'.
+    // Any other value (`'none'`, a variable) leaves the section to the inline check.
+    const targetArgs = (markup.args || []).filter((arg) => arg.name === 'scheme_target');
+    if (targetArgs.length === 0) return true;
+    if (targetArgs.length !== 1) return false;
+    const target = targetArgs[0].value;
+    return target?.type === 'String' && (target.value === 'root' || target.value === 'inner');
 }
 
 function rendersSectionFrame(markup) {

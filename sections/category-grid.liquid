@@ -9,8 +9,6 @@
 
     assign category_grid_heading_class = section.settings.heading_size | default: 'heading-2xl'
     assign category_grid_subheading_size = section.settings.subheading_size | default: 'body-lg'
-    assign category_grid_subheading_class = 'category-grid__subheading rte rte--compact typo-subtitle '
-    assign category_grid_subheading_class = category_grid_subheading_class | append: category_grid_subheading_size
 
     if section.settings.image_shape == 'arch'
         assign category_grid_media_aspect_ratio = '4 / 5'
@@ -19,22 +17,17 @@
     endif
 -%}
 
-<div
-    data-section-id="{{ section.id }}"
-    class="category-grid-section full-width color-{{ section.settings.color_scheme }} surface-section"
-    style="
-        --section-padding-top: {{ section.settings.padding_top }}px;
-        --section-padding-bottom: {{ section.settings.padding_bottom }}px;
-        --category-grid-columns: {{ desktop_columns }};
-        --category-grid-columns-mobile: {{ mobile_columns }};
-        --category-grid-gap: {{ category_grid_gap }}px;
-        --category-grid-media-aspect-ratio: {{ category_grid_media_aspect_ratio }};
-    "
-    data-module-id="motion-reveal"
-    x-data="motionRevealSection()"
-    data-motion-section
->
-    <div class="layout{% if section.settings.section_width != 'full' %} container-page{% endif %}">
+{%- liquid
+    assign category_grid_width = 'full'
+    if section.settings.section_width != 'full'
+        assign category_grid_width = 'page'
+    endif
+-%}
+{%- capture category_grid_root_style -%}
+--category-grid-columns: {{ desktop_columns }}; --category-grid-columns-mobile: {{ mobile_columns }}; --category-grid-gap: {{ category_grid_gap }}px; --category-grid-media-aspect-ratio: {{ category_grid_media_aspect_ratio }};
+{%- endcapture -%}
+{%- capture category_grid_children -%}
+        <div class="flex flex-col gap-12 pc:gap-16">
         {%- if section.settings.heading != blank
             or section.settings.subheading != blank
             or section.settings.view_all_label != blank
@@ -45,12 +38,12 @@
             >
                 <div class="category-grid__header-copy" data-motion-sequence>
                     {%- if section.settings.heading != blank -%}
-                        <h2
-                            class="category-grid__heading {{ category_grid_heading_class }}"
-                            data-motion-reveal="content"
-                        >
-                            {{ section.settings.heading }}
-                        </h2>
+                        {% render 'heading',
+                            level: '2',
+                            tier: category_grid_heading_class,
+                            class: 'category-grid__heading',
+                            content: section.settings.heading
+                        %}
                     {%- endif -%}
 
                     {%- if section.settings.subheading != blank
@@ -59,12 +52,14 @@
                     -%}
                         <div class="category-grid__header-meta">
                             {%- if section.settings.subheading != blank -%}
-                                <div
-                                    class="{{ category_grid_subheading_class }}"
-                                    data-motion-reveal="content"
-                                >
-                                    {{ section.settings.subheading }}
-                                </div>
+                                {% render 'text',
+                                    tier: category_grid_subheading_size,
+                                    element: 'div',
+                                    rte: true,
+                                    subtitle: true,
+                                    class: 'category-grid__subheading',
+                                    content: section.settings.subheading
+                                %}
                             {%- endif -%}
 
                             {%- if section.settings.view_all_label != blank
@@ -180,17 +175,21 @@
                 {{ category_grid_items }}
             </div>
         {%- endif -%}
-    </div>
-</div>
+        </div>
+{%- endcapture -%}
+
+{% render 'section-frame',
+    section: section,
+    section_class: 'category-grid-section',
+    width: category_grid_width,
+    height_kind: 'media',
+    motion: true,
+    root_style: category_grid_root_style,
+    children: category_grid_children
+%}
 
 {% stylesheet %}
     @layer snippets {
-        .category-grid__header {
-            margin-bottom: calc(var(--spacing) * 12);
-            @media (width >= 48rem) {
-                margin-bottom: calc(var(--spacing) * 16);
-            }
-        }
         .category-grid__header-copy {
             display: flex;
             width: 100%;

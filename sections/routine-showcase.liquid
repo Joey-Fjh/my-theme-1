@@ -24,21 +24,12 @@
     endif
 -%}
 
-<div
-    data-section-id="{{ section.id }}"
-    class="routine-showcase-section full-width"
-    style="
-        --section-padding-top: {{ section.settings.padding_top }}px;
-        --section-padding-bottom: {{ section.settings.padding_bottom }}px;
-    "
-    data-component-kind="section"
-    data-component-type="routine-showcase"
-    data-component-id="{{ section.id }}"
-    data-module-id="motion-reveal"
-    x-data="motionRevealSection()"
-    data-motion-section
->
-    <div class="relative overflow-hidden pc:h-screen">
+{%- assign routine_showcase_root_attrs = 'data-component-kind="section" data-component-type="routine-showcase" data-component-id="'
+    | append: section.id
+    | append: '"'
+-%}
+{%- capture routine_showcase_children -%}
+    <div class="relative h-full overflow-hidden pc:h-full">
         {%- capture sizes -%}
             (min-width: 80rem) 100vw, (min-width: 48rem) 1280px, 100vw
         {%- endcapture -%}
@@ -73,12 +64,12 @@
             -%}
         </div>
 
-        <div class="layout container-page relative pc:h-full color-{{ section.settings.color_scheme }} bg-transparent!">
+        <div class="section-frame__overlay-padding container-page relative pc:h-full color-{{ section.settings.color_scheme }} bg-transparent!">
             {%- comment -%}
                 Mobile keeps products in normal flow, then collapses the overlay's
                 horizontal axis into a three-row grid. Content and badge preserve
                 their desktop row and same-cell overlap semantics.
-                Desktop keeps the full-bleed h-screen overlay with absolute product rail
+                Desktop keeps the full-bleed stage overlay with absolute product rail
                 and 3×3 content/badge grid.
             {%- endcomment -%}
             <div class="routine-showcase__layout relative flex flex-col gap-6 py-3 pc:block pc:h-full">
@@ -238,17 +229,28 @@
                         data-motion-reveal="content"
                         data-motion-index="1"
                     >
-                        <p class="body-3xl typo-subtitle text-theme-text/80">
-                            {{ section.settings.eyebrow }}
-                        </p>
+                        {% render 'text',
+                            tier: 'body-3xl',
+                            subtitle: true,
+                            class: 'text-theme-text/80',
+                            content: section.settings.eyebrow,
+                            motion_reveal: false
+                        %}
 
                         <div class="flex flex-col gap-4">
-                            <h2 class="{{ routine_showcase_heading_class }}">
-                                {{ section.settings.heading }}
-                            </h2>
-                            <div class="rte rte--compact text-theme-text/60">
-                                {{ section.settings.description }}
-                            </div>
+                            {% render 'heading',
+                                level: '2',
+                                tier: routine_showcase_heading_class,
+                                content: section.settings.heading,
+                                motion_reveal: false
+                            %}
+                            {% render 'text',
+                                element: 'div',
+                                rte: true,
+                                class: 'text-theme-text/60',
+                                content: section.settings.description,
+                                motion_reveal: false
+                            %}
                         </div>
 
                         {%- liquid
@@ -288,7 +290,21 @@
             </div>
         </div>
     </div>
-</div>
+{%- endcapture -%}
+
+{% render 'section-frame',
+    section: section,
+    section_class: 'routine-showcase-section',
+    scheme_target: 'none',
+    surface_section: false,
+    width: 'full',
+    height_kind: 'stage-pc',
+    padding_mode: 'overlay',
+    motion: true,
+    safe_top: false,
+    root_attrs: routine_showcase_root_attrs,
+    children: routine_showcase_children
+%}
 
 {% stylesheet %}
     .routine-showcase-section {

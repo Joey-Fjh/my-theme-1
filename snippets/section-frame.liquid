@@ -9,7 +9,8 @@
     @param {string} [background] - Optional captured markup rendered before the inner wrapper (full-bleed behind padding)
     @param {string} [section_class] - BEM section class on the root (for example `brand-statement-section`)
     @param {string} [width] - `page` (default) or `full`
-    @param {string} [height_kind] - `content` (default), `media`, or `stage`
+    @param {string} [height_kind] - `content` (default), `media`, `stage`, or `stage-pc` (desktop-only stage)
+    @param {string} [padding_mode] - `default` (root padding) or `overlay` (expose `--section-frame-padding-*` on root; apply via `section-frame__overlay-padding` on descendants)
     @param {boolean} [motion] - When true, outputs literal CAP-01 section-reveal mount attributes on the root (motion-reveal module)
     @param {boolean} [safe_top] - When false, adds `section-frame--no-safe-top` (skips first-section header offset)
     @param {string} [root_class] - Extra classes on the root element
@@ -17,11 +18,14 @@
     @param {string} [root_attrs] - Extra attributes on the root element (for example `data-component-kind="section"`). Must not include `data-module-id`, `x-data`, `x-on:*`, or other Alpine mount attributes; import-map and Alpine lints read literal markup on the section file and frame root.
     @param {string} [inner_class] - Extra classes on the page-width inner wrapper
     @param {boolean} [surface_section] - When true (default), adds `surface-section`
+    @param {string} [scheme_target] - Where the colour scheme class goes: `root` (default), `inner` (the page-width inner wrapper, which then also takes the padding, as `.layout` did), or `none` (the section applies `color-{{ section.settings.color_scheme }}` itself, which the section-color-scheme lint then reads in the section)
 {% enddoc %}
 
 {%- liquid
     assign width_mode = width | default: 'page'
     assign height_kind = height_kind | default: 'content'
+    assign padding_mode = padding_mode | default: 'default'
+    assign scheme_target = scheme_target | default: 'root'
     assign pad_top_v = section.settings.padding_top | default: 0 | plus: 0
     assign pad_bottom_v = section.settings.padding_bottom | default: 0 | plus: 0
 
@@ -71,6 +75,12 @@
     endif
 
     assign root_classes = 'section-frame--height-' | append: height_kind | append: ' full-width'
+    if scheme_target == 'inner'
+        assign root_classes = root_classes | append: ' section-frame--padding-inner'
+    endif
+    if padding_mode == 'overlay'
+        assign root_classes = root_classes | append: ' section-frame--padding-overlay'
+    endif
     if use_surface
         assign root_classes = root_classes | append: ' surface-section'
     endif
@@ -88,7 +98,7 @@
     if width_mode == 'page'
         assign inner_classes = inner_classes | append: ' container-page'
     endif
-    if height_kind == 'stage'
+    if height_kind == 'stage' or height_kind == 'stage-pc'
         assign inner_classes = inner_classes | append: ' section-frame__stage'
     endif
     if inner_class != blank
@@ -98,7 +108,7 @@
 
 <div
     data-section-id="{{ section.id }}"
-    class="section-frame{% if section.settings.color_scheme != blank %} color-{{ section.settings.color_scheme }}{% endif %} {{ root_classes }}"
+    class="section-frame{% if section.settings.color_scheme != blank and scheme_target == 'root' %} color-{{ section.settings.color_scheme }}{% endif %} {{ root_classes }}"
     style="
         --section-frame-padding-top: {{ pad_top_clamp }};
         --section-frame-padding-bottom: {{ pad_bottom_clamp }};
@@ -116,7 +126,7 @@
             {{ background }}
         </div>
     {%- endif -%}
-    <div class="{{ inner_classes }}">
+    <div class="{{ inner_classes }}{% if section.settings.color_scheme != blank and scheme_target == 'inner' %} color-{{ section.settings.color_scheme }}{% endif %}">
         {{ children }}
     </div>
 </div>
@@ -125,8 +135,47 @@
     .section-frame {
         position: relative;
         overflow: hidden;
+        box-sizing: border-box;
         padding-top: var(--section-frame-padding-top, 0);
         padding-bottom: var(--section-frame-padding-bottom, 0);
+    }
+
+    /* scheme_target: 'inner' paints the inner wrapper, so the padding moves there with it. */
+    .section-frame--padding-inner {
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+
+    .section-frame--padding-inner > .section-frame__inner {
+        padding-top: var(--section-frame-padding-top, 0);
+        padding-bottom: var(--section-frame-padding-bottom, 0);
+    }
+
+    main
+        > .shopify-section:first-child
+        > .section-frame--padding-inner:not(.section-frame--no-safe-top)
+        > .section-frame__inner {
+        padding-top: calc(
+            var(--announcement-bar-height, 0px) + var(--header-height, 0px) +
+                var(--section-frame-padding-top, 0)
+        );
+    }
+
+    .section-frame--padding-overlay {
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+
+    .section-frame__overlay-padding {
+        padding-top: var(--section-frame-padding-top, 0);
+        padding-bottom: var(--section-frame-padding-bottom, 0);
+    }
+
+    .section-frame__overlay-padding.section-frame__overlay-safe-top {
+        padding-top: calc(
+            var(--announcement-bar-height, 0px) + var(--header-height, 0px) +
+                var(--section-frame-padding-top, 0)
+        );
     }
 
     .section-frame__background {
@@ -142,17 +191,70 @@
         z-index: 1;
     }
 
-    main > .shopify-section:first-child > .section-frame:not(.section-frame--no-safe-top) {
+    main
+        > .shopify-section:first-child
+        > .section-frame:not(.section-frame--no-safe-top):not(.section-frame--padding-overlay):not(
+            .section-frame--padding-inner
+        ) {
         padding-top: calc(
             var(--announcement-bar-height, 0px) + var(--header-height, 0px) +
                 var(--section-frame-padding-top, 0)
         );
     }
 
+    main
+        > .shopify-section:first-child
+        > .section-frame.section-frame--padding-overlay:not(.section-frame--no-safe-top)
+        .section-frame__overlay-safe-top {
+        padding-top: calc(
+            var(--announcement-bar-height, 0px) + var(--header-height, 0px) +
+                var(--section-frame-padding-top, 0)
+        );
+    }
+
+    .section-frame--height-stage {
+        display: grid;
+        grid-template-rows: minmax(0, 1fr);
+        min-height: var(--section-stage-min-height);
+    }
+
+    .section-frame--height-stage .section-frame__inner {
+        min-height: 0;
+    }
+
+    /* Height only: the inner wrapper keeps its own display (container-page stays a grid). */
     .section-frame--height-stage .section-frame__stage {
+        min-height: 0;
+        height: 100%;
+    }
+
+    .section-frame--height-stage .section-frame__stage--center {
         display: flex;
         flex-direction: column;
         justify-content: center;
-        min-height: var(--section-stage-min-height);
+    }
+
+    @media (width >= 48rem) {
+        .section-frame--height-stage-pc {
+            display: grid;
+            grid-template-rows: minmax(0, 1fr);
+            min-height: var(--section-stage-min-height);
+        }
+
+        .section-frame--height-stage-pc .section-frame__inner {
+            min-height: 0;
+        }
+
+        /* Height only: the inner wrapper keeps its own display (container-page stays a grid). */
+        .section-frame--height-stage-pc .section-frame__stage {
+            min-height: 0;
+            height: 100%;
+        }
+
+        .section-frame--height-stage-pc .section-frame__stage--center {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
     }
 {% endstylesheet %}

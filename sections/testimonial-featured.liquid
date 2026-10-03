@@ -1,20 +1,10 @@
-<div
-    data-section-id="{{ section.id }}"
-    class="testimonial-featured-section full-width color-{{ section.settings.color_scheme }} surface-section"
-    style="
-        --section-padding-top: {{ section.settings.padding_top }}px;
-        --section-padding-bottom: {{ section.settings.padding_bottom }}px;
-    "
-    data-component-kind="section"
-    data-component-type="testimonial-featured"
-    data-component-id="{{ section.id }}"
-    data-module-id="motion-reveal"
-    x-data="motionRevealSection()"
-    data-motion-section
->
-    <div class="layout container-page pc:h-full">
+{%- assign testimonial_featured_root_attrs = 'data-component-kind="section" data-component-type="testimonial-featured" data-component-id="'
+    | append: section.id
+    | append: '"'
+-%}
+{%- capture testimonial_featured_children -%}
         <div
-            class="flex flex-col gap-12 pc:h-screen pc:flex-row pc:gap-0"
+            class="flex flex-col gap-12 pc:h-full pc:flex-row pc:gap-0"
             data-module-id="testimonial-featured"
             x-data="testimonialFeatured()"
             data-auto-slide="{{ section.settings.is_auto_slide }}"
@@ -90,8 +80,8 @@
                         class="absolute inset-x-0 bottom-8 mx-auto w-[90%]"
                         data-motion-copy-bound
                     >
-                        <div class="w-full bg-theme-bg p-6 italic" data-motion-copy>
-                            <p class="mb-3">
+                        <div class="flex w-full flex-col gap-3 bg-theme-bg p-6 italic" data-motion-copy>
+                            <p>
                                 {{ section.settings.card_label }}
                             </p>
                             <p class="heading-2xl">
@@ -102,8 +92,18 @@
                 {% endif %}
             </div>
         </div>
-    </div>
-</div>
+{%- endcapture -%}
+
+{% render 'section-frame',
+    section: section,
+    section_class: 'testimonial-featured-section',
+    width: 'page',
+    height_kind: 'stage-pc',
+    motion: true,
+    root_attrs: testimonial_featured_root_attrs,
+    inner_class: 'pc:h-full',
+    children: testimonial_featured_children
+%}
 
 {% schema %}
 {

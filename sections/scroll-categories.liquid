@@ -1,21 +1,9 @@
-<div
-    data-section-id="{{ section.id }}"
-    class="scroll-categories-section full-width"
-    style="
-        --section-padding-top: {{ section.settings.padding_top }}px;
-        --section-padding-bottom: {{ section.settings.padding_bottom }}px;
-    "
-    data-module-id="motion-reveal"
-    x-data="motionRevealSection()"
-    data-motion-section
->
-    <div class="layout container-page color-{{ section.settings.color_scheme }}">
+{%- capture scroll_categories_children -%}
         {%- liquid
             assign selected_collection = section.settings.collection
             assign scroll_categories_heading_class = section.settings.heading_size | default: 'heading-2xl'
             assign scroll_categories_collection_heading_class = section.settings.collection_heading_size | default: 'heading-3xl'
             assign scroll_categories_subtitle_size = section.settings.subtitle_size | default: 'body-xl'
-            assign scroll_categories_subtitle_class = 'typo-subtitle text-theme-text ' | append: scroll_categories_subtitle_size
         -%}
 
         <div class="flex flex-col gap-16">
@@ -49,12 +37,14 @@
                     {%- endif -%}
                 </div>
 
-                <div
-                    class="rte rte--compact {{ scroll_categories_subtitle_class }}"
-                    data-motion-reveal="content"
-                >
-                    {{ section.settings.description }}
-                </div>
+                {% render 'text',
+                    tier: scroll_categories_subtitle_size,
+                    element: 'div',
+                    rte: true,
+                    subtitle: true,
+                    class: 'text-theme-text',
+                    content: section.settings.description
+                %}
             </div>
 
             <div data-motion-cascade>
@@ -230,8 +220,18 @@
                 </div>
             </div>
         </div>
-    </div>
-</div>
+{%- endcapture -%}
+
+{% render 'section-frame',
+    section: section,
+    section_class: 'scroll-categories-section',
+    scheme_target: 'inner',
+    surface_section: false,
+    width: 'page',
+    height_kind: 'content',
+    motion: true,
+    children: scroll_categories_children
+%}
 
 {% stylesheet %}
     .scroll-categories__item {

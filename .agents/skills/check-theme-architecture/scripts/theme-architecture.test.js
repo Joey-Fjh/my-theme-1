@@ -1111,6 +1111,32 @@ test('section color scheme via section-frame passes', async () => {
     );
 });
 
+test("section color scheme via section-frame with scheme_target 'inner' passes", async () => {
+    assert.equal(
+        await sectionFrameColorSchemeFailures(
+            SECTION_FRAME_FIXTURE_SNIPPET,
+            SECTION_FRAME_FIXTURE_SECTION.replace('section: section,', "section: section, scheme_target: 'inner',"),
+        ),
+        0,
+    );
+});
+
+test("section color scheme with scheme_target 'none' passes when the section applies the class", async () => {
+    assert.equal(
+        await sectionFrameColorSchemeFailures(
+            SECTION_FRAME_FIXTURE_SNIPPET,
+            SECTION_FRAME_FIXTURE_SECTION.replace(
+                "{% render 'section-frame', section: section, children: body %}",
+                [
+                    '{% capture body %}<div class="color-{{ section.settings.color_scheme }}"></div>{% endcapture %}',
+                    "{% render 'section-frame', section: section, scheme_target: 'none', children: body %}",
+                ].join('\n'),
+            ),
+        ),
+        0,
+    );
+});
+
 test('section color scheme via section-frame rendered inside a liquid tag passes', async () => {
     assert.equal(
         await sectionFrameColorSchemeFailures(
@@ -1165,6 +1191,10 @@ for (const [name, from, to] of [
     ['has a lookup after whitespace', 'section: section,', 'section: section .settings,'],
     ['has a lookup on the next line', 'section: section,', 'section: section\n    .settings,'],
     ['has a bracket lookup', 'section: section,', "section: section [ 'settings' ],"],
+    ["comes with scheme_target 'none'", 'section: section,', "section: section, scheme_target: 'none',"],
+    ['comes with a variable scheme_target', 'section: section,', 'section: section, scheme_target: target,'],
+    ['comes with a with alias named scheme_target', "'section-frame',", "'section-frame' with target as scheme_target,"],
+    ['comes with a for alias named scheme_target', "'section-frame',", "'section-frame' for targets as scheme_target,"],
 ]) {
     test(`section color scheme via section-frame fails when the section argument ${name}`, async () => {
         assert.equal(

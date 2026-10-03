@@ -52,18 +52,13 @@
     endif
 -%}
 
-<div
-    data-section-id="{{ section.id }}"
-    class="video-banner-section full-width color-{{ section.settings.color_scheme }} surface-section"
-    style="
-        --section-padding-top: {{ section.settings.padding_top }}px;
-        --section-padding-bottom: {{ section.settings.padding_bottom }}px;
-    "
-    data-module-id="motion-reveal"
-    x-data="motionRevealSection()"
-    data-motion-section
->
-    <div class="layout {% if container_width == 'page' %}container-page{% endif %}">
+{%- liquid
+    assign video_banner_width = 'full'
+    if container_width == 'page'
+        assign video_banner_width = 'page'
+    endif
+-%}
+{%- capture video_banner_children -%}
         <div class="video-banner__frame" style="aspect-ratio: {{ aspect_ratio }};">
             {%- if has_hosted_video -%}
                 {%- render 'media-video',
@@ -142,8 +137,16 @@
                 -%}
             {%- endif -%}
         </div>
-    </div>
-</div>
+{%- endcapture -%}
+
+{% render 'section-frame',
+    section: section,
+    section_class: 'video-banner-section',
+    width: video_banner_width,
+    height_kind: 'media',
+    motion: true,
+    children: video_banner_children
+%}
 
 {% stylesheet %}
     .video-banner__frame {
