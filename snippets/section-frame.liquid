@@ -19,6 +19,7 @@
     @param {string} [inner_class] - Extra classes on the page-width inner wrapper
     @param {boolean} [surface_section] - When true (default), adds `surface-section`
     @param {string} [scheme_target] - Where the colour scheme class goes: `root` (default), `inner` (the page-width inner wrapper, which then also takes the padding, as `.layout` did), or `none` (the section applies `color-{{ section.settings.color_scheme }}` itself, which the section-color-scheme lint then reads in the section)
+    @param {boolean} [clip] - When false, root and inner wrapper use `overflow: visible` so `position: sticky` descendants are not clipped (default true)
 {% enddoc %}
 
 {%- liquid
@@ -74,6 +75,11 @@
         assign use_surface = false
     endif
 
+    assign clip_overflow = true
+    if clip == false or clip == 'false'
+        assign clip_overflow = false
+    endif
+
     assign root_classes = 'section-frame--height-' | append: height_kind | append: ' full-width'
     if scheme_target == 'inner'
         assign root_classes = root_classes | append: ' section-frame--padding-inner'
@@ -93,6 +99,9 @@
     if root_class != blank
         assign root_classes = root_classes | append: ' ' | append: root_class
     endif
+    unless clip_overflow
+        assign root_classes = root_classes | append: ' section-frame--no-clip'
+    endunless
 
     assign inner_classes = 'section-frame__inner'
     if width_mode == 'page'
@@ -138,6 +147,11 @@
         box-sizing: border-box;
         padding-top: var(--section-frame-padding-top, 0);
         padding-bottom: var(--section-frame-padding-bottom, 0);
+    }
+
+    .section-frame--no-clip,
+    .section-frame--no-clip > .section-frame__inner {
+        overflow: visible;
     }
 
     /* scheme_target: 'inner' paints the inner wrapper, so the padding moves there with it. */

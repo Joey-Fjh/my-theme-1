@@ -39,17 +39,11 @@
     {% endif %}
 {% endfor %}
 
-<div
-    data-section-id="{{ section.id }}"
-    class="product-section full-width color-{{ section.settings.color_scheme }} surface-section"
-    style="
-        --section-padding-top: {{ section.settings.padding_top | default: 0 }}px;
-        --section-padding-bottom: {{ section.settings.padding_bottom | default: 0 }}px;
-    "
-    x-data="productLayout"
-    data-module-id="product-layout"
->
-    <div class="layout container-page overflow-visible!">
+{%- capture product_children -%}
+    <div
+        x-data="productLayout"
+        data-module-id="product-layout"
+    >
         <div
             class="grid w-full min-w-0 grid-cols-1 items-start gap-8 pc:grid-cols-[minmax(0,var(--product-media-fr))_minmax(0,var(--product-info-fr))] pc:items-stretch pc:gap-10 fw:gap-12"
             style="
@@ -114,7 +108,16 @@
             </div>
         </div>
     </div>
-</div>
+{%- endcapture -%}
+
+{% render 'section-frame',
+    section: section,
+    section_class: 'product-section',
+    width: 'page',
+    height_kind: 'content',
+    clip: false,
+    children: product_children
+%}
 
 {% schema %}
 {

@@ -2,88 +2,92 @@
 {% assign desktop_info_width = 100 | minus: desktop_media_width %}
 {% assign featured_product = section.settings.product %}
 
-<div
-    data-section-id="{{ section.id }}"
-    class="featured-product-section full-width color-{{ section.settings.color_scheme }} surface-section"
-    style="
-        --section-padding-top: {{ section.settings.padding_top }}px;
-        --section-padding-bottom: {{ section.settings.padding_bottom }}px;
-    "
-    x-data="productLayout"
-    data-module-id="product-layout"
->
+{%- capture featured_product_children -%}
     <div
-        class="layout container-page overflow-visible!"
-        {% if featured_product != blank %}
-            x-data="motionRevealSection()"
-            data-module-id="motion-reveal"
-            data-motion-section
-        {% endif %}
+        x-data="productLayout"
+        data-module-id="product-layout"
     >
         <div
-            class="grid w-full min-w-0 grid-cols-1 items-start gap-8 pc:grid-cols-[minmax(0,var(--product-media-fr))_minmax(0,var(--product-info-fr))] pc:items-stretch pc:gap-10 fw:gap-12"
-            style="
-                --product-media-fr: {{ desktop_media_width }}fr;
-                --product-info-fr: {{ desktop_info_width }}fr;
-            "
+            {% if featured_product != blank %}
+                x-data="motionRevealSection()"
+                data-module-id="motion-reveal"
+                data-motion-section
+            {% endif %}
         >
             <div
-                class="min-w-0"
-                data-product-media-column
-                {% if featured_product != blank %}
-                    data-motion-bound
-                {% endif %}
+                class="grid w-full min-w-0 grid-cols-1 items-start gap-8 pc:grid-cols-[minmax(0,var(--product-media-fr))_minmax(0,var(--product-info-fr))] pc:items-stretch pc:gap-10 fw:gap-12"
+                style="
+                    --product-media-fr: {{ desktop_media_width }}fr;
+                    --product-info-fr: {{ desktop_info_width }}fr;
+                "
             >
                 <div
-                    class="flex w-full min-w-0 flex-col gap-8"
-                    data-product-media-sticky-target
+                    class="min-w-0"
+                    data-product-media-column
+                    {% if featured_product != blank %}
+                        data-motion-bound
+                    {% endif %}
                 >
                     <div
-                        class="min-w-0 overflow-hidden"
-                        data-product-media-panel
+                        class="flex w-full min-w-0 flex-col gap-8"
+                        data-product-media-sticky-target
                     >
-                        {% assign thumb_position = section.settings.thumb_position
-                            | default: 'left'
-                        %}
-                        {%- assign gallery_id = 'product-gallery-featured-' | append: section.id -%}
-                        {%- if featured_product != blank -%}
-                            {%- render 'product-gallery',
-                                media: featured_product.media,
-                                id: gallery_id,
-                                layout: 'thumbnails',
-                                thumb_position: thumb_position,
-                                thumbnail_size: section.settings.thumbnail_size,
-                                aspect_ratio: '3/4',
-                                motion_reveal: true
-                            -%}
-                        {%- else -%}
-                            {%- render 'image',
-                                image: blank,
-                                placeholder_key: 'product-1',
-                                aspect_ratio: '3/4',
-                                mode: 'frame',
-                                fit: 'contain',
-                                motion_reveal: false
-                            -%}
-                        {%- endif -%}
+                        <div
+                            class="min-w-0 overflow-hidden"
+                            data-product-media-panel
+                        >
+                            {% assign thumb_position = section.settings.thumb_position
+                                | default: 'left'
+                            %}
+                            {%- assign gallery_id = 'product-gallery-featured-' | append: section.id -%}
+                            {%- if featured_product != blank -%}
+                                {%- render 'product-gallery',
+                                    media: featured_product.media,
+                                    id: gallery_id,
+                                    layout: 'thumbnails',
+                                    thumb_position: thumb_position,
+                                    thumbnail_size: section.settings.thumbnail_size,
+                                    aspect_ratio: '3/4',
+                                    motion_reveal: true
+                                -%}
+                            {%- else -%}
+                                {%- render 'image',
+                                    image: blank,
+                                    placeholder_key: 'product-1',
+                                    aspect_ratio: '3/4',
+                                    mode: 'frame',
+                                    fit: 'contain',
+                                    motion_reveal: false
+                                -%}
+                            {%- endif -%}
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="min-w-0" data-product-info-panel>
-                <div class="self-start" data-product-info-sticky-target>
-                    {%- render 'product-info-blocks',
-                        product: featured_product,
-                        section: section,
-                        context: 'featured',
-                        render_column: 'form',
-                        container_class: 'px-6 py-4 pc:px-10 pc:py-6'
-                    -%}
+                <div class="min-w-0" data-product-info-panel>
+                    <div class="self-start" data-product-info-sticky-target>
+                        {%- render 'product-info-blocks',
+                            product: featured_product,
+                            section: section,
+                            context: 'featured',
+                            render_column: 'form',
+                            container_class: 'px-6 py-4 pc:px-10 pc:py-6'
+                        -%}
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
+{%- endcapture -%}
+
+{% render 'section-frame',
+    section: section,
+    section_class: 'featured-product-section',
+    width: 'page',
+    height_kind: 'content',
+    clip: false,
+    children: featured_product_children
+%}
 
 {% schema %}
 {

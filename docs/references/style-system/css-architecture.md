@@ -206,7 +206,7 @@ Each token uses the same linear `clamp()` as section padding (0.6× at 375px vie
 
 **Section padding clamp** (merchant setting `v` in px, computed in `section-frame`):
 
-`clamp(0.6v px, a px + b vw, v px)` with `b = 40v / 905`, `a = 0.6v − 3.75b` (three decimal places). `v = 0` yields `0`. The root sets `--section-frame-padding-top` and `--section-frame-padding-bottom`; `snippets/section-frame.liquid` stylesheet applies them. First-section header offset uses `main > .shopify-section:first-child > .section-frame:not(.section-frame--no-safe-top)` (equivalent to `main > section:first-child .layout:first-child` in `assets/base.css`). `safe_top: false` adds `section-frame--no-safe-top`.
+`clamp(0.6v px, a px + b vw, v px)` with `b = 40v / 905`, `a = 0.6v − 3.75b` (three decimal places). `v = 0` yields `0`. The root sets `--section-frame-padding-top` and `--section-frame-padding-bottom`; `snippets/section-frame.liquid` stylesheet applies them. First-section header offset uses `main > .shopify-section:first-child > .section-frame:not(.section-frame--no-safe-top)` (equivalent to `main > section:first-child .layout:first-child` in `assets/base.css`). `safe_top: false` adds `section-frame--no-safe-top`. By default `.section-frame` clips (`overflow: hidden`), matching unmigrated `.layout`. Pass `clip: false` when sticky descendants must not be clipped (product core sections): it adds `section-frame--no-clip` to the root, which sets `overflow: visible` on the root and its direct `.section-frame__inner`.
 
 ## Primitive snippets (5-C3a)
 
