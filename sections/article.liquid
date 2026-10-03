@@ -1,21 +1,11 @@
-<div
-    data-section-id="{{ section.id }}"
-    class="article-section full-width color-{{ section.settings.color_scheme }} surface-section"
-    style="
-        --section-padding-top: {{ section.settings.padding_top }}px;
-        --section-padding-bottom: {{ section.settings.padding_bottom }}px;
-    "
-    data-module-id="motion-reveal"
-    x-data="motionRevealSection()"
-    data-motion-section
->
-    {%- liquid
-        assign article_heading_class = section.settings.heading_size | default: 'heading-2xl'
-        assign article_subtitle_size = section.settings.subtitle_size | default: 'body-xl'
-        assign article_subtitle_class = 'typo-subtitle ' | append: article_subtitle_size
-        assign article_title_text = article.title | strip_html | strip
-        assign article_heading_override = section.settings.heading | strip_html | strip
-    -%}
+{%- liquid
+    assign article_heading_class = section.settings.heading_size | default: 'heading-2xl'
+    assign article_subtitle_size = section.settings.subtitle_size | default: 'body-xl'
+    assign article_subtitle_class = 'typo-subtitle ' | append: article_subtitle_size
+    assign article_title_text = article.title | strip_html | strip
+    assign article_heading_override = section.settings.heading | strip_html | strip
+-%}
+{%- capture article_children -%}
     <div class="article-hero relative overflow-hidden color-{{ section.settings.header_color_scheme }} pc:max-h-200">
         {%- capture sizes -%}
             (min-width: 80rem) 100vw, (min-width: 48rem) 1280px, 768px
@@ -70,7 +60,7 @@
         </div>
     </div>
 
-    <div class="layout layout-no-pt container-page mt-12 overflow-clip!">
+    <div class="section-frame__overlay-padding-bottom container-page relative mt-12 overflow-clip!">
         <div class="flex flex-col gap-16 pc:flex-row pc:gap-24 fw:gap-32">
             {% comment %} Aside Bar {% endcomment %}
             <aside class="shrink-0 body-xl max-pc:hidden pc:w-72 fw:w-80">
@@ -390,7 +380,19 @@
             </article>
         </div>
     </div>
-</div>
+{%- endcapture -%}
+
+{% render 'section-frame',
+    section: section,
+    section_class: 'article-section',
+    width: 'full',
+    height_kind: 'content',
+    motion: true,
+    clip: false,
+    safe_top: false,
+    padding_mode: 'overlay',
+    children: article_children
+%}
 
 {%- stylesheet -%}
     .article-hero {

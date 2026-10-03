@@ -11,25 +11,21 @@
         endfor
     endif
 -%}
-<div
-    data-section-id="{{ section.id }}"
-    class="blog-section full-width relative"
-    style="
-        --section-padding-top: {{ section.settings.padding_top }}px;
-        --section-padding-bottom: {{ section.settings.padding_bottom }}px;
-    "
-    data-pagination-section-id="{{ section.id }}"
-    data-pagination-selectors='["[role=&quot;tabpanel&quot;]",".sup-badge"]'
-    data-module-id="section-pagination"
-    data-blog-tab-initial-index="{{ active_tab_index }}"
-    x-data="sectionPagination()"
->
+{%- capture blog_children -%}
     <div
-        class="
-            layout layout-no-pb container-page
-            color-{{ section.settings.header_color_scheme }}
-        "
+        class="relative"
+        data-pagination-section-id="{{ section.id }}"
+        data-pagination-selectors='["[role=&quot;tabpanel&quot;]",".sup-badge"]'
+        data-module-id="section-pagination"
+        data-blog-tab-initial-index="{{ active_tab_index }}"
+        x-data="sectionPagination()"
     >
+        <div
+            class="
+                section-frame__overlay-padding-top section-frame__overlay-safe-top container-page relative overflow-hidden
+                color-{{ section.settings.header_color_scheme }}
+            "
+        >
         {%- comment -%} Hero {%- endcomment -%}
         <div
             class="relative py-20 pc:py-40"
@@ -67,16 +63,16 @@
                 </div>
             </div>
         </div>
-    </div>
+        </div>
 
-    <div
-        class="
-            layout layout-no-pt container-page
-            color-{{ section.settings.color_scheme }} surface-section
-            pt-6 pc:pt-8
-        "
-        style="--body-size-custom: 24px; --body-size-custom-pc: 32px;"
-    >
+        <div
+            class="
+                section-frame__overlay-padding-bottom container-page relative overflow-hidden
+                color-{{ section.settings.color_scheme }} surface-section
+                pt-6 pc:pt-8
+            "
+            style="--body-size-custom: 24px; --body-size-custom-pc: 32px;"
+        >
         <div class="relative flex items-center justify-between">
             {%- comment -%} Tab Header (Router Trigger) + Tab Content (fetch replace) {%- endcomment -%}
             <div class="min-w-0 flex-1">
@@ -221,8 +217,21 @@
                 -%}
             </div>
         </div>
+        </div>
     </div>
-</div>
+{%- endcapture -%}
+
+{% render 'section-frame',
+    section: section,
+    section_class: 'blog-section',
+    width: 'full',
+    height_kind: 'content',
+    padding_mode: 'overlay',
+    scheme_target: 'none',
+    surface_section: false,
+    root_class: 'relative',
+    children: blog_children
+%}
 
 {% stylesheet %}
     @layer snippets {

@@ -1,32 +1,33 @@
-<div
-    data-section-id="{{ section.id }}"
-    class="cart-section full-width color-{{ section.settings.color_scheme }} surface-section"
-    style="
-        --section-padding-top: {{ section.settings.padding_top }}px;
-        --section-padding-bottom: {{ section.settings.padding_bottom }}px;
-    "
-    x-data="cartPage()"
-    data-module-id="cart-page"
-    data-shipping-msg-calculating="{{ 'cart.shipping_calculating' | t | escape }}"
-    data-shipping-msg-rates="{{ 'cart.shipping_rates' | t | escape }}"
-    data-shipping-msg-empty="{{ 'cart.shipping_no_rates' | t | escape }}"
-    data-shipping-msg-error="{{ 'cart.shipping_error' | t | escape }}"
-    data-shipping-msg-timeout="{{ 'cart.shipping_timeout' | t | escape }}"
-    data-shipping-msg-country-required="{{ 'cart.shipping_country_required' | t | escape }}"
-    :class="{ 'opacity-50 pointer-events-none': $store.cart.loading }"
->
-    {%- liquid
-        assign cart_heading_class = section.settings.heading_size | default: 'heading-3xl'
-        assign cart_shop_more_link = section.settings.shop_more_link
-        if cart_shop_more_link == blank or cart_shop_more_link == '/'
-            assign cart_shop_more_link = routes.root_url
-        endif
-    -%}
-    <div class="layout container-page">
+{%- liquid
+    assign cart_heading_class = section.settings.heading_size | default: 'heading-3xl'
+    assign cart_shop_more_link = section.settings.shop_more_link
+    if cart_shop_more_link == blank or cart_shop_more_link == '/'
+        assign cart_shop_more_link = routes.root_url
+    endif
+-%}
+{%- capture cart_children -%}
+    <div
+        data-section-id="{{ section.id }}"
+        x-data="cartPage()"
+        data-module-id="cart-page"
+        data-shipping-msg-calculating="{{ 'cart.shipping_calculating' | t | escape }}"
+        data-shipping-msg-rates="{{ 'cart.shipping_rates' | t | escape }}"
+        data-shipping-msg-empty="{{ 'cart.shipping_no_rates' | t | escape }}"
+        data-shipping-msg-error="{{ 'cart.shipping_error' | t | escape }}"
+        data-shipping-msg-timeout="{{ 'cart.shipping_timeout' | t | escape }}"
+        data-shipping-msg-country-required="{{ 'cart.shipping_country_required' | t | escape }}"
+        :class="{ 'opacity-50 pointer-events-none': $store.cart.loading }"
+    >
         <div class="grid grid-cols-1 gap-10 pc:grid-cols-[minmax(0,1fr)_auto]">
             {%- comment -%} Left: Cart list (Liquid-rendered for SRA) {%- endcomment -%}
             <div class="flex flex-col gap-10 pc:gap-30">
-                <h1 class="{{ cart_heading_class }}">{{ 'cart.title' | t }}</h1>
+                {%- capture cart_title_content -%}{{ 'cart.title' | t }}{%- endcapture -%}
+                {% render 'heading',
+                    level: '1',
+                    tier: cart_heading_class,
+                    content: cart_title_content,
+                    motion_reveal: false
+                %}
 
                 {%- if cart.item_count == 0 -%}
                     <p>{{ 'cart.empty' | t }}</p>
@@ -493,7 +494,15 @@
             </aside>
         </div>
     </div>
-</div>
+{%- endcapture -%}
+
+{% render 'section-frame',
+    section: section,
+    section_class: 'cart-section',
+    width: 'page',
+    height_kind: 'content',
+    children: cart_children
+%}
 
 {% schema %}
 {
