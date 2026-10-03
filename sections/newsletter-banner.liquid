@@ -11,28 +11,16 @@
 
     assign newsletter_banner_heading_class = section.settings.heading_size | default: 'heading-xl'
     assign newsletter_banner_subtitle_size = section.settings.subtitle_size | default: 'body-3xl'
-    assign newsletter_banner_subtitle_class = 'typo-subtitle ' | append: newsletter_banner_subtitle_size
 -%}
-<div
-    data-section-id="{{ section.id }}"
-    class="newsletter-banner-section full-width color-{{ section.settings.color_scheme }}"
-    style="
-        --section-padding-top: {{ section.settings.padding_top }}px;
-        --section-padding-bottom: {{ section.settings.padding_bottom }}px;
-    "
-    data-module-id="motion-reveal"
-    x-data="motionRevealSection()"
-    data-motion-section
->
-    <div class="layout container-page">
-        <div
-            class="newsletter-banner__media relative overflow-hidden{% unless newsletter_banner_has_background %} media-placeholder-frame{% endunless %}"
-            style="
-                --newsletter-banner-aspect-mobile: {{ banner_aspect_mobile }};
-                --newsletter-banner-aspect-desktop: {{ banner_aspect_desktop }};
-            "
-        >
-            {% comment %} Background Image {% endcomment %}
+{%- capture newsletter_banner_children -%}
+    <div
+        class="newsletter-banner__media relative flex flex-col justify-center"
+        style="
+            --newsletter-banner-aspect-mobile: {{ banner_aspect_mobile }};
+            --newsletter-banner-aspect-desktop: {{ banner_aspect_desktop }};
+        "
+    >
+        <div class="newsletter-banner__media-clip pointer-events-none absolute inset-0 overflow-hidden{% unless newsletter_banner_has_background %} media-placeholder-frame{% endunless %}">
             {%- if newsletter_banner_has_background -%}
                 {%- assign image_alt = section.settings.background_image.alt
                     | default: section.settings.heading
@@ -48,7 +36,7 @@
                     position: section.settings.background_image_position
                 -%}
             {%- else -%}
-                <div class="pointer-events-none absolute inset-0" aria-hidden="true">
+                <div class="absolute inset-0" aria-hidden="true">
                     {%- render 'image',
                         image: blank,
                         placeholder_key: 'image',
@@ -59,7 +47,6 @@
                 </div>
             {%- endif -%}
 
-            {% comment %} Frosted glass center overlay {% endcomment %}
             {%- assign blur_enabled = section.settings.enable_blur_overlay
                 | default: true, allow_false: true
             -%}
@@ -75,83 +62,96 @@
                     "
                 ></div>
             {%- endif -%}
+        </div>
 
-            {% comment %} Content {% endcomment %}
+        <div
+            class="newsletter-banner__content relative z-10 flex flex-col items-center justify-center gap-group px-3.5 text-center pc:px-4"
+            data-motion-sequence
+        >
+            {%- capture newsletter_copy -%}
+                {% render 'text',
+                    tier: newsletter_banner_subtitle_size,
+                    subtitle: true,
+                    align: 'center',
+                    content: section.settings.subtitle
+                %}
+                {% render 'heading',
+                    level: '2',
+                    tier: newsletter_banner_heading_class,
+                    align: 'center',
+                    content: section.settings.heading
+                %}
+            {%- endcapture -%}
+            {% render 'content-group',
+                align: 'center',
+                gap: 'tight',
+                class: 'w-full pc:gap-group',
+                children: newsletter_copy
+            %}
+
             <div
-                class="relative z-10 flex h-full flex-col items-center justify-center gap-2.5 px-3.5 text-center pc:gap-6 pc:px-4"
-                data-motion-sequence
+                class="w-full max-w-3xl"
+                x-data="newsletterBanner()"
+                data-module-id="newsletter-banner"
+                data-newsletter-success-message="{{ 'newsletter.success_message' | t | escape }}"
             >
-                <p
-                    class="{{ newsletter_banner_subtitle_class }}"
-                    data-motion-reveal="content"
-                >
-                    {{ section.settings.subtitle }}
-                </p>
-                <h2
-                    class="{{ newsletter_banner_heading_class }}"
-                    data-motion-reveal="content"
-                >
-                    {{ section.settings.heading }}
-                </h2>
-                <div
-                    class="mt-4 w-full max-w-3xl pc:mt-0"
-                    x-data="newsletterBanner()"
-                    data-module-id="newsletter-banner"
-                    data-newsletter-success-message="{{ 'newsletter.success_message' | t | escape }}"
-                >
-                    {%- assign email_placeholder_fallback = 'newsletter.email_placeholder' | t -%}
-                    {%- comment -%}
-                        Keep default Shopify id contact_form: return_to back lands on
-                        #contact_form. Overlay must use a different id so hash scroll
-                        targets this banner, not the popup form near the top.
-                    {%- endcomment -%}
-                    {%- form 'customer', return_to: 'back', data-shopify-captcha: 'true' -%}
-                        <input type="hidden" name="contact[tags]" value="newsletter">
+                {%- assign email_placeholder_fallback = 'newsletter.email_placeholder' | t -%}
+                {%- comment -%}
+                    Keep default Shopify id contact_form: return_to back lands on
+                    #contact_form. Overlay must use a different id so hash scroll
+                    targets this banner, not the popup form near the top.
+                {%- endcomment -%}
+                {%- form 'customer', return_to: 'back', data-shopify-captcha: 'true' -%}
+                    <input type="hidden" name="contact[tags]" value="newsletter">
 
-                        <div class="inline-submit-field">
-                            <label class="sr-only" for="NewsletterEmail-{{ section.id }}">
-                                {{ 'newsletter.email_address' | t }}
-                            </label>
-                            <input
-                                id="NewsletterEmail-{{ section.id }}"
-                                type="email"
-                                name="contact[email]"
-                                placeholder="{{ section.settings.placeholder | default: email_placeholder_fallback | escape }}"
-                                autocomplete="email"
-                                required
-                                class="inline-submit-field__input"
-                            >
-                            <button
-                                type="submit"
-                                class="inline-submit-field__button inline-submit-field__button--icon"
-                                aria-label="{{ 'newsletter.subscribe' | t }}"
-                            >
-                                {%- render 'icons', icon: 'icon-arrow2' -%}
-                            </button>
-                        </div>
-                    {%- endform -%}
-                </div>
+                    <div class="inline-submit-field">
+                        <label class="sr-only" for="NewsletterEmail-{{ section.id }}">
+                            {{ 'newsletter.email_address' | t }}
+                        </label>
+                        <input
+                            id="NewsletterEmail-{{ section.id }}"
+                            type="email"
+                            name="contact[email]"
+                            placeholder="{{ section.settings.placeholder | default: email_placeholder_fallback | escape }}"
+                            autocomplete="email"
+                            required
+                            class="inline-submit-field__input"
+                        >
+                        <button
+                            type="submit"
+                            class="inline-submit-field__button inline-submit-field__button--icon"
+                            aria-label="{{ 'newsletter.subscribe' | t }}"
+                        >
+                            {%- render 'icons', icon: 'icon-arrow2' -%}
+                        </button>
+                    </div>
+                {%- endform -%}
             </div>
         </div>
     </div>
-</div>
+{%- endcapture -%}
+
+{% render 'section-frame',
+    section: section,
+    section_class: 'newsletter-banner-section',
+    width: 'page',
+    height_kind: 'content',
+    motion: true,
+    surface_section: false,
+    children: newsletter_banner_children
+%}
 
 {% stylesheet %}
     .newsletter-banner-section .newsletter-banner__media {
         aspect-ratio: var(--newsletter-banner-aspect-mobile, 9/16);
-        min-height: 32rem;
     }
 
     @media (width >= 48rem) {
         .newsletter-banner-section .newsletter-banner__media {
             aspect-ratio: var(--newsletter-banner-aspect-desktop, 16/9);
-            min-height: 0;
         }
     }
 
-    /* Mobile-only inline-submit-field sizing for this section's hero form layout.
-       Scoped here — not in components.css — so newsletter-overlay and other
-       inline-submit-field consumers keep the default component chrome. */
     @media (width < 768px) {
         .newsletter-banner-section .inline-submit-field__input {
             padding-top: 0.5rem;

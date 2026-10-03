@@ -1,0 +1,62 @@
+{% doc %}
+    Body or rich text with a size tier and optional measure.
+
+    @param {string} [tier] - Body tier class (for example `body-xl`, `body-md`)
+    @param {string} [element] - Wrapper element: `p` (default), `div`
+    @param {boolean} [rte] - When true, adds `rte` and `rte--compact`
+    @param {boolean} [subtitle] - When true, adds `typo-subtitle`
+    @param {string} [align] - `start`, `center`, or `end`
+    @param {string} [measure] - Max-width utility token: `prose`, `2/3`, `1/3`, `3xl`
+    @param {string} content - Inner HTML
+    @param {string} [class] - Escape hatch classes
+    @param {boolean} [motion_reveal] - When true (default), sets `data-motion-reveal="content"`
+    @param {string} [motion_attrs] - Extra motion attributes
+{% enddoc %}
+
+{%- liquid
+    assign tag = element | default: 'p'
+    unless tag == 'p' or tag == 'div'
+        assign tag = 'p'
+    endunless
+
+    assign text_classes = tier | default: 'body-md'
+    if rte == true or rte == 'true'
+        assign text_classes = 'rte rte--compact ' | append: text_classes
+    endif
+    if subtitle == true or subtitle == 'true'
+        assign text_classes = 'typo-subtitle ' | append: text_classes
+    endif
+    if align == 'center'
+        assign text_classes = text_classes | append: ' text-center'
+    elsif align == 'end'
+        assign text_classes = text_classes | append: ' text-end'
+    endif
+    if measure == 'prose'
+        assign text_classes = text_classes | append: ' max-w-prose'
+    elsif measure == '2/3'
+        assign text_classes = text_classes | append: ' max-w-2/3'
+    elsif measure == '1/3'
+        assign text_classes = text_classes | append: ' max-w-1/3 pc:max-w-1/3'
+    elsif measure == '3xl'
+        assign text_classes = text_classes | append: ' max-w-3xl'
+    endif
+    if class != blank
+        assign text_classes = text_classes | append: ' ' | append: class
+    endif
+    assign text_classes = text_classes | strip
+
+    assign motion_on = true
+    if motion_reveal == false or motion_reveal == 'false'
+        assign motion_on = false
+    endif
+-%}
+
+<{{ tag }}
+    class="{{ text_classes }}"
+    {% if motion_on %}
+        data-motion-reveal="content"
+    {% endif %}
+    {{ motion_attrs }}
+>
+    {{ content }}
+</{{ tag }}>

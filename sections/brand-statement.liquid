@@ -1,17 +1,7 @@
-<div
-    data-section-id="{{ section.id }}"
-    class="brand-statement-section full-width relative overflow-hidden color-{{ section.settings.color_scheme }} surface-section"
-    style="
-        --section-padding-top: {{ section.settings.padding_top }}px;
-        --section-padding-bottom: {{ section.settings.padding_bottom }}px;
-    "
-    data-module-id="motion-reveal"
-    x-data="motionRevealSection()"
-    data-motion-section
->
-    {%- liquid
-        assign brand_statement_heading_class = section.settings.heading_size | default: 'heading-2xl'
-    -%}
+{%- liquid
+    assign brand_statement_heading_class = section.settings.heading_size | default: 'heading-2xl'
+-%}
+{%- capture brand_statement_background -%}
     {%- comment -%}
         Decorative brushstroke is a true background layer: absolute inset-0 so it never
         owns height. Section height comes only from statement copy + section padding.
@@ -20,7 +10,7 @@
     {%- endcomment -%}
     <div
         class="
-            pointer-events-none absolute inset-0 z-0
+            pointer-events-none absolute inset-0
             {% if section.settings.brushstroke_image == blank %}media-placeholder-frame{% endif %}
         "
         aria-hidden="true"
@@ -53,19 +43,29 @@
             -%}
         {%- endif -%}
     </div>
-
-    <div class="layout container-page relative z-10">
-        {% comment %} Statement text — height owner {% endcomment %}
-        <div class="mx-auto flex items-center justify-center py-8" data-motion-bound>
-            <div
-                class="rte rte--compact {{ brand_statement_heading_class }} text-center text-balance pc:max-w-5/6"
-                data-motion-reveal="content"
-            >
-                {{ section.settings.statement }}
-            </div>
-        </div>
+{%- endcapture -%}
+{%- capture brand_statement_children -%}
+    <div class="relative flex items-center justify-center py-8" data-motion-bound>
+        {% render 'text',
+            tier: brand_statement_heading_class,
+            element: 'div',
+            rte: true,
+            align: 'center',
+            class: 'text-balance pc:max-w-5/6',
+            content: section.settings.statement
+        %}
     </div>
-</div>
+{%- endcapture -%}
+
+{% render 'section-frame',
+    section: section,
+    section_class: 'brand-statement-section',
+    width: 'page',
+    height_kind: 'content',
+    motion: true,
+    background: brand_statement_background,
+    children: brand_statement_children
+%}
 
 {% schema %}
 {

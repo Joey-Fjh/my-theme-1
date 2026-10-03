@@ -32,7 +32,7 @@ Tailwind scans every token in the `@source` Liquid files, including `{% schema %
 
 Typography and color flow only through `config/settings_schema.json` → `snippets/css-variables.liquid` → tokens → tier or scheme classes. Do not bypass the chain with default Tailwind typography or palette utilities, arbitrary values (`text-[14px]`, `bg-[#fff]`), or literal typography/color properties in first-party CSS.
 
-`tailwind/tailwind.input.css` resets Tailwind default namespaces to `initial` for font family, font size, font weight, line height, letter spacing, palette colors, easing, and animation (as breakpoints already are). Project bridges remain; keyword colors `transparent`, `current`, and `inherit` are re-declared after the color reset so utilities such as `text-current` keep working.
+`tailwind/tailwind.input.css` resets Tailwind default namespaces to `initial` for breakpoints, font family (`--font-*`), font size (`--text-*`), easing, and animation. The resets for font weight, line height, letter spacing, and palette colors are not adopted yet: theme CSS still uses those default utilities, and each reset lands with the CSS step 3 batch that removes its last consumer. When the palette reset lands, re-declare the keyword colors `transparent`, `current`, and `inherit` after it so utilities such as `text-current` keep working.
 
 A typography value passes when it derives from the chain or from the inherited, already-derived value: `var(--font-*)` alone or inside `calc()` / `max()` / `min()` / `clamp()`, `inherit`, `unset`, `bolder`, `lighter`, or an `em` / `%` size. Literals such as `bold`, `600`, `1rem`, or `14px` fail, because a settings change would not reach them.
 
@@ -125,7 +125,7 @@ Add a tier only in `tailwind/tailwind.typography.css` on the `heading-base` / `b
 - The first configured color scheme is the `:root` token fallback; it is not the implicit visible page-canvas decision.
 - `settings.page_canvas_color_scheme` explicitly owns the visible `<body>` canvas behind sections, during overscroll, and in areas without their own color-scheme scope.
 - Section, overlay, drawer, modal, and component color-scheme scopes override the body canvas normally.
-- Use one surface role per node: `color-{{ section.settings.color_scheme }}` on the section frame, or `surface-component` on nested overlays such as dropdown panels. `lint:theme` (`section-color-scheme`) fails a section with a `color_scheme` setting whose root lacks the class.
+- Use one surface role per node: `color-{{ section.settings.color_scheme }}` on the section frame, or `surface-component` on nested overlays such as dropdown panels. `lint:theme` (`section-color-scheme`) fails a section with a `color_scheme` setting whose root lacks the class. A section that renders `snippets/section-frame.liquid` with `section: section` passes only while the snippet writes `color-{{ section.settings.color_scheme }}` literally in a `class` attribute outside comments. Keep that literal; do not build it through a variable. The check reads markup, not the rendered DOM.
 - Use semantic tokens or scheme utilities for theme UI; avoid hardcoded brand colors unless documented as a platform bridge or local effect.
 - Allowed inline styles: scoped CSS custom properties from Liquid, platform-required media values, and per-render geometry that static utilities cannot express.
 - Use semantic z-index utilities or variables for layered UI.
@@ -152,6 +152,64 @@ Theme setting / token source
 ```
 
 Don't use `animate-spin` or `x-transition:*` for ordinary loading or state motion; use a motion recipe class such as `.spinner` in `tailwind/tailwind.animates.css`. Classification, first-viewport visibility, and reduced motion: `docs/references/architecture/motion-architecture.md`.
+
+## CSS homes (5-C3a)
+
+| Home | Owns |
+| --- | --- |
+| Tailwind utilities in Liquid | Layout and one-off adjustments |
+| Owner `{% stylesheet %}` | Plain CSS on tokens: states, nesting, motion details for one render tree |
+| Tailwind build (`tailwind/tailwind.*.css`) | Tokens, typography tiers, surfaces, layout vocabulary, utilities with 2+ unrelated consumers |
+| `snippets/section-frame.liquid` | Section colour scheme, fluid merchant padding, width (`page` / full bleed), height kind (`content`, `media`, `stage`), first-section header offset |
+
+Move rules into a `{% stylesheet %}` block only when every class in the selector and nested selectors belongs to that file's render tree. Move a BEM block whole. JS- or vendor-generated classes stay shared.
+
+Unmigrated sections keep `assets/base.css` `.layout` padding (`--section-padding-top` / `--section-padding-bottom`). Migrated section roots use `section-frame` instead.
+
+## Layout levels (5-C3a)
+
+1. **Page frame** — `assets/base.css` (`.shopify-section` grid, `page_width`, `page_margin`) and `container-page` in `tailwind/tailwind.utilities.css`.
+2. **Section frame** — `snippets/section-frame.liquid` only.
+3. **Inside a section** — repeated patterns become snippets (`content-group` for stacked copy and actions). Column grids use `grid-list`; one-off arrangements use flex/grid utilities with relationship gap tokens. No generic layout wrapper driven only by direction/alignment parameters.
+
+Placement utilities (`place-top-left`, `place-center`, …) in `tailwind/tailwind.utilities.css` position content inside stage and media frames.
+
+## Height kinds (5-C3a)
+
+| Kind | Rule |
+| --- | --- |
+| `content` | No fixed height on copy boxes |
+| `media` | `aspect-ratio` minimum; image `object-cover`; content may grow the frame |
+| `stage` | Shared `min-height` from `--section-stage-min-height` (`100svh` minus `--announcement-bar-height` and `--header-height`) on `section-frame--height-stage` |
+
+Overlays cap with `dvh`. Do not use `vh` in new theme CSS. Controls and icons keep fixed sizes (24px touch-target floor).
+
+## Spacing tokens (5-C3a)
+
+Three relationship-named fluid gaps in `tailwind/tailwind.input.css`, consumed as `gap-tight`, `gap-related`, and `gap-group` in `tailwind/tailwind.utilities.css`:
+
+| Token | Desktop target (dominant legacy utility) |
+| --- | --- |
+| `--spacing-gap-tight` | `gap-2` (8px) |
+| `--spacing-gap-related` | `gap-4` (16px) |
+| `--spacing-gap-group` | `gap-6` (24px) |
+
+Each token uses the same linear `clamp()` as section padding (0.6× at 375px viewport width to 1× at 1280px). Prefer `gap` utilities; margin and `space-y` are exceptions.
+
+**Section padding clamp** (merchant setting `v` in px, computed in `section-frame`):
+
+`clamp(0.6v px, a px + b vw, v px)` with `b = 40v / 905`, `a = 0.6v − 3.75b` (three decimal places). `v = 0` yields `0`. The root sets `--section-frame-padding-top` and `--section-frame-padding-bottom`; `snippets/section-frame.liquid` stylesheet applies them. First-section header offset uses `main > .shopify-section:first-child > .section-frame:not(.section-frame--no-safe-top)` (equivalent to `main > section:first-child .layout:first-child` in `assets/base.css`). `safe_top: false` adds `section-frame--no-safe-top`.
+
+## Primitive snippets (5-C3a)
+
+| Snippet | Role |
+| --- | --- |
+| `snippets/section-frame.liquid` | Section root frame; optional `background` slot before `container-page` inner |
+| `snippets/heading.liquid` | Semantic `h1`–`h6` + visual `heading-*` tier |
+| `snippets/text.liquid` | Body / RTE copy + `body-*` tier |
+| `snippets/button.liquid` | `btn` / `btn-primary` / `btn-secondary`; not plain text links (`snippets/link.liquid`) |
+| `snippets/content-group.liquid` | Vertical stack with relationship gaps (3+ section consumers in inventory) |
+| `snippets/image.liquid` | Image display; ratio vocabulary keywords mapped in one place |
 
 ## Stylesheet Placement Constraints
 

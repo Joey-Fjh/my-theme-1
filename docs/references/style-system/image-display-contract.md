@@ -24,6 +24,7 @@ Nil images default to the shared `framed` placeholder surface so adjacent empty 
 | `fit` | explicit object-fit intent such as `cover` or `contain` |
 | `position` | optional explicit object-position whitelist value; see Object-position precedence |
 | `placeholder_style` | nil-image surface: `framed` (default) or `plain`; `plain` delegates visible boundary ownership to the caller and framing never affects a real image |
+| `aspect_ratio` | CSS ratio (`16/9`, `3/2`) or vocabulary keyword: `adapt`, `1:1`, `4:5`, `3:2`, `16:9` (mapped in `snippets/image.liquid`; slash forms unchanged) |
 | `class` / `wrapper_class` | wrapper classes; `wrapper_class` is preferred |
 | `img_class` | image element classes |
 | `sizes`, `widths`, `loading`, `fetchpriority`, `alt` | rendering and performance metadata |
@@ -64,11 +65,23 @@ If `img_class` already contains an `object-*` utility, including responsive vari
 5. Does the merchant need cover-vs-contain control? Expose or pass `fit`.
 6. The caller decides semantic mode; `image.liquid` should not guess business intent.
 
+## Ratio vocabulary (5-C3a)
+
+| Keyword | Maps to |
+| --- | --- |
+| `adapt` | Intrinsic image ratio, or placeholder ratio when image is blank |
+| `1:1` | `1/1` |
+| `4:5` | `4/5` |
+| `3:2` | `3/2` |
+| `16:9` | `16/9` |
+
+Callers that already pass slash ratios (for example `3/4`, `16/9`) are unchanged.
+
 ## Current Contract
 
 - `image.liquid` is the base image primitive.
 - Frame mode is the default for current callers: product media, the product card, cart line items, collection and blog cards, and the article image. The header logo passes `mode: 'natural'`.
-- `placeholder_style: 'plain'` and `position` are available API with no current caller; keep them working when changing the snippet.
+- `placeholder_style: 'plain'` is used by `sections/brand-statement.liquid` and `sections/newsletter-banner.liquid`, and `position` by the same two sections; keep both working when changing the snippet.
 
 ## Review Checklist
 

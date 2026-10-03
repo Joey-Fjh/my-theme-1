@@ -1077,6 +1077,106 @@ test('section color scheme on frame passes', async () => {
     });
 });
 
+const SECTION_FRAME_FIXTURE_SECTION = [
+    "{% render 'section-frame', section: section, children: body %}",
+    '{% schema %}',
+    '{"name":"t:x","settings":[{"type":"color_scheme","id":"color_scheme","label":"t:x"}]}',
+    '{% endschema %}',
+    '',
+].join('\n');
+
+const SECTION_FRAME_FIXTURE_SNIPPET = [
+    '{%- liquid',
+    "    assign root_classes = 'section-frame--' | append: width",
+    '-%}',
+    '<div class="section-frame color-{{ section.settings.color_scheme }} {{ root_classes }}">{{ children }}</div>',
+    '',
+].join('\n');
+
+async function sectionFrameColorSchemeFailures(snippet, section) {
+    let count = 0;
+    await withTempThemeAsync(async (root) => {
+        writeFile(root, 'snippets/section-frame.liquid', snippet);
+        writeFile(root, 'sections/fixture.liquid', section);
+        const failures = await runThemeLint(root);
+        count = failures.filter((failure) => failure.checkId === 'section-color-scheme').length;
+    });
+    return count;
+}
+
+test('section color scheme via section-frame passes', async () => {
+    assert.equal(
+        await sectionFrameColorSchemeFailures(SECTION_FRAME_FIXTURE_SNIPPET, SECTION_FRAME_FIXTURE_SECTION),
+        0,
+    );
+});
+
+test('section color scheme via section-frame rendered inside a liquid tag passes', async () => {
+    assert.equal(
+        await sectionFrameColorSchemeFailures(
+            SECTION_FRAME_FIXTURE_SNIPPET,
+            SECTION_FRAME_FIXTURE_SECTION.replace(
+                "{% render 'section-frame', section: section, children: body %}",
+                "{% liquid\n    render 'section-frame', section: section, children: body\n%}",
+            ),
+        ),
+        0,
+    );
+});
+
+for (const [name, snippet] of [
+    ['drops the class', '<div class="section-frame">{{ children }}</div>\n'],
+    [
+        'builds the class through a variable',
+        [
+            '{%- liquid',
+            '    assign scheme = section.settings.color_scheme',
+            "    assign root_classes = 'section-frame color-' | append: scheme",
+            '-%}',
+            '<div class="{{ root_classes }}">{{ children }}</div>',
+            '',
+        ].join('\n'),
+    ],
+    [
+        'keeps the class only in a comment',
+        [
+            '{% comment %}<div class="color-{{ section.settings.color_scheme }}">{% endcomment %}',
+            '<div class="section-frame">{{ children }}</div>',
+            '',
+        ].join('\n'),
+    ],
+    [
+        'keeps the class outside a class attribute',
+        '<div class="section-frame" data-x="color-{{ section.settings.color_scheme }}">{{ children }}</div>\n',
+    ],
+]) {
+    test(`section color scheme via section-frame fails when the frame ${name}`, async () => {
+        assert.equal(await sectionFrameColorSchemeFailures(snippet, SECTION_FRAME_FIXTURE_SECTION), 1);
+    });
+}
+
+for (const [name, from, to] of [
+    ['is not the section object', 'section: section,', 'section: section.settings,'],
+    ['appears only inside a quoted argument', 'section: section,', "section: other, root_class: 'fake section: section, fake',"],
+    ['is missing', 'section: section, ', ''],
+    ['is overridden by a later duplicate', 'section: section,', 'section: section, section: other,'],
+    ['is overridden by a with alias', "'section-frame',", "'section-frame' with section.settings as section,"],
+    ['is overridden by a for alias', "'section-frame',", "'section-frame' for sections as section,"],
+    ['has a lookup after whitespace', 'section: section,', 'section: section .settings,'],
+    ['has a lookup on the next line', 'section: section,', 'section: section\n    .settings,'],
+    ['has a bracket lookup', 'section: section,', "section: section [ 'settings' ],"],
+]) {
+    test(`section color scheme via section-frame fails when the section argument ${name}`, async () => {
+        assert.equal(
+            await sectionFrameColorSchemeFailures(
+                SECTION_FRAME_FIXTURE_SNIPPET,
+                SECTION_FRAME_FIXTURE_SECTION.replace(from, to),
+            ),
+            1,
+        );
+    });
+}
+
 test('vendor notice missing fails', async () => {
     await withTempThemeAsync(async (root) => {
         writeFile(root, 'assets/vendor-test.js', `export default null;\n`);

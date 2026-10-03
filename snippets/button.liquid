@@ -1,0 +1,89 @@
+{% doc %}
+    Primary UI button or link-styled control. Plain text links stay on `snippets/link.liquid`.
+
+    @param {string} [href] - Destination URL; omit for a non-navigating control
+    @param {string} [label] - Visible label when `content` is blank
+    @param {string} [content] - Inner HTML (overrides `label`)
+    @param {string} [style] - `primary` (default) or `secondary`
+    @param {string} [size] - Body tier on the control: `md` (default), `lg`, `xl`
+    @param {string} [type] - Button type when no `href`: `button` (default) or `submit`
+    @param {boolean} [new_tab] - Opens link in a new tab with rel security
+    @param {string} [class] - Escape hatch classes
+    @param {string} [aria_label] - Accessible name when visible text is insufficient
+    @param {boolean} [disabled] - Disables button or marks link as aria-disabled
+{% enddoc %}
+
+{%- liquid
+    assign style_name = style | default: 'primary'
+    assign size_name = size | default: 'md'
+    assign btn_type = type | default: 'button'
+
+    assign style_class = 'btn-primary'
+    if style_name == 'secondary'
+        assign style_class = 'btn-secondary'
+    endif
+
+    assign size_class = 'body-md'
+    if size_name == 'lg'
+        assign size_class = 'body-lg'
+    elsif size_name == 'xl'
+        assign size_class = 'body-xl'
+    endif
+
+    assign btn_classes = 'btn ' | append: style_class | append: ' ' | append: size_class
+    if class != blank
+        assign btn_classes = btn_classes | append: ' ' | append: class
+    endif
+    assign btn_classes = btn_classes | strip
+
+    assign inner = content
+    if inner == blank
+        assign inner = label
+    endif
+
+    assign is_disabled = false
+    if disabled == true or disabled == 'true'
+        assign is_disabled = true
+    endif
+-%}
+
+{%- if href != blank and is_disabled == false -%}
+    <a
+        href="{{ href }}"
+        class="{{ btn_classes }}"
+        {% if aria_label != blank %}
+            aria-label="{{ aria_label | escape }}"
+        {% endif %}
+        {% if new_tab == true or new_tab == 'true' %}
+            target="_blank"
+            rel="noopener noreferrer"
+        {% endif %}
+    >
+        {{ inner }}
+    </a>
+{%- elsif href != blank and is_disabled -%}
+    <span
+        class="{{ btn_classes }}"
+        role="link"
+        aria-disabled="true"
+        tabindex="-1"
+        {% if aria_label != blank %}
+            aria-label="{{ aria_label | escape }}"
+        {% endif %}
+    >
+        {{ inner }}
+    </span>
+{%- else -%}
+    <button
+        type="{{ btn_type }}"
+        class="{{ btn_classes }}"
+        {% if is_disabled %}
+            disabled
+        {% endif %}
+        {% if aria_label != blank %}
+            aria-label="{{ aria_label | escape }}"
+        {% endif %}
+    >
+        {{ inner }}
+    </button>
+{%- endif -%}

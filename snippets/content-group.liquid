@@ -1,0 +1,45 @@
+{% doc %}
+    Vertical stack for heading, text, and actions with relationship gap tokens.
+
+    @param {string} children - Captured inner HTML
+    @param {string} [align] - `start` (default), `center`, or `end`
+    @param {string} [gap] - `tight`, `related` (default), or `group`
+    @param {string} [class] - Escape hatch classes
+    @param {string} [motion_attrs] - Attributes on the group root (for example `data-motion-sequence`)
+{% enddoc %}
+
+{%- liquid
+    assign gap_name = gap | default: 'related'
+    assign align_name = align | default: 'start'
+
+    assign gap_class = 'gap-related'
+    if gap_name == 'tight'
+        assign gap_class = 'gap-tight'
+    elsif gap_name == 'group'
+        assign gap_class = 'gap-group'
+    endif
+
+    assign group_classes = 'content-group ' | append: gap_class
+    if align_name == 'center'
+        assign group_classes = group_classes | append: ' content-group--align-center items-center text-center'
+    elsif align_name == 'end'
+        assign group_classes = group_classes | append: ' content-group--align-end items-end text-end'
+    else
+        assign group_classes = group_classes | append: ' content-group--align-start items-start'
+    endif
+    if class != blank
+        assign group_classes = group_classes | append: ' ' | append: class
+    endif
+    assign group_classes = group_classes | strip
+-%}
+
+<div class="{{ group_classes }}" {{ motion_attrs }}>
+    {{ children }}
+</div>
+
+{% stylesheet %}
+    .content-group {
+        display: flex;
+        flex-direction: column;
+    }
+{% endstylesheet %}

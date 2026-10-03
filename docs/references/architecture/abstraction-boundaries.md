@@ -52,3 +52,15 @@ Snippets are the theme's reusable UI components. Their parameter contracts follo
 3. **Do not split snippets only because they are long.** A snippet that is long but has a single coherent responsibility should stay as one file. Split only when the parts have genuinely different consumers, lifetimes, or contracts. Length alone is not a boundary signal.
 
 4. **Parameter defaults must be safe.** Every snippet parameter with a default must render a correct, visible, accessible result when the consumer omits it. An omitted parameter must never produce broken HTML, invisible content, or missing ARIA.
+
+## Layout primitives (5-C3a)
+
+| Snippet | Parameters (semantic) | Notes |
+| --- | --- | --- |
+| `section-frame` | `section`, `children`, `background`, `width`, `height_kind`, `motion`, `safe_top`, `surface_section` | `motion: true` emits literal CAP-01 mount attributes only; padding via `--section-frame-padding-*` custom properties |
+| `heading` | `level`, `tier`, `align`, `content` | Visual tier separate from outline level |
+| `text` | `tier`, `rte`, `subtitle`, `align`, `measure`, `content` | Body tiers on `p` or `div` |
+| `button` | `href`, `style`, `size`, `label` / `content`, `new_tab`, `disabled` | Plain links stay on `link.liquid` |
+| `content-group` | `align`, `gap` (`tight` / `related` / `group`), `children` | Stacks copy and actions; not a generic flex wrapper |
+
+Captured `children` strings are the slot for nested markup. Raw `class` parameters remain escape hatches per the rules above.

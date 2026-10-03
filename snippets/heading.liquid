@@ -1,0 +1,51 @@
+{% doc %}
+    Semantic heading with an independent visual tier class.
+
+    @param {string} level - Heading level `1`–`6`
+    @param {string} tier - Visual tier class (for example `heading-2xl`, `heading-h2`)
+    @param {string} [align] - Alignment utility: `start`, `center`, or `end` (default `start`)
+    @param {string} content - Inner HTML (escaped plain text or controlled markup from settings)
+    @param {string} [class] - Escape hatch classes
+    @param {boolean} [motion_reveal] - When true (default), sets `data-motion-reveal="content"`
+    @param {string} [motion_attrs] - Extra motion attributes (for example `data-motion-critical`)
+{% enddoc %}
+
+{%- liquid
+    assign heading_level = level | default: '2' | plus: 0
+    if heading_level < 1
+        assign heading_level = 1
+    elsif heading_level > 6
+        assign heading_level = 6
+    endif
+
+    assign align_class = ''
+    if align == 'center'
+        assign align_class = 'text-center'
+    elsif align == 'end'
+        assign align_class = 'text-end'
+    endif
+
+    assign motion_on = true
+    if motion_reveal == false or motion_reveal == 'false'
+        assign motion_on = false
+    endif
+
+    assign heading_classes = tier | default: 'heading-h2'
+    if align_class != blank
+        assign heading_classes = heading_classes | append: ' ' | append: align_class
+    endif
+    if class != blank
+        assign heading_classes = heading_classes | append: ' ' | append: class
+    endif
+    assign heading_classes = heading_classes | strip
+-%}
+
+<h{{ heading_level }}
+    class="{{ heading_classes }}"
+    {% if motion_on %}
+        data-motion-reveal="content"
+    {% endif %}
+    {{ motion_attrs }}
+>
+    {{ content }}
+</h{{ heading_level }}>

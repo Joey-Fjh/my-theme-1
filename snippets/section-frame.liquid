@@ -1,0 +1,154 @@
+{% doc %}
+    Section frame: color scheme, fluid merchant padding, width, height kind, and captured children.
+
+    Root carries CAP-01 section reveal when `motion` is true (literal mount attributes only).
+    Plain CSS lives in this file's stylesheet block.
+
+    @param {section} section - Section object (padding and color_scheme settings)
+    @param {string} children - Captured inner HTML
+    @param {string} [background] - Optional captured markup rendered before the inner wrapper (full-bleed behind padding)
+    @param {string} [section_class] - BEM section class on the root (for example `brand-statement-section`)
+    @param {string} [width] - `page` (default) or `full`
+    @param {string} [height_kind] - `content` (default), `media`, or `stage`
+    @param {boolean} [motion] - When true, outputs literal CAP-01 section-reveal mount attributes on the root (motion-reveal module)
+    @param {boolean} [safe_top] - When false, adds `section-frame--no-safe-top` (skips first-section header offset)
+    @param {string} [root_class] - Extra classes on the root element
+    @param {string} [inner_class] - Extra classes on the page-width inner wrapper
+    @param {boolean} [surface_section] - When true (default), adds `surface-section`
+{% enddoc %}
+
+{%- liquid
+    assign width_mode = width | default: 'page'
+    assign height_kind = height_kind | default: 'content'
+    assign pad_top_v = section.settings.padding_top | default: 0 | plus: 0
+    assign pad_bottom_v = section.settings.padding_bottom | default: 0 | plus: 0
+
+    assign pad_top_clamp = '0'
+    assign pad_bottom_clamp = '0'
+
+    assign pad_slots = 'top,bottom' | split: ','
+    for pad_slot in pad_slots
+        if pad_slot == 'top'
+            assign v = pad_top_v
+        else
+            assign v = pad_bottom_v
+        endif
+
+        capture clamp_out
+            if v == 0
+                echo '0'
+            else
+                assign b_num = v | times: 40.0 | divided_by: 905.0 | round: 3
+                assign v_half = v | times: 600.0 | divided_by: 1000.0
+                assign b_offset = b_num | times: 3.75
+                assign a_num = v_half | minus: b_offset | round: 3
+                assign low_num = v_half | round: 3
+                assign high_num = v | round: 3
+                echo 'clamp('
+                echo low_num
+                echo 'px, '
+                echo a_num
+                echo 'px + '
+                echo b_num
+                echo 'vw, '
+                echo high_num
+                echo 'px)'
+            endif
+        endcapture
+
+        if pad_slot == 'top'
+            assign pad_top_clamp = clamp_out | strip
+        else
+            assign pad_bottom_clamp = clamp_out | strip
+        endif
+    endfor
+
+    assign use_surface = true
+    if surface_section == false or surface_section == 'false'
+        assign use_surface = false
+    endif
+
+    assign root_classes = 'section-frame--height-' | append: height_kind | append: ' full-width'
+    if use_surface
+        assign root_classes = root_classes | append: ' surface-section'
+    endif
+    if safe_top == false or safe_top == 'false'
+        assign root_classes = root_classes | append: ' section-frame--no-safe-top'
+    endif
+    if section_class != blank
+        assign root_classes = root_classes | append: ' ' | append: section_class
+    endif
+    if root_class != blank
+        assign root_classes = root_classes | append: ' ' | append: root_class
+    endif
+
+    assign inner_classes = 'section-frame__inner'
+    if width_mode == 'page'
+        assign inner_classes = inner_classes | append: ' container-page'
+    endif
+    if height_kind == 'stage'
+        assign inner_classes = inner_classes | append: ' section-frame__stage'
+    endif
+    if inner_class != blank
+        assign inner_classes = inner_classes | append: ' ' | append: inner_class
+    endif
+-%}
+
+<div
+    data-section-id="{{ section.id }}"
+    class="section-frame color-{{ section.settings.color_scheme }} {{ root_classes }}"
+    style="
+        --section-frame-padding-top: {{ pad_top_clamp }};
+        --section-frame-padding-bottom: {{ pad_bottom_clamp }};
+    "
+    {% if motion == true or motion == 'true' %}
+        data-module-id="motion-reveal"
+        x-data="motionRevealSection()"
+        data-motion-section
+    {% endif %}
+>
+    {%- if background != blank -%}
+        <div class="section-frame__background">
+            {{ background }}
+        </div>
+    {%- endif -%}
+    <div class="{{ inner_classes }}">
+        {{ children }}
+    </div>
+</div>
+
+{% stylesheet %}
+    .section-frame {
+        position: relative;
+        overflow: hidden;
+        padding-top: var(--section-frame-padding-top, 0);
+        padding-bottom: var(--section-frame-padding-bottom, 0);
+    }
+
+    .section-frame__background {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        overflow: hidden;
+    }
+
+    .section-frame__inner {
+        position: relative;
+        z-index: 1;
+    }
+
+    main > .shopify-section:first-child > .section-frame:not(.section-frame--no-safe-top) {
+        padding-top: calc(
+            var(--announcement-bar-height, 0px) + var(--header-height, 0px) +
+                var(--section-frame-padding-top, 0)
+        );
+    }
+
+    .section-frame--height-stage .section-frame__stage {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-height: var(--section-stage-min-height);
+    }
+{% endstylesheet %}

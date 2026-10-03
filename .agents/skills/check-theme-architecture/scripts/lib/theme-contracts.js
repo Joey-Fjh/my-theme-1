@@ -2,7 +2,7 @@ const fs = require('node:fs/promises');
 const path = require('node:path');
 const fg = require('fast-glob');
 const { parseTree, getNodeValue } = require('jsonc-parser');
-const { walk } = require('./liquid-ast');
+const { parseLiquidAst, walk } = require('./liquid-ast');
 const { parseLineAllows, pushFailure } = require('./lint-allow');
 
 const CHECK = {
@@ -734,8 +734,54 @@ function sectionHasColorSchemeSetting(schemaText) {
     return /"type"\s*:\s*"color_scheme"/.test(schemaText);
 }
 
+function stripLiquidAndHtmlComments(text) {
+    return text
+        .replace(/{%-?\s*comment\s*-?%}[\s\S]*?{%-?\s*endcomment\s*-?%}/g, '')
+        .replace(/<!--[\s\S]*?-->/g, '');
+}
+
+// snippets/section-frame.liquid writes `color-{{ section.settings.color_scheme }}` literally in
+// a class attribute, so a section that renders it with `section: section` applies the scheme on
+// its frame. The frame check is as strict as the inline one, plus: outside comments and inside
+// `class="…"`. Like the inline check, it proves the markup carries the class, not the rendered DOM.
+function sectionFrameAppliesColorScheme(root) {
+    const framePath = path.join(root, 'snippets/section-frame.liquid');
+    if (!require('node:fs').existsSync(framePath)) return false;
+    const text = stripLiquidAndHtmlComments(require('node:fs').readFileSync(framePath, 'utf8'));
+    return /class="[^"]*color-\{\{\s*section\.settings\.color_scheme\s*\}\}[^"]*"/.test(text);
+}
+
+// Checks the value the snippet receives as `section`, read from Shopify's Liquid parser rather
+// than from text, so whitespace, quoting, comments, and `{% liquid %}` blocks resolve as Liquid
+// resolves them. Liquid keeps the last named argument per key and applies a `with`/`for … as
+// <alias>` binding after named arguments, so a render tag passes only with exactly one `section:`
+// argument that is the bare `section` variable (no lookups) and no alias named `section`.
+function isSectionFrameRenderWithSection(node) {
+    if (node.type !== 'LiquidTag' || node.name !== 'render') return false;
+    const markup = node.markup;
+    if (!markup || typeof markup !== 'object' || markup.snippet?.value !== 'section-frame') return false;
+    if (markup.alias?.value === 'section') return false;
+
+    const sectionArgs = (markup.args || []).filter((arg) => arg.name === 'section');
+    if (sectionArgs.length !== 1) return false;
+    const value = sectionArgs[0].value;
+    return value?.type === 'VariableLookup' && value.name === 'section' && value.lookups.length === 0;
+}
+
+function rendersSectionFrame(markup) {
+    const { ast } = parseLiquidAst(markup);
+    if (!ast) return false;
+
+    let found = false;
+    walk(ast, (node) => {
+        if (isSectionFrameRenderWithSection(node)) found = true;
+    });
+    return found;
+}
+
 function collectSectionColorSchemeFailures(root, failures) {
     const files = fg.sync('sections/**/*.liquid', { cwd: root, onlyFiles: true }).map(formatPath);
+    const frameAppliesScheme = sectionFrameAppliesColorScheme(root);
 
     for (const file of files) {
         const text = require('node:fs').readFileSync(path.join(root, file), 'utf8');
@@ -744,7 +790,9 @@ function collectSectionColorSchemeFailures(root, failures) {
         if (!sectionHasColorSchemeSetting(schemaMatch[1])) continue;
 
         const markup = text.slice(0, schemaMatch.index ?? 0);
-        if (!/color-\{\{\s*section\.settings\.color_scheme\s*\}\}/.test(markup)) {
+        const appliesInline = /color-\{\{\s*section\.settings\.color_scheme\s*\}\}/.test(markup);
+        const appliesViaFrame = frameAppliesScheme && rendersSectionFrame(markup);
+        if (!appliesInline && !appliesViaFrame) {
             failures.push({
                 file,
                 line: 1,
