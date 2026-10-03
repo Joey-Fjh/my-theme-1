@@ -75,25 +75,36 @@
                                         {%- when 'text' -%}
                                             {%- liquid
                                                 assign overlay_text_class = block.settings.body_text_size | default: 'body-lg'
+                                                capture overlay_text_attrs
+                                                    echo block.shopify_attributes
+                                                endcapture
                                             -%}
-                                            <div
-                                                class="rte rte--compact mb-0 pc:mb-2 {{ overlay_text_class }}"
-                                                {{ block.shopify_attributes }}
-                                            >
-                                                {{ block.settings.text }}
-                                            </div>
+                                            {% render 'text',
+                                                element: 'div',
+                                                rte: true,
+                                                tier: overlay_text_class,
+                                                class: 'mb-0 pc:mb-2',
+                                                content: block.settings.text,
+                                                attrs: overlay_text_attrs,
+                                                motion_reveal: false
+                                            %}
 
                                         {%- when 'heading' -%}
                                             {%- liquid
                                                 assign overlay_heading_class = block.settings.heading_text_size | default: 'heading-h2'
+                                                capture overlay_heading_attrs
+                                                    echo 'id="dialog-title-' | append: popup_id | append: '" '
+                                                    echo block.shopify_attributes
+                                                endcapture
                                             -%}
-                                            <h2
-                                                id="dialog-title-{{ popup_id }}"
-                                                class="mb-0 pc:mb-3 {{ overlay_heading_class }}"
-                                                {{ block.shopify_attributes }}
-                                            >
-                                                {{ block.settings.heading }}
-                                            </h2>
+                                            {% render 'heading',
+                                                level: '2',
+                                                tier: overlay_heading_class,
+                                                class: 'mb-0 pc:mb-3',
+                                                content: block.settings.heading,
+                                                attrs: overlay_heading_attrs,
+                                                motion_reveal: false
+                                            %}
 
                                         {%- when 'form' -%}
                                             <div
@@ -177,25 +188,36 @@
                 {%- when 'text' -%}
                     {%- liquid
                         assign overlay_text_class = block.settings.body_text_size | default: 'body-lg'
+                        capture overlay_text_attrs
+                            echo block.shopify_attributes
+                        endcapture
                     -%}
-                    <div
-                        class="rte rte--compact mb-0 pc:mb-2 {{ overlay_text_class }}"
-                        {{ block.shopify_attributes }}
-                    >
-                        {{ block.settings.text }}
-                    </div>
+                    {% render 'text',
+                        element: 'div',
+                        rte: true,
+                        tier: overlay_text_class,
+                        class: 'mb-0 pc:mb-2',
+                        content: block.settings.text,
+                        attrs: overlay_text_attrs,
+                        motion_reveal: false
+                    %}
 
                 {%- when 'heading' -%}
                     {%- liquid
                         assign overlay_heading_class = block.settings.heading_text_size | default: 'heading-h2'
+                        capture overlay_heading_attrs
+                            echo 'id="dialog-title-' | append: popup_id | append: '" '
+                            echo block.shopify_attributes
+                        endcapture
                     -%}
-                    <h2
-                        id="dialog-title-{{ popup_id }}"
-                        class="mb-0 pc:mb-3 {{ overlay_heading_class }}"
-                        {{ block.shopify_attributes }}
-                    >
-                        {{ block.settings.heading }}
-                    </h2>
+                    {% render 'heading',
+                        level: '2',
+                        tier: overlay_heading_class,
+                        class: 'mb-0 pc:mb-3',
+                        content: block.settings.heading,
+                        attrs: overlay_heading_attrs,
+                        motion_reveal: false
+                    %}
 
                 {%- when 'form' -%}
                     <div class="newsletter-form" {{ block.shopify_attributes }}>

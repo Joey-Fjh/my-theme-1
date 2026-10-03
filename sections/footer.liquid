@@ -27,9 +27,13 @@
                         {% for block in section.blocks %}
                             {% if block.type == 'link_column' %}
                                 <div {{ block.shopify_attributes }}>
-                                    <h2 class="mb-6 heading-h2 pc:mb-10">
-                                        {{ block.settings.heading }}
-                                    </h2>
+                                    {% render 'heading',
+                                        level: '2',
+                                        tier: 'heading-h2',
+                                        class: 'mb-6 pc:mb-10',
+                                        content: block.settings.heading,
+                                        motion_reveal: false
+                                    %}
                                     <ul class="flex flex-col gap-3">
                                         {% assign links_menu = block.settings.menu %}
                                         {% if links_menu != blank and links_menu.links != blank %}
@@ -72,14 +76,21 @@
                                 data-motion-copy
                             >
                                 {% if section.settings.content_heading != blank %}
-                                    <h3 class="heading-h2">
-                                        {{ section.settings.content_heading }}
-                                    </h3>
+                                    {% render 'heading',
+                                        level: '3',
+                                        tier: 'heading-h2',
+                                        content: section.settings.content_heading,
+                                        motion_reveal: false
+                                    %}
                                 {% endif %}
                                 {% if section.settings.content_text != blank %}
-                                    <div class="rte rte--compact body-3xl">
-                                        {{ section.settings.content_text }}
-                                    </div>
+                                    {% render 'text',
+                                        element: 'div',
+                                        rte: true,
+                                        tier: 'body-3xl',
+                                        content: section.settings.content_text,
+                                        motion_reveal: false
+                                    %}
                                 {% endif %}
                             </div>
                         </div>
