@@ -99,14 +99,9 @@ Use `npm.cmd` for project scripts in this Windows workspace. Default to the smal
 
 Generated and vendor assets must not be edited manually. See `AGENTS.md` for source and validation rules.
 
-## Runtime (current storefront — pre phase 3–4)
+## Runtime
 
-Until the runtime migration batch lands, the live theme still uses:
-
-- `Components.register()`, `ThemeEvents`, `ShopifyHttp`, and `ShopifySectionRefresher` in `assets/`
-- Alpine.js and vendored Swiper (carousel approach under review; see `docs/agent/board.md`)
-
-Target architecture after migration is documented in [JavaScript runtime](docs/references/architecture/javascript-runtime.md).
+Theme code loads as ES modules through an import map (`snippets/scripts.liquid`, entry `base.js`). Components are Alpine.js modules mounted by `data-module-id`, loaded through the project's Alpine adapter; Swiper is vendored behind the `carousel-swiper.js` adapter. Details: [JavaScript runtime](docs/references/architecture/javascript-runtime.md). Styles: Tailwind CSS v4 plus section and snippet `{% stylesheet %}` blocks; see [CSS architecture](docs/references/style-system/css-architecture.md).
 
 ## Documentation
 
