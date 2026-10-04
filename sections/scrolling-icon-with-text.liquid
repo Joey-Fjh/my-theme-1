@@ -10,8 +10,66 @@
     endunless
 
     assign scrolling_gap = section.settings.gap | default: 40
-    assign scrolling_height = section.settings.height | default: 120
-    assign scrolling_content_scale = section.settings.content_scale | default: 100
+    assign scrolling_bar_padding = section.settings.bar_padding | default: 24
+    assign scrolling_text_size_mobile = section.settings.text_size_mobile | default: 'body-xl'
+    assign scrolling_text_size = section.settings.text_size | default: 'heading-h1'
+
+    assign scrolling_text_mobile_class = 'max-pc:body-xl'
+    case scrolling_text_size_mobile
+        when 'body-3xl'
+            assign scrolling_text_mobile_class = 'max-pc:body-3xl'
+        when 'body-2xl'
+            assign scrolling_text_mobile_class = 'max-pc:body-2xl'
+        when 'body-xl'
+            assign scrolling_text_mobile_class = 'max-pc:body-xl'
+        when 'body-lg'
+            assign scrolling_text_mobile_class = 'max-pc:body-lg'
+        when 'body-md'
+            assign scrolling_text_mobile_class = 'max-pc:body-md'
+        when 'body-sm'
+            assign scrolling_text_mobile_class = 'max-pc:body-sm'
+        when 'body-xs'
+            assign scrolling_text_mobile_class = 'max-pc:body-xs'
+        when 'heading-h1'
+            assign scrolling_text_mobile_class = 'max-pc:heading-h1'
+        when 'heading-h2'
+            assign scrolling_text_mobile_class = 'max-pc:heading-h2'
+        when 'heading-h3'
+            assign scrolling_text_mobile_class = 'max-pc:heading-h3'
+        when 'heading-h4'
+            assign scrolling_text_mobile_class = 'max-pc:heading-h4'
+        when 'heading-h5'
+            assign scrolling_text_mobile_class = 'max-pc:heading-h5'
+        when 'heading-h6'
+            assign scrolling_text_mobile_class = 'max-pc:heading-h6'
+    endcase
+
+    assign scrolling_text_desktop_class = 'pc:heading-h1'
+    case scrolling_text_size
+        when 'heading-4xl'
+            assign scrolling_text_desktop_class = 'pc:heading-4xl'
+        when 'heading-3xl'
+            assign scrolling_text_desktop_class = 'pc:heading-3xl'
+        when 'heading-2xl'
+            assign scrolling_text_desktop_class = 'pc:heading-2xl'
+        when 'heading-xl'
+            assign scrolling_text_desktop_class = 'pc:heading-xl'
+        when 'heading-h1'
+            assign scrolling_text_desktop_class = 'pc:heading-h1'
+        when 'heading-h2'
+            assign scrolling_text_desktop_class = 'pc:heading-h2'
+        when 'heading-h3'
+            assign scrolling_text_desktop_class = 'pc:heading-h3'
+        when 'heading-h4'
+            assign scrolling_text_desktop_class = 'pc:heading-h4'
+        when 'heading-h5'
+            assign scrolling_text_desktop_class = 'pc:heading-h5'
+        when 'heading-h6'
+            assign scrolling_text_desktop_class = 'pc:heading-h6'
+    endcase
+
+    assign scrolling_text_tier_class = scrolling_text_mobile_class | append: ' ' | append: scrolling_text_desktop_class
+    assign scrolling_separator = section.settings.separator
 
     assign scrolling_pause_on_hover = true
     if section.settings.pause_on_hover == false
@@ -24,29 +82,15 @@
         assign scrolling_pause_on_hover_attr = 'false'
     endif
 
-    assign scrolling_icon_size = scrolling_height | times: 42 | times: scrolling_content_scale | divided_by: 10000
-    if scrolling_icon_size < 24
-        assign scrolling_icon_size = 24
-    endif
-
-    assign scrolling_icon_size_max = scrolling_height | times: 50 | divided_by: 100
-    if scrolling_icon_size > scrolling_icon_size_max
-        assign scrolling_icon_size = scrolling_icon_size_max
-    endif
-
-    assign scrolling_icon_text_gap = scrolling_height | times: 10 | divided_by: 100
-    if scrolling_icon_text_gap < 8
-        assign scrolling_icon_text_gap = 8
-    elsif scrolling_icon_text_gap > 20
-        assign scrolling_icon_text_gap = 20
-    endif
-
     assign scrolling_item_count = 0
     for block in section.blocks
         if block.settings.title != blank
             assign scrolling_item_count = scrolling_item_count | plus: 1
         endif
     endfor
+
+    assign scrolling_title_class = 'scrolling-icon-with-text__title font-medium whitespace-nowrap ' | append: scrolling_text_tier_class
+    assign scrolling_separator_class = 'scrolling-icon-with-text__separator ' | append: scrolling_text_tier_class
 
     if scrolling_item_count == 1
         assign scrolling_copies_per_set = 6
@@ -64,88 +108,106 @@
     endif
 -%}
 {%- capture scrolling_icon_root_style -%}
---scrolling-icon-gap: {{ scrolling_gap }}px; --scrolling-icon-height: {{ scrolling_height }}px; --scrolling-content-scale-pct: {{ scrolling_content_scale }}; --scrolling-icon-media-size: {{ scrolling_icon_size }}px;
+--scrolling-icon-gap: {{ scrolling_gap }}px; --scrolling-bar-padding-y: {{ scrolling_bar_padding }}px;
 {%- endcapture -%}
 {%- capture scrolling_icon_children -%}
         {%- if scrolling_item_count > 0 -%}
-            <div class="flex flex-col gap-4">
-            {%- if section.settings.show_divider -%}
-                <div
-                    class="scrolling-icon-with-text__divider scrolling-icon-with-text__divider--top"
-                    aria-hidden="true"
-                ></div>
-            {%- endif -%}
-
             <div
-                class="scrolling-icon-with-text__marquee"
-                data-scrolling-direction="{{ scrolling_direction }}"
-                data-scrolling-speed="{{ scrolling_speed }}"
-                data-scrolling-pause-on-hover="{{ scrolling_pause_on_hover_attr }}"
+                class="scrolling-icon-with-text__module relative"
+                data-module-id="scrolling-marquee"
+                x-data="scrollingMarquee()"
             >
-                <div class="scrolling-icon-with-text__viewport">
-                    <div class="scrolling-icon-with-text__track">
-                        {%- for pass in (1..2) -%}
-                            {%- for copy in (1..scrolling_copies_per_set) -%}
-                                {%- for block in section.blocks -%}
-                                    {%- liquid
-                                        assign block_title = block.settings.title
-                                        assign block_image = block.settings.image_icon
-                                        assign block_icon = block.settings.icon | default: 'icon-content-check'
-                                        assign block_layout = block.settings.layout | default: 'horizontal'
-                                        assign is_primary_item = false
-                                        if pass == 1 and copy == 1
-                                            assign is_primary_item = true
-                                        endif
-                                        # Marquee duplicates stay visible for seamless scroll fill and keep
-                                        # pointer/touch links on every copy. Duplicates are excluded from
-                                        # assistive tech and sequential Tab navigation via aria-hidden and
-                                        # tabindex="-1"; semantics and keyboard entry stay on the canonical
-                                        # primary set only.
-                                        assign block_link = block.settings.link
-                                        assign block_link_tabindex = blank
-                                        unless is_primary_item
-                                            assign block_link_tabindex = '-1'
-                                        endunless
-                                    -%}
-                                    {%- if block_title != blank -%}
-                                        <div
-                                            class="scrolling-icon-with-text__item"
-                                            {% unless is_primary_item %}
-                                                aria-hidden="true"
-                                            {% endunless %}
-                                            {% if is_primary_item %}
-                                                {{ block.shopify_attributes }}
-                                            {% endif %}
-                                        >
-                                            {%- render 'icon-with-text-item',
-                                                title: block_title,
-                                                icon: block_icon,
-                                                image_icon: block_image,
-                                                link: block_link,
-                                                link_tabindex: block_link_tabindex,
-                                                icon_size: scrolling_icon_size,
-                                                icon_size_mobile: scrolling_icon_size,
-                                                direction: block_layout,
-                                                gap: scrolling_icon_text_gap,
-                                                alignment: 'center',
-                                                class: 'scrolling-icon-with-text__icon-item',
-                                                title_class: 'scrolling-icon-with-text__title font-medium whitespace-nowrap'
-                                            -%}
-                                        </div>
-                                    {%- endif -%}
-                                {%- endfor -%}
-                            {%- endfor -%}
-                        {%- endfor -%}
-                    </div>
-                </div>
-            </div>
+                <div class="flex flex-col gap-4">
+                    {%- if section.settings.show_divider -%}
+                        <div
+                            class="scrolling-icon-with-text__divider scrolling-icon-with-text__divider--top"
+                            aria-hidden="true"
+                        ></div>
+                    {%- endif -%}
 
-            {%- if section.settings.show_divider -%}
-                <div
-                    class="scrolling-icon-with-text__divider scrolling-icon-with-text__divider--bottom"
-                    aria-hidden="true"
-                ></div>
-            {%- endif -%}
+                    <div
+                        class="scrolling-icon-with-text__marquee"
+                        data-scrolling-direction="{{ scrolling_direction }}"
+                        data-scrolling-speed="{{ scrolling_speed }}"
+                        data-scrolling-pause-on-hover="{{ scrolling_pause_on_hover_attr }}"
+                    >
+                        <button
+                            type="button"
+                            class="scrolling-icon-with-text__pause-btn focus-ring"
+                            data-scrolling-marquee-pause
+                            aria-pressed="false"
+                            aria-label="{{ 'accessibility.marquee_pause' | t }}"
+                        ></button>
+                        <div class="scrolling-icon-with-text__viewport">
+                            <div class="scrolling-icon-with-text__track">
+                                {%- for pass in (1..2) -%}
+                                    {%- for copy in (1..scrolling_copies_per_set) -%}
+                                        {%- for block in section.blocks -%}
+                                            {%- liquid
+                                                assign block_title = block.settings.title
+                                                assign block_image = block.settings.image_icon
+                                                assign block_icon = block.settings.icon | default: 'icon-content-check'
+                                                assign block_layout = block.settings.layout | default: 'horizontal'
+                                                assign is_primary_item = false
+                                                if pass == 1 and copy == 1
+                                                    assign is_primary_item = true
+                                                endif
+                                                assign block_link = block.settings.link
+                                                assign block_link_tabindex = blank
+                                                unless is_primary_item
+                                                    assign block_link_tabindex = '-1'
+                                                endunless
+                                            -%}
+                                            {%- if block_title != blank -%}
+                                                <div
+                                                    class="scrolling-icon-with-text__item"
+                                                    {% unless is_primary_item %}
+                                                        aria-hidden="true"
+                                                    {% endunless %}
+                                                    {% if is_primary_item %}
+                                                        {{ block.shopify_attributes }}
+                                                    {% endif %}
+                                                >
+                                                    <div class="scrolling-icon-with-text__item-row">
+                                                        {%- render 'icon-with-text-item',
+                                                            title: block_title,
+                                                            icon: block_icon,
+                                                            image_icon: block_image,
+                                                            link: block_link,
+                                                            link_tabindex: block_link_tabindex,
+                                                            icon_size: 16,
+                                                            icon_size_mobile: 16,
+                                                            direction: block_layout,
+                                                            gap: 8,
+                                                            alignment: 'center',
+                                                            class: 'scrolling-icon-with-text__icon-item',
+                                                            title_class: scrolling_title_class
+                                                        -%}
+                                                        {%- if scrolling_separator != blank -%}
+                                                            <span
+                                                                class="{{ scrolling_separator_class }}"
+                                                                aria-hidden="true"
+                                                            >
+                                                                {{- scrolling_separator -}}
+                                                            </span>
+                                                        {%- endif -%}
+                                                    </div>
+                                                </div>
+                                            {%- endif -%}
+                                        {%- endfor -%}
+                                    {%- endfor -%}
+                                {%- endfor -%}
+                            </div>
+                        </div>
+                    </div>
+
+                    {%- if section.settings.show_divider -%}
+                        <div
+                            class="scrolling-icon-with-text__divider scrolling-icon-with-text__divider--bottom"
+                            aria-hidden="true"
+                        ></div>
+                    {%- endif -%}
+                </div>
             </div>
         {%- endif -%}
 {%- endcapture -%}
@@ -165,14 +227,6 @@
             width: 100%;
             min-width: calc(var(--spacing) * 0);
             overflow: hidden;
-            --font-scrolling-icon-title-size: clamp(
-                calc(var(--font-body-size-mobile) * var(--font-body-scale)),
-                calc(
-                    var(--scrolling-icon-height, 120px) * var(--scrolling-content-scale-pct, 100) *
-                        0.17 / 100
-                ),
-                calc(var(--scrolling-icon-height, 120px) * 0.22)
-            );
         }
         .scrolling-icon-with-text__divider {
             border-bottom-style: solid;
@@ -183,8 +237,69 @@
             }
         }
         .scrolling-icon-with-text__marquee {
+            position: relative;
             width: 100%;
             min-width: calc(var(--spacing) * 0);
+        }
+        .scrolling-icon-with-text__pause-btn {
+            position: absolute;
+            right: 0.8rem;
+            bottom: 0.8rem;
+            z-index: 2;
+            width: 2.4rem;
+            min-width: 2.4rem;
+            height: 2.4rem;
+            min-height: 2.4rem;
+            padding: 0;
+            border: 0;
+            border-radius: 9999px;
+            background: rgba(var(--color-foreground), 0.12);
+            color: rgb(var(--color-foreground));
+            cursor: pointer;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .scrolling-icon-with-text__pause-btn:focus-visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .scrolling-icon-with-text__pause-btn::before,
+        .scrolling-icon-with-text__pause-btn::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 0.2rem;
+            height: 1rem;
+            margin-top: -0.5rem;
+            border-radius: 1px;
+            background: currentcolor;
+        }
+        .scrolling-icon-with-text__pause-btn::before {
+            left: calc(50% - 0.35rem);
+        }
+        .scrolling-icon-with-text__pause-btn::after {
+            left: calc(50% + 0.15rem);
+        }
+        .scrolling-icon-with-text__pause-btn[aria-pressed='true']::after {
+            content: none;
+            width: 0;
+            height: 0;
+            margin-top: 0;
+            border-radius: 0;
+            background: none;
+        }
+        .scrolling-icon-with-text__pause-btn[aria-pressed='true']::before {
+            content: '';
+            width: 0;
+            height: 0;
+            left: calc(50% - 0.35rem);
+            top: 50%;
+            margin-top: -0.5rem;
+            border-radius: 0;
+            background: none;
+            border-style: solid;
+            border-width: 0.5rem 0 0.5rem 0.85rem;
+            border-color: transparent transparent transparent currentcolor;
         }
     }
     @layer snippets {
@@ -199,40 +314,60 @@
             position: relative;
             width: 100%;
             overflow: hidden;
-            height: var(--scrolling-icon-height, 120px);
+            padding-block: var(--scrolling-bar-padding-y, 24px);
         }
+
+        @media (width < 48rem) {
+            .scrolling-icon-with-text__viewport {
+                padding-block: calc(var(--scrolling-bar-padding-y, 24px) * 0.6);
+            }
+        }
+
         .scrolling-icon-with-text__track {
             display: flex;
-            height: 100%;
             width: max-content;
             align-items: center;
-            gap: var(--scrolling-icon-gap, 40px);
             will-change: transform;
         }
         .scrolling-icon-with-text__item {
             display: flex;
             flex-shrink: 0;
             align-items: center;
+            padding-inline-end: var(--scrolling-icon-gap, 40px);
+        }
+        .scrolling-icon-with-text__item-row {
+            display: inline-flex;
+            flex-shrink: 0;
+            align-items: center;
+        }
+        .scrolling-icon-with-text__separator {
+            flex-shrink: 0;
+            margin-inline-start: 0.5em;
+            margin-inline-end: 0;
+            line-height: 1;
+            font-weight: 500;
+            font-size: inherit;
         }
         .scrolling-icon-with-text__icon-item {
             flex-shrink: 0;
-            --icon-with-text-icon-size: var(--scrolling-icon-media-size, 48px);
-            --icon-with-text-icon-size-mobile: var(--scrolling-icon-media-size, 48px);
+            --icon-with-text-icon-size: 1em;
+            --icon-with-text-icon-size-mobile: 1em;
+            --icon-with-text-gap: 0.5em;
         }
-        .scrolling-icon-with-text__title {
-            font-size: var(--font-scrolling-icon-title-size);
-            line-height: var(--font-body-line-height);
-        }
-
         .scrolling-icon-with-text__icon-item .icon-with-text-item__image {
-            width: var(--scrolling-icon-media-size, 48px);
-            height: var(--scrolling-icon-media-size, 48px);
+            width: 1em;
+            height: 1em;
         }
-
         .scrolling-icon-with-text__icon-item .content-icon {
-            width: var(--scrolling-icon-media-size, 48px);
-            height: var(--scrolling-icon-media-size, 48px);
+            width: 1em;
+            height: 1em;
+            --content-icon-size: 1em;
         }
+    }
+
+    .scrolling-icon-with-text-section .scrolling-icon-with-text__title,
+    .scrolling-icon-with-text-section .scrolling-icon-with-text__separator {
+        line-height: 1;
     }
 {% endstylesheet %}
 
@@ -302,26 +437,128 @@
             "default": 40
         },
         {
-            "type": "range",
-            "id": "height",
-            "min": 60,
-            "max": 220,
-            "step": 4,
-            "unit": "px",
-            "label": "t:sections.scrolling-icon-with-text.settings.height",
-            "info": "t:sections.scrolling-icon-with-text.info.height",
-            "default": 120
+            "type": "select",
+            "id": "text_size",
+            "label": "t:sections.scrolling-icon-with-text.settings.text_size",
+            "options": [
+                {
+                    "value": "heading-4xl",
+                    "label": "t:sections.scrolling-icon-with-text.options.heading_4xl"
+                },
+                {
+                    "value": "heading-3xl",
+                    "label": "t:sections.scrolling-icon-with-text.options.heading_3xl"
+                },
+                {
+                    "value": "heading-2xl",
+                    "label": "t:sections.scrolling-icon-with-text.options.heading_2xl"
+                },
+                {
+                    "value": "heading-xl",
+                    "label": "t:sections.scrolling-icon-with-text.options.heading_xl"
+                },
+                {
+                    "value": "heading-h1",
+                    "label": "t:sections.scrolling-icon-with-text.options.heading_h1"
+                },
+                {
+                    "value": "heading-h2",
+                    "label": "t:sections.scrolling-icon-with-text.options.heading_h2"
+                },
+                {
+                    "value": "heading-h3",
+                    "label": "t:sections.scrolling-icon-with-text.options.heading_h3"
+                },
+                {
+                    "value": "heading-h4",
+                    "label": "t:sections.scrolling-icon-with-text.options.heading_h4"
+                },
+                {
+                    "value": "heading-h5",
+                    "label": "t:sections.scrolling-icon-with-text.options.heading_h5"
+                },
+                {
+                    "value": "heading-h6",
+                    "label": "t:sections.scrolling-icon-with-text.options.heading_h6"
+                }
+            ],
+            "default": "heading-h1"
+        },
+        {
+            "type": "select",
+            "id": "text_size_mobile",
+            "label": "t:sections.scrolling-icon-with-text.settings.text_size_mobile",
+            "options": [
+                {
+                    "value": "body-3xl",
+                    "label": "t:sections.scrolling-icon-with-text.options.body_3xl"
+                },
+                {
+                    "value": "body-2xl",
+                    "label": "t:sections.scrolling-icon-with-text.options.body_2xl"
+                },
+                {
+                    "value": "body-xl",
+                    "label": "t:sections.scrolling-icon-with-text.options.body_xl"
+                },
+                {
+                    "value": "body-lg",
+                    "label": "t:sections.scrolling-icon-with-text.options.body_lg"
+                },
+                {
+                    "value": "body-md",
+                    "label": "t:sections.scrolling-icon-with-text.options.body_md"
+                },
+                {
+                    "value": "body-sm",
+                    "label": "t:sections.scrolling-icon-with-text.options.body_sm"
+                },
+                {
+                    "value": "body-xs",
+                    "label": "t:sections.scrolling-icon-with-text.options.body_xs"
+                },
+                {
+                    "value": "heading-h1",
+                    "label": "t:sections.scrolling-icon-with-text.options.heading_h1"
+                },
+                {
+                    "value": "heading-h2",
+                    "label": "t:sections.scrolling-icon-with-text.options.heading_h2"
+                },
+                {
+                    "value": "heading-h3",
+                    "label": "t:sections.scrolling-icon-with-text.options.heading_h3"
+                },
+                {
+                    "value": "heading-h4",
+                    "label": "t:sections.scrolling-icon-with-text.options.heading_h4"
+                },
+                {
+                    "value": "heading-h5",
+                    "label": "t:sections.scrolling-icon-with-text.options.heading_h5"
+                },
+                {
+                    "value": "heading-h6",
+                    "label": "t:sections.scrolling-icon-with-text.options.heading_h6"
+                }
+            ],
+            "default": "body-xl"
         },
         {
             "type": "range",
-            "id": "content_scale",
-            "min": 80,
-            "max": 120,
-            "step": 5,
-            "unit": "%",
-            "label": "t:sections.scrolling-icon-with-text.settings.content_scale",
-            "info": "t:sections.scrolling-icon-with-text.info.content_scale",
-            "default": 100
+            "id": "bar_padding",
+            "min": 0,
+            "max": 48,
+            "step": 2,
+            "unit": "px",
+            "label": "t:sections.scrolling-icon-with-text.settings.bar_padding",
+            "default": 24
+        },
+        {
+            "type": "text",
+            "id": "separator",
+            "label": "t:sections.scrolling-icon-with-text.settings.separator",
+            "default": "*"
         },
         {
             "type": "checkbox",

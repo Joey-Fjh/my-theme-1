@@ -31,6 +31,61 @@ class Utils {
     }
 }
 
+/** @type {Set<(velocity: number) => void>} */
+const scrollVelocitySubscribers = new Set();
+
+let scrollVelocityListenerAttached = false;
+let scrollVelocityRafPending = false;
+let scrollVelocityLastY = 0;
+let scrollVelocityLastTime = 0;
+
+function onScrollVelocityWindowScroll() {
+    if (scrollVelocityRafPending) return;
+    scrollVelocityRafPending = true;
+    requestAnimationFrame(() => {
+        scrollVelocityRafPending = false;
+        const y = window.scrollY;
+        const t = performance.now();
+        let velocity = 0;
+        if (scrollVelocityLastTime > 0) {
+            const dt = t - scrollVelocityLastTime;
+            if (dt > 0) {
+                velocity = (y - scrollVelocityLastY) / dt;
+            }
+        }
+        scrollVelocityLastY = y;
+        scrollVelocityLastTime = t;
+        scrollVelocitySubscribers.forEach((callback) => {
+            callback(velocity);
+        });
+    });
+}
+
+/**
+ * Subscribe to window scroll velocity (px/ms). One passive scroll listener is shared.
+ * @param {(velocity: number) => void} callback
+ * @returns {() => void} unsubscribe
+ */
+export function subscribeScrollVelocity(callback) {
+    scrollVelocitySubscribers.add(callback);
+    if (!scrollVelocityListenerAttached) {
+        window.addEventListener('scroll', onScrollVelocityWindowScroll, { passive: true });
+        scrollVelocityListenerAttached = true;
+        scrollVelocityLastY = window.scrollY;
+        scrollVelocityLastTime = performance.now();
+    }
+
+    return () => {
+        scrollVelocitySubscribers.delete(callback);
+        if (scrollVelocitySubscribers.size === 0 && scrollVelocityListenerAttached) {
+            window.removeEventListener('scroll', onScrollVelocityWindowScroll);
+            scrollVelocityListenerAttached = false;
+            scrollVelocityRafPending = false;
+            scrollVelocityLastTime = 0;
+        }
+    };
+}
+
 /**
  * Collect listener and observer registrations so a component can release them in one call.
  */
