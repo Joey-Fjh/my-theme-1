@@ -12,6 +12,12 @@ None active. Next (user, 2026-10-04): the design rework, then one browser pass, 
 
 Design workflow (user, 2026-10-04): one section at a time, one page at a time, starting with the home `slides-show`. The user puts screenshots (desktop about 1440 wide, mobile about 390) and optional notes or reference sites in `docs/design/<page>/<section>/` (Git-tracked, excluded from Shopify upload and Prettier by the existing `docs/**` rules). Per section: compare with the current implementation and plan (schema changes, GSAP need), implement, compare dev screenshots at the same widths, user acceptance. Decisions that set the tone for later sections (type, scale, spacing, colour roles, motion timing) are collected as a growing design specification. Figma values are not used directly; reference sites are inspected with Chrome DevTools MCP for motion.
 
+Design specification (grows section by section; first entries from the home `slides-show`, user 2026-10-04):
+
+- Hero headline: uppercase, very large, tight leading; links in the hero: underlined, uppercase, trailing arrow icon.
+- Slide transition text motion: CSS only (headline group, then body, small stagger), never on the first slide at page load, gated by `motion_enabled` and `prefers-reduced-motion`. No GSAP or SplitText for it; GSAP stays reserved for the home scroll narrative.
+- Pending: an accent colour role. The design's active pagination pill is a bright lime that no scheme role holds; 6-S1 uses the scheme's primary button colour until the colour roles are decided.
+
 Design phase inputs:
 
 - Component CSS: the shared rules in `tailwind/tailwind.components.css` (product info blocks, quick view, marquee) are reworked in the design phase (user, 2026-10-03).
