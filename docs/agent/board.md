@@ -10,13 +10,16 @@ None active. Next (user, 2026-10-04): the design rework, then one browser pass, 
 
 **Motion simplification done** (6-M1, `3652441`; plan and review rounds: `git show 3652441:docs/agent/context.md`): the list and card cascade is the only settings-driven reveal, under `motion_enabled`. Follow-ups: `assets/motion-reveal.js` is still 29.9 KB because the cascade machinery was kept unchanged; rewrite it smaller once the design phase settles the cascade's look. GSAP arrives with the home page narrative.
 
+Home `slides-show` redesigned (6-S1, `a0a5aa6`, content `99ee7b1`; plan and review rounds: `git show a0a5aa6:docs/agent/context.md`). Browser checks still open for it: a real Theme Editor block select and deselect, native reduced motion.
+
 Design workflow (user, 2026-10-04): one section at a time, one page at a time, starting with the home `slides-show`. The user puts screenshots (desktop about 1440 wide, mobile about 390) and optional notes or reference sites in `docs/design/<page>/<section>/` (Git-tracked, excluded from Shopify upload and Prettier by the existing `docs/**` rules). Per section: compare with the current implementation and plan (schema changes, GSAP need), implement, compare dev screenshots at the same widths, user acceptance. Decisions that set the tone for later sections (type, scale, spacing, colour roles, motion timing) are collected as a growing design specification. Figma values are not used directly; reference sites are inspected with Chrome DevTools MCP for motion.
 
 Design specification (grows section by section; first entries from the home `slides-show`, user 2026-10-04):
 
 - Hero headline: uppercase, very large, tight leading; links in the hero: underlined, uppercase, trailing arrow icon.
 - Slide transition text motion: CSS only (headline group, then body, small stagger), never on the first slide at page load, gated by `motion_enabled` and `prefers-reduced-motion`. No GSAP or SplitText for it; GSAP stays reserved for the home scroll narrative.
-- Pending: an accent colour role. The design's active pagination pill is a bright lime that no scheme role holds; 6-S1 uses the scheme's primary button colour until the colour roles are decided.
+- Pending decision: an accent colour role. The design's active pagination pill is a bright lime that no scheme role holds; 6-S1 uses the scheme's primary button colour. Coordinator proposal: add an `accent` colour to the colour scheme definition (`config/settings_schema.json`, colour scheme group; adding a role keeps existing scheme data valid), exposed as a token, for pagination, badges and highlights.
+- Pending decision: a shared carousel controls component, from the 6-S1 pagination (user, 2026-10-04). A snippet for the dot buttons and optional pause button plus a JS helper for `aria-current`, progress, pause/play, hover and focus pause; variants by parameter (`progress` pill or plain `dots`, pause on or off) and colour by CSS custom properties defaulting to scheme roles. Candidate consumers: `testimonial-featured` (autoplay with no pause control today, a WCAG 2.2.2 gap), `icon-with-text` and the product gallery (Swiper bullets), `featured-products` and `routine-showcase` (arrows only). Coordinator proposal: extract it with the second real consumer, `testimonial-featured`, either when the design reaches it or earlier as an accessibility fix.
 
 Design phase inputs:
 
