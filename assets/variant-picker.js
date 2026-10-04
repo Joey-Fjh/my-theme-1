@@ -48,7 +48,7 @@ define('VariantPicker', () => ({
         this.variants = this._mergeQuantityMeta(variants, quantityMeta);
 
         this._buildOptionNames();
-        this._setInitialSelection();
+        this._setInitialSelection(Number(dataset.selectedVariantId) || null);
         this._resolveVariant();
 
         this.$nextTick(() => this._dispatchChange());
@@ -82,15 +82,18 @@ define('VariantPicker', () => ({
         }
     },
 
-    _setInitialSelection() {
-        const first = this.variants.find((v) => v.available) || this.variants[0];
-        if (!first) return;
-        first.options.forEach((val, i) => {
+    _setInitialSelection(selectedVariantId) {
+        const initial =
+            this.variants.find((v) => v.id === selectedVariantId) ||
+            this.variants.find((v) => v.available) ||
+            this.variants[0];
+        if (!initial) return;
+        initial.options.forEach((val, i) => {
             const name = this._optionNameByPosition(i + 1);
             if (name) this.selectedOptions[name] = val;
         });
-        this.currentVariant = first;
-        this.currentVariantId = first.id;
+        this.currentVariant = initial;
+        this.currentVariantId = initial.id;
     },
 
     _optionNameByPosition(pos) {
