@@ -1,6 +1,6 @@
 # Phase 0b — Browser verification checklist
 
-Use against commit `926dddb`. Fill **Result** (Pass/Fail/Skip), **Screenshot**, **Notes**. Reference capability IDs from `capabilities.md`.
+Use against commit `926dddb`. Fill **Result** (Pass/Fail/Skip), **Screenshot**, **Notes**. Capability IDs (CAP-xx) refer to the removed phase 0 inventory: `git show 047b539:docs/migration/phase0/capabilities.md`.
 
 **Viewports:** Desktop **1440×900**; Mobile **390×844** (unless noted).
 
@@ -224,7 +224,7 @@ Disable JavaScript in browser (or use `?pb=0` where applicable).
 
 ## Retained theme contracts (from phase 1 retention audit)
 
-Added from `docs/migration/step1/retention-audit.md` (class C). Old validators guarded these; the skeleton validators do not, so each phase 4 slice checks them in the browser.
+Added from the phase 1 retention audit (class C; `git show 047b539:docs/migration/step1/retention-audit.md`). Old validators guarded these; the skeleton validators do not, so each phase 4 slice checks them in the browser.
 
 | Viewport | Action | Expected (CAP / source) | Result | Screenshot | Notes |
 |----------|--------|--------------------------|--------|------------|-------|
