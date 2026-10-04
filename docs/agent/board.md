@@ -25,9 +25,10 @@ Design phase inputs:
   - the merchant JSON `.prettierignore` exclusion;
   - 5-S (entry scripts snippet, `2e0cddd`): the snippet, the layout render, and the lint that reads the import map from it;
   - H (5-H, `2683402`): `holdUntilReady` in the adapter, `holdForModule` and download-ahead `scanModules` in `base.js`, no mount after a failed import, the moved-lazy-root observer fix, and the matching `javascript-runtime.md` contract. H also closes two skeleton gaps found here: `scanModules` activating an already-loaded container root before deferring its descendants, and module roots in `<template>` content never being scanned;
-  - the CSS step 3 rules (5-C3a–5-C3g): `css-architecture.md` (style ownership, CSS homes, layout levels, height kinds, spacing tokens, primitive snippets), `abstraction-boundaries.md`, `image-display-contract.md` (ratio keywords), the primitive snippets themselves, and the 5-B1 stage column fix;
-  - the validator additions (`theme-contracts.js`, `theme-architecture.test.js`, `doctor-agent.mjs`);
+  - the validator additions that guard the items above (in `theme-contracts.js`, `theme-architecture.test.js`, `doctor-agent.mjs`); the style ownership and settings-chain additions stay here;
   - the Chrome DevTools MCP adapter entries (5-T1) and the `frontend-design` skill.
+  - Not a candidate (user, 2026-10-04): the CSS step 3 rules and primitive snippets (5-C3a–5-C3g, 5-B1). They serve this theme's section-block model; the skeleton composes with Theme Blocks as components (as Horizon does) and keeps snippets as code fragments. A GSAP adapter is judged after the home page narrative is built.
+  - Timing (coordinator proposal): after the second submission, unless a new theme starts from the skeleton earlier.
   - Already covered by the skeleton reference, not applied here: `javascript-runtime.md` recommends `modulepreload` for a first-viewport module chain that the page truly needs before interaction.
 - Process calibration: write acceptance counts from commands, not by hand; execution prompts must state that open board decisions may be cited but not decided. Proposed home: `.agents/roles/implementer.md` and `verifier.md` (a rule change, needs the user's approval).
 
