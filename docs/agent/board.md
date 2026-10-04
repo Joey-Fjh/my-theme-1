@@ -8,6 +8,15 @@ Last updated: 2026-10-04.
 
 None active. Next (user, 2026-10-04): the design rework, then one browser pass, then the docs review together with a readiness review before the second submission.
 
+**Accepted direction, first design-phase batch (user, 2026-10-04): motion simplification.** Not yet a plan.
+
+- Remove the media reveal (zoom, slide, fade on images and video) and the per-element text reveal (49 `data-motion-reveal="content"` and 16 `"media"` targets today).
+- Keep one ordinary reveal: list and card items appearing in sequence (stagger).
+- Theme settings: keep `motion_enabled` (same ID, so `settings_data.json` stays valid; the label may change) as the one switch; remove `content_reveal_style`, `media_reveal_style`, `motion_speed`, `reveal_behavior`. This changes the "Merchant motion settings" contract in `docs/project.md` (approved by the user with this direction).
+- `motion_enabled` off turns off the list reveal and any future GSAP choreography (the final static state shows); hover, focus, dropdown, drawer, dialog and loading feedback stay, under `prefers-reduced-motion`. A GSAP section may add its own section setting later; the global switch wins.
+- Reasons: `assets/motion-reveal.js` is 53,915 bytes raw for ordinary reveals; media reveal touches LCP and CLS candidates; distinctiveness should come from the home page choreography, not from global reveal options.
+- GSAP is not vendored in this batch: it arrives with its first consumer, the home page narrative (`AGENTS.md`, vendored libraries).
+
 Design phase inputs:
 
 - Component CSS: the shared rules in `tailwind/tailwind.components.css` (product info blocks, quick view, marquee) are reworked in the design phase (user, 2026-10-03).
