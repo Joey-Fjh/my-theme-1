@@ -58,6 +58,7 @@
     @param {string} [placeholder_aspect_ratio] - Optional fallback aspect ratio when image is nil (defaults to '4/3')
     @param {string} [extra_attributes] - Additional raw HTML attributes applied to the <img> element
     @param {string} [fetchpriority] - Optional fetchpriority attribute for the img tag ('high', 'low', or 'auto')
+    @param {image} [mobile_image] - Optional alternate image for viewports below the `pc` breakpoint (48rem). When set, renders a `<picture>` with one mobile `<source>` and a single desktop `<img>`; when omitted, output is unchanged from the desktop-only path.
 
     @example
     {% render 'image', image: product.featured_image, url: product.url %}
@@ -252,21 +253,55 @@
 >
     {%- if image != blank -%}
         {%- capture image_tag_html -%}
-            {{ 
-                image 
-                | image_url: width: width, height: height, crop: crop 
+            {{
+                image
+                | image_url: width: width, height: height, crop: crop
                 | image_tag:
                     class: img_class,
                     alt: alt,
-                    widths: widths, 
+                    widths: widths,
                     sizes: sizes,
                     loading: loading,
                     decoding: decoding
-            }}  
+            }}
         {%- endcapture -%}
 
         {%- if extra_attributes != blank -%}
-            {{ image_tag_html | replace_first: '>', ' ' | append: extra_attributes | append: '>' }}
+            {%- assign image_tag_html = image_tag_html
+                | replace_first: '>', ' '
+                | append: extra_attributes
+                | append: '>'
+            -%}
+        {%- endif -%}
+
+        {%- if mobile_image != blank -%}
+            {%- liquid
+                assign mobile_width_tokens = widths | split: ','
+                assign mobile_srcset = ''
+                for mobile_width_token in mobile_width_tokens
+                    assign mobile_width_value = mobile_width_token | strip | plus: 0
+                    if mobile_width_value > 0
+                        assign mobile_url = mobile_image | image_url: width: mobile_width_value
+                        assign mobile_srcset_part = mobile_url | append: ' ' | append: mobile_width_value | append: 'w'
+                        if mobile_srcset != blank
+                            assign mobile_srcset = mobile_srcset | append: ', '
+                        endif
+                        assign mobile_srcset = mobile_srcset | append: mobile_srcset_part
+                    endif
+                endfor
+                if mobile_srcset == blank
+                    assign mobile_fallback_width = width | default: 1500
+                    assign mobile_srcset = mobile_image | image_url: width: mobile_fallback_width
+                endif
+            -%}
+            <picture>
+                <source
+                    media="(max-width: 47.9375rem)"
+                    srcset="{{ mobile_srcset }}"
+                    sizes="{{ sizes }}"
+                >
+                {{ image_tag_html }}
+            </picture>
         {%- else -%}
             {{ image_tag_html }}
         {%- endif -%}

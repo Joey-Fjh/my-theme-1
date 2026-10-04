@@ -28,6 +28,7 @@ Nil images default to the shared `framed` placeholder surface so adjacent empty 
 | `class` / `wrapper_class` | wrapper classes; `wrapper_class` is preferred |
 | `img_class` | image element classes |
 | `sizes`, `widths`, `loading`, `fetchpriority`, `alt` | rendering and performance metadata |
+| `mobile_image` | optional Shopify image for viewports below `pc` (48rem); renders `<picture>` with a mobile `<source>` and the desktop `image` on the lone `<img>`. Omit to keep the desktop-only markup byte-identical to the pre-parameter path. |
 
 ## Sizes and widths
 

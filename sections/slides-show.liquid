@@ -73,6 +73,10 @@
         data-module-id="slides-show"
         x-data="slidesShow()"
         data-swiper-src="{{ 'vendor-swiper.min.js' | asset_url }}"
+        data-section-id="{{ section.id }}"
+        data-slide-count="{{ section.blocks.size }}"
+        data-autoplay="{% if section.settings.autoplay %}true{% else %}false{% endif %}"
+        data-autoplay-delay-ms="{{ section.settings.autoplay_speed | default: 5 | times: 1000 }}"
     >
         <div
             class="swiper h-full w-full focus-ring"
@@ -89,14 +93,19 @@
             {%- endif -%}
             <div class="swiper-wrapper">
                 {%- for block in section.blocks -%}
-                    <div class="swiper-slide" {{ block.shopify_attributes }}>
+                    <div
+                        class="swiper-slide"
+                        data-block-id="{{ block.id }}"
+                        data-slide-index="{{ forloop.index0 }}"
+                        {{ block.shopify_attributes }}
+                    >
                         {%- capture sizes -%}
-                        (min-width: 80rem) 100vw, (min-width: 48rem) 1280px, 100vw
-                    {%- endcapture -%}
+                            (min-width: 80rem) 100vw, (min-width: 48rem) 1280px, 100vw
+                        {%- endcapture -%}
 
                         {%- capture widths -%}
-                        400,480,768,1280,1536,2400,2560
-                    {%- endcapture -%}
+                            400,480,768,1280,1536,2400,2560
+                        {%- endcapture -%}
 
                         {%- assign image_loading = 'lazy' -%}
                         {%- assign image_fetchpriority = 'auto' -%}
@@ -109,38 +118,44 @@
                             | default: shop.name
                             | escape
                         -%}
-                        {%- render 'image',
-                            image: block.settings.slide_image,
-                            alt: image_alt,
-                            width: block.settings.slide_image.width,
-                            sizes: sizes,
-                            widths: widths,
-                            loading: image_loading,
-                            fetchpriority: image_fetchpriority,
-                            placeholder_key: 'lifestyle-1',
-                            placeholder_style: 'plain',
-                        -%}
+                        <div class="slides-show__media absolute inset-0">
+                            {%- render 'image',
+                                image: block.settings.slide_image,
+                                mobile_image: block.settings.slide_image_mobile,
+                                alt: image_alt,
+                                width: block.settings.slide_image.width,
+                                sizes: sizes,
+                                widths: widths,
+                                loading: image_loading,
+                                fetchpriority: image_fetchpriority,
+                                placeholder_key: 'lifestyle-1',
+                                placeholder_style: 'plain',
+                                wrapper_class: 'h-full w-full',
+                                img_class: 'h-full w-full object-cover'
+                            -%}
+                        </div>
 
-                        <div class="section-frame__overlay-padding section-frame__overlay-safe-top container-page absolute inset-0">
-                            <div class="slides-show__content-grid grid h-full min-h-0 grid-cols-1 grid-rows-3 text-theme-text/80 pc:grid-cols-3">
+                        <div class="section-frame__overlay-padding section-frame__overlay-safe-top pointer-events-none container-page absolute inset-0">
+                            <div class="slides-show__content-grid{% if slides_show_multi_slide %} slides-show__content-grid--with-controls{% endif %} grid h-full min-h-0 grid-cols-1 grid-rows-3 text-theme-text pc:grid-cols-3">
                                 <div
-                                    class="slides-show__caption-content {{ block.settings.caption_position }} flex h-full min-h-0 w-full flex-col justify-around gap-4"
-                                    {% if forloop.first %}
-                                    {% endif %}
+                                    class="slides-show__headline-group {{ block.settings.heading_position }} pointer-events-auto flex h-full min-h-0 w-full max-w-3xl flex-col items-start justify-start gap-4 pc:max-w-4xl"
+                                    data-slides-show-text-motion
                                 >
-                                    {% render 'text',
-                                        tier: 'body-3xl',
-                                        content: block.settings.year,
-                                    %}
-
-                                    {% render 'text',
-                                        tier: slides_show_subtitle_size,
-                                        element: 'div',
-                                        rte: true,
-                                        subtitle: true,
-                                        class: 'mt-2',
-                                        content: block.settings.description,
-                                    %}
+                                    {%- if slides_show_multi_slide -%}
+                                        {% render 'heading',
+                                            level: '2',
+                                            tier: slides_show_heading_class,
+                                            class: 'slides-show__headline',
+                                            content: block.settings.headline
+                                        %}
+                                    {%- else -%}
+                                        {% render 'heading',
+                                            level: '1',
+                                            tier: slides_show_heading_class,
+                                            class: 'slides-show__headline',
+                                            content: block.settings.headline
+                                        %}
+                                    {%- endif -%}
 
                                     {%- if block.settings.cta_text != blank
                                         and block.settings.cta_link != blank
@@ -152,60 +167,91 @@
                                             endif
                                         -%}
                                         {%- capture link_content -%}
-                                        <span>{{ block.settings.cta_text }}</span>
-                                        {% render 'icons', icon: 'icon-arrow2', class: 'ms-3' %}
-                                    {%- endcapture -%}
-
-                                        {%- if block.settings.cta_style == 'button' -%}
-                                            {%- render 'link',
-                                                href: cta_href,
-                                                variant: 'plain',
-                                                class: 'btn-primary w-fit max-w-full',
-                                                content: link_content
-                                            -%}
-                                        {%- else -%}
-                                            {%- render 'link',
-                                                href: cta_href,
-                                                variant: 'underline',
-                                                class: 'body-2xl text-theme-text',
-                                                content: link_content
-                                            -%}
-                                        {%- endif -%}
+                                            <span class="uppercase">{{ block.settings.cta_text }}</span>
+                                            {% render 'icons', icon: 'icon-arrow2', class: 'ms-2', size: 'sm' %}
+                                        {%- endcapture -%}
+                                        {%- render 'link',
+                                            href: cta_href,
+                                            variant: 'underline',
+                                            class: 'body-lg uppercase text-theme-text pc:body-xl',
+                                            content: link_content
+                                        -%}
                                     {%- endif -%}
                                 </div>
 
                                 <div
-                                    class="slides-show__headline-content {{ block.settings.heading_position }} flex h-full min-h-0 w-full items-center"
-                                    {% if forloop.first %}
-                                    {% endif %}
+                                    class="slides-show__body {{ block.settings.caption_position }} pointer-events-auto flex h-full min-h-0 w-full max-w-xl flex-col justify-end pc:max-w-2xl"
+                                    data-slides-show-text-motion
                                 >
-                                    {%- if slides_show_multi_slide -%}
-                                        {% render 'heading',
-                                            level: '2',
-                                            tier: slides_show_heading_class,
-                                            content: block.settings.headline,
-                                        %}
-                                    {%- else -%}
-                                        {% render 'heading',
-                                            level: '1',
-                                            tier: slides_show_heading_class,
-                                            content: block.settings.headline,
-                                        %}
-                                    {%- endif -%}
-                                </div>
-
-                                <div
-                                    class="slides-show__meta-content {{ block.settings.meta_position }} flex h-full min-h-0 w-full flex-col justify-around pc:items-center"
-                                    {% if forloop.first %}
-                                    {% endif %}
-                                >
-                                    <div>{{ block.settings.meta_text }}</div>
+                                    {% render 'text',
+                                        tier: slides_show_subtitle_size,
+                                        element: 'div',
+                                        rte: true,
+                                        class: 'text-theme-text/90',
+                                        content: block.settings.description
+                                    %}
                                 </div>
                             </div>
                         </div>
                     </div>
                 {%- endfor -%}
             </div>
+
+            {%- if slides_show_multi_slide -%}
+                <div
+                    class="slides-show__controls container-page"
+                    data-slides-show-controls
+                    hidden
+                >
+                    <div class="slides-show__controls-row">
+                        <div
+                            class="slides-show__pagination"
+                            role="group"
+                            aria-label="{{ 'accessibility.slideshow_pagination' | t }}"
+                        >
+                            {%- for block in section.blocks -%}
+                                <button
+                                    type="button"
+                                    class="slides-show__pagination-button focus-ring"
+                                    data-slides-show-pagination-button
+                                    data-slide-index="{{ forloop.index0 }}"
+                                    aria-label="{{ 'accessibility.go_to_slide' | t: index: forloop.index }}"
+                                    {% if forloop.first %}
+                                        aria-current="true"
+                                    {% endif %}
+                                >
+                                    <span
+                                        class="slides-show__dot{% if forloop.first %} is-active{% endif %}"
+                                        aria-hidden="true"
+                                    >
+                                        <span
+                                            class="slides-show__dot-fill"
+                                            {% if forloop.first %}
+                                                data-slides-show-progress-fill
+                                                style="--slides-show-progress: 0"
+                                            {% endif %}
+                                        ></span>
+                                    </span>
+                                </button>
+                            {%- endfor -%}
+                        </div>
+                        <button
+                            type="button"
+                            class="slides-show__autoplay-toggle focus-ring"
+                            data-slides-show-autoplay-toggle
+                            data-state="playing"
+                            data-label-pause="{{ 'accessibility.slideshow_pause' | t | escape }}"
+                            data-label-play="{{ 'accessibility.slideshow_play' | t | escape }}"
+                            aria-label="{{ 'accessibility.slideshow_pause' | t }}"
+                        >
+                            <span class="slides-show__autoplay-icon slides-show__autoplay-icon--pause" aria-hidden="true"></span>
+                            <span class="slides-show__autoplay-icon slides-show__autoplay-icon--play hidden" aria-hidden="true">
+                                {% render 'icons', icon: 'icon-play', size: 'xs' %}
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            {%- endif -%}
         </div>
     </div>
 {%- endcapture -%}
@@ -224,9 +270,23 @@
 %}
 
 {% stylesheet %}
+    /* Hero display headline (design specification): its own case, leading and tracking.
+       Unlayered, so it wins over the responsive heading tier utilities, which reset
+       text-transform and line-height to the global typography settings. */
+    .slides-show-section .slides-show__headline {
+        text-transform: uppercase;
+        line-height: 0.95;
+        letter-spacing: -0.02em;
+    }
+
     .slides-show-section .slides-show__content-grid {
         grid-template-rows: repeat(3, minmax(0, 1fr));
         row-gap: 1rem;
+    }
+
+    .slides-show-section .slides-show__media .theme-image {
+        height: 100%;
+        aspect-ratio: auto;
     }
 
     .slides-show-section .place-top-left,
@@ -256,25 +316,172 @@
         justify-self: stretch;
     }
 
-    .slides-show-section .slides-show__caption-content {
-        grid-column: 1 / -1;
-        grid-row-start: 1;
-        align-self: stretch;
-        justify-self: stretch;
+    /* Page-width row along the bottom, so the controls share the copy's gutter. */
+    .slides-show-section .slides-show__controls {
+        position: absolute;
+        right: 0;
+        bottom: 1.6rem;
+        left: 0;
+        z-index: 2;
+        pointer-events: none;
     }
 
-    .slides-show-section .slides-show__headline-content {
-        grid-column: 1 / -1;
-        grid-row-start: 2;
-        align-self: stretch;
-        justify-self: stretch;
+    .slides-show-section .slides-show__controls-row {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 0.8rem;
     }
 
-    .slides-show-section .slides-show__meta-content {
-        grid-column: 1 / -1;
-        grid-row-start: 3;
-        align-self: stretch;
-        justify-self: stretch;
+    .slides-show-section .slides-show__controls-row > * {
+        pointer-events: auto;
+    }
+
+    /* Stays hidden until the slideshow mounts (no-JS: no dead controls). */
+    .slides-show-section .slides-show__controls[hidden] {
+        display: none;
+    }
+
+    /* Phones: full-width copy would run under the controls; keep it above them. */
+    @media (width < 48rem) {
+        .slides-show-section .slides-show__content-grid--with-controls {
+            padding-bottom: 4rem;
+        }
+    }
+
+    @media (width >= 48rem) {
+        .slides-show-section .slides-show__controls {
+            bottom: 3.2rem;
+        }
+    }
+
+    /* The root font size is 62.5%: 1rem = 10px. Each dot button is a 24px target
+       (WCAG 2.5.8); the visible dot sits centred inside it. */
+    .slides-show-section .slides-show__pagination {
+        display: flex;
+        align-items: center;
+    }
+
+    .slides-show-section .slides-show__pagination-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 2.4rem;
+        height: 2.4rem;
+        padding: 0 0.4rem;
+        border: 0;
+        background: transparent;
+        cursor: pointer;
+    }
+
+    .slides-show-section .slides-show__dot {
+        display: block;
+        width: 0.8rem;
+        height: 0.8rem;
+        border-radius: 9999px;
+        background: rgba(var(--color-foreground), 0.5);
+        overflow: hidden;
+        transition: width 0.2s ease;
+    }
+
+    .slides-show-section .slides-show__dot.is-active {
+        width: 4.8rem;
+        background: rgba(var(--color-foreground), 0.25);
+    }
+
+    .slides-show-section .slides-show__dot:not(.is-active) .slides-show__dot-fill {
+        width: 0;
+    }
+
+    .slides-show-section .slides-show__dot-fill {
+        display: block;
+        height: 100%;
+        width: calc(var(--slides-show-progress, 1) * 100%);
+        background: rgb(var(--color-primary-button));
+        border-radius: inherit;
+    }
+
+    .slides-show-section .slides-show__autoplay-toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.4rem;
+        height: 2.4rem;
+        padding: 0;
+        border: 0;
+        border-radius: 9999px;
+        background: rgba(var(--color-foreground), 0.12);
+        color: rgb(var(--color-foreground));
+        cursor: pointer;
+    }
+
+    .slides-show-section .slides-show__autoplay-icon--pause {
+        display: inline-flex;
+        gap: 0.3rem;
+    }
+
+    .slides-show-section .slides-show__autoplay-icon--pause::before,
+    .slides-show-section .slides-show__autoplay-icon--pause::after {
+        content: '';
+        display: block;
+        width: 0.2rem;
+        height: 1rem;
+        border-radius: 1px;
+        background: currentcolor;
+    }
+
+    .slides-show-section
+        .slides-show__autoplay-toggle[data-state='paused']
+        .slides-show__autoplay-icon--pause {
+        display: none;
+    }
+
+    .slides-show-section
+        .slides-show__autoplay-toggle[data-state='paused']
+        .slides-show__autoplay-icon--play {
+        display: inline-flex;
+    }
+
+    @keyframes slides-show-text-rise {
+        from {
+            opacity: 0;
+            transform: translate3d(0, 2.4rem, 0);
+        }
+
+        to {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+        }
+    }
+
+    .slides-show-section [data-slides-show-text-motion].is-slides-show-text-enter {
+        animation: slides-show-text-rise 0.75s
+            var(--motion-ease-default, cubic-bezier(0.22, 1, 0.36, 1)) both;
+        animation-delay: calc(var(--slides-show-text-index, 0) * 120ms);
+    }
+
+    body[data-motion-enabled='false']
+        .slides-show-section
+        [data-slides-show-text-motion].is-slides-show-text-enter {
+        animation: none !important;
+    }
+
+    /* Motion off: the active pill shows full and still (the script stops updating it). */
+    body[data-motion-enabled='false']
+        .slides-show-section
+        .slides-show__dot.is-active
+        .slides-show__dot-fill {
+        width: 100% !important;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .slides-show-section [data-slides-show-text-motion].is-slides-show-text-enter {
+            animation: none !important;
+        }
+
+        .slides-show-section .slides-show__dot.is-active .slides-show__dot-fill {
+            width: 100% !important;
+        }
     }
 
     @media (width >= 48rem) {
@@ -509,6 +716,26 @@
         },
         {
             "type": "header",
+            "content": "t:sections.slides-show.content.autoplay"
+        },
+        {
+            "type": "checkbox",
+            "id": "autoplay",
+            "label": "t:sections.slides-show.settings.autoplay",
+            "default": true
+        },
+        {
+            "type": "range",
+            "id": "autoplay_speed",
+            "min": 3,
+            "max": 10,
+            "step": 1,
+            "unit": "s",
+            "label": "t:sections.slides-show.settings.autoplay_speed",
+            "default": 5
+        },
+        {
+            "type": "header",
             "content": "t:sections.slides-show.content.padding"
         },
         {
@@ -545,6 +772,12 @@
                     "type": "image_picker",
                     "id": "slide_image",
                     "label": "t:sections.slides-show.block_settings.slide_image"
+                },
+                {
+                    "type": "image_picker",
+                    "id": "slide_image_mobile",
+                    "label": "t:sections.slides-show.block_settings.slide_image_mobile",
+                    "info": "t:sections.slides-show.block_settings.slide_image_mobile_info"
                 },
                 {
                     "type": "header",
@@ -600,7 +833,7 @@
                             "label": "t:sections.slides-show.options.bottom_right"
                         }
                     ],
-                    "default": "place-bottom-left"
+                    "default": "place-top-left"
                 },
                 {
                     "type": "inline_richtext",
@@ -658,13 +891,7 @@
                             "label": "t:sections.slides-show.options.bottom_right"
                         }
                     ],
-                    "default": "place-top-left"
-                },
-                {
-                    "type": "inline_richtext",
-                    "id": "year",
-                    "label": "t:sections.slides-show.block_settings.year_copyright",
-                    "default": "2026©"
+                    "default": "place-bottom-left"
                 },
                 {
                     "type": "richtext",
@@ -683,80 +910,6 @@
                     "id": "cta_link",
                     "label": "t:sections.slides-show.block_settings.link_url",
                     "default": "/collections"
-                },
-                {
-                    "type": "select",
-                    "id": "cta_style",
-                    "label": "t:sections.slides-show.block_settings.call_to_action_style",
-                    "options": [
-                        {
-                            "value": "link",
-                            "label": "t:sections.slides-show.options.link"
-                        },
-                        {
-                            "value": "button",
-                            "label": "t:sections.slides-show.options.button"
-                        }
-                    ],
-                    "default": "link"
-                },
-                {
-                    "type": "header",
-                    "content": "t:sections.slides-show.meta"
-                },
-                {
-                    "type": "paragraph",
-                    "content": "t:sections.slides-show.display_a_small_meta_line_e_g_a_short_la"
-                },
-                {
-                    "type": "select",
-                    "id": "meta_position",
-                    "label": "t:sections.slides-show.block_settings.meta_position",
-                    "options": [
-                        {
-                            "value": "place-top-left",
-                            "label": "t:sections.slides-show.options.top_left"
-                        },
-                        {
-                            "value": "place-top-center",
-                            "label": "t:sections.slides-show.options.top_center"
-                        },
-                        {
-                            "value": "place-top-right",
-                            "label": "t:sections.slides-show.options.top_right"
-                        },
-                        {
-                            "value": "place-center-left",
-                            "label": "t:sections.slides-show.options.center_left"
-                        },
-                        {
-                            "value": "place-center",
-                            "label": "t:sections.slides-show.options.center"
-                        },
-                        {
-                            "value": "place-center-right",
-                            "label": "t:sections.slides-show.options.center_right"
-                        },
-                        {
-                            "value": "place-bottom-left",
-                            "label": "t:sections.slides-show.options.bottom_left"
-                        },
-                        {
-                            "value": "place-bottom-center",
-                            "label": "t:sections.slides-show.options.bottom_center"
-                        },
-                        {
-                            "value": "place-bottom-right",
-                            "label": "t:sections.slides-show.options.bottom_right"
-                        }
-                    ],
-                    "default": "place-bottom-right"
-                },
-                {
-                    "type": "inline_richtext",
-                    "id": "meta_text",
-                    "label": "t:sections.slides-show.block_settings.meta_text",
-                    "default": "t:sections.slides-show.blocks.defaults.meta_text"
                 }
             ]
         }
