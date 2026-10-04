@@ -1,0 +1,238 @@
+{% doc %}
+    Collection carousel card: one link, rest/hover images, CSS-only hover/focus lift.
+
+    @param {collection} [collection] - Shopify collection
+    @param {string} title_class - Typography tier classes for the title
+    @param {boolean} [placeholder] - Render editor placeholder card
+    @param {number} [placeholder_index] - Placeholder image key index (1–5)
+{% enddoc %}
+
+{%- liquid
+    assign collection_card_is_placeholder = placeholder | default: false
+    assign collection_card_rest_image = blank
+    assign collection_card_hover_image = blank
+    assign collection_card_image_rule = 'none'
+    assign collection_card_has_swap = false
+    assign collection_card_url = '#'
+    assign collection_card_title = ''
+
+    if collection_card_is_placeholder
+        assign collection_card_title = 'sections.collection-list.placeholder_card_title' | t
+        assign collection_card_image_rule = 'placeholder'
+        assign collection_card_placeholder_key = 'product-' | append: placeholder_index | default: 1
+    else
+        assign collection_card_url = collection.url
+        assign collection_card_title = collection.title
+        assign collection_card_first_product = collection.products.first
+
+        if collection.products_count > 0 and collection_card_first_product != blank
+            if collection_card_first_product.media.size > 0
+                assign collection_card_rest_image = collection_card_first_product.media.first.preview_image
+            elsif collection_card_first_product.featured_image != blank
+                assign collection_card_rest_image = collection_card_first_product.featured_image
+            endif
+
+            if collection_card_first_product.media.size > 1
+                assign collection_card_hover_image = collection_card_first_product.media[1].preview_image
+                assign collection_card_image_rule = 'second_product_media'
+                assign collection_card_has_swap = true
+            elsif collection.featured_image != blank
+                assign collection_card_hover_image = collection.featured_image
+                assign collection_card_image_rule = 'collection_featured_fallback'
+                assign collection_card_has_swap = true
+            else
+                assign collection_card_image_rule = 'tilt_only_no_second_media'
+            endif
+        elsif collection.featured_image != blank
+            assign collection_card_rest_image = collection.featured_image
+            assign collection_card_image_rule = 'empty_collection_featured'
+        endif
+
+        if collection_card_has_swap and collection_card_hover_image == blank
+            assign collection_card_has_swap = false
+            assign collection_card_image_rule = 'tilt_only_no_hover_image'
+        endif
+    endif
+
+    assign collection_card_title_class = title_class | default: 'heading-h4'
+    assign collection_card_link_class = 'collection-card block h-full text-theme-text no-underline focus:outline-none'
+
+    if collection_card_has_swap and collection_card_hover_image != blank
+        assign collection_card_link_class = collection_card_link_class | append: ' collection-card--has-swap'
+    endif
+-%}
+
+<a
+    href="{{ collection_card_url }}"
+    class="{{ collection_card_link_class }}"
+    data-collection-card-image-rule="{{ collection_card_image_rule }}"
+    {% if collection_card_is_placeholder %}
+        aria-disabled="true"
+        tabindex="-1"
+    {% endif %}
+>
+    <span class="collection-card__surface flex h-full flex-col overflow-hidden rounded-[1.6rem] bg-white">
+        <span class="collection-card__media relative min-h-0 w-full flex-1 overflow-hidden bg-white">
+            {%- if collection_card_is_placeholder -%}
+                {%- render 'image',
+                    image: blank,
+                    wrapper: 'div',
+                    wrapper_class: 'collection-card__image collection-card__image--rest absolute inset-0 h-full w-full',
+                    img_class: 'collection-card__img h-full w-full object-contain',
+                    mode: 'frame',
+                    fit: 'contain',
+                    aspect_ratio: 'adapt',
+                    alt: '',
+                    loading: 'lazy',
+                    placeholder_key: collection_card_placeholder_key,
+                    sizes: '(min-width: 48rem) 22vw, 44vw'
+                -%}
+            {%- elsif collection_card_rest_image != blank -%}
+                {%- render 'image',
+                    image: collection_card_rest_image,
+                    wrapper: 'div',
+                    wrapper_class: 'collection-card__image collection-card__image--rest absolute inset-0 h-full w-full',
+                    img_class: 'collection-card__img h-full w-full object-contain',
+                    mode: 'frame',
+                    fit: 'contain',
+                    aspect_ratio: 'adapt',
+                    alt: '',
+                    loading: 'lazy',
+                    sizes: '(min-width: 48rem) 22vw, 44vw'
+                -%}
+            {%- else -%}
+                <span class="collection-card__placeholder bg-theme-surface absolute inset-0"></span>
+            {%- endif -%}
+        </span>
+
+        <span class="collection-card__title {{ collection_card_title_class }} px-4 pt-4 pb-6 text-center font-medium">
+            {{- collection_card_title -}}
+        </span>
+
+        {%- if collection_card_has_swap and collection_card_hover_image != blank -%}
+            <span class="collection-card__hover-layer pointer-events-none" aria-hidden="true">
+                {%- render 'image',
+                    image: collection_card_hover_image,
+                    wrapper: 'div',
+                    wrapper_class: 'collection-card__image collection-card__image--hover absolute inset-0 h-full w-full',
+                    img_class: 'collection-card__img h-full w-full object-cover',
+                    mode: 'frame',
+                    fit: 'cover',
+                    aspect_ratio: '1/1',
+                    alt: '',
+                    loading: 'lazy',
+                    sizes: '(min-width: 48rem) 22vw, 44vw'
+                -%}
+                <span class="collection-card__gradient"></span>
+            </span>
+        {%- endif -%}
+    </span>
+</a>
+
+{% stylesheet %}
+    .collection-card__surface {
+        position: relative;
+        aspect-ratio: 3 / 5;
+        transition:
+            transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+            box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        transform-origin: center center;
+    }
+
+    .collection-card__media {
+        padding: 1.6rem 1.6rem 0.8rem;
+    }
+
+    .collection-card__hover-layer {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        overflow: hidden;
+        border-radius: inherit;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .collection-card__image--hover {
+        opacity: 1;
+    }
+
+    .collection-card__gradient {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+            180deg,
+            rgba(0, 0, 0, 0) 0%,
+            rgba(0, 0, 0, 0) calc(100% - 5.6rem - 2.4rem),
+            rgba(0, 0, 0, 0.58) calc(100% - 5.6rem),
+            rgba(0, 0, 0, 0.58) 100%
+        );
+    }
+
+    .collection-card__image--rest {
+        transition: opacity 0.3s ease;
+    }
+
+    .collection-card__title {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        min-height: 5.6rem;
+    }
+
+    .collection-card:focus-visible .collection-card__surface {
+        outline: var(--focus-ring-width) solid
+            rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+        outline-offset: var(--focus-ring-offset);
+        transform: translateY(-6px) rotate(2deg);
+        box-shadow: 0 16px 32px rgba(var(--color-foreground), 0.18);
+    }
+
+    .collection-card--has-swap:focus-visible .collection-card__title {
+        color: rgb(255, 255, 255);
+    }
+
+    .collection-card--has-swap:focus-visible .collection-card__hover-layer {
+        opacity: 1;
+    }
+
+    .collection-card--has-swap:focus-visible .collection-card__image--rest {
+        opacity: 0;
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+        .collection-card:hover .collection-card__surface {
+            transform: translateY(-6px) rotate(2deg);
+            box-shadow: 0 16px 32px rgba(var(--color-foreground), 0.18);
+        }
+
+        .collection-card--has-swap:hover .collection-card__title {
+            color: rgb(255, 255, 255);
+        }
+
+        .collection-card--has-swap:hover .collection-card__hover-layer {
+            opacity: 1;
+        }
+
+        .collection-card--has-swap:hover .collection-card__image--rest {
+            opacity: 0;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .collection-card__surface,
+        .collection-card__hover-layer,
+        .collection-card__image--rest {
+            transition: none;
+        }
+
+        .collection-card:focus-visible .collection-card__surface,
+        .collection-card:hover .collection-card__surface {
+            transform: none;
+            box-shadow: none;
+        }
+    }
+{% endstylesheet %}
