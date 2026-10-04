@@ -10,6 +10,8 @@ None active. Next (user, 2026-10-04): the design rework, then one browser pass, 
 
 **Motion simplification done** (6-M1, `3652441`; plan and review rounds: `git show 3652441:docs/agent/context.md`): the list and card cascade is the only settings-driven reveal, under `motion_enabled`. Follow-ups: `assets/motion-reveal.js` is still 29.9 KB because the cascade machinery was kept unchanged; rewrite it smaller once the design phase settles the cascade's look. GSAP arrives with the home page narrative.
 
+Design workflow (user, 2026-10-04): one section at a time, one page at a time, starting with the home `slides-show`. The user puts screenshots (desktop about 1440 wide, mobile about 390) and optional notes or reference sites in `docs/design/<page>/<section>/` (Git-tracked, excluded from Shopify upload and Prettier by the existing `docs/**` rules). Per section: compare with the current implementation and plan (schema changes, GSAP need), implement, compare dev screenshots at the same widths, user acceptance. Decisions that set the tone for later sections (type, scale, spacing, colour roles, motion timing) are collected as a growing design specification. Figma values are not used directly; reference sites are inspected with Chrome DevTools MCP for motion.
+
 Design phase inputs:
 
 - Component CSS: the shared rules in `tailwind/tailwind.components.css` (product info blocks, quick view, marquee) are reworked in the design phase (user, 2026-10-03).
