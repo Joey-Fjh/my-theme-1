@@ -228,9 +228,9 @@ Added from the phase 1 retention audit (class C; `git show 047b539:docs/migratio
 
 | Viewport | Action | Expected (CAP / source) | Result | Screenshot | Notes |
 |----------|--------|--------------------------|--------|------------|-------|
-| Desktop | Theme settings: turn `motion_enabled` off, load `/` and a PDP | No section reveal, media reveal, or scroll motion; all content visible immediately (CAP-01) | | | |
+| Desktop | Theme settings: turn `motion_enabled` off, load `/` and a PDP | No list/card cascade or decorative loops; all content visible immediately (CAP-01) | | | |
 | Desktop | Same, then hover cards, open a dropdown, the cart drawer, and a dialog | State and micro interactions still animate (CAP-01) | | | |
-| Desktop | OS "reduce motion" on, `motion_enabled` on | Reveal and state motion reduced per `prefers-reduced-motion` (CAP-01) | | | |
-| Desktop | Change `motion_speed`, then `reveal_behavior` `once` / `always` | Reveal timing changes; hover/drawer timing does not; reveal replays on re-entry only with `always` (CAP-01) | | | |
+| Desktop | OS "reduce motion" on, `motion_enabled` on | Cascade and decorative loops respect `prefers-reduced-motion`; state/micro interactions respect it too (CAP-01) | | | |
+| Desktop | Collection grid, featured products tabs, blog cards, recommendations | List/card items cascade in sequence once per page view when motion is on (CAP-01) | | | |
 | Mobile + Desktop (Safari / iOS) | Home `category-grid` section | Cards fill their grid column at full width (old WebKit guard on `.category-grid__item`) (CAP-15) | | | |
 | Mobile + Desktop (Safari / iOS) | Open custom `<summary>` controls: header dropdown, filter field, product collapsible | No default disclosure triangle is shown (old `::-webkit-details-marker` guard) (CAP-03, CAP-08, CAP-12) | | | |

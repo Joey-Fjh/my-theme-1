@@ -6,8 +6,6 @@
     @param {string} [align] - Alignment utility: `start`, `center`, or `end` (default `start`)
     @param {string} content - Inner HTML (escaped plain text or controlled markup from settings)
     @param {string} [class] - Escape hatch classes
-    @param {boolean} [motion_reveal] - When true (default), sets `data-motion-reveal="content"`
-    @param {string} [motion_attrs] - Extra motion attributes (for example `data-motion-critical`)
     @param {string} [attrs] - Static root attributes only (`id`, `{{ block.shopify_attributes }}`, and similar). Never `data-module-id`, `x-*`, `@*`, or `:*`.
 {% enddoc %}
 
@@ -26,11 +24,6 @@
         assign align_class = 'text-end'
     endif
 
-    assign motion_on = true
-    if motion_reveal == false or motion_reveal == 'false'
-        assign motion_on = false
-    endif
-
     assign heading_classes = tier | default: 'heading-h2'
     if align_class != blank
         assign heading_classes = heading_classes | append: ' ' | append: align_class
@@ -43,10 +36,6 @@
 
 <h{{ heading_level }}
     class="{{ heading_classes }}"
-    {% if motion_on %}
-        data-motion-reveal="content"
-    {% endif %}
-    {{ motion_attrs }}
     {{ attrs }}
 >
     {{ content }}
