@@ -64,6 +64,11 @@ Design specification (grows section by section; first entries from the home `sli
     - **Image motion:** as on loiseau.framer.website, an IntersectionObserver at 0.5 toggles `is-in-view`, and the main image eases from scale 1.2 to 1 over 600ms on entry and back on exit. It is time-based, not a scrub, and needs no GSAP. Motion off, reduced motion and no JavaScript keep it at 1.
     - **Mobile:** image (4:5) above text in normal flow, with no sticky.
     - **Pattern for later sections:** percentage margins resolve against width, so vertical placement inside a fixed-height panel uses a height variable. Placeholder wrappers are `aria-hidden` (see the snippet item in the polish list).
+- Trust strip (6-S10, `8fbe2c8`; plan and review: `git show 8fbe2c8:docs/agent/context.md`):
+    - **Section:** the existing `icon-with-text`, extended: an optional item description, `alignment` (default center), and an optional bottom wave (`show_wave`, `wave_color_scheme`). It is the last section on home.
+    - **Wave:** the asset `icon-divider-wave.svg` (`preserveAspectRatio="none"`) rendered through the `icons` snippet inside the `section-frame` `background` slot. `lint:theme` forbids inline SVG in Liquid. Its fill is the wave scheme's background on a transparent wrapper.
+    - **New icons:** Phosphor regular `shield-check` and `hand-heart` through `build:svg`.
+    - **Pattern for later sections:** decorative full-bleed shapes go in the frame's `background` slot as icon assets.
 - Card surface and depth (user, 2026-10-05; recorded, not yet planned):
     - **Surface colour.** The design's product cards (6-S4) and collection cards (6-S3) are white panels on the sage section background. Product cards have no surface of their own today, and collection cards hard-code `bg-white`.
     - **Coordinator proposal, layer 1:** a card background role in the colour schemes, default white, shared by product and collection cards.
@@ -99,6 +104,8 @@ Home polish pass (user, 2026-10-05). Per-section batches now settle structure, d
     - the small image position (now ending at about 72% of the panel; the design is at 85%);
     - the optional link's Tab reach was not tested with a configured link.
 - **Placeholder accessibility (6-S9 review):** the shared `snippets/image.liquid` placeholder branch ignores `alt`, so placeholder SVGs render as unnamed images in other sections too. Decide whether the snippet marks placeholders decorative (a shared-snippet change for the cleanup sweep).
+- **Sage colour scheme (6-S9, 6-S10):** the design's sage backgrounds have no scheme. The trust strip uses scheme-3 with a scheme-2 wave for now. A fourth (sage) scheme would serve 6-S3, 6-S5, 6-S6, 6-S9 panel 1 and 6-S10. The design's icons also use a lighter stroke than Phosphor regular.
+- **Third-party notices (6-S10 review):** `THIRD_PARTY_NOTICES.md` has no entry for the Phosphor icon set (MIT) used by every `icon-content-*` asset. Add one in the cleanup sweep.
 
 Design phase inputs:
 
