@@ -105,6 +105,12 @@
                 </div>
 
             {%- when 'price' -%}
+                {%- liquid
+                    assign show_product_rating = true
+                    if block.settings.show_rating == false
+                        assign show_product_rating = false
+                    endif
+                -%}
                 <div {{ block.shopify_attributes }}>
                     {%- if product_data != blank -%}
                         {%- assign current_variant = product_data.selected_or_first_available_variant -%}
@@ -120,45 +126,84 @@
                             {%- endfor -%}
                             }
                         {%- endcapture -%}
-                        <div
-                            class="product-price product-info-blocks__price"
-                            data-section-id="{{ section.id }}"
-                            data-variant-id="{{ current_variant.id }}"
-                            data-price="{{ current_variant.price | default: 0 }}"
-                            data-compare-price="{{ current_variant.compare_at_price | default: 0 }}"
-                            data-currency="{{ cart.currency.iso_code }}"
-                            data-unit-prices="{{ unit_prices_json | strip | escape }}"
-                            x-data="ProductPrice()"
-                            data-module-id="product-price"
-                        >
-                            <span
-                                class="product-price__main product-info-blocks__price-main{% if context == 'product' or context == 'featured' %} body-3xl text-theme-text{% else %} body-lg{% endif %}"
-                                x-text="formattedPrice"
+                        {%- liquid
+                            assign review_rating_metafield = product_data.metafields.reviews.rating.value
+                            assign review_rating_count = product_data.metafields.reviews.rating_count.value
+                            assign review_rating_value = blank
+                            if review_rating_metafield != blank
+                                assign review_rating_value = review_rating_metafield.rating | default: review_rating_metafield
+                            endif
+                        -%}
+                        <div class="product-info-blocks__price-row">
+                            <div
+                                class="product-price product-info-blocks__price"
+                                data-section-id="{{ section.id }}"
+                                data-variant-id="{{ current_variant.id }}"
+                                data-price="{{ current_variant.price | default: 0 }}"
+                                data-compare-price="{{ current_variant.compare_at_price | default: 0 }}"
+                                data-currency="{{ cart.currency.iso_code }}"
+                                data-unit-prices="{{ unit_prices_json | strip | escape }}"
+                                x-data="ProductPrice()"
+                                data-module-id="product-price"
                             >
-                                {{- current_variant.price | money -}}
-                            </span>
-                            <s
-                                class="product-price__compare product-info-blocks__price-compare{% if context == 'product' or context == 'featured' %} body-3xl{% endif %}"
-                                x-show="hasComparePrice"
-                                x-text="formattedComparePrice"
-                            >
-                                {%- if current_variant.compare_at_price > current_variant.price -%}
-                                    {{- current_variant.compare_at_price | money -}}
-                                {%- endif -%}
-                            </s>
-                            <span
-                                class="product-price__unit product-info-blocks__price-unit block body-sm text-theme-text/80"
-                                x-show="hasUnitPrice"
-                                x-text="unitPriceText"
-                            >
-                                {%- if current_variant.unit_price_measurement -%}
-                                    {{-
-                                        current_variant.unit_price
-                                        | unit_price_with_measurement: current_variant.unit_price_measurement
-                                    -}}
-                                {%- endif -%}
-                            </span>
+                                <span
+                                    class="product-price__main product-info-blocks__price-main{% if context == 'product' or context == 'featured' %} heading-h1 text-theme-text{% else %} body-lg{% endif %}"
+                                    x-text="formattedPrice"
+                                >
+                                    {{- current_variant.price | money -}}
+                                </span>
+                                <s
+                                    class="product-price__compare product-info-blocks__price-compare{% if context == 'product' or context == 'featured' %} heading-h4{% endif %}"
+                                    x-show="hasComparePrice"
+                                    x-text="formattedComparePrice"
+                                >
+                                    {%- if current_variant.compare_at_price > current_variant.price
+                                    -%}
+                                        {{- current_variant.compare_at_price | money -}}
+                                    {%- endif -%}
+                                </s>
+                                <span
+                                    class="product-price__unit product-info-blocks__price-unit block body-sm text-theme-text/80"
+                                    x-show="hasUnitPrice"
+                                    x-text="unitPriceText"
+                                >
+                                    {%- if current_variant.unit_price_measurement -%}
+                                        {{-
+                                            current_variant.unit_price
+                                            | unit_price_with_measurement: current_variant.unit_price_measurement
+                                        -}}
+                                    {%- endif -%}
+                                </span>
+                            </div>
+                            {%- if show_product_rating and review_rating_value != blank -%}
+                                <div class="product-info-blocks__rating">
+                                    {%- render 'starts',
+                                        rating: review_rating_value,
+                                        size: 'sm',
+                                        wrapper_class: 'mb-0'
+                                    -%}
+                                    {%- if review_rating_count != blank -%}
+                                        <span class="product-info-blocks__rating-count body-sm text-theme-text/80">
+                                            <span aria-hidden="true"
+                                                >({{ review_rating_count }})</span
+                                            >
+                                            <span class="sr-only">
+                                                {{
+                                                    'products.product.rating_accessible'
+                                                    | t:
+                                                        rating: review_rating_value,
+                                                        count: review_rating_count
+                                                }}
+                                            </span>
+                                        </span>
+                                    {%- endif -%}
+                                </div>
+                            {%- endif -%}
                         </div>
+                        <div
+                            class="product-info-blocks__price-divider"
+                            aria-hidden="true"
+                        ></div>
                         {%- assign payment_terms_form_id = 'product-payment-terms-'
                             | append: section.id
                             | append: '-'
@@ -181,9 +226,15 @@
                         {%- endform -%}
                         {%- render 'product-tax-note', class: 'mt-2 body-sm text-theme-text/80' -%}
                     {%- else -%}
-                        <p class="product-price__main product-info-blocks__price-main{% if context == 'featured' %} body-3xl text-theme-text{% else %} body-lg{% endif %}">
-                            {{ 'products.product.example_price' | t }}
-                        </p>
+                        <div class="product-info-blocks__price-row">
+                            <p class="product-price__main product-info-blocks__price-main{% if context == 'featured' %} heading-h1 text-theme-text{% else %} body-lg{% endif %}">
+                                {{ 'products.product.example_price' | t }}
+                            </p>
+                        </div>
+                        <div
+                            class="product-info-blocks__price-divider"
+                            aria-hidden="true"
+                        ></div>
                     {%- endif -%}
                 </div>
 
@@ -199,7 +250,7 @@
                             data-product-description
                         >
                             {%- if context == 'featured' -%}
-                                {{ product_data.description | strip_html }}
+                                {{ product_data.description | strip_html | truncatewords: 26 }}
                             {%- else -%}
                                 {{ product_data.description }}
                             {%- endif -%}
@@ -281,6 +332,7 @@
                     >
                         {%- render 'icon-with-text-item',
                             title: block.settings.item_1_title,
+                            text: block.settings.item_1_text,
                             icon: block.settings.item_1_icon,
                             link: block.settings.item_1_link,
                             icon_size: 24,
@@ -288,10 +340,12 @@
                             gap: icon_with_text_gap,
                             alignment: 'center',
                             class: 'product-info-blocks__icon-with-text-item',
-                            title_class: 'body-sm font-medium'
+                            title_class: 'body-sm font-medium',
+                            text_class: 'body-xs text-theme-text/80'
                         -%}
                         {%- render 'icon-with-text-item',
                             title: block.settings.item_2_title,
+                            text: block.settings.item_2_text,
                             icon: block.settings.item_2_icon,
                             link: block.settings.item_2_link,
                             icon_size: 24,
@@ -299,10 +353,12 @@
                             gap: icon_with_text_gap,
                             alignment: 'center',
                             class: 'product-info-blocks__icon-with-text-item',
-                            title_class: 'body-sm font-medium'
+                            title_class: 'body-sm font-medium',
+                            text_class: 'body-xs text-theme-text/80'
                         -%}
                         {%- render 'icon-with-text-item',
                             title: block.settings.item_3_title,
+                            text: block.settings.item_3_text,
                             icon: block.settings.item_3_icon,
                             link: block.settings.item_3_link,
                             icon_size: 24,
@@ -310,7 +366,8 @@
                             gap: icon_with_text_gap,
                             alignment: 'center',
                             class: 'product-info-blocks__icon-with-text-item',
-                            title_class: 'body-sm font-medium'
+                            title_class: 'body-sm font-medium',
+                            text_class: 'body-xs text-theme-text/80'
                         -%}
                     </div>
                 {%- endif -%}

@@ -6638,6 +6638,30 @@ shopify-accelerated-checkout {
     pointer-events: none;
     cursor: default;
   }
+  .quantity-selector[data-qty-surface='product'] {
+    width: 16rem;
+    height: 4.4rem;
+    justify-content: space-between;
+    border-style: solid;
+    border-width: 1px;
+    border-radius: var(--radius-sm);
+    border-color: rgba(var(--color-foreground), 0.16);
+    padding-inline: 0.75rem;
+  }
+  .quantity-selector[data-qty-surface='product'] .quantity-selector__button {
+    border-color: transparent;
+    background-color: transparent;
+    box-shadow: none;
+  }
+  .quantity-selector[data-qty-surface='product'] .quantity-selector__button:hover:not(:disabled):not([aria-disabled='true']) {
+    border-color: transparent;
+    background-color: rgba(var(--color-foreground), 0.06);
+  }
+  .quantity-selector[data-qty-surface='product'] .quantity-selector__input {
+    width: 3ch;
+    flex: 1 1 auto;
+    border-bottom-width: 0;
+  }
 }
 @layer components {
   .buy-buttons__label.is-loading {
@@ -7736,6 +7760,36 @@ shopify-accelerated-checkout {
       pointer-events: auto;
     }
   }
+  @media (width >= 64rem) {
+    .product-gallery-carousel--pagination-vertical {
+      position: relative;
+      height: 100%;
+      min-height: 100%;
+      aspect-ratio: auto;
+    }
+    .product-gallery-carousel--pagination-vertical .swiper-wrapper, .product-gallery-carousel--pagination-vertical .swiper-slide {
+      height: 100%;
+    }
+    .product-gallery-carousel--pagination-vertical .product-gallery-carousel__pagination {
+      position: absolute;
+      top: 50%;
+      left: max(1rem, calc(var(--page-margin) * 0.5));
+      z-index: 2;
+      display: flex;
+      width: auto;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0;
+      transform: translateY(-50%);
+    }
+    .product-gallery-carousel--pagination-vertical .product-gallery-carousel__pagination.swiper-pagination-horizontal {
+      flex-direction: column;
+    }
+    .product-gallery-carousel--pagination-vertical .product-gallery-carousel__pagination .swiper-pagination-bullet {
+      margin: 0;
+    }
+  }
 }
 @layer snippets {
   .product-info-blocks {
@@ -8024,17 +8078,54 @@ shopify-accelerated-checkout {
     }
   }
   .product-info-blocks--featured .product-info-blocks__price-main, .product-info-blocks--featured .product-info-blocks__price-compare {
-    font-family: var(--font-body-family);
-    font-style: var(--font-body-style);
-    line-height: var(--font-body-line-height);
-    letter-spacing: var(--font-body-letter-spacing);
-    text-transform: var(--font-body-text-transform);
+    font-family: var(--font-heading-family);
+    font-style: var(--font-heading-style);
+    font-weight: var(--font-heading-weight);
+    line-height: var(--font-heading-line-height);
+    letter-spacing: var(--font-heading-letter-spacing);
+    text-transform: var(--font-heading-text-transform);
     word-break: break-word;
-    font-size: calc(var(--font-body-size-mobile) * var(--font-body-scale) * 1.375);
+    font-size: calc(var(--font-heading-scale) * 1.5rem);
     @media (width >= 48rem) {
-      font-size: calc(var(--font-body-size) * var(--font-body-scale) * 1.5);
+      font-size: calc(var(--font-heading-scale) * 1.5rem);
     }
     color: rgb(var(--color-foreground));
+  }
+  .product-info-blocks--product .product-info-blocks__price-main, .product-info-blocks--product .product-info-blocks__price-compare {
+    font-family: var(--font-heading-family);
+    font-style: var(--font-heading-style);
+    font-weight: var(--font-heading-weight);
+    line-height: var(--font-heading-line-height);
+    letter-spacing: var(--font-heading-letter-spacing);
+    text-transform: var(--font-heading-text-transform);
+    word-break: break-word;
+    font-size: calc(var(--font-heading-scale) * 1.5rem);
+    @media (width >= 48rem) {
+      font-size: calc(var(--font-heading-scale) * 1.5rem);
+    }
+    color: rgb(var(--color-foreground));
+  }
+  .product-info-blocks__price-row {
+    display: flex;
+    width: 100%;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: calc(var(--spacing) * 4);
+  }
+  .product-info-blocks__rating {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: calc(var(--spacing) * 2);
+  }
+  .product-info-blocks__price-divider {
+    margin-top: calc(var(--spacing) * 3);
+    height: 1px;
+    width: 100%;
+    background-color: rgb(var(--color-border));
+    @supports (color: color-mix(in lab, red, red)) {
+      background-color: color-mix(in oklab, rgb(var(--color-border)) 20%, transparent);
+    }
   }
   .product-info-blocks--gallery {
     overflow: visible;

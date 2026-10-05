@@ -19,9 +19,11 @@
     @param {string} [max_height] - Optional desktop max height for the main gallery media box
     @param {string} [class] - Optional CSS classes for the outermost wrapper
     @param {string} [id] - Optional HTML id for event-targeting (variant mapping)
+    @param {string} [pagination] - Carousel pagination mode; pass `vertical` for left-stacked dots (default: horizontal below)
 {% enddoc %}
 
 {%- assign layout = layout | default: 'thumbnails' -%}
+{%- assign gallery_pagination = pagination | default: '' -%}
 {%- assign thumb_position = thumb_position | default: 'left' -%}
 {%- assign thumbnail_size = thumbnail_size | default: 'standard' -%}
 {%- assign zoom_enabled = false -%}
@@ -100,7 +102,7 @@
                 when 'thumbnails'
                     render 'product-gallery-thumbnails', images: gallery_items, gallery_id: id, thumb_position: thumb_position, thumbnail_size: thumbnail_size, zoom: zoom_enabled, magnifier: magnifier_enabled, magnifier_zoom_scale: magnifier_zoom_scale, magnifier_preview_width: magnifier_preview_width, magnifier_preview_height: magnifier_preview_height, magnifier_preview_max_width: magnifier_preview_max_width, aspect_ratio: aspect_ratio, max_height: max_height
                 when 'carousel'
-                    render 'product-gallery-carousel', images: gallery_items, zoom: zoom_enabled, magnifier: magnifier_enabled, magnifier_zoom_scale: magnifier_zoom_scale, magnifier_preview_width: magnifier_preview_width, magnifier_preview_height: magnifier_preview_height, magnifier_preview_max_width: magnifier_preview_max_width, aspect_ratio: aspect_ratio, max_height: max_height
+                    render 'product-gallery-carousel', images: gallery_items, zoom: zoom_enabled, magnifier: magnifier_enabled, magnifier_zoom_scale: magnifier_zoom_scale, magnifier_preview_width: magnifier_preview_width, magnifier_preview_height: magnifier_preview_height, magnifier_preview_max_width: magnifier_preview_max_width, aspect_ratio: aspect_ratio, max_height: max_height, pagination: gallery_pagination
                 when 'stacked'
                     render 'product-gallery-stacked', images: gallery_items, zoom: zoom_enabled, magnifier: magnifier_enabled, magnifier_zoom_scale: magnifier_zoom_scale, magnifier_preview_width: magnifier_preview_width, magnifier_preview_height: magnifier_preview_height, magnifier_preview_max_width: magnifier_preview_max_width, aspect_ratio: aspect_ratio, max_height: max_height
                 when 'grid'
@@ -136,5 +138,30 @@
         opacity: 0;
         z-index: 0;
         pointer-events: none;
+    }
+
+    @keyframes product-gallery-media-fade-in {
+        from {
+            opacity: 0.35;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+        body:not([data-motion-enabled='false'])
+            .product-gallery[data-gallery-hydrated]
+            .swiper-slide-active
+            .theme-image
+            img,
+        body:not([data-motion-enabled='false'])
+            .product-gallery[data-gallery-hydrated]
+            [role='tabpanel']
+            > .product-gallery__zoom-button.is-active
+            .theme-image
+            img {
+            animation: product-gallery-media-fade-in 300ms var(--motion-ease-default, ease);
+        }
     }
 {% endstylesheet %}

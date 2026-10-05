@@ -11,7 +11,14 @@
     @param {number}  magnifier_preview_max_width - Maximum magnifier preview width in pixels
     @param {string}  aspect_ratio - Optional CSS aspect-ratio (fallback when first image has no ratio)
     @param {string}  max_height   - Optional desktop max height for the carousel media box
+    @param {string}  pagination   - Optional pagination layout: `vertical` stacks dots on the left (desktop)
 {% endcomment %}
+
+{%- assign gallery_pagination = pagination | default: '' -%}
+{%- assign gallery_pagination_vertical = false -%}
+{%- if gallery_pagination == 'vertical' -%}
+    {%- assign gallery_pagination_vertical = true -%}
+{%- endif -%}
 
 {%- assign first_img = images.first -%}
 {%- assign gallery_aspect = aspect_ratio -%}
@@ -24,11 +31,15 @@
 <div
     class="
         swiper w-full min-w-0 overflow-hidden rounded-sm
+        {% if gallery_pagination_vertical %}product-gallery-carousel--pagination-vertical{% endif %}
         {% if max_height != blank %}
           pc:max-h-(--product-gallery-max-height)
         {% endif %}
     "
     data-gallery-swiper
+    {% if gallery_pagination_vertical %}
+        data-gallery-pagination="vertical"
+    {% endif %}
     role="group"
     aria-label="{{ 'accessibility.product_gallery_carousel' | t }}"
     aria-roledescription="{{ 'accessibility.carousel' | t }}"
@@ -124,5 +135,7 @@
             </div>
         {%- endfor -%}
     </div>
-    <div class="swiper-pagination mt-4"></div>
+    <div
+        class="swiper-pagination mt-4{% if gallery_pagination_vertical %} product-gallery-carousel__pagination{% endif %}"
+    ></div>
 </div>

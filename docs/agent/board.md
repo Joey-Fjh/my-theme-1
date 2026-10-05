@@ -8,6 +8,12 @@ Last updated: 2026-10-06.
 
 None active. Next (user, 2026-10-04): the design rework, then one browser pass, then the docs review together with a readiness review before the second submission.
 
+**Approved, queued after 6-S12** (user, 2026-10-06): a lint check that fails when a Liquid `{% stylesheet %}` (or `{% style %}`) block contains a Tailwind function such as `theme(`, `--spacing(` or `--alpha(`. These are compiled only in `tailwind/*.css`; inside Liquid stylesheets the browser drops the whole rule or media block.
+
+- **Recurrences:** 6-S6 (`scroll-categories` panels) and 6-S12 (the `featured-product` desktop grid).
+- **Home:** the `check-theme-architecture` lint (`lint-theme.js`) plus a test case.
+- **Tier:** a validator change, so Ask.
+
 **Motion simplification done** (6-M1, `3652441`; plan and review rounds: `git show 3652441:docs/agent/context.md`): the list and card cascade is the only settings-driven reveal, under `motion_enabled`. Follow-ups: `assets/motion-reveal.js` is still 29.9 KB because the cascade machinery was kept unchanged; rewrite it smaller once the design phase settles the cascade's look. GSAP arrived in 6-S5 (`a2424d4`): `motion-gsap.js` adapter, first consumer `scatter-gallery`. Cascade in carousels (6-S4 R10, 2026-10-05): the entrance `translateY` (64px desktop, 40px mobile) is clipped by the Swiper `overflow: hidden` until the slides settle. The rest state is correct. Settle it with the cascade rewrite (for example no vertical offset inside overflow containers).
 
 Home `slides-show` redesigned (6-S1, `a0a5aa6`, content `99ee7b1`; plan and review rounds: `git show a0a5aa6:docs/agent/context.md`). Browser checks still open for it: a real Theme Editor block select and deselect, native reduced motion.
