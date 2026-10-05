@@ -1,282 +1,585 @@
 {%- liquid
-    assign product_position = section.settings.product_position | default: 'left'
-    assign product_position_class = 'pc:left-0'
-    case product_position
-        when 'center'
-            assign product_position_class = 'pc:left-1/2 pc:-translate-x-1/2'
-        when 'right'
-            assign product_position_class = 'pc:right-0'
+    assign routine_heading_size = section.settings.heading_size | default: 'heading-h4'
+    case routine_heading_size
+        when 'heading-4xl'
+            assign routine_heading_class = 'heading-h2 pc:heading-4xl'
+        when 'heading-3xl'
+            assign routine_heading_class = 'heading-h2 pc:heading-3xl'
+        when 'heading-2xl'
+            assign routine_heading_class = 'heading-h2 pc:heading-2xl'
+        when 'heading-xl'
+            assign routine_heading_class = 'heading-h3 pc:heading-xl'
+        when 'heading-h1'
+            assign routine_heading_class = 'heading-h2 pc:heading-h1'
+        when 'heading-h2'
+            assign routine_heading_class = 'heading-h3 pc:heading-h2'
+        when 'heading-h3'
+            assign routine_heading_class = 'heading-h4 pc:heading-h3'
+        when 'heading-h4'
+            assign routine_heading_class = 'heading-h5 pc:heading-h4'
+        when 'heading-h5'
+            assign routine_heading_class = 'heading-h6 pc:heading-h5'
+        when 'heading-h6'
+            assign routine_heading_class = 'body-xl pc:heading-h6'
+        else
+            assign routine_heading_class = 'heading-h3 pc:heading-h4'
     endcase
 
-    assign content_position = section.settings.content_position | default: 'place-center-right'
-
-    assign badge_position = section.settings.badge_position | default: 'place-bottom-right'
-
-    assign routine_showcase_heading_class = section.settings.heading_size | default: 'heading-h4'
-
-    assign routine_products = section.settings.collection.products
-
-    assign routine_background_surface_class = ''
-    assign routine_content_surface_class = ''
-    if section.settings.bg_img == blank
-        assign routine_background_surface_class = 'media-placeholder-frame'
-        assign routine_content_surface_class = 'media-placeholder-frame'
+    assign routine_eyebrow = section.settings.eyebrow
+    assign routine_heading = section.settings.heading
+    if routine_heading == blank
+        assign routine_heading = 'sections.routine-showcase.defaults.heading' | t
     endif
+    assign routine_description = section.settings.description
+    assign routine_cta_text = section.settings.cta_text
+    if routine_cta_text == blank
+        assign routine_cta_text = 'sections.routine-showcase.defaults.cta_text' | t
+    endif
+    assign routine_cta_link = section.settings.cta_link | default: routes.collections_url
+
+    assign routine_autoplay = true
+    if section.settings.autoplay == false
+        assign routine_autoplay = false
+    endif
+    assign routine_autoplay_speed = section.settings.autoplay_speed | default: 5
+
+    assign routine_step_count = 0
+    for routine_block in section.blocks
+        if routine_block.type == 'step'
+            assign routine_step_count = routine_step_count | plus: 1
+        endif
+    endfor
+
+    if routine_autoplay
+        assign routine_autoplay_attr = 'true'
+    else
+        assign routine_autoplay_attr = 'false'
+    endif
+
+    assign routine_bg_sizes = '(min-width: 64rem) 100vw, 100vw'
+    assign routine_bg_widths = '768,1280,1536,1920,2560'
 -%}
 
 {%- assign routine_showcase_root_attrs = 'data-component-kind="section" data-component-type="routine-showcase" data-component-id="'
     | append: section.id
     | append: '"'
 -%}
+
+{%- capture routine_cta_content -%}
+    <span class="uppercase">{{ routine_cta_text }}</span>
+    {%- render 'icons', icon: 'icon-arrow2', class: 'ms-2', size: 'sm' -%}
+{%- endcapture -%}
+
 {%- capture routine_showcase_children -%}
-    <div class="relative h-full overflow-hidden pc:h-full">
-        {%- capture sizes -%}
-            (min-width: 80rem) 100vw, (min-width: 48rem) 1280px, 100vw
-        {%- endcapture -%}
+    <div
+        class="routine-showcase__root color-{{ section.settings.color_scheme }}"
+        data-module-id="routine-showcase"
+        x-data="routineShowcase()"
+        data-initial-active="0"
+        data-autoplay="{{ routine_autoplay_attr }}"
+        data-autoplay-speed="{{ routine_autoplay_speed }}"
+        style="--routine-autoplay-duration: {{ routine_autoplay_speed }}s;"
+    >
+        {%- if section.settings.bg_img != blank -%}
+            <div class="routine-showcase__bg" aria-hidden="true">
+                {%- render 'image',
+                    image: section.settings.bg_img,
+                    alt: '',
+                    mode: 'frame',
+                    fit: 'cover',
+                    loading: 'lazy',
+                    sizes: routine_bg_sizes,
+                    widths: routine_bg_widths,
+                    wrapper_class: 'h-full w-full',
+                    img_class: 'h-full w-full object-cover'
+                -%}
+            </div>
+        {%- endif -%}
 
-        {%- capture widths -%}
-            400,480,768,1280,1440,1536,2560
-        {%- endcapture -%}
-
-        <div
-            class="absolute inset-0 color-{{ section.settings.color_scheme }} bg-theme-bg {{ routine_background_surface_class }}"
-        >
-            {%- assign image_alt = section.settings.bg_img.alt
-                | default: section.settings.heading
-                | escape
-            -%}
-            {%- render 'image',
-                image: section.settings.bg_img,
-                placeholder_key: 'lifestyle-1',
-                alt: image_alt,
-                width: section.settings.bg_img.width,
-                sizes: sizes,
-                widths: widths,
-                mode: 'frame',
-                fit: 'cover',
-                wrapper_class: 'h-full w-full bg-theme-bg',
-                placeholder_style: 'plain',
-                placeholder_class: 'text-theme-text/20',
-                loading: 'lazy',
-            -%}
-        </div>
-
-        <div class="section-frame__overlay-padding container-page relative pc:h-full color-{{ section.settings.color_scheme }} bg-transparent!">
-            {%- comment -%}
-                Mobile keeps products in normal flow, then collapses the overlay's
-                horizontal axis into a three-row grid. Content and badge preserve
-                their desktop row and same-cell overlap semantics.
-                Desktop keeps the full-bleed stage overlay with absolute product rail
-                and 3×3 content/badge grid.
-            {%- endcomment -%}
-            <div class="routine-showcase__layout relative flex flex-col gap-6 py-3 pc:block pc:h-full">
-                <div
-                    data-module-id="routine-showcase"
-                    x-data="routineShowcase()"
-                    data-swiper-src="{{ 'vendor-swiper.min.js' | asset_url }}"
-                    class="
-                        {{ product_position_class }}
-                        routine-showcase__products
-                        relative z-20 flex w-full min-w-0 flex-col gap-5
-                        pc:absolute pc:inset-x-auto pc:top-3 pc:bottom-3 pc:w-fit
-                    "
-                >
-                    <div
-                        class="routine-showcase__swiper-wrap flex min-h-0 flex-row gap-3 pc:h-full pc:w-fit pc:flex-col pc:justify-between"
-                    >
-                        <button
-                            type="button"
-                            class="swiper-button-prev self-center max-pc:hidden"
-                            aria-label="{{ 'accessibility.previous_slide' | t }}"
-                        ></button>
-                        <div
-                            class="swiper ms-0 w-full min-w-0 flex-1 pc:h-full pc:min-h-0"
-                            role="region"
-                            aria-label="{{ 'accessibility.routine_carousel' | t }}"
-                            aria-roledescription="{{ 'accessibility.carousel' | t }}"
-                        >
-                            <div class="swiper-wrapper">
-                                {%- for product in routine_products -%}
-                                    {%- liquid
-                                        assign image_alt = product.title | escape
-                                        assign routine_placeholder_index = forloop.index | minus: 1 | modulo: 6 | plus: 1
-                                        assign routine_placeholder_key = 'product-' | append: routine_placeholder_index
-                                        assign routine_image_fit = 'cover'
-                                        assign routine_product_surface_class = 'bg-theme-bg max-pc:rounded-sm'
-                                        assign routine_product_placeholder_style = 'framed'
-                                        if product.featured_image == blank
-                                            assign routine_image_fit = 'contain'
-                                            assign routine_product_surface_class = 'media-placeholder-frame'
-                                            assign routine_product_placeholder_style = 'plain'
-                                        endif
-                                    -%}
-                                    <div class="swiper-slide pc:w-136">
+        <div class="routine-showcase__inner section-frame__overlay-padding container-page">
+            {%- if routine_step_count > 0 -%}
+                <ul class="routine-showcase__mobile-rail" role="list">
+                    {%- assign routine_step_index = 0 -%}
+                    {%- for block in section.blocks -%}
+                        {%- if block.type != 'step' -%}
+                            {%- continue -%}
+                        {%- endif -%}
+                        {%- liquid
+                            assign routine_step_index = routine_step_index | plus: 1
+                            assign routine_step_label = block.settings.label
+                            if routine_step_label == blank
+                                assign routine_step_label = 'sections.routine-showcase.defaults.step_label' | t
+                            endif
+                            assign routine_step_number = routine_step_index
+                            if routine_step_number < 10
+                                assign routine_step_number_label = routine_step_number | prepend: '0'
+                            else
+                                assign routine_step_number_label = routine_step_number
+                            endif
+                            assign routine_product = block.settings.product
+                            assign routine_is_placeholder = false
+                            if routine_product == blank
+                                assign routine_is_placeholder = true
+                            endif
+                            assign routine_product_title = routine_product.title
+                            if routine_is_placeholder
+                                assign routine_product_title = 'sections.routine-showcase.placeholder_product_title' | t: index: routine_step_index
+                                assign routine_product_url = routes.all_products_collection_url
+                            else
+                                assign routine_product_url = routine_product.url
+                            endif
+                            if routine_is_placeholder
+                                assign routine_product_description = 'sections.routine-showcase.placeholder_description' | t
+                            else
+                                assign routine_product_description = routine_product.description | strip_html | strip | truncatewords: 28
+                            endif
+                            assign routine_product_image_alt = routine_product.title | escape
+                            if routine_product.featured_image.alt != blank
+                                assign routine_product_image_alt = routine_product.featured_image.alt | escape
+                            endif
+                            assign routine_placeholder_index = routine_step_index | minus: 1 | modulo: 6 | plus: 1
+                            assign routine_placeholder_key = 'product-' | append: routine_placeholder_index
+                            assign routine_float_image = block.settings.product_image
+                            if routine_float_image == blank and routine_is_placeholder == false
+                                assign routine_float_image = routine_product.featured_image
+                            endif
+                            if routine_float_image.alt != blank
+                                assign routine_product_image_alt = routine_float_image.alt | escape
+                            endif
+                            assign routine_scene_image = block.settings.image
+                            assign routine_lifestyle_index = routine_step_index | modulo: 2 | plus: 1
+                            assign routine_lifestyle_key = 'lifestyle-' | append: routine_lifestyle_index
+                        -%}
+                        <li class="routine-showcase__mobile-card-slot" {{ block.shopify_attributes }}>
+                            <article class="routine-showcase__mobile-card">
+                                <div class="routine-showcase__mobile-product">
+                                    {%- if routine_float_image == blank -%}
                                         <a
-                                            class="routine-showcase__product-link media-interaction relative block h-full overflow-hidden {{ routine_product_surface_class }}"
-                                            href="{{ product.url }}"
-                                            data-module-id="hover-card"
-                                            x-data="hoverCard()"
-                                            @mouseenter="enter()"
-                                            @mouseleave="leave()"
-                                            @focus="enter()"
-                                            @blur="leave()"
+                                            class="routine-showcase__mobile-product-link block"
+                                            href="{{ routine_product_url }}"
+                                            tabindex="-1"
+                                            aria-hidden="true"
+                                        >
+                                            {{ routine_placeholder_key | placeholder_svg_tag: 'routine-showcase__placeholder-svg routine-showcase__placeholder-svg--product' }}
+                                        </a>
+                                    {%- else -%}
+                                        <a
+                                            class="routine-showcase__mobile-product-link block"
+                                            href="{{ routine_product_url }}"
+                                            tabindex="-1"
+                                            aria-hidden="true"
                                         >
                                             {%- render 'image',
-                                                aspect_ratio: '342/198',
-                                                image: product.featured_image,
+                                                image: routine_float_image,
                                                 placeholder_key: routine_placeholder_key,
-                                                alt: image_alt,
-                                                width: product.featured_image.width,
-                                                fit: routine_image_fit,
-                                                placeholder_style: routine_product_placeholder_style,
+                                                alt: routine_product_image_alt,
+                                                mode: 'frame',
+                                                fit: 'contain',
+                                                loading: 'lazy',
+                                                sizes: '78vw',
+                                                widths: '240,360,480,640',
+                                                wrapper_class: 'h-full w-full',
+                                                img_class: 'h-full w-full object-contain'
                                             -%}
-
-                                            <div
-                                                class="
-                                                    routine-showcase__product-info
-                                                    absolute right-0 bottom-0 left-0
-                                                    flex items-center justify-between p-2 pc:p-4
-                                                "
-                                                :class="hoverClass()"
-                                            >
-                                                <p class="truncate body-lg text-theme-text">
-                                                    {{ product.title }}
-                                                </p>
-                                                <div class="text-nowrap">
-                                                    {% if forloop.index < 10 %}
-                                                        {% assign display_index = forloop.index
-                                                            | prepend: '0'
-                                                        %}
-                                                    {% else %}
-                                                        {% assign display_index = forloop.index %}
-                                                    {% endif %}
-                                                    {{ display_index }}
-                                                </div>
-                                            </div>
                                         </a>
-                                    </div>
-                                {%- else -%}
-                                    {%- for placeholder_index in (1..6) -%}
-                                        {%- liquid
-                                            assign routine_placeholder_key = 'product-' | append: placeholder_index
-                                            if placeholder_index < 10
-                                                assign display_index = placeholder_index | prepend: '0'
-                                            else
-                                                assign display_index = placeholder_index
-                                            endif
-                                        -%}
-                                        <div class="swiper-slide pc:w-136">
-                                            <div
-                                                class="routine-showcase__product-link media-placeholder-frame relative block h-full overflow-hidden"
-                                                data-module-id="hover-card"
-                                                x-data="hoverCard()"
-                                                @mouseenter="enter()"
-                                                @mouseleave="leave()"
-                                            >
-                                                {%- render 'image',
-                                                    image: blank,
-                                                    placeholder_key: routine_placeholder_key,
-                                                    aspect_ratio: '342/198',
-                                                    mode: 'frame',
-                                                    fit: 'contain',
-                                                    placeholder_style: 'plain',
-                                                -%}
+                                    {%- endif -%}
+                                </div>
+                                <p class="routine-showcase__mobile-eyebrow body-xs text-theme-text/70 uppercase" aria-hidden="true">
+                                    {{ routine_eyebrow }}
+                                </p>
+                                <p class="routine-showcase__mobile-heading body-2xl text-theme-text uppercase max-pc:body-3xl" aria-hidden="true">
+                                    {{ routine_heading }}
+                                </p>
+                                <p class="routine-showcase__mobile-badge body-xs uppercase">
+                                    {{ routine_step_number_label }}
+                                    {{ routine_step_label }}
+                                </p>
+                                <p class="routine-showcase__mobile-product-title body-lg text-theme-text uppercase">
+                                    <a class="text-theme-text" href="{{ routine_product_url }}">{{ routine_product_title }}</a>
+                                </p>
+                                <p class="routine-showcase__mobile-description body-sm text-theme-text/80">
+                                    {{ routine_product_description }}
+                                </p>
+                                <p class="routine-showcase__mobile-price body-md text-theme-text">
+                                    {%- if routine_is_placeholder -%}
+                                        {{ 1999 | money }}
+                                    {%- else -%}
+                                        {{ routine_product.price | money }}
+                                    {%- endif -%}
+                                </p>
+                                <div class="routine-showcase__mobile-footer">
+                                    {%- render 'link',
+                                        href: routine_cta_link,
+                                        variant: 'default',
+                                        class: 'link-with-icon-motion body-sm uppercase text-theme-text self-start',
+                                        content: routine_cta_content
+                                    -%}
+                                </div>
+                            </article>
+                        </li>
+                    {%- endfor -%}
+                </ul>
 
-                                                <div
-                                                    class="routine-showcase__product-info absolute right-0 bottom-0 left-0 flex items-center justify-between p-2 pc:p-4"
-                                                    :class="hoverClass()"
-                                                >
-                                                    <p class="truncate body-lg text-theme-text">
-                                                        {{-
-                                                            'products.product.example_title_numbered'
-                                                            | t: index: placeholder_index
-                                                        -}}
-                                                    </p>
-                                                    <div class="text-nowrap">
-                                                        {{- display_index -}}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    {%- endfor -%}
+                <div class="routine-showcase__desktop">
+                    <div class="routine-showcase__desktop-grid">
+                        <div class="routine-showcase__col routine-showcase__col--left">
+                            <div class="routine-showcase__intro">
+                                {%- if routine_eyebrow != blank -%}
+                                    <p class="routine-showcase__eyebrow body-sm text-theme-text/70 uppercase pc:body-lg">
+                                        {{ routine_eyebrow }}
+                                    </p>
+                                {%- endif -%}
+                                <h2 class="routine-showcase__heading {{ routine_heading_class }} text-theme-text">
+                                    {{ routine_heading }}
+                                </h2>
+                                {%- if routine_description != blank -%}
+                                    <div class="routine-showcase__description rte body-lg text-theme-text/80">
+                                        {{ routine_description }}
+                                    </div>
+                                {%- endif -%}
+                                {%- render 'link',
+                                    href: routine_cta_link,
+                                    variant: 'default',
+                                    class: 'link-with-icon-motion body-md pc:body-lg uppercase text-theme-text self-start',
+                                    content: routine_cta_content
+                                -%}
+                            </div>
+                            <div class="routine-showcase__info-stack">
+                                {%- assign routine_step_index = 0 -%}
+                                {%- for block in section.blocks -%}
+                                    {%- if block.type != 'step' -%}
+                                        {%- continue -%}
+                                    {%- endif -%}
+                                    {%- liquid
+                                        assign routine_step_index = routine_step_index | plus: 1
+                                        assign routine_info_index = routine_step_index | minus: 1
+                                        assign routine_product = block.settings.product
+                                        assign routine_is_placeholder = false
+                                        if routine_product == blank
+                                            assign routine_is_placeholder = true
+                                        endif
+                                        assign routine_product_title = routine_product.title
+                                        if routine_is_placeholder
+                                            assign routine_product_title = 'sections.routine-showcase.placeholder_product_title' | t: index: routine_step_index
+                                            assign routine_product_url = routes.all_products_collection_url
+                                        else
+                                            assign routine_product_url = routine_product.url
+                                        endif
+                                        if routine_is_placeholder
+                                            assign routine_product_description = 'sections.routine-showcase.placeholder_description' | t
+                                        else
+                                            assign routine_product_description = routine_product.description | strip_html | strip | truncatewords: 28
+                                        endif
+                                        assign routine_info_active = false
+                                        if routine_info_index == 0
+                                            assign routine_info_active = true
+                                        endif
+                                    -%}
+                                    <div
+                                        class="routine-showcase__info{% unless routine_info_active %} routine-showcase__info--inactive{% endunless %}{% if routine_info_active %} is-active{% endif %}"
+                                        data-routine-info
+                                        data-item-index="{{ routine_info_index }}"
+                                        id="routine-showcase-{{ section.id }}-info-{{ routine_info_index }}"
+                                        :class="infoClassFromEl($el)"
+                                        {{ block.shopify_attributes }}
+                                    >
+                                        <p class="routine-showcase__product-title body-2xl leading-tight text-theme-text uppercase pc:body-3xl">
+                                            <a class="text-theme-text" href="{{ routine_product_url }}">
+                                                {{- routine_product_title -}}
+                                            </a>
+                                        </p>
+                                        <p class="routine-showcase__product-price body-2xl leading-tight text-theme-text pc:body-3xl">
+                                            {%- if routine_is_placeholder -%}
+                                                {{ 1999 | money }}
+                                            {%- else -%}
+                                                {{ routine_product.price | money }}
+                                            {%- endif -%}
+                                        </p>
+                                        <hr class="routine-showcase__product-divider border-theme-border/20" />
+                                        <p class="routine-showcase__product-description body-lg text-theme-text/80">
+                                            {{ routine_product_description }}
+                                        </p>
+                                    </div>
                                 {%- endfor -%}
                             </div>
                         </div>
-                        <button
-                            type="button"
-                            class="swiper-button-next left-0 self-center max-pc:hidden"
-                            aria-label="{{ 'accessibility.next_slide' | t }}"
-                        ></button>
-                    </div>
-                </div>
 
-                <div
-                    class="routine-showcase__overlay-grid relative z-10 grid grid-cols-1 gap-6 pc:absolute pc:inset-0 pc:grid-cols-3 pc:gap-4 pc:py-3"
-                >
-                    <div
-                        class="
-                            {{ content_position }}
-                            flex w-full flex-col gap-6 bg-theme-bg p-6
-                            pc:min-h-0 pc:gap-12 pc:overflow-y-auto pc:p-8
-                            {{ routine_content_surface_class }}
-                        "
-                    >
-                        {% render 'text',
-                            tier: 'body-3xl',
-                            subtitle: true,
-                            class: 'text-theme-text/80',
-                            content: section.settings.eyebrow,
-                        %}
-
-                        <div class="flex flex-col gap-4">
-                            {% render 'heading',
-                                level: '2',
-                                tier: routine_showcase_heading_class,
-                                content: section.settings.heading,
-                            %}
-                            {% render 'text',
-                                element: 'div',
-                                rte: true,
-                                class: 'text-theme-text/60',
-                                content: section.settings.description,
-                            %}
+                        <div class="routine-showcase__col routine-showcase__col--center">
+                            <div class="routine-showcase__stage">
+                                {%- assign routine_step_index = 0 -%}
+                                {%- for block in section.blocks -%}
+                                    {%- if block.type != 'step' -%}
+                                        {%- continue -%}
+                                    {%- endif -%}
+                                    {%- liquid
+                                        assign routine_step_index = routine_step_index | plus: 1
+                                        assign routine_panel_index = routine_step_index | minus: 1
+                                        assign routine_product = block.settings.product
+                                        assign routine_is_placeholder = false
+                                        if routine_product == blank
+                                            assign routine_is_placeholder = true
+                                        endif
+                                        if routine_is_placeholder
+                                            assign routine_product_url = routes.all_products_collection_url
+                                        else
+                                            assign routine_product_url = routine_product.url
+                                        endif
+                                        assign routine_placeholder_index = routine_step_index | minus: 1 | modulo: 6 | plus: 1
+                                        assign routine_placeholder_key = 'product-' | append: routine_placeholder_index
+                                        assign routine_product_image_alt = routine_product.title | escape
+                                        if routine_product.featured_image.alt != blank
+                                            assign routine_product_image_alt = routine_product.featured_image.alt | escape
+                                        endif
+                                        assign routine_float_image = block.settings.product_image
+                                        if routine_float_image == blank and routine_is_placeholder == false
+                                            assign routine_float_image = routine_product.featured_image
+                                        endif
+                                        if routine_float_image.alt != blank
+                                            assign routine_product_image_alt = routine_float_image.alt | escape
+                                        endif
+                                        assign routine_scene_image = block.settings.image
+                                        assign routine_scene_fallback_image = blank
+                                        unless routine_is_placeholder
+                                            if routine_scene_image == blank
+                                                if routine_product.images.size > 1
+                                                    assign routine_scene_fallback_image = routine_product.images[1]
+                                                endif
+                                            endif
+                                        endunless
+                                        assign routine_lifestyle_index = routine_step_index | modulo: 2 | plus: 1
+                                        assign routine_lifestyle_key = 'lifestyle-' | append: routine_lifestyle_index
+                                        assign routine_scene_alt = 'sections.routine-showcase.placeholder_scene_alt' | t
+                                        if routine_scene_image != blank and routine_scene_image.alt != blank
+                                            assign routine_scene_alt = routine_scene_image.alt
+                                        elsif routine_scene_fallback_image != blank and routine_scene_fallback_image.alt != blank
+                                            assign routine_scene_alt = routine_scene_fallback_image.alt
+                                        endif
+                                        assign routine_panel_active = false
+                                        if routine_panel_index == 0
+                                            assign routine_panel_active = true
+                                        endif
+                                    -%}
+                                    <div
+                                        class="routine-showcase__panel{% unless routine_panel_active %} routine-showcase__panel--inactive{% endunless %}{% if routine_panel_active %} is-active{% endif %}"
+                                        role="tabpanel"
+                                        id="routine-showcase-{{ section.id }}-panel-{{ routine_panel_index }}"
+                                        aria-labelledby="routine-showcase-{{ section.id }}-tab-{{ routine_panel_index }}"
+                                        data-item-index="{{ routine_panel_index }}"
+                                        x-init="registerPanel($el)"
+                                        :class="panelClassFromEl($el)"
+                                    >
+                                        <div class="routine-showcase__arch-compose">
+                                            <div class="routine-showcase__arch">
+                                                {%- if routine_scene_image != blank -%}
+                                                    {%- render 'image',
+                                                        image: routine_scene_image,
+                                                        alt: routine_scene_alt,
+                                                        mode: 'frame',
+                                                        fit: 'cover',
+                                                        loading: 'lazy',
+                                                        sizes: '(min-width: 64rem) 27vw, 70vw',
+                                                        widths: '400,600,800,1000,1200',
+                                                        wrapper_class: 'routine-showcase__scene routine-showcase__scene-img h-full w-full',
+                                                        img_class: 'h-full w-full object-cover'
+                                                    -%}
+                                                {%- elsif routine_scene_fallback_image != blank -%}
+                                                    {%- render 'image',
+                                                        image: routine_scene_fallback_image,
+                                                        alt: routine_scene_alt,
+                                                        mode: 'frame',
+                                                        fit: 'cover',
+                                                        loading: 'lazy',
+                                                        sizes: '(min-width: 64rem) 27vw, 70vw',
+                                                        widths: '400,600,800,1000,1200',
+                                                        wrapper_class: 'routine-showcase__scene routine-showcase__scene-img h-full w-full',
+                                                        img_class: 'h-full w-full object-cover'
+                                                    -%}
+                                                {%- else -%}
+                                                    <div class="routine-showcase__scene routine-showcase__scene-img routine-showcase__scene--placeholder">
+                                                        {{ routine_lifestyle_key | placeholder_svg_tag: 'routine-showcase__placeholder-svg routine-showcase__placeholder-svg--scene' }}
+                                                    </div>
+                                                {%- endif -%}
+                                            </div>
+                                            <div class="routine-showcase__product-float">
+                                                {%- if routine_float_image == blank -%}
+                                                    <a
+                                                        class="routine-showcase__product-link block"
+                                                        href="{{ routine_product_url }}"
+                                                        tabindex="-1"
+                                                        aria-hidden="true"
+                                                    >
+                                                        {{ routine_placeholder_key | placeholder_svg_tag: 'routine-showcase__placeholder-svg routine-showcase__placeholder-svg--product' }}
+                                                    </a>
+                                                {%- else -%}
+                                                    <a
+                                                        class="routine-showcase__product-link block"
+                                                        href="{{ routine_product_url }}"
+                                                        tabindex="-1"
+                                                        aria-hidden="true"
+                                                    >
+                                                        {%- render 'image',
+                                                            image: routine_float_image,
+                                                            placeholder_key: routine_placeholder_key,
+                                                            alt: routine_product_image_alt,
+                                                            mode: 'frame',
+                                                            fit: 'contain',
+                                                            position: 'bottom',
+                                                            loading: 'lazy',
+                                                            sizes: '(min-width: 64rem) 11vw, 40vw',
+                                                            widths: '240,360,480,640,800',
+                                                            wrapper_class: 'routine-showcase__product-img h-full w-full',
+                                                            img_class: 'h-full w-full object-contain object-bottom'
+                                                        -%}
+                                                    </a>
+                                                {%- endif -%}
+                                            </div>
+                                        </div>
+                                    </div>
+                                {%- endfor -%}
+                            </div>
                         </div>
 
-                        {%- liquid
-                            assign cta_href = section.settings.cta_link
-                            if cta_href == '/collections'
-                                assign cta_href = routes.collections_url
-                            endif
-                        -%}
-                        {%- if section.settings.cta_text != blank and cta_href != blank -%}
-                            {%- capture link_content -%}
-                                <span>{{ section.settings.cta_text }}</span>
-                                {% render 'icons', icon: 'icon-arrow2', class: 'ms-3' %}
-                            {%- endcapture -%}
+                        <div class="routine-showcase__col routine-showcase__col--right">
+                            <div class="routine-showcase__controls">
+                                <div class="routine-showcase__counter-row">
+                                    <p class="routine-showcase__counter body-md tracking-wide text-theme-text">
+                                        <span x-text="counterCurrent()">{{ '01' }}</span>
+                                        <span aria-hidden="true"> / </span>
+                                        <span x-text="counterTotal()">
+                                            {%- if routine_step_count < 10 -%}
+                                                {{- routine_step_count | prepend: '0' -}}
+                                            {%- else -%}
+                                                {{- routine_step_count -}}
+                                            {%- endif -%}
+                                        </span>
+                                    </p>
+                                </div>
+                                <div class="routine-showcase__bars" aria-hidden="true">
+                                    {%- assign routine_step_index = 0 -%}
+                                    {%- for block in section.blocks -%}
+                                        {%- if block.type != 'step' -%}
+                                            {%- continue -%}
+                                        {%- endif -%}
+                                        {%- assign routine_step_index = routine_step_index | plus: 1 -%}
+                                        {%- assign routine_bar_index = routine_step_index | minus: 1 -%}
+                                        <div
+                                            class="routine-showcase__bar{% if routine_bar_index == 0 %} is-active{% endif %}"
+                                            data-item-index="{{ routine_bar_index }}"
+                                            :class="barClassFromEl($el)"
+                                        >
+                                            <div
+                                                class="routine-showcase__bar-fill"
+                                                data-routine-bar-fill
+                                                data-item-index="{{ routine_bar_index }}"
+                                            ></div>
+                                        </div>
+                                    {%- endfor -%}
+                                </div>
+                            </div>
 
-                            {%- render 'link',
-                                href: cta_href,
-                                variant: 'underline',
-                                class: 'body-xl text-theme-text',
-                                content: link_content
-                            -%}
-                        {%- endif -%}
-                    </div>
+                            <div class="routine-showcase__side-labels">
+                                {%- assign routine_step_index = 0 -%}
+                                {%- for block in section.blocks -%}
+                                    {%- if block.type != 'step' -%}
+                                        {%- continue -%}
+                                    {%- endif -%}
+                                    {%- liquid
+                                        assign routine_step_index = routine_step_index | plus: 1
+                                        assign routine_label_index = routine_step_index | minus: 1
+                                        assign routine_step_label = block.settings.label
+                                        if routine_step_label == blank
+                                            assign routine_step_label = 'sections.routine-showcase.defaults.step_label' | t
+                                        endif
+                                        assign routine_label_active = false
+                                        if routine_label_index == 0
+                                            assign routine_label_active = true
+                                        endif
+                                    -%}
+                                    <p
+                                        class="routine-showcase__side-label body-sm uppercase pc:body-md text-theme-text{% unless routine_label_active %} routine-showcase__side-label--inactive{% endunless %}{% if routine_label_active %} is-active{% endif %}"
+                                        data-routine-side-label
+                                        data-item-index="{{ routine_label_index }}"
+                                        :class="sideLabelClassFromEl($el)"
+                                    >
+                                        {{ routine_step_label }}
+                                    </p>
+                                {%- endfor -%}
+                            </div>
 
-                    <div
-                        class="{{ badge_position }} flex w-full items-center justify-center pc:h-full pc:min-h-0"
-                    >
-                        {%- render 'rotating-badge',
-                            classes: 'relative',
-                            unique_id: section.id,
-                            size: 100,
-                            size_mobile: 72,
-                            badge_text: section.settings.rotate_badge_text,
-                            center_text: section.settings.rotate_badge_percent
-                        -%}
+                            <div
+                                class="routine-showcase__tabs"
+                                role="tablist"
+                                aria-label="{{ 'sections.routine-showcase.accessibility.step_tabs' | t }}"
+                                @keydown="onTabKeydown($event)"
+                            >
+                                {%- assign routine_step_index = 0 -%}
+                                {%- for block in section.blocks -%}
+                                    {%- if block.type != 'step' -%}
+                                        {%- continue -%}
+                                    {%- endif -%}
+                                    {%- liquid
+                                        assign routine_step_index = routine_step_index | plus: 1
+                                        assign routine_tab_index = routine_step_index | minus: 1
+                                        assign routine_step_label = block.settings.label
+                                        if routine_step_label == blank
+                                            assign routine_step_label = 'sections.routine-showcase.defaults.step_label' | t
+                                        endif
+                                        assign routine_product = block.settings.product
+                                        assign routine_tab_product_title = routine_product.title
+                                        if routine_product == blank
+                                            assign routine_tab_product_title = 'sections.routine-showcase.placeholder_product_title' | t: index: routine_step_index
+                                        endif
+                                        assign routine_tab_aria = 'sections.routine-showcase.accessibility.step_tab' | t: step: routine_step_index, label: routine_step_label, product: routine_tab_product_title
+                                        assign routine_tab_selected = false
+                                        if routine_tab_index == 0
+                                            assign routine_tab_selected = true
+                                        endif
+                                        assign routine_placeholder_index = routine_step_index | minus: 1 | modulo: 6 | plus: 1
+                                        assign routine_placeholder_key = 'product-' | append: routine_placeholder_index
+                                    -%}
+                                    <button
+                                        type="button"
+                                        role="tab"
+                                        class="routine-showcase__tab"
+                                        id="routine-showcase-{{ section.id }}-tab-{{ routine_tab_index }}"
+                                        aria-controls="routine-showcase-{{ section.id }}-panel-{{ routine_tab_index }}"
+                                        aria-selected="{% if routine_tab_selected %}true{% else %}false{% endif %}"
+                                        tabindex="{% if routine_tab_selected %}0{% else %}-1{% endif %}"
+                                        data-item-index="{{ routine_tab_index }}"
+                                        x-init="registerTab($el)"
+                                        @click="selectTabFromEl($el)"
+                                        :tabindex="tabTabindexFromEl($el)"
+                                        :aria-selected="tabAriaSelectedFromEl($el)"
+                                        :class="tabActiveClassFromEl($el)"
+                                    >
+                                        <span class="routine-showcase__tab-thumb">
+                                            {%- if routine_product != blank and routine_product.featured_image != blank -%}
+                                                {%- render 'image',
+                                                    image: routine_product.featured_image,
+                                                    alt: '',
+                                                    mode: 'frame',
+                                                    fit: 'contain',
+                                                    loading: 'lazy',
+                                                    sizes: '80px',
+                                                    widths: '80,120,160',
+                                                    wrapper_class: 'h-full w-full',
+                                                    img_class: 'h-full w-full object-contain'
+                                                -%}
+                                            {%- else -%}
+                                                {{ routine_placeholder_key | placeholder_svg_tag: 'h-full w-full object-cover' }}
+                                            {%- endif -%}
+                                        </span>
+                                        <span class="routine-showcase__tab-caption text-center body-sm text-theme-text/80">
+                                            {{ routine_step_label }}
+                                        </span>
+                                        <span class="sr-only">{{ routine_tab_aria }}</span>
+                                    </button>
+                                {%- endfor -%}
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
+            {%- endif -%}
         </div>
     </div>
 {%- endcapture -%}
@@ -287,7 +590,7 @@
     scheme_target: 'none',
     surface_section: false,
     width: 'full',
-    height_kind: 'stage-pc',
+    height_kind: 'content',
     padding_mode: 'overlay',
     motion: false,
     safe_top: false,
@@ -297,185 +600,495 @@
 
 {% stylesheet %}
     .routine-showcase-section {
-        .swiper-button-prev,
-        .swiper-button-next {
-            --swiper-navigation-size: 18px;
-            --swiper-navigation-color: currentColor;
-            position: relative;
-            top: 0;
-            margin-top: 0;
-            border: 0;
-            padding: 0;
-            background: none;
-            cursor: pointer;
-        }
-
-        @media (min-width: 768px) {
-            .swiper-button-prev {
-                transform: rotate(90deg);
-            }
-        }
-
-        .routine-showcase__swiper-wrap {
-            visibility: hidden;
-
-            &.is-ready {
-                visibility: visible;
-            }
-        }
-
-        @media (width < 48rem) {
-            .routine-showcase__swiper-wrap .swiper {
-                aspect-ratio: 1.7;
-                height: auto;
-            }
-
-            .routine-showcase__overlay-grid {
-                grid-template-rows: repeat(3, auto);
-            }
-
-            .routine-showcase__overlay-grid .place-top-left,
-            .routine-showcase__overlay-grid .place-top-center,
-            .routine-showcase__overlay-grid .place-top-right,
-            .routine-showcase__overlay-grid .place-center-left,
-            .routine-showcase__overlay-grid .place-center,
-            .routine-showcase__overlay-grid .place-center-right,
-            .routine-showcase__overlay-grid .place-bottom-left,
-            .routine-showcase__overlay-grid .place-bottom-center,
-            .routine-showcase__overlay-grid .place-bottom-right {
-                grid-column-start: 1;
-                justify-self: stretch;
-            }
-
-            .routine-showcase__overlay-grid .place-top-left,
-            .routine-showcase__overlay-grid .place-top-center,
-            .routine-showcase__overlay-grid .place-top-right {
-                grid-row-start: 1;
-                align-self: start;
-            }
-
-            .routine-showcase__overlay-grid .place-center-left,
-            .routine-showcase__overlay-grid .place-center,
-            .routine-showcase__overlay-grid .place-center-right {
-                grid-row-start: 2;
-                align-self: center;
-            }
-
-            .routine-showcase__overlay-grid .place-bottom-left,
-            .routine-showcase__overlay-grid .place-bottom-center,
-            .routine-showcase__overlay-grid .place-bottom-right {
-                grid-row-start: 3;
-                align-self: end;
-            }
-        }
-
-        @media (width >= 48rem) {
-            .routine-showcase__swiper-wrap .swiper {
-                aspect-ratio: auto;
-                height: 100%;
-            }
-        }
-
-        @media (width >= 48rem) {
-            .routine-showcase__overlay-grid {
-                grid-template-rows: repeat(3, minmax(0, 1fr));
-            }
-        }
-
-        @media (width >= 48rem) {
-            .routine-showcase__overlay-grid .place-top-left {
-                grid-column: auto;
-                grid-column-start: 1;
-                grid-row-start: 1;
-                align-self: start;
-                justify-self: start;
-            }
-
-            .routine-showcase__overlay-grid .place-top-center {
-                grid-column: auto;
-                grid-column-start: 2;
-                grid-row-start: 1;
-                align-self: start;
-                justify-self: center;
-            }
-
-            .routine-showcase__overlay-grid .place-top-right {
-                grid-column: auto;
-                grid-column-start: 3;
-                grid-row-start: 1;
-                align-self: start;
-                justify-self: end;
-            }
-
-            .routine-showcase__overlay-grid .place-center-left {
-                grid-column: auto;
-                grid-column-start: 1;
-                grid-row-start: 2;
-                align-self: center;
-                justify-self: start;
-            }
-
-            .routine-showcase__overlay-grid .place-center {
-                grid-column: auto;
-                grid-column-start: 2;
-                grid-row-start: 2;
-                align-self: center;
-                justify-self: center;
-            }
-
-            .routine-showcase__overlay-grid .place-center-right {
-                grid-column: auto;
-                grid-column-start: 3;
-                grid-row-start: 2;
-                align-self: center;
-                justify-self: end;
-            }
-
-            .routine-showcase__overlay-grid .place-bottom-left {
-                grid-column: auto;
-                grid-column-start: 1;
-                grid-row-start: 3;
-                align-self: end;
-                justify-self: start;
-            }
-
-            .routine-showcase__overlay-grid .place-bottom-center {
-                grid-column: auto;
-                grid-column-start: 2;
-                grid-row-start: 3;
-                align-self: end;
-                justify-self: center;
-            }
-
-            .routine-showcase__overlay-grid .place-bottom-right {
-                grid-column: auto;
-                grid-column-start: 3;
-                grid-row-start: 3;
-                align-self: end;
-                justify-self: end;
-            }
-        }
+        overflow: hidden;
     }
 
-    .routine-showcase__product-info {
-        background-color: rgb(var(--color-background));
+    .routine-showcase__root {
+        position: relative;
         color: rgb(var(--color-foreground));
-        transition:
-            background-color var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease),
-            color var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease);
     }
 
-    .routine-showcase__product-info.is-hovered {
-        background-color: rgb(var(--color-foreground));
+    .routine-showcase__bg {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+    }
+
+    .routine-showcase__inner {
+        position: relative;
+        z-index: 1;
+        box-sizing: border-box;
+        width: 100%;
+        container-type: inline-size;
+        container-name: routine-showcase;
+    }
+
+    .routine-showcase__mobile-rail {
+        display: flex;
+        gap: 1rem;
+        margin: 0;
+        padding: 0 0 0.5rem;
+        list-style: none;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .routine-showcase__mobile-card-slot {
+        flex: 0 0 78%;
+        scroll-snap-align: start;
+        list-style: none;
+    }
+
+    .routine-showcase__mobile-card {
+        display: flex;
+        flex-direction: column;
+        gap: 0.875rem;
+        padding: 1.25rem;
+        border-radius: 0.5rem;
+        background-color: #fff;
+        box-shadow: 0 0 0 1px rgba(var(--color-foreground), 0.06);
+    }
+
+    .routine-showcase__mobile-product {
+        position: relative;
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .routine-showcase__mobile-product::before {
+        content: '';
+        position: absolute;
+        inset: 8%;
+        border-radius: 50%;
+        background: radial-gradient(
+            circle at center,
+            rgba(154, 171, 138, 0.45) 0%,
+            rgba(154, 171, 138, 0.12) 55%,
+            transparent 72%
+        );
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    .routine-showcase__mobile-product-link {
+        position: relative;
+        z-index: 1;
+        width: 72%;
+        height: 72%;
+        margin-inline: auto;
+    }
+
+    .routine-showcase__mobile-badge {
+        align-self: flex-start;
+        padding: 0.35rem 0.65rem;
+        border-radius: 0.375rem;
+        background-color: color-mix(
+            in oklab,
+            rgb(var(--color-foreground)) 38%,
+            rgb(var(--color-background)) 62%
+        );
         color: rgb(var(--color-background));
     }
 
-    .routine-showcase__product-info :where(h1, h2, h3, h4, h5, h6) {
-        color: currentColor;
+    .routine-showcase__mobile-footer {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 0.75rem 1.25rem;
     }
 
-    .routine-showcase__product-info :where(p) {
-        color: inherit;
+    .routine-showcase__heading {
+        font-weight: 400;
+    }
+
+    .routine-showcase__desktop {
+        display: none;
+    }
+
+    .routine-showcase__placeholder-svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+
+    .routine-showcase__placeholder-svg--scene {
+        object-fit: cover;
+    }
+
+    .routine-showcase__placeholder-svg--product {
+        object-fit: contain;
+    }
+
+    @media (min-width: 1024px) {
+        .routine-showcase__mobile-rail {
+            display: none;
+        }
+
+        .routine-showcase__desktop {
+            display: block;
+        }
+
+        .routine-showcase__desktop-grid {
+            display: flex;
+            align-items: stretch;
+            justify-content: space-between;
+            gap: clamp(1.25rem, 3vw, 3.5rem);
+            --routine-stage-height: clamp(40rem, 58cqi, calc(100svh - 4rem));
+            --routine-arch-ratio: 0.5;
+            min-height: var(--routine-stage-height);
+            height: var(--routine-stage-height);
+        }
+
+        .routine-showcase__col {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            height: 100%;
+        }
+
+        .routine-showcase__col--left {
+            flex: 1 1 33%;
+            min-width: 0;
+            max-width: 38%;
+            justify-content: space-between;
+            gap: 2.5rem;
+        }
+
+        .routine-showcase__col--center {
+            flex: 0 0 auto;
+            width: calc(var(--routine-stage-height) * 0.9 * var(--routine-arch-ratio));
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        .routine-showcase__col--right {
+            flex: 0 1 20%;
+            min-width: 0;
+            max-width: 22%;
+            align-items: flex-end;
+            text-align: right;
+            justify-content: space-between;
+            gap: 2rem;
+        }
+
+        .routine-showcase__intro {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            max-width: 100%;
+        }
+
+        .routine-showcase__info-stack {
+            position: relative;
+            min-height: 12rem;
+            max-width: min(100%, 26.75rem);
+        }
+
+        .routine-showcase__info {
+            transition:
+                opacity var(--motion-duration-base, 300ms) ease,
+                transform var(--motion-duration-base, 300ms) ease;
+        }
+
+        .routine-showcase__info--inactive {
+            visibility: hidden;
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            transform: translateY(0.75rem);
+            pointer-events: none;
+        }
+
+        .routine-showcase__info.is-active {
+            visibility: visible;
+            position: relative;
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        .routine-showcase__product-divider {
+            width: 5.5rem;
+            max-width: 100%;
+            margin: 1rem 0;
+            border: 0;
+            border-top: 1px solid rgba(var(--color-foreground), 0.12);
+        }
+
+        .routine-showcase__stage {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .routine-showcase__panel {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .routine-showcase__panel--inactive {
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .routine-showcase__panel.is-active {
+            visibility: visible;
+            pointer-events: auto;
+        }
+
+        .routine-showcase__arch-compose {
+            position: relative;
+            width: 100%;
+            height: 90%;
+            overflow: visible;
+        }
+
+        .routine-showcase__arch {
+            box-sizing: border-box;
+            width: 100%;
+            height: 100%;
+            border: 1px solid rgba(var(--color-foreground), 0.15);
+            border-radius: 9999px;
+            overflow: hidden;
+        }
+
+        .routine-showcase__scene--placeholder {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            background-color: rgb(var(--color-background));
+
+            @supports (background-color: color-mix(in oklab, white, black)) {
+                background-color: color-mix(
+                    in oklab,
+                    rgb(var(--color-background)) 92%,
+                    rgb(var(--color-foreground)) 8%
+                );
+            }
+        }
+
+        .routine-showcase__scene-img {
+            opacity: 0;
+            transition: opacity var(--motion-duration-base, 300ms) ease;
+        }
+
+        .routine-showcase__panel.is-active .routine-showcase__scene-img {
+            opacity: 1;
+        }
+
+        .routine-showcase__product-float {
+            position: absolute;
+            left: 50%;
+            top: 34%;
+            z-index: 2;
+            width: 46%;
+            height: 74%;
+            transform: translateX(-50%);
+            pointer-events: none;
+        }
+
+        .routine-showcase__product-link {
+            display: block;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .routine-showcase__product-link .routine-showcase__placeholder-svg--product,
+        .routine-showcase__product-link img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            object-position: bottom center;
+        }
+
+        .routine-showcase__product-img {
+            opacity: 0;
+            transform: translateY(1rem);
+            transition:
+                opacity var(--motion-duration-base, 300ms) ease 100ms,
+                transform var(--motion-duration-base, 300ms) ease 100ms;
+        }
+
+        .routine-showcase__panel.is-active .routine-showcase__product-img,
+        .routine-showcase__panel.is-active .routine-showcase__product-link {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .routine-showcase__controls {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            width: 100%;
+        }
+
+        .routine-showcase__counter-row {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            width: 100%;
+        }
+
+        .routine-showcase__bars {
+            display: inline-flex;
+            gap: 0.625rem;
+            margin-top: 0.75rem;
+            justify-content: flex-end;
+        }
+
+        .routine-showcase__bar {
+            flex: 0 0 auto;
+            width: 3.125rem;
+            height: 0.25rem;
+            border-radius: 9999px;
+            background: rgba(var(--color-foreground), 0.15);
+            overflow: hidden;
+        }
+
+        .routine-showcase__bar-fill {
+            display: block;
+            width: 100%;
+            height: 100%;
+            transform: scaleX(0);
+            transform-origin: left center;
+            background: rgb(var(--color-foreground));
+        }
+
+        .routine-showcase__bar.is-active .routine-showcase__bar-fill.is-static-full {
+            transform: scaleX(1);
+        }
+
+        .routine-showcase__bar.is-active .routine-showcase__bar-fill.is-animating {
+            animation: routine-showcase-progress var(--routine-autoplay-duration, 5s) linear
+                forwards;
+        }
+
+        .routine-showcase__root.is-autoplay-paused
+            .routine-showcase__bar.is-active
+            .routine-showcase__bar-fill.is-animating {
+            animation-play-state: paused;
+        }
+
+        @keyframes routine-showcase-progress {
+            from {
+                transform: scaleX(0);
+            }
+
+            to {
+                transform: scaleX(1);
+            }
+        }
+
+        .routine-showcase__side-labels {
+            position: relative;
+            flex: 1 1 auto;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        .routine-showcase__side-label {
+            position: absolute;
+            right: 0;
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            letter-spacing: 0.12em;
+            transition: opacity var(--motion-duration-base, 300ms) ease;
+        }
+
+        .routine-showcase__side-label--inactive {
+            visibility: hidden;
+            opacity: 0;
+        }
+
+        .routine-showcase__side-label.is-active {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .routine-showcase__tabs {
+            display: flex;
+            gap: clamp(0.5rem, 1.5cqi, 0.9375rem);
+            flex-wrap: nowrap;
+            justify-content: flex-end;
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .routine-showcase__tab {
+            display: flex;
+            flex: 1 1 0;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            min-width: 0;
+            max-width: 5rem;
+            padding: 0;
+            border: 0;
+            background: none;
+            cursor: pointer;
+            opacity: 0.5;
+        }
+
+        .routine-showcase__tab.is-active {
+            opacity: 1;
+        }
+
+        .routine-showcase__tab-thumb {
+            display: block;
+            width: 100%;
+            min-width: 0;
+            aspect-ratio: 2 / 3;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            border: 1.5px solid transparent;
+            background-color: rgba(var(--color-foreground), 0.06);
+        }
+
+        .routine-showcase__tab.is-active .routine-showcase__tab-thumb {
+            border-color: rgb(var(--color-foreground));
+        }
+
+        .routine-showcase__tab-caption {
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2;
+            overflow: hidden;
+            overflow-wrap: normal;
+            word-break: normal;
+            hyphens: none;
+        }
+    }
+
+    body[data-motion-enabled='false'] .routine-showcase__info,
+    body[data-motion-enabled='false'] .routine-showcase__scene-img,
+    body[data-motion-enabled='false'] .routine-showcase__product-img {
+        transition: none;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .routine-showcase__info,
+        .routine-showcase__scene-img,
+        .routine-showcase__product-img {
+            transition: none;
+        }
+
+        .routine-showcase__bar.is-active .routine-showcase__bar-fill.is-animating {
+            animation: none;
+        }
     }
 {% endstylesheet %}
 
@@ -484,6 +1097,7 @@
     "name": "t:sections.routine-showcase.name",
     "tag": "section",
     "class": "section",
+    "max_blocks": 5,
     "disabled_on": {
         "groups": ["header", "footer", "custom.overlay"]
     },
@@ -556,119 +1170,6 @@
             "label": "t:sections.routine-showcase.settings.background_image"
         },
         {
-            "type": "collection",
-            "id": "collection",
-            "label": "t:sections.routine-showcase.settings.select_collection"
-        },
-        {
-            "type": "select",
-            "id": "product_position",
-            "label": "t:sections.routine-showcase.settings.product_position",
-            "options": [
-                {
-                    "value": "left",
-                    "label": "t:sections.routine-showcase.options.left"
-                },
-                {
-                    "value": "center",
-                    "label": "t:sections.routine-showcase.options.center"
-                },
-                {
-                    "value": "right",
-                    "label": "t:sections.routine-showcase.options.right"
-                }
-            ],
-            "default": "left"
-        },
-        {
-            "type": "select",
-            "id": "content_position",
-            "label": "t:sections.routine-showcase.settings.content_position",
-            "options": [
-                {
-                    "value": "place-top-left",
-                    "label": "t:sections.routine-showcase.options.top_left"
-                },
-                {
-                    "value": "place-top-center",
-                    "label": "t:sections.routine-showcase.options.top_center"
-                },
-                {
-                    "value": "place-top-right",
-                    "label": "t:sections.routine-showcase.options.top_right"
-                },
-                {
-                    "value": "place-center-left",
-                    "label": "t:sections.routine-showcase.options.center_left"
-                },
-                {
-                    "value": "place-center",
-                    "label": "t:sections.routine-showcase.options.center"
-                },
-                {
-                    "value": "place-center-right",
-                    "label": "t:sections.routine-showcase.options.center_right"
-                },
-                {
-                    "value": "place-bottom-left",
-                    "label": "t:sections.routine-showcase.options.bottom_left"
-                },
-                {
-                    "value": "place-bottom-center",
-                    "label": "t:sections.routine-showcase.options.bottom_center"
-                },
-                {
-                    "value": "place-bottom-right",
-                    "label": "t:sections.routine-showcase.options.bottom_right"
-                }
-            ],
-            "default": "place-center-right"
-        },
-        {
-            "type": "select",
-            "id": "badge_position",
-            "label": "t:sections.routine-showcase.settings.badge_position",
-            "options": [
-                {
-                    "value": "place-top-left",
-                    "label": "t:sections.routine-showcase.options.top_left"
-                },
-                {
-                    "value": "place-top-center",
-                    "label": "t:sections.routine-showcase.options.top_center"
-                },
-                {
-                    "value": "place-top-right",
-                    "label": "t:sections.routine-showcase.options.top_right"
-                },
-                {
-                    "value": "place-center-left",
-                    "label": "t:sections.routine-showcase.options.center_left"
-                },
-                {
-                    "value": "place-center",
-                    "label": "t:sections.routine-showcase.options.center"
-                },
-                {
-                    "value": "place-center-right",
-                    "label": "t:sections.routine-showcase.options.center_right"
-                },
-                {
-                    "value": "place-bottom-left",
-                    "label": "t:sections.routine-showcase.options.bottom_left"
-                },
-                {
-                    "value": "place-bottom-center",
-                    "label": "t:sections.routine-showcase.options.bottom_center"
-                },
-                {
-                    "value": "place-bottom-right",
-                    "label": "t:sections.routine-showcase.options.bottom_right"
-                }
-            ],
-            "default": "place-bottom-right"
-        },
-        {
             "type": "inline_richtext",
             "id": "eyebrow",
             "label": "t:sections.routine-showcase.settings.eyebrow",
@@ -699,16 +1200,20 @@
             "default": "/collections"
         },
         {
-            "type": "text",
-            "id": "rotate_badge_text",
-            "label": "t:sections.routine-showcase.settings.rotate_badge_text",
-            "default": "t:sections.routine-showcase.defaults.rotate_badge_text"
+            "type": "checkbox",
+            "id": "autoplay",
+            "label": "t:sections.routine-showcase.settings.autoplay",
+            "default": true
         },
         {
-            "type": "text",
-            "id": "rotate_badge_percent",
-            "label": "t:sections.routine-showcase.settings.rotate_badge_percent",
-            "default": "t:sections.routine-showcase.defaults.rotate_badge_percent"
+            "type": "range",
+            "id": "autoplay_speed",
+            "min": 3,
+            "max": 10,
+            "step": 1,
+            "unit": "s",
+            "label": "t:sections.routine-showcase.settings.autoplay_speed",
+            "default": 5
         },
         {
             "type": "header",
@@ -735,10 +1240,59 @@
             "default": 32
         }
     ],
+    "blocks": [
+        {
+            "type": "step",
+            "name": "t:sections.routine-showcase.blocks.step.name",
+            "settings": [
+                {
+                    "type": "product",
+                    "id": "product",
+                    "label": "t:sections.routine-showcase.blocks.step.settings.product"
+                },
+                {
+                    "type": "text",
+                    "id": "label",
+                    "label": "t:sections.routine-showcase.blocks.step.settings.label",
+                    "default": "t:sections.routine-showcase.defaults.step_label"
+                },
+                {
+                    "type": "image_picker",
+                    "id": "image",
+                    "label": "t:sections.routine-showcase.blocks.step.settings.image"
+                },
+                {
+                    "type": "image_picker",
+                    "id": "product_image",
+                    "label": "t:sections.routine-showcase.blocks.step.settings.product_image",
+                    "info": "t:sections.routine-showcase.blocks.step.settings.product_image_info"
+                }
+            ]
+        }
+    ],
     "presets": [
         {
             "name": "t:sections.routine-showcase.presets.routine_showcase",
-            "settings": {}
+            "blocks": [
+                {
+                    "type": "step",
+                    "settings": {
+                        "label": "Cleanse"
+                    }
+                },
+                {
+                    "type": "step",
+                    "settings": {
+                        "label": "Treat"
+                    }
+                },
+                {
+                    "type": "step",
+                    "settings": {
+                        "label": "Protect"
+                    }
+                }
+            ]
         }
     ]
 }
