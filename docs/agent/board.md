@@ -2,7 +2,7 @@
 
 This board holds only what is not yet decided: the one active decision, evidence that has not become a plan, and deferred ideas. `docs/agent/context.md` holds exactly one accepted plan during execution, or no plan. Recording a plan does not authorize implementation. Project identity, scope, accepted direction, and overall status belong in `docs/project.md`; completed execution history belongs in Git.
 
-Last updated: 2026-10-04.
+Last updated: 2026-10-06.
 
 ## Open decisions
 
@@ -47,6 +47,17 @@ Design specification (grows section by section; first entries from the home `sli
   - **Cards:** row-alternating card schemes, light cards on `#fff`, and a `show_image` block toggle.
   - **Marquee module:** `scrolling-marquee.js` is the shared marquee module, through data hooks with optional `data-scrolling-velocity-k` and `data-scrolling-max-rate` (defaults 0.12 and 4). Tuned values: testimonials 1.2/8, icon strip 1/6.
   - **Lesson:** `inline_richtext` rejects `<br>`, and a rejected template blocks the whole `shopify theme dev` upload. If the dev store shows stale settings, restart `shopify theme dev`.
+- Step showcase (6-S8, `4d5ff30`; plan and review rounds: `git show 4d5ff30:docs/agent/context.md`):
+  - **Section:** `routine-showcase`, rewritten in place. One `step` block per product, with a step label, an optional arch scene (fallback: the product's second image, then a placeholder) and an optional floating packshot (fallback: the featured image).
+  - **Desktop (from 1024px):** the stage height comes from the content width (`58cqi`, capped at the screen height). The arch is a bordered pill at 90% of the stage, ratio `--routine-arch-ratio` 0.5. The packshot box overlaps the arch's bottom edge and is anchored with the `image` snippet's `position: 'bottom'`.
+  - **Steps:** WAI-ARIA tabs with roving tabindex. Inactive panels use CSS `visibility: hidden`.
+  - **Autoplay** (user decision):
+    - it always runs; a selection restarts the fill on the new step;
+    - it pauses only while the pointer is over the active thumbnail, while keyboard focus (`:focus-visible`) is on the active tab, off-screen, or in a hidden document;
+    - there is no pause button.
+  - **Mobile:** a native scroll-snap card rail, with no autoplay.
+  - **Pattern for later sections:** the `image` snippet applies Shopify's focal-point `object-position` unless `position` is passed. Pass it whenever the layout needs an anchor.
+  - **Lesson:** plan numeric targets against the container the section actually sits in. R2 tied the height to the viewport width while the content was capped, and R3 removed the page width. Both were coordinator errors, and each cost a round.
 - Card surface and depth (user, 2026-10-05; recorded, not yet planned):
   - **Surface colour.** The design's product cards (6-S4) and collection cards (6-S3) are white panels on the sage section background. Product cards have no surface of their own today, and collection cards hard-code `bg-white`.
   - **Coordinator proposal, layer 1:** a card background role in the colour schemes, default white, shared by product and collection cards.
@@ -67,6 +78,13 @@ Home polish pass (user, 2026-10-05). Per-section batches now settle structure, d
 - **Testimonial marquee:** the native reduced-motion check on a real device (MCP emulation does not take effect), and `templates/page.about.json`, which still holds the old testimonial keys (cleanup sweep).
 - **Testimonial marquee seam:** with exactly 2 testimonials, half the track holds 3 columns (odd), so the column-offset alternation breaks at the loop seam (6-S7 R4).
 - **Tier pairs and layout breakpoint:** in `scroll-categories`, the `pc:` / `max-pc:` tier and flex classes still switch at 768px, while the two-column layout now starts at 1024px. At 768–1023 the index sits beside the title in the stacked layout, and the image `sizes` still switch at `48rem` (6-S6 R12).
+- **Step showcase (6-S8):**
+  - the heading face (one design export shows a serif);
+  - the vertical label shows the step label, while the design repeats the heading;
+  - the badge sage is a scheme mix;
+  - Treat and Protect have no second image in the dev store;
+  - the arch ratio and the packshot box need checking against a real transparent packshot.
+- **Autoplay and WCAG 2.2.2 (6-S8):** the only user pauses are hover on the active thumbnail and keyboard focus on it. Touch devices at 1024px and wider have no pause, and there is no pause button by user decision. Decide before any Theme Store submission.
 
 Design phase inputs:
 
