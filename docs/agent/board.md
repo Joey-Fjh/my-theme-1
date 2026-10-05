@@ -22,69 +22,83 @@ Design specification (grows section by section; first entries from the home `sli
 - Promo bar / marquee (6-S2, `8cc18be`; plan and review rounds: `git show 8cc18be:docs/agent/context.md`): colour `scheme-3` (lime `#d5ff83` background, dark green `#263d29` text) for accent bars; separator spacing in `em` (0.5em before, the gap setting after); text sizes by responsive tier pairs (`pc:` / `max-pc:` literal classes, as in `slides-show`). Scroll-linked motion uses `subscribeScrollVelocity` in `assets/utils.js` (one shared passive listener) and modulates CSS animations with `updatePlaybackRate`; no GSAP. Open browser checks: hover pause (forced `:hover`), touch tap does not pause, native reduced motion.
 - Collection cards (6-S3, `75d077b`; plan and review rounds: `git show 75d077b:docs/agent/context.md`): new `collection-list` section (carousel only, `collection_list` source). Card hover: clockwise `rotate(2deg)`, lift 6px, soft shadow `rgba(var(--color-foreground), 0.18)`; image swap, neutral scrim (0.58 over the title box) and white title only when a second image exists; `:hover` fine-pointer only, `:focus-visible` on every device; reduced motion removes the motion. Pending: a card surface colour role (cards use `bg-white`), and the section background (design sage against `scheme-2` grey). Open browser checks: real touch tap, real `:hover`.
 - Product badges and featured products (6-S4; plan and review rounds: `git show 1aa88ed:docs/agent/context.md`):
-  - **Badges** live in the shared `product-card` (`snippets/product-card-badge.liquid`): one badge at most, in the order sold out, sale (`-N%`, or "Sale" when prices vary), custom tag 1, custom tag 2.
-  - **Badge colours** are theme settings (background and text per badge). Defaults are darkened from the mockup to reach 4.5:1.
-  - **Badge size:** `body-xs`, uppercase, padding `0.45em 0.8em`, radius `0.25em`. The badge sits at the top right of the media, or the top left on coarse pointers.
-  - **Section links** below a carousel use `link` `variant: 'default'` (resting underline) with a trailing arrow, centred.
-  - **Open:** custom badges in the browser, badges in recommendations, and lite cards in the header super menu are Blocked for data.
-  - **Open:** the per-scheme `badge_*` colours (`snippets/css-variables.liquid`) have no consumer of their own since 6-S4. Decide whether to retire them (a schema removal, Ask tier).
+    - **Badges** live in the shared `product-card` (`snippets/product-card-badge.liquid`): one badge at most, in the order sold out, sale (`-N%`, or "Sale" when prices vary), custom tag 1, custom tag 2.
+    - **Badge colours** are theme settings (background and text per badge). Defaults are darkened from the mockup to reach 4.5:1.
+    - **Badge size:** `body-xs`, uppercase, padding `0.45em 0.8em`, radius `0.25em`. The badge sits at the top right of the media, or the top left on coarse pointers.
+    - **Section links** below a carousel use `link` `variant: 'default'` (resting underline) with a trailing arrow, centred.
+    - **Open:** custom badges in the browser, badges in recommendations, and lite cards in the header super menu are Blocked for data.
+    - **Open:** the per-scheme `badge_*` colours (`snippets/css-variables.liquid`) have no consumer of their own since 6-S4. Decide whether to retire them (a schema removal, Ask tier).
 - Scatter gallery (6-S5, `a2424d4`; plan and review rounds: `git show a2424d4:docs/agent/context.md`):
-  - **Section:** new `scatter-gallery`, with fixed slots (8 on desktop, 6 on mobile) around a three-line uppercase statement that sits above the images.
-  - **Motion:** one scrubbed, unpinned ScrollTrigger over the whole pass (`top bottom` → `bottom top`). The cards start gathered with overlap, hold the design layout from 0.36 to 0.68, then spread outward by 0.24 on desktop and 0.16 on mobile.
-  - **Exit spread:** the user's decision. The alethia.earth reference block shows no exit spread.
-  - **Gates:** `motion_enabled` off, reduced motion and no JavaScript all show the layout.
-  - **Pattern for later GSAP sections:** load GSAP one viewport ahead through the section module's own observer; the core's 200px `data-module-lazy` margin is too late for a first-frame state.
-  - **Open:** the section background (design sage against `scheme-2` grey), the same item as in 6-S3.
+    - **Section:** new `scatter-gallery`, with fixed slots (8 on desktop, 6 on mobile) around a three-line uppercase statement that sits above the images.
+    - **Motion:** one scrubbed, unpinned ScrollTrigger over the whole pass (`top bottom` → `bottom top`). The cards start gathered with overlap, hold the design layout from 0.36 to 0.68, then spread outward by 0.24 on desktop and 0.16 on mobile.
+    - **Exit spread:** the user's decision. The alethia.earth reference block shows no exit spread.
+    - **Gates:** `motion_enabled` off, reduced motion and no JavaScript all show the layout.
+    - **Pattern for later GSAP sections:** load GSAP one viewport ahead through the section module's own observer; the core's 200px `data-module-lazy` margin is too late for a first-frame state.
+    - **Open:** the section background (design sage against `scheme-2` grey), the same item as in 6-S3.
 - Indexed hover list (6-S6, `ae9e9da`; plan and review rounds: `git show ae9e9da:docs/agent/context.md`):
-  - **Section:** `scroll-categories`, rewritten on the product model: a heading with a "(NN)" count, a divider, and rows of index plus title.
-  - **Desktop (from 1024px):** a right panel shows the active row's image, a description excerpt and a link. Hover or focus activates a row, and the panel holds the last active row.
-  - **Keyboard:** the inactive panels use `visibility: hidden` (no JavaScript `inert`), so keyboard order and resizing stay correct without a script.
-  - **Below 1024px:** every item is expanded.
-  - **Pattern for later sections:** hide inactive content with CSS visibility under the layout media query instead of a JavaScript-computed `inert`, which does not refresh on resize.
-  - **Polish items:** in the Home polish pass list.
+    - **Section:** `scroll-categories`, rewritten on the product model: a heading with a "(NN)" count, a divider, and rows of index plus title.
+    - **Desktop (from 1024px):** a right panel shows the active row's image, a description excerpt and a link. Hover or focus activates a row, and the panel holds the last active row.
+    - **Keyboard:** the inactive panels use `visibility: hidden` (no JavaScript `inert`), so keyboard order and resizing stay correct without a script.
+    - **Below 1024px:** every item is expanded.
+    - **Pattern for later sections:** hide inactive content with CSS visibility under the layout media query instead of a JavaScript-computed `inert`, which does not refresh on resize.
+    - **Polish items:** in the Home polish pass list.
 - Testimonial marquee (6-S7, `0f33e1c`; plan and review rounds: `git show 0f33e1c:docs/agent/context.md`):
-  - **Section:** `testimonial-featured`, rewritten as a marquee of two-card columns with alternating offsets; the columns bob on `watermark-marquee-bounce`.
-  - **Cards:** row-alternating card schemes, light cards on `#fff`, and a `show_image` block toggle.
-  - **Marquee module:** `scrolling-marquee.js` is the shared marquee module, through data hooks with optional `data-scrolling-velocity-k` and `data-scrolling-max-rate` (defaults 0.12 and 4). Tuned values: testimonials 1.2/8, icon strip 1/6.
-  - **Lesson:** `inline_richtext` rejects `<br>`, and a rejected template blocks the whole `shopify theme dev` upload. If the dev store shows stale settings, restart `shopify theme dev`.
+    - **Section:** `testimonial-featured`, rewritten as a marquee of two-card columns with alternating offsets; the columns bob on `watermark-marquee-bounce`.
+    - **Cards:** row-alternating card schemes, light cards on `#fff`, and a `show_image` block toggle.
+    - **Marquee module:** `scrolling-marquee.js` is the shared marquee module, through data hooks with optional `data-scrolling-velocity-k` and `data-scrolling-max-rate` (defaults 0.12 and 4). Tuned values: testimonials 1.2/8, icon strip 1/6.
+    - **Lesson:** `inline_richtext` rejects `<br>`, and a rejected template blocks the whole `shopify theme dev` upload. If the dev store shows stale settings, restart `shopify theme dev`.
 - Step showcase (6-S8, `4d5ff30`; plan and review rounds: `git show 4d5ff30:docs/agent/context.md`):
-  - **Section:** `routine-showcase`, rewritten in place. One `step` block per product, with a step label, an optional arch scene (fallback: the product's second image, then a placeholder) and an optional floating packshot (fallback: the featured image).
-  - **Desktop (from 1024px):** the stage height comes from the content width (`58cqi`, capped at the screen height). The arch is a bordered pill at 90% of the stage, ratio `--routine-arch-ratio` 0.5. The packshot box overlaps the arch's bottom edge and is anchored with the `image` snippet's `position: 'bottom'`.
-  - **Steps:** WAI-ARIA tabs with roving tabindex. Inactive panels use CSS `visibility: hidden`.
-  - **Autoplay** (user decision):
-    - it always runs; a selection restarts the fill on the new step;
-    - it pauses only while the pointer is over the active thumbnail, while keyboard focus (`:focus-visible`) is on the active tab, off-screen, or in a hidden document;
-    - there is no pause button.
-  - **Mobile:** a native scroll-snap card rail, with no autoplay.
-  - **Pattern for later sections:** the `image` snippet applies Shopify's focal-point `object-position` unless `position` is passed. Pass it whenever the layout needs an anchor.
-  - **Lesson:** plan numeric targets against the container the section actually sits in. R2 tied the height to the viewport width while the content was capped, and R3 removed the page width. Both were coordinator errors, and each cost a round.
+    - **Section:** `routine-showcase`, rewritten in place. One `step` block per product, with a step label, an optional arch scene (fallback: the product's second image, then a placeholder) and an optional floating packshot (fallback: the featured image).
+    - **Desktop (from 1024px):** the stage height comes from the content width (`58cqi`, capped at the screen height). The arch is a bordered pill at 90% of the stage, ratio `--routine-arch-ratio` 0.5. The packshot box overlaps the arch's bottom edge and is anchored with the `image` snippet's `position: 'bottom'`.
+    - **Steps:** WAI-ARIA tabs with roving tabindex. Inactive panels use CSS `visibility: hidden`.
+    - **Autoplay** (user decision):
+        - it always runs; a selection restarts the fill on the new step;
+        - it pauses only while the pointer is over the active thumbnail, while keyboard focus (`:focus-visible`) is on the active tab, off-screen, or in a hidden document;
+        - there is no pause button.
+    - **Mobile:** a native scroll-snap card rail, with no autoplay.
+    - **Pattern for later sections:** the `image` snippet applies Shopify's focal-point `object-position` unless `position` is passed. Pass it whenever the layout needs an anchor.
+    - **Lesson:** plan numeric targets against the container the section actually sits in. R2 tied the height to the viewport width while the content was capped, and R3 removed the page width. Both were coordinator errors, and each cost a round.
+- Stacked image panels (6-S9, `b94d212`; plan and review rounds: `git show b94d212:docs/agent/context.md`):
+    - **Section:** `promo-bannder`, rewritten in place; the type ID keeps its spelling. Each `card` block is a panel: a main image, a heading, a description, a small image, an optional link and its own colour scheme.
+    - **Desktop (from 1024px):** each panel is one screen tall (`--promo-bannder-panel-height`), `position: sticky; top: 0`, with a rising `z-index`, so the next panel slides up over the previous one. This is pure CSS and works without JavaScript. The image side alternates (odd left, even right) through CSS `order` under the desktop query only.
+    - **Image motion:** as on loiseau.framer.website, an IntersectionObserver at 0.5 toggles `is-in-view`, and the main image eases from scale 1.2 to 1 over 600ms on entry and back on exit. It is time-based, not a scrub, and needs no GSAP. Motion off, reduced motion and no JavaScript keep it at 1.
+    - **Mobile:** image (4:5) above text in normal flow, with no sticky.
+    - **Pattern for later sections:** percentage margins resolve against width, so vertical placement inside a fixed-height panel uses a height variable. Placeholder wrappers are `aria-hidden` (see the snippet item in the polish list).
 - Card surface and depth (user, 2026-10-05; recorded, not yet planned):
-  - **Surface colour.** The design's product cards (6-S4) and collection cards (6-S3) are white panels on the sage section background. Product cards have no surface of their own today, and collection cards hard-code `bg-white`.
-  - **Coordinator proposal, layer 1:** a card background role in the colour schemes, default white, shared by product and collection cards.
-  - **Coordinator proposal, layer 2 (optional, later):** a product or collection metafield that overrides the colour per card. This is how the Partake reference matches each card to its art-directed packshot. Liquid cannot read an image's dominant colour, so there is no automatic match.
-  - **Uniform colour and product images:** transparent or white packshots blend with the card; images with their own background show as a framed block.
-  - **Hover depth.** The design reads as a flat 2D card at rest turning into a raised 3D card on hover, done with the shadow. Reference: `docs/design/home/category-grid/hover-depth.png` (local, Git-ignored). Left: the rest card, white and flat. Right: the hovered card, tilted, with a deep soft shadow along its lower and right edges.
-  - **Gap:** today's single `0 16px 32px` shadow is flatter. Measure and design a layered shadow (a tight contact shadow plus a wide diffuse one, possibly tinted) when the card surface batch runs, and decide then whether product cards get the same depth on hover.
+    - **Surface colour.** The design's product cards (6-S4) and collection cards (6-S3) are white panels on the sage section background. Product cards have no surface of their own today, and collection cards hard-code `bg-white`.
+    - **Coordinator proposal, layer 1:** a card background role in the colour schemes, default white, shared by product and collection cards.
+    - **Coordinator proposal, layer 2 (optional, later):** a product or collection metafield that overrides the colour per card. This is how the Partake reference matches each card to its art-directed packshot. Liquid cannot read an image's dominant colour, so there is no automatic match.
+    - **Uniform colour and product images:** transparent or white packshots blend with the card; images with their own background show as a framed block.
+    - **Hover depth.** The design reads as a flat 2D card at rest turning into a raised 3D card on hover, done with the shadow. Reference: `docs/design/home/category-grid/hover-depth.png` (local, Git-ignored). Left: the rest card, white and flat. Right: the hovered card, tilted, with a deep soft shadow along its lower and right edges.
+    - **Gap:** today's single `0 16px 32px` shadow is flatter. Measure and design a layered shadow (a tight contact shadow plus a wide diffuse one, possibly tinted) when the card surface batch runs, and decide then whether product cards get the same depth on hover.
 - Shared carousel controls component, from the 6-S1 pagination (user, 2026-10-04). A snippet for the dot buttons and optional pause button plus a JS helper for `aria-current`, progress, pause/play, hover and focus pause; variants by parameter (`progress` pill or plain `dots`, pause on or off) and colour by CSS custom properties defaulting to scheme roles. Candidate consumers: `testimonial-featured` (autoplay with no pause control today, a WCAG 2.2.2 gap), `icon-with-text` and the product gallery (Swiper bullets), `featured-products` and `routine-showcase` (arrows only). Decided (user, 2026-10-04): extract it with the second real consumer, `testimonial-featured`, when the section-by-section design reaches it. **Update (6-S7, 2026-10-05):** `testimonial-featured` became a marquee with no pagination, so it is no longer the second consumer. Extraction waits for the next real consumer.
 
 Home polish pass (user, 2026-10-05). Per-section batches now settle structure, data, interaction logic and accessibility only, and close once they are roughly right. After the remaining home sections are done, one batch tunes the following across the whole home page against the designs:
+
 - **Colours:** the section backgrounds (design sage against `scheme-2` grey: 6-S3, 6-S5, 6-S6); the card surface role and the hover depth (card surface item below); the badge colours that were darkened for contrast (6-S4).
 - **Breakpoints:** tablet widths of 768–1024 on every section (the theme's `pc` breakpoint is 768). The 6-S6 1024px layout breakpoint is kept or revised there.
 - **Hover and touch:** hover-only behaviour on touch devices (6-S3 cards, 6-S6 rows) and the hero CTA underline (resting or on hover, under the hero item above).
 - **Typography:**
-  - weights: only the 400 and 700 faces are loaded, so decide on the medium weight;
-  - the tier choices that missed the design: 6-S6 row titles at 40px against about 58, plus its mobile index and spacing; 6-S3 heading and title sizes;
-  - the copied `heading-h1` PC formula in `scroll-categories`, which goes back to plain tier pairs once sizes are settled.
+    - weights: only the 400 and 700 faces are loaded, so decide on the medium weight;
+    - the tier choices that missed the design: 6-S6 row titles at 40px against about 58, plus its mobile index and spacing; 6-S3 heading and title sizes;
+    - the copied `heading-h1` PC formula in `scroll-categories`, which goes back to plain tier pairs once sizes are settled.
 - **Testimonial marquee:** the native reduced-motion check on a real device (MCP emulation does not take effect), and `templates/page.about.json`, which still holds the old testimonial keys (cleanup sweep).
 - **Testimonial marquee seam:** with exactly 2 testimonials, half the track holds 3 columns (odd), so the column-offset alternation breaks at the loop seam (6-S7 R4).
 - **Tier pairs and layout breakpoint:** in `scroll-categories`, the `pc:` / `max-pc:` tier and flex classes still switch at 768px, while the two-column layout now starts at 1024px. At 768–1023 the index sits beside the title in the stacked layout, and the image `sizes` still switch at `48rem` (6-S6 R12).
 - **Step showcase (6-S8):**
-  - the heading face (one design export shows a serif);
-  - the vertical label shows the step label, while the design repeats the heading;
-  - the badge sage is a scheme mix;
-  - Treat and Protect have no second image in the dev store;
-  - the arch ratio and the packshot box need checking against a real transparent packshot.
+    - the heading face (one design export shows a serif);
+    - the vertical label shows the step label, while the design repeats the heading;
+    - the badge sage is a scheme mix;
+    - Treat and Protect have no second image in the dev store;
+    - the arch ratio and the packshot box need checking against a real transparent packshot.
 - **Autoplay and WCAG 2.2.2 (6-S8):** the only user pauses are hover on the active thumbnail and keyboard focus on it. Touch devices at 1024px and wider have no pause, and there is no pause button by user decision. Decide before any Theme Store submission.
+- **Stacked panels (6-S9):**
+    - the design's pale sage (panel 1) against bright lime (panel 3) needs a fourth colour scheme (merchant configuration);
+    - the serif heading face;
+    - the sticky header overlaps the top of a stuck panel;
+    - the small image position (now ending at about 72% of the panel; the design is at 85%);
+    - the optional link's Tab reach was not tested with a configured link.
+- **Placeholder accessibility (6-S9 review):** the shared `snippets/image.liquid` placeholder branch ignores `alt`, so placeholder SVGs render as unnamed images in other sections too. Decide whether the snippet marks placeholders decorative (a shared-snippet change for the cleanup sweep).
 
 Design phase inputs:
 
@@ -102,14 +116,14 @@ Design phase inputs:
 - Browser sweep environment: through the `shopify theme dev` proxy with an isolated MCP profile, `/cdn/shop/files/*` images, `/variants/<id>/?section_id=pickup-availability`, and `/search` return 401 until the storefront password is entered, which hides real image and section failures. Before a sweep, restart `shopify theme dev` if needed and have the user enter the store password in the MCP browser window; the agent never handles the password.
 - First submission, clarified (user, 2026-09-29): the ZIP upload passed the automatic syntax check, then the manual review rejected the design as not distinct before any code review. So neither the Lighthouse bar (average ≥ 60 performance, ≥ 90 accessibility on home, product, collection, desktop and mobile) nor the technical requirements have been verified by Shopify for any version of this theme.
 - Skeleton backport candidates, **on hold** (user, 2026-10-03; policy in `docs/project.md`; checked against `skeleton/main` `5191a50` on 2026-10-04):
-  - the merchant JSON `.prettierignore` exclusion;
-  - 5-S (entry scripts snippet, `2e0cddd`): the snippet, the layout render, and the lint that reads the import map from it;
-  - H (5-H, `2683402`): `holdUntilReady` in the adapter, `holdForModule` and download-ahead `scanModules` in `base.js`, no mount after a failed import, the moved-lazy-root observer fix, and the matching `javascript-runtime.md` contract. H also closes two skeleton gaps found here: `scanModules` activating an already-loaded container root before deferring its descendants, and module roots in `<template>` content never being scanned;
-  - the validator additions that guard the items above (in `theme-contracts.js`, `theme-architecture.test.js`, `doctor-agent.mjs`); the style ownership and settings-chain additions stay here;
-  - the Chrome DevTools MCP adapter entries (5-T1) and the `frontend-design` skill.
-  - Not a candidate (user, 2026-10-04): the CSS step 3 rules and primitive snippets (5-C3a–5-C3g, 5-B1). They serve this theme's section-block model; the skeleton composes with Theme Blocks as components (as Horizon does) and keeps snippets as code fragments. A GSAP adapter is judged after the home page narrative is built.
-  - Timing (coordinator proposal): after the second submission, unless a new theme starts from the skeleton earlier.
-  - Already covered by the skeleton reference, not applied here: `javascript-runtime.md` recommends `modulepreload` for a first-viewport module chain that the page truly needs before interaction.
+    - the merchant JSON `.prettierignore` exclusion;
+    - 5-S (entry scripts snippet, `2e0cddd`): the snippet, the layout render, and the lint that reads the import map from it;
+    - H (5-H, `2683402`): `holdUntilReady` in the adapter, `holdForModule` and download-ahead `scanModules` in `base.js`, no mount after a failed import, the moved-lazy-root observer fix, and the matching `javascript-runtime.md` contract. H also closes two skeleton gaps found here: `scanModules` activating an already-loaded container root before deferring its descendants, and module roots in `<template>` content never being scanned;
+    - the validator additions that guard the items above (in `theme-contracts.js`, `theme-architecture.test.js`, `doctor-agent.mjs`); the style ownership and settings-chain additions stay here;
+    - the Chrome DevTools MCP adapter entries (5-T1) and the `frontend-design` skill.
+    - Not a candidate (user, 2026-10-04): the CSS step 3 rules and primitive snippets (5-C3a–5-C3g, 5-B1). They serve this theme's section-block model; the skeleton composes with Theme Blocks as components (as Horizon does) and keeps snippets as code fragments. A GSAP adapter is judged after the home page narrative is built.
+    - Timing (coordinator proposal): after the second submission, unless a new theme starts from the skeleton earlier.
+    - Already covered by the skeleton reference, not applied here: `javascript-runtime.md` recommends `modulepreload` for a first-viewport module chain that the page truly needs before interaction.
 - Process calibration: write acceptance counts from commands, not by hand; execution prompts must state that open board decisions may be cited but not decided. Proposed home: `.agents/roles/implementer.md` and `verifier.md` (a rule change, needs the user's approval).
 
 ## Deferred ideas
