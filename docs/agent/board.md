@@ -42,6 +42,11 @@ Design specification (grows section by section; first entries from the home `sli
   - **Below 1024px:** every item is expanded.
   - **Pattern for later sections:** hide inactive content with CSS visibility under the layout media query instead of a JavaScript-computed `inert`, which does not refresh on resize.
   - **Polish items:** in the Home polish pass list.
+- Testimonial marquee (6-S7, `0f33e1c`; plan and review rounds: `git show 0f33e1c:docs/agent/context.md`):
+  - **Section:** `testimonial-featured`, rewritten as a marquee of two-card columns with alternating offsets; the columns bob on `watermark-marquee-bounce`.
+  - **Cards:** row-alternating card schemes, light cards on `#fff`, and a `show_image` block toggle.
+  - **Marquee module:** `scrolling-marquee.js` is the shared marquee module, through data hooks with optional `data-scrolling-velocity-k` and `data-scrolling-max-rate` (defaults 0.12 and 4). Tuned values: testimonials 1.2/8, icon strip 1/6.
+  - **Lesson:** `inline_richtext` rejects `<br>`, and a rejected template blocks the whole `shopify theme dev` upload. If the dev store shows stale settings, restart `shopify theme dev`.
 - Card surface and depth (user, 2026-10-05; recorded, not yet planned):
   - **Surface colour.** The design's product cards (6-S4) and collection cards (6-S3) are white panels on the sage section background. Product cards have no surface of their own today, and collection cards hard-code `bg-white`.
   - **Coordinator proposal, layer 1:** a card background role in the colour schemes, default white, shared by product and collection cards.
@@ -49,7 +54,7 @@ Design specification (grows section by section; first entries from the home `sli
   - **Uniform colour and product images:** transparent or white packshots blend with the card; images with their own background show as a framed block.
   - **Hover depth.** The design reads as a flat 2D card at rest turning into a raised 3D card on hover, done with the shadow. Reference: `docs/design/home/category-grid/hover-depth.png` (local, Git-ignored). Left: the rest card, white and flat. Right: the hovered card, tilted, with a deep soft shadow along its lower and right edges.
   - **Gap:** today's single `0 16px 32px` shadow is flatter. Measure and design a layered shadow (a tight contact shadow plus a wide diffuse one, possibly tinted) when the card surface batch runs, and decide then whether product cards get the same depth on hover.
-- Shared carousel controls component, from the 6-S1 pagination (user, 2026-10-04). A snippet for the dot buttons and optional pause button plus a JS helper for `aria-current`, progress, pause/play, hover and focus pause; variants by parameter (`progress` pill or plain `dots`, pause on or off) and colour by CSS custom properties defaulting to scheme roles. Candidate consumers: `testimonial-featured` (autoplay with no pause control today, a WCAG 2.2.2 gap), `icon-with-text` and the product gallery (Swiper bullets), `featured-products` and `routine-showcase` (arrows only). Decided (user, 2026-10-04): extract it with the second real consumer, `testimonial-featured`, when the section-by-section design reaches it.
+- Shared carousel controls component, from the 6-S1 pagination (user, 2026-10-04). A snippet for the dot buttons and optional pause button plus a JS helper for `aria-current`, progress, pause/play, hover and focus pause; variants by parameter (`progress` pill or plain `dots`, pause on or off) and colour by CSS custom properties defaulting to scheme roles. Candidate consumers: `testimonial-featured` (autoplay with no pause control today, a WCAG 2.2.2 gap), `icon-with-text` and the product gallery (Swiper bullets), `featured-products` and `routine-showcase` (arrows only). Decided (user, 2026-10-04): extract it with the second real consumer, `testimonial-featured`, when the section-by-section design reaches it. **Update (6-S7, 2026-10-05):** `testimonial-featured` became a marquee with no pagination, so it is no longer the second consumer. Extraction waits for the next real consumer.
 
 Home polish pass (user, 2026-10-05). Per-section batches now settle structure, data, interaction logic and accessibility only, and close once they are roughly right. After the remaining home sections are done, one batch tunes the following across the whole home page against the designs:
 - **Colours:** the section backgrounds (design sage against `scheme-2` grey: 6-S3, 6-S5, 6-S6); the card surface role and the hover depth (card surface item below); the badge colours that were darkened for contrast (6-S4).
@@ -59,6 +64,8 @@ Home polish pass (user, 2026-10-05). Per-section batches now settle structure, d
   - weights: only the 400 and 700 faces are loaded, so decide on the medium weight;
   - the tier choices that missed the design: 6-S6 row titles at 40px against about 58, plus its mobile index and spacing; 6-S3 heading and title sizes;
   - the copied `heading-h1` PC formula in `scroll-categories`, which goes back to plain tier pairs once sizes are settled.
+- **Testimonial marquee:** the native reduced-motion check on a real device (MCP emulation does not take effect), and `templates/page.about.json`, which still holds the old testimonial keys (cleanup sweep).
+- **Testimonial marquee seam:** with exactly 2 testimonials, half the track holds 3 columns (odd), so the column-offset alternation breaks at the loop seam (6-S7 R4).
 - **Tier pairs and layout breakpoint:** in `scroll-categories`, the `pc:` / `max-pc:` tier and flex classes still switch at 768px, while the two-column layout now starts at 1024px. At 768–1023 the index sits beside the title in the stacked layout, and the image `sizes` still switch at `48rem` (6-S6 R12).
 
 Design phase inputs:
