@@ -22,8 +22,8 @@ class ScrollingMarqueeInstance {
     constructor(root, disposable) {
         this._root = root;
         this._disposable = disposable;
-        this._marquee = root.querySelector('.scrolling-icon-with-text__marquee');
-        this._track = root.querySelector('.scrolling-icon-with-text__track');
+        this._marquee = root.querySelector('[data-scrolling-marquee]');
+        this._track = root.querySelector('[data-scrolling-marquee-track]');
         this._pauseButton = root.querySelector('[data-scrolling-marquee-pause]');
         this._observer = null;
         this._visible = false;
@@ -34,10 +34,22 @@ class ScrollingMarqueeInstance {
         this._unsubscribeScroll = null;
         this._hoverPaused = false;
         this._focusPaused = false;
+        this._velocityK = VELOCITY_K;
+        this._maxPlaybackRate = MAX_PLAYBACK_RATE;
     }
 
     mount() {
         if (!this._marquee || !this._track) return;
+
+        const velocityK = Number.parseFloat(this._marquee.dataset.scrollingVelocityK);
+        if (Number.isFinite(velocityK) && velocityK >= 0) {
+            this._velocityK = velocityK;
+        }
+
+        const maxRate = Number.parseFloat(this._marquee.dataset.scrollingMaxRate);
+        if (Number.isFinite(maxRate) && maxRate > 0) {
+            this._maxPlaybackRate = maxRate;
+        }
 
         this._syncVisibleState();
 
@@ -113,7 +125,10 @@ class ScrollingMarqueeInstance {
         if (!motionEnabled() || !this._visible) return;
         if (!this._shouldModulateRate()) return;
 
-        const nextTarget = Math.min(MAX_PLAYBACK_RATE, 1 + VELOCITY_K * Math.abs(velocity));
+        const nextTarget = Math.min(
+            this._maxPlaybackRate,
+            1 + this._velocityK * Math.abs(velocity),
+        );
         this._targetRate = nextTarget;
         this._ensureRateLoop();
 
@@ -191,7 +206,7 @@ class ScrollingMarqueeInstance {
         if (!track) return;
         const animation = track.getAnimations()[0];
         if (!animation) return;
-        const clamped = Math.max(0, Math.min(MAX_PLAYBACK_RATE, Number(rate) || 1));
+        const clamped = Math.max(0, Math.min(this._maxPlaybackRate, Number(rate) || 1));
         animation.updatePlaybackRate(clamped);
     }
 

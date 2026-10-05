@@ -1,107 +1,618 @@
-{%- assign testimonial_featured_root_attrs = 'data-component-kind="section" data-component-type="testimonial-featured" data-component-id="'
-    | append: section.id
-    | append: '"'
+{%- liquid
+    assign testimonial_heading_size = section.settings.heading_size | default: 'heading-2xl'
+    case testimonial_heading_size
+        when 'heading-4xl'
+            assign testimonial_heading_class = 'heading-h2 pc:heading-4xl'
+        when 'heading-3xl'
+            assign testimonial_heading_class = 'heading-h2 pc:heading-3xl'
+        when 'heading-2xl'
+            assign testimonial_heading_class = 'heading-h2 pc:heading-2xl'
+        when 'heading-xl'
+            assign testimonial_heading_class = 'heading-h3 pc:heading-xl'
+        when 'heading-h1'
+            assign testimonial_heading_class = 'heading-h2 pc:heading-h1'
+        when 'heading-h2'
+            assign testimonial_heading_class = 'heading-h3 pc:heading-h2'
+        when 'heading-h3'
+            assign testimonial_heading_class = 'heading-h4 pc:heading-h3'
+        when 'heading-h4'
+            assign testimonial_heading_class = 'heading-h5 pc:heading-h4'
+        when 'heading-h5'
+            assign testimonial_heading_class = 'heading-h6 pc:heading-h5'
+        when 'heading-h6'
+            assign testimonial_heading_class = 'body-xl pc:heading-h6'
+        else
+            assign testimonial_heading_class = 'heading-h2 pc:heading-2xl'
+    endcase
+    assign testimonial_heading_text = section.settings.heading
+    if testimonial_heading_text == blank
+        assign testimonial_heading_text = 'sections.testimonial-featured.defaults.heading' | t
+    endif
+
+    assign testimonial_marquee_direction = section.settings.marquee_direction | default: 'right_to_left'
+    unless testimonial_marquee_direction == 'right_to_left' or testimonial_marquee_direction == 'left_to_right'
+        assign testimonial_marquee_direction = 'right_to_left'
+    endunless
+
+    assign testimonial_marquee_speed = section.settings.marquee_speed | default: 'normal'
+    unless testimonial_marquee_speed == 'slow' or testimonial_marquee_speed == 'normal' or testimonial_marquee_speed == 'fast'
+        assign testimonial_marquee_speed = 'normal'
+    endunless
+
+    assign testimonial_pause_on_hover = true
+    if section.settings.marquee_pause_on_hover == false
+        assign testimonial_pause_on_hover = false
+    endif
+    if testimonial_pause_on_hover
+        assign testimonial_pause_on_hover_attr = 'true'
+    else
+        assign testimonial_pause_on_hover_attr = 'false'
+    endif
+
+    assign testimonial_card_scheme_top = section.settings.card_scheme_top | default: 'scheme-1'
+    assign testimonial_card_scheme_bottom = section.settings.card_scheme_bottom | default: 'scheme-2'
+
+    assign testimonial_block_count = section.blocks.size
+    assign testimonial_column_count = testimonial_block_count | plus: 1 | divided_by: 2
+
+    if testimonial_block_count == 1
+        assign testimonial_copies_per_set = 6
+    elsif testimonial_block_count == 2
+        assign testimonial_copies_per_set = 3
+    else
+        assign testimonial_copies_per_set = 2
+    endif
+
+    assign testimonial_global_column_index = 0
 -%}
+
 {%- capture testimonial_featured_children -%}
-        <div
-            class="flex flex-col gap-12 pc:h-full pc:flex-row pc:gap-0"
-            data-module-id="testimonial-featured"
-            x-data="testimonialFeatured()"
-            data-auto-slide="{{ section.settings.is_auto_slide }}"
-            data-slide-delay="{{ section.settings.slide_delay }}"
-            data-swiper-src="{{ 'vendor-swiper.min.js' | asset_url }}"
-        >
-            {% comment %} Left - Testimonial {% endcomment %}
-            <div class="swiper w-full flex-1 pc:h-full pc:w-1/2">
-                <div class="swiper-wrapper">
-                    {% for block in section.blocks %}
-                        {%- liquid
-                            assign testimonial_author_name = block.settings.author_name
-                            if testimonial_author_name == blank
-                                assign testimonial_author_name = 'testimonial.defaults.author_name' | t
-                            endif
+    <div class="testimonial-featured__layout flex flex-col gap-10 pc:gap-12">
+        <h2 class="testimonial-featured__heading {{ testimonial_heading_class }} text-theme-text">
+            {{ testimonial_heading_text }}
+        </h2>
 
-                            assign testimonial_author_title = block.settings.author_title
-                            if testimonial_author_title == blank
-                                assign testimonial_author_title = 'testimonial.defaults.author_title' | t
-                            endif
-                        -%}
-                        <div class="swiper-slide h-auto pc:h-full" {{ block.shopify_attributes }}>
-                            <div
-                                class="
-                                    flex flex-1 flex-col items-center justify-center
-                                    py-16 text-center pc:h-full pc:py-0
-                                "
-                            >
-                                <div
-                                    class="flex w-full flex-col items-center gap-10 pc:gap-24"
-                                    {% if forloop.first %}
-                                    {% endif %}
-                                >
-                                    {% render 'starts', rating: block.settings.rating, size: 'lg' %}
+        {%- if testimonial_block_count > 0 -%}
+            <div
+                class="testimonial-featured__module relative"
+                data-module-id="scrolling-marquee"
+                x-data="scrollingMarquee()"
+            >
+                <div
+                    class="testimonial-featured__region"
+                    role="region"
+                    aria-label="{{ 'sections.testimonial-featured.accessibility.marquee_region' | t }}"
+                >
+                    <div
+                        class="testimonial-featured__marquee"
+                        data-scrolling-marquee
+                        data-scrolling-direction="{{ testimonial_marquee_direction }}"
+                        data-scrolling-speed="{{ testimonial_marquee_speed }}"
+                        data-scrolling-pause-on-hover="{{ testimonial_pause_on_hover_attr }}"
+                        data-scrolling-velocity-k="1.2"
+                        data-scrolling-max-rate="8"
+                    >
+                        <button
+                            type="button"
+                            class="testimonial-featured__pause-btn focus-ring"
+                            data-scrolling-marquee-pause
+                            aria-pressed="false"
+                            aria-label="{{ 'accessibility.marquee_pause' | t }}"
+                        ></button>
 
-                                    <blockquote
-                                        class="rte rte--compact max-w-[90%] body-3xl pc:max-w-[60%]"
-                                    >
-                                        {{ block.settings.quote }}
-                                    </blockquote>
-
-                                    <div class="flex flex-col gap-3">
-                                        <p class="heading-2xl">
-                                            {{ testimonial_author_name }}
-                                        </p>
-                                        <p>
-                                            {{ testimonial_author_title }}
-                                        </p>
-                                    </div>
-                                </div>
+                        <div class="testimonial-featured__viewport">
+                            <div class="testimonial-featured__track" data-scrolling-marquee-track>
+                                {%- for pass in (1..2) -%}
+                                    {%- for copy in (1..testimonial_copies_per_set) -%}
+                                        {%- for column_index in (1..testimonial_column_count) -%}
+                                            {%- liquid
+                                                assign testimonial_global_column_index = testimonial_global_column_index | plus: 1
+                                                assign testimonial_top_block_index = column_index | minus: 1 | times: 2
+                                                assign testimonial_bottom_block_index = testimonial_top_block_index | plus: 1
+                                                assign testimonial_top_block = section.blocks[testimonial_top_block_index]
+                                                assign testimonial_bottom_block = section.blocks[testimonial_bottom_block_index]
+                                                assign testimonial_is_primary_column = false
+                                                if pass == 1 and copy == 1
+                                                    assign testimonial_is_primary_column = true
+                                                endif
+                                                assign testimonial_bounce_phase = testimonial_global_column_index | minus: 1 | modulo: 4
+                                                assign testimonial_column_offset = false
+                                                assign testimonial_column_parity = testimonial_global_column_index | modulo: 2
+                                                if testimonial_column_parity == 0
+                                                    assign testimonial_column_offset = true
+                                                endif
+                                            -%}
+                                            <div
+                                                class="testimonial-featured__column{% if testimonial_column_offset %} testimonial-featured__column--offset{% endif %}"
+                                                style="--wm-phase: {{ testimonial_bounce_phase }};"
+                                                {% unless testimonial_is_primary_column %}
+                                                    aria-hidden="true"
+                                                    inert
+                                                {% endunless %}
+                                            >
+                                                <ul
+                                                    class="testimonial-featured__column-list"
+                                                    role="list"
+                                                >
+                                                    {%- for testimonial_row in (1..2) -%}
+                                                        {%- liquid
+                                                            assign testimonial_card_block = blank
+                                                            assign testimonial_row_scheme = testimonial_card_scheme_top
+                                                            if testimonial_row == 1
+                                                                assign testimonial_card_block = testimonial_top_block
+                                                            else
+                                                                assign testimonial_card_block = testimonial_bottom_block
+                                                                assign testimonial_row_scheme = testimonial_card_scheme_bottom
+                                                            endif
+                                                        -%}
+                                                        {%- if testimonial_card_block -%}
+                                                            {%- liquid
+                                                                assign testimonial_card_rating = testimonial_card_block.settings.rating | default: 5
+                                                                assign testimonial_card_quote = testimonial_card_block.settings.quote
+                                                                assign testimonial_card_author = testimonial_card_block.settings.author_name
+                                                                if testimonial_card_author == blank
+                                                                    assign testimonial_card_author = 'sections.testimonial-featured.defaults.author_name' | t
+                                                                endif
+                                                                assign testimonial_show_image = testimonial_card_block.settings.show_image | default: true, allow_false: true
+                                                                if testimonial_show_image == false or testimonial_show_image == 'false'
+                                                                    assign testimonial_show_media = false
+                                                                else
+                                                                    assign testimonial_show_media = true
+                                                                endif
+                                                                assign testimonial_placeholder_index = testimonial_top_block_index | plus: testimonial_row | modulo: 6
+                                                                if testimonial_placeholder_index == 0
+                                                                    assign testimonial_placeholder_index = 6
+                                                                endif
+                                                                assign testimonial_placeholder_key = 'product-' | append: testimonial_placeholder_index
+                                                                assign testimonial_image_sizes = '(min-width: 768px) 36vw, 78vw'
+                                                                assign testimonial_card_row_modifier = ''
+                                                                if testimonial_row == 2
+                                                                    assign testimonial_card_row_modifier = ' testimonial-featured__card--bottom'
+                                                                endif
+                                                                assign testimonial_card_modifier = ''
+                                                                unless testimonial_show_media
+                                                                    assign testimonial_card_modifier = ' testimonial-featured__card--text-only'
+                                                                endunless
+                                                            -%}
+                                                            <li
+                                                                class="testimonial-featured__card-slot"
+                                                                {% if testimonial_is_primary_column %}
+                                                                    {{ testimonial_card_block.shopify_attributes }}
+                                                                {% endif %}
+                                                            >
+                                                                <article
+                                                                    class="testimonial-featured__card color-{{ testimonial_row_scheme }}{{ testimonial_card_row_modifier }}{{ testimonial_card_modifier }}"
+                                                                >
+                                                                    <div
+                                                                        class="testimonial-featured__card-inner{% if testimonial_show_media %} testimonial-featured__card-inner--media{% endif %}"
+                                                                    >
+                                                                        {%- if testimonial_show_media -%}
+                                                                            <div
+                                                                                class="testimonial-featured__media{% if testimonial_card_block.settings.image == blank %} testimonial-featured__media--placeholder{% endif %}"
+                                                                            >
+                                                                                {%- if testimonial_card_block.settings.image != blank -%}
+                                                                                    {%- render 'image',
+                                                                                        image: testimonial_card_block.settings.image,
+                                                                                        mode: 'frame',
+                                                                                        fit: 'cover',
+                                                                                        loading: 'lazy',
+                                                                                        sizes: testimonial_image_sizes,
+                                                                                        widths: '240, 360, 480, 640',
+                                                                                        wrapper_class: 'h-full w-full',
+                                                                                        img_class: 'h-full w-full object-cover'
+                                                                                    -%}
+                                                                                {%- else -%}
+                                                                                    {{ testimonial_placeholder_key | placeholder_svg_tag: 'h-full w-full object-cover' }}
+                                                                                {%- endif -%}
+                                                                            </div>
+                                                                        {%- endif -%}
+                                                                        <div class="testimonial-featured__content">
+                                                                            {%- if testimonial_card_quote != blank -%}
+                                                                                <div class="testimonial-featured__quote rte body-md text-theme-text italic pc:body-lg">
+                                                                                    {{ testimonial_card_quote }}
+                                                                                </div>
+                                                                            {%- endif -%}
+                                                                            <div class="testimonial-featured__meta">
+                                                                                {%- render 'starts',
+                                                                                    rating: testimonial_card_rating,
+                                                                                    max: 5,
+                                                                                    size: 'md',
+                                                                                    wrapper_class: 'testimonial-featured__stars mb-0 inline-flex shrink-0 items-center'
+                                                                                -%}
+                                                                                <p class="testimonial-featured__author shrink-0 body-md text-theme-text">
+                                                                                    — {{ testimonial_card_author }}
+                                                                                </p>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </article>
+                                                            </li>
+                                                        {%- endif -%}
+                                                    {%- endfor -%}
+                                                </ul>
+                                            </div>
+                                        {%- endfor -%}
+                                    {%- endfor -%}
+                                {%- endfor -%}
                             </div>
                         </div>
-                    {% endfor %}
+                    </div>
                 </div>
             </div>
-
-            {% comment %} Right - Image  {% endcomment %}
-            <div class="relative flex-1 pc:w-1/2">
-                {% render 'image',
-                    class: 'h-full w-full',
-                    image: section.settings.image,
-                    placeholder_key: 'lifestyle-2',
-                    alt: section.settings.image.alt,
-                    width: section.settings.image.width,
-                    mode: 'frame',
-                    fit: 'cover'
-                %}
-
-                {% comment %} Floating Card {% endcomment %}
-                {% if section.settings.show_floating_card %}
-                    <div
-                        class="absolute inset-x-0 bottom-8 mx-auto w-[90%]"
-                    >
-                        <div class="flex w-full flex-col gap-3 bg-theme-bg p-6 italic">
-                            <p>
-                                {{ section.settings.card_label }}
-                            </p>
-                            <p class="heading-2xl">
-                                {{ section.settings.card_title }}
-                            </p>
-                        </div>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
+        {%- endif -%}
+    </div>
 {%- endcapture -%}
 
 {% render 'section-frame',
     section: section,
     section_class: 'testimonial-featured-section',
+    scheme_target: 'inner',
     width: 'page',
-    height_kind: 'stage-pc',
+    height_kind: 'content',
     motion: false,
-    root_attrs: testimonial_featured_root_attrs,
-    inner_class: 'pc:h-full',
     children: testimonial_featured_children
 %}
+
+{% stylesheet %}
+    .testimonial-featured-section {
+        width: 100%;
+        min-width: calc(var(--spacing) * 0);
+        overflow: hidden;
+        --testimonial-card-width: 78vw;
+        --testimonial-card-ratio: 1.8;
+    }
+
+    @media (min-width: 768px) {
+        .testimonial-featured-section {
+            --testimonial-card-width: 36vw;
+            --testimonial-card-ratio: 2.209302;
+        }
+    }
+
+    .testimonial-featured__heading {
+        max-width: 10em;
+    }
+
+    @media (min-width: 768px) {
+        .testimonial-featured__heading {
+            max-width: 11em;
+        }
+    }
+
+    .testimonial-featured__marquee {
+        position: relative;
+        width: 100%;
+        min-width: calc(var(--spacing) * 0);
+        --wm-bounce-duration: 3.6s;
+    }
+
+    .testimonial-featured__pause-btn {
+        position: absolute;
+        right: 0.8rem;
+        bottom: 0.8rem;
+        z-index: 2;
+        width: 2.4rem;
+        min-width: 2.4rem;
+        height: 2.4rem;
+        min-height: 2.4rem;
+        padding: 0;
+        border: 0;
+        border-radius: 9999px;
+        background: rgba(var(--color-foreground), 0.12);
+        color: rgb(var(--color-foreground));
+        cursor: pointer;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .testimonial-featured__pause-btn:focus-visible {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .testimonial-featured__pause-btn::before,
+    .testimonial-featured__pause-btn::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        width: 0.2rem;
+        height: 1rem;
+        margin-top: -0.5rem;
+        border-radius: 1px;
+        background: currentcolor;
+    }
+
+    .testimonial-featured__pause-btn::before {
+        left: calc(50% - 0.35rem);
+    }
+
+    .testimonial-featured__pause-btn::after {
+        left: calc(50% + 0.15rem);
+    }
+
+    .testimonial-featured__pause-btn[aria-pressed='true']::after {
+        content: none;
+    }
+
+    .testimonial-featured__pause-btn[aria-pressed='true']::before {
+        width: 0;
+        height: 0;
+        left: calc(50% - 0.35rem);
+        top: 50%;
+        margin-top: -0.5rem;
+        border-radius: 0;
+        background: none;
+        border-style: solid;
+        border-width: 0.5rem 0 0.5rem 0.85rem;
+        border-color: transparent transparent transparent currentcolor;
+    }
+
+    .testimonial-featured__viewport {
+        position: relative;
+        width: 100%;
+        overflow: hidden;
+        padding-block: 2rem;
+    }
+
+    @media (min-width: 768px) {
+        .testimonial-featured__viewport {
+            padding-block: 3rem;
+        }
+    }
+
+    .testimonial-featured__track {
+        display: flex;
+        width: max-content;
+        align-items: flex-start;
+        gap: 1.5rem;
+        will-change: transform;
+        animation: watermark-marquee-x var(--testimonial-marquee-duration, 40s) linear infinite;
+    }
+
+    .testimonial-featured__marquee[data-scrolling-speed='slow'] {
+        --testimonial-marquee-duration: 64s;
+    }
+
+    .testimonial-featured__marquee[data-scrolling-speed='normal'] {
+        --testimonial-marquee-duration: 40s;
+    }
+
+    .testimonial-featured__marquee[data-scrolling-speed='fast'] {
+        --testimonial-marquee-duration: 24s;
+    }
+
+    .testimonial-featured__marquee[data-scrolling-direction='left_to_right']
+        .testimonial-featured__track {
+        animation-direction: reverse;
+    }
+
+    .testimonial-featured__column {
+        flex: 0 0 auto;
+        width: var(--testimonial-card-width);
+        --wm-bounce: 1.4rem;
+        animation: watermark-marquee-bounce var(--wm-bounce-duration, 3.6s) linear infinite;
+        animation-delay: calc(var(--wm-phase, 0) * var(--wm-bounce-duration, 3.6s) / -4);
+    }
+
+    @media (min-width: 768px) {
+        .testimonial-featured__column {
+            --wm-bounce: 2.4rem;
+        }
+    }
+
+    .testimonial-featured__column--offset {
+        margin-block-start: 2.7em;
+    }
+
+    .testimonial-featured__column-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .testimonial-featured__card-slot {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        width: 100%;
+    }
+
+    .testimonial-featured__card {
+        width: 100%;
+        aspect-ratio: var(--testimonial-card-ratio);
+        border-radius: var(--radius-xl, 0.75rem);
+        overflow: hidden;
+    }
+
+    .testimonial-featured__card--text-only {
+        width: 58%;
+        aspect-ratio: auto;
+        height: calc(var(--testimonial-card-width) / var(--testimonial-card-ratio));
+    }
+
+    .testimonial-featured__card--bottom {
+        background-color: #fff;
+    }
+
+    .testimonial-featured__card-inner {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+        padding: 1.2em;
+        box-sizing: border-box;
+    }
+
+    .testimonial-featured__card-inner--media {
+        display: grid;
+        grid-template-columns: 42% 1fr;
+        grid-template-rows: minmax(0, 1fr);
+        gap: 0;
+        padding: 0;
+    }
+
+    .testimonial-featured__media {
+        height: 100%;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    .testimonial-featured__media--placeholder {
+        overflow: hidden;
+        border: 1px solid rgba(var(--color-foreground), 0.12);
+        background-color: rgb(var(--color-background));
+
+        @supports (background-color: color-mix(in oklab, white, black)) {
+            background-color: color-mix(
+                in oklab,
+                rgb(var(--color-background)) 92%,
+                rgb(var(--color-foreground)) 8%
+            );
+        }
+    }
+
+    .testimonial-featured__media--placeholder svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+
+    .testimonial-featured__media .image_img,
+    .testimonial-featured__media img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .testimonial-featured__content {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 0.75em;
+        min-width: 0;
+        min-height: 0;
+        height: 100%;
+        box-sizing: border-box;
+    }
+
+    .testimonial-featured__card-inner--media .testimonial-featured__content {
+        padding: 1.2em;
+    }
+
+    .testimonial-featured__quote {
+        margin: 0;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 5;
+    }
+
+    .testimonial-featured__quote.rte em,
+    .testimonial-featured__quote.rte i {
+        font-style: italic;
+    }
+
+    .testimonial-featured__quote.rte p {
+        margin: 0;
+    }
+
+    .testimonial-featured__meta {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 0.75em;
+    }
+
+    .testimonial-featured__stars {
+        font-size: 1em;
+    }
+
+    .testimonial-featured__stars .stars__icon {
+        width: 1em;
+        height: 1em;
+    }
+
+    .testimonial-featured__author {
+        margin: 0;
+        text-align: end;
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+        .testimonial-featured__marquee[data-scrolling-pause-on-hover='true'] {
+            pointer-events: auto;
+        }
+
+        .testimonial-featured__marquee[data-scrolling-pause-on-hover='true']:hover
+            .testimonial-featured__track,
+        .testimonial-featured__marquee[data-scrolling-pause-on-hover='true']:hover
+            .testimonial-featured__column {
+            animation-play-state: paused;
+        }
+    }
+
+    .testimonial-featured__marquee:focus-within .testimonial-featured__track,
+    .testimonial-featured__marquee:focus-within .testimonial-featured__column,
+    .testimonial-featured__marquee[data-paused='true'] .testimonial-featured__track,
+    .testimonial-featured__marquee[data-paused='true'] .testimonial-featured__column {
+        animation-play-state: paused;
+    }
+
+    body[data-motion-enabled='false'] .testimonial-featured__viewport {
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    body[data-motion-enabled='false'] .testimonial-featured__track {
+        animation: none !important;
+        transform: none !important;
+        width: max-content;
+        padding-inline-end: 1.5rem;
+    }
+
+    body[data-motion-enabled='false'] .testimonial-featured__column {
+        animation: none !important;
+        transform: none !important;
+        scroll-snap-align: start;
+    }
+
+    body[data-motion-enabled='false'] .testimonial-featured__column[aria-hidden='true'] {
+        display: none;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .testimonial-featured__viewport {
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .testimonial-featured__track {
+            animation: none !important;
+            transform: none !important;
+            width: max-content;
+            padding-inline-end: 1.5rem;
+        }
+
+        .testimonial-featured__column {
+            animation: none !important;
+            transform: none !important;
+            scroll-snap-align: start;
+        }
+
+        .testimonial-featured__column[aria-hidden='true'] {
+            display: none;
+        }
+    }
+{% endstylesheet %}
 
 {% schema %}
 {
@@ -119,51 +630,124 @@
             "default": "scheme-2"
         },
         {
-            "type": "image_picker",
-            "id": "image",
-            "label": "t:sections.testimonial-featured.settings.image"
-        },
-        {
             "type": "header",
-            "content": "t:sections.testimonial-featured.content.floating_card"
-        },
-        {
-            "type": "checkbox",
-            "id": "show_floating_card",
-            "label": "t:sections.testimonial-featured.settings.show_floating_card",
-            "default": true
+            "content": "t:sections.testimonial-featured.content.heading"
         },
         {
             "type": "inline_richtext",
-            "id": "card_label",
-            "label": "t:sections.testimonial-featured.settings.card_label",
-            "default": "t:sections.testimonial-featured.defaults.card_label"
+            "id": "heading",
+            "label": "t:sections.testimonial-featured.settings.heading",
+            "default": "t:sections.testimonial-featured.defaults.heading"
         },
         {
-            "type": "inline_richtext",
-            "id": "card_title",
-            "label": "t:sections.testimonial-featured.settings.card_title",
-            "default": "t:sections.testimonial-featured.defaults.card_title"
+            "type": "select",
+            "id": "heading_size",
+            "label": "t:sections.slides-show.settings.heading_size",
+            "options": [
+                {
+                    "value": "heading-4xl",
+                    "label": "t:sections.slides-show.options.heading_4xl"
+                },
+                {
+                    "value": "heading-3xl",
+                    "label": "t:sections.slides-show.options.heading_3xl"
+                },
+                {
+                    "value": "heading-2xl",
+                    "label": "t:sections.slides-show.options.heading_2xl"
+                },
+                {
+                    "value": "heading-xl",
+                    "label": "t:sections.slides-show.options.heading_xl"
+                },
+                {
+                    "value": "heading-h1",
+                    "label": "t:sections.slides-show.options.heading_h1"
+                },
+                {
+                    "value": "heading-h2",
+                    "label": "t:sections.slides-show.options.heading_h2"
+                },
+                {
+                    "value": "heading-h3",
+                    "label": "t:sections.slides-show.options.heading_h3"
+                },
+                {
+                    "value": "heading-h4",
+                    "label": "t:sections.slides-show.options.heading_h4"
+                },
+                {
+                    "value": "heading-h5",
+                    "label": "t:sections.slides-show.options.heading_h5"
+                },
+                {
+                    "value": "heading-h6",
+                    "label": "t:sections.slides-show.options.heading_h6"
+                }
+            ],
+            "default": "heading-2xl"
         },
         {
             "type": "header",
-            "content": "t:sections.testimonial-featured.content.slide_setting"
+            "content": "t:sections.testimonial-featured.content.cards"
+        },
+        {
+            "type": "color_scheme",
+            "id": "card_scheme_top",
+            "label": "t:sections.testimonial-featured.settings.card_scheme_top",
+            "default": "scheme-1"
+        },
+        {
+            "type": "color_scheme",
+            "id": "card_scheme_bottom",
+            "label": "t:sections.testimonial-featured.settings.card_scheme_bottom",
+            "default": "scheme-2"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.testimonial-featured.content.marquee"
+        },
+        {
+            "type": "select",
+            "id": "marquee_direction",
+            "label": "t:sections.scrolling-icon-with-text.settings.direction",
+            "options": [
+                {
+                    "value": "right_to_left",
+                    "label": "t:sections.scrolling-icon-with-text.options.right_to_left"
+                },
+                {
+                    "value": "left_to_right",
+                    "label": "t:sections.scrolling-icon-with-text.options.left_to_right"
+                }
+            ],
+            "default": "right_to_left"
+        },
+        {
+            "type": "select",
+            "id": "marquee_speed",
+            "label": "t:sections.scrolling-icon-with-text.settings.speed",
+            "options": [
+                {
+                    "value": "slow",
+                    "label": "t:sections.scrolling-icon-with-text.options.slow"
+                },
+                {
+                    "value": "normal",
+                    "label": "t:sections.scrolling-icon-with-text.options.normal"
+                },
+                {
+                    "value": "fast",
+                    "label": "t:sections.scrolling-icon-with-text.options.fast"
+                }
+            ],
+            "default": "normal"
         },
         {
             "type": "checkbox",
-            "id": "is_auto_slide",
-            "label": "t:sections.testimonial-featured.settings.auto_slide",
+            "id": "marquee_pause_on_hover",
+            "label": "t:sections.scrolling-icon-with-text.settings.pause_on_hover",
             "default": true
-        },
-        {
-            "type": "range",
-            "id": "slide_delay",
-            "min": 3,
-            "max": 10,
-            "step": 1,
-            "unit": "s",
-            "label": "t:sections.testimonial-featured.settings.slide_delay",
-            "default": 5
         },
         {
             "type": "header",
@@ -196,6 +780,17 @@
             "name": "t:sections.testimonial-featured.blocks.testimonial",
             "settings": [
                 {
+                    "type": "image_picker",
+                    "id": "image",
+                    "label": "t:sections.testimonial-featured.block_settings.image"
+                },
+                {
+                    "type": "checkbox",
+                    "id": "show_image",
+                    "label": "t:sections.testimonial-featured.block_settings.show_image",
+                    "default": true
+                },
+                {
                     "type": "range",
                     "id": "rating",
                     "label": "t:sections.testimonial-featured.block_settings.star_rating",
@@ -215,12 +810,6 @@
                     "id": "author_name",
                     "label": "t:sections.testimonial-featured.block_settings.author_name",
                     "default": "t:sections.testimonial-featured.defaults.author_name"
-                },
-                {
-                    "type": "inline_richtext",
-                    "id": "author_title",
-                    "label": "t:sections.testimonial-featured.block_settings.author_title",
-                    "default": "t:sections.testimonial-featured.defaults.author_title"
                 }
             ]
         }
