@@ -243,7 +243,7 @@ Each token uses the same linear `clamp()` as section padding (0.6× at 375px vie
 
 Four constraints govern CSS written from here on. Violations of 1-3 fail silently at runtime.
 
-1. **Plain CSS in `{% stylesheet %}`.** Shopify ships `{% stylesheet %}` content as written. `@apply`, `@utility`, and `@variant` never run there. Use plain CSS only: properties, nesting, pseudo-elements, keyframes, container queries, `:has()`, and direct `var()` consumption.
+1. **Plain CSS in `{% stylesheet %}`.** Shopify ships `{% stylesheet %}` content as written. `@apply`, `@utility`, and `@variant` never run there, and neither do Tailwind functions (`theme()`, `--spacing()`, `--alpha()`): the browser drops the declaration or the whole media block. `lint:theme` rejects both. Use plain CSS only: properties, nesting, pseudo-elements, keyframes, container queries, `:has()`, and direct `var()` consumption.
 
 2. **Subsetting compatibility.** A file's `{% stylesheet %}` classes may be used only within that file or files it directly renders. Cross-file use breaks once CSS lives in a subsetted block. Example: `snippets/quantity-selector.liquid` defines control classes consumed by its own markup.
 

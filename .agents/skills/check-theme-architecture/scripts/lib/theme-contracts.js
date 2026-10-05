@@ -541,6 +541,16 @@ function collectStylesheetDirectiveFailures(cssText, file, failures, allowsByLin
                 '{% stylesheet %} blocks accept plain CSS only; do not use @apply, @utility, or @variant.',
             );
         }
+        if (/(?<![\w-])(?:theme|--spacing|--alpha)\(/.test(line)) {
+            pushFailure(
+                failures,
+                allowsByLine,
+                file,
+                lineAt(lineText, baseOffset + offset),
+                CHECK.STYLESHEET_DIRECTIVE,
+                '{% stylesheet %} blocks are not compiled by Tailwind; do not call theme(), --spacing(), or --alpha() (the browser drops the rule). Use var() tokens or literal media queries such as (min-width: 64rem).',
+            );
+        }
         offset += line.length + 1;
     }
 }

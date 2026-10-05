@@ -1083,6 +1083,42 @@ test('stylesheet directive @apply fails', async () => {
     });
 });
 
+for (const [name, css] of [
+    ['theme() in a media query', '@media (width >= theme(--breakpoint-pc)) { .x { display: grid; } }'],
+    ['--spacing()', '.x { padding: --spacing(4); }'],
+    ['--alpha()', '.x { color: --alpha(var(--color-foreground) / 50%); }'],
+]) {
+    test(`stylesheet Tailwind function ${name} fails`, async () => {
+        await withTempThemeAsync(async (root) => {
+            writeFile(
+                root,
+                'sections/fixture.liquid',
+                ['{% stylesheet %}', css, '{% endstylesheet %}', ''].join('\n'),
+            );
+            const failures = await runThemeLint(root);
+            assert.match(failureMessages(failures), /not compiled by Tailwind/);
+        });
+    });
+}
+
+test('stylesheet custom properties named like Tailwind functions pass', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(
+            root,
+            'sections/fixture.liquid',
+            [
+                '{% stylesheet %}',
+                '.ok { gap: var(--spacing-gap-md); opacity: var(--alpha-x); --theme-y: 1; }',
+                '@media (min-width: 64rem) { .ok { gap: calc(var(--spacing) * 4); } }',
+                '{% endstylesheet %}',
+                '',
+            ].join('\n'),
+        );
+        const failures = await runThemeLint(root);
+        assert.equal(failures.length, 0);
+    });
+});
+
 test('stylesheet plain css passes', async () => {
     await withTempThemeAsync(async (root) => {
         writeFile(
