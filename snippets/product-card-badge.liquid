@@ -1,0 +1,90 @@
+{% doc %}
+    Renders at most one sale, sold out, or custom tag badge on a product card.
+
+    Priority: sold out, sale (-N% or Sale), custom badge 1, custom badge 2.
+
+    @param {product} product - Product to evaluate; omit or blank for no output
+
+    @example
+    {% render 'product-card-badge', product: product %}
+{% enddoc %}
+
+{%- liquid
+    if product == blank
+        assign badge_rendered = false
+    else
+        assign badge_label = blank
+        assign badge_bg = blank
+        assign badge_fg = blank
+
+        if product.available == false
+            assign badge_label = 'products.product.sold_out' | t
+            assign badge_bg = settings.badge_sold_out_background
+            assign badge_fg = settings.badge_sold_out_text
+        elsif product.compare_at_price > product.price
+            if product.price_varies
+                assign badge_label = 'products.product.badge_sale' | t
+            else
+                assign badge_compare_at_float = product.compare_at_price | times: 1.0
+                assign badge_discount_numerator = product.compare_at_price | minus: product.price | times: 100
+                assign badge_discount_percent = badge_discount_numerator | divided_by: badge_compare_at_float | round
+                assign badge_label = 'products.product.badge_sale_percent' | t: percent: badge_discount_percent
+            endif
+            assign badge_bg = settings.badge_sale_background
+            assign badge_fg = settings.badge_sale_text
+        elsif settings.badge_custom_1_tag != blank and product.tags contains settings.badge_custom_1_tag
+            assign badge_label = settings.badge_custom_1_tag
+            assign badge_bg = settings.badge_custom_1_background
+            assign badge_fg = settings.badge_custom_1_text
+        elsif settings.badge_custom_2_tag != blank and product.tags contains settings.badge_custom_2_tag
+            assign badge_label = settings.badge_custom_2_tag
+            assign badge_bg = settings.badge_custom_2_background
+            assign badge_fg = settings.badge_custom_2_text
+        endif
+
+        if badge_label != blank
+            assign badge_rendered = true
+        else
+            assign badge_rendered = false
+        endif
+    endif
+-%}
+
+{%- if badge_rendered -%}
+    <span
+        class="product-card-shell__badge body-xs font-medium tracking-wide uppercase"
+        style="
+            --badge-bg: {{ badge_bg.red }}, {{ badge_bg.green }}, {{ badge_bg.blue }};
+            --badge-fg: {{ badge_fg.red }}, {{ badge_fg.green }}, {{ badge_fg.blue }};
+        "
+    >
+        {{- badge_label -}}
+    </span>
+{%- endif -%}
+
+{% stylesheet %}
+    .product-card-shell__badge {
+        pointer-events: none;
+        position: absolute;
+        top: 0.75rem;
+        inset-inline-end: 0.75rem;
+        z-index: 5;
+        max-width: calc(100% - 1.5rem);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        border-radius: 0.25em;
+        padding: 0.45em 0.8em;
+        text-align: center;
+        line-height: 1;
+        background-color: rgb(var(--badge-bg));
+        color: rgb(var(--badge-fg));
+    }
+
+    @media (hover: none), (pointer: coarse) {
+        .product-card-shell__badge {
+            inset-inline-end: auto;
+            inset-inline-start: 0.75rem;
+        }
+    }
+{% endstylesheet %}
