@@ -20,7 +20,7 @@ None active. Next (user, 2026-10-04): the design rework, then one browser pass, 
 - **User decision:**
     - remove `category-grid` (replaced by `collection-list` in 6-S3, placed nowhere) or keep it as an option;
     - the unredesigned home sections (`before-after-comparison`, `promotion-countdown`, `about-stats`, `blog-stories`, `newsletter-banner`, `video-banner`, `google-map`) at the home order review;
-    - one or both `ritual-steps` instances.
+    - ~~one or both `ritual-steps` instances~~: decided (user, 2026-10-06). Home keeps one instance (`ritual_steps_sticky`, style A); the style is switched in the editor. The style B demo instance is removed.
 
 **Motion simplification done** (6-M1, `3652441`; plan and review rounds: `git show 3652441:docs/agent/context.md`): the list and card cascade is the only settings-driven reveal, under `motion_enabled`. Follow-ups: `assets/motion-reveal.js` is still 29.9 KB because the cascade machinery was kept unchanged; rewrite it smaller once the design phase settles the cascade's look. GSAP arrived in 6-S5 (`a2424d4`): `motion-gsap.js` adapter, first consumer `scatter-gallery`. Cascade in carousels (6-S4 R10, 2026-10-05): the entrance `translateY` (64px desktop, 40px mobile) is clipped by the Swiper `overflow: hidden` until the slides settle. The rest state is correct. Settle it with the cascade rewrite (for example no vertical offset inside overflow containers).
 
@@ -152,13 +152,12 @@ Home polish pass (user, 2026-10-05). Per-section batches now settle structure, d
     - colours: the sage section background and the badge fill;
     - proportions and spacing against the design, including the oval angle and size, ring offset, star size, numeral size and packshot scale;
     - the header overlap with the sticky frame and stage;
-    - decide whether home keeps one or both style instances (both are there for comparison).
-- **Featured product (6-S12):**
-    - the quantity sits beside add-to-cart on mobile (the product page design), while the home mobile design stacks them;
-    - cap the `space-between` gaps in the info column on very tall screens;
-    - optional sticky add-to-cart bar when the info column is taller than the screen;
-    - the price and title sizes against the design;
-    - the design's lighter icon stroke (`flask` was not added).
+    - **Featured product (6-S12):**
+        - the quantity sits beside add-to-cart on mobile (the product page design), while the home mobile design stacks them;
+        - cap the `space-between` gaps in the info column on very tall screens;
+        - optional sticky add-to-cart bar when the info column is taller than the screen;
+        - the price and title sizes against the design;
+        - the design's lighter icon stroke (`flask` was not added).
 
 Design phase inputs:
 
