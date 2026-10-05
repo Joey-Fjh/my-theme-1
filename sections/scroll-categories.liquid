@@ -1,218 +1,224 @@
+{%- liquid
+    assign selected_collection = section.settings.collection
+    assign max_items = section.settings.max_items
+    assign scroll_categories_heading_class = section.settings.heading_size | default: 'heading-2xl'
+    assign scroll_categories_row_title_class = section.settings.collection_heading_size | default: 'heading-3xl'
+    assign scroll_categories_link_label_default = 'sections.scroll-categories.defaults.link_label' | t
+    assign scroll_categories_link_label = section.settings.link_label | default: scroll_categories_link_label_default
+    assign scroll_categories_description_words = 24
+
+    case scroll_categories_heading_class
+        when 'heading-3xl'
+            assign scroll_categories_heading_tiers = 'heading-2xl pc:heading-3xl'
+        when 'heading-2xl'
+            assign scroll_categories_heading_tiers = 'heading-2xl pc:heading-2xl'
+        when 'heading-xl'
+            assign scroll_categories_heading_tiers = 'heading-xl pc:heading-xl'
+        else
+            assign scroll_categories_heading_tiers = 'heading-2xl pc:heading-3xl'
+    endcase
+
+    case scroll_categories_row_title_class
+        when 'heading-h1'
+            assign scroll_categories_row_title_tiers = 'heading-h1'
+        when 'heading-h2'
+            assign scroll_categories_row_title_tiers = 'heading-h2'
+        else
+            assign scroll_categories_row_title_tiers = 'heading-h1'
+    endcase
+
+    assign scroll_categories_item_count = 0
+    for scroll_categories_product in selected_collection.products limit: max_items
+        assign scroll_categories_item_count = scroll_categories_item_count | plus: 1
+    endfor
+    if scroll_categories_item_count == 0
+        assign scroll_categories_item_count = max_items
+    endif
+
+    if scroll_categories_item_count < 10
+        assign scroll_categories_count_label = scroll_categories_item_count | prepend: '0'
+    else
+        assign scroll_categories_count_label = scroll_categories_item_count
+    endif
+
+    if section.settings.heading != blank
+        assign scroll_categories_heading_text = section.settings.heading
+    elsif selected_collection != blank
+        assign scroll_categories_heading_text = selected_collection.title
+    else
+        assign scroll_categories_heading_text = 'sections.scroll-categories.defaults.heading' | t
+    endif
+-%}
+
+{%- capture scroll_categories_panel_link_content -%}
+    <span class="uppercase">{{ scroll_categories_link_label }}</span>
+    {%- render 'icons', icon: 'icon-arrow2', class: 'ms-2', size: 'sm' -%}
+{%- endcapture -%}
+
 {%- capture scroll_categories_children -%}
-        {%- liquid
-            assign selected_collection = section.settings.collection
-            assign scroll_categories_heading_class = section.settings.heading_size | default: 'heading-2xl'
-            assign scroll_categories_collection_heading_class = section.settings.collection_heading_size | default: 'heading-3xl'
-            assign scroll_categories_subtitle_size = section.settings.subtitle_size | default: 'body-xl'
-        -%}
-
-        <div class="flex flex-col gap-16">
-            <div
-                class="flex flex-col gap-3 pc:flex-row pc:items-center pc:justify-between"
+    <div
+        class="scroll-categories__root flex flex-col gap-9 pc:gap-28"
+        data-module-id="scroll-categories"
+        data-module-lazy
+        x-data="scrollCategories()"
+        data-initial-active="1"
+    >
+        <div class="scroll-categories__header flex flex-col">
+            <h2
+                class="scroll-categories__heading {{ scroll_categories_heading_tiers }} flex items-end justify-between gap-6 text-theme-text"
             >
-                {%- capture link_content -%}
-                    <h1 class="{{ scroll_categories_heading_class }}">
-                        {%- if section.settings.heading != blank -%}
-                            {{ section.settings.heading }}
-                        {%- else -%}
-                            {{ selected_collection.title }}
-                        {%- endif -%}
+                <span>{{- scroll_categories_heading_text -}}</span>
+                <span class="shrink-0">({{ scroll_categories_count_label }})</span>
+            </h2>
+            <hr class="scroll-categories__divider border-0" />
+        </div>
 
-                        {%- if selected_collection != nil and selected_collection.products_count > 0 -%}
-                            <sup class="sup-badge">({{ selected_collection.products_count }})</sup>
-                        {%- endif -%}
-                    </h1>
-                {%- endcapture -%}
-
-                <div>
-                    {%- if selected_collection != blank -%}
+        <div
+            class="scroll-categories__grid flex flex-col gap-9"
+            data-motion-cascade
+            style="--scroll-categories-rows: {{ scroll_categories_item_count }}"
+        >
+            {%- for product in selected_collection.products limit: max_items -%}
+                {%- liquid
+                    assign scroll_categories_index_label = forloop.index
+                    if forloop.index < 10
+                        assign scroll_categories_index_label = forloop.index | prepend: '0'
+                    endif
+                    assign scroll_categories_description = product.description | strip_html | strip | truncatewords: scroll_categories_description_words
+                    assign scroll_categories_image = product.featured_image
+                    assign scroll_categories_image_alt = scroll_categories_image.alt | default: product.title | escape
+                    assign scroll_categories_panel_aria_label = 'sections.scroll-categories.panel_link_aria' | t: product: product.title, label: scroll_categories_link_label
+                    if forloop.first
+                        assign scroll_categories_image_loading = 'eager'
+                    else
+                        assign scroll_categories_image_loading = 'lazy'
+                    endif
+                -%}
+                <article
+                    class="scroll-categories__item flex flex-col gap-10 pc:contents"
+                    data-motion-bound
+                >
+                    <div
+                        class="scroll-categories__row flex flex-col items-start gap-1 pc:flex-row pc:items-baseline pc:gap-6 scroll-categories__row--desktop-pitch{% if forloop.first %} is-active{% else %} is-inactive{% endif %}"
+                        data-item-index="{{ forloop.index }}"
+                        @mouseenter="onRowEnterFromEl($el)"
+                        @focusin="setActiveFromEl($el)"
+                        :class="rowClassFromEl($el)"
+                    >
+                        {%- capture scroll_categories_row_title -%}
+                            <h3 class="scroll-categories__row-heading flex min-w-0 flex-1 flex-col items-start gap-1 pc:flex-row pc:items-baseline pc:gap-6 {{ scroll_categories_row_title_tiers }} text-theme-text">
+                                <span class="scroll-categories__index body-xs text-theme-text">{{ scroll_categories_index_label }}</span>
+                                <span class="scroll-categories__title min-w-0 flex-1">{{ product.title }}</span>
+                            </h3>
+                        {%- endcapture -%}
                         {%- render 'link',
-                            href: selected_collection.url,
-                            content: link_content,
-                            variant: 'underline'
+                            href: product.url,
+                            variant: 'plain',
+                            class: 'min-w-0 flex-1',
+                            content: scroll_categories_row_title
                         -%}
-                    {%- else -%}
-                        {{- link_content -}}
-                    {%- endif -%}
-                </div>
+                    </div>
 
-                {% render 'text',
-                    tier: scroll_categories_subtitle_size,
-                    element: 'div',
-                    rte: true,
-                    subtitle: true,
-                    class: 'text-theme-text',
-                    content: section.settings.description
-                %}
-            </div>
+                    <div
+                        class="scroll-categories__details flex flex-col gap-8 pc:gap-6{% if forloop.first %} is-active{% endif %}{% unless forloop.first %} scroll-categories__details--inactive{% endunless %}"
+                        data-item-index="{{ forloop.index }}"
+                        :class="detailsClassFromEl($el)"
+                    >
+                        <div class="scroll-categories__media order-3 w-full overflow-hidden pc:order-1">
+                            {%- render 'image',
+                                class: 'h-full w-full object-cover',
+                                image: scroll_categories_image,
+                                alt: scroll_categories_image_alt,
+                                loading: scroll_categories_image_loading,
+                                sizes: '(min-width: 48rem) 45vw, 100vw',
+                                widths: '400,600,800,1000,1200,1600'
+                            -%}
+                        </div>
 
-            <div data-motion-cascade>
-                {%- assign max_items = section.settings.max_items -%}
+                        {%- if scroll_categories_description != blank -%}
+                            <p class="order-1 line-clamp-3 body-2xl text-theme-text pc:order-2">{{ scroll_categories_description }}</p>
+                        {%- endif -%}
 
-                {% # theme-check-disable-next-line LiquidHTMLSyntaxError %}
-                {%- for product in selected_collection.products limit: max_items -%}
-                    <a
-                        class="scroll-categories__item block py-8 text-theme-text/80 pc:p-8"
-                        href="{{ product.url }}"
-                        title="{{ product.title | escape }}"
+                        <div class="order-2 pc:order-3">
+                            {%- render 'link',
+                                href: product.url,
+                                variant: 'default',
+                                class: 'link-with-icon-motion body-sm uppercase text-theme-text pc:body-sm self-start',
+                                aria_label: scroll_categories_panel_aria_label,
+                                content: scroll_categories_panel_link_content
+                            -%}
+                        </div>
+                    </div>
+                </article>
+            {%- else -%}
+                {%- for placeholder_index in (1..max_items) -%}
+                    {%- liquid
+                        assign scroll_categories_index_label = placeholder_index
+                        if placeholder_index < 10
+                            assign scroll_categories_index_label = placeholder_index | prepend: '0'
+                        endif
+                        assign product_placeholder_index = placeholder_index | minus: 1 | modulo: 6 | plus: 1
+                        assign product_placeholder_key = 'product-' | append: product_placeholder_index
+                        assign scroll_categories_placeholder_title = 'products.product.example_title_numbered' | t: index: placeholder_index
+                        assign scroll_categories_placeholder_description = 'sections.scroll-categories.placeholder_description' | t
+                        assign scroll_categories_placeholder_panel_aria_label = 'sections.scroll-categories.panel_link_aria' | t: product: scroll_categories_placeholder_title, label: scroll_categories_link_label
+                        if forloop.first
+                            assign scroll_categories_image_loading = 'eager'
+                        else
+                            assign scroll_categories_image_loading = 'lazy'
+                        endif
+                    -%}
+                    <article
+                        class="scroll-categories__item flex flex-col gap-10 pc:contents"
                         data-motion-bound
-                        data-module-id="hover-card"
-                        x-data="hoverCard()"
-                        @mouseenter="enter()"
-                        @mouseleave="leave()"
-                        @focus="enter()"
-                        @blur="leave()"
-                        :class="hoverClass()"
                     >
                         <div
-                            class="flex w-full flex-col gap-3 pc:flex-row pc:items-center pc:justify-between"
+                            class="scroll-categories__row flex flex-col items-start gap-1 pc:flex-row pc:items-baseline pc:gap-6 scroll-categories__row--desktop-pitch{% if forloop.first %} is-active{% else %} is-inactive{% endif %}"
+                            data-item-index="{{ forloop.index }}"
+                            @mouseenter="onRowEnterFromEl($el)"
+                            @focusin="setActiveFromEl($el)"
+                            :class="rowClassFromEl($el)"
                         >
-                            <span class="scroll-categories__item-side shrink-0 body-lg text-theme-text">
-                                {%- if product.type != blank -%}
-                                    {{ product.type }}
-                                {%- else -%}
-                                    {{ 'products.product.fallback_vendor' | t }}
-                                {%- endif -%}
-                            </span>
-
-                            <div class="relative flex min-w-0 items-center gap-4 pc:pe-44">
-                                <h2 class="scroll-categories__product-title min-w-0 truncate {{ scroll_categories_collection_heading_class }}">
-                                    {{ product.title }}
-                                </h2>
-
-                                <div
-                                    class="
-                                        scroll-categories__preview
-                                        absolute
-                                        end-0
-                                        top-1/2
-                                        hidden
-                                        aspect-100/72 h-30
-                                        -translate-y-1/2 scale-95
-                                        opacity-0
-                                        pc:block
-                                    "
-                                    :class="overlayVisibleClass()"
-                                >
-                                    {%- if product.featured_image != blank -%}
-                                        {%- assign alt = product.featured_image.alt
-                                            | default: product.title
-                                            | escape
-                                        -%}
-                                        {%- render 'image-magnifier',
-                                            class: 'h-full w-full',
-                                            image: product.featured_image,
-                                            alt: alt,
-                                            width: 220,
-                                            sizes: '220px',
-                                            zoom_width: 1200,
-                                            preview_mode: 'contain',
-                                            preview_width: 280,
-                                            preview_height: 200,
-                                        -%}
-                                    {%- else -%}
-                                        {%- assign image_alt = product.featured_image.alt
-                                            | default: product.title
-                                            | escape
-                                        -%}
-                                        {%- render 'image',
-                                            class: 'h-full w-full',
-                                            image: product.featured_image,
-                                            alt: image_alt,
-                                            width: 220,
-                                            sizes: '220px',
-                                        -%}
-                                    {%- endif -%}
-                                </div>
-                            </div>
-
-                            <span class="scroll-categories__item-side shrink-0 body-lg text-theme-text">
-                                {%- render 'product-card-price', product: product -%}
-                            </span>
+                            {%- capture scroll_categories_placeholder_row_title -%}
+                                <h3 class="scroll-categories__row-heading flex min-w-0 flex-1 flex-col items-start gap-1 pc:flex-row pc:items-baseline pc:gap-6 {{ scroll_categories_row_title_tiers }} text-theme-text">
+                                    <span class="scroll-categories__index body-xs text-theme-text">{{ scroll_categories_index_label }}</span>
+                                    <span class="scroll-categories__title min-w-0 flex-1">{{ scroll_categories_placeholder_title }}</span>
+                                </h3>
+                            {%- endcapture -%}
+                            {%- render 'link',
+                                href: routes.all_products_collection_url,
+                                variant: 'plain',
+                                class: 'min-w-0 flex-1',
+                                content: scroll_categories_placeholder_row_title
+                            -%}
                         </div>
-                    </a>
-                {%- else -%}
-                    {%- for placeholder_index in (1..max_items) -%}
-                        {%- liquid
-                            assign product_placeholder_index = placeholder_index | minus: 1 | modulo: 6 | plus: 1
-                            assign product_placeholder_key = 'product-' | append: product_placeholder_index
-                        -%}
+
                         <div
-                            class="scroll-categories__item block py-8 text-theme-text/80 pc:p-8"
-                            data-motion-bound
-                            data-module-id="hover-card"
-                            x-data="hoverCard()"
-                            @mouseenter="enter()"
-                            @mouseleave="leave()"
-                            @focus="enter()"
-                            @blur="leave()"
-                            :class="hoverClass()"
+                            class="scroll-categories__details flex flex-col gap-8 pc:gap-6{% if forloop.first %} is-active{% endif %}{% unless forloop.first %} scroll-categories__details--inactive{% endunless %}"
+                            data-item-index="{{ forloop.index }}"
+                            :class="detailsClassFromEl($el)"
                         >
-                            <div
-                                class="flex w-full flex-col gap-3 pc:flex-row pc:items-center pc:justify-between"
-                            >
-                                <span class="scroll-categories__item-side shrink-0 body-lg text-theme-text">
-                                    {{- 'products.product.fallback_vendor' | t -}}
-                                </span>
+                            <div class="scroll-categories__media scroll-categories__media--placeholder order-3 w-full overflow-hidden pc:order-1">
+                                {{ product_placeholder_key | placeholder_svg_tag: 'h-full w-full object-cover' }}
+                            </div>
 
-                                <div class="relative flex min-w-0 items-center gap-4 pc:pe-44">
-                                    <h2 class="scroll-categories__product-title min-w-0 truncate {{ scroll_categories_collection_heading_class }}">
-                                        {{-
-                                            'products.product.example_title_numbered'
-                                            | t: index: placeholder_index
-                                        -}}
-                                    </h2>
+                            <p class="order-1 line-clamp-3 body-2xl text-theme-text pc:order-2">{{ scroll_categories_placeholder_description }}</p>
 
-                                    <div
-                                        class="
-                                            scroll-categories__preview
-                                            absolute
-                                            end-0
-                                            top-1/2
-                                            hidden
-                                            aspect-100/72 h-30
-                                            -translate-y-1/2 scale-95
-                                            opacity-0
-                                            pc:block
-                                        "
-                                        :class="overlayVisibleClass()"
-                                    >
-                                        {%- render 'image-magnifier',
-                                            class: 'h-full w-full',
-                                            image: blank,
-                                            placeholder_key: product_placeholder_key,
-                                            aspect_ratio: '100/72',
-                                            fit: 'contain',
-                                            image_wrapper_class: 'h-full w-full',
-                                            width: 220,
-                                            sizes: '220px',
-                                            zoom_width: 1200,
-                                            preview_mode: 'contain',
-                                            preview_width: 280,
-                                            preview_height: 200,
-                                        -%}
-                                    </div>
-                                </div>
-
-                                <span class="scroll-categories__item-side shrink-0 body-lg text-theme-text">
-                                    {{- 1999 | money -}}
-                                </span>
+                            <div class="order-2 pc:order-3">
+                                {%- render 'link',
+                                    href: routes.all_products_collection_url,
+                                    variant: 'default',
+                                    class: 'link-with-icon-motion body-sm uppercase text-theme-text pc:body-sm self-start',
+                                    aria_label: scroll_categories_placeholder_panel_aria_label,
+                                    content: scroll_categories_panel_link_content
+                                -%}
                             </div>
                         </div>
-                    {%- endfor -%}
+                    </article>
                 {%- endfor -%}
-            </div>
-
-            <div class="self-center">
-                <div
-                    class="rte rte--compact flex flex-col items-center justify-center text-center"
-                >
-                    {% render 'icons', icon: 'icon-eyeglasses' %}
-
-                    {{ section.settings.caption }}
-                </div>
-            </div>
+            {%- endfor -%}
         </div>
+    </div>
 {%- endcapture -%}
 
 {% render 'section-frame',
@@ -227,27 +233,147 @@
 %}
 
 {% stylesheet %}
-    .scroll-categories__item {
-        transition:
-            background-color var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease),
-            color var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease);
+    .scroll-categories__heading {
+        margin-block-end: 1.05em;
     }
 
-    .scroll-categories__item.is-hovered {
+    .scroll-categories__index,
+    .scroll-categories__title {
+        font-weight: 400;
+    }
+
+    @media (min-width: 1024px) {
+        .scroll-categories__index {
+            flex: 0 0 36%;
+            white-space: nowrap;
+            font-size: 1em;
+            line-height: inherit;
+        }
+    }
+
+    .scroll-categories__divider {
+        height: 1px;
         background-color: rgb(var(--color-foreground));
-        color: rgb(var(--color-background));
+
+        @supports (background-color: color-mix(in oklab, white, black)) {
+            background-color: color-mix(in oklab, rgb(var(--color-foreground)) 15%, transparent);
+        }
     }
 
-    /* Explicit foreground on title and side meta; inherit only on row hover invert */
-    .scroll-categories__item.is-hovered .scroll-categories__product-title,
-    .scroll-categories__item.is-hovered .scroll-categories__item-side {
-        color: inherit;
+    .scroll-categories__row {
+        transition: opacity var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease);
+        opacity: 1;
     }
 
-    .scroll-categories__preview {
+    @media (max-width: 1023px) {
+        .scroll-categories__row.is-inactive,
+        .scroll-categories__row.is-active {
+            opacity: 1;
+        }
+    }
+
+    .scroll-categories__details {
         transition:
             opacity var(--motion-duration-base, 300ms) var(--motion-ease-exit, ease-out),
-            transform var(--motion-duration-base, 300ms) var(--motion-ease-exit, ease-out);
+            visibility 0s linear var(--motion-duration-base, 300ms);
+    }
+
+    .scroll-categories__media,
+    .scroll-categories__media--placeholder {
+        aspect-ratio: 1 / 1;
+        border-radius: var(--radius-xl, 1rem);
+    }
+
+    @media (min-width: 1024px) {
+        .scroll-categories__heading {
+            margin-block-end: 1.05em;
+        }
+
+        .scroll-categories__title {
+            white-space: nowrap;
+        }
+
+        .scroll-categories__row-heading {
+            font-size: calc(var(--font-heading-scale) * 4rem);
+        }
+
+        .scroll-categories__row--desktop-pitch {
+            padding-block: 0.45em;
+        }
+
+        .scroll-categories__grid {
+            display: grid;
+            grid-template-columns: minmax(0, 62.6%) minmax(0, 37.4%);
+            grid-template-rows: repeat(var(--scroll-categories-rows, 1), auto);
+            column-gap: 2.5rem;
+            row-gap: 0;
+        }
+
+        .scroll-categories__row {
+            grid-column: 1;
+        }
+
+        .scroll-categories__details {
+            grid-column: 2;
+            grid-row: 1 / -1;
+            align-self: start;
+            transition:
+                opacity var(--motion-duration-base, 300ms) var(--motion-ease-exit, ease-out),
+                visibility 0s;
+        }
+
+        .scroll-categories__row.is-inactive {
+            opacity: 0.3;
+        }
+
+        .scroll-categories__row.is-active {
+            opacity: 1;
+        }
+
+        .scroll-categories__media,
+        .scroll-categories__media--placeholder {
+            aspect-ratio: 513 / 371;
+        }
+
+        .scroll-categories__details:not(.is-active) {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition:
+                opacity var(--motion-duration-base, 300ms) var(--motion-ease-exit, ease-out),
+                visibility 0s linear var(--motion-duration-base, 300ms);
+        }
+
+        .scroll-categories__details.is-active {
+            opacity: 1;
+            visibility: visible;
+        }
+    }
+
+    .scroll-categories__media--placeholder {
+        border: 1px solid rgba(var(--color-foreground), 0.12);
+        background-color: rgb(var(--color-background));
+
+        @supports (background-color: color-mix(in oklab, white, black)) {
+            background-color: color-mix(
+                in oklab,
+                rgb(var(--color-background)) 95%,
+                rgb(var(--color-foreground)) 5%
+            );
+        }
+    }
+
+    .scroll-categories__media--placeholder svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .scroll-categories__row,
+        .scroll-categories__details {
+            transition: none;
+        }
     }
 {% endstylesheet %}
 
@@ -320,47 +446,7 @@
                     "label": "t:sections.slides-show.options.heading_h6"
                 }
             ],
-            "default": "heading-2xl"
-        },
-        {
-            "type": "header",
-            "content": "t:sections.scroll-categories.content.subtitle"
-        },
-        {
-            "type": "select",
-            "id": "subtitle_size",
-            "label": "t:sections.scroll-categories.settings.subtitle_size",
-            "options": [
-                {
-                    "value": "body-3xl",
-                    "label": "t:sections.scroll-categories.options.body_3xl"
-                },
-                {
-                    "value": "body-2xl",
-                    "label": "t:sections.scroll-categories.options.body_2xl"
-                },
-                {
-                    "value": "body-xl",
-                    "label": "t:sections.scroll-categories.options.body_xl"
-                },
-                {
-                    "value": "body-lg",
-                    "label": "t:sections.scroll-categories.options.body_lg"
-                },
-                {
-                    "value": "body-md",
-                    "label": "t:sections.scroll-categories.options.body_md"
-                },
-                {
-                    "value": "body-sm",
-                    "label": "t:sections.scroll-categories.options.body_sm"
-                },
-                {
-                    "value": "body-xs",
-                    "label": "t:sections.scroll-categories.options.body_xs"
-                }
-            ],
-            "default": "body-xl"
+            "default": "heading-3xl"
         },
         {
             "type": "header",
@@ -412,7 +498,7 @@
                     "label": "t:sections.slides-show.options.heading_h6"
                 }
             ],
-            "default": "heading-3xl"
+            "default": "heading-h1"
         },
         {
             "type": "range",
@@ -429,21 +515,15 @@
             "label": "t:sections.scroll-categories.settings.heading"
         },
         {
-            "type": "richtext",
-            "id": "description",
-            "label": "t:sections.scroll-categories.settings.description",
-            "default": "t:sections.scroll-categories.defaults.description"
+            "type": "text",
+            "id": "link_label",
+            "label": "t:sections.scroll-categories.settings.link_label",
+            "default": "t:sections.scroll-categories.defaults.link_label"
         },
         {
             "type": "collection",
             "id": "collection",
             "label": "t:sections.scroll-categories.settings.select_collection"
-        },
-        {
-            "type": "richtext",
-            "id": "caption",
-            "label": "t:sections.scroll-categories.settings.caption",
-            "default": "t:sections.scroll-categories.defaults.caption"
         },
         {
             "type": "header",
