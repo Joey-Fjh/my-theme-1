@@ -8,11 +8,19 @@ Last updated: 2026-10-06.
 
 None active. Next (user, 2026-10-04): the design rework, then one browser pass, then the docs review together with a readiness review before the second submission.
 
-**Approved, queued after 6-S12** (user, 2026-10-06): a lint check that fails when a Liquid `{% stylesheet %}` (or `{% style %}`) block contains a Tailwind function such as `theme(`, `--spacing(` or `--alpha(`. These are compiled only in `tailwind/*.css`; inside Liquid stylesheets the browser drops the whole rule or media block.
+**Done** (6-V1, `e78047c`): `lint:theme` rejects `theme()`, `--spacing()` and `--alpha()` in Liquid `{% stylesheet %}` blocks. The Ask review was not run; the user chose to commit without it.
 
-- **Recurrences:** 6-S6 (`scroll-categories` panels) and 6-S12 (the `featured-product` desktop grid).
-- **Home:** the `check-theme-architecture` lint (`lint-theme.js`) plus a test case.
-- **Tier:** a validator change, so Ask.
+**Cleanup survey** (coordinator, 2026-10-06, read-only; for the cleanup batch):
+
+- **Unused, safe to delete:** `assets/icon-eyeglasses.svg` (its only consumer, the old `scroll-categories` caption, was removed in 6-S6).
+- **Not placed in any template, but keep:**
+    - `custom-liquid`, a merchant utility;
+    - `pickup-availability` and `collection-navigation-items`, which are fetched through the Section Rendering API;
+    - the social icons, which are named dynamically in `snippets/social-icons.liquid`.
+- **User decision:**
+    - remove `category-grid` (replaced by `collection-list` in 6-S3, placed nowhere) or keep it as an option;
+    - the unredesigned home sections (`before-after-comparison`, `promotion-countdown`, `about-stats`, `blog-stories`, `newsletter-banner`, `video-banner`, `google-map`) at the home order review;
+    - one or both `ritual-steps` instances.
 
 **Motion simplification done** (6-M1, `3652441`; plan and review rounds: `git show 3652441:docs/agent/context.md`): the list and card cascade is the only settings-driven reveal, under `motion_enabled`. Follow-ups: `assets/motion-reveal.js` is still 29.9 KB because the cascade machinery was kept unchanged; rewrite it smaller once the design phase settles the cascade's look. GSAP arrived in 6-S5 (`a2424d4`): `motion-gsap.js` adapter, first consumer `scatter-gallery`. Cascade in carousels (6-S4 R10, 2026-10-05): the entrance `translateY` (64px desktop, 40px mobile) is clipped by the Swiper `overflow: hidden` until the slides settle. The rest state is correct. Settle it with the cascade rewrite (for example no vertical offset inside overflow containers).
 
