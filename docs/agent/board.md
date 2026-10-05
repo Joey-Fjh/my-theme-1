@@ -69,6 +69,20 @@ Design specification (grows section by section; first entries from the home `sli
     - **Wave:** the asset `icon-divider-wave.svg` (`preserveAspectRatio="none"`) rendered through the `icons` snippet inside the `section-frame` `background` slot. `lint:theme` forbids inline SVG in Liquid. Its fill is the wave scheme's background on a transparent wrapper.
     - **New icons:** Phosphor regular `shield-check` and `hand-heart` through `build:svg`.
     - **Pattern for later sections:** decorative full-bleed shapes go in the frame's `background` slot as icon assets.
+- Ritual steps (6-S11, `15d5c6b`; plan and rounds: `git show 15d5c6b:docs/agent/context.md`):
+    - **Section:** new `ritual-steps`. One `step` block per step, with a `layout` setting.
+    - **Style A, `sticky_media`:** screen-tall text slots, each repeating the section title (the copies are `aria-hidden`). A sticky, tilted oval scene cross-fades at the centre line.
+    - **Style B, `scroll_carousel`:**
+        - the stage pins for `steps × 100svh`;
+        - centre-line sentinels sit in a track starting at `50svh`, each `(n − 1) / n × 100svh`, so the switches are evenly spaced;
+        - the text fades, the packshot rocks from its base, and an outline numeral sits behind it;
+        - number buttons jump to a step.
+    - **Mobile:** a scroll-snap rail with dots.
+    - **No GSAP:** sticky positioning, IntersectionObserver and CSS only.
+    - **Patterns for later sections:**
+        - **Grids:** never put `container-page` on a custom grid, because its `& > * { grid-column: 2 }` collapses the columns. Use `padding-inline: max(var(--page-margin), calc((100% - var(--page-width)) / 2))`.
+        - **Sticky:** a sticky child needs a parent that spans the scroll range (`align-items: stretch`).
+        - **Headings:** heading tiers set `text-transform` from a theme variable, so uppercase must come from a section rule. Heading tiers go on `h*` elements only; decorative copies use the `heading` snippet with `attrs: 'aria-hidden="true"'`.
 - Card surface and depth (user, 2026-10-05; recorded, not yet planned):
     - **Surface colour.** The design's product cards (6-S4) and collection cards (6-S3) are white panels on the sage section background. Product cards have no surface of their own today, and collection cards hard-code `bg-white`.
     - **Coordinator proposal, layer 1:** a card background role in the colour schemes, default white, shared by product and collection cards.
@@ -106,6 +120,12 @@ Home polish pass (user, 2026-10-05). Per-section batches now settle structure, d
 - **Placeholder accessibility (6-S9 review):** the shared `snippets/image.liquid` placeholder branch ignores `alt`, so placeholder SVGs render as unnamed images in other sections too. Decide whether the snippet marks placeholders decorative (a shared-snippet change for the cleanup sweep).
 - **Sage colour scheme (6-S9, 6-S10):** the design's sage backgrounds have no scheme. The trust strip uses scheme-3 with a scheme-2 wave for now. A fourth (sage) scheme would serve 6-S3, 6-S5, 6-S6, 6-S9 panel 1 and 6-S10. The design's icons also use a lighter stroke than Phosphor regular.
 - **Third-party notices (6-S10 review):** `THIRD_PARTY_NOTICES.md` has no entry for the Phosphor icon set (MIT) used by every `icon-content-*` asset. Add one in the cleanup sweep.
+- **Ritual steps (6-S11):**
+    - fonts: the design's serif titles and monospace italic badges, eyebrow and price (`lint:theme` forbids `font-mono`; decide a font role);
+    - colours: the sage section background and the badge fill;
+    - proportions and spacing against the design, including the oval angle and size, ring offset, star size, numeral size and packshot scale;
+    - the header overlap with the sticky frame and stage;
+    - decide whether home keeps one or both style instances (both are there for comparison).
 
 Design phase inputs:
 
