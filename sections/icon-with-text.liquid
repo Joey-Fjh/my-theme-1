@@ -7,7 +7,19 @@
     assign item_gap = section.settings.item_gap | default: 32 | plus: 0
     assign direction = section.settings.direction | default: 'vertical'
     assign enable_carousel = section.settings.enable_carousel
+    assign item_alignment = section.settings.alignment | default: 'center'
 -%}
+
+{%- capture icon_with_text_background -%}
+    {%- if section.settings.show_wave -%}
+        <div
+            class="icon-with-text-section__wave color-{{ section.settings.wave_color_scheme | default: 'scheme-2' }}"
+            aria-hidden="true"
+        >
+            {%- render 'icons', icon: 'icon-divider-wave', size: 'fill', class: 'icon-with-text-section__wave-shape' -%}
+        </div>
+    {%- endif -%}
+{%- endcapture -%}
 
 {%- capture icon_with_text_root_style -%}
 --icon-with-text-columns: {{ desktop_columns }}; --icon-with-text-columns-mobile: {{ mobile_columns }}; --icon-with-text-item-gap: {{ item_gap }}px;
@@ -56,9 +68,11 @@
                                     icon_size_mobile: icon_size_mobile,
                                     direction: direction,
                                     gap: icon_text_gap,
-                                    alignment: 'center',
+                                    alignment: item_alignment,
                                     class: 'icon-with-text-section__item',
-                                    title_class: 'body-xl'
+                                    title_class: 'heading-h6 pc:heading-h5 uppercase',
+                                    text: block.settings.text,
+                                    text_class: 'body-sm pc:body-md'
                                 -%}
                             </div>
                         {%- endif -%}
@@ -83,9 +97,11 @@
                                 icon_size_mobile: icon_size_mobile,
                                 direction: direction,
                                 gap: icon_text_gap,
-                                alignment: 'center',
+                                alignment: item_alignment,
                                 class: 'icon-with-text-section__item',
-                                title_class: 'body-xl'
+                                title_class: 'heading-h6 pc:heading-h5 uppercase',
+                                text: block.settings.text,
+                                text_class: 'body-sm pc:body-md'
                             -%}
                         </div>
                     {%- endif -%}
@@ -99,12 +115,37 @@
     section: section,
     section_class: 'icon-with-text-section',
     motion: true,
+    background: icon_with_text_background,
     root_style: icon_with_text_root_style,
     root_attrs: icon_with_text_root_attrs,
     children: icon_with_text_children
 %}
 
 {% stylesheet %}
+    .icon-with-text-section .icon-with-text-item__body {
+        display: flex;
+        min-width: 0;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .icon-with-text-section .icon-with-text-section__wave {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        height: clamp(2.5rem, 5vw, 4.5rem);
+        background-color: transparent;
+        color: rgb(var(--color-background));
+    }
+
+    .icon-with-text-section__wave-shape,
+    .icon-with-text-section__wave-shape svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+
     .icon-with-text-section__grid {
         display: grid;
         align-items: start;
@@ -286,6 +327,38 @@
             "default": 16
         },
         {
+            "type": "select",
+            "id": "alignment",
+            "label": "t:sections.icon-with-text.settings.alignment",
+            "options": [
+                {
+                    "value": "left",
+                    "label": "t:sections.icon-with-text.options.left"
+                },
+                {
+                    "value": "center",
+                    "label": "t:sections.icon-with-text.options.center"
+                }
+            ],
+            "default": "center"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.icon-with-text.content.wave"
+        },
+        {
+            "type": "checkbox",
+            "id": "show_wave",
+            "label": "t:sections.icon-with-text.settings.show_wave",
+            "default": false
+        },
+        {
+            "type": "color_scheme",
+            "id": "wave_color_scheme",
+            "label": "t:sections.icon-with-text.settings.wave_color_scheme",
+            "default": "scheme-2"
+        },
+        {
             "type": "header",
             "content": "t:sections.icon-with-text.content.padding"
         },
@@ -320,6 +393,11 @@
                     "id": "title",
                     "label": "t:sections.icon-with-text.block_settings.title",
                     "default": "t:sections.icon-with-text.blocks_defaults.title"
+                },
+                {
+                    "type": "inline_richtext",
+                    "id": "text",
+                    "label": "t:sections.icon-with-text.block_settings.text"
                 },
                 {
                     "type": "select",
@@ -391,6 +469,11 @@
                             "group": "t:sections.icon-with-text.option_groups.service_and_information"
                         },
                         {
+                            "value": "icon-content-shield-check",
+                            "label": "t:sections.icon-with-text.options.shield_check",
+                            "group": "t:sections.icon-with-text.option_groups.service_and_information"
+                        },
+                        {
                             "value": "icon-content-check",
                             "label": "t:sections.icon-with-text.options.check",
                             "group": "t:sections.icon-with-text.option_groups.values_and_lifestyle"
@@ -398,6 +481,11 @@
                         {
                             "value": "icon-content-heart",
                             "label": "t:sections.icon-with-text.options.heart",
+                            "group": "t:sections.icon-with-text.option_groups.values_and_lifestyle"
+                        },
+                        {
+                            "value": "icon-content-hand-heart",
+                            "label": "t:sections.icon-with-text.options.hand_heart",
                             "group": "t:sections.icon-with-text.option_groups.values_and_lifestyle"
                         },
                         {
