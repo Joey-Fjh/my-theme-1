@@ -89,6 +89,19 @@ Design specification (grows section by section; first entries from the home `sli
         - **Grids:** never put `container-page` on a custom grid, because its `& > * { grid-column: 2 }` collapses the columns. Use `padding-inline: max(var(--page-margin), calc((100% - var(--page-width)) / 2))`.
         - **Sticky:** a sticky child needs a parent that spans the scroll range (`align-items: stretch`).
         - **Headings:** heading tiers set `text-transform` from a theme variable, so uppercase must come from a section rule. Heading tiers go on `h*` elements only; decorative copies use the `heading` snippet with `attrs: 'aria-hidden="true"'`.
+- Featured product and shared purchase controls (6-S12, `9a56b9e`; plan and rounds: `git show 9a56b9e:docs/agent/context.md`):
+    - **Section:** `featured-product` `gallery_layout: carousel`: a full-bleed media column, vertical dots in the scheme foreground, `contain` fit, and the info column inset to the page width and stretched with `space-between`.
+    - **Two columns:** `productLayout` makes the shorter column sticky. The fixed media height sits on `.featured-product__media-sticky`, never on the column itself, so the sticky child has room.
+    - **Shared on every product surface:**
+        - option buttons with a colour dot and a visible label;
+        - uppercase option names;
+        - full-width uppercase buy buttons;
+        - a `heading-h1` price, with an optional rating (`show_rating`, `reviews.rating` metafields);
+        - benefit texts (`item_N_text`).
+    - **Quantity box:** restyled for `data-qty-surface='product'` only; the cart is unchanged.
+    - **Patterns for later sections:**
+        - **rem:** the theme's root font size is 10px (`2rem` is 20px in property values), while media queries resolve `rem` at 16px (`64rem` = 1024px).
+        - **Motion gate:** `layout/theme.liquid` emits `data-motion-enabled="false"` only, so motion CSS gates on `body:not([data-motion-enabled='false'])`.
 - Card surface and depth (user, 2026-10-05; recorded, not yet planned):
     - **Surface colour.** The design's product cards (6-S4) and collection cards (6-S3) are white panels on the sage section background. Product cards have no surface of their own today, and collection cards hard-code `bg-white`.
     - **Coordinator proposal, layer 1:** a card background role in the colour schemes, default white, shared by product and collection cards.
@@ -132,6 +145,12 @@ Home polish pass (user, 2026-10-05). Per-section batches now settle structure, d
     - proportions and spacing against the design, including the oval angle and size, ring offset, star size, numeral size and packshot scale;
     - the header overlap with the sticky frame and stage;
     - decide whether home keeps one or both style instances (both are there for comparison).
+- **Featured product (6-S12):**
+    - the quantity sits beside add-to-cart on mobile (the product page design), while the home mobile design stacks them;
+    - cap the `space-between` gaps in the info column on very tall screens;
+    - optional sticky add-to-cart bar when the info column is taller than the screen;
+    - the price and title sizes against the design;
+    - the design's lighter icon stroke (`flask` was not added).
 
 Design phase inputs:
 
