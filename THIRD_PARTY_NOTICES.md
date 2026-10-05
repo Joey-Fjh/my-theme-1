@@ -95,4 +95,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
+## GSAP (GreenSock)
+
+- Version: 3.15.0 (from `npm view gsap version` at vendoring time, 2026-10-05)
+- Files: `assets/vendor-gsap.min.js`, `assets/vendor-gsap-scrolltrigger.min.js` (unmodified copies of `dist/gsap.min.js` and `dist/ScrollTrigger.min.js` from the npm package)
+- MD5 (npm `dist/` files): `BF3FD8EC2A5D9F4531B4C310222361F8` (`gsap.min.js`), `5445D0E95E612449839D2462BA8AB7D0` (`ScrollTrigger.min.js`)
+- Source: https://gsap.com / https://www.npmjs.com/package/gsap
+- License: GreenSock Standard "No Charge" License (https://gsap.com/community/standard-license/)
+
+```text
+See https://gsap.com/community/standard-license/ for the current GreenSock Standard License terms.
+Redistribution inside a Shopify theme is a merchant/platform packaging use; written confirmation from GSAP remains optional before Theme Store submission (residual risk accepted in batch 6-S5).
+```
+
 When a vendored library is added, replaced, or upgraded, update its entry here in the same change.

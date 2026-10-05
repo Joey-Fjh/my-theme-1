@@ -40,9 +40,22 @@ The mother template ships no drawer or dialog overlay. Derived themes that add o
 
 ## GSAP Boundary
 
-The current theme has no active GSAP runtime or project consumers. Do not reintroduce GSAP during ordinary motion cleanup.
+GSAP core and ScrollTrigger are vendored for complex narrative choreography only. The active consumer is `assets/scatter-gallery.js`; do not add GSAP elsewhere without an accepted batch.
 
-GSAP remains an explicitly approved future option only for complex narrative choreography. If approved again, register factories through `define()` on a `data-module-id` entry module, scope triggers to the component root, clean up in `destroy()`, respect reduced motion, and keep no-JS critical content visible.
+Loading:
+
+- Sections pass `data-gsap-src` and `data-scrolltrigger-src` on the component root.
+- Only `assets/motion-gsap.js` loads the classic scripts and touches `window.gsap` / `window.ScrollTrigger`.
+- Entry modules load GSAP on demand through `motion-gsap.js` (for example after an `IntersectionObserver` with a generous `rootMargin`), not from the static import map graph alone.
+
+Implementation rules:
+
+- Register factories through `define()` on a `data-module-id` entry module.
+- Wrap each component in one `gsap.context()` and call `revert()` in `destroy()`.
+- Use `gsap.matchMedia()` for `prefers-reduced-motion: reduce` (no tween) and for layout breakpoints when distances differ.
+- Respect `body[data-motion-enabled='false']` by skipping GSAP setup entirely.
+- Without JavaScript, the final (spread) layout must remain visible; do not hide critical content behind animation completion.
+- Do not share `transform` or `opacity` ownership with CSS transitions/animations or Alpine on the same element GSAP transforms.
 
 ## Page-Type Policy
 

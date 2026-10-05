@@ -1,0 +1,503 @@
+{%- assign scatter_gallery_root_attrs = 'data-component-kind="section" data-component-type="scatter-gallery" data-component-id="'
+    | append: section.id
+    | append: '"'
+-%}
+{%- liquid
+    assign scatter_gallery_heading_mobile = section.settings.heading_size_mobile | default: 'heading-h4'
+    assign scatter_gallery_heading_desktop = section.settings.heading_size | default: 'heading-h2'
+    assign scatter_gallery_heading_mobile_class = 'max-pc:heading-h4'
+    case scatter_gallery_heading_mobile
+        when 'heading-4xl'
+            assign scatter_gallery_heading_mobile_class = 'max-pc:heading-4xl'
+        when 'heading-3xl'
+            assign scatter_gallery_heading_mobile_class = 'max-pc:heading-3xl'
+        when 'heading-2xl'
+            assign scatter_gallery_heading_mobile_class = 'max-pc:heading-2xl'
+        when 'heading-xl'
+            assign scatter_gallery_heading_mobile_class = 'max-pc:heading-xl'
+        when 'heading-h1'
+            assign scatter_gallery_heading_mobile_class = 'max-pc:heading-h1'
+        when 'heading-h2'
+            assign scatter_gallery_heading_mobile_class = 'max-pc:heading-h2'
+        when 'heading-h3'
+            assign scatter_gallery_heading_mobile_class = 'max-pc:heading-h3'
+        when 'heading-h4'
+            assign scatter_gallery_heading_mobile_class = 'max-pc:heading-h4'
+        when 'heading-h5'
+            assign scatter_gallery_heading_mobile_class = 'max-pc:heading-h5'
+        when 'heading-h6'
+            assign scatter_gallery_heading_mobile_class = 'max-pc:heading-h6'
+    endcase
+    assign scatter_gallery_heading_desktop_class = 'pc:heading-h2'
+    case scatter_gallery_heading_desktop
+        when 'heading-4xl'
+            assign scatter_gallery_heading_desktop_class = 'pc:heading-4xl'
+        when 'heading-3xl'
+            assign scatter_gallery_heading_desktop_class = 'pc:heading-3xl'
+        when 'heading-2xl'
+            assign scatter_gallery_heading_desktop_class = 'pc:heading-2xl'
+        when 'heading-xl'
+            assign scatter_gallery_heading_desktop_class = 'pc:heading-xl'
+        when 'heading-h1'
+            assign scatter_gallery_heading_desktop_class = 'pc:heading-h1'
+        when 'heading-h2'
+            assign scatter_gallery_heading_desktop_class = 'pc:heading-h2'
+        when 'heading-h3'
+            assign scatter_gallery_heading_desktop_class = 'pc:heading-h3'
+        when 'heading-h4'
+            assign scatter_gallery_heading_desktop_class = 'pc:heading-h4'
+        when 'heading-h5'
+            assign scatter_gallery_heading_desktop_class = 'pc:heading-h5'
+        when 'heading-h6'
+            assign scatter_gallery_heading_desktop_class = 'pc:heading-h6'
+    endcase
+    if section.settings.heading != blank
+        assign scatter_gallery_heading_text = section.settings.heading
+    else
+        assign scatter_gallery_heading_text = 'sections.scatter-gallery.defaults.heading' | t
+    endif
+-%}
+
+{%- capture scatter_gallery_children -%}
+    <div
+        class="scatter-gallery__root"
+        data-module-id="scatter-gallery"
+        x-data="scatterGallery()"
+        data-gsap-src="{{ 'vendor-gsap.min.js' | asset_url }}"
+        data-scrolltrigger-src="{{ 'vendor-gsap-scrolltrigger.min.js' | asset_url }}"
+        data-gather-factor="1.08"
+        data-spread-factor="0.24"
+        data-gather-factor-mobile="0.88"
+        data-spread-factor-mobile="0.16"
+    >
+        <div class="scatter-gallery__stage-wrap">
+            <h2
+                class="scatter-gallery__heading {{ scatter_gallery_heading_mobile_class }} {{ scatter_gallery_heading_desktop_class }}"
+            >
+                {{- scatter_gallery_heading_text -}}
+            </h2>
+
+            <div class="scatter-gallery__stage">
+                {%- if section.settings.decoration_image != blank -%}
+                    <div class="scatter-gallery__decoration" aria-hidden="true">
+                        {%- render 'image',
+                            image: section.settings.decoration_image,
+                            alt: '',
+                            mode: 'natural',
+                            fit: 'contain',
+                            loading: 'lazy',
+                            sizes: '100vw',
+                            widths: '400,800,1200,1600',
+                            wrapper_class: 'scatter-gallery__decoration-inner h-full w-full'
+                        -%}
+                    </div>
+                {%- endif -%}
+
+                {%- for slot_index in (1..8) -%}
+                    {%- liquid
+                        assign block_index = slot_index | minus: 1
+                        assign image_block = section.blocks[block_index]
+                        assign slot_image = blank
+                        if image_block != blank and image_block.settings.image != blank
+                            assign slot_image = image_block.settings.image
+                        endif
+                        assign placeholder_index = slot_index | modulo: 6
+                        if placeholder_index == 0
+                            assign placeholder_index = 6
+                        endif
+                        assign placeholder_key = 'product-' | append: placeholder_index
+                        assign scatter_gallery_slot_sizes = '(min-width: 768px) 16vw, 37vw'
+                        case slot_index
+                            when 1
+                                assign scatter_gallery_slot_sizes = '(min-width: 768px) 17vw, 37vw'
+                            when 2
+                                assign scatter_gallery_slot_sizes = '(min-width: 768px) 15vw, 33vw'
+                            when 3
+                                assign scatter_gallery_slot_sizes = '(min-width: 768px) 17vw, 36vw'
+                            when 4
+                                assign scatter_gallery_slot_sizes = '(min-width: 768px) 14vw, 41vw'
+                            when 5
+                                assign scatter_gallery_slot_sizes = '(min-width: 768px) 15vw, 32vw'
+                            when 6
+                                assign scatter_gallery_slot_sizes = '(min-width: 768px) 16vw, 39vw'
+                            when 7
+                                assign scatter_gallery_slot_sizes = '(min-width: 768px) 16vw, 32vw'
+                            when 8
+                                assign scatter_gallery_slot_sizes = '(min-width: 768px) 17vw, 44vw'
+                        endcase
+                    -%}
+                    <div
+                        class="scatter-gallery__slot scatter-gallery__slot--{{ slot_index }}"
+                        data-scatter-gallery-item
+                        {% if image_block != blank %}
+                            {{ image_block.shopify_attributes }}
+                        {% endif %}
+                    >
+                        {%- if slot_image != blank -%}
+                            {%- render 'image',
+                                image: slot_image,
+                                alt: slot_image.alt,
+                                mode: 'frame',
+                                fit: 'cover',
+                                loading: 'lazy',
+                                sizes: scatter_gallery_slot_sizes,
+                                widths: '200,360,480,640,800,960,1200',
+                                wrapper_class: 'scatter-gallery__media h-full w-full'
+                            -%}
+                        {%- else -%}
+                            <div class="scatter-gallery__media scatter-gallery__media--placeholder h-full w-full">
+                                {{ placeholder_key | placeholder_svg_tag: 'h-full w-full object-cover' }}
+                            </div>
+                        {%- endif -%}
+                    </div>
+                {%- endfor -%}
+            </div>
+        </div>
+    </div>
+{%- endcapture -%}
+
+{% render 'section-frame',
+    section: section,
+    section_class: 'scatter-gallery-section',
+    width: 'page',
+    height_kind: 'content',
+    motion: false,
+    root_attrs: scatter_gallery_root_attrs,
+    children: scatter_gallery_children
+%}
+
+{% stylesheet %}
+    .scatter-gallery-section {
+        overflow-x: clip;
+        overflow-y: visible;
+    }
+
+    @supports not (overflow: clip) {
+        .scatter-gallery-section {
+            overflow-x: hidden;
+        }
+    }
+
+    .scatter-gallery-section {
+        .scatter-gallery__stage-wrap {
+            position: relative;
+        }
+
+        .scatter-gallery__heading {
+            position: absolute;
+            z-index: 5;
+            inset-inline: 0;
+            margin-inline: auto;
+            max-width: 92%;
+            text-align: center;
+            text-wrap: balance;
+            text-transform: uppercase;
+            line-height: 0.95;
+            top: 48.5%;
+        }
+
+        @media (min-width: 768px) {
+            .scatter-gallery__heading {
+                top: 46%;
+                max-width: 40%;
+            }
+        }
+
+        .scatter-gallery__stage {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 585 / 1238;
+        }
+
+        @media (min-width: 768px) {
+            .scatter-gallery__stage {
+                aspect-ratio: 1607 / 1010;
+            }
+        }
+
+        .scatter-gallery__decoration {
+            pointer-events: none;
+            position: absolute;
+            inset-inline: 0;
+            bottom: 0;
+            z-index: 1;
+            height: 42%;
+        }
+
+        .scatter-gallery__slot {
+            position: absolute;
+            z-index: 2;
+            overflow: hidden;
+            border-radius: 0.75rem;
+        }
+
+        @media (min-width: 768px) {
+            .scatter-gallery__slot {
+                border-radius: 1rem;
+            }
+        }
+
+        .scatter-gallery__media,
+        .scatter-gallery__media--placeholder {
+            border-radius: inherit;
+        }
+
+        .scatter-gallery__media--placeholder {
+            overflow: hidden;
+            border: 1px solid rgba(var(--color-foreground), 0.12);
+            background-color: rgb(var(--color-background));
+
+            @supports (background-color: color-mix(in oklab, white, black)) {
+                background-color: color-mix(
+                    in oklab,
+                    rgb(var(--color-background)) 95%,
+                    rgb(var(--color-foreground)) 5%
+                );
+            }
+        }
+
+        .scatter-gallery__media--placeholder svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .scatter-gallery__slot--1 {
+            inset-block-start: 11.6%;
+            inset-inline-start: 6.2%;
+            width: 37.1%;
+            height: 21.4%;
+        }
+
+        .scatter-gallery__slot--2 {
+            inset-block-start: 7.2%;
+            inset-inline-start: 59.3%;
+            width: 32.8%;
+            height: 11.5%;
+        }
+
+        .scatter-gallery__slot--3 {
+            inset-block-start: 22.5%;
+            inset-inline-start: 53.3%;
+            width: 36.1%;
+            height: 22.5%;
+        }
+
+        .scatter-gallery__slot--4 {
+            inset-block-start: 58.5%;
+            inset-inline-start: 6.3%;
+            width: 41.4%;
+            height: 26.9%;
+        }
+
+        .scatter-gallery__slot--5 {
+            inset-block-start: 59.6%;
+            inset-inline-start: 56.2%;
+            width: 32.1%;
+            height: 15.2%;
+        }
+
+        .scatter-gallery__slot--6 {
+            inset-block-start: 81%;
+            inset-inline-start: 54.5%;
+            width: 38.5%;
+            height: 12.9%;
+        }
+
+        .scatter-gallery__slot--7,
+        .scatter-gallery__slot--8 {
+            display: none;
+        }
+
+        @media (min-width: 768px) {
+            .scatter-gallery__slot--1 {
+                inset-block-start: 8%;
+                inset-inline-start: 4.3%;
+                width: 16.7%;
+                height: 33.1%;
+            }
+
+            .scatter-gallery__slot--2 {
+                inset-block-start: 18.1%;
+                inset-inline-start: 29.5%;
+                width: 15.3%;
+                height: 17.6%;
+            }
+
+            .scatter-gallery__slot--3 {
+                inset-block-start: 6.3%;
+                inset-inline-start: 57.3%;
+                width: 16.7%;
+                height: 35.2%;
+            }
+
+            .scatter-gallery__slot--4 {
+                inset-block-start: 24.7%;
+                inset-inline-start: 78.4%;
+                width: 14.4%;
+                height: 23.1%;
+            }
+
+            .scatter-gallery__slot--5 {
+                inset-block-start: 52.3%;
+                inset-inline-start: 7.4%;
+                width: 14.9%;
+                height: 22.1%;
+            }
+
+            .scatter-gallery__slot--6 {
+                inset-block-start: 57.5%;
+                inset-inline-start: 26.3%;
+                width: 16.5%;
+                height: 35.4%;
+            }
+
+            .scatter-gallery__slot--7 {
+                display: block;
+                inset-block-start: 66.6%;
+                inset-inline-start: 54.3%;
+                width: 16.4%;
+                height: 18.6%;
+            }
+
+            .scatter-gallery__slot--8 {
+                display: block;
+                inset-block-start: 58%;
+                inset-inline-start: 79.1%;
+                width: 16.9%;
+                height: 34%;
+            }
+        }
+    }
+{% endstylesheet %}
+
+{% schema %}
+{
+    "name": "t:sections.scatter-gallery.name",
+    "tag": "section",
+    "class": "section",
+    "disabled_on": {
+        "groups": ["header", "footer", "custom.overlay"]
+    },
+    "settings": [
+        {
+            "type": "header",
+            "content": "t:sections.scatter-gallery.content.general"
+        },
+        {
+            "type": "color_scheme",
+            "id": "color_scheme",
+            "label": "t:sections.scatter-gallery.settings.color_scheme",
+            "default": "scheme-2"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.slides-show.content.heading"
+        },
+        {
+            "type": "text",
+            "id": "heading",
+            "label": "t:sections.scatter-gallery.settings.heading",
+            "default": "t:sections.scatter-gallery.defaults.heading"
+        },
+        {
+            "type": "select",
+            "id": "heading_size",
+            "label": "t:sections.slides-show.settings.heading_size",
+            "options": [
+                { "value": "heading-4xl", "label": "t:sections.slides-show.options.heading_4xl" },
+                { "value": "heading-3xl", "label": "t:sections.slides-show.options.heading_3xl" },
+                { "value": "heading-2xl", "label": "t:sections.slides-show.options.heading_2xl" },
+                { "value": "heading-xl", "label": "t:sections.slides-show.options.heading_xl" },
+                { "value": "heading-h1", "label": "t:sections.slides-show.options.heading_h1" },
+                { "value": "heading-h2", "label": "t:sections.slides-show.options.heading_h2" },
+                { "value": "heading-h3", "label": "t:sections.slides-show.options.heading_h3" },
+                { "value": "heading-h4", "label": "t:sections.slides-show.options.heading_h4" },
+                { "value": "heading-h5", "label": "t:sections.slides-show.options.heading_h5" },
+                { "value": "heading-h6", "label": "t:sections.slides-show.options.heading_h6" }
+            ],
+            "default": "heading-h2"
+        },
+        {
+            "type": "select",
+            "id": "heading_size_mobile",
+            "label": "t:sections.slides-show.settings.heading_size_mobile",
+            "options": [
+                { "value": "heading-4xl", "label": "t:sections.slides-show.options.heading_4xl" },
+                { "value": "heading-3xl", "label": "t:sections.slides-show.options.heading_3xl" },
+                { "value": "heading-2xl", "label": "t:sections.slides-show.options.heading_2xl" },
+                { "value": "heading-xl", "label": "t:sections.slides-show.options.heading_xl" },
+                { "value": "heading-h1", "label": "t:sections.slides-show.options.heading_h1" },
+                { "value": "heading-h2", "label": "t:sections.slides-show.options.heading_h2" },
+                { "value": "heading-h3", "label": "t:sections.slides-show.options.heading_h3" },
+                { "value": "heading-h4", "label": "t:sections.slides-show.options.heading_h4" },
+                { "value": "heading-h5", "label": "t:sections.slides-show.options.heading_h5" },
+                { "value": "heading-h6", "label": "t:sections.slides-show.options.heading_h6" }
+            ],
+            "default": "heading-h4"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.scatter-gallery.content.decoration"
+        },
+        {
+            "type": "image_picker",
+            "id": "decoration_image",
+            "label": "t:sections.scatter-gallery.settings.decoration_image"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.scatter-gallery.content.padding"
+        },
+        {
+            "type": "range",
+            "id": "padding_top",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "t:sections.scatter-gallery.settings.padding_top",
+            "default": 32
+        },
+        {
+            "type": "range",
+            "id": "padding_bottom",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "t:sections.scatter-gallery.settings.padding_bottom",
+            "default": 32
+        }
+    ],
+    "blocks": [
+        {
+            "type": "image",
+            "name": "t:sections.scatter-gallery.blocks.image",
+            "limit": 8,
+            "settings": [
+                {
+                    "type": "image_picker",
+                    "id": "image",
+                    "label": "t:sections.scatter-gallery.block_settings.image"
+                }
+            ]
+        }
+    ],
+    "presets": [
+        {
+            "name": "t:sections.scatter-gallery.presets.scatter_gallery",
+            "blocks": [
+                { "type": "image" },
+                { "type": "image" },
+                { "type": "image" },
+                { "type": "image" },
+                { "type": "image" },
+                { "type": "image" },
+                { "type": "image" },
+                { "type": "image" }
+            ]
+        }
+    ]
+}
+{% endschema %}

@@ -239,13 +239,13 @@ Alpine remains the deliberate UI runtime for this theme; do not add parallel Web
 
 ## Motion Runtime Boundary
 
-The theme has no active GSAP runtime namespace. Do not add GSAP during ordinary motion work. Read `docs/references/architecture/motion-architecture.md` for classification and ownership.
+GSAP is optional narrative choreography only. The vendored runtime loads on demand through `assets/motion-gsap.js`; only that adapter touches `window.gsap` and `window.ScrollTrigger`. Consumer entry modules (currently `scatter-gallery.js`) must use one `gsap.context()` per root, revert it in `destroy()`, gate on `body[data-motion-enabled='false']`, and use `gsap.matchMedia()` for reduced motion. Read `docs/references/architecture/motion-architecture.md` for classification and transform ownership.
 
 ## CSS / Alpine Boundary
 
 - Alpine owns state and trigger behaviour through adapter-registered factories and stores.
 - `tailwind.animates.css` owns animation capability CSS.
-- GSAP is optional narrative choreography only and must not share `opacity` or `transform` ownership with Alpine/CSS on the same element.
+- GSAP is optional narrative choreography only. It loads on demand through `motion-gsap.js` and must not share `opacity` or `transform` ownership with Alpine/CSS on the same element.
 
 ## File Ownership
 
