@@ -1,5 +1,6 @@
 import { define } from 'alpine-adapter';
 import { useDisposable, Utils } from 'utils';
+import { bindCardRail } from 'card-rail';
 
 const DESKTOP_MQL = '(min-width: 1024px)';
 
@@ -22,6 +23,7 @@ define('routineShowcase', () => ({
     _reducedMotion: false,
     _viewportObserver: null,
     _progressListener: null,
+    _mobileRailBinding: null,
 
     init() {
         this._root = this.$el;
@@ -61,10 +63,54 @@ define('routineShowcase', () => ({
         observer.observe(this._root);
         this._viewportObserver = observer;
 
+        this.on(this._desktopMql, 'change', () => this._rebindMobileRail());
+
         this.$nextTick(() => {
             this._applyStaticA11y();
             this._applyBarStates(true);
+            this._bindMobileDots();
+            this._rebindMobileRail();
         });
+    },
+
+    _rebindMobileRail() {
+        this._mobileRailBinding?.disconnect();
+        this._mobileRailBinding = null;
+        if (this._desktopMql.matches) return;
+
+        const rail = this._root?.querySelector('[data-routine-mobile-rail]');
+        const cards = this._root?.querySelectorAll('[data-routine-mobile-card]');
+        if (!rail || !cards?.length) return;
+
+        this._mobileRailBinding = bindCardRail({
+            root: this._root,
+            rail,
+            cards,
+            onActiveIndex: (index) => {
+                this.activeIndex = index;
+            },
+            getIndexFromCard: (el) => Number(el.dataset.cardRailIndex),
+        });
+    },
+
+    _bindMobileDots() {
+        this._root?.querySelectorAll('[data-routine-mobile-dot]').forEach((button) => {
+            this.on(button, 'click', () => {
+                const index = Number(button.dataset.cardRailIndex);
+                if (!Number.isFinite(index)) return;
+                this._mobileRailBinding?.scrollToIndex(index);
+            });
+        });
+    },
+
+    mobileDotClassFromEl(el) {
+        const index = Number(el?.dataset?.cardRailIndex);
+        return { 'is-active': Number.isFinite(index) && this.activeIndex === index };
+    },
+
+    mobileDotAriaCurrentFromEl(el) {
+        const index = Number(el?.dataset?.cardRailIndex);
+        return Number.isFinite(index) && this.activeIndex === index ? 'true' : 'false';
     },
 
     _hydrateDataset() {
@@ -367,6 +413,8 @@ define('routineShowcase', () => ({
         }
         this._viewportObserver?.disconnect();
         this._viewportObserver = null;
+        this._mobileRailBinding?.disconnect();
+        this._mobileRailBinding = null;
         this._root = null;
         this.tabs = [];
         this.panels = [];

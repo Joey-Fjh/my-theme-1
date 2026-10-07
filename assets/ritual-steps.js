@@ -1,6 +1,7 @@
 import { define } from 'alpine-adapter';
 import { useDisposable, Utils } from 'utils';
 import ThemeEvents from 'events';
+import { bindCardRail } from 'card-rail';
 
 const DESKTOP_MQL = '(min-width: 64rem)';
 const CENTER_IO_OPTIONS = { root: null, rootMargin: '-50% 0px -50% 0px', threshold: 0 };
@@ -21,6 +22,7 @@ define('ritualSteps', () => ({
     _root: null,
     _desktopMql: null,
     _observers: [],
+    _mobileRailBinding: null,
     _offEditorSelect: null,
     _swingFrame: 0,
 
@@ -69,6 +71,8 @@ define('ritualSteps', () => ({
     _teardownObservers() {
         this._observers.forEach((observer) => observer.disconnect());
         this._observers = [];
+        this._mobileRailBinding?.disconnect();
+        this._mobileRailBinding = null;
     },
 
     _setupObservers() {
@@ -121,26 +125,13 @@ define('ritualSteps', () => ({
         const cards = this._root.querySelectorAll('[data-ritual-mobile-card]');
         if (!rail || !cards.length) return;
 
-        const observer = new IntersectionObserver(
-            (entries) => {
-                let best = null;
-                let bestRatio = 0;
-                entries.forEach((entry) => {
-                    if (entry.intersectionRatio > bestRatio) {
-                        bestRatio = entry.intersectionRatio;
-                        best = entry;
-                    }
-                });
-                if (best?.isIntersecting) {
-                    const index = Number(best.target.dataset.stepIndex);
-                    if (Number.isFinite(index)) this.setActive(index);
-                }
-            },
-            { root: rail, threshold: [0.35, 0.55, 0.75] },
-        );
-
-        cards.forEach((card) => observer.observe(card));
-        this._observers.push(observer);
+        this._mobileRailBinding = bindCardRail({
+            root: this._root,
+            rail,
+            cards,
+            onActiveIndex: (index) => this.setActive(index),
+            getIndexFromCard: (el) => Number(el.dataset.stepIndex),
+        });
     },
 
     _bindNav() {
@@ -166,16 +157,7 @@ define('ritualSteps', () => ({
     },
 
     _scrollMobileToIndex(index) {
-        const rail = this._root.querySelector('[data-ritual-mobile-rail]');
-        const card = this._root.querySelector(
-            `[data-ritual-mobile-card][data-step-index="${index}"]`,
-        );
-        if (!rail || !card) return;
-        rail.scrollTo({
-            left: card.offsetLeft,
-            behavior: scrollBehavior(),
-        });
-        this.setActive(index);
+        this._mobileRailBinding?.scrollToIndex(index);
     },
 
     setActive(index, options = {}) {

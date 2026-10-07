@@ -48,10 +48,10 @@
                     tier: ritual_heading_tier,
                     align: 'start',
                     content: ritual_heading,
-                    class: 'ritual-steps__mobile-section-heading text-theme-text uppercase px-4'
+                    class: 'ritual-steps__mobile-section-heading sr-only text-theme-text uppercase'
                 %}
                 <ul
-                    class="ritual-steps__mobile-rail"
+                    class="card-rail ritual-steps__mobile-rail"
                     data-ritual-mobile-rail
                     role="list"
                 >
@@ -116,7 +116,7 @@
                             endif
                         -%}
                         <li
-                            class="ritual-steps__mobile-slot"
+                            class="card-rail__slot ritual-steps__mobile-slot"
                             data-ritual-block-id="{{ block.id }}"
                             data-step-index="{{ ritual_step_idx }}"
                             {{ block.shopify_attributes }}
@@ -248,7 +248,7 @@
                     {%- endfor -%}
                 </ul>
 
-                <div class="ritual-steps__dots" role="group" aria-label="{{ 'sections.ritual-steps.accessibility.step_dots' | t }}">
+                <div class="card-rail__dots ritual-steps__dots" role="group" aria-label="{{ 'sections.ritual-steps.accessibility.step_dots' | t }}">
                     {%- assign ritual_step_index = 0 -%}
                     {%- for block in section.blocks -%}
                         {%- if block.type != 'step' -%}
@@ -264,14 +264,14 @@
                         -%}
                         <button
                             type="button"
-                            class="ritual-steps__dot focus-ring"
+                            class="card-rail__dot ritual-steps__dot focus-ring"
                             data-ritual-nav-button
                             data-step-index="{{ ritual_step_idx }}"
                             :class="dotClassFromEl($el)"
                             :aria-current="dotAriaCurrentFromEl($el)"
                             aria-label="{{ 'sections.ritual-steps.accessibility.go_to_step' | t: step: ritual_step_index, label: ritual_label }}"
                         >
-                            <span class="ritual-steps__dot-visual" aria-hidden="true"></span>
+                            <span class="card-rail__dot-visual ritual-steps__dot-visual" aria-hidden="true"></span>
                         </button>
                     {%- endfor -%}
                 </div>
@@ -702,21 +702,8 @@
         }
     }
 
-    .ritual-steps__mobile-rail {
-        display: flex;
-        gap: 0.75rem;
-        margin: 0;
-        padding: 0 1rem 0.5rem;
-        list-style: none;
-        overflow-x: auto;
-        scroll-snap-type: x mandatory;
-        -webkit-overflow-scrolling: touch;
-    }
-
-    .ritual-steps__mobile-slot {
-        flex: 0 0 88%;
-        scroll-snap-align: start;
-        list-style: none;
+    .ritual-steps__mobile {
+        width: 100%;
     }
 
     .ritual-steps__mobile-card {
@@ -724,36 +711,7 @@
         flex-direction: column;
         gap: 0.875rem;
         padding: 1.25rem 0;
-    }
-
-    .ritual-steps__dots {
-        display: flex;
-        justify-content: center;
-        gap: 0.5rem;
-        padding: 0.75rem 1rem 0;
-    }
-
-    .ritual-steps__dot {
-        padding: 0.25rem;
-        border: 0;
-        background: transparent;
-        cursor: pointer;
-    }
-
-    .ritual-steps__dot-visual {
-        display: block;
-        width: 0.5rem;
-        height: 0.5rem;
-        border-radius: 999px;
-        background-color: color-mix(in oklab, rgb(var(--color-foreground)) 25%, transparent);
-        transition:
-            transform 200ms ease,
-            background-color 200ms ease;
-    }
-
-    .ritual-steps__dot.is-active .ritual-steps__dot-visual {
-        transform: scale(1.15);
-        background-color: rgb(var(--color-foreground));
+        box-sizing: border-box;
     }
 
     .ritual-steps__oval-scene {
@@ -952,12 +910,14 @@
         min-height: 100svh;
     }
 
-    .ritual-steps__oval-scene {
-        width: auto;
-        height: 76%;
-        max-width: 92%;
-        max-height: none;
-        aspect-ratio: 0.7;
+    @media (min-width: 64rem) {
+        .ritual-steps__oval-scene:not(.ritual-steps__oval-scene--mobile) {
+            width: auto;
+            height: 76%;
+            max-width: 92%;
+            max-height: none;
+            aspect-ratio: 0.7;
+        }
     }
 
     .ritual-steps__pin {
@@ -999,10 +959,6 @@
         .ritual-steps__stage {
         position: sticky;
         top: 0;
-    }
-
-    .ritual-steps__mobile-section-heading {
-        margin-bottom: 1rem;
     }
 
     .ritual-steps__carousel-grid {

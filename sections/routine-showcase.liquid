@@ -96,9 +96,9 @@
             </div>
         {%- endif -%}
 
-        <div class="routine-showcase__inner section-frame__overlay-padding container-page">
+        <div class="routine-showcase__inner section-frame__overlay-padding">
             {%- if routine_step_count > 0 -%}
-                <ul class="routine-showcase__mobile-rail" role="list">
+                <ul class="card-rail routine-showcase__mobile-rail" data-routine-mobile-rail role="list">
                     {%- assign routine_step_index = 0 -%}
                     {%- for block in section.blocks -%}
                         {%- if block.type != 'step' -%}
@@ -150,8 +150,17 @@
                             assign routine_lifestyle_index = routine_step_index | modulo: 2 | plus: 1
                             assign routine_lifestyle_key = 'lifestyle-' | append: routine_lifestyle_index
                         -%}
-                        <li class="routine-showcase__mobile-card-slot" {{ block.shopify_attributes }}>
-                            <article class="routine-showcase__mobile-card">
+                        <li
+                            class="card-rail__slot routine-showcase__mobile-card-slot"
+                            data-routine-mobile-slot
+                            data-card-rail-index="{{ routine_step_index | minus: 1 }}"
+                            {{ block.shopify_attributes }}
+                        >
+                            <article
+                                class="routine-showcase__mobile-card"
+                                data-routine-mobile-card
+                                data-card-rail-index="{{ routine_step_index | minus: 1 }}"
+                            >
                                 <div class="routine-showcase__mobile-product">
                                     {%- if routine_float_image == blank -%}
                                         <a
@@ -220,6 +229,35 @@
                     {%- endfor -%}
                 </ul>
 
+                <div
+                    class="card-rail__dots routine-showcase__mobile-dots"
+                    role="group"
+                    aria-label="{{ 'accessibility.card_rail_dots' | t }}"
+                >
+                    {%- assign routine_step_index = 0 -%}
+                    {%- for block in section.blocks -%}
+                        {%- if block.type != 'step' -%}
+                            {%- continue -%}
+                        {%- endif -%}
+                        {%- liquid
+                            assign routine_step_index = routine_step_index | plus: 1
+                            assign routine_dot_idx = routine_step_index | minus: 1
+                        -%}
+                        <button
+                            type="button"
+                            class="card-rail__dot routine-showcase__mobile-dot focus-ring"
+                            data-routine-mobile-dot
+                            data-card-rail-index="{{ routine_dot_idx }}"
+                            :class="mobileDotClassFromEl($el)"
+                            :aria-current="mobileDotAriaCurrentFromEl($el)"
+                            aria-label="{{ 'accessibility.go_to_slide' | t: index: routine_step_index }}"
+                        >
+                            <span class="card-rail__dot-visual" aria-hidden="true"></span>
+                        </button>
+                    {%- endfor -%}
+                </div>
+
+                <div class="container-page">
                 <div class="routine-showcase__desktop">
                     <div class="routine-showcase__desktop-grid">
                         <div class="routine-showcase__col routine-showcase__col--left">
@@ -579,6 +617,7 @@
                         </div>
                     </div>
                 </div>
+                </div>
             {%- endif -%}
         </div>
     </div>
@@ -624,23 +663,6 @@
         container-name: routine-showcase;
     }
 
-    .routine-showcase__mobile-rail {
-        display: flex;
-        gap: 1rem;
-        margin: 0;
-        padding: 0 0 0.5rem;
-        list-style: none;
-        overflow-x: auto;
-        scroll-snap-type: x mandatory;
-        -webkit-overflow-scrolling: touch;
-    }
-
-    .routine-showcase__mobile-card-slot {
-        flex: 0 0 78%;
-        scroll-snap-align: start;
-        list-style: none;
-    }
-
     .routine-showcase__mobile-card {
         display: flex;
         flex-direction: column;
@@ -649,6 +671,7 @@
         border-radius: 0.5rem;
         background-color: #fff;
         box-shadow: 0 0 0 1px rgba(var(--color-foreground), 0.06);
+        box-sizing: border-box;
     }
 
     .routine-showcase__mobile-product {
@@ -724,7 +747,8 @@
     }
 
     @media (min-width: 1024px) {
-        .routine-showcase__mobile-rail {
+        .routine-showcase__mobile-rail,
+        .routine-showcase__mobile-dots {
             display: none;
         }
 
