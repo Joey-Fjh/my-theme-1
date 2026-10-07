@@ -2,11 +2,42 @@
 
 This board holds only what is not yet decided: the one active decision, evidence that has not become a plan, and deferred ideas. `docs/agent/context.md` holds exactly one accepted plan during execution, or no plan. Recording a plan does not authorize implementation. Project identity, scope, accepted direction, and overall status belong in `docs/project.md`; completed execution history belongs in Git.
 
-Last updated: 2026-10-07.
+Last updated: 2026-10-08.
 
 ## Open decisions
 
-**Active: page frame rules, width and height** (CSS specification step 1 of 5; user, 2026-10-07). Order: page frame → spacing rhythm → font roles → breakpoints → colour scheme roles. The home polish pass then applies them; the skeleton backport follows once they hold on real sections.
+**Active: the layout check harness** (next discussion; user, 2026-10-08). It covers the sweep range, what it checks, and how it runs locally and in CI. It also covers the JS runtime-test gap (one Playwright harness).
+
+**Decided: CSS readiness definition** (user, 2026-10-08). The goal: from design to theme in controlled, repeatable batches under the harness. JS already meets it. CSS meets it when all four criteria hold on the pilot page.
+
+1. **Fluid and adaptive.**
+    - **Approach:** layout follows content and container, not design pixels: fluid type and spacing (`clamp()`), container queries for components, and layout switches only at the token breakpoints.
+    - **Check:** the layout harness sweeps every template from 320 to 2560 in 40px steps for:
+        - horizontal page scroll;
+        - clipped or overlapping content;
+        - content edges off the page margin;
+        - tap targets under 24px.
+2. **Settings chain, and settings that are visible.**
+    - **Chain:** every merchant-facing appearance decision runs `settings_schema` → `css-variables` → token → class. Sections hard-code no colour, font or spacing values; extend the lints to raw values.
+    - **Visible:** the needed settings are exposed, and every exposed setting takes effect. A new lint finds dead settings (defined in a schema but unused in its markup or CSS).
+3. **Abstraction and management.** Every pattern has one owner, and a pattern with two consumers is extracted (`card-rail`). The ownership and settings-chain lints cover what they can; duplicated patterns go on the verifier checklist.
+4. **Outcome.** A design-to-delivery batch needs at most one correction round caused by CSS. The product page is the pilot that tests this.
+
+**Hard requirements vs open choices:**
+- **Hard requirements** come only from Shopify's official sources:
+    - typography through `font_picker`;
+    - colour through schemes and settings;
+    - accessibility (contrast, focus, 24px targets);
+    - browser support;
+    - performance.
+- **Open choices:** third-party practice (Utopia, Every Layout, Horizon) is experience to weigh and decide on together.
+
+**Decided: design source** (user, 2026-10-08; replaces the calibration-by-measurement step in "Conclusion: design input"):
+- **Designs give intent only:** which elements appear, their order, and their relative weight. They never give values. The current designer's work covers appearance, but not type, spacing or colour control, so it is not a value reference.
+- **Values come from our system:** the type and spacing scales, font roles and colour schemes are set once from the user's judgement, and every page uses them. Agents map intent to semantic tokens (main heading → `display`, tight group → `related`).
+- **Design production:** a design comes from the user's base design plus a design tool or agent (for example Stitch), constrained by our system through an SOP that we write, or else a design agent using our vocabulary. Whether Stitch can take our tokens as constraints is checked against its documentation when this step starts.
+
+**Earlier specification discussion (page frame rules, width and height)** (CSS specification step 1 of 5; user, 2026-10-07). Order: page frame → spacing rhythm → font roles → breakpoints → colour scheme roles. The home polish pass then applies them; the skeleton backport follows once they hold on real sections.
 
 - **Why now.** The design mismatches came mostly from missing rules, not code bugs. The goal is that later sections are built from a design without discussion.
 - **Evidence, width.** The mechanism exists: `section-frame` `width: page` (default, `container-page`) or `full`, and the page frame layer in `css-architecture.md`. No rule says when `full` is allowed or what may span it. Eight sections use `full`. Five keep their content in `container-page` (`slides-show`, `routine-showcase`, `article`, `blog`, `main-page-about`) and `ritual-steps` insets its own grid. `promo-bannder` and `google-map` run their media edge to edge. The 6-S12 spec asked for a full-bleed media column and nothing stopped it (corrected in `355851f`).
