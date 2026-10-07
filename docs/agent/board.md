@@ -2,11 +2,153 @@
 
 This board holds only what is not yet decided: the one active decision, evidence that has not become a plan, and deferred ideas. `docs/agent/context.md` holds exactly one accepted plan during execution, or no plan. Recording a plan does not authorize implementation. Project identity, scope, accepted direction, and overall status belong in `docs/project.md`; completed execution history belongs in Git.
 
-Last updated: 2026-10-06.
+Last updated: 2026-10-07.
 
 ## Open decisions
 
-None active. Next (user, 2026-10-04): the design rework, then one browser pass, then the docs review together with a readiness review before the second submission.
+**Active: page frame rules, width and height** (CSS specification step 1 of 5; user, 2026-10-07). Order: page frame → spacing rhythm → font roles → breakpoints → colour scheme roles. The home polish pass then applies them; the skeleton backport follows once they hold on real sections.
+
+- **Why now.** The design mismatches came mostly from missing rules, not code bugs. The goal is that later sections are built from a design without discussion.
+- **Evidence, width.** The mechanism exists: `section-frame` `width: page` (default, `container-page`) or `full`, and the page frame layer in `css-architecture.md`. No rule says when `full` is allowed or what may span it. Eight sections use `full`. Five keep their content in `container-page` (`slides-show`, `routine-showcase`, `article`, `blog`, `main-page-about`) and `ritual-steps` insets its own grid. `promo-bannder` and `google-map` run their media edge to edge. The 6-S12 spec asked for a full-bleed media column and nothing stopped it (corrected in `355851f`).
+- **Evidence, height.** Height kinds exist (`content`, `media`, `stage`, `stage-pc`), but four sections declare `content` and set screen heights in their own CSS, each with a different formula:
+    - `featured-product`: `min(calc(100svh - 6rem), 96rem)`;
+    - `promo-bannder`: `max(40rem, 100svh)`;
+    - `ritual-steps`: `100svh` multiples for the scroll stage;
+    - `routine-showcase`: `clamp(40rem, 58cqi, calc(100svh - 4rem))`.
+- **Decided, width** (user, 2026-10-07): content always sits in the page grid, so the left and right margins match from top to bottom. A section may span the full width only with its background; its content keeps the page margins.
+- **Conclusion, step 1** (user, 2026-10-07; discussion closed, sources to be supplemented by another agent before the plan):
+    - **Layers, like the JS module graph:** tokens → page frame → section frame → section interior. Inner layers consume, never redefine. Grid or flex inside a section is the section's own choice. References: ITCSS, CUBE CSS composition and exceptions, Every Layout.
+    - **Width:** one page grid with named lines (`full` / `content`, the breakout grid of Josh Comeau and Ryan Mulligan; Horizon keeps its page grid in global variables too). This replaces the two definitions on `.shopify-section` and `container-page`. The section root spans `full` and carries the background; content sits in `content`. A real exception (`google-map`) declares `full` on its own element and is named.
+    - **Height:** default `content`. A cover kind uses `min-height` from one shared screen-height token, never a fixed `height` (Every Layout Cover). It is for the hero and the scroll stages (`ritual-steps` style A, `promo-bannder` panels). The media-led two-column sections (`featured-product` carousel, `routine-showcase`) use the same token.
+    - **Enforcement:**
+        - `lint:theme` rejects `--page-width` / `--page-margin` and `vh` / `svh` / `dvh` in section stylesheets outside the frame;
+        - the width rule also goes into the verifier checklist.
+    - **Follow-up batch, section CSS layering:** wrap every `{% stylesheet %}` in a `sections` layer added to the order statement in `tailwind/tailwind.input.css` (`theme, base, components, sections, utilities`; the leftover `snippets` layer name is reused or renamed).
+        - Shopify compiles the tags into one `styles.css` linked from `content_for_header`. Layer order follows the first declaration, which `tailwind.output.css` makes above that tag.
+        - Before it: audit the 63 blocks for rules that override utility classes (for example `featured-product`'s `padding-inline: 0` against `px-6`), since section CSS loses to utilities once layered.
+        - Confirm in the browser that the compiled `styles.css` keeps `@layer`.
+        - A lint requires the wrapper.
+    - **Planned:** the page frame part is plan 6-F1 in `docs/agent/context.md` (2026-10-07, awaiting authorization).
+    - **Batches:** the page frame batch first (Ask tier: `base.css`, `container-page`, `section-frame`, the eight `full` sections, the four sections with their own heights), then the layering batch.
+
+- **Conclusion, step 2: spacing** (user, 2026-10-07):
+    - **Between sections (frame):**
+        - keep the merchant `padding_top` / `padding_bottom` ranges (Shopify norm, no data migration);
+        - set their default to one value measured from the design;
+        - raise the 100px maximum if the design needs more.
+        - Changing the saved values in `templates/*.json` is merchant configuration and needs the user's approval.
+    - **Inside sections:**
+        - one fluid space scale of about seven steps (Utopia-style `clamp`), with `tight` / `related` / `group` and a new `section-gap` as semantic aliases;
+        - agents map a measured design value to the nearest step, so no 2.5px unit arithmetic. Accepted: steps are not pixel-exact; exceptions are rare and named.
+    - **Enforcement:**
+        - `lint:theme` rejects raw numeric spacing utilities (`gap-N`, `mt-N`, `space-y-N` and similar) in changed sections, with a baseline count of the about 250 existing uses that may only fall;
+        - the polish pass migrates them.
+    - **Evidence:**
+        - home sections default to 32 + 32px between sections (fluid to 0.6× on mobile); a rough reading of the downscaled design preview suggests about 120–140px at 1440, to be measured at full resolution;
+        - the gap tokens exist but are used 8 times against about 250 raw `gap-N` and similar.
+- **Conclusion: design input** (user, 2026-10-07):
+    - **Inputs:** the designs come from Figma.
+        - Figma MCP is not adopted (paid seats).
+        - The design author works on appearance only, so even 1:1 exports stay screenshots of one width and one state.
+        - Design-tool values do not map directly onto a fluid, merchant-configurable theme.
+    - **Target workflow:** a controlled agent pipeline from design to delivery inside the harness, the way this collaboration works:
+        1. the CSS specification becomes the design system (tokens, the space scale, font and colour roles, frame kinds, the section catalog with its style variants);
+        2. the user gives a reference (Figma screenshot, reference site, intent);
+        3. a design agent produces a prototype using only the system, at 1440, 768 and 390 with states, and the user judges its look;
+        4. the plan maps the prototype onto sections and settings one to one, and anything outside the system is flagged as a named exception;
+        5. implementation under lint;
+        6. verification by numeric screenshot comparison at the same widths, plus runtime tests;
+        7. user acceptance.
+    - **Order:**
+        - finish the CSS specification (steps 3–5);
+        - calibrate the scale from the current home page and its design, with the coordinator measuring and the user confirming;
+        - then choose the design-agent tooling.
+    - Adding the workflow to the SOP is a rule change for the user to approve.
+
+- **Conclusion, step 3: type** (user, 2026-10-07):
+    - **Font roles:** heading, body and accent, each with a `font_picker` on the settings chain. Accent covers badges, eyebrows and prices. The design's serif and monospace families are to be confirmed in Shopify's font library.
+    - **Weights:** each role declares regular, one emphasis weight and italic if needed; `font_modify` loads exactly those. Weight settings offer only loaded weights. `lint:theme` rejects weight utilities without a loaded face (today `font-medium` renders at 400).
+    - **Scale:**
+        - one fluid modular scale of about nine steps (Utopia-style), on the same base as the space scale;
+        - semantic aliases: display, heading-l/m/s, body, body-s, label, caption;
+        - agents map a measured size to the nearest step.
+    - **Migration:**
+        - the existing `heading-*` / `body-*` names (about 1,100 uses) become aliases pointing at scale steps;
+        - the batch carries an old-tier → step table with pixel values before and after, plus one home screenshot comparison;
+        - the polish pass renames per section to semantic names;
+        - `lint:theme` baselines the old names, which may only fall; the aliases are deleted at zero.
+    - **Merchant control:** the three role fonts, the base size and the scale ratio; no per-level sizes.
+    - **Evidence:**
+        - 10 fixed heading tiers in two naming systems (plus `heading-size-custom`) and 7 body tiers;
+        - `heading-xl` (45px) is larger than `heading-h1` (40px) on desktop;
+        - two-step sizes switching at 768px;
+        - the 6-S6 design value of 58px was mapped to `h1` (40px) instead of `2xl` (60px).
+
+- **Conclusion, step 4: breakpoints** (user, 2026-10-07):
+    - **Tokens:** three tokenized breakpoints, `tablet` 48rem (768), `desktop` 64rem (1024) and `wide` 80rem (1280). `pc` and `fw` remain as aliases with a `lint:theme` baseline that may only fall.
+    - **Layout switches:** column-count and side-by-side changes happen at `desktop` by default. 768–1023 gets the widened mobile layout or an explicit tablet variant.
+    - **Container queries:** recommended for components inside a section that appear at different widths. They are MDN Baseline widely available and inside the browserslist matrix (last 2 Safari / iOS).
+    - **Hover:** two named variants, `can-hover` (`(hover: hover) and (pointer: fine)`) and `no-hover` (its negation; renamed from `touch` after the source supplement), replace the three current combinations.
+    - **Enforcement:** Liquid stylesheets cannot use `theme()` (6-V1) and custom properties do not work in media queries. So `lint:theme` allows only `width >= 48rem / 64rem / 80rem` and their `<` forms there, and rejects px values, `min-width` spellings and other numbers.
+    - **Evidence:**
+        - 1024 is hand-written in 8+ sections (16 uses, four spellings, no token); 768 has five spellings;
+        - `pc:` is used 466 times, so tablets get desktop layouts (iPad pass, 2026-10-05).
+
+- **Conclusion, step 5: colour** (user, 2026-10-07):
+    - **Order of colour sources (user rule):**
+        1. colour schemes first: sections, and nested parts that need a different surface, pick a scheme;
+        2. the central derived tokens from the scheme roles;
+        3. standalone colour settings last, as named exceptions: section-level overrides, or global colours outside the scheme group.
+    - **Schemes:**
+        - five in total, adding a sage scheme and a page-background scheme;
+        - scheme-1's default blue badge is corrected;
+        - values come from the calibration.
+        - The values live in `config/settings_data.json` (merchant configuration) and need the user's explicit approval; the schema structure is unchanged.
+    - **Derived layer:** `snippets/css-variables.liquid` derives a fixed set per scheme (`surface-raised`, `surface-muted`, `border-subtle`, `text-muted`, `scrim`). Sections consume them and stop mixing colours locally. A derived token becomes a scheme role only when merchants need it separately.
+    - **Scrims:** two semantic levels (dialog overlay, image scrim) replace `bg-black/45`, `/60` and `/80`.
+    - **Standalone colours today:**
+        - 8 global (product badges: sale, sold out, two custom; background and text each);
+        - 9 in 3 sections:
+            - `main-page-contact`: form background and text;
+            - `product-comparison-table`: column background, success, danger;
+            - `product`: zoom overlay, icon, a block's background and text.
+        - Under the rule, the section ones become a scheme picker, scheme roles (`success` / `error`), the scrim or a derived token. The badges stay global as status colours that must read the same across schemes, or map to scheme roles (decide in the plan).
+        - Removing or renaming a setting changes schema IDs and merchant data: Ask tier, with user approval.
+    - **Enforcement:**
+        - `lint:theme` rejects hex, `rgb()` and `color-mix()` in section stylesheets (baseline, may only fall);
+        - it rejects new `color` / `color_background` settings outside an allowlist with a reason;
+        - `bg-white` / `bg-black/N` are limited to overlays and placeholders;
+        - a script checks WCAG AA for every scheme's key pairs from `config/settings_data.json`.
+    - **Evidence:** 3 schemes; the design's sage and page background are substituted with the `scheme-2` grey; `color-mix` is used 54 times in 16 files; hex literals in 3 sections.
+- **Source supplement** (external read-only agent, 2026-10-07; report outside the repo: `C:/Users/Joey/AppData/Local/Temp/ceylune-css-spec-sources.md`; Horizon `5acd1b6`, Dawn `258f00f`). Corrections that the plans must carry:
+    - **Attribution:** the background-only width rule, schemes-first colour and the 1024 desktop switch are project policy, not Horizon or Shopify practice.
+        - Horizon's page grid uses numeric columns (no named lines) and lets full-width sections span their content.
+        - Horizon's colour model is a `color_palette` of five entries plus local `background_color` on group blocks, not schemes.
+        - Shopify's colour guidance now also describes palettes with local overrides.
+        - Dawn and Horizon switch at 750 / 990.
+        - Named lines come from Ryan Mulligan's breakout grid, and the cover `min-height` from Every Layout.
+    - **Layering (follow-up batch):** layered section CSS loses to utilities only for competing normal declarations. `!important`, inline styles and any CSS left unlayered behave differently, so the audit covers them too. There is no official statement that Shopify keeps `@layer` in the compiled `styles.css`; the browser check stays a hard gate.
+    - **Fonts:**
+        - `font_modify` returns nil for a missing variant, so every role needs a fallback;
+        - some serif families have only 400 (DM Serif Display).
+        - Available: Cormorant (300–700 with italics); monospace with italics: IBM Plex Mono, Roboto Mono, Space Mono, Source Code Pro, Azeret Mono, Anonymous Pro, Courier New.
+        - The code already loads base, bold, italic and bold-italic per role; the gap is the medium weight.
+        - The fixed heading tiers are 10 (four display + h1–h6); `heading-size-custom` is the eleventh utility.
+    - **Colour features:**
+        - derived tokens use `color-mix()` (Baseline widely available);
+        - relative colour syntax is only newly available, so it is not used;
+        - the contrast script checks the pairs it lists, not opacity, gradient or image contexts.
+        - Theme Store requirement 16 asks for at least four colours with foreground pairs; Dawn ships schemes only, so the scheme model stays.
+    - **Breakpoints:**
+        - `rem` in media queries follows the user's default font size, not the 62.5% root;
+        - the second hover variant does not detect touch (hybrid devices). Name it `no-hover`, defined as `not ((hover: hover) and (pointer: fine))`, instead of `touch`.
+    - **Root size:** the 62.5% root has no primary-source endorsement with Tailwind, and px-valued body tokens ignore the user's default font size. Not a blocker; revisit with the type token batch.
+    - **Design input:** Figma's remote MCP works on every plan, with about 20 reads a month on free seats and 200 a day on paid Dev/Full seats. Only the desktop server needs a paid seat. The decision not to adopt it stands.
+- **Specification discussion closed** (2026-10-07). Next:
+    1. ~~sources supplemented~~ (done, above);
+    2. then the plans, in order: the page frame batch → section CSS layering → tokens (space, type, colour, breakpoints) → calibration → the home polish pass.
+
+Next after this decision (user, 2026-10-04): the design rework, then one browser pass, then the docs review together with a readiness review before the second submission.
 
 **Done** (6-V1, `e78047c`): `lint:theme` rejects `theme()`, `--spacing()` and `--alpha()` in Liquid `{% stylesheet %}` blocks. The Ask review was not run; the user chose to commit without it.
 
@@ -137,7 +279,7 @@ Home polish pass (user, 2026-10-05). Per-section batches now settle structure, d
     - the badge sage is a scheme mix;
     - Treat and Protect have no second image in the dev store;
     - the arch ratio and the packshot box need checking against a real transparent packshot.
-- **Autoplay and WCAG 2.2.2 (6-S8):** the only user pauses are hover on the active thumbnail and keyboard focus on it. Touch devices at 1024px and wider have no pause, and there is no pause button by user decision. Decide before any Theme Store submission.
+- **Autoplay and WCAG 2.2.2 (6-S8):** the only user pauses are hover on the active thumbnail and keyboard focus on it. Touch devices at 1024px and wider have no pause, and there is no pause button by user decision. Decide before any Theme Store submission. **`slides-show` now matches** (user, 2026-10-07): its pause button was removed and it uses the same pause model (pointer on the active dot, keyboard focus, out of view); a manual dot click keeps autoplay running. The same WCAG 2.2.2 question applies to the hero.
 - **Stacked panels (6-S9):**
     - the design's pale sage (panel 1) against bright lime (panel 3) needs a fourth colour scheme (merchant configuration);
     - the serif heading face;
@@ -191,7 +333,7 @@ Design phase inputs:
 
 - Looping media video (user, 2026-10-05): `snippets/media-video.liquid` already covers autoplay, loop, muted, no controls and optional play/mute buttons. Add a "play when in viewport" parameter (a small module) when a section design first needs a GIF-like video. WCAG 2.2.2 still needs a pause mechanism (at least a focus-revealed pause button, as in the marquee); with reduced motion show the poster.
 
-- Design phase, home page scroll narrative (user, 2026-09-30; the GSAP foundation landed in 6-S5, `a2424d4`, so later narrative sections reuse `motion-gsap.js`; Three.js is still open): the user expects GSAP (ScrollTrigger) to be required and possibly Three.js. Compatible with H: a section module (`data-module-id`, typically `data-module-lazy`) loads the library inside its component through an adapter, as `carousel-swiper.js` does for Swiper; H only guarantees the component definition. Constraints from existing rules: the motion reference must classify the work as complex choreography before GSAP; first frame rendered in Liquid and visible without JS; `prefers-reduced-motion` and `motion_enabled` honoured; a Three.js canvas must not be the LCP element (poster image first) and should initialize when visible and idle; vendoring follows `THIRD_PARTY_NOTICES.md`. Full-page loading of these libraries would weigh on every page and on the Lighthouse bar, so on-demand loading is required for them. Loader choice (user question, coordinator answer 2026-09-30): own implementation (H) over Async Alpine, which would change every module; revisit if loading strategies grow beyond eager, visible, idle, or if `interceptInit` changes in an Alpine upgrade.
+- Design phase, home page scroll narrative (user, 2026-09-30; the GSAP foundation landed in 6-S5, `a2424d4`, so later narrative sections reuse `motion-gsap.js`; Three.js is still open): the user expects GSAP (ScrollTrigger) to be required and possibly Three.js. Compatible with H: a section module (`data-module-id`, typically `data-module-lazy`) loads the library inside its component through an adapter, as `carousel-swiper.js` does for Swiper; H only guarantees the component definition. Constraints from existing rules: the motion reference must classify the work as complex choreography before GSAP; first frame rendered in Liquid and visible without JS; `prefers-reduced-motion` and `motion_enabled` honoured; a Three.js canvas must not be the LCP element (poster image first) and should initialize when visible and idle; vendoring follows `THIRD_PARTY_NOTICES.md`. Full-page loading of these libraries would weigh on every page and on the Lighthouse bar, so on-demand loading is required for them. Loader choice (user question, coordinator answer 2026-09-30): own implementation (H) over Async Alpine, which would change every module; revisit if loading strategies grow beyond eager, visible, idle, or if `interceptInit` changes in an Alpine upgrade. **Vendored library upgrades** (user, 2026-10-07): none by default. Alpine, Swiper and GSAP are upgraded only to fix a bug in the library itself, since the theme needs only what Shopify storefronts use. Runtime tests are the open JS gap, to be decided after the CSS specification.
 
 - CSS craft (user, 2026-09-29): architecture is considered sound, but CSS implementation lacks detail. Coordinator view: the gap is a missing design specification (direction, type scale, spacing rhythm, state rules). `frontend-design` is vendored as a design reference below the project rules (`AGENTS.md`, Agent Skills); the Vercel Web Interface Guidelines were not evaluated. The design phase writes that specification.
 
