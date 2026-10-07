@@ -160,6 +160,28 @@ Last updated: 2026-10-07.
     - `featured-product` and the product column at 1100;
     - menus, popovers, image zoom and focus rings near the section edges at 768, 1100 and 1440.
 
+**Done** (6-B4, collection-list scrollbar flash, `511ad9d`, 2026-10-08):
+- **Fix:** the pre-init fallback rail hides its scrollbar, and its slide widths use Swiper's sizing, so there is no jump at init.
+- **Cross review: finding P2 rejected by the coordinator.** The verifier overrode only `--collection-list-gap` (24px) and measured a jump. In the theme, `--collection-list-gap` and `data-slide-gap` both come from `collection_list_slide_gap` in `sections/collection-list.liquid`, so a merchant gap change moves both. The override state cannot occur; the coordinator's review prompt had asked for it. At the real gap the difference is 0px.
+- **Remaining:** the user's look on the live store.
+- **Process note:** agent browser tooling creates an untracked `%SystemDrive%/` cache folder in the repo root; delete it after agent browser runs.
+
+**Mobile card pattern, decided** (user, 2026-10-07; planned as 6-S13 after 6-B4):
+- **Problems** (user screenshots, mobile):
+    - `routine-showcase` and `ritual-steps` style B show a native scrollbar and uneven card heights;
+    - `ritual-steps` style A on mobile does not match its design. The design: oval image, heading, step badge, title, text, link, dots; one step per screen.
+- **Pattern** for all three, below `desktop` (1024px):
+    - one card per screen with page-margin gutters, cards capped at about 480px and centred on tablets;
+    - native scrollbar hidden, all cards as tall as the tallest, swipe left and right;
+    - dots below (design first; matches the hero).
+- **Per section:**
+    - style A follows its design;
+    - `routine-showcase` stacks image above content;
+    - style B keeps its card content.
+- **Implementation direction:** CSS scroll snap, so the first card works without JavaScript. JavaScript drives only the dots and jump-to. The pattern becomes one shared component (three consumers).
+- **Batching:** one batch for all three.
+- **Not yet verified:** the code diagnosis of `sections/routine-showcase.liquid` and `sections/ritual-steps.liquid` is still to do, as the first step of the plan.
+
 Next after this decision (user, 2026-10-04): the design rework, then one browser pass, then the docs review together with a readiness review before the second submission.
 
 **Done** (6-V1, `e78047c`): `lint:theme` rejects `theme()`, `--spacing()` and `--alpha()` in Liquid `{% stylesheet %}` blocks. The Ask review was not run; the user chose to commit without it.
