@@ -20,9 +20,19 @@ Last updated: 2026-10-08.
     - clipped text;
     - console errors and unmounted `data-module-id` roots.
 - **Method:** load each page once, then resize from 320 to 2560 in 40px steps. The output is JSON plus a summary table, with a non-zero exit on failure and a baseline of known issues that may only shrink. Interaction smoke tests come in a later second suite.
-- **Open, next:**
-    - how "content edges on the page margin" is defined, given full-width exceptions;
-    - one URL per template from the dev store content.
+- **Decided (user, 2026-10-08):**
+    - **Page-margin check:**
+        - visible text and controls (headings, paragraphs, buttons, links, form controls) in every section, header and footer included, have left ≥ page margin and right ≤ `clientWidth` − page margin, ±1px;
+        - images and video are not checked, since they may span;
+        - an element partly outside the viewport under a clipping ancestor is a deliberate peek and is skipped; if nothing clips it, the overflow check reports it;
+        - real exceptions are named in the harness config (selector plus reason), never by theme markup.
+    - **URLs:**
+        - fixed paths for home, `/cart`, `/search?q=a`, `/collections`, `/collections/all` and a 404 path;
+        - auto-discovered product (the first product on `/collections/all`), blog and article;
+        - pages through alternate templates (for example `/pages/privacy-policy?view=about`);
+        - any URL can be pinned in the config.
+    - **Storefront password:** not needed. `shopify theme dev` handles password protection itself, and `http://127.0.0.1:9292/` loaded without a password page in this session. The harness supports an optional `STOREFRONT_PASSWORD` environment variable (never committed) only for runs that land on the password page.
+- **Status:** discussion complete. The plan and the execution prompt are written when the user schedules execution.
 
 **Decided: CSS readiness definition** (user, 2026-10-08). The goal: from design to theme in controlled, repeatable batches under the harness. JS already meets it. CSS meets it when all four criteria hold on the pilot page.
 
