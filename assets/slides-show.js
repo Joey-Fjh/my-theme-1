@@ -63,8 +63,10 @@ define('slidesShow', () => ({
     _onAutoplayTimeLeft: null,
     _onKeydown: null,
     _hoverPaused: false,
+    _hoverSuppressedUntilLeave: false,
     _focusPaused: false,
-    _userPaused: false,
+    _viewportPaused: false,
+    _viewportObserver: null,
     _editorPaused: false,
     _hasSlideChanged: false,
     _progress: 1,
@@ -145,7 +147,7 @@ define('slidesShow', () => ({
         if (index < 0 || !this._swiper) return;
 
         this._editorPaused = true;
-        this._swiper.autoplay?.stop?.();
+        this._syncAutoplay();
         if (typeof this._swiper.slideToLoop === 'function') {
             this._swiper.slideToLoop(index);
         } else {
@@ -159,7 +161,7 @@ define('slidesShow', () => ({
             return;
         }
         this._editorPaused = false;
-        this._maybeResumeAutoplay();
+        this._syncAutoplay();
     },
 
     _setProgress(progress) {
@@ -215,98 +217,118 @@ define('slidesShow', () => ({
         this._updateTextMotionClasses();
     },
 
-    _pauseForInteraction() {
-        this._swiper?.autoplay?.stop?.();
+    _isInteractionPaused() {
+        return this._hoverPaused || this._focusPaused || this._viewportPaused;
     },
 
-    _maybeResumeAutoplay() {
+    // Same pause model as routine-showcase: the Theme Editor stops autoplay;
+    // pointer on the active dot, keyboard focus and leaving the viewport only pause it, so the
+    // remaining time is kept. A manual slide change never turns autoplay off.
+    _syncAutoplay() {
+        const autoplay = this._swiper?.autoplay;
+        if (!autoplay) return;
+
         const config = this._readConfig();
-        if (!this._shouldRunAutoplay(config)) return;
-        if (this._userPaused || this._editorPaused || this._hoverPaused || this._focusPaused) {
+        if (!this._shouldRunAutoplay(config) || this._editorPaused) {
+            if (autoplay.running) autoplay.stop();
             return;
         }
-        this._swiper?.autoplay?.start?.();
+
+        if (!autoplay.running) autoplay.start();
+        if (this._isInteractionPaused()) {
+            if (!autoplay.paused) autoplay.pause();
+        } else if (autoplay.paused) {
+            autoplay.resume();
+        }
+    },
+
+    _restartAutoplayDelay() {
+        const autoplay = this._swiper?.autoplay;
+        if (!autoplay?.running || autoplay.paused) return;
+        autoplay.stop();
+        this._syncAutoplay();
     },
 
     _bindInteractionPause() {
         const root = this._root;
         if (!root) return;
 
-        this.on(root, 'mouseenter', () => {
-            this._hoverPaused = true;
-            this._pauseForInteraction();
-        });
-        this.on(root, 'mouseleave', () => {
-            this._hoverPaused = false;
-            this._maybeResumeAutoplay();
-        });
-        this.on(root, 'focusin', () => {
-            this._focusPaused = true;
-            this._pauseForInteraction();
+        // Mouse clicks also move focus; only keyboard focus (:focus-visible) pauses.
+        this.on(root, 'focusin', (event) => {
+            this._focusPaused = Boolean(event.target?.matches?.(':focus-visible'));
+            this._syncAutoplay();
         });
         this.on(root, 'focusout', (event) => {
             if (root.contains(event.relatedTarget)) return;
             this._focusPaused = false;
-            this._maybeResumeAutoplay();
+            this._syncAutoplay();
         });
+
+        // Swiper resumes on its own when the tab becomes visible; re-apply our pause state.
+        this.on(document, 'visibilitychange', () => {
+            if (!document.hidden) this._syncAutoplay();
+        });
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                this._viewportPaused = !entries[0]?.isIntersecting;
+                this._syncAutoplay();
+            },
+            { threshold: 0.15 },
+        );
+        observer.observe(root);
+        this._viewportObserver = observer;
+    },
+
+    _isActiveDot(button) {
+        const index = Number(button.dataset.slideIndex);
+        const activeIndex = this._swiper?.realIndex ?? 0;
+        return Number.isFinite(index) && index === activeIndex;
     },
 
     _bindPagination() {
         const swiperContainer = this._swiperContainer;
         if (!swiperContainer) return;
 
+        // The active dot widens, so dots shift under a still pointer after a click. The
+        // post-click suppression therefore ends when the pointer leaves the whole dot row.
+        const controls = swiperContainer.querySelector('[data-slides-show-controls]');
+        if (controls) {
+            this.on(controls, 'pointerleave', () => {
+                this._hoverSuppressedUntilLeave = false;
+                this._hoverPaused = false;
+                this._syncAutoplay();
+            });
+        }
+
         swiperContainer
             .querySelectorAll('[data-slides-show-pagination-button]')
             .forEach((button) => {
+                // Pointer on the active dot pauses, as on routine-showcase's active thumbnail.
+                this.on(button, 'pointerenter', () => {
+                    if (this._hoverSuppressedUntilLeave || !this._isActiveDot(button)) return;
+                    this._hoverPaused = true;
+                    this._syncAutoplay();
+                });
+                this.on(button, 'pointerleave', () => {
+                    if (!this._hoverPaused) return;
+                    this._hoverPaused = false;
+                    this._syncAutoplay();
+                });
                 this.on(button, 'click', () => {
                     const index = Number(button.dataset.slideIndex);
                     if (!Number.isFinite(index) || !this._swiper) return;
+                    // The clicked dot becomes active under the pointer; do not pause until it leaves.
+                    this._hoverSuppressedUntilLeave = true;
+                    this._hoverPaused = false;
                     if (typeof this._swiper.slideToLoop === 'function') {
                         this._swiper.slideToLoop(index);
                     } else {
                         this._swiper.slideTo(index);
                     }
+                    this._restartAutoplayDelay();
                 });
             });
-
-        const toggle = swiperContainer.querySelector('[data-slides-show-autoplay-toggle]');
-        if (toggle) {
-            this.on(toggle, 'click', () => this._toggleUserPause(toggle));
-        }
-    },
-
-    _toggleUserPause(toggle) {
-        const config = this._readConfig();
-        if (!this._shouldRunAutoplay(config) && config.autoplaySetting) {
-            return;
-        }
-        if (!config.autoplaySetting) return;
-
-        this._userPaused = !this._userPaused;
-        if (this._userPaused) {
-            this._swiper?.autoplay?.stop?.();
-            toggle.setAttribute('data-state', 'paused');
-        } else {
-            toggle.setAttribute('data-state', 'playing');
-            this._maybeResumeAutoplay();
-        }
-        this._syncToggleLabels(toggle);
-        this._syncToggleIcons(toggle);
-    },
-
-    _syncToggleIcons(toggle) {
-        const isPaused = toggle.getAttribute('data-state') === 'paused';
-        const pauseIcon = toggle.querySelector('.slides-show__autoplay-icon--pause');
-        const playIcon = toggle.querySelector('.slides-show__autoplay-icon--play');
-        pauseIcon?.classList.toggle('hidden', isPaused);
-        playIcon?.classList.toggle('hidden', !isPaused);
-    },
-
-    _syncToggleLabels(toggle) {
-        const pauseLabel = toggle.dataset.labelPause || '';
-        const playLabel = toggle.dataset.labelPlay || '';
-        const isPaused = toggle.getAttribute('data-state') === 'paused';
-        toggle.setAttribute('aria-label', isPaused ? playLabel : pauseLabel);
     },
 
     async _initSwiper() {
@@ -359,17 +381,6 @@ define('slidesShow', () => ({
             this._bindInteractionPause();
             this._bindPagination();
 
-            const toggle = swiperContainer.querySelector('[data-slides-show-autoplay-toggle]');
-            if (toggle) {
-                if (!config.autoplaySetting || prefersReducedMotion()) {
-                    toggle.hidden = true;
-                } else {
-                    toggle.setAttribute('data-state', runAutoplay ? 'playing' : 'paused');
-                    this._syncToggleLabels(toggle);
-                    this._syncToggleIcons(toggle);
-                }
-            }
-
             this._onSlideChange = () => this._onSlideChanged();
             this._swiper?.on?.('slideChange', this._onSlideChange);
 
@@ -377,8 +388,8 @@ define('slidesShow', () => ({
             const animateProgress = motionEnabled();
             this._onAutoplayTimeLeft = (_swiper, _timeLeft, progress) => {
                 if (!animateProgress) return;
-                if (!runAutoplay || this._userPaused || this._editorPaused) return;
-                if (this._hoverPaused || this._focusPaused) return;
+                if (!runAutoplay || this._editorPaused) return;
+                if (this._isInteractionPaused()) return;
                 // Swiper passes the remaining fraction (1 → 0); the pill fills as time passes.
                 this._setProgress(1 - progress);
             };
@@ -418,9 +429,14 @@ define('slidesShow', () => ({
         } else {
             swiper.slidePrev();
         }
+        this._restartAutoplayDelay();
     },
 
     _teardownSwiper() {
+        if (this._viewportObserver) {
+            this._viewportObserver.disconnect();
+            this._viewportObserver = null;
+        }
         if (this._swiper && typeof this._swiper.off === 'function') {
             if (this._onSlideChange) {
                 this._swiper.off('slideChange', this._onSlideChange);
