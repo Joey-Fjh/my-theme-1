@@ -19,8 +19,8 @@ None active. Next (user, 2026-10-04): the design rework, then one browser pass, 
     - the social icons, which are named dynamically in `snippets/social-icons.liquid`.
 - **User decision:**
     - remove `category-grid` (replaced by `collection-list` in 6-S3, placed nowhere) or keep it as an option;
-    - the unredesigned home sections (`before-after-comparison`, `promotion-countdown`, `about-stats`, `blog-stories`, `newsletter-banner`, `video-banner`, `google-map`) at the home order review;
-    - ~~one or both `ritual-steps` instances~~: decided (user, 2026-10-06). Home keeps one instance (`ritual_steps_sticky`, style A); the style is switched in the editor. The style B demo instance is removed.
+    - the sections removed from home at the order review (user, 2026-10-07; home now follows the full design): `before-after-comparison`, `promotion-countdown`, `about-stats`, `blog-stories`, `newsletter-banner`, `video-banner`, `google-map`. Delete with code, or keep as options;
+    - ~~one or both `ritual-steps` instances~~: decided (user, 2026-10-07, replacing the 2026-10-06 decision). Home keeps both instances back to back, as the design shows: `ritual_steps_sticky` (style A) and then `ritual_steps_carousel` (style B).
 
 **Motion simplification done** (6-M1, `3652441`; plan and review rounds: `git show 3652441:docs/agent/context.md`): the list and card cascade is the only settings-driven reveal, under `motion_enabled`. Follow-ups: `assets/motion-reveal.js` is still 29.9 KB because the cascade machinery was kept unchanged; rewrite it smaller once the design phase settles the cascade's look. GSAP arrived in 6-S5 (`a2424d4`): `motion-gsap.js` adapter, first consumer `scatter-gallery`. Cascade in carousels (6-S4 R10, 2026-10-05): the entrance `translateY` (64px desktop, 40px mobile) is clipped by the Swiper `overflow: hidden` until the slides settle. The rest state is correct. Settle it with the cascade rewrite (for example no vertical offset inside overflow containers).
 
@@ -98,7 +98,7 @@ Design specification (grows section by section; first entries from the home `sli
         - **Sticky:** a sticky child needs a parent that spans the scroll range (`align-items: stretch`).
         - **Headings:** heading tiers set `text-transform` from a theme variable, so uppercase must come from a section rule. Heading tiers go on `h*` elements only; decorative copies use the `heading` snippet with `attrs: 'aria-hidden="true"'`.
 - Featured product and shared purchase controls (6-S12, `9a56b9e`; plan and rounds: `git show 9a56b9e:docs/agent/context.md`):
-    - **Section:** `featured-product` `gallery_layout: carousel`: a full-bleed media column, vertical dots in the scheme foreground, `contain` fit, and the info column inset to the page width and stretched with `space-between`.
+    - **Section:** `featured-product` `gallery_layout: carousel`: both columns inside the page grid (user, 2026-10-07: only backgrounds may go full width, content keeps the page margin on both sides), vertical dots in the scheme foreground, `contain` fit, and the info column stretched with `space-between`.
     - **Two columns:** `productLayout` makes the shorter column sticky. The fixed media height sits on `.featured-product__media-sticky`, never on the column itself, so the sticky child has room.
     - **Shared on every product surface:**
         - option buttons with a colour dot and a visible label;
