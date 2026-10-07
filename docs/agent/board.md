@@ -166,7 +166,23 @@ Last updated: 2026-10-07.
 - **Remaining:** the user's look on the live store.
 - **Process note:** agent browser tooling creates an untracked `%SystemDrive%/` cache folder in the repo root; delete it after agent browser runs.
 
-**Mobile card pattern, decided** (user, 2026-10-07; planned as 6-S13 after 6-B4):
+**Done** (6-S13, shared mobile card rail, `84a4930`, 2026-10-08; the plan as recorded before execution: `git show 38a555e:docs/agent/context.md`; the review rounds were not committed and are summarised here):
+- **Result:** `ritual-steps` (both styles) and `routine-showcase` use `.card-rail` and `bindCardRail` (`assets/card-rail.js`) below 1024px.
+    - Cards are capped at `48rem` and centred.
+    - Rail padding is `max(var(--page-margin), calc((100% - 48rem) / 2))`.
+    - Equal heights come from CSS.
+    - The dots are 24px targets.
+- **Reviews:**
+    - **Coordinator round 1:** C1–C6 (30rem cap error from the plan, `100vw` width, JS height sync, 10px dots, dead factory, desktop proof).
+    - **Coordinator round 2:** C7 (`aria-hidden` restored on the in-card heading copy).
+    - **Cross review 1:** FAIL; C8 (active dot chosen only from changed entries) and C9 (end cards could not centre at 768).
+    - **Focused cross review 2:** PASS at 390, 768 and 900.
+- **Lesson:** this theme's root is 62.5%, so 1rem is 10px. Write rem caps from the pixel intent (480px is `48rem`). The 30rem error came from the coordinator's plan.
+- **Remaining:**
+    - **Phone pass:** the user's real-phone look and swipe feel.
+    - **Low risk:** the observer thresholds `[0.35, 0.55, 0.75]` have no 0 or 1, so a card that leaves view keeps its last ratio; the active pick is still correct.
+
+**Mobile card pattern, decided** (user, 2026-10-07; done as 6-S13):
 - **Problems** (user screenshots, mobile):
     - `routine-showcase` and `ritual-steps` style B show a native scrollbar and uneven card heights;
     - `ritual-steps` style A on mobile does not match its design. The design: oval image, heading, step badge, title, text, link, dots; one step per screen.
