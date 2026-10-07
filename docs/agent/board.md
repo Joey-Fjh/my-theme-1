@@ -28,7 +28,7 @@ Last updated: 2026-10-07.
         - Before it: audit the 63 blocks for rules that override utility classes (for example `featured-product`'s `padding-inline: 0` against `px-6`), since section CSS loses to utilities once layered.
         - Confirm in the browser that the compiled `styles.css` keeps `@layer`.
         - A lint requires the wrapper.
-    - **Planned:** the page frame part is plan 6-F1 in `docs/agent/context.md` (2026-10-07, awaiting authorization).
+    - **Planned:** the page frame part is plan 6-F1, recorded and not authorized; its full text is `git show c0e9bcb:docs/agent/context.md`. It left `context.md` for bug fix 6-B3 (2026-10-07). The user asked to slim it (one lint, no grid rewrite); revise it before authorization.
     - **Batches:** the page frame batch first (Ask tier: `base.css`, `container-page`, `section-frame`, the eight `full` sections, the four sections with their own heights), then the layering batch.
 
 - **Conclusion, step 2: spacing** (user, 2026-10-07):
@@ -147,6 +147,18 @@ Last updated: 2026-10-07.
 - **Specification discussion closed** (2026-10-07). Next:
     1. ~~sources supplemented~~ (done, above);
     2. then the plans, in order: the page frame batch → section CSS layering → tokens (space, type, colour, breakpoints) → calibration → the home polish pass.
+
+**Done** (6-B3, horizontal scrollbar at 1024–1300px, 2026-10-07):
+- **Fix:** `.section-frame--no-clip` and its direct inner use `overflow-x: clip` / `overflow-y: visible`. The rotated `ritual-steps` oval ring had pushed the page wider.
+- **Cross review:** no defect found.
+    - A1 passed 49/54 cells; the about template was checked through `/pages/privacy-policy?view=about`.
+    - Sticky still pins in `promo-bannder`, `ritual-steps`, the article sidebar and the product column.
+    - The oval geometry is identical at 1440 and 1920.
+    - The `featured-product` sticky travel at 1440 is 0px with and without the change, so it predates it.
+- **Not proven by the agents; the user checks in the browser (user, 2026-10-07):**
+    - the last five about-template widths;
+    - `featured-product` and the product column at 1100;
+    - menus, popovers, image zoom and focus rings near the section edges at 768, 1100 and 1440.
 
 Next after this decision (user, 2026-10-04): the design rework, then one browser pass, then the docs review together with a readiness review before the second submission.
 
