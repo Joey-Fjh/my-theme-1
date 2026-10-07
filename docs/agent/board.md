@@ -62,6 +62,7 @@ Last updated: 2026-10-08.
 - **Designs give intent only:** which elements appear, their order, and their relative weight. They never give values. The current designer's work covers appearance, but not type, spacing or colour control, so it is not a value reference.
 - **Values come from our system:** the type and spacing scales, font roles and colour schemes are set once from the user's judgement, and every page uses them. Agents map intent to semantic tokens (main heading → `display`, tight group → `related`).
 - **Design production:** a design comes from the user's base design plus a design tool or agent (for example Stitch), constrained by our system through an SOP that we write, or else a design agent using our vocabulary. Whether Stitch can take our tokens as constraints is checked against its documentation when this step starts.
+- **Base scales** (user, 2026-10-08): set the same way, from the user's base design through an agent-era design tool such as Stitch, not from hand-picked numbers or measured screenshots. The tool choice and the SOP are settled when the pilot starts.
 
 **Earlier specification discussion (page frame rules, width and height)** (CSS specification step 1 of 5; user, 2026-10-07). Order: page frame → spacing rhythm → font roles → breakpoints → colour scheme roles. The home polish pass then applies them; the skeleton backport follows once they hold on real sections.
 
