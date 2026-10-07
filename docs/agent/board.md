@@ -6,7 +6,23 @@ Last updated: 2026-10-08.
 
 ## Open decisions
 
-**Active: the layout check harness** (next discussion; user, 2026-10-08). It covers the sweep range, what it checks, and how it runs locally and in CI. It also covers the JS runtime-test gap (one Playwright harness).
+**Active: the layout check harness** (user, 2026-10-08). It also covers the JS runtime-test gap.
+
+- **Decided (user, 2026-10-08):**
+    - **Tooling:** `playwright-core` as a devDependency, driving the locally installed **Chrome** (`channel: 'chrome'`). No bundled browser download. Adding it changes `package.json` scripts (validator wiring), which the user has approved for this purpose.
+    - **Where it runs:** locally only, as `npm run test:layout`, against `shopify theme dev`. No CI for now; revisit with more contributors or before the merge to `main`.
+    - **Who runs it:** agents run it once when they finish a batch, as acceptance evidence, and read only the summary. The user can run it at any time. Running it costs no model tokens; it replaces the per-batch manual MCP measuring.
+- **Proposed checks** (coordinator):
+    - no horizontal page scroll;
+    - overflowing elements that no ancestor clips;
+    - content edges on the page margin;
+    - tap targets of at least 24×24 for buttons, form controls and standalone links (inline text links exempt per WCAG 2.5.8);
+    - clipped text;
+    - console errors and unmounted `data-module-id` roots.
+- **Method:** load each page once, then resize from 320 to 2560 in 40px steps. The output is JSON plus a summary table, with a non-zero exit on failure and a baseline of known issues that may only shrink. Interaction smoke tests come in a later second suite.
+- **Open, next:**
+    - how "content edges on the page margin" is defined, given full-width exceptions;
+    - one URL per template from the dev store content.
 
 **Decided: CSS readiness definition** (user, 2026-10-08). The goal: from design to theme in controlled, repeatable batches under the harness. JS already meets it. CSS meets it when all four criteria hold on the pilot page.
 
