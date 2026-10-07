@@ -155,7 +155,7 @@ Last updated: 2026-10-07.
     - Sticky still pins in `promo-bannder`, `ritual-steps`, the article sidebar and the product column.
     - The oval geometry is identical at 1440 and 1920.
     - The `featured-product` sticky travel at 1440 is 0px with and without the change, so it predates it.
-- **Not proven by the agents; the user checks in the browser (user, 2026-10-07):**
+- **Not proven by the agents; checked and accepted by the user in the browser (2026-10-08):**
     - the last five about-template widths;
     - `featured-product` and the product column at 1100;
     - menus, popovers, image zoom and focus rings near the section edges at 768, 1100 and 1440.
@@ -163,7 +163,7 @@ Last updated: 2026-10-07.
 **Done** (6-B4, collection-list scrollbar flash, `511ad9d`, 2026-10-08):
 - **Fix:** the pre-init fallback rail hides its scrollbar, and its slide widths use Swiper's sizing, so there is no jump at init.
 - **Cross review: finding P2 rejected by the coordinator.** The verifier overrode only `--collection-list-gap` (24px) and measured a jump. In the theme, `--collection-list-gap` and `data-slide-gap` both come from `collection_list_slide_gap` in `sections/collection-list.liquid`, so a merchant gap change moves both. The override state cannot occur; the coordinator's review prompt had asked for it. At the real gap the difference is 0px.
-- **Remaining:** the user's look on the live store.
+- **User check:** the live-store look was accepted by the user (2026-10-08).
 - **Process note:** agent browser tooling creates an untracked `%SystemDrive%/` cache folder in the repo root; delete it after agent browser runs.
 
 **Done** (6-S13, shared mobile card rail, `84a4930`, 2026-10-08; the plan as recorded before execution: `git show 38a555e:docs/agent/context.md`; the review rounds were not committed and are summarised here):
@@ -179,7 +179,7 @@ Last updated: 2026-10-07.
     - **Focused cross review 2:** PASS at 390, 768 and 900.
 - **Lesson:** this theme's root is 62.5%, so 1rem is 10px. Write rem caps from the pixel intent (480px is `48rem`). The 30rem error came from the coordinator's plan.
 - **Remaining:**
-    - **Phone pass:** the user's real-phone look and swipe feel.
+    - **Phone pass:** accepted by the user (2026-10-08).
     - **Low risk:** the observer thresholds `[0.35, 0.55, 0.75]` have no 0 or 1, so a card that leaves view keeps its last ratio; the active pick is still correct.
 
 **Mobile card pattern, decided** (user, 2026-10-07; done as 6-S13):
