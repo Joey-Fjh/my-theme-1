@@ -74,7 +74,7 @@ Hard implementation rules:
 
 The coordinator (the agent the user is talking to) owns steps 1–6 unless execution is delegated. Delegation does not transfer execution authority; one-writer and independent-review rules still apply.
 
-The coordinator does not spawn subagents on its own, because each one rebuilds context and multiplies token use. When a step would benefit from one (step 7 independent review, a broad read-only search, a large batch), propose the role, client, and model (default: inherit the main model) and wait for the user's decision.
+The coordinator does not spawn subagents on its own, because each one rebuilds context and multiplies token use. When a step would benefit from one (step 7 independent review, a broad read-only search, a large batch), propose the role, client, and model and wait for the user's decision. Default model: inherit the main model; for a mechanical, high-volume task whose plan fixes the surface and acceptance checks, propose Sonnet (the latest Sonnet model) instead. Model choice stays out of the adapter files; roles stay model-agnostic.
 
 | Step | Owner | Action | Stop condition |
 | --- | --- | --- | --- |
