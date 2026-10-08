@@ -6,7 +6,7 @@ Last updated: 2026-10-08.
 
 ## Open decisions
 
-**Active: the layout check harness** (user, 2026-10-08). It also covers the JS runtime-test gap.
+**Done: the layout check harness** (6-T1, accepted 2026-10-08, `ff285c8`; the `test:layout` row is in `AGENTS.md` Validation). It also covers the JS runtime-test gap. The decisions below stay as its record until the next harness plan.
 
 - **Decided (user, 2026-10-08):**
     - **Tooling:** `playwright-core` as a devDependency, driving the locally installed **Chrome** (`channel: 'chrome'`). No bundled browser download. Adding it changes `package.json` scripts (validator wiring), which the user has approved for this purpose.
