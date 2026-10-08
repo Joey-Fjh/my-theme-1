@@ -93,6 +93,8 @@ npm.cmd run test:validators     # Project validator fixture tests
 npm.cmd test                    # Validators, Liquid syntax guard, Theme Check
 npm.cmd run test:theme-check    # Shopify Theme Check only
 npm.cmd run doctor:agent        # Verify CLAUDE.md / .claude/skills symlinks and matching MCP lists
+npm.cmd run test:layout-harness # Layout-check fixture suite (Chrome required; no dev server)
+npm.cmd run test:layout         # Storefront layout scan (Chrome + shopify:dev). Optional LAYOUT_INJECT_STYLE for local regression CSS probes.
 ```
 
 Use `npm.cmd` for project scripts in this Windows workspace. Default to the smallest relevant validation command while developing; run full `npm.cmd run lint` and `npm.cmd test` before PR, version/release, or Theme Store submission, or when explicitly requested.

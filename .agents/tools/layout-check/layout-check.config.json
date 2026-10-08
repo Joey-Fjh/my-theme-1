@@ -1,0 +1,56 @@
+{
+    "notes": "Dialogs (for example the newsletter popup) are out of scope for the page sweep: the runner marks the popup as already shown through localStorage before page scripts run. Dialogs belong to the later interaction suite.",
+    "baseUrl": "http://127.0.0.1:9292",
+    "settleMs": 150,
+    "runtimeObserveMs": 3000,
+    "viewportHeight": 900,
+    "defaultViewportWidth": 1440,
+    "widthMin": 320,
+    "widthMax": 2560,
+    "widthStep": 40,
+    "fixedPages": {
+        "home": "/",
+        "cart": "/cart",
+        "search": "/search?q=a",
+        "collections": "/collections",
+        "collection-all": "/collections/all",
+        "not-found": "/this-path-should-404-layout-check"
+    },
+    "alternateTemplates": [
+        {
+            "key": "page-about-view",
+            "path": "/pages/privacy-policy?view=about"
+        }
+    ],
+    "pinnedUrls": [],
+    "exceptions": [
+        {
+            "selector": "#shop-hcaptcha-badge-container",
+            "checks": [
+                "unclipped-overflow"
+            ],
+            "reason": "Shopify-injected hCaptcha badge; vendor UI is outside theme layout ownership."
+        },
+        {
+            "selector": "http:GET:self/this-path-should-404-layout-check",
+            "checks": [
+                "runtime"
+            ],
+            "reason": "The not-found page is the deliberate 404 path; its own document response is the expected status, not a defect."
+        },
+        {
+            "urlPattern": "**/api/**/graphql.json",
+            "checks": [
+                "runtime"
+            ],
+            "reason": "Board Evidence (browser pass 2026-10-04): dev-only Storefront GraphQL 400 on the 127.0.0.1 origin; absent through ?preview_theme_id=."
+        },
+        {
+            "urlPattern": "**://shop.app/**",
+            "checks": [
+                "runtime"
+            ],
+            "reason": "Board Evidence (browser pass 2026-10-04): dev-only shop.app 403 on the 127.0.0.1 origin; absent through ?preview_theme_id=."
+        }
+    ]
+}

@@ -34,6 +34,18 @@ Last updated: 2026-10-08.
     - **Storefront password:** not needed. `shopify theme dev` handles password protection itself, and `http://127.0.0.1:9292/` loaded without a password page in this session. The harness supports an optional `STOREFRONT_PASSWORD` environment variable (never committed) only for runs that land on the password page.
 - **Status:** discussion complete. The plan and the execution prompt are written when the user schedules execution.
 
+**Decided: order of work** (user, 2026-10-08):
+
+1. **First:** finish this repository: the CSS specification batches, JS, lint, CI, best practices and Shopify's official constraints.
+2. **Then:** the skeleton backport.
+3. **After it:** the design-tool pipeline (Stitch or similar), run in batches and automated under the harness.
+
+**Consequences:**
+- **Token batch:** it builds the mechanism (scale structure, semantic aliases, settings chain, lints) with values mapped from today's rendering. It carries an old-to-new table and one home screenshot comparison. Calibrating the base scales from the design moves to the pipeline phase.
+- **Layout check:** the layout check (6-T1) guards against regressions in between.
+- **CI:** CI is now in scope for this phase. The 6-T1 decision "local only, revisit before the merge to `main`" is reopened when the CI item is discussed.
+- **Open:** whether the second submission waits for the design pipeline, or ships with today's values plus the polish pass.
+
 **Decided: CSS readiness definition** (user, 2026-10-08). The goal: from design to theme in controlled, repeatable batches under the harness. JS already meets it. CSS meets it when all four criteria hold on the pilot page.
 
 1. **Fluid and adaptive.**
@@ -62,7 +74,7 @@ Last updated: 2026-10-08.
 - **Designs give intent only:** which elements appear, their order, and their relative weight. They never give values. The current designer's work covers appearance, but not type, spacing or colour control, so it is not a value reference.
 - **Values come from our system:** the type and spacing scales, font roles and colour schemes are set once from the user's judgement, and every page uses them. Agents map intent to semantic tokens (main heading → `display`, tight group → `related`).
 - **Design production:** a design comes from the user's base design plus a design tool or agent (for example Stitch), constrained by our system through an SOP that we write, or else a design agent using our vocabulary. Whether Stitch can take our tokens as constraints is checked against its documentation when this step starts.
-- **Base scales** (user, 2026-10-08): set the same way, from the user's base design through an agent-era design tool such as Stitch, not from hand-picked numbers or measured screenshots. The tool choice and the SOP are settled when the pilot starts.
+- **Base scales** (user, 2026-10-08): set the same way, from the user's base design through an agent-era design tool such as Stitch, not from hand-picked numbers or measured screenshots. The tool choice and the SOP are settled when the pilot starts. **Deferred** to the design-pipeline phase after the skeleton backport ("Decided: order of work"); until then tokens keep today's rendered values.
 
 **Earlier specification discussion (page frame rules, width and height)** (CSS specification step 1 of 5; user, 2026-10-07). Order: page frame → spacing rhythm → font roles → breakpoints → colour scheme roles. The home polish pass then applies them; the skeleton backport follows once they hold on real sections.
 
