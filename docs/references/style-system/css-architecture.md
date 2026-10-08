@@ -261,6 +261,61 @@ Three Shopify platform constraints govern `{% stylesheet %}` and `{% javascript 
 
 `npm.cmd run lint:theme` enforces all three. Sources: [JavaScript and stylesheet tags](https://shopify.dev/docs/storefronts/themes/best-practices/javascript-and-stylesheet-tags), [`{% stylesheet %}` tag](https://shopify.dev/docs/api/liquid/tags/stylesheet) (verified 2026-09-20).
 
+## Breakpoints and hover (6-C2)
+
+- **Breakpoints:** `--breakpoint-tablet` 48rem (768px), `--breakpoint-desktop` 64rem (1024px) and `--breakpoint-wide` 80rem (1280px), in `tailwind/tailwind.input.css`. Media query `rem` follows the user's default font size (16px), not the 62.5% root.
+    - `pc` (48rem) and `fw` (80rem) remain as legacy aliases for existing classes. New markup uses `tablet:`, `desktop:` and `wide:`.
+    - The migration lint counts `pc:` / `fw:`.
+- **Hover:** `can-hover` is `(hover: hover) and (pointer: fine)`; `no-hover` is its negation, `not ((hover: hover) and (pointer: fine))`.
+    - They are `@custom-variant`s for classes.
+    - Stylesheets write the same two conditions as media queries.
+    - Touch devices do not depend on hover.
+- **Liquid `{% stylesheet %}` media queries** may use only:
+    - `(width >= 48rem | 64rem | 80rem)` and their `<` forms;
+    - the `can-hover` pair;
+    - `prefers-reduced-motion`;
+    - any of these joined by `and`.
+- **`no-hover` stands alone.** CSS grammar does not allow `not (…)` to be joined by `and` without extra parentheses. To combine it with a width, nest a width query inside the `no-hover` block.
+  `lint:theme` rejects px values, `min-width` / `max-width` spellings and other numbers. Custom properties and `theme()` do not work in media queries there.
+
+## Font weights (6-C3)
+
+- **Loaded faces:** each font role loads its base face, bold (700) and their italics (`snippets/css-variables.liquid`).
+- **What fails:** a weight without a loaded face falls back silently to the nearest loaded one. So markup, `@apply` and stylesheets use only `font-normal` / `font-bold` (400 / 700). `lint:theme` rejects every other weight utility and numeric `font-weight`.
+- **Adding a weight:** load its face per role first (a design decision with a font payload cost), then widen the lint.
+
+## Migration lints (6-C1)
+
+`lint:theme` counts three legacy patterns in Liquid markup (`layout/`, `sections/`, `snippets/`), per file:
+
+- `legacy-type-tier`: the `heading-*` / `body-*` tier utilities, read from `tailwind/tailwind.typography.css` (not the `*-base` mixins);
+- `raw-spacing`: gap, padding, margin and `space-*` utilities with a numeric or arbitrary value (`0`, `px`, `auto` and token aliases do not count);
+- `legacy-breakpoint`: class tokens with the `pc:`, `max-pc:`, `fw:` or `max-fw:` variant.
+
+**What is counted:**
+- **Counted:** tokens in three places:
+    - quoted HTML attribute values;
+    - string literals inside Liquid tags and outputs (assigns, `case` values, `render` parameters);
+    - the body of `{% capture *class* %}` blocks.
+- **Variants and the important modifier are stripped first:** `pc:mt-4!` counts as `mt-4`. The font weight lint uses the same extraction.
+- **Not counted:**
+    - text content;
+    - `{% schema %}` blocks, whose option values are merchant data IDs;
+    - comments, including `#` lines inside `{% liquid %}`;
+    - `{% stylesheet %}` and `{% javascript %}` blocks.
+- **Known limits:**
+    - class names built from Liquid output (`{{ ... }}`) cannot be resolved, so they are not counted;
+    - a `{% capture %}` whose name does not contain `class` is treated as text, even if it is later used as a class list;
+    - every quoted attribute value and Liquid string literal is a candidate whatever its purpose. A `data-*` value such as `pc:flex` counts.
+
+**The baseline is a ratchet:** `.agents/skills/check-theme-architecture/scripts/migration-baseline.json`.
+- **Fails:** a file whose count rises above its entry, or a file with no entry that uses a pattern.
+- **Falls:** a lower count passes, with a hint to run `node .agents/skills/check-theme-architecture/scripts/lint-theme.js --shrink-migration-baseline`. That flag only lowers entries and removes zeros.
+- **Raising an entry:** a manual edit, and it needs the user's approval.
+- **Creating it:** `--write-migration-baseline` refuses when the file exists.
+
+The baseline reaches zero through the breakpoint, type and space batches and the polish pass.
+
 ## Decision Flow
 
 1. Is this only a token? Use `css-variables.liquid` or scoped inline custom properties.

@@ -20,6 +20,19 @@ const {
     collectVendorNoticeFailures,
     collectLintAllowReasonFailures,
 } = require('./lib/theme-contracts');
+const {
+    collectMigrationCounts,
+    collectMigrationFailures,
+    baselinePath,
+    readBaseline,
+    shrinkBaseline,
+    toBaseline,
+    writeBaselineFile,
+} = require('./lib/migration-lint');
+const {
+    collectCssFontWeightFailures,
+    collectMarkupFontWeightFailures,
+} = require('./lib/font-weight-lint');
 
 const LIQUID_GLOBS = [
     'layout/**/*.liquid',
@@ -70,6 +83,48 @@ const PROTECTED_RUNTIME_NAMES = new Set([
     'template',
     'theme',
 ]);
+
+const STYLESHEET_MEDIA_CHECK = 'stylesheet-media-query';
+const MEDIA_WIDTH_ATOM = /^\(width (>=|<) (48|64|80)rem\)$/;
+const MEDIA_MOTION_ATOM = /^\(prefers-reduced-motion: (reduce|no-preference)\)$/;
+const MEDIA_CAN_HOVER = '(hover: hover) and (pointer: fine)';
+const MEDIA_NO_HOVER = 'not ((hover: hover) and (pointer: fine))';
+const STYLESHEET_MEDIA_MESSAGE =
+    'Liquid stylesheet media queries use only (width >= | < 48rem / 64rem / 80rem), ' +
+    `${MEDIA_CAN_HOVER}, ${MEDIA_NO_HOVER}, and prefers-reduced-motion, joined by "and" (6-C2).`;
+
+/** True when a media prelude uses only the tokenized breakpoints and the two hover conditions. */
+function isAllowedStylesheetMedia(prelude) {
+    const text = prelude.replace(/\s+/g, ' ').trim();
+    if (text === MEDIA_NO_HOVER) return true;
+    const parts = text.split(' and ');
+    for (let i = 0; i < parts.length; i++) {
+        if (MEDIA_WIDTH_ATOM.test(parts[i]) || MEDIA_MOTION_ATOM.test(parts[i])) continue;
+        // can-hover is the pair `(hover: hover) and (pointer: fine)`, never one half alone.
+        if (parts[i] === '(hover: hover)' && parts[i + 1] === '(pointer: fine)') {
+            i++;
+            continue;
+        }
+        return false;
+    }
+    return parts.length > 0 && parts[0] !== '';
+}
+
+function collectStylesheetMediaFailures(cssText, file, failures, allowsByLine, options = {}) {
+    const { baseOffset = 0, lineText = cssText } = options;
+    const stripped = cssText.replace(/\/\*[\s\S]*?\*\//g, (match) => match.replace(/[^\n\r]/g, ' '));
+    for (const match of stripped.matchAll(/@media([^{]*){/g)) {
+        if (isAllowedStylesheetMedia(match[1])) continue;
+        pushFailure(
+            failures,
+            allowsByLine,
+            file,
+            lineAt(lineText, baseOffset + match.index),
+            STYLESHEET_MEDIA_CHECK,
+            `${STYLESHEET_MEDIA_MESSAGE} Found: @media${match[1].trimEnd()}.`,
+        );
+    }
+}
 
 const LEGACY_CHECK = {
     PROTECTED_RUNTIME: 'protected-runtime-name',
@@ -471,7 +526,7 @@ function collectInvalidRgbAlphaFailures(cssText, file, failures, allowsByLine, o
     }
 }
 
-async function runThemeLint(root) {
+async function runThemeLint(root, notes = []) {
     const failures = [];
     const files = await fg(LIQUID_GLOBS, { cwd: root, dot: false, onlyFiles: true });
 
@@ -496,6 +551,7 @@ async function runThemeLint(root) {
         collectAlpineExpressionFailures(ast, text, file, failures, allowsByLine);
         collectSettingsChainLiquidFailures(ast, text, file, failures, allowsByLine);
         collectTypographyTierFailures(ast, text, file, failures, allowsByLine);
+        collectMarkupFontWeightFailures(text, file, failures, allowsByLine);
         collectStylesheetPlacementFailures(ast, text, file, failures, allowsByLine, { file });
 
         for (const block of extractBlocks(text, 'stylesheet')) {
@@ -511,6 +567,14 @@ async function runThemeLint(root) {
                 baseOffset: block.offset,
                 lineText: text,
             });
+            collectStylesheetMediaFailures(block.code, file, failures, allowsByLine, {
+                baseOffset: block.offset,
+                lineText: text,
+            });
+            collectCssFontWeightFailures(block.code, file, failures, allowsByLine, {
+                baseOffset: block.offset,
+                lineText: text,
+            });
         }
     }
 
@@ -522,6 +586,7 @@ async function runThemeLint(root) {
         collectLintAllowReasonFailures(text, file, failures);
         collectInvalidRgbAlphaFailures(text, file, failures, allowsByLine);
         collectSettingsChainCssFailures(text, file, failures, allowsByLine);
+        collectCssFontWeightFailures(text, file, failures, allowsByLine);
     }
 
     const hasThemeLayout = await fs
@@ -544,6 +609,7 @@ async function runThemeLint(root) {
     }
 
     collectSectionColorSchemeFailures(root, failures);
+    collectMigrationFailures(root, failures, notes);
 
     if (hasAssets && hasVendorNotices) {
         collectVendorNoticeFailures(root, failures);
@@ -552,9 +618,41 @@ async function runThemeLint(root) {
     return failures;
 }
 
+/** Returns an exit code, or null when no migration baseline flag was given. */
+function runMigrationBaselineFlag(root, argv) {
+    if (argv.includes('--write-migration-baseline')) {
+        if (require('node:fs').existsSync(baselinePath(root))) {
+            console.error('--write-migration-baseline refused: the baseline already exists.');
+            return 1;
+        }
+        writeBaselineFile(root, toBaseline(collectMigrationCounts(root)));
+        console.log('Migration baseline written.');
+        return 0;
+    }
+    if (argv.includes('--shrink-migration-baseline')) {
+        const baseline = readBaseline(root);
+        if (!baseline) {
+            console.error('--shrink-migration-baseline refused: no baseline exists.');
+            return 1;
+        }
+        writeBaselineFile(root, shrinkBaseline(baseline, collectMigrationCounts(root)));
+        console.log('Migration baseline shrunk to the current counts.');
+        return 0;
+    }
+    return null;
+}
+
 async function main(argv = process.argv) {
     const root = parseRootArg(argv);
-    const failures = await runThemeLint(root);
+    const flagExit = runMigrationBaselineFlag(root, argv);
+    if (flagExit !== null) {
+        process.exitCode = flagExit;
+        return;
+    }
+
+    const notes = [];
+    const failures = await runThemeLint(root, notes);
+    for (const note of notes) console.log(note);
 
     if (failures.length === 0) {
         console.log('Theme architecture lint passed.');
@@ -586,5 +684,6 @@ module.exports = {
     collectBundledAssetTagFailures,
     collectTabFailures,
     collectInvalidRgbAlphaFailures,
+    isAllowedStylesheetMedia,
     parseLineAllows,
 };

@@ -6,33 +6,46 @@ Last updated: 2026-10-08.
 
 ## Open decisions
 
-**Done: the layout check harness** (6-T1, accepted 2026-10-08, `ff285c8`; the `test:layout` row is in `AGENTS.md` Validation). It also covers the JS runtime-test gap. The decisions below stay as its record until the next harness plan.
+**Done: 6-C1, 6-C2, 6-C3** (2026-10-08, one commit; cross review 3 PASS after two FAIL rounds, all of them lint defects):
+- the migration ratchet (633 / 662 / 537 in `migration-baseline.json`);
+- the breakpoint tokens and hover variants;
+- weights limited to loaded faces.
+The contracts are in `docs/references/style-system/css-architecture.md`. Next in the order: 6-C4.
 
-- **Decided (user, 2026-10-08):**
-    - **Tooling:** `playwright-core` as a devDependency, driving the locally installed **Chrome** (`channel: 'chrome'`). No bundled browser download. Adding it changes `package.json` scripts (validator wiring), which the user has approved for this purpose.
-    - **Where it runs:** locally only, as `npm run test:layout`, against `shopify theme dev`. No CI for now; revisit with more contributors or before the merge to `main`.
-    - **Who runs it:** agents run it once when they finish a batch, as acceptance evidence, and read only the summary. The user can run it at any time. Running it costs no model tokens; it replaces the per-batch manual MCP measuring.
-- **Proposed checks** (coordinator):
-    - no horizontal page scroll;
-    - overflowing elements that no ancestor clips;
-    - content edges on the page margin;
-    - tap targets of at least 24×24 for buttons, form controls and standalone links (inline text links exempt per WCAG 2.5.8);
-    - clipped text;
-    - console errors and unmounted `data-module-id` roots.
-- **Method:** load each page once, then resize from 320 to 2560 in 40px steps. The output is JSON plus a summary table, with a non-zero exit on failure and a baseline of known issues that may only shrink. Interaction smoke tests come in a later second suite.
-- **Decided (user, 2026-10-08):**
-    - **Page-margin check:**
-        - visible text and controls (headings, paragraphs, buttons, links, form controls) in every section, header and footer included, have left ≥ page margin and right ≤ `clientWidth` − page margin, ±1px;
-        - images and video are not checked, since they may span;
-        - an element partly outside the viewport under a clipping ancestor is a deliberate peek and is skipped; if nothing clips it, the overflow check reports it;
-        - real exceptions are named in the harness config (selector plus reason), never by theme markup.
-    - **URLs:**
-        - fixed paths for home, `/cart`, `/search?q=a`, `/collections`, `/collections/all` and a 404 path;
-        - auto-discovered product (the first product on `/collections/all`), blog and article;
-        - pages through alternate templates (for example `/pages/privacy-policy?view=about`);
-        - any URL can be pinned in the config.
-    - **Storefront password:** not needed. `shopify theme dev` handles password protection itself, and `http://127.0.0.1:9292/` loaded without a password page in this session. The harness supports an optional `STOREFRONT_PASSWORD` environment variable (never committed) only for runs that land on the password page.
-- **Status:** discussion complete. The plan and the execution prompt are written when the user schedules execution.
+**Decided: CSS batch order** (proposed by the coordinator, accepted by the user 2026-10-08; 6-C5 is the full version, not the slimmed 6-F1; the product page design runs in parallel, see the open item below; user direction: the full specification, not a slimmed one; small and fast batches first; no manual browser sweeps that a tool can do; product page design work may arrive in between). Supersedes the order under "Specification discussion closed". Calibration stays deferred to the design pipeline; tokens keep today's values.
+1. **6-C1 lints with baselines** (tooling, no theme change): raw spacing utilities; hex, `rgb()` and `color-mix()` in section stylesheets; viewport units and `--page-width` / `--page-margin` in section stylesheets; media query spellings; weight utilities without a loaded face; old type tier names; `pc:` / `fw:`; dead settings. Every baseline may only fall.
+2. **6-C2 breakpoints:** `tablet` / `desktop` / `wide` tokens, `can-hover` / `no-hover`, hand-written media queries replaced, `pc` / `fw` as aliases. No visual change.
+3. **6-C3 medium weight:** load the emphasis face per role. Intended visual change: `font-medium` renders at 500.
+4. **6-C4 derived colour tokens and scrims**, plus the contrast script. No visual change, or one within the listed tolerance.
+5. **6-C5 page frame** (6-F1 revised in full: named-line page grid, a cover height token, the four sections with their own heights).
+6. **6-C6 section CSS layering**, including the utility-override audit and an automated check that the compiled `styles.css` keeps `@layer`.
+7. **6-C7 space scale** and **6-C8 type scale** with semantic aliases and the old-to-new tables.
+8. **6-C9 schemes and standalone colour settings** (needs approval for `config/settings_data.json` and the schema IDs).
+9. **Polish pass**, per section: migrate raw values, old names and `pc:` to the scales and `desktop`. The product page is the pilot (readiness criterion 4). If its design arrives earlier, it is built on the tokens that exist then, and migrated here.
+
+**Decided: the product page runs alongside the CSS batches by interleaving (option A)** (user, 2026-10-08).
+- **Constraints:**
+    - one writer per shared worktree;
+    - `context.md` holds one plan under execution at a time.
+    - Both tracks touch shared files: tokens in `tailwind/`, `snippets/css-variables.liquid`, the product sections, and the purchase snippets.
+- **Options:**
+    - interleave product page batches between CSS batches (no rule change);
+    - a second git worktree and branch for the product page, with its own agent and record, merged later (a process change: two records and merge conflicts in shared files).
+- **Decided (user, 2026-10-08):** A. Product page batches go between CSS batches in the same worktree, preferably after 6-C7 and 6-C8, so they use the new tokens.
+
+**Decided: 6-T2 stopped, verification stays light** (user, 2026-10-08):
+- **Why:** the question was necessity, not run time. People still look at the pages; automation only has to be light, and cut later agent cost.
+- **State:** the pixel comparison was never finished, and its uncommitted code was deleted. Nothing of it remains in Git or the working tree.
+- **Per CSS batch from now on:**
+    - the lints;
+    - `test:layout` at a few key widths (`--widths`, for example 390,768,1024,1440);
+    - the user's browser look at the pages and widths the plan names.
+    - The full 57-width sweep runs before a release.
+- **Accepted as a candidate (user):** Shopify's official Lighthouse CI GitHub Action, with the CI item (6-T4).
+- **Open, later:**
+    - 6-T3, the interaction suite;
+    - 6-T4, CI;
+    - a computed-style comparison, only if a batch such as 6-C6 proves to need it.
 
 **Decided: order of work** (user, 2026-10-08):
 
@@ -148,6 +161,22 @@ Last updated: 2026-10-08.
         - the polish pass renames per section to semantic names;
         - `lint:theme` baselines the old names, which may only fall; the aliases are deleted at zero.
     - **Merchant control:** the three role fonts, the base size and the scale ratio; no per-level sizes.
+    - **Merchant-visible values (coordinator count, 2026-10-08; raised by the user):**
+        - about 40 `select` settings in 30+ sections use tier class names as option values (about 500 option values);
+        - about 62 saved values in `templates/*.json`, `config/settings_data.json` and the section groups use them.
+        - **Constraints:**
+            - 6-C8 keeps the option values as stable IDs and maps them to scale steps in Liquid, so saved merchant data needs no migration;
+            - renaming option values needs the user's approval and a migration of merchant data. Before choosing it, check in Shopify's documentation what happens to a saved value that is no longer an option;
+            - editor labels may move to semantic names through locale keys;
+            - lints and baselines count class usage in markup only, never schema option values.
+        - **Redesign the merchant size settings with the scale** (user, 2026-10-08). 6-C8 starts with a proposal for the user, before any implementation:
+            1. inventory every size setting: the sections that have one, their options, and the values merchants saved;
+            2. compare with Dawn and Horizon, checked through Shopify Dev MCP and their source:
+                - how many steps they offer;
+                - how they name the steps in the editor;
+                - which sections expose a size setting at all;
+            3. show a table: current option → new option → editor label → pixel value at 390 / 1440.
+            The user approves before implementation.
     - **Evidence:**
         - 10 fixed heading tiers in two naming systems (plus `heading-size-custom`) and 7 body tiers;
         - `heading-xl` (45px) is larger than `heading-h1` (40px) on desktop;
@@ -217,62 +246,6 @@ Last updated: 2026-10-08.
 - **Specification discussion closed** (2026-10-07). Next:
     1. ~~sources supplemented~~ (done, above);
     2. then the plans, in order: the page frame batch → section CSS layering → tokens (space, type, colour, breakpoints) → calibration → the home polish pass.
-
-**Done** (6-B3, horizontal scrollbar at 1024–1300px, 2026-10-07):
-- **Fix:** `.section-frame--no-clip` and its direct inner use `overflow-x: clip` / `overflow-y: visible`. The rotated `ritual-steps` oval ring had pushed the page wider.
-- **Cross review:** no defect found.
-    - A1 passed 49/54 cells; the about template was checked through `/pages/privacy-policy?view=about`.
-    - Sticky still pins in `promo-bannder`, `ritual-steps`, the article sidebar and the product column.
-    - The oval geometry is identical at 1440 and 1920.
-    - The `featured-product` sticky travel at 1440 is 0px with and without the change, so it predates it.
-- **Not proven by the agents; checked and accepted by the user in the browser (2026-10-08):**
-    - the last five about-template widths;
-    - `featured-product` and the product column at 1100;
-    - menus, popovers, image zoom and focus rings near the section edges at 768, 1100 and 1440.
-
-**Done** (6-B4, collection-list scrollbar flash, `511ad9d`, 2026-10-08):
-- **Fix:** the pre-init fallback rail hides its scrollbar, and its slide widths use Swiper's sizing, so there is no jump at init.
-- **Cross review: finding P2 rejected by the coordinator.** The verifier overrode only `--collection-list-gap` (24px) and measured a jump. In the theme, `--collection-list-gap` and `data-slide-gap` both come from `collection_list_slide_gap` in `sections/collection-list.liquid`, so a merchant gap change moves both. The override state cannot occur; the coordinator's review prompt had asked for it. At the real gap the difference is 0px.
-- **User check:** the live-store look was accepted by the user (2026-10-08).
-- **Process note:** agent browser tooling creates an untracked `%SystemDrive%/` cache folder in the repo root; delete it after agent browser runs.
-    - **Cause:** Chrome is started with `%SystemDrive%` unexpanded, so the literal folder name lands in the working directory.
-    - **Decided (user, 2026-10-08):** add `%SystemDrive%/` to `.gitignore` in the next batch. It is not a theme folder, so `.shopifyignore` does not need it.
-
-**Done** (6-S13, shared mobile card rail, `84a4930`, 2026-10-08; the plan as recorded before execution: `git show 38a555e:docs/agent/context.md`; the review rounds were not committed and are summarised here):
-- **Result:** `ritual-steps` (both styles) and `routine-showcase` use `.card-rail` and `bindCardRail` (`assets/card-rail.js`) below 1024px.
-    - Cards are capped at `48rem` and centred.
-    - Rail padding is `max(var(--page-margin), calc((100% - 48rem) / 2))`.
-    - Equal heights come from CSS.
-    - The dots are 24px targets.
-- **Reviews:**
-    - **Coordinator round 1:** C1–C6 (30rem cap error from the plan, `100vw` width, JS height sync, 10px dots, dead factory, desktop proof).
-    - **Coordinator round 2:** C7 (`aria-hidden` restored on the in-card heading copy).
-    - **Cross review 1:** FAIL; C8 (active dot chosen only from changed entries) and C9 (end cards could not centre at 768).
-    - **Focused cross review 2:** PASS at 390, 768 and 900.
-- **Lesson:** this theme's root is 62.5%, so 1rem is 10px. Write rem caps from the pixel intent (480px is `48rem`). The 30rem error came from the coordinator's plan.
-- **Remaining:**
-    - **Phone pass:** accepted by the user (2026-10-08).
-    - **Low risk:** the observer thresholds `[0.35, 0.55, 0.75]` have no 0 or 1, so a card that leaves view keeps its last ratio; the active pick is still correct.
-
-**Mobile card pattern, decided** (user, 2026-10-07; done as 6-S13):
-- **Problems** (user screenshots, mobile):
-    - `routine-showcase` and `ritual-steps` style B show a native scrollbar and uneven card heights;
-    - `ritual-steps` style A on mobile does not match its design. The design: oval image, heading, step badge, title, text, link, dots; one step per screen.
-- **Pattern** for all three, below `desktop` (1024px):
-    - one card per screen with page-margin gutters, cards capped at about 480px and centred on tablets;
-    - native scrollbar hidden, all cards as tall as the tallest, swipe left and right;
-    - dots below (design first; matches the hero).
-- **Per section:**
-    - style A follows its design;
-    - `routine-showcase` stacks image above content;
-    - style B keeps its card content.
-- **Implementation direction:** CSS scroll snap, so the first card works without JavaScript. JavaScript drives only the dots and jump-to. The pattern becomes one shared component (three consumers).
-- **Batching:** one batch for all three.
-- **Not yet verified:** the code diagnosis of `sections/routine-showcase.liquid` and `sections/ritual-steps.liquid` is still to do, as the first step of the plan.
-
-Next after this decision (user, 2026-10-04): the design rework, then one browser pass, then the docs review together with a readiness review before the second submission.
-
-**Done** (6-V1, `e78047c`): `lint:theme` rejects `theme()`, `--spacing()` and `--alpha()` in Liquid `{% stylesheet %}` blocks. The Ask review was not run; the user chose to commit without it.
 
 **Cleanup survey** (coordinator, 2026-10-06, read-only; for the cleanup batch):
 
@@ -459,7 +432,7 @@ Design phase inputs:
     - Timing (coordinator proposal): after the second submission, unless a new theme starts from the skeleton earlier.
     - Already covered by the skeleton reference, not applied here: `javascript-runtime.md` recommends `modulepreload` for a first-viewport module chain that the page truly needs before interaction.
 - Process calibration: write acceptance counts from commands, not by hand; execution prompts must state that open board decisions may be cited but not decided. Proposed home: `.agents/roles/implementer.md` and `verifier.md` (a rule change, needs the user's approval).
-- Layout harness candidate (cross review 2 of 6-T1, 2026-10-08): a scroller item fully inside the viewport but inside the page margin, cut by its own scroller, is still reported under the viewport-based peek rule (2 `collection-all` nav-link entries in the baseline). A scrollport-visibility exclusion would change the plan's page-margin rule; decide it in a later harness plan.
+- Layout harness candidate (cross review 2 of 6-T1, 2026-10-08): a scroller item fully inside the viewport but inside the page margin, cut by its own scroller, is still reported under the viewport-based peek rule (2 `collection-all` nav-link entries in the baseline). A scrollport-visibility exclusion would change the plan's page-margin rule; decide it in a later harness plan. Second case (6-C2, 2026-10-08): `ritual_steps_carousel` mobile rail card 2, product title link at 768. The full sweep never tests 768, and the user chose not to add it to the baseline for now.
 
 ## Deferred ideas
 

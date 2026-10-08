@@ -5,7 +5,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { test } = require('node:test');
 
-const { runThemeLint, maskNonExecutableLiquid } = require('./lint-theme.js');
+const { runThemeLint, maskNonExecutableLiquid, isAllowedStylesheetMedia } = require('./lint-theme.js');
 const {
     getLiquidSyntaxFailures,
     isRubyCompatibilityFallback,
@@ -716,9 +716,9 @@ function writeMinimalImportMap(root) {
     writeEntryScripts(root, `{"imports":{"accordion":"{{ 'accordion.js' | asset_url }}"}}`);
 }
 
-test('settings chain liquid class font-medium passes (default weight scale)', async () => {
+test('settings chain liquid class font-bold passes (default weight scale; 6-C3 limits weights to loaded faces)', async () => {
     await withTempThemeAsync(async (root) => {
-        writeFile(root, 'sections/fixture.liquid', `<p class="font-medium">Label</p>\n`);
+        writeFile(root, 'sections/fixture.liquid', `<p class="font-bold">Label</p>\n`);
         const failures = await runThemeLint(root);
         assert.equal(failures.length, 0, failureMessages(failures));
     });
@@ -1109,7 +1109,7 @@ test('stylesheet custom properties named like Tailwind functions pass', async ()
             [
                 '{% stylesheet %}',
                 '.ok { gap: var(--spacing-gap-md); opacity: var(--alpha-x); --theme-y: 1; }',
-                '@media (min-width: 64rem) { .ok { gap: calc(var(--spacing) * 4); } }',
+                '@media (width >= 64rem) { .ok { gap: calc(var(--spacing) * 4); } }',
                 '{% endstylesheet %}',
                 '',
             ].join('\n'),
@@ -1754,4 +1754,312 @@ test('import map entry used by an asset import passes', async () => {
             failureMessages(failures),
         );
     });
+});
+
+const MIGRATION_TYPOGRAPHY = `@utility heading-base { color: red; }
+@utility heading-h2 { @apply heading-base; }
+@utility body-sm { font-size: 1rem; }
+`;
+const MIGRATION_BASELINE = '.agents/skills/check-theme-architecture/scripts/migration-baseline.json';
+
+function writeMigrationTheme(root, sectionMarkup, baseline) {
+    writeFile(root, 'tailwind/tailwind.typography.css', MIGRATION_TYPOGRAPHY);
+    writeFile(root, 'sections/a.liquid', sectionMarkup);
+    if (baseline) writeFile(root, MIGRATION_BASELINE, JSON.stringify(baseline));
+}
+
+function runThemeLintArgs(root, args) {
+    return spawnSync(process.execPath, [THEME_LINT_SCRIPT, '--root', root, ...args], {
+        cwd: path.join(__dirname, '../../../../'),
+        encoding: 'utf8',
+    });
+}
+
+test('migration lint: a count above the baseline fails', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeMigrationTheme(root, '<div class="mt-4 gap-6 pc:flex heading-h2"></div>', {
+            'legacy-breakpoint': { 'sections/a.liquid': 1 },
+            'legacy-type-tier': { 'sections/a.liquid': 1 },
+            'raw-spacing': { 'sections/a.liquid': 1 },
+        });
+        const failures = await runThemeLint(root);
+        const migration = failures.filter((f) => f.message.startsWith('[raw-spacing]'));
+        assert.equal(migration.length, 1);
+        assert.match(migration[0].message, /2 use\(s\), baseline 1/);
+        assert.equal(failures.filter((f) => /^\[legacy-/.test(f.message)).length, 0);
+    });
+});
+
+test('migration lint: a drop passes with a shrink hint', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeMigrationTheme(root, '<div class="mt-4"></div>', {
+            'legacy-breakpoint': {},
+            'legacy-type-tier': {},
+            'raw-spacing': { 'sections/a.liquid': 3 },
+        });
+        const notes = [];
+        const failures = await runThemeLint(root, notes);
+        assert.equal(failures.filter((f) => f.message.startsWith('[')).length, 0);
+        assert.match(notes.join('\n'), /--shrink-migration-baseline/);
+    });
+});
+
+test('migration lint: a file not in the baseline fails on its first use', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeMigrationTheme(root, '<p class="body-sm"></p>', {
+            'legacy-breakpoint': {},
+            'legacy-type-tier': {},
+            'raw-spacing': {},
+        });
+        const failures = await runThemeLint(root);
+        assert.ok(failures.some((f) => /\[legacy-type-tier\] 1 use\(s\), baseline 0/.test(f.message)));
+    });
+});
+
+test('migration lint: schema option values, comments and stylesheets are not counted', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeMigrationTheme(
+            root,
+            [
+                '{% comment %}<div class="mt-4 heading-h2 pc:flex"></div>{% endcomment %}',
+                '<!-- <div class="gap-6"></div> -->',
+                '{% # pc:mt-2 %}',
+                '{% stylesheet %}.x { --a: mt-4; }{% endstylesheet %}',
+                '{% schema %}{"settings":[{"type":"select","id":"s","options":[{"value":"heading-h2","label":"x"}],"default":"heading-h2"}]}{% endschema %}',
+            ].join('\n'),
+            { 'legacy-breakpoint': {}, 'legacy-type-tier': {}, 'raw-spacing': {} },
+        );
+        const failures = await runThemeLint(root);
+        assert.equal(failures.filter((f) => f.message.startsWith('[')).length, 0);
+    });
+});
+
+test('migration lint: tiers come from the typography source, not a fixed list', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeMigrationTheme(root, '<h2 class="heading-h3 heading-base"></h2>', {
+            'legacy-breakpoint': {},
+            'legacy-type-tier': {},
+            'raw-spacing': {},
+        });
+        let failures = await runThemeLint(root);
+        assert.equal(failures.filter((f) => f.message.startsWith('[legacy-type-tier]')).length, 0);
+
+        writeFile(root, 'tailwind/tailwind.typography.css', `${MIGRATION_TYPOGRAPHY}@utility heading-h3 { font-size: 2rem; }\n`);
+        failures = await runThemeLint(root);
+        assert.equal(failures.filter((f) => f.message.startsWith('[legacy-type-tier]')).length, 1);
+    });
+});
+
+test('migration lint: token aliases, 0, px and auto are not raw spacing', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeMigrationTheme(root, '<div class="gap-related mt-0 px-px mx-auto pc:gap-group p-[1rem]"></div>', {
+            'legacy-breakpoint': { 'sections/a.liquid': 1 },
+            'legacy-type-tier': {},
+            'raw-spacing': {},
+        });
+        const failures = await runThemeLint(root);
+        const spacing = failures.filter((f) => f.message.startsWith('[raw-spacing]'));
+        assert.equal(spacing.length, 1);
+        assert.match(spacing[0].message, /1 use\(s\), baseline 0/);
+    });
+});
+
+test('migration lint: a theme without a baseline fails', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeMigrationTheme(root, '<div></div>');
+        const failures = await runThemeLint(root);
+        assert.ok(failures.some((f) => /Migration baseline is missing/.test(f.message)));
+    });
+});
+
+test('migration baseline flags: write refuses an existing file; shrink only lowers and removes', () => {
+    withTempTheme((root) => {
+        writeMigrationTheme(root, '<div class="mt-4 pc:flex"></div>');
+        let result = runThemeLintArgs(root, ['--write-migration-baseline']);
+        assert.equal(result.status, 0, result.stderr);
+        const written = JSON.parse(fs.readFileSync(path.join(root, MIGRATION_BASELINE), 'utf8'));
+        assert.deepEqual(written, {
+            'legacy-breakpoint': { 'sections/a.liquid': 1 },
+            'legacy-type-tier': {},
+            'raw-spacing': { 'sections/a.liquid': 1 },
+        });
+
+        result = runThemeLintArgs(root, ['--write-migration-baseline']);
+        assert.notEqual(result.status, 0);
+        assert.match(result.stderr, /refused/);
+
+        writeFile(root, 'sections/a.liquid', '<div class="mt-4 mb-2 gap-6"></div>');
+        writeFile(root, 'sections/b.liquid', '<div class="mt-4"></div>');
+        result = runThemeLintArgs(root, ['--shrink-migration-baseline']);
+        assert.equal(result.status, 0, result.stderr);
+        const shrunk = JSON.parse(fs.readFileSync(path.join(root, MIGRATION_BASELINE), 'utf8'));
+        assert.deepEqual(shrunk, {
+            'legacy-breakpoint': {},
+            'legacy-type-tier': {},
+            'raw-spacing': { 'sections/a.liquid': 1 },
+        });
+    });
+});
+
+test('stylesheet media queries: tokenized widths and the two hover conditions pass', () => {
+    for (const prelude of [
+        ' (width >= 48rem) ',
+        '(width < 64rem)',
+        '(width >= 80rem)',
+        '(hover: hover) and (pointer: fine)',
+        'not ((hover: hover) and (pointer: fine))',
+        '(prefers-reduced-motion: reduce)',
+        '(width >= 64rem) and (hover: hover) and (pointer: fine)',
+    ]) {
+        assert.equal(isAllowedStylesheetMedia(prelude), true, prelude);
+    }
+});
+
+test('stylesheet media queries: px, min/max-width, other numbers and bare hover fail', () => {
+    for (const prelude of [
+        '(min-width: 768px)',
+        '(max-width: 1023px)',
+        '(min-width: 64rem)',
+        '(width >= 900px)',
+        '(width >= 60rem)',
+        '(hover: hover)',
+        '(hover: none), (pointer: coarse)',
+    ]) {
+        assert.equal(isAllowedStylesheetMedia(prelude), false, prelude);
+    }
+});
+
+test('stylesheet media queries: a failing query in a Liquid stylesheet is reported', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(
+            root,
+            'sections/a.liquid',
+            '<div></div>\n{% stylesheet %}\n.a { color: red; }\n@media (min-width: 768px) { .a { display: none; } }\n{% endstylesheet %}\n',
+        );
+        const failures = await runThemeLint(root);
+        const media = failures.filter((f) => f.message.includes('Liquid stylesheet media queries'));
+        assert.equal(media.length, 1);
+        assert.equal(media[0].line, 4);
+    });
+});
+
+test('unloaded font weights: markup classes, stylesheet weights and @apply fail', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(
+            root,
+            'sections/a.liquid',
+            [
+                '<p class="font-medium pc:font-semibold">x</p>',
+                '<p class="font-normal font-bold">ok</p>',
+                '{% comment %}<p class="font-light"></p>{% endcomment %}',
+                '{% stylesheet %}',
+                '.a { font-weight: 500; }',
+                '.b { font-weight: 700; }',
+                '{% endstylesheet %}',
+                '',
+            ].join('\n'),
+        );
+        writeFile(root, 'tailwind/tailwind.components.css', '.c { @apply body-xl font-medium; }\n.d { font-weight: 400; }\n');
+        const failures = (await runThemeLint(root)).filter((f) => f.message.startsWith('Only the regular and bold'));
+        assert.deepEqual(
+            failures.map((f) => `${f.file}:${f.line}`).sort(),
+            ['sections/a.liquid:1', 'sections/a.liquid:1', 'sections/a.liquid:5', 'tailwind/tailwind.components.css:1'],
+        );
+    });
+});
+
+test('cross review C1-C3 F1: the important modifier does not bypass the lints', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeMigrationTheme(root, '<p class="font-medium! hover:font-semibold! heading-h2! mt-4!">x</p>', {
+            'legacy-breakpoint': {},
+            'legacy-type-tier': {},
+            'raw-spacing': {},
+        });
+        writeFile(root, 'tailwind/tailwind.components.css', '.c { @apply font-medium!; }\n.d { font-weight: 400.5; }\n');
+        const failures = await runThemeLint(root);
+        const weight = failures.filter((f) => f.message.startsWith('Only the regular and bold'));
+        assert.equal(weight.length, 4, failureMessages(weight));
+        assert.ok(failures.some((f) => f.message.startsWith('[legacy-type-tier] 1 use')));
+        assert.ok(failures.some((f) => f.message.startsWith('[raw-spacing] 1 use')));
+    });
+});
+
+test('cross review C1-C3 F2: liquid comment lines and text content are not class usage', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeMigrationTheme(
+            root,
+            [
+                '{% liquid',
+                '  # mt-4 heading-h2 pc:flex font-medium',
+                "  assign extra = 'mt-4'",
+                '%}',
+                '<p>Please remove mt-4 and font-medium from this example.</p>',
+                '<div class="{{ extra }} gap-6" data-note="pc:flex"></div>',
+            ].join('\n'),
+            { 'legacy-breakpoint': {}, 'legacy-type-tier': {}, 'raw-spacing': {} },
+        );
+        const failures = await runThemeLint(root);
+        const spacing = failures.filter((f) => f.message.startsWith('[raw-spacing]'));
+        assert.equal(spacing.length, 1, failureMessages(failures));
+        assert.match(spacing[0].message, /2 use\(s\), baseline 0; .* Lines: 3, 6\./);
+        assert.equal(failures.filter((f) => f.message.startsWith('[legacy-type-tier]')).length, 0);
+        assert.equal(failures.filter((f) => f.message.startsWith('Only the regular and bold')).length, 0);
+        // Attribute values count, whatever the attribute: pc:flex in data-note is one breakpoint use.
+        assert.ok(failures.some((f) => f.message.startsWith('[legacy-breakpoint] 1 use')));
+    });
+});
+
+test('cross review C1-C3 F3: the media grammar has no placeholder and no half hover pair', () => {
+    for (const prelude of ['HOVER', '(hover: hover)', '(pointer: fine)', '(pointer: fine) and (hover: hover)', '']) {
+        assert.equal(isAllowedStylesheetMedia(prelude), false, prelude);
+    }
+});
+
+test('cross review C1-C3 F4: --write-migration-baseline refuses any existing file', () => {
+    withTempTheme((root) => {
+        writeMigrationTheme(root, '<div class="mt-4"></div>');
+        writeFile(root, MIGRATION_BASELINE, 'null');
+        const result = runThemeLintArgs(root, ['--write-migration-baseline']);
+        assert.notEqual(result.status, 0);
+        assert.match(result.stderr, /refused/);
+        assert.equal(fs.readFileSync(path.join(root, MIGRATION_BASELINE), 'utf8'), 'null');
+    });
+});
+
+test('cross review C1-C3 F2: class lists in {% capture *class* %} blocks are counted, other captures are text', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeMigrationTheme(
+            root,
+            [
+                '{% capture item_classes %}block px-4 font-medium {% if x %}py-2{% endif %}{% endcapture %}',
+                '{% capture intro %}Use px-4 in copy.{% endcapture %}',
+            ].join('\n'),
+            { 'legacy-breakpoint': {}, 'legacy-type-tier': {}, 'raw-spacing': {} },
+        );
+        const failures = await runThemeLint(root);
+        assert.ok(failures.some((f) => /^\[raw-spacing\] 2 use\(s\)/.test(f.message)), failureMessages(failures));
+        assert.equal(failures.filter((f) => f.message.startsWith('Only the regular and bold')).length, 1);
+    });
+});
+
+test('cross review 2 of C1-C3: a quoted > inside an attribute does not end the tag', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeMigrationTheme(
+            root,
+            [
+                '<div title="a > b" class="mt-4 font-medium"></div>',
+                `<div :class="count > 1 ? 'gap-6' : 'gap-related'"></div>`,
+            ].join('\n'),
+            { 'legacy-breakpoint': {}, 'legacy-type-tier': {}, 'raw-spacing': {} },
+        );
+        const failures = await runThemeLint(root);
+        assert.ok(failures.some((f) => /^\[raw-spacing\] 2 use\(s\)/.test(f.message)), failureMessages(failures));
+        assert.equal(failures.filter((f) => f.message.startsWith('Only the regular and bold')).length, 1);
+    });
+});
+
+test('cross review 2 of C1-C3: no-hover stands alone, as documented', () => {
+    assert.equal(isAllowedStylesheetMedia('not ((hover: hover) and (pointer: fine))'), true);
+    assert.equal(isAllowedStylesheetMedia('not ((hover: hover) and (pointer: fine)) and (width >= 64rem)'), false);
+    assert.equal(isAllowedStylesheetMedia('(width >= 64rem) and not ((hover: hover) and (pointer: fine))'), false);
 });
