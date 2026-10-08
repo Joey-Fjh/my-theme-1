@@ -38,8 +38,9 @@ export function checkUnclippedOverflow() {
         const pastRight = rect.right > vw + 0.5;
         if (!pastLeft && !pastRight) continue;
 
-        if (pastLeft && isOverflowClippedOnEdge(el, 'left')) continue;
-        if (pastRight && isOverflowClippedOnEdge(el, 'right')) continue;
+        const leftUnclipped = pastLeft && !isOverflowClippedOnEdge(el, 'left');
+        const rightUnclipped = pastRight && !isOverflowClippedOnEdge(el, 'right');
+        if (!leftUnclipped && !rightUnclipped) continue;
 
         const selector = stableSelector(el);
         const key = `${CHECK_UNCLIPPED_OVERFLOW}:${selector}`;
@@ -52,6 +53,9 @@ export function checkUnclippedOverflow() {
 
 export function checkPageMargin() {
     const margin = readPageMarginPx();
+    if (margin === null) {
+        return [{ check: CHECK_PAGE_MARGIN, selector: ':root', detail: 'page-margin-undefined' }];
+    }
     const vw = document.documentElement.clientWidth;
     const maxRight = vw - margin;
     const issues = [];
@@ -99,7 +103,7 @@ export function checkTapTargets() {
     });
 
     const undersized = targets.filter(
-        (t) => t.rect.width < 24 - 0.5 || t.rect.height < 24 - 0.5,
+        (t) => t.rect.width < 24 || t.rect.height < 24,
     );
 
     const issues = [];
@@ -164,15 +168,17 @@ export const CHECK_NAMES = [
     'runtime',
 ];
 
+/** Resolved `--page-margin` in px; 0 is valid. Returns null when the property is undefined. */
 function readPageMarginPx() {
     const probe = document.createElement('div');
     probe.setAttribute('data-layout-check-probe', 'page-margin');
     probe.style.cssText =
         'position:absolute;left:0;top:0;visibility:hidden;pointer-events:none;width:var(--page-margin);height:1px;';
-    document.documentElement.appendChild(probe);
+    document.body.appendChild(probe);
+    const defined = getComputedStyle(probe).getPropertyValue('--page-margin').trim() !== '';
     const margin = probe.getBoundingClientRect().width;
     probe.remove();
-    return margin > 0 ? margin : 16;
+    return defined ? margin : null;
 }
 
 function isElementVisible(el) {
@@ -230,8 +236,9 @@ function hasClippingAncestor(el, edge) {
         if (style.clipPath && style.clipPath !== 'none') return true;
         if (ancestorClipsHorizontal(style)) {
             const rect = node.getBoundingClientRect();
-            if (edge === 'left' && rect.left <= 0 && rect.width < vw) return true;
-            if (edge === 'right' && rect.right >= vw && rect.width < vw) return true;
+            // The ancestor clips the element's outside part when its own box stops at that viewport edge.
+            if (edge === 'left' && rect.left >= -0.5) return true;
+            if (edge === 'right' && rect.right <= vw + 0.5) return true;
         }
         node = node.parentElement;
     }
@@ -288,7 +295,7 @@ function passesSpacingException(target, allTargets) {
     for (const other of allTargets) {
         if (other.el === target.el) continue;
         const otherUndersized =
-            other.rect.width < 24 - 0.5 || other.rect.height < 24 - 0.5;
+            other.rect.width < 24 || other.rect.height < 24;
         if (otherUndersized) {
             const ocx = other.rect.left + other.rect.width / 2;
             const ocy = other.rect.top + other.rect.height / 2;
@@ -359,6 +366,37 @@ const UTILITY_CLASS_PATTERNS = [
     /^overflow/,
     /^pointer-events-/,
     /^cursor-/,
+    /^overscroll(-|$)/,
+    /^select-/,
+    /^transition(-|$)/,
+    /^duration-/,
+    /^ease-/,
+    /^delay-/,
+    /^shrink(-|$)/,
+    /^grow(-|$)/,
+    /^basis-/,
+    /^aspect-/,
+    /^object-/,
+    /^-?translate-/,
+    /^-?scale-/,
+    /^-?rotate-/,
+    /^transform$/,
+    /^snap-/,
+    /^scroll-/,
+    /^leading-/,
+    /^tracking-/,
+    /^whitespace-/,
+    /^break-/,
+    /^truncate$/,
+    /^line-clamp-/,
+    /^uppercase$|^lowercase$|^capitalize$|^italic$|^underline$/,
+    /^shadow(-|$)/,
+    /^outline(-|$)/,
+    /^ring(-|$)/,
+    /^fill-|^stroke-/,
+    /^size-/,
+    /^place-/,
+    /^isolate$|^contents$|^invisible$|^visible$|^static$/,
     /^pe-/,
     /^ps-/,
     /^pt-/,
@@ -378,14 +416,18 @@ const UTILITY_CLASS_PATTERNS = [
     /^container$/,
 ];
 
+function hasUtilitySyntax(className) {
+    return className.includes('[') || className.includes(':') || className.includes('/');
+}
+
 function isUtilityClass(className) {
+    if (hasUtilitySyntax(className)) return true;
     if (className.includes('__') || className.includes('--')) return false;
-    if (className.includes('[') || className.includes(':') || className.includes('/')) return true;
     return UTILITY_CLASS_PATTERNS.some((re) => re.test(className));
 }
 
 function classesForSelector(el) {
-    const names = [...el.classList];
+    const names = [...el.classList].filter((c) => !hasUtilitySyntax(c));
     const component = names.filter((c) => c.includes('__') || c.includes('--'));
     if (component.length) {
         return component.slice(0, 2).map((c) => `.${cssEscape(c)}`).join('');

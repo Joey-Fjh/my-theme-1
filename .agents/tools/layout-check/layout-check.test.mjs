@@ -16,7 +16,13 @@ import {
     runtimeMatchesUrlPattern,
     shouldIgnoreRequestFailure,
 } from './runtime-keys.mjs';
-import { expectedDocumentStatus, isArticlePath, pickArticleHref, pruneRefusalReason } from './run-rules.mjs';
+import {
+    expectedDocumentStatus,
+    isArticlePath,
+    pickArticleHref,
+    pruneRefusalReason,
+    validateConfig,
+} from './run-rules.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES_DIR = path.join(__dirname, 'fixtures');
@@ -209,6 +215,51 @@ test('stable selectors omit theme numeric IDs and utility classes', async () => 
     assert.ok(selector.includes('template__scroll_categories_B8wjNV'));
 });
 
+test('V1 classes with utility syntax never enter selectors', async () => {
+    await openFixture('selector-utility-syntax.html');
+    const selector = await page.evaluate(
+        new Function(
+            `${getBrowserChecksSource()}; return stableSelector(document.querySelector('p'));`,
+        ),
+    );
+    assert.ok(!/[[\]:/]/.test(selector.replace(/:nth-of-type\(\d+\)/g, '')), selector);
+    assert.ok(!selector.includes('overscroll'), selector);
+    assert.ok(selector.includes('.product__media'), selector);
+});
+
+test('V2 a peek inside a full-width clipping section is not reported', async () => {
+    await openFixture('unclipped-fullwidth-clipper-negative.html');
+    const issues = await runLayoutChecks();
+    assert.equal(hasCheck(issues, 'unclipped-overflow'), false);
+    assert.equal(hasCheck(issues, 'page-margin'), false);
+});
+
+test('V3 a zero page margin is valid; an undefined one is reported', async () => {
+    await openFixture('page-margin-zero-negative.html');
+    let issues = await runCheck('checkPageMargin');
+    assert.equal(issues.length, 0);
+
+    await openFixture('page-margin-undefined-positive.html');
+    issues = await runCheck('checkPageMargin');
+    assert.deepEqual(issues, [{ check: 'page-margin', selector: ':root', detail: 'page-margin-undefined' }]);
+});
+
+test('V4 adjacent 23.6px buttons are undersized', async () => {
+    await openFixture('tap-target-subpixel-positive.html');
+    const issues = await runCheck('checkTapTargets');
+    assert.equal(issues.filter((i) => i.check === 'tap-targets').length, 2);
+});
+
+test('V5 one clipped edge does not hide the other', async () => {
+    await openFixture('unclipped-one-edge-positive.html');
+    const issues = await runCheck('checkUnclippedOverflow');
+    // The 0…500px clipper overflows too; the child must be reported on its own unclipped right edge.
+    assert.ok(
+        issues.some((i) => i.check === 'unclipped-overflow' && i.selector.includes('.wide')),
+        JSON.stringify(issues),
+    );
+});
+
 test('stable selectors normalize derived element ids (T2)', async () => {
     await openFixture('selector-element-id.html');
     const selectors = await page.evaluate(
@@ -303,20 +354,30 @@ test('prune-baseline refuses --page and --widths', () => {
     );
 });
 
-test('config exception without reason fails validation', async () => {
-    const bad = {
-        exceptions: [{ selector: '#x', checks: ['page-margin'] }],
-    };
-    const validateConfig = (config) => {
-        for (const ex of config.exceptions ?? []) {
-            if (!ex.reason || !String(ex.reason).trim()) {
-                throw new Error(
-                    `Config error: exception for selector "${ex.selector ?? '?'}" is missing a non-empty "reason".`,
-                );
-            }
-        }
-    };
-    assert.throws(() => validateConfig(bad), /Config error/);
+test('config exception without reason fails validation', () => {
+    assert.throws(
+        () => validateConfig({ exceptions: [{ selector: '#x', checks: ['page-margin'] }] }),
+        /Config error: exception is missing a non-empty "reason"/,
+    );
+    assert.throws(
+        () => validateConfig({ exceptions: [{ selector: '#x', checks: ['page-margin'], reason: '   ' }] }),
+        /missing a non-empty "reason"/,
+    );
+});
+
+test('config exception needs a checks array and a selector or urlPattern', () => {
+    assert.throws(
+        () => validateConfig({ exceptions: [{ selector: '#x', reason: 'r' }] }),
+        /must include a checks array/,
+    );
+    assert.throws(
+        () => validateConfig({ exceptions: [{ checks: ['runtime'], reason: 'r' }] }),
+        /must include selector or urlPattern/,
+    );
+    assert.doesNotThrow(() =>
+        validateConfig({ exceptions: [{ urlPattern: 'https://x/*', checks: ['runtime'], reason: 'r' }] }),
+    );
+    assert.doesNotThrow(() => validateConfig({ exceptions: [{ selector: '#x', checks: ['page-margin'], reason: 'r' }] }));
 });
 
 test('U2 article URL filter excludes tag listings and blog roots', () => {

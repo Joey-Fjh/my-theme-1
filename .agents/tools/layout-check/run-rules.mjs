@@ -37,3 +37,20 @@ export function pruneRefusalReason({ newIssueCount, documentRetries }) {
 export function expectedDocumentStatus(pageKey) {
     return pageKey === 'not-found' ? 404 : 200;
 }
+
+/** Config errors stop the run: every exception needs a reason, a checks array, and a selector or urlPattern. */
+export function validateConfig(config) {
+    for (const ex of config.exceptions ?? []) {
+        if (!ex.reason || !String(ex.reason).trim()) {
+            throw new Error(
+                `Config error: exception is missing a non-empty "reason" (${ex.selector ?? ex.urlPattern ?? '?'}).`,
+            );
+        }
+        if (!Array.isArray(ex.checks) || ex.checks.length === 0) {
+            throw new Error(`Config error: exception must include a checks array.`);
+        }
+        if (!ex.selector && !ex.urlPattern) {
+            throw new Error(`Config error: exception must include selector or urlPattern.`);
+        }
+    }
+}

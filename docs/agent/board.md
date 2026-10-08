@@ -459,6 +459,7 @@ Design phase inputs:
     - Timing (coordinator proposal): after the second submission, unless a new theme starts from the skeleton earlier.
     - Already covered by the skeleton reference, not applied here: `javascript-runtime.md` recommends `modulepreload` for a first-viewport module chain that the page truly needs before interaction.
 - Process calibration: write acceptance counts from commands, not by hand; execution prompts must state that open board decisions may be cited but not decided. Proposed home: `.agents/roles/implementer.md` and `verifier.md` (a rule change, needs the user's approval).
+- Layout harness candidate (cross review 2 of 6-T1, 2026-10-08): a scroller item fully inside the viewport but inside the page margin, cut by its own scroller, is still reported under the viewport-based peek rule (2 `collection-all` nav-link entries in the baseline). A scrollport-visibility exclusion would change the plan's page-margin rule; decide it in a later harness plan.
 
 ## Deferred ideas
 

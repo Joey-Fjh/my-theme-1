@@ -6,7 +6,7 @@ Last updated: 2026-10-08.
 
 ## Plan 6-T1: layout check harness
 
-**Status:** in progress. Rounds 1–4 executed; cross review 1 FAIL (2026-10-08). **Next: correction round 5 (V1–V6, section "Cross review 1"), then cross review 2.** Committed mid-batch as a work-in-progress handoff at the user's request (2026-10-08); not accepted. Review tier: **Ask** (validator wiring in `package.json`, external prompt).
+**Status:** accepted by the user (2026-10-08) after cross review 2. Next: step 9 (commit when the user asks, migrate the `test:layout` rule with approved wording, clear this file). Rounds 1–4 executed; cross review 1 FAIL; round 5 code (part 1) and baseline or runs (part 2) recorded below. Rounds 1–4 were committed mid-batch as a work-in-progress handoff (`b3c4abc`); round 5 is uncommitted. Review tier: **Ask** (validator wiring in `package.json`, external prompt).
 
 ### Outcome
 
@@ -624,3 +624,119 @@ Six check defects make the verdict FAIL. The coordinator checked each one agains
     - delete and rewrite the baseline once (V1–V5 change the keys and the counts), and explain the count differences from 10 / 54 / 15 / 22;
     - run A2 twice (both 0 new), A5 (prune byte-identical on the first attempt), A1 and A7;
     - after that, cross review 2 re-checks V1–V6 and the counts.
+
+### Correction round 5 (2026-10-08, coordinator, part 1: code and fixtures)
+
+- **V1:** `hasUtilitySyntax` (`[`, `:`, `/`) runs first in `isUtilityClass`, and `classesForSelector` drops those classes before the BEM test. Added prefixes: `overscroll`, `select`, `transition`, `duration`, `ease`, `delay`, `shrink`, `grow`, `basis`, `aspect`, `object`, `translate`/`scale`/`rotate`, `snap`, `scroll`, `leading`, `tracking`, `whitespace`, `break`, `line-clamp`, `shadow`, `outline`, `ring`, `fill`/`stroke`, `size`, `place`, and single-word utilities. `content-` and `list-` are deliberately not prefixes (`content-group` is a theme primitive). Fixture `selector-utility-syntax.html`.
+- **V2:** `hasClippingAncestor` treats a horizontally clipping ancestor as clipping the left part when `rect.left >= -0.5`, and the right part when `rect.right <= vw + 0.5`; the width condition is gone. Fixture `unclipped-fullwidth-clipper-negative.html` (no unclipped-overflow and no page-margin issue).
+- **V3:** `readPageMarginPx` returns 0 as a valid value and `null` when `--page-margin` is undefined on a body-level probe. `checkPageMargin` then reports one `{ check: 'page-margin', selector: ':root', detail: 'page-margin-undefined' }` issue. Fixtures `page-margin-zero-negative.html`, `page-margin-undefined-positive.html`.
+- **V4:** undersized means `< 24` with no allowance, in both `checkTapTargets` and `passesSpacingException`. Fixture `tap-target-subpixel-positive.html` (2 issues).
+- **V5:** each edge is evaluated on its own (`leftUnclipped || rightUnclipped`). Fixture `unclipped-one-edge-positive.html`; the test asserts the `.wide` child, not the overflowing clipper.
+- **V6:** `validateConfig` moved to `run-rules.mjs`, imported by the runner and tested directly: missing or blank `reason`, missing `checks`, and missing `selector`/`urlPattern` all throw; a `urlPattern`-only or `selector` exception passes.
+- **Evidence:**
+    - `npm.cmd run test:layout-harness`: 25/25 pass.
+    - Against `HEAD`'s `checks.mjs`, the five V1–V5 tests fail (20 pass, 5 fail).
+    - `npx.cmd prettier --check` on the harness `.mjs` files and fixtures passes.
+    - `node_modules` was installed on this machine with `npm.cmd ci` (lockfile unchanged).
+- **Remaining (part 1 only):** baseline rewrite and A2/A5 were deferred to part 2 (below).
+
+### Correction round 5 (part 2: baseline and runs) (2026-10-08, Implementer)
+
+Dev server: `http://127.0.0.1:9292/` returned 200 before runs. No theme file edited. Old baseline saved from `HEAD` to `%TEMP%\layout-check-r5p2\layout-check.baseline.old.json` for key-level diff.
+
+**Baseline rewrite:** deleted `layout-check.baseline.json`, then `node .agents/tools/layout-check/layout-check.mjs --write-baseline` → **60 issues** (wall ~182.6s on write).
+
+#### Per-check counts (key-level diff vs round 4 / cross review 1)
+
+| check | old (101 total) | new (60 total) | Δ | explanation (V-fix, from old vs new `page|check|selector` keys) |
+| --- | --- | --- | --- | --- |
+| runtime | 10 | 10 | 0 | V1–V5 do not change runtime keys. |
+| page-margin | 54 | 13 | −41 | **Corrected by cross review 2:** **V2:** 41 keys dropped (peek inside a full-width horizontal clipper no longer reported). **V1:** 2 `collection-all` keys renamed (utility segment stripped from the path; same nav links as old entries). No collapse: the 101 old keys stay 101 distinct keys after normalization. **V3:** no `page-margin-undefined` issue. |
+| tap-targets | 15 | 15 | 0 | **V4:** stricter `<24` rule; live storefront had no additional undersized targets vs prior baseline. |
+| clipped-text | 22 | 22 | 0 | **V1:** 1 `product` key removed and 1 added (old path contained `pc:grid-cols-[…]` utility syntax; new path uses `nth-of-type` only). Net count unchanged. |
+| horizontal-scroll | 0 | 0 | 0 | — |
+| unclipped-overflow | 0 | 0 | 0 | **V5:** no live issues; count unchanged. |
+
+Key diff summary: **44** keys removed, **3** keys added (net −41) = 41 V2 drops + 3 V1 renames (2 page-margin, 1 clipped-text). Duplicate `page|check|selector` keys: **0**. Selectors with 6+ digits: **0**. `page-margin-undefined`: **0**.
+
+#### Class names in new baseline selectors (T3 / V1)
+
+**105** distinct class tokens in DOM selectors (runtime `console:` keys excluded). Each is a theme component or semantic primitive (`__` / `--` BEM, typography tiers `body-3xl` / `heading-3xl`, `btn`, `links`, or Swiper surface classes `swiper`, `swiper-slide`, `swiper-pagination-bullet`). No Tailwind utility tokens; no `[`, `:` (except runtime message text), or `/` in class tokens; no 6+ digit runs in selectors.
+
+#### A2 (twice)
+
+```
+npm.cmd run test:layout
+Run 1: exit 0  Wall time: 177407ms  New issues (not in baseline): 0
+Run 2: exit 0  Wall time: 176456ms  New issues (not in baseline): 0
+```
+
+`report.json` pages (run 1): `home` `http://127.0.0.1:9292/`; `cart` `/cart`; `search` `/search?q=a`; `collections` `/collections`; `collection-all` `/collections/all`; `not-found` `/this-path-should-404-layout-check`; `page-about-view` `/pages/privacy-policy?view=about`; `product` `/products/floral-white-top`; `blog` `/blogs/news`; `article` `http://127.0.0.1:9292/blogs/news/%E6%98%9F%E6%9C%9F%E4%BA%94%E4%B8%8B%E5%8D%88`.
+
+#### A5
+
+```
+node .agents/tools/layout-check/layout-check.mjs --write-baseline
+--write-baseline refused: baseline file already exists.  (exit 1)
+node .agents/tools/layout-check/layout-check.mjs --prune-baseline
+Pruned baseline: 60 -> 60 issues.
+fc.exe /b (copy in %TEMP%\layout-check-r5p2 vs after prune): FC_EXIT:0 (byte-identical, first attempt)
+```
+
+#### A1
+
+```
+npm.cmd run test:layout-harness
+# tests 25  # pass 25  # fail 0  # duration_ms 2069.5824
+```
+
+#### A6
+
+```
+git status --porcelain:
+ M .agents/tools/layout-check/checks.mjs
+ M .agents/tools/layout-check/layout-check.baseline.json
+ M .agents/tools/layout-check/layout-check.mjs
+ M .agents/tools/layout-check/layout-check.test.mjs
+ M .agents/tools/layout-check/run-rules.mjs
+ M docs/agent/context.md
+?? .agents/tools/layout-check/fixtures/*.html (six new fixture files)
+```
+
+All paths are inside the plan implementation surface; no theme, `package.json`, or `AGENTS.md` changes from this part. `%LOCALAPPDATA%\ms-playwright` exists (pre-existing on this machine); this batch did not run `npx playwright install`.
+
+#### A7
+
+```
+npm.cmd run lint:doc-paths
+Doc path lint passed.
+npm.cmd run doctor:agent
+(exit 0)
+npx.cmd prettier --check .agents/tools/layout-check/layout-check.baseline.json docs/agent/context.md
+All matched files use Prettier code style!
+```
+
+### Coordinator review, round 5 (2026-10-08): passed, ready for cross review 2
+
+**Re-checked by the coordinator:**
+- Baseline: 60 entries (runtime 10, page-margin 13, tap-targets 15, clipped-text 22); 0 duplicate keys; 0 runs of 6+ digits.
+- Class audit: every class in the baseline selectors is a component, typography-tier (`body-3xl`, `heading-3xl`), `btn`/`links`, or Swiper class; none has `[`, `:` or `/`.
+- `git status`: only the harness files, the new fixtures, the baseline and this file.
+- `%LOCALAPPDATA%/ms-playwright` predates this batch (2026-06-04, subfolders 2026-06/07).
+
+**Correction to the part 2 report:** the 3 "added" keys are V1 renames, not new issues.
+- The 2 `collection-all` page-margin keys (`collection__nav-link` 6 at 1280, 9 at 2280) are the same tab links the old baseline reported over 800–1280 and 800–2280. The keys changed because V1 changed the path prefix.
+- V2 removed every width where the link sat partly outside the viewport under the scroller. What remains is the last width of each old range: the link is fully inside the viewport but inside the right page margin, so under the plan's rule it is not a peek.
+- **Observation for the cross review, not a defect:** a scroller item visible inside the page margin but cut by its own scroller is reported. The rule as written does this; changing it is a plan decision.
+- The `product` clipped-text key is the V1 rename of the quantity-selector label (utility dropped from the path).
+
+### Cross review 2 (2026-10-08): FAIL on two findings; coordinator disposition
+
+V1–V6, A1–A6 and the counts 101 → 60 were re-proven with fresh evidence. Two runs took 174,879ms and 176,719ms with 0 new issues. Prune was byte-identical. A3 reported 461 new issues and exited 1; A4 exited 1 in 656ms. The old `checks.mjs` gives 20 pass / 5 fail. The scroller observation matches the written rule. The verifier recommends a scrollport-visibility exclusion for a later plan (board candidate, not this batch).
+
+- **P3, the baseline explanation:** accepted and corrected above (41 V2 drops + 3 V1 renames, no collapse).
+- **P2, A7 formatting coverage:** disputed, not a defect of this batch.
+    - A7 says `npx.cmd prettier --check` on the changed files, and that passes under the project's `.prettierignore`.
+    - `.prettierignore` excludes `.agents`, `docs` and `AGENTS.md` on purpose (since `1bf75c6`, the skeleton import). `docs/references/code-review/launch-gate.md` states that formatting scope for these governance files follows `.prettierignore`.
+    - Checking them with an empty ignore file measures a scope the project rules exclude. Changing that scope is a harness rule change the user owns.
+    - **Decided (user, 2026-10-08):** dispute accepted; A7 passes under `.prettierignore`. No cross review 3: the user accepted the batch on the coordinator's disposition. The scroller recommendation is on `docs/agent/board.md` (Evidence).

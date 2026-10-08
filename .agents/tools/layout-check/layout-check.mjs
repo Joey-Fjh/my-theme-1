@@ -19,7 +19,7 @@ import {
     shouldIgnoreRequestFailure,
 } from './runtime-keys.mjs';
 
-import { pickArticleHref, pruneRefusalReason, expectedDocumentStatus } from './run-rules.mjs';
+import { pickArticleHref, pruneRefusalReason, expectedDocumentStatus, validateConfig } from './run-rules.mjs';
 export { baselineIdentityKey, compareToBaseline, normalizeRuntimeMessage } from './runtime-keys.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -51,22 +51,6 @@ function parseArgs(argv) {
         }
     }
     return flags;
-}
-
-function validateConfig(config) {
-    for (const ex of config.exceptions ?? []) {
-        if (!ex.reason || !String(ex.reason).trim()) {
-            throw new Error(
-                `Config error: exception is missing a non-empty "reason" (${ex.selector ?? ex.urlPattern ?? '?'}).`,
-            );
-        }
-        if (!Array.isArray(ex.checks) || ex.checks.length === 0) {
-            throw new Error(`Config error: exception must include a checks array.`);
-        }
-        if (!ex.selector && !ex.urlPattern) {
-            throw new Error(`Config error: exception must include selector or urlPattern.`);
-        }
-    }
 }
 
 function buildWidthList(config, override) {
