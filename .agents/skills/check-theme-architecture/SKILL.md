@@ -61,6 +61,9 @@ Liquid files under `layout/`, `sections/`, `snippets/`, `blocks/`, and `template
 | `section-color-scheme` | Sections with a `color_scheme` setting apply `color-{{ section.settings.color_scheme }}` on the frame. |
 | `vendor-notices` | Every `assets/vendor-*` file has a `THIRD_PARTY_NOTICES.md` entry. |
 | `lint-allow-reason` | `lint-allow` comments must include a check id and reason. |
+| `page-token-scope` | `sections/` and `snippets/` (Liquid comments excepted; CSS and HTML comments fail closed) must not read `--page-width` or `--page-margin` (use `--page-inset` for custom insets). `tailwind/tailwind.components.css` must not read `--page-width`; `--page-margin` stays allowed there as the gutter token. |
+| `screen-height-literal` | Liquid files (`layout/`, `sections/`, `snippets/`, `blocks/`, `templates/`) must not use literal `100svh`, `100vh`, `100lvh`, or `100dvh` for one-screen heights; use `var(--screen-height)`. Named exception: only the exact `sections/header.liquid` menu cap `max-height: calc(100dvh - var(--announcement-bar-height) - var(--header-height))`. |
+| `frame-full-allowlist` | A `render 'section-frame'` (either quote style, tag or `{% liquid %}` form) with a literal `width: 'full'` only in sections listed under Page frame in `css-architecture.md`; never in snippets. |
 
 ## Reporting
 

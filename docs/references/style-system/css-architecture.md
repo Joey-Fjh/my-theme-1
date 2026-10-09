@@ -228,9 +228,51 @@ Every section with merchant padding settings uses `section-frame` for that paddi
 
 ## Layout levels (5-C3a)
 
-1. **Page frame** — `assets/base.css` (`.shopify-section` grid, `page_width`, `page_margin`) and `container-page` in `tailwind/tailwind.utilities.css`.
+1. **Page frame** — see **Page frame (6-C5)** below.
 2. **Section frame** — `snippets/section-frame.liquid` only.
 3. **Inside a section** — repeated patterns become snippets (`content-group` for stacked copy and actions). Column grids use `grid-list`; one-off arrangements use flex/grid utilities with relationship gap tokens. No generic layout wrapper driven only by direction/alignment parameters.
+
+## Page frame (6-C5)
+
+Layer order: merchant settings → `snippets/css-variables.liquid` (`--page-width`, `--page-margin`) → frame tokens on `:root` in `assets/base.css` → `.shopify-section` and `container-page` → `section-frame` width/height → section interior layout.
+
+**Ownership.** The page frame is the only owner of page width and the one-screen height unit (`--screen-height` in `tailwind/tailwind.input.css`). Inner layers consume frame tokens; they do not recompute page insets or full viewport height.
+
+**Tokens (`assets/base.css` `:root`).**
+
+| Token | Value / role |
+| --- | --- |
+| `--page-grid-columns` | Single three-track grid with named lines `full` / `content` (today's `minmax(var(--page-margin), 1fr)` … `minmax(0, var(--page-width))` … tracks). |
+| `--page-inset` | `max(var(--page-margin), calc((100% - var(--page-width)) / 2))` for section-local inset without reading width/margin tokens in Liquid. |
+
+**Consumption.**
+
+- `.shopify-section` and `container-page` set `grid-template-columns: var(--page-grid-columns)`; direct children default to `grid-column: content`; `.full-width` uses `grid-column: full`.
+- `--section-stage-min-height` is `var(--screen-height)` (`100svh` at the token source only).
+
+**Rules.**
+
+| Rule | Kind | Check |
+| --- | --- | --- |
+| One page-grid track list with named lines `full` / `content`, shared by `.shopify-section` and `container-page` | Enforced by structure (no lint) | One `--page-grid-columns` definition in `assets/base.css`; both consumers reference it |
+| `sections/` and `snippets/` never read `--page-width` / `--page-margin` (Liquid comments excepted; CSS and HTML comments fail closed); custom insets use `--page-inset` | Enforced | `page-token-scope` |
+| `tailwind/tailwind.components.css` never reads `--page-width`; `--page-margin` remains the gutter token there | Enforced | `page-token-scope` |
+| One-screen height is `var(--screen-height)`, not literal `100svh` / `100vh` / `100lvh` / `100dvh`, in every Liquid file (`layout/`, `sections/`, `snippets/`, `blocks/`, `templates/`) | Enforced | `screen-height-literal` (only the exact header menu cap `calc(100dvh - var(--announcement-bar-height) - var(--header-height))` is excepted) |
+| A `section-frame` render with `width: 'full'` only in allowlisted sections, never in snippets | Enforced | `frame-full-allowlist` (literal argument only; a variable width is not resolved) |
+| Full-width sections keep text and controls on the `content` column; only backgrounds and named media span `full` | Guidance | Verifier / polish pass |
+| Fractional viewport units inside a section's choreography, overlay `dvh` / `vh` caps, article/search hero heights, product `80` / `90svh` media options | Guidance | — |
+
+**`width: 'full'` allowlist.**
+
+| Section | Reason |
+| --- | --- |
+| `slides-show` | Slide media behind content |
+| `routine-showcase` | Stage background |
+| `article`, `blog` | Hero media behind content |
+| `main-page-about` | Image behind content |
+| `ritual-steps` | Stage background; copy inset with `--page-inset` |
+| `promo-bannder` | Edge-to-edge panel media |
+| `google-map` | Map is the content (named exception) |
 
 Placement utilities (`place-top-left`, `place-center`, …) in `tailwind/tailwind.utilities.css` position content inside stage and media frames.
 
@@ -240,7 +282,7 @@ Placement utilities (`place-top-left`, `place-center`, …) in `tailwind/tailwin
 | --- | --- |
 | `content` | No fixed height on copy boxes |
 | `media` | `aspect-ratio` minimum; image `object-cover`; content may grow the frame |
-| `stage` | `section-frame--height-stage`: `display: grid` with one `minmax(0, 1fr)` row and `min-height: var(--section-stage-min-height)` (`100svh`, padding included via `box-sizing: border-box` on `.section-frame`). `.section-frame__inner` is the sole grid item and stretches to that row; a stretched grid item has a **definite** block size (CSS Grid), so descendant `height: 100%` / `h-full` chains resolve as under former `h-screen`. `.section-frame__stage` sets only `height: 100%` and `min-height: 0`, so the inner wrapper keeps its own display (`container-page` stays a grid). `section-frame__stage--center` adds `display: flex; flex-direction: column; justify-content: center` for vertically centred copy (404). |
+| `stage` | `section-frame--height-stage`: `display: grid` with one `minmax(0, 1fr)` row and `min-height: var(--section-stage-min-height)` (`var(--screen-height)` via `--section-stage-min-height` in `tailwind/tailwind.input.css`; padding included via `box-sizing: border-box` on `.section-frame`). `.section-frame__inner` is the sole grid item and stretches to that row; a stretched grid item has a **definite** block size (CSS Grid), so descendant `height: 100%` / `h-full` chains resolve as under former `h-screen`. `.section-frame__stage` sets only `height: 100%` and `min-height: 0`, so the inner wrapper keeps its own display (`container-page` stays a grid). `section-frame__stage--center` adds `display: flex; flex-direction: column; justify-content: center` for vertically centred copy (404). |
 | `stage-pc` | Same grid construction from `(width >= 48rem)` / `tablet` up only (`section-frame--height-stage-pc` inside the tablet breakpoint). Mobile stays content-sized. |
 
 Overlays cap with `dvh`. Do not use `vh` in new theme CSS. Controls and icons keep fixed sizes (24px touch-target floor).

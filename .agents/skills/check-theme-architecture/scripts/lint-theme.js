@@ -47,6 +47,10 @@ const {
     collectCssRawColourFailures,
     collectMarkupRawColourFailures,
 } = require('./lib/raw-colour-lint');
+const {
+    collectPageFrameLiquidFailures,
+    collectPageFrameCssFailures,
+} = require('./lib/page-frame-lint');
 
 const LIQUID_GLOBS = [
     'layout/**/*.liquid',
@@ -567,6 +571,7 @@ async function runThemeLint(root, notes = []) {
         collectTypographyTierFailures(ast, text, file, failures, allowsByLine);
         collectMarkupFontWeightFailures(text, file, failures, allowsByLine);
         collectMarkupRawColourFailures(text, file, failures, allowsByLine);
+        collectPageFrameLiquidFailures(text, file, failures, allowsByLine);
         collectStylesheetPlacementFailures(ast, text, file, failures, allowsByLine, { file });
 
         for (const block of extractBlocks(text, 'stylesheet')) {
@@ -607,6 +612,7 @@ async function runThemeLint(root, notes = []) {
         collectSettingsChainCssFailures(text, file, failures, allowsByLine);
         collectCssFontWeightFailures(text, file, failures, allowsByLine);
         collectCssRawColourFailures(text, file, failures, allowsByLine);
+        collectPageFrameCssFailures(text, file, failures, allowsByLine);
     }
 
     const hasThemeLayout = await fs

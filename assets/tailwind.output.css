@@ -59,7 +59,8 @@
     --spacing-gap-tight: clamp(0.3rem, 0.2171rem + 0.221vw, 0.5rem);
     --spacing-gap-related: clamp(0.6rem, 0.4343rem + 0.442vw, 1rem);
     --spacing-gap-group: clamp(0.9rem, 0.6514rem + 0.663vw, 1.5rem);
-    --section-stage-min-height: 100svh;
+    --screen-height: 100svh;
+    --section-stage-min-height: var(--screen-height);
     --animate-icon-breathe: icon-breathe 0.9s ease-in-out infinite;
   }
 }
@@ -933,9 +934,9 @@
     position: relative;
     display: grid;
     width: 100%;
-    grid-template-columns: minmax(var(--page-margin), 1fr) minmax(0, var(--page-width)) minmax(var(--page-margin), 1fr);
+    grid-template-columns: var(--page-grid-columns);
     & > * {
-      grid-column: 2;
+      grid-column: content;
     }
   }
   .sr-only {
@@ -5054,6 +5055,11 @@
     box-sizing: border-box;
     margin: 0;
   }
+  :root {
+    --page-inset: max(var(--page-margin), calc((100% - var(--page-width)) / 2));
+    --page-grid-columns: [full-start] minmax(var(--page-margin), 1fr) [content-start]
+        minmax(0, var(--page-width)) [content-end] minmax(var(--page-margin), 1fr) [full-end];
+  }
   html {
     scrollbar-gutter: stable;
     --sticky-viewport-gap: 1rem;
@@ -5166,13 +5172,13 @@
     position: relative;
     display: grid;
     width: 100%;
-    grid-template-columns: minmax(var(--page-margin), 1fr) minmax(0, var(--page-width)) minmax(var(--page-margin), 1fr);
+    grid-template-columns: var(--page-grid-columns);
   }
   .shopify-section > * {
-    grid-column: 2;
+    grid-column: content;
   }
   .shopify-section > .full-width {
-    grid-column: 1 / -1;
+    grid-column: full;
   }
   body > main {
     flex-grow: 1;

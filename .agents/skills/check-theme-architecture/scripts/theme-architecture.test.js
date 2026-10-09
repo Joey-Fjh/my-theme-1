@@ -2512,6 +2512,156 @@ test('6-V2 review: a same-named setting in another scope does not count as usage
     });
 });
 
+test('page-token-scope: sections must not read --page-width or --page-margin', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(
+            root,
+            'sections/good.liquid',
+            `<div class="x">{% stylesheet %}.x { padding-inline: var(--page-inset); }{% endstylesheet %}</div>\n`,
+        );
+        assert.deepEqual(
+            (await runThemeLint(root)).filter((f) => f.checkId === 'page-token-scope'),
+            [],
+        );
+    });
+    await withTempThemeAsync(async (root) => {
+        writeFile(
+            root,
+            'sections/bad.liquid',
+            `<div>{% stylesheet %}.x { margin-inline: var(--page-margin); }{% endstylesheet %}</div>\n`,
+        );
+        const failures = (await runThemeLint(root)).filter((f) => f.checkId === 'page-token-scope');
+        assert.equal(failures.length, 1);
+    });
+});
+
+test('screen-height-literal: one-screen heights use var(--screen-height)', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(
+            root,
+            'sections/good.liquid',
+            `<div>{% stylesheet %}.x { min-height: var(--screen-height); }{% endstylesheet %}</div>\n`,
+        );
+        assert.deepEqual(
+            (await runThemeLint(root)).filter((f) => f.checkId === 'screen-height-literal'),
+            [],
+        );
+    });
+    await withTempThemeAsync(async (root) => {
+        writeFile(
+            root,
+            'sections/bad.liquid',
+            `<div>{% stylesheet %}.x { min-height: 100svh; }{% endstylesheet %}</div>\n`,
+        );
+        const failures = (await runThemeLint(root)).filter((f) => f.checkId === 'screen-height-literal');
+        assert.equal(failures.length, 1);
+    });
+});
+
+test('frame-full-allowlist: width full only on allowlisted sections', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(root, 'sections/article.liquid', `{% render 'section-frame', width: 'full' %}\n`);
+        assert.deepEqual(
+            (await runThemeLint(root)).filter((f) => f.checkId === 'frame-full-allowlist'),
+            [],
+        );
+    });
+    await withTempThemeAsync(async (root) => {
+        writeFile(root, 'sections/featured-collection.liquid', `{% render 'section-frame', width: 'full' %}\n`);
+        const failures = (await runThemeLint(root)).filter((f) => f.checkId === 'frame-full-allowlist');
+        assert.equal(failures.length, 1);
+    });
+});
+
+test('6-C5 review: page frame lints resist bypasses and report true lines', async () => {
+    const lintIds = async (root, checkId) => (await runThemeLint(root)).filter((f) => f.checkId === checkId);
+
+    // Whitespace inside var( still reads the token; a commented mention does not.
+    await withTempThemeAsync(async (root) => {
+        writeFile(root, 'sections/spaced.liquid', `{% stylesheet %}.x { width: var( --page-width); }{% endstylesheet %}\n`);
+        writeFile(root, 'sections/commented.liquid', `{% comment %}var(--page-width){% endcomment %}{%- # var(--page-margin) -%}\n`);
+        const failures = await lintIds(root, 'page-token-scope');
+        assert.deepEqual(failures.map((f) => f.file), ['sections/spaced.liquid']);
+    });
+
+    // CRLF files report the real line.
+    await withTempThemeAsync(async (root) => {
+        writeFile(root, 'sections/crlf.liquid', `${'<div></div>\r\n'.repeat(100)}{% stylesheet %}.x { min-height: 100lvh; }{% endstylesheet %}\r\n`);
+        const failures = await lintIds(root, 'screen-height-literal');
+        assert.deepEqual(failures.map((f) => f.line), [101]);
+    });
+
+    // Only the exact header menu cap is excepted, not another 100dvh or a literal on the same line.
+    await withTempThemeAsync(async (root) => {
+        writeFile(
+            root,
+            'sections/header.liquid',
+            [
+                '{% stylesheet %}',
+                '.menu { max-height: calc(100dvh - var(--announcement-bar-height) - var(--header-height)); }',
+                '.page { max-height: calc(100dvh - 1rem); }',
+                '.menu { max-height: calc(100dvh - var(--announcement-bar-height) - var(--header-height)); height: 100lvh; }',
+                '{% endstylesheet %}',
+                '',
+            ].join('\n'),
+        );
+        const failures = await lintIds(root, 'screen-height-literal');
+        assert.deepEqual(failures.map((f) => f.line), [3, 4]);
+    });
+
+    // Layout files are in scope.
+    await withTempThemeAsync(async (root) => {
+        writeFile(root, 'layout/theme.liquid', `<style>.x { min-height: 100vh; }</style>\n`);
+        assert.equal((await lintIds(root, 'screen-height-literal')).length, 1);
+    });
+
+    // Full width: double quotes and snippets count, other renders and liquid-tag neighbours do not.
+    await withTempThemeAsync(async (root) => {
+        writeFile(root, 'sections/double-quoted.liquid', `{% render "section-frame", width: "full" %}\n`);
+        writeFile(root, 'snippets/frame-wrapper.liquid', `{% render 'section-frame',\n    section: section,\n    width: 'full'\n%}\n`);
+        writeFile(
+            root,
+            'sections/other-render.liquid',
+            `{% render 'image', width: 'full' %}\n{% liquid\n  render 'section-frame', width: 'page'\n  render 'button', width: 'full'\n%}\n`,
+        );
+        const failures = await lintIds(root, 'frame-full-allowlist');
+        assert.deepEqual(
+            failures.map((f) => `${f.file}:${f.line}`).sort(),
+            ['sections/double-quoted.liquid:1', 'snippets/frame-wrapper.liquid:3'],
+        );
+    });
+});
+
+test('6-C5 review 2: comment, whitespace and quoting edge cases', async () => {
+    const lintIds = async (root, checkId) => (await runThemeLint(root)).filter((f) => f.checkId === checkId);
+
+    // A quoted `/*` cannot hide live CSS: CSS and HTML comments are not masked, so mentions there fail closed.
+    await withTempThemeAsync(async (root) => {
+        writeFile(root, 'sections/quoted.liquid', `{% stylesheet %}.x{content:"/*";height:100svh;width:var(--page-width)} /* note */{% endstylesheet %}\n`);
+        assert.equal((await lintIds(root, 'screen-height-literal')).length, 1);
+        assert.equal((await lintIds(root, 'page-token-scope')).length, 1);
+    });
+
+    // Tag form with deep indentation before `render` keeps the multiline arguments.
+    await withTempThemeAsync(async (root) => {
+        writeFile(root, 'sections/indented.liquid', `{%          render 'section-frame',\n    width: 'full'\n%}\n`);
+        assert.deepEqual((await lintIds(root, 'frame-full-allowlist')).map((f) => f.line), [2]);
+    });
+
+    // Text inside another quoted argument is not a width argument; `{% liquid %}` comment lines are not code.
+    await withTempThemeAsync(async (root) => {
+        writeFile(root, 'sections/quoted-arg.liquid', `{% render 'section-frame', width: 'page', root_attrs: "width: 'full'" %}\n`);
+        writeFile(root, 'sections/liquid-comment.liquid', `{% liquid\n  # render 'section-frame', width: 'full'\n  echo 1\n%}\n`);
+        assert.deepEqual(await lintIds(root, 'frame-full-allowlist'), []);
+    });
+
+    // page-token-scope stays on sections and snippets, as authorized.
+    await withTempThemeAsync(async (root) => {
+        writeFile(root, 'layout/theme.liquid', `<style>.x { width: var(--page-width); }</style>\n`);
+        assert.deepEqual(await lintIds(root, 'page-token-scope'), []);
+    });
+});
+
 test('6-V2 review: a setting referenced only in a Liquid comment is dead', async () => {
     for (const markup of [
         '{% comment %}{{ section.settings.note }}{% endcomment %}',
