@@ -287,17 +287,36 @@ Placement utilities (`place-top-left`, `place-center`, …) in `tailwind/tailwin
 
 Overlays cap with `dvh`. Do not use `vh` in new theme CSS. Controls and icons keep fixed sizes (24px touch-target floor).
 
-## Spacing tokens (5-C3a)
+## Space scale (6-C7)
 
-Three relationship-named fluid gaps in `tailwind/tailwind.input.css`, consumed as `gap-tight`, `gap-related`, and `gap-group` in `tailwind/tailwind.utilities.css`:
+One fluid scale in `tailwind/tailwind.input.css` (`@theme inline`). Each step is a multiple of one base that runs from 6px at `100vw` = 375px to 10px at `100vw` = 1280px, the same 0.6× linear `clamp()` as section padding, written in `rem` (10px on the 62.5% root). The endpoints are in `vw` terms: the root keeps `scrollbar-gutter: stable`, so on desktop `100vw` excludes the classic scrollbar (about 15px) and a 1280px browser window computes slightly below the maximum (60px reads 59.6px). Mobile overlay scrollbars take no width, so the 375px end is exact. Measure the endpoints at a width where `100vw` equals the column header. Because the steps live in Tailwind's `--spacing-*` namespace, every spacing utility accepts them: `gap-step-m`, `mt-step-l`, `px-step-s`, `space-y-step-xs`; stylesheets read `var(--spacing-step-m)`.
 
-| Token | Desktop target (dominant legacy utility) |
-| --- | --- |
-| `--spacing-gap-tight` | `gap-2` (0.5rem, 5px on the 62.5% root) |
-| `--spacing-gap-related` | `gap-4` (1rem, 10px) |
-| `--spacing-gap-group` | `gap-6` (1.5rem, 15px) |
+| Step | × base | `100vw` = 375px | `100vw` = 1280px |
+| --- | --- | --- | --- |
+| `step-3xs` | 0.25 | 1.5px | 2.5px |
+| `step-2xs` | 0.5 | 3px | 5px |
+| `step-xs` | 0.75 | 4.5px | 7.5px |
+| `step-s` | 1 | 6px | 10px |
+| `step-m` | 1.5 | 9px | 15px |
+| `step-l` | 2 | 12px | 20px |
+| `step-xl` | 3 | 18px | 30px |
+| `step-2xl` | 4 | 24px | 40px |
+| `step-3xl` | 6 | 36px | 60px |
 
-Each token uses the same linear `clamp()` as section padding (0.6× at 375px viewport width to 1× at 1280px), written in `rem` so it stays on Tailwind's spacing unit (`--spacing: 0.25rem`, 2.5px on the 62.5% root set in `assets/base.css`). Convert Tailwind spacing to pixels with that unit, not 4px. Prefer `gap` utilities; margin and `space-y` are exceptions.
+**Why `step-`.** A bare `--spacing-xl` or `--spacing-2xl` makes Tailwind resolve `max-w-xl` / `max-w-2xl` to the spacing value instead of `--container-*`. Keep the prefix for any new step.
+
+**Semantic aliases** (map design intent to these first; use a step only when no alias fits):
+
+| Alias | Step | Intent |
+| --- | --- | --- |
+| `tight` | `2xs` | parts of one item (icon and label, price and badge) |
+| `related` | `s` | items of one group (heading and text, stacked copy) |
+| `group` | `m` | groups inside a block (copy group and actions) |
+| `section` | `xl` | header group to body inside a section (provisional value) |
+
+`snippets/content-group.liquid` maps its `gap` parameter to `gap-tight`, `gap-related`, and `gap-group`.
+
+**Old-to-new table** (raw Tailwind unit `--spacing: 0.25rem`, 2.5px on the 62.5% root; convert with that unit, not 4px): `1`→`3xs`, `2`→`2xs`, `3`→`xs`, `4`→`s`, `5`→`m`, `6`→`m`, `8`→`l`, `10`→`xl`, `12`→`xl`, `16`→`2xl`, `20`→`3xl`, `24`→`3xl`. Larger values and positioning offsets (`inset`, `top`, `left`, …) are named exceptions. Raw values are fixed and steps are fluid, so a migrated value shrinks to 0.6× on mobile; the polish pass owns that change. `lint:theme` `raw-spacing` (a ratchet baseline) keeps new raw spacing utilities out. Values map today's rendering; calibration comes from the design.
 
 **Section padding clamp** (merchant setting `v` in px, computed in `section-frame`):
 
