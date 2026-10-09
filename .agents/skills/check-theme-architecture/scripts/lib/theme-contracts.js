@@ -426,14 +426,14 @@ function collectTypographyTierFailures(ast, text, file, failures, allowsByLine) 
         const line = lineAt(text, node.position?.start ?? 0);
 
         if (!HEADING_TAGS.has(tagName)) {
-            if (/\bheading-h[1-6]\b/.test(classValues)) {
+            if (/\bheading-h[1-6]\b/.test(classValues) || /\btitle-(?:xs|s|m|l|xl|2xl|3xl|4xl)\b/.test(classValues)) {
                 pushFailure(
                     failures,
                     allowsByLine,
                     file,
                     line,
                     CHECK.TYPOGRAPHY_TIER_HEADING,
-                    `heading-h* tiers belong on h1–h6 elements, not <${tagName}>.`,
+                    `heading-h* and title-* tiers belong on h1–h6 elements, not <${tagName}>.`,
                 );
             }
         }

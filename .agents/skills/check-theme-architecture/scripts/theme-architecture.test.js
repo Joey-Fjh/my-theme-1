@@ -1044,13 +1044,29 @@ test('heading-h tier on div fails', async () => {
     await withTempThemeAsync(async (root) => {
         writeFile(root, 'sections/fixture.liquid', `<div class="heading-h2">Title</div>\n`);
         const failures = await runThemeLint(root);
-        assert.match(failureMessages(failures), /heading-h\* tiers belong on h1–h6/);
+        assert.match(failureMessages(failures), /heading-h\* and title-\* tiers belong on h1–h6/);
+    });
+});
+
+test('title tier on div fails', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(root, 'sections/fixture.liquid', `<div class="title-m">Title</div>\n`);
+        const failures = await runThemeLint(root);
+        assert.match(failureMessages(failures), /heading-h\* and title-\* tiers belong on h1–h6/);
     });
 });
 
 test('heading-h tier on h2 passes', async () => {
     await withTempThemeAsync(async (root) => {
         writeFile(root, 'sections/fixture.liquid', `<h2 class="heading-h2">Title</h2>\n`);
+        const failures = await runThemeLint(root);
+        assert.equal(failures.length, 0);
+    });
+});
+
+test('title tier on h2 passes', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(root, 'sections/fixture.liquid', `<h2 class="title-m">Title</h2>\n`);
         const failures = await runThemeLint(root);
         assert.equal(failures.length, 0);
     });

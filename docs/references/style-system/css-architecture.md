@@ -318,6 +318,48 @@ One fluid scale in `tailwind/tailwind.input.css` (`@theme inline`). Each step is
 
 **Old-to-new table** (raw Tailwind unit `--spacing: 0.25rem`, 2.5px on the 62.5% root; convert with that unit, not 4px): `1`→`3xs`, `2`→`2xs`, `3`→`xs`, `4`→`s`, `5`→`m`, `6`→`m`, `8`→`l`, `10`→`xl`, `12`→`xl`, `16`→`2xl`, `20`→`3xl`, `24`→`3xl`. Larger values and positioning offsets (`inset`, `top`, `left`, …) are named exceptions. Raw values are fixed and steps are fluid, so a migrated value shrinks to 0.6× on mobile; the polish pass owns that change. `lint:theme` `raw-spacing` (a ratchet baseline) keeps new raw spacing utilities out. Values map today's rendering; calibration comes from the design.
 
+## Type scale (6-C8)
+
+Eleven fluid steps `--type-step--2` .. `--type-step-8` in `snippets/css-variables.liquid`. Each step is base × ratio^n at both ends of the viewport range, with ratio interpolating from 1.2 at `100vw` = 375px to 1.25 at 1280px (fixed in code). The mobile and desktop body size settings (`body_font_size_mobile`, `body_font_size`; defaults 14 and 16) are the step-0 bases. Values are `clamp()`s in `rem` on the 62.5% root (same linear `vw` shape as the space scale). Step 3 exists on the scale but has no dedicated semantic utility yet.
+
+**Semantic utilities** in `tailwind/tailwind.typography.css` (names do not start with `heading-` or `body-`, so the legacy-type-tier ratchet does not count them):
+
+| Utility | Step | Role |
+| --- | --- | --- |
+| `title-xs` | 0 | Heading scale × `--font-heading-scale` on `heading-base` |
+| `title-s` | 1 | |
+| `title-m` | 2 | |
+| `title-l` | 4 | |
+| `title-xl` | 5 | |
+| `title-2xl` | 6 | |
+| `title-3xl` | 7 | |
+| `title-4xl` | 8 | |
+| `copy-s` | −1 | Body scale × `--font-body-scale` on `body-base` |
+| `copy-m` | 0 | |
+| `copy-l` | 1 | |
+| `copy-xl` | 2 | |
+
+**Legacy tier aliases** (same computed size as the mapped utility; no 768px size switch):
+
+| Legacy | Maps to |
+| --- | --- |
+| `heading-h6`, `heading-h5`, `heading-h4` | `title-xs` (step 0) |
+| `heading-h3` | `title-s` (1) |
+| `heading-h2` | `title-m` (2) |
+| `heading-h1` | `title-l` (4) |
+| `heading-xl` | `title-xl` (5) |
+| `heading-2xl` | `title-2xl` (6) |
+| `heading-3xl` | `title-3xl` (7) |
+| `heading-4xl` | `title-4xl` (8) |
+| `body-xs`, `body-sm` | `copy-s` (−1) |
+| `body-md` | `copy-m` (0) |
+| `body-lg`, `body-xl` | `copy-l` (1) |
+| `body-2xl`, `body-3xl` | `copy-xl` (2) |
+
+`heading-size-custom` and `body-size-custom` are unchanged.
+
+**Merchant size selects** use the semantic option values above (eight heading, four body). Labels come from `t:settings.type_size.*` in `locales/en.default.schema.json`. A mixed select (heading and body sizes in one list, for example the `collection-list` card titles) offers the mapped values of its old options only, ordered by step, with role-qualified labels from `t:settings.type_size_mixed.*` ("Heading: Medium", "Text: Large") so equal steps from the two roles stay distinguishable. A section stylesheet never sets an absolute `font-size` on an element whose size comes from a merchant setting; the stylesheet wins over utilities and would mute the setting. Relative values (`inherit`, `em`, `%`) follow the setting and are allowed.
+
 **Section padding clamp** (merchant setting `v` in px, computed in `section-frame`):
 
 `clamp(0.6v px, a px + b vw, v px)` with `b = 40v / 905`, `a = 0.6v − 3.75b` (three decimal places). `v = 0` yields `0`. The root sets `--section-frame-padding-top` and `--section-frame-padding-bottom`; `snippets/section-frame.liquid` stylesheet applies them on the root by default, or on descendants via `padding_mode: overlay` and `section-frame__overlay-padding`, `section-frame__overlay-padding-top`, or `section-frame__overlay-padding-bottom` (the one-sided classes set only their own side; pair `section-frame__overlay-safe-top` on a top block for the first-section-only header offset). First-section header offset uses `main > .shopify-section:first-child > .section-frame:not(.section-frame--no-safe-top)` (and overlay safe-top descendants when `padding_mode: overlay`). `safe_top: false` adds `section-frame--no-safe-top`. By default `.section-frame` clips (`overflow: hidden`). Pass `element: main`, `header`, or `footer` when the section root must be a landmark (password template); default `div`. Pass `clip: false` when sticky descendants must not be clipped vertically (product core sections): it adds `section-frame--no-clip` to the root, which sets `overflow-x: clip` and `overflow-y: visible` on the root and its direct `.section-frame__inner`. `.section-frame__inner` is positioned but sets no `z-index`, so fixed overlays rendered inside a section (drawers, modals) stack against the header as they did before the frame; tree order paints it above `.section-frame__background`.

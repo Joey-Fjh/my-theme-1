@@ -156,6 +156,36 @@
         --font-heading-text-transform: {{ settings.heading_text_transform }};
         --font-heading-scale: {{ settings.heading_scale | divided_by: 100.0 }};
 
+        {%- comment -%} Fluid type steps (6-C8): base × ratio^n, ratio 1.2→1.25 from 375px to 1280px {%- endcomment -%}
+        {%- assign type_step_keys = '-2,-1,0,1,2,3,4,5,6,7,8' | split: ',' -%}
+        {%- for step_key in type_step_keys -%}
+            {%- liquid
+                assign step_num = step_key | plus: 0
+                assign mob_micro = theme_body_font_size_mobile | times: 10000
+                assign desk_micro = theme_body_font_size | times: 10000
+                if step_num < 0
+                    assign abs_n = step_num | times: -1
+                    for i in (1..abs_n)
+                        assign mob_micro = mob_micro | times: 10 | divided_by: 12
+                        assign desk_micro = desk_micro | times: 100 | divided_by: 125
+                    endfor
+                elsif step_num > 0
+                    for i in (1..step_num)
+                        assign mob_micro = mob_micro | times: 12 | divided_by: 10
+                        assign desk_micro = desk_micro | times: 125 | divided_by: 100
+                    endfor
+                endif
+                assign min_r = mob_micro | times: 1.0 | divided_by: 100000
+                assign max_r = desk_micro | times: 1.0 | divided_by: 100000
+                assign diff_r = max_r | minus: min_r
+                assign b_vw = diff_r | divided_by: 0.905
+                assign b_at_min = b_vw | times: 0.375
+                assign a_rem = min_r | minus: b_at_min
+                assign type_step_token = 'type-step-' | append: step_key
+            -%}
+        --{{ type_step_token }}: clamp({{ min_r | round: 4 }}rem, {{ a_rem | round: 4 }}rem + {{ b_vw | round: 4 }}vw, {{ max_r | round: 4 }}rem);
+        {%- endfor -%}
+
         {% if settings.subtitle_font_source == 'body' %}
             --font-subtitle-family: var(--font-body-family);
             --font-subtitle-style: var(--font-body-style);
