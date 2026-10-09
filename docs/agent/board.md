@@ -6,7 +6,7 @@ Last updated: 2026-10-09.
 
 ## Open decisions
 
-**Done: 6-C1 to 6-C4.** 6-C1 to 6-C3 in `2bd5533` (migration ratchet, breakpoint tokens and hover variants, loaded weights only). 6-C4 accepted by the user 2026-10-09 after independent review round 3 PASS and the browser look (layered colour tokens: alpha steps, roles re-declared per scheme, scrims, three shadows, `raw-colour` and `colour-role-sync` lints, `scan:contrast`; plan and review rounds: `git show 6b439ca:docs/agent/context.md`). Contracts: `docs/references/style-system/css-architecture.md`. Next in the order: 6-V2 (validator batch), then 6-C5.
+**Done: 6-C1 to 6-C4.** 6-C1 to 6-C3 in `2bd5533` (migration ratchet, breakpoint tokens and hover variants, loaded weights only). 6-C4 accepted by the user 2026-10-09 after independent review round 3 PASS and the browser look (layered colour tokens: alpha steps, roles re-declared per scheme, scrims, three shadows, `raw-colour` and `colour-role-sync` lints, `scan:contrast`; plan and review rounds: `git show 6b439ca:docs/agent/context.md`). Contracts: `docs/references/style-system/css-architecture.md`. 6-V2 done 2026-10-09 (review round 2 PASS): `js-custom-event`, `js-section-mutation`, `dead-setting` (0 dead settings; three dynamic-access files reported as unprovable) and three reference fixes. Next in the order: 6-C5.
 
 **Decided: audit practice** (user, 2026-10-09).
 - **Per CSS batch:** the scope discussion runs a three-part audit of its domain (bypasses of the chain, redundant or leftover code, rule holes). Findings go into the plan; the batch's baseline is cleared when it closes. 6-C4 is the first.
@@ -16,10 +16,7 @@ Last updated: 2026-10-09.
 - **Closed-area audit, done** (external Sonnet session, 2026-10-09; report not kept, the findings are filed below; 4 BYPASS, 4 LEFTOVER, 8 RULE HOLE, 2 UNPROVEN; it ran before 6-C4 Part A, so its `lint:theme` pass predates `raw-colour`). Filed by owner; the coordinator spot-checked the doc findings.
     - **6-C5 (already planned there, confirmed):** the four viewport-height bypasses (`featured-product`, `promo-bannder`, `ritual-steps`, `routine-showcase`) and the missing viewport-unit lint.
     - **6-T4 (CI):** `test:layout` is required by `AGENTS.md` but not in CI; CI needs a runner strategy for the dev server.
-    - **Validator batch 6-V2** (accepted by the user 2026-10-09; runs after 6-C4 closes, before 6-C5; together with the reference fixes below):
-        - a dead-settings lint (needs a cross-file consumer graph: `padding_top` and `color_scheme` are read through `section-frame`, so a per-file scan is wrong);
-        - `lint:theme` rules for `new CustomEvent` outside `events.js` and `innerHTML =` / `outerHTML =` / `replaceWith(` outside `https.js`, replacing the manual phase 3 greps in `docs/project.md`.
-    - **Reference fixes (harness, user-owned):** `css-architecture.md` `stage-pc` row still says "`pc` media query" (code: `width >= 48rem`, confirmed); `javascript-runtime.md` repeats the GSAP on-demand boundary under "Motion Runtime Boundary" and "CSS / Alpine Boundary" (confirmed); its File Ownership table lists about 10 of 50+ modules (mark as illustrative or regenerate).
+    - **Validator batch 6-V2:** done 2026-10-09 (see the Done line above).
     - **Record fix (coordinator):** done 2026-10-09 (6-C1 and 6-C3 lines in the batch order).
     - **No action:** `gift-card.js` listener skip is a documented exception; `motion-reveal.js` size is the known deferred motion item; only English locales exist (a release or Theme Store question, not a code leftover); hard-coded Liquid copy beyond the validators is UNPROVEN, reviewed per new section.
 
@@ -401,7 +398,6 @@ Design phase inputs:
 
 - Component CSS: the shared rules in `tailwind/tailwind.components.css` (product info blocks, quick view, marquee) are reworked in the design phase (user, 2026-10-03).
 - Design phase: font faces. The theme loads the base weight and bold only, so `font-medium` renders with the 400 face and `font-semibold` with the 700 face. Load more weights if the design needs them.
-- Design phase: overlay colour. The `dialog-overlay` token is black at 45%, while markup also uses `bg-black/45`, `/60` and `/80` scrims. Decide whether scrims share the token.
 - Design phase: article's `padding_top` setting has had no effect since before the frame (the hero carries no section padding and the body block was `layout-no-pt`); 5-C3d3 kept that. Decide with the design rework whether it should apply. **Decided (user, 2026-10-08):** fix it; top and bottom padding are a standard section setting. The article top moves by the stored template value (32), which the user checks. It is also the first known case for the dead-setting lint in the readiness definition.
 - Design phase (user, 2026-10-03): only hero-type sections such as the home slideshow are expected to fill the screen; whether other sections keep a set distance from a full screen is decided with the home page redesign. 5-C3c keeps today's heights, identical or close.
 

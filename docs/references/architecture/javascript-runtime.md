@@ -221,6 +221,8 @@ The `dialog` store in `dialog.js` owns every `ui-dialog` shell and shared media 
 | `fetch(` / `XMLHttpRequest` | `https.js` |
 | `/cart/` paths and `routes.cart_` | `cart.contract.js` |
 | Global listeners: `document.addEventListener` / `window.addEventListener` | `base.js`, `events.js`, `https.js`, `utils.js`, `alpine.adapter.js` |
+| `new CustomEvent` (`js-custom-event`) | `events.js` |
+| `innerHTML =`, `outerHTML =`, `.replaceWith(` (`js-section-mutation`) | `https.js` |
 
 `gift-card.js` renders outside the module graph (`templates/gift_card.liquid`) and is excluded from these outlet checks. It uses classic `defer` scripts and may attach `document` listeners directly.
 
@@ -245,9 +247,11 @@ GSAP is optional narrative choreography only. The vendored runtime loads on dema
 
 - Alpine owns state and trigger behaviour through adapter-registered factories and stores.
 - `tailwind.animates.css` owns animation capability CSS.
-- GSAP is optional narrative choreography only. It loads on demand through `motion-gsap.js` and must not share `opacity` or `transform` ownership with Alpine/CSS on the same element.
+- GSAP on-demand loading and transform ownership follow **Motion Runtime Boundary** above; do not duplicate that policy here.
 
 ## File Ownership
+
+Illustrative map of core outlets and a few feature modules. The full module inventory is the import map in `snippets/scripts.liquid` (every `data-module-id` and static `import` in `assets/*.js`).
 
 | Area | Location |
 | --- | --- |

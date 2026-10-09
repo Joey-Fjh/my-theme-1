@@ -241,7 +241,7 @@ Placement utilities (`place-top-left`, `place-center`, …) in `tailwind/tailwin
 | `content` | No fixed height on copy boxes |
 | `media` | `aspect-ratio` minimum; image `object-cover`; content may grow the frame |
 | `stage` | `section-frame--height-stage`: `display: grid` with one `minmax(0, 1fr)` row and `min-height: var(--section-stage-min-height)` (`100svh`, padding included via `box-sizing: border-box` on `.section-frame`). `.section-frame__inner` is the sole grid item and stretches to that row; a stretched grid item has a **definite** block size (CSS Grid), so descendant `height: 100%` / `h-full` chains resolve as under former `h-screen`. `.section-frame__stage` sets only `height: 100%` and `min-height: 0`, so the inner wrapper keeps its own display (`container-page` stays a grid). `section-frame__stage--center` adds `display: flex; flex-direction: column; justify-content: center` for vertically centred copy (404). |
-| `stage-pc` | Same grid construction from `48rem` up only (`section-frame--height-stage-pc` inside the `pc` media query). Mobile stays content-sized. |
+| `stage-pc` | Same grid construction from `(width >= 48rem)` / `tablet` up only (`section-frame--height-stage-pc` inside the tablet breakpoint). Mobile stays content-sized. |
 
 Overlays cap with `dvh`. Do not use `vh` in new theme CSS. Controls and icons keep fixed sizes (24px touch-target floor).
 
@@ -308,8 +308,8 @@ Three Shopify platform constraints govern `{% stylesheet %}` and `{% javascript 
     - the `can-hover` pair;
     - `prefers-reduced-motion`;
     - any of these joined by `and`.
+    - `lint:theme` rejects px values, `min-width` / `max-width` spellings and other numbers. Custom properties and Tailwind's theme function do not work in media queries there.
 - **`no-hover` stands alone.** CSS grammar does not allow `not (…)` to be joined by `and` without extra parentheses. To combine it with a width, nest a width query inside the `no-hover` block.
-  `lint:theme` rejects px values, `min-width` / `max-width` spellings and other numbers. Custom properties and `theme()` do not work in media queries there.
 
 ## Font weights (6-C3)
 

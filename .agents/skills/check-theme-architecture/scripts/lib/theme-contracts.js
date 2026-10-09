@@ -21,6 +21,8 @@ const CHECK = {
     JS_FETCH_OUTLET: 'js-fetch-outlet',
     JS_CART_ROUTE_OUTLET: 'js-cart-route-outlet',
     JS_DOCUMENT_OUTLET: 'js-document-outlet',
+    JS_CUSTOM_EVENT: 'js-custom-event',
+    JS_SECTION_MUTATION: 'js-section-mutation',
     JS_USER_VISIBLE_COPY: 'js-user-visible-copy',
     MODULE_DATA_MODULE_ID: 'module-data-module-id',
     MODULE_IMPORT_MAP: 'module-import-map',
@@ -178,6 +180,8 @@ const JS_OUTLET_FILES = {
         'assets/utils.js',
         'assets/alpine.adapter.js',
     ]),
+    customEvent: new Set(['assets/events.js']),
+    sectionMutation: new Set(['assets/https.js']),
 };
 
 const JS_LINT_SKIP = new Set(['assets/gift-card.js']);
@@ -548,7 +552,7 @@ function collectStylesheetDirectiveFailures(cssText, file, failures, allowsByLin
                 file,
                 lineAt(lineText, baseOffset + offset),
                 CHECK.STYLESHEET_DIRECTIVE,
-                '{% stylesheet %} blocks are not compiled by Tailwind; do not call theme(), --spacing(), or --alpha() (the browser drops the rule). Use var() tokens or literal media queries such as (min-width: 64rem).',
+                "{% stylesheet %} blocks are not compiled by Tailwind; do not call Tailwind's theme, --spacing or --alpha functions (the browser drops the rule). Use var() tokens or literal media queries such as (width >= 64rem).",
             );
         }
         offset += line.length + 1;
@@ -556,6 +560,7 @@ function collectStylesheetDirectiveFailures(cssText, file, failures, allowsByLin
 }
 
 function collectJsOutletFailures(root, failures) {
+    const { parseLineAllows, pushFailure } = require('./lint-allow');
     const files = fg.sync('assets/*.js', { cwd: root, onlyFiles: true }).map(formatPath);
 
     for (const file of files) {
@@ -564,6 +569,7 @@ function collectJsOutletFailures(root, failures) {
         }
 
         const source = require('node:fs').readFileSync(path.join(root, file), 'utf8');
+        const allowsByLine = parseLineAllows(source);
         const lines = source.split(/\r\n|\r|\n/);
 
         lines.forEach((line, index) => {
@@ -571,46 +577,84 @@ function collectJsOutletFailures(root, failures) {
 
             if (/\bwindow\.Alpine\b/.test(line) || /\bAlpine\./.test(line)) {
                 if (!JS_OUTLET_FILES.alpine.has(file)) {
-                    failures.push({
+                    pushFailure(
+                        failures,
+                        allowsByLine,
                         file,
-                        line: lineNumber,
-                        checkId: CHECK.JS_ALPINE_OUTLET,
-                        message: 'Alpine APIs belong in alpine.adapter.js only.',
-                    });
+                        lineNumber,
+                        CHECK.JS_ALPINE_OUTLET,
+                        'Alpine APIs belong in alpine.adapter.js only.',
+                    );
                 }
             }
 
             if (/\bfetch\s*\(/.test(line) || /\bXMLHttpRequest\b/.test(line)) {
                 if (!JS_OUTLET_FILES.fetch.has(file)) {
-                    failures.push({
+                    pushFailure(
+                        failures,
+                        allowsByLine,
                         file,
-                        line: lineNumber,
-                        checkId: CHECK.JS_FETCH_OUTLET,
-                        message: 'HTTP requests belong in https.js only.',
-                    });
+                        lineNumber,
+                        CHECK.JS_FETCH_OUTLET,
+                        'HTTP requests belong in https.js only.',
+                    );
                 }
             }
 
             if (/\/cart\//.test(line) || /\broutes\.cart_/.test(line)) {
                 if (!JS_OUTLET_FILES.cart.has(file)) {
-                    failures.push({
+                    pushFailure(
+                        failures,
+                        allowsByLine,
                         file,
-                        line: lineNumber,
-                        checkId: CHECK.JS_CART_ROUTE_OUTLET,
-                        message: 'Cart routes belong in cart.contract.js only.',
-                    });
+                        lineNumber,
+                        CHECK.JS_CART_ROUTE_OUTLET,
+                        'Cart routes belong in cart.contract.js only.',
+                    );
                 }
             }
 
             if (/\b(?:document|window)\.addEventListener\b/.test(line)) {
                 if (!JS_OUTLET_FILES.document.has(file)) {
-                    failures.push({
+                    pushFailure(
+                        failures,
+                        allowsByLine,
                         file,
-                        line: lineNumber,
-                        checkId: CHECK.JS_DOCUMENT_OUTLET,
-                        message:
-                            'Global document/window listeners belong in base.js, events.js, https.js, utils.js, or alpine.adapter.js.',
-                    });
+                        lineNumber,
+                        CHECK.JS_DOCUMENT_OUTLET,
+                        'Global document/window listeners belong in base.js, events.js, https.js, utils.js, or alpine.adapter.js.',
+                    );
+                }
+            }
+
+            // Also the global-qualified spellings (`new window.CustomEvent`, `new globalThis.CustomEvent`, `new self.CustomEvent`).
+            if (/\bnew\s+(?:(?:window|globalThis|self)\s*\.\s*)?CustomEvent\b/.test(line)) {
+                if (!JS_OUTLET_FILES.customEvent.has(file)) {
+                    pushFailure(
+                        failures,
+                        allowsByLine,
+                        file,
+                        lineNumber,
+                        CHECK.JS_CUSTOM_EVENT,
+                        'new CustomEvent belongs in events.js only (ThemeEvents).',
+                    );
+                }
+            }
+
+            if (
+                /\binnerHTML\s*=/.test(line) ||
+                /\bouterHTML\s*=/.test(line) ||
+                /\.replaceWith\s*\(/.test(line)
+            ) {
+                if (!JS_OUTLET_FILES.sectionMutation.has(file)) {
+                    pushFailure(
+                        failures,
+                        allowsByLine,
+                        file,
+                        lineNumber,
+                        CHECK.JS_SECTION_MUTATION,
+                        'Section HTML mutation (innerHTML, outerHTML, replaceWith) belongs in https.js only (SectionRefresher).',
+                    );
                 }
             }
         });

@@ -30,6 +30,15 @@ const {
     writeBaselineFile,
 } = require('./lib/migration-lint');
 const {
+    collectDeadSettingEntries,
+    collectDeadSettingFailures,
+    baselinePath: deadSettingsBaselinePath,
+    readBaseline: readDeadSettingsBaseline,
+    shrinkBaseline: shrinkDeadSettingsBaseline,
+    toBaseline: toDeadSettingsBaseline,
+    writeBaselineFile: writeDeadSettingsBaselineFile,
+} = require('./lib/dead-setting-lint');
+const {
     collectCssFontWeightFailures,
     collectMarkupFontWeightFailures,
 } = require('./lib/font-weight-lint');
@@ -622,6 +631,7 @@ async function runThemeLint(root, notes = []) {
     collectSectionColorSchemeFailures(root, failures);
     collectColourRoleSyncFailures(root, failures);
     collectMigrationFailures(root, failures, notes);
+    collectDeadSettingFailures(root, failures, notes);
 
     if (hasAssets && hasVendorNotices) {
         collectVendorNoticeFailures(root, failures);
@@ -654,9 +664,40 @@ function runMigrationBaselineFlag(root, argv) {
     return null;
 }
 
+/** Returns an exit code, or null when no dead-settings baseline flag was given. */
+function runDeadSettingsBaselineFlag(root, argv) {
+    if (argv.includes('--write-dead-settings-baseline')) {
+        if (require('node:fs').existsSync(deadSettingsBaselinePath(root))) {
+            console.error('--write-dead-settings-baseline refused: the baseline already exists.');
+            return 1;
+        }
+        const { entries } = collectDeadSettingEntries(root);
+        writeDeadSettingsBaselineFile(root, toDeadSettingsBaseline(entries));
+        console.log('Dead-settings baseline written.');
+        return 0;
+    }
+    if (argv.includes('--shrink-dead-settings-baseline')) {
+        const baseline = readDeadSettingsBaseline(root);
+        if (!baseline) {
+            console.error('--shrink-dead-settings-baseline refused: no baseline exists.');
+            return 1;
+        }
+        const { entries } = collectDeadSettingEntries(root);
+        writeDeadSettingsBaselineFile(root, shrinkDeadSettingsBaseline(baseline, entries));
+        console.log('Dead-settings baseline shrunk to the current entries.');
+        return 0;
+    }
+    return null;
+}
+
 async function main(argv = process.argv) {
     const root = parseRootArg(argv);
-    const flagExit = runMigrationBaselineFlag(root, argv);
+    let flagExit = runDeadSettingsBaselineFlag(root, argv);
+    if (flagExit !== null) {
+        process.exitCode = flagExit;
+        return;
+    }
+    flagExit = runMigrationBaselineFlag(root, argv);
     if (flagExit !== null) {
         process.exitCode = flagExit;
         return;

@@ -2260,3 +2260,268 @@ test('colour-role-sync review round 2: a conditional or repeated per-scheme role
         assert.deepEqual(sync(await runThemeLint(root)), []);
     });
 });
+
+const DEAD_SETTINGS_BASELINE =
+    '.agents/skills/check-theme-architecture/scripts/dead-settings-baseline.json';
+
+function writeJsOutletFixture(root, jsFile, jsBody) {
+    writeFile(root, 'assets/events.js', 'export {};\n');
+    writeFile(root, 'assets/https.js', 'export {};\n');
+    writeFile(root, jsFile, jsBody);
+}
+
+function writeDeadSettingSection(root, markup, schema, baseline) {
+    writeFile(
+        root,
+        'sections/fixture.liquid',
+        `${markup}\n{% schema %}${JSON.stringify(schema)}{% endschema %}\n`,
+    );
+    if (baseline !== undefined) {
+        writeFile(root, DEAD_SETTINGS_BASELINE, JSON.stringify(baseline));
+    }
+}
+
+function writeGlobalSettingsSchema(root, settings, baseline) {
+    writeFile(root, 'config/settings_schema.json', JSON.stringify([{ name: 'theme', settings }]));
+    if (baseline !== undefined) {
+        writeFile(root, DEAD_SETTINGS_BASELINE, JSON.stringify(baseline));
+    }
+}
+
+test('js-custom-event: CustomEvent outside events.js fails; inside passes', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeJsOutletFixture(root, 'assets/accordion.js', "new CustomEvent('x');\n");
+        const failures = await runThemeLint(root);
+        assert.ok(failures.some((f) => f.checkId === 'js-custom-event'));
+    });
+    await withTempThemeAsync(async (root) => {
+        writeJsOutletFixture(root, 'assets/events.js', "export function emit() { new CustomEvent('x'); }\n");
+        const failures = await runThemeLint(root);
+        assert.equal(failures.filter((f) => f.checkId === 'js-custom-event').length, 0);
+    });
+});
+
+test('js-section-mutation: mutations outside https.js fail; inside https.js pass', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeJsOutletFixture(root, 'assets/accordion.js', 'el.innerHTML = "";\n');
+        let failures = await runThemeLint(root);
+        assert.ok(failures.some((f) => f.checkId === 'js-section-mutation' && /innerHTML/.test(f.message)));
+
+        writeFile(root, 'assets/accordion.js', 'el.outerHTML = "";\n');
+        failures = await runThemeLint(root);
+        assert.ok(failures.some((f) => f.checkId === 'js-section-mutation' && /outerHTML/.test(f.message)));
+
+        writeFile(root, 'assets/accordion.js', 'el.replaceWith(next);\n');
+        failures = await runThemeLint(root);
+        assert.ok(failures.some((f) => f.checkId === 'js-section-mutation' && /replaceWith/.test(f.message)));
+    });
+    await withTempThemeAsync(async (root) => {
+        writeFile(
+            root,
+            'assets/https.js',
+            'target.innerHTML = x; old.outerHTML = y; node.replaceWith(next);\n',
+        );
+        writeFile(root, 'assets/events.js', 'export {};\n');
+        const failures = await runThemeLint(root);
+        assert.equal(failures.filter((f) => f.checkId === 'js-section-mutation').length, 0);
+    });
+});
+
+test('js-section-mutation: lint-allow suppresses a violation', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeJsOutletFixture(
+            root,
+            'assets/accordion.js',
+            '/* lint-allow js-section-mutation: fixture probe */\nel.innerHTML = "";\n',
+        );
+        const failures = await runThemeLint(root);
+        assert.equal(failures.filter((f) => f.checkId === 'js-section-mutation').length, 0);
+    });
+});
+
+test('dead-setting: unused section setting fails when not baselined', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeDeadSettingSection(
+            root,
+            '<div>{{ section.settings.used }}</div>',
+            { settings: [{ type: 'text', id: 'used' }, { type: 'text', id: 'unused' }] },
+            { 'dead-setting': {} },
+        );
+        const dead = (await runThemeLint(root)).filter((f) => f.checkId === 'dead-setting');
+        assert.equal(dead.length, 1, dead.map((f) => f.message).join('\n'));
+        assert.equal(dead[0].file, 'sections/fixture.liquid');
+        assert.match(dead[0].message, /unused/);
+    });
+});
+
+test('dead-setting: setting used only in a rendered snippet passes', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(root, 'snippets/child.liquid', '<span>{{ section.settings.from_snippet }}</span>\n');
+        writeDeadSettingSection(
+            root,
+            "{% render 'child', section: section %}",
+            { settings: [{ type: 'text', id: 'from_snippet' }] },
+            { 'dead-setting': {} },
+        );
+        const failures = await runThemeLint(root);
+        assert.equal(failures.filter((f) => f.checkId === 'dead-setting').length, 0);
+    });
+});
+
+test('dead-setting: setting used through a two-level render chain passes', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(root, 'snippets/mid.liquid', "{% render 'leaf', section: section %}\n");
+        writeFile(root, 'snippets/leaf.liquid', '{{ section.settings.deep }}\n');
+        writeDeadSettingSection(
+            root,
+            "{% render 'mid', section: section %}",
+            { settings: [{ type: 'text', id: 'deep' }] },
+            { 'dead-setting': {} },
+        );
+        const failures = await runThemeLint(root);
+        assert.equal(failures.filter((f) => f.checkId === 'dead-setting').length, 0);
+    });
+});
+
+test('dead-setting: unused global setting fails when not baselined', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeGlobalSettingsSchema(
+            root,
+            [{ type: 'text', id: 'live' }, { type: 'text', id: 'dead_global' }],
+            { 'dead-setting': {} },
+        );
+        writeFile(root, 'sections/fixture.liquid', '{{ settings.live }}\n');
+        const failures = await runThemeLint(root);
+        assert.ok(failures.some((f) => f.checkId === 'dead-setting' && /dead_global/.test(f.message)));
+    });
+});
+
+test('dead-setting: dynamic settings access is reported as unprovable in notes', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeDeadSettingSection(
+            root,
+            '{% assign k = "x" %}{{ settings[k] }}',
+            { settings: [{ type: 'text', id: 'maybe' }] },
+            { 'dead-setting': {} },
+        );
+        const notes = [];
+        const failures = await runThemeLint(root, notes);
+        assert.equal(failures.filter((f) => f.checkId === 'dead-setting').length, 0);
+        assert.match(notes.join('\n'), /dead-setting-unprovable.*sections\/fixture\.liquid/);
+    });
+});
+
+test('dead-setting baseline: write refuses an existing file; new dead entry fails the ratchet', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeDeadSettingSection(
+            root,
+            '<div></div>',
+            { settings: [{ type: 'text', id: 'orphan' }] },
+            { 'dead-setting': { 'sections/fixture.liquid|section|orphan': 1 } },
+        );
+        const refused = runThemeLintArgs(root, ['--write-dead-settings-baseline']);
+        assert.notEqual(refused.status, 0);
+        assert.match(refused.stderr, /refused/);
+
+        writeFile(
+            root,
+            'sections/fixture.liquid',
+            '<div></div>\n{% schema %}{"settings":[{"type":"text","id":"orphan"},{"type":"text","id":"new_dead"}]}{% endschema %}\n',
+        );
+        const failures = await runThemeLint(root);
+        assert.ok(failures.some((f) => f.checkId === 'dead-setting' && /new_dead/.test(f.message)));
+        assert.equal(failures.filter((f) => /orphan/.test(f.message)).length, 0);
+    });
+});
+
+test('dead-setting: block settings read through any loop variable pass; an unused block setting fails', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeDeadSettingSection(
+            root,
+            [
+                '{% for card_block in section.blocks %}',
+                '  {%- assign quote = card_block.settings.quote -%}',
+                "  {{ image_block.settings['image'] }}",
+                '{% endfor %}',
+            ].join('\n'),
+            {
+                blocks: [
+                    {
+                        type: 'card',
+                        settings: [
+                            { type: 'text', id: 'quote' },
+                            { type: 'image_picker', id: 'image' },
+                            { type: 'text', id: 'never_read' },
+                        ],
+                    },
+                ],
+            },
+            { 'dead-setting': {} },
+        );
+        const dead = (await runThemeLint(root)).filter((f) => f.checkId === 'dead-setting');
+        assert.equal(dead.length, 1, dead.map((f) => f.message).join('\n'));
+        assert.match(dead[0].message, /never_read/);
+    });
+});
+
+test('6-V2 review: global-qualified CustomEvent constructors fail outside events.js', async () => {
+    for (const spelling of ['new window.CustomEvent', 'new globalThis.CustomEvent', 'new self.CustomEvent']) {
+        await withTempThemeAsync(async (root) => {
+            writeJsOutletFixture(root, 'assets/accordion.js', `${spelling}('x');\n`);
+            const failures = await runThemeLint(root);
+            assert.ok(failures.some((f) => f.checkId === 'js-custom-event'), spelling);
+        });
+    }
+});
+
+test('6-V2 review: a same-named setting in another scope does not count as usage', async () => {
+    const deadIds = async (root) =>
+        (await runThemeLint(root)).filter((f) => f.checkId === 'dead-setting').map((f) => f.message);
+
+    // Section setting read only as a block setting.
+    await withTempThemeAsync(async (root) => {
+        writeDeadSettingSection(
+            root,
+            '{% for block in section.blocks %}{{ block.settings.title }}{% endfor %}',
+            { settings: [{ type: 'text', id: 'title' }], blocks: [{ type: 'b', settings: [{ type: 'text', id: 'title' }] }] },
+            { 'dead-setting': {} },
+        );
+        const dead = await deadIds(root);
+        assert.equal(dead.length, 1, dead.join('\n'));
+        assert.match(dead[0], /section.*title|title.*section/i);
+    });
+    // Block setting read only as a section setting.
+    await withTempThemeAsync(async (root) => {
+        writeDeadSettingSection(
+            root,
+            '{{ section.settings.title }}',
+            { settings: [{ type: 'text', id: 'title' }], blocks: [{ type: 'b', settings: [{ type: 'text', id: 'title' }] }] },
+            { 'dead-setting': {} },
+        );
+        const dead = await deadIds(root);
+        assert.equal(dead.length, 1, dead.join('\n'));
+        assert.match(dead[0], /block/i);
+    });
+    // Global setting read only as a section setting.
+    await withTempThemeAsync(async (root) => {
+        writeGlobalSettingsSchema(root, [{ type: 'text', id: 'title' }], { 'dead-setting': {} });
+        writeDeadSettingSection(root, '{{ section.settings.title }}', { settings: [{ type: 'text', id: 'title' }] });
+        const dead = await deadIds(root);
+        assert.equal(dead.length, 1, dead.join('\n'));
+        assert.match(dead[0], /global|settings_schema/i);
+    });
+});
+
+test('6-V2 review: a setting referenced only in a Liquid comment is dead', async () => {
+    for (const markup of [
+        '{% comment %}{{ section.settings.note }}{% endcomment %}',
+        '{%- # section.settings.note -%}',
+        '{% liquid\n  # assign x = section.settings.note\n  echo 1\n%}',
+    ]) {
+        await withTempThemeAsync(async (root) => {
+            writeDeadSettingSection(root, markup, { settings: [{ type: 'text', id: 'note' }] }, { 'dead-setting': {} });
+            const dead = (await runThemeLint(root)).filter((f) => f.checkId === 'dead-setting');
+            assert.equal(dead.length, 1, markup);
+        });
+    }
+});

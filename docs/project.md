@@ -20,7 +20,8 @@ Ceylune, a custom Shopify theme maintained as a multi-industry Shopify Theme Sto
 - Progress (2026-10-09):
     - **6-C4 layered colour tokens:** alpha steps, semantic colour and shadow roles re-declared per scheme, scrims; the `raw-colour` and `colour-role-sync` lints and `npm.cmd run scan:contrast`. Accepted after three independent review rounds and the user's browser look.
     - **Closed-area audit** (JS, i18n, schema and settings, validators, references): no blocking defect; follow-ups are filed on `docs/agent/board.md`.
-    - **Next:** 6-V2 (dead-settings lint, DOM mutation and event outlet lints, three reference fixes), then 6-C5. Product page batches are interleaved with the CSS batches.
+    - **6-V2 validator gaps:** `lint:theme` now guards CustomEvent and section DOM mutation outlets and reports dead settings (0 today); three reference fixes.
+    - **Next:** 6-C5 page frame. Product page batches are interleaved with the CSS batches.
 
 ## Migration Direction (accepted)
 
@@ -50,7 +51,7 @@ Knowledge the old Agent layer held and the skeleton leaves to derived themes; so
 - **Ordinary reveal pattern.** Settings-driven reveal is the cascade only: `motionRevealSection()` on a section or nested root with `data-motion-section`, a `data-motion-cascade` container, and `data-motion-bound` row items. The runtime sets `data-motion-state` once per page view. `prefers-reduced-motion: reduce` disables the cascade. Content stays visible without JavaScript until the module sets `data-motion-state="pending"`.
 - **WebKit guards.** `.category-grid__item` keeps a definite full width for WebKit grid intrinsic sizing; custom `<summary>` controls hide the Safari disclosure marker. The skeleton validators do not check these; they are browser checklist rows.
 - **Acceptance, phase 0.** The merchant motion settings contract above (phase 0 CAP-01) and `docs/migration/phase0/browser-checklist.md` (Retained theme contracts) carry the checks.
-- **Acceptance, phase 3 (guards the skeleton validators dropped).** Cross-component events go through ThemeEvents; `new CustomEvent` appears only in the events module. Section HTML replacement goes through the SectionRefresher; no `innerHTML =`, `outerHTML =`, or `replaceWith(` on section markup outside it. Each phase 3 plan lists both as acceptance checks with a search command.
+- **Acceptance, phase 3 (guards the skeleton validators dropped).** Cross-component events go through ThemeEvents; `lint:theme` check `js-custom-event` allows `new CustomEvent` only in `assets/events.js`. Section HTML replacement goes through the SectionRefresher; `js-section-mutation` allows `innerHTML =`, `outerHTML =`, and `.replaceWith(` only in `assets/https.js`.
 
 ## Deviations From The Skeleton
 
