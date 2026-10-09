@@ -6,7 +6,7 @@ Last updated: 2026-10-09.
 
 ## Open decisions
 
-**Done: 6-C1 to 6-C4.** 6-C1 to 6-C3 in `2bd5533` (migration ratchet, breakpoint tokens and hover variants, loaded weights only). 6-C4 accepted by the user 2026-10-09 after independent review round 3 PASS and the browser look (layered colour tokens: alpha steps, roles re-declared per scheme, scrims, three shadows, `raw-colour` and `colour-role-sync` lints, `scan:contrast`; plan and review rounds in the 6-C4 commit's `docs/agent/context.md`). Contracts: `docs/references/style-system/css-architecture.md`. Next in the order: 6-V2 (validator batch), then 6-C5.
+**Done: 6-C1 to 6-C4.** 6-C1 to 6-C3 in `2bd5533` (migration ratchet, breakpoint tokens and hover variants, loaded weights only). 6-C4 accepted by the user 2026-10-09 after independent review round 3 PASS and the browser look (layered colour tokens: alpha steps, roles re-declared per scheme, scrims, three shadows, `raw-colour` and `colour-role-sync` lints, `scan:contrast`; plan and review rounds: `git show 6b439ca:docs/agent/context.md`). Contracts: `docs/references/style-system/css-architecture.md`. Next in the order: 6-V2 (validator batch), then 6-C5.
 
 **Decided: audit practice** (user, 2026-10-09).
 - **Per CSS batch:** the scope discussion runs a three-part audit of its domain (bypasses of the chain, redundant or leftover code, rule holes). Findings go into the plan; the batch's baseline is cleared when it closes. 6-C4 is the first.
