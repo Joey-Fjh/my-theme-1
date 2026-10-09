@@ -23,14 +23,14 @@ Tailwind scans every token in the `@source` Liquid files, including `{% schema %
 
 | Source | Owns | Notes |
 | --- | --- | --- |
-| `snippets/css-variables.liquid` | Merchant settings, color-scheme RGB triplets, typography, motion | Runtime CSS custom-property source |
+| `snippets/css-variables.liquid` | Merchant settings, color-scheme RGB triplets, colour alpha steps, typography, motion | Runtime CSS custom-property source |
 | `tailwind/tailwind.input.css` | Tailwind `@theme inline` bridge | Only bridge values that need Tailwind utility consumption |
 | Snippet/section inline custom properties | Per-render dynamic variables | Valid only when scoped to that render tree |
 | `tailwind/tailwind.*.css` | CSS consumption of tokens | Prefer direct `var()` for geometry/motion internals |
 
 ## Global settings chain
 
-Typography and color flow through `config/settings_schema.json` → `snippets/css-variables.liquid` → tokens → tier or scheme classes. Prefer that chain for theme-linked copy. Local intent may use the Tailwind weight, leading, and tracking scales and black/white utilities in Liquid, and matching literals in first-party CSS (see **Style ownership** and `settings-chain-*` in `check-theme-architecture` SKILL.md). Still reject arbitrary values (`text-[14px]`, `bg-[#f00]`), default text sizes, default font families, other palette colours, and non-chain `font-size` / `font-family` literals.
+Typography and color flow through `config/settings_schema.json` → `snippets/css-variables.liquid` → tokens → tier or scheme classes. Prefer that chain for theme-linked copy. Local intent may use the Tailwind weight, leading, and tracking scales in Liquid, and matching literals in first-party CSS; colour goes through the roles under **Color, Surface, And Inline Style** (see **Style ownership** and `settings-chain-*` in `check-theme-architecture` SKILL.md). Still reject arbitrary values (`text-[14px]`, `bg-[#f00]`), default text sizes, default font families, other palette colours, and non-chain `font-size` / `font-family` literals.
 
 `tailwind/tailwind.input.css` resets Tailwind default namespaces to `initial` for breakpoints, font family (`--font-*`), font size (`--text-*`), easing, and animation. The `--font-weight-*`, `--leading-*`, `--tracking-*`, and `--color-*` namespace resets are **not adopted**: Tailwind's default scales remain the project scales for local utility intent (batch 5-C3f). When a palette reset is adopted later, re-declare the keyword colors `transparent`, `current`, and `inherit` after it so utilities such as `text-current` keep working.
 
@@ -110,7 +110,7 @@ These thresholds are complementary. A pattern can be promoted to the components 
 
 **Snippets carry structure and behaviour, not a forced style entry.** Primitives (`heading`, `text`, `button`, `link`, `image`, `content-group`, `section-frame`) hold shared tags, ARIA, link `rel`, image sizing, and motion attributes. They are the preferred entry for section-level composition; raw element classes remain valid for Alpine bindings, `<template>` contents, and component internals.
 
-**Local overrides.** Tailwind weight, leading, tracking, and `black` / `white` / `transparent` utilities may express one-off intent. An override that repeats across files becomes a variant in `tailwind.typography.css` or `tailwind.elements.css`. `lint:theme` (`settings-chain-liquid`, `settings-chain-css-typography`, `settings-chain-css-color`) allows the same scales and black/white literals in Liquid classes and first-party CSS; it still rejects default text sizes, font families, other palette colours, arbitrary `[…]` utilities, and non-chain `font-size` / `font-family` literals.
+**Local overrides.** Tailwind weight, leading, tracking, and `transparent` utilities may express one-off intent; black and white only through the scrim roles. An override that repeats across files becomes a variant in `tailwind.typography.css` or `tailwind.elements.css`. `lint:theme` (`settings-chain-liquid`, `settings-chain-css-typography`, `settings-chain-css-color`) allows the same scales in Liquid classes and first-party CSS (black/white literals pass it but fail `raw-colour`); it still rejects default text sizes, font families, other palette colours, arbitrary `[…]` utilities, and non-chain `font-size` / `font-family` literals.
 
 **Loaded font weights.** `snippets/css-variables.liquid` loads the base weight and `bold` via `font_modify` only. Weights without a face match by CSS font matching (`font-medium` / 500 uses the 400 face; `font-semibold` / 600 uses the 700 face). Loading additional weights is a design-phase decision.
 
@@ -141,12 +141,45 @@ Add a tier only in `tailwind/tailwind.typography.css` on the `heading-base` / `b
 ## Color, Surface, And Inline Style
 
 - Merchant color schemes produce RGB custom properties through `snippets/css-variables.liquid`.
-- Those properties are comma-separated triplets (`r, g, b`). Write alpha as `rgba(var(--color-foreground), 0.55)`. The form `rgb(var(--color-foreground) / 0.55)` expands to `rgb(r, g, b / 0.55)`, which browsers reject and drop silently. `lint:theme` fails `rgb(var(--color-*) / alpha)` in `{% stylesheet %}` blocks and first-party CSS (`tailwind/**/*.css`, `assets/base.css`, `assets/gift-card.css`).
+- Those properties are comma-separated triplets (`r, g, b`). Alpha is written only in the token files, as `rgba(var(--color-foreground), var(--alpha-72))`; consumers use the roles below. The form `rgb(var(--color-foreground) / 0.55)` expands to `rgb(r, g, b / 0.55)`, which browsers reject and drop silently. `lint:theme` fails `rgb(var(--color-*) / alpha)` in `{% stylesheet %}` blocks and first-party CSS (`tailwind/**/*.css`, `assets/base.css`, `assets/gift-card.css`).
 - The first configured color scheme is the `:root` token fallback; it is not the implicit visible page-canvas decision.
 - `settings.page_canvas_color_scheme` explicitly owns the visible `<body>` canvas behind sections, during overscroll, and in areas without their own color-scheme scope.
 - Section, overlay, drawer, modal, and component color-scheme scopes override the body canvas normally.
 - Use one surface role per node: `color-{{ section.settings.color_scheme }}` on the section frame, or `surface-component` on nested overlays such as dropdown panels. `lint:theme` (`section-color-scheme`) fails a section with a `color_scheme` setting whose root lacks the class. A section that renders `snippets/section-frame.liquid` with `section: section` passes only while the snippet writes `color-{{ section.settings.color_scheme }}` literally in a `class` attribute outside comments. Keep that literal; do not build it through a variable. The check reads markup, not the rendered DOM.
 - Use semantic tokens or scheme utilities for theme UI; avoid hardcoded brand colors unless documented as a platform bridge or local effect.
+
+### Colour layers (6-C4)
+
+| Layer | Lives in | Holds | Consumers |
+| --- | --- | --- | --- |
+| 0 source | `config/settings_schema.json` → `snippets/css-variables.liquid`; bridge tokens in `tailwind/tailwind.input.css` | Scheme roles as RGB triplets (`--color-foreground`, `--color-border`, …); bridge tokens (`--color-theme-text`, `--color-field`, `--color-primary`, …) for utilities | CSS uses the triplets as `rgb(var(--color-*))`; the bridge tokens are utility-only (`text-theme-text`), never `var()` in CSS |
+| 1 steps | `snippets/css-variables.liquid` | Abstract alpha scale on `:root`: `--alpha-5`, `-10`, `-20`, `-35`, `-50`, `-72`, `-80`; shadow steps `--alpha-shadow-sm` / `-md` / `-lg` per scheme, higher when the scheme background's `color_brightness` is below 128 | Token files only |
+| 2 roles | `tailwind/tailwind.input.css` (`@theme inline`), re-declared per scheme in `snippets/css-variables.liquid` | Semantic colour and shadow tokens, each on one step | Sections, snippets, layer CSS, as utilities or `var(--color-<role>)` |
+| 3 aliases | The owning component's CSS | Optional component name for a role (`--card-border-hover: var(--color-line-strong)`) | That component |
+
+Tint steps are one set for every scheme: a tint's strength already follows the scheme's own foreground/background contrast. Only shadows (black) rise on dark backgrounds, where a light-scheme shadow would vanish.
+
+**Why roles are declared twice.** A custom property whose value contains `var()` resolves on the element that declares it, and descendants inherit the result. Declared only on `:root`, `var(--color-muted)` would carry the first scheme's foreground into every section. Utilities are unaffected (`@theme inline` writes the formula into each utility), but CSS consumers need the role re-declared on every scheme scope, so the scheme loop in `css-variables.liquid` repeats each scheme-dependent role with the identical value; `lint:theme` `colour-role-sync` keeps both lists equal. Scrims and on-scrim colours are fixed, so they are declared once.
+
+| Role | Utilities | Use |
+| --- | --- | --- |
+| `--color-muted` | `text-muted` | Secondary text; the body default colour uses the same step |
+| `--color-subtle` | `text-subtle` | Captions, meta, hints |
+| `--color-faint` | `text-faint` | Graphics only (placeholder art, empty rating stars); never text |
+| `--color-line` / `--color-line-strong` | `border-line`, `divide-line`, `bg-line` (1px rules) / `border-line-strong` | Dividers and card edges / hover and active edges, scrollbar thumbs |
+| `--color-line-inverse` | `border-line-inverse`, `bg-line-inverse` (1px rules) | Lines on an inverted fill (a foreground-coloured card or chip); the fill itself is `rgb(var(--color-foreground))` / `bg-theme-text` with background-coloured content |
+| `--color-surface-muted` / `--color-surface-strong` | `bg-surface-muted` / `bg-surface-strong` | Quiet fills and placeholders / hover, selected, pressed, track and skeleton-loader fills, disabled controls |
+| `--color-indicator` / `--color-indicator-strong` | `bg-indicator` / `bg-indicator-strong` | State indicators: carousel and pagination dots, step bars / their hover or emphasised state |
+| `--color-veil` | `bg-veil` | Translucent scheme background over media |
+| `--color-scrim` / `--color-scrim-strong` | `bg-scrim` / `bg-scrim-strong` | Dialog and drawer backdrops, image text scrims / full-focus media viewers; fixed black |
+| `--color-on-scrim` / `--color-on-scrim-muted` | `text-on-scrim` / `text-on-scrim-muted` | Text and icons over a scrim; fixed white |
+| `--shadow-sm` / `-md` / `-lg` | `shadow-sm`, `shadow-md`, `shadow-lg` | Elevation; the `--shadow-*` namespace is reset, so Tailwind's other shadow utilities do not exist |
+
+**Mapping rule** for a raw value in old code: by CSS property first (`color` → text roles; borders, outlines, dividers, 1px rules and `0 0 0 1px` rings → line roles; fills on the foreground → surface roles, or indicator roles for dots and step bars; fills on the background → `veil` or `surface-muted`; black or white over media → scrim roles; decorative `box-shadow` → shadow roles), then the nearest step. A need no role covers adds a role on an existing step here, never a raw value in a consumer.
+
+**Out of the role set:** setting-driven alphas (`rgba(var(--color-*), var(--…))` for focus rings and the merchant shadow settings) and the button reverse-fill mixes, which carry `lint-allow raw-colour` with that reason.
+
+**Enforcement:** `lint:theme` `raw-colour` and `colour-role-sync` (see `check-theme-architecture` SKILL.md). Items owned by 6-C9 (scheme roles and colour settings that need merchant-data approval) carry `lint-allow raw-colour: owner 6-C9, …` until that batch. `npm.cmd run scan:contrast` reports WCAG contrast for each scheme's key pairs from `config/settings_data.json`, including `text-muted` and `text-subtle` composited on the background; it reports and never fails.
 - Allowed inline styles: scoped CSS custom properties from Liquid, platform-required media values, and per-render geometry that static utilities cannot express.
 - Use semantic z-index utilities or variables for layered UI.
 

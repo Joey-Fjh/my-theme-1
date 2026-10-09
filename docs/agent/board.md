@@ -2,20 +2,31 @@
 
 This board holds only what is not yet decided: the one active decision, evidence that has not become a plan, and deferred ideas. `docs/agent/context.md` holds exactly one accepted plan during execution, or no plan. Recording a plan does not authorize implementation. Project identity, scope, accepted direction, and overall status belong in `docs/project.md`; completed execution history belongs in Git.
 
-Last updated: 2026-10-08.
+Last updated: 2026-10-09.
 
 ## Open decisions
 
-**Done: 6-C1, 6-C2, 6-C3** (2026-10-08, one commit; cross review 3 PASS after two FAIL rounds, all of them lint defects):
-- the migration ratchet (633 / 662 / 537 in `migration-baseline.json`);
-- the breakpoint tokens and hover variants;
-- weights limited to loaded faces.
-The contracts are in `docs/references/style-system/css-architecture.md`. Next in the order: 6-C4.
+**Done: 6-C1 to 6-C4.** 6-C1 to 6-C3 in `2bd5533` (migration ratchet, breakpoint tokens and hover variants, loaded weights only). 6-C4 accepted by the user 2026-10-09 after independent review round 3 PASS and the browser look (layered colour tokens: alpha steps, roles re-declared per scheme, scrims, three shadows, `raw-colour` and `colour-role-sync` lints, `scan:contrast`; plan and review rounds in the 6-C4 commit's `docs/agent/context.md`). Contracts: `docs/references/style-system/css-architecture.md`. Next in the order: 6-V2 (validator batch), then 6-C5.
+
+**Decided: audit practice** (user, 2026-10-09).
+- **Per CSS batch:** the scope discussion runs a three-part audit of its domain (bypasses of the chain, redundant or leftover code, rule holes). Findings go into the plan; the batch's baseline is cleared when it closes. 6-C4 is the first.
+- **Before the second submission:** one cross-domain consolidation pass (the polish pass plus the readiness review).
+- **Closed areas no later batch revisits** (JS runtime and modules, i18n, schema and settings, assets, `docs/references/` accuracy): one read-only audit by an external session (Sonnet), report outside the repo; the coordinator files the findings here by domain.
+- **Finding during the 6-C4 discussion (resolved 2026-10-09; the order list above now says what was built):** the board lists 6-C1 as eight lints and marks it done, but commit `2bd5533` implements three (type tiers, raw spacing, `pc:` / `fw:`; 6-C2 added the media query lint and 6-C3 the weight lint). Not implemented and not recorded as dropped: hex / `rgb()` / `color-mix()` in section stylesheets, viewport units and `--page-width` / `--page-margin` in section stylesheets, dead settings. 6-C3 also went the other way from its line in the order (`font-medium` → `font-normal` instead of loading a 500 face); the Done line records the result but not the decision. The colour lint goes into 6-C4; viewport / page width belongs to 6-C5; dead settings has no owner yet.
+- **Closed-area audit, done** (external Sonnet session, 2026-10-09; report not kept, the findings are filed below; 4 BYPASS, 4 LEFTOVER, 8 RULE HOLE, 2 UNPROVEN; it ran before 6-C4 Part A, so its `lint:theme` pass predates `raw-colour`). Filed by owner; the coordinator spot-checked the doc findings.
+    - **6-C5 (already planned there, confirmed):** the four viewport-height bypasses (`featured-product`, `promo-bannder`, `ritual-steps`, `routine-showcase`) and the missing viewport-unit lint.
+    - **6-T4 (CI):** `test:layout` is required by `AGENTS.md` but not in CI; CI needs a runner strategy for the dev server.
+    - **Validator batch 6-V2** (accepted by the user 2026-10-09; runs after 6-C4 closes, before 6-C5; together with the reference fixes below):
+        - a dead-settings lint (needs a cross-file consumer graph: `padding_top` and `color_scheme` are read through `section-frame`, so a per-file scan is wrong);
+        - `lint:theme` rules for `new CustomEvent` outside `events.js` and `innerHTML =` / `outerHTML =` / `replaceWith(` outside `https.js`, replacing the manual phase 3 greps in `docs/project.md`.
+    - **Reference fixes (harness, user-owned):** `css-architecture.md` `stage-pc` row still says "`pc` media query" (code: `width >= 48rem`, confirmed); `javascript-runtime.md` repeats the GSAP on-demand boundary under "Motion Runtime Boundary" and "CSS / Alpine Boundary" (confirmed); its File Ownership table lists about 10 of 50+ modules (mark as illustrative or regenerate).
+    - **Record fix (coordinator):** done 2026-10-09 (6-C1 and 6-C3 lines in the batch order).
+    - **No action:** `gift-card.js` listener skip is a documented exception; `motion-reveal.js` size is the known deferred motion item; only English locales exist (a release or Theme Store question, not a code leftover); hard-coded Liquid copy beyond the validators is UNPROVEN, reviewed per new section.
 
 **Decided: CSS batch order** (proposed by the coordinator, accepted by the user 2026-10-08; 6-C5 is the full version, not the slimmed 6-F1; the product page design runs in parallel, see the open item below; user direction: the full specification, not a slimmed one; small and fast batches first; no manual browser sweeps that a tool can do; product page design work may arrive in between). Supersedes the order under "Specification discussion closed". Calibration stays deferred to the design pipeline; tokens keep today's values.
-1. **6-C1 lints with baselines** (tooling, no theme change): raw spacing utilities; hex, `rgb()` and `color-mix()` in section stylesheets; viewport units and `--page-width` / `--page-margin` in section stylesheets; media query spellings; weight utilities without a loaded face; old type tier names; `pc:` / `fw:`; dead settings. Every baseline may only fall.
+1. **6-C1 lints with baselines** (as built in `2bd5533`): old type tier names, raw spacing utilities, `pc:` / `fw:`, each a ratchet that may only fall. The rest of the original list moved: media query spellings to 6-C2, weights to 6-C3, colour literals to 6-C4 (`raw-colour`), viewport units and `--page-width` / `--page-margin` to 6-C5, dead settings to the validator batch below.
 2. **6-C2 breakpoints:** `tablet` / `desktop` / `wide` tokens, `can-hover` / `no-hover`, hand-written media queries replaced, `pc` / `fw` as aliases. No visual change.
-3. **6-C3 medium weight:** load the emphasis face per role. Intended visual change: `font-medium` renders at 500.
+3. **6-C3 loaded weights only** (as built in `2bd5533`): `font-medium` → `font-normal`, `font-semibold` → `font-bold`, matching the faces already loaded, with no visual change, and a lint rejects other weights. Choosing an emphasis (medium) weight and the accent font role is **not decided**; it belongs to the font discussion with 6-C8 (user, 2026-10-09).
 4. **6-C4 derived colour tokens and scrims**, plus the contrast script. No visual change, or one within the listed tolerance.
 5. **6-C5 page frame** (6-F1 revised in full: named-line page grid, a cover height token, the four sections with their own heights).
 6. **6-C6 section CSS layering**, including the utility-override audit and an automated check that the compiled `styles.css` keeps `@layer`.
@@ -193,32 +204,11 @@ The contracts are in `docs/references/style-system/css-architecture.md`. Next in
         - 1024 is hand-written in 8+ sections (16 uses, four spellings, no token); 768 has five spellings;
         - `pc:` is used 466 times, so tablets get desktop layouts (iPad pass, 2026-10-05).
 
-- **Conclusion, step 5: colour** (user, 2026-10-07):
-    - **Order of colour sources (user rule):**
-        1. colour schemes first: sections, and nested parts that need a different surface, pick a scheme;
-        2. the central derived tokens from the scheme roles;
-        3. standalone colour settings last, as named exceptions: section-level overrides, or global colours outside the scheme group.
-    - **Schemes:**
-        - five in total, adding a sage scheme and a page-background scheme;
-        - scheme-1's default blue badge is corrected;
-        - values come from the calibration.
-        - The values live in `config/settings_data.json` (merchant configuration) and need the user's explicit approval; the schema structure is unchanged.
-    - **Derived layer:** `snippets/css-variables.liquid` derives a fixed set per scheme (`surface-raised`, `surface-muted`, `border-subtle`, `text-muted`, `scrim`). Sections consume them and stop mixing colours locally. A derived token becomes a scheme role only when merchants need it separately.
-    - **Scrims:** two semantic levels (dialog overlay, image scrim) replace `bg-black/45`, `/60` and `/80`.
-    - **Standalone colours today:**
-        - 8 global (product badges: sale, sold out, two custom; background and text each);
-        - 9 in 3 sections:
-            - `main-page-contact`: form background and text;
-            - `product-comparison-table`: column background, success, danger;
-            - `product`: zoom overlay, icon, a block's background and text.
-        - Under the rule, the section ones become a scheme picker, scheme roles (`success` / `error`), the scrim or a derived token. The badges stay global as status colours that must read the same across schemes, or map to scheme roles (decide in the plan).
-        - Removing or renaming a setting changes schema IDs and merchant data: Ask tier, with user approval.
-    - **Enforcement:**
-        - `lint:theme` rejects hex, `rgb()` and `color-mix()` in section stylesheets (baseline, may only fall);
-        - it rejects new `color` / `color_background` settings outside an allowlist with a reason;
-        - `bg-white` / `bg-black/N` are limited to overlays and placeholders;
-        - a script checks WCAG AA for every scheme's key pairs from `config/settings_data.json`.
-    - **Evidence:** 3 schemes; the design's sage and page background are substituted with the `scheme-2` grey; `color-mix` is used 54 times in 16 files; hex literals in 3 sections.
+- **Conclusion, step 5: colour** (user, 2026-10-07). Order of sources: schemes first, then the derived roles, then standalone colour settings as named exceptions. The derived layer, scrims and enforcement are built (6-C4). **Left for 6-C9** (needs approval for `config/settings_data.json` and schema IDs):
+    - five schemes, adding a sage scheme and a page-background scheme, plus a card surface role (the white cards carry `lint-allow raw-colour: owner 6-C9`); scheme-1's default blue badge corrected; values from the calibration;
+    - the standalone colour settings: 8 global badge colours, `main-page-contact` form background and text, `product-comparison-table` column background, success and danger, `product` zoom overlay, icon and a block's colours; each becomes a scheme picker, a scheme role, the scrim or a role, or stays as a named global status colour;
+    - a lint that rejects new `color` / `color_background` settings outside an allowlist with a reason;
+    - `assets/gift-card.css` (own fixed palette, exempt from `raw-colour`).
 - **Source supplement** (external read-only agent, 2026-10-07; report outside the repo: `C:/Users/Joey/AppData/Local/Temp/ceylune-css-spec-sources.md`; Horizon `5acd1b6`, Dawn `258f00f`). Corrections that the plans must carry:
     - **Attribution:** the background-only width rule, schemes-first colour and the 1024 desktop switch are project policy, not Horizon or Shopify practice.
         - Horizon's page grid uses numeric columns (no named lines) and lets full-width sections span their content.

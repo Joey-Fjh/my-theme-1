@@ -17,7 +17,10 @@ Ceylune, a custom Shopify theme maintained as a multi-industry Shopify Theme Sto
     - **6-T2 pixel comparison:** stopped by the user (the necessity was not established); nothing of it was kept.
     - **6-C1 to 6-C3** (`2bd5533`): migration lints with a ratchet baseline, breakpoint tokens and hover variants, and font weights limited to loaded faces.
     - **Order of work:** finish this repository first, then the skeleton backport, then the design-tool pipeline. The CSS batch order and the open items are on `docs/agent/board.md`.
-    - **Next:** 6-C4, derived colour tokens and scrims, starting with a scope discussion. Product page batches are interleaved with the CSS batches.
+- Progress (2026-10-09):
+    - **6-C4 layered colour tokens:** alpha steps, semantic colour and shadow roles re-declared per scheme, scrims; the `raw-colour` and `colour-role-sync` lints and `npm.cmd run scan:contrast`. Accepted after three independent review rounds and the user's browser look.
+    - **Closed-area audit** (JS, i18n, schema and settings, validators, references): no blocking defect; follow-ups are filed on `docs/agent/board.md`.
+    - **Next:** 6-V2 (dead-settings lint, DOM mutation and event outlet lints, three reference fixes), then 6-C5. Product page batches are interleaved with the CSS batches.
 
 ## Migration Direction (accepted)
 

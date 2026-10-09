@@ -764,11 +764,12 @@ test('settings chain liquid class tracking-[0.2em] fails (arbitrary)', async () 
     });
 });
 
-test('settings chain liquid class text-white/80 passes', async () => {
+test('settings chain liquid class text-white/80 passes the settings chain and fails raw-colour (6-C4)', async () => {
     await withTempThemeAsync(async (root) => {
         writeFile(root, 'sections/fixture.liquid', `<p class="text-white/80">Label</p>\n`);
         const failures = await runThemeLint(root);
-        assert.equal(failures.length, 0, failureMessages(failures));
+        assert.equal(failures.length, 1, failureMessages(failures));
+        assert.equal(failures[0].checkId, 'raw-colour');
     });
 });
 
@@ -2062,4 +2063,200 @@ test('cross review 2 of C1-C3: no-hover stands alone, as documented', () => {
     assert.equal(isAllowedStylesheetMedia('not ((hover: hover) and (pointer: fine))'), true);
     assert.equal(isAllowedStylesheetMedia('not ((hover: hover) and (pointer: fine)) and (width >= 64rem)'), false);
     assert.equal(isAllowedStylesheetMedia('(width >= 64rem) and not ((hover: hover) and (pointer: fine))'), false);
+});
+
+// 6-C4 raw-colour: role tokens only.
+function rawColourMessages(failures) {
+    return failures.filter((f) => f.checkId === 'raw-colour').map((f) => `${f.file}:${f.line} ${f.message}`);
+}
+
+test('raw-colour markup: opacity modifiers, black/white and default shadows fail; roles pass', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(
+            root,
+            'sections/fixture.liquid',
+            [
+                '<p class="text-theme-text/80 hover:border-theme-border/[0.3]">a</p>',
+                '<div class="bg-black can-hover:bg-white shadow shadow-2xl shadow-[0_1px_2px_red]"></div>',
+                '<div class="text-muted text-subtle text-faint border-line border-line-strong bg-surface-muted bg-surface-strong bg-veil bg-scrim bg-scrim-strong text-on-scrim text-on-scrim-muted shadow-sm shadow-md shadow-lg shadow-none w-1/2 top-1/2"></div>',
+                '',
+            ].join('\n'),
+        );
+        const messages = rawColourMessages(await runThemeLint(root));
+        assert.equal(messages.length, 7, messages.join('\n'));
+        assert.equal(messages.filter((m) => m.includes(':1 ')).length, 2);
+        assert.equal(messages.filter((m) => m.includes(':2 ')).length, 5);
+    });
+});
+
+test('raw-colour css: numeric alpha, color-mix, literals and direct steps fail; setting-driven alpha passes', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(
+            root,
+            'sections/fixture.liquid',
+            [
+                '{% stylesheet %}',
+                '.a { color: rgba(var(--color-foreground), 0.6); }',
+                '.b { border-color: color-mix(in oklab, rgb(var(--color-border)) 20%, transparent); }',
+                '.c { background-color: #fff; }',
+                '.d { box-shadow: 0 1px 2px rgb(0 0 0 / 0.1); }',
+                '.e { color: white; }',
+                '.f { opacity: 1; color: rgba(var(--color-foreground), var(--alpha-72)); }',
+                '.ok { color: var(--color-muted); box-shadow: 0 0 2px rgba(var(--color-foreground), var(--button-shadow-opacity)); outline-color: rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4)); }',
+                '{% endstylesheet %}',
+                '',
+            ].join('\n'),
+        );
+        const messages = rawColourMessages(await runThemeLint(root));
+        assert.equal(messages.length, 6, messages.join('\n'));
+        for (const line of [2, 3, 4, 5, 6, 7]) {
+            assert.ok(messages.some((m) => m.startsWith(`sections/fixture.liquid:${line} `)), `line ${line}`);
+        }
+    });
+});
+
+test('raw-colour css files: @apply is checked, the token file is exempt, lint-allow needs the check id', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(root, 'tailwind/tailwind.components.css', '.c { @apply bg-black/50 text-muted; }\n');
+        writeFile(root, 'tailwind/tailwind.input.css', '@theme inline { --color-scrim: rgba(0, 0, 0, var(--alpha-50)); }\n');
+        writeFile(
+            root,
+            'sections/fixture.liquid',
+            [
+                '{%- # lint-allow raw-colour: owner 6-C9, card surface scheme role -%}',
+                '<div class="bg-white"></div>',
+                '',
+            ].join('\n'),
+        );
+        const messages = rawColourMessages(await runThemeLint(root));
+        assert.equal(messages.length, 1, messages.join('\n'));
+        assert.match(messages[0], /^tailwind\/tailwind\.components\.css:1 .*opacity modifier bg-black\/50/);
+    });
+});
+
+test('raw-colour review round 1: inline styles, fractional and variable modifiers, calc alpha, color(), currentColor shadows, bridge tokens', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(
+            root,
+            'sections/fixture.liquid',
+            [
+                '<div style="color: rgba(var(--color-foreground), .5); background: #fff;"></div>',
+                '<div class="text-theme-text/12.5 text-theme-text/(--opacity)"></div>',
+                '{% stylesheet %}',
+                '.a { color: rgba(var(--color-foreground), calc(.5)); }',
+                '.b { color: color(srgb 1 1 1 / .5); }',
+                '.c { box-shadow: 0 1px 2px currentColor; }',
+                '.d { outline-color: var(--color-theme-text); }',
+                '.ok { mask: url("sprite.svg#face"); color: rgba(var(--color-foreground),',
+                '    var(--setting-opacity)); }',
+                '{% endstylesheet %}',
+                '',
+            ].join('\n'),
+        );
+        writeFile(root, 'tailwind/tailwind.components.css', '.e { @apply text-theme-text/12.5; }\n');
+        const messages = rawColourMessages(await runThemeLint(root));
+        const lines = messages.map((m) => m.split(' ')[0]);
+        assert.deepEqual(
+            [...new Set(lines)].sort(),
+            [
+                'sections/fixture.liquid:1',
+                'sections/fixture.liquid:2',
+                'sections/fixture.liquid:4',
+                'sections/fixture.liquid:5',
+                'sections/fixture.liquid:6',
+                'sections/fixture.liquid:7',
+                'tailwind/tailwind.components.css:1',
+            ],
+            messages.join('\n'),
+        );
+        assert.equal(lines.filter((l) => l === 'sections/fixture.liquid:1').length, 2);
+        assert.equal(lines.filter((l) => l === 'sections/fixture.liquid:2').length, 2);
+    });
+});
+
+function writeRoleFiles(root, sourceRoles, runtimeRoles) {
+    writeFile(root, 'tailwind/tailwind.input.css', `@theme inline {\n${sourceRoles.join('\n')}\n}\n`);
+    writeFile(
+        root,
+        'snippets/css-variables.liquid',
+        [
+            '{% style %}',
+            '{% for scheme in settings.color_schemes %}',
+            '.color-{{ scheme.id }} {',
+            '    --color-foreground: {{ scheme.settings.text_color.red }}, 0, 0;',
+            ...runtimeRoles,
+            '}',
+            '{% endfor %}',
+            '{% endstyle %}',
+            '',
+        ].join('\n'),
+    );
+}
+
+test('colour-role-sync: scheme-dependent roles must be re-declared per scheme with the same value', async () => {
+    const muted = '    --color-muted: rgba(var(--color-foreground), var(--alpha-80));';
+    const scrim = '    --color-scrim: rgba(0, 0, 0, var(--alpha-50));';
+    const bridge = '    --color-theme-text: rgb(var(--color-foreground));';
+    const shadow = '    --shadow-sm: 0 1px 3px rgba(0, 0, 0, var(--alpha-shadow-sm));';
+    const sync = (failures) => failures.filter((f) => f.checkId === 'colour-role-sync').map((f) => f.message);
+
+    await withTempThemeAsync(async (root) => {
+        writeRoleFiles(root, [muted, scrim, bridge, shadow], [muted, shadow]);
+        assert.deepEqual(sync(await runThemeLint(root)), []);
+    });
+    await withTempThemeAsync(async (root) => {
+        writeRoleFiles(root, [muted, shadow], [muted]);
+        assert.match(sync(await runThemeLint(root)).join('\n'), /--shadow-sm depends on the scheme but is not re-declared/);
+    });
+    await withTempThemeAsync(async (root) => {
+        writeRoleFiles(root, [muted], ['    --color-muted: rgba(var(--color-foreground), var(--alpha-72));']);
+        assert.match(sync(await runThemeLint(root)).join('\n'), /--color-muted differs/);
+    });
+    await withTempThemeAsync(async (root) => {
+        writeRoleFiles(root, [muted], [muted, '    --color-stale: rgba(var(--color-foreground), var(--alpha-5));']);
+        assert.match(sync(await runThemeLint(root)).join('\n'), /--color-stale is re-declared per scheme but is not/);
+    });
+});
+
+test('raw-colour review round 2: spaced var(), named colours in colour properties, words in strings pass', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(
+            root,
+            'sections/fixture.liquid',
+            [
+                '{% stylesheet %}',
+                '.a { color: rgba(var( --color-foreground ), .5); }',
+                '.b { color: orange; }',
+                '.c { border: 1px solid tomato; }',
+                '.d { --overlay: white; }',
+                '.ok { content: "choose white today"; font-family: Gold, serif; animation-name: tan; }',
+                '{% endstylesheet %}',
+                '',
+            ].join('\n'),
+        );
+        const messages = rawColourMessages(await runThemeLint(root));
+        const lines = messages.map((m) => m.split(' ')[0]).sort();
+        assert.deepEqual(
+            lines,
+            ['sections/fixture.liquid:2', 'sections/fixture.liquid:3', 'sections/fixture.liquid:4', 'sections/fixture.liquid:5'],
+            messages.join('\n'),
+        );
+    });
+});
+
+test('colour-role-sync review round 2: a conditional or repeated per-scheme role fails', async () => {
+    const muted = '    --color-muted: rgba(var(--color-foreground), var(--alpha-80));';
+    const sync = (failures) => failures.filter((f) => f.checkId === 'colour-role-sync').map((f) => f.message);
+    await withTempThemeAsync(async (root) => {
+        writeRoleFiles(root, [muted], ['{%- if scheme_brightness < 128 -%}', muted, '{%- endif -%}']);
+        assert.match(sync(await runThemeLint(root)).join('\n'), /--color-muted is declared inside a Liquid condition/);
+    });
+    await withTempThemeAsync(async (root) => {
+        writeRoleFiles(root, [muted], [muted, muted]);
+        assert.match(sync(await runThemeLint(root)).join('\n'), /--color-muted is declared 2 times/);
+    });
+    await withTempThemeAsync(async (root) => {
+        writeRoleFiles(root, [muted], ['{%- if x -%}', '    --alpha-shadow-sm: 0.3;', '{%- endif -%}', muted]);
+        assert.deepEqual(sync(await runThemeLint(root)), []);
+    });
 });

@@ -48,45 +48,58 @@
     --font-heading: var(--font-heading-family);
     --font-body: var(--font-body-family);
 
-    /* Colors: General */
+    /* Colours, layer 0: scheme roles (css-variables.liquid triplets) */
     --color-theme-bg: rgb(var(--color-background));
     --color-theme-text: rgb(var(--color-foreground));
-
     --color-theme-border: rgb(var(--color-border));
 
-    --color-dialog-overlay: rgba(0, 0, 0, 0.45);
-
-    /* Colors: Field */
     --color-field: rgb(var(--color-input-background));
     --color-field-text: rgb(var(--color-input-text));
     --color-field-border: rgb(var(--color-input-border));
     --color-field-placeholder: rgb(var(--color-input-placeholder));
 
-    /* Colors: Button */
     --color-primary: rgb(var(--color-primary-button));
-    --color-primary-text: rgb(var(--color-primary-button-text));
-    --color-primary-border: rgb(var(--color-primary-button-border));
     --color-secondary: rgb(var(--color-secondary-button));
-    --color-secondary-text: rgb(var(--color-secondary-button-text));
-    --color-secondary-border: rgb(var(--color-secondary-button-border));
 
-    /* Colors: Badge */
     --color-badge: rgb(var(--color-badge-background));
     --color-badge-text: rgb(var(--color-badge-foreground));
     --color-badge-bdr: rgb(var(--color-badge-border));
 
-    /* Colors: Accent (scheme triplet is --color-accent) */
-    --color-accent-ui: rgb(var(--color-accent));
-
-    /* Colors: Feedback */
     --color-success: rgb(var(--color-success-background));
-    --color-success-text: rgb(var(--color-success-foreground));
     --color-warning: rgb(var(--color-warning-background));
-    --color-warning-text: rgb(var(--color-warning-foreground));
     --color-error: rgb(var(--color-error-background));
     --color-error-text: rgb(var(--color-error-foreground));
     --color-info: rgb(var(--color-info-background));
-    --color-info-text: rgb(var(--color-info-foreground));
+
+    /* Colours, layer 2: derived roles (6-C4). Each consumes one layer 1 step from css-variables.liquid.
+       Sections and snippets use these roles, never a raw alpha. See css-architecture.md.
+       Scheme-dependent roles are re-declared per scheme in css-variables.liquid with the same value, because a
+       custom property resolves where it is declared: CSS var() consumers would otherwise get the :root scheme.
+       lint:theme colour-role-sync keeps the two in step. */
+    --color-muted: rgba(var(--color-foreground), var(--alpha-80));
+    --color-subtle: rgba(var(--color-foreground), var(--alpha-72));
+    --color-faint: rgba(var(--color-foreground), var(--alpha-20));
+    --color-line: rgba(var(--color-border), var(--alpha-20));
+    --color-line-strong: rgba(var(--color-border), var(--alpha-35));
+    /* Lines on an inverted fill (a foreground-coloured card or chip) */
+    --color-line-inverse: rgba(var(--color-background), var(--alpha-20));
+    --color-surface-muted: rgba(var(--color-foreground), var(--alpha-5));
+    --color-surface-strong: rgba(var(--color-foreground), var(--alpha-10));
+    /* State indicators: carousel dots, step and progress bars */
+    --color-indicator: rgba(var(--color-foreground), var(--alpha-35));
+    --color-indicator-strong: rgba(var(--color-foreground), var(--alpha-50));
+    --color-veil: rgba(var(--color-background), var(--alpha-80));
+    /* Scrims cover any content, so they are fixed black / white, not scheme colours */
+    --color-scrim: rgba(0, 0, 0, var(--alpha-50));
+    --color-scrim-strong: rgba(0, 0, 0, var(--alpha-80));
+    --color-on-scrim: rgb(255, 255, 255);
+    --color-on-scrim-muted: rgba(255, 255, 255, var(--alpha-80));
+
+    /* Shadows (6-C4): three elevation roles; steps rise on dark schemes (css-variables.liquid) */
+    --shadow-*: initial;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, var(--alpha-shadow-sm));
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, var(--alpha-shadow-md));
+    --shadow-lg: 0 14px 36px rgba(0, 0, 0, var(--alpha-shadow-lg));
 
     /* Global z-index layers: semantic overlay ordering */
     --z-layer-dropdown: 20;

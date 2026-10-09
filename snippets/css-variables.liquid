@@ -78,16 +78,53 @@
             --color-error-foreground: {{ scheme.settings.error_foreground_color.red }}, {{ scheme.settings.error_foreground_color.green }}, {{ scheme.settings.error_foreground_color.blue }};
             --color-info-background: {{ scheme.settings.info_background_color.red }}, {{ scheme.settings.info_background_color.green }}, {{ scheme.settings.info_background_color.blue }};
             --color-info-foreground: {{ scheme.settings.info_foreground_color.red }}, {{ scheme.settings.info_foreground_color.green }}, {{ scheme.settings.info_foreground_color.blue }};
+
+            {% comment %} Shadow steps rise on dark backgrounds; tint steps are one set on :root {% endcomment %}
+            {%- assign scheme_brightness = scheme.settings.background_color | color_brightness -%}
+            {%- if scheme_brightness < 128 -%}
+                --alpha-shadow-sm: 0.28;
+                --alpha-shadow-md: 0.45;
+                --alpha-shadow-lg: 0.6;
+            {%- else -%}
+                --alpha-shadow-sm: 0.06;
+                --alpha-shadow-md: 0.1;
+                --alpha-shadow-lg: 0.16;
+            {%- endif %}
+
+            {% comment %} Scheme-dependent colour roles, re-declared here so var() consumers resolve against this scheme. Same values as tailwind.input.css (lint:theme colour-role-sync). {% endcomment %}
+            --color-muted: rgba(var(--color-foreground), var(--alpha-80));
+            --color-subtle: rgba(var(--color-foreground), var(--alpha-72));
+            --color-faint: rgba(var(--color-foreground), var(--alpha-20));
+            --color-line: rgba(var(--color-border), var(--alpha-20));
+            --color-line-strong: rgba(var(--color-border), var(--alpha-35));
+            --color-line-inverse: rgba(var(--color-background), var(--alpha-20));
+            --color-surface-muted: rgba(var(--color-foreground), var(--alpha-5));
+            --color-surface-strong: rgba(var(--color-foreground), var(--alpha-10));
+            --color-indicator: rgba(var(--color-foreground), var(--alpha-35));
+            --color-indicator-strong: rgba(var(--color-foreground), var(--alpha-50));
+            --color-veil: rgba(var(--color-background), var(--alpha-80));
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, var(--alpha-shadow-sm));
+            --shadow-md: 0 8px 24px rgba(0, 0, 0, var(--alpha-shadow-md));
+            --shadow-lg: 0 14px 36px rgba(0, 0, 0, var(--alpha-shadow-lg));
         }
     {% endfor %}
 
     {% comment %} last result: body, .color-sheme-1{}, .color-sheme-2{} ... {% endcomment %}
     {{ scheme_classes | prepend: 'body' }} {
-        color: rgba(var(--color-foreground), 0.8);
+        color: rgba(var(--color-foreground), var(--alpha-80));
         background-color: rgb(var(--color-background));
     }
 
     :root {
+        {% comment %} Colour steps (layer 1); roles in tailwind.input.css consume them {% endcomment %}
+        --alpha-5: 0.05;
+        --alpha-10: 0.1;
+        --alpha-20: 0.2;
+        --alpha-35: 0.35;
+        --alpha-50: 0.5;
+        --alpha-72: 0.72;
+        --alpha-80: 0.8;
+
         {%- comment -%} global Variables {%- endcomment -%}
         --announcement-bar-height: 0px;
         --header-height: 0px;

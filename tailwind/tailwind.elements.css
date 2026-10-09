@@ -13,7 +13,7 @@ icon
 link
 ========================================================= */
 @utility skip-link {
-    @apply fixed start-4 top-4 bg-theme-bg px-4 py-3 body-md text-theme-text shadow-lg;
+    @apply fixed start-4 top-4 bg-theme-bg px-4 py-3 body-md text-theme-text shadow-md;
     z-index: var(--z-layer-toast);
     transform: translateY(calc(-100% - 2rem));
     transition: transform var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease);
@@ -217,17 +217,20 @@ button
             filter var(--btn-ui-transition-duration) var(--btn-ui-transition-ease),
             transform var(--btn-ui-transition-duration) var(--btn-ui-transition-ease);
 
+        /* lint-allow raw-colour: setting-driven button reverse fill, out of the role set */
         background-color: color-mix(
             in srgb,
             rgb(var(--btn-bg-rgb)) calc(100% - var(--btn-reverse-fill-pct)),
             rgb(var(--btn-text-rgb)) var(--btn-reverse-fill-pct)
         );
+        /* lint-allow raw-colour: setting-driven button reverse fill, out of the role set */
         color: color-mix(
             in srgb,
             rgb(var(--btn-text-rgb)) calc(100% - var(--btn-reverse-text-pct)),
             rgb(var(--btn-bg-rgb)) var(--btn-reverse-text-pct)
         );
         /* Mix border toward button bg (not text) so reversed fill keeps a visible edge */
+        /* lint-allow raw-colour: setting-driven button reverse fill, out of the role set */
         border-color: color-mix(
             in srgb,
             rgb(var(--btn-border-rgb)) calc(100% - var(--btn-reverse-border-pct)),
@@ -368,23 +371,24 @@ button.shopify-payment-button__button--unbranded {
  * soft-reverse color-mix and animation are preserved on dynamic checkout.
  */
 button.shopify-payment-button__button--unbranded:hover:not([disabled]) {
-    @supports (background-color: color-mix(in srgb, black, white)) {
-        background-color: color-mix(
-            in srgb,
-            rgb(var(--btn-bg-rgb)) calc(100% - var(--btn-reverse-fill-pct)),
-            rgb(var(--btn-text-rgb)) var(--btn-reverse-fill-pct)
-        );
-        color: color-mix(
-            in srgb,
-            rgb(var(--btn-text-rgb)) calc(100% - var(--btn-reverse-text-pct)),
-            rgb(var(--btn-bg-rgb)) var(--btn-reverse-text-pct)
-        );
-        border-color: color-mix(
-            in srgb,
-            rgb(var(--btn-border-rgb)) calc(100% - var(--btn-reverse-border-pct)),
-            rgb(var(--btn-bg-rgb)) var(--btn-reverse-border-pct)
-        );
-    }
+    /* lint-allow raw-colour: setting-driven button reverse fill, out of the role set */
+    background-color: color-mix(
+        in srgb,
+        rgb(var(--btn-bg-rgb)) calc(100% - var(--btn-reverse-fill-pct)),
+        rgb(var(--btn-text-rgb)) var(--btn-reverse-fill-pct)
+    );
+    /* lint-allow raw-colour: setting-driven button reverse fill, out of the role set */
+    color: color-mix(
+        in srgb,
+        rgb(var(--btn-text-rgb)) calc(100% - var(--btn-reverse-text-pct)),
+        rgb(var(--btn-bg-rgb)) var(--btn-reverse-text-pct)
+    );
+    /* lint-allow raw-colour: setting-driven button reverse fill, out of the role set */
+    border-color: color-mix(
+        in srgb,
+        rgb(var(--btn-border-rgb)) calc(100% - var(--btn-reverse-border-pct)),
+        rgb(var(--btn-bg-rgb)) var(--btn-reverse-border-pct)
+    );
 
     @supports not (background-color: color-mix(in srgb, black, white)) {
         background-color: rgb(var(--color-primary-button));
@@ -425,7 +429,7 @@ shopify-accelerated-checkout {
         var(--button-shadow-vertical-offset) var(--button-shadow-blur-radius)
         rgba(var(--color-foreground), var(--button-shadow-opacity));
     /* optional loading-state styling: skeleton uses primary color as background */
-    --shopify-accelerated-checkout-skeleton-background-color: var(--color-primary);
+    --shopify-accelerated-checkout-skeleton-background-color: rgb(var(--color-primary-button));
 }
 
 /* =========================================================
@@ -457,7 +461,7 @@ field
         outline-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
 
     &::placeholder {
-        color: var(--color-field-placeholder);
+        color: rgb(var(--color-input-placeholder));
         opacity: 0.8;
     }
 
@@ -537,7 +541,7 @@ Related utilities:
   layers share the media surface (promo tiles, product-card media)
 
 Targets nested .image_img / img for scale/brightness feedback only. Does not replace
-card-level shadow, arrow motion, or section reveal choreography.
+card-level shadow-sm, arrow motion, or section reveal choreography.
 
 Exclude: slideshow/hero, logo, static editorial, decorative media, PDP main LCP gallery.
 ========================================================= */
@@ -802,16 +806,16 @@ Variants:
 }
 
 @utility close-button-on-overlay {
-    @apply text-white/80;
+    @apply text-on-scrim-muted;
 
     @media (hover: hover) and (pointer: fine) {
         &:hover:not(:disabled):not([aria-disabled='true']) {
-            @apply text-white;
+            @apply text-on-scrim;
         }
     }
 
     &:focus-visible:not(:disabled):not([aria-disabled='true']) {
-        @apply text-white;
+        @apply text-on-scrim;
     }
 }
 
@@ -860,7 +864,7 @@ Consumers: quantity-selector (default size), product-card carousel arrows (`cont
 
     @media (hover: hover) and (pointer: fine) {
         &:hover:not(:disabled):not([aria-disabled='true']) {
-            background-color: rgba(var(--color-foreground), 0.08);
+            background-color: var(--color-surface-muted);
         }
     }
 
@@ -872,7 +876,7 @@ Consumers: quantity-selector (default size), product-card carousel arrows (`cont
 
     &:active:not(:disabled):not([aria-disabled='true']) {
         transform: scale(0.96);
-        background-color: rgba(var(--color-foreground), 0.12);
+        background-color: var(--color-surface-strong);
     }
 
     &:disabled,
@@ -905,7 +909,7 @@ Consumers: product-card-shell pagination dots (is-active stays component-owned).
 
     width: var(--control-dot-size, 0.75rem);
     height: var(--control-dot-size, 0.75rem);
-    background-color: color-mix(in srgb, currentColor 20%, transparent);
+    background-color: var(--color-indicator);
     transition:
         width var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
         height var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
@@ -915,7 +919,7 @@ Consumers: product-card-shell pagination dots (is-active stays component-owned).
 
     @media (hover: hover) and (pointer: fine) {
         &:hover:not(:disabled):not([aria-disabled='true']) {
-            background-color: color-mix(in srgb, currentColor 35%, transparent);
+            background-color: var(--color-indicator-strong);
         }
     }
 

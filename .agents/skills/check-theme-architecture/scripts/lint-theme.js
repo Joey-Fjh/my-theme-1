@@ -33,6 +33,11 @@ const {
     collectCssFontWeightFailures,
     collectMarkupFontWeightFailures,
 } = require('./lib/font-weight-lint');
+const {
+    collectColourRoleSyncFailures,
+    collectCssRawColourFailures,
+    collectMarkupRawColourFailures,
+} = require('./lib/raw-colour-lint');
 
 const LIQUID_GLOBS = [
     'layout/**/*.liquid',
@@ -552,6 +557,7 @@ async function runThemeLint(root, notes = []) {
         collectSettingsChainLiquidFailures(ast, text, file, failures, allowsByLine);
         collectTypographyTierFailures(ast, text, file, failures, allowsByLine);
         collectMarkupFontWeightFailures(text, file, failures, allowsByLine);
+        collectMarkupRawColourFailures(text, file, failures, allowsByLine);
         collectStylesheetPlacementFailures(ast, text, file, failures, allowsByLine, { file });
 
         for (const block of extractBlocks(text, 'stylesheet')) {
@@ -575,6 +581,10 @@ async function runThemeLint(root, notes = []) {
                 baseOffset: block.offset,
                 lineText: text,
             });
+            collectCssRawColourFailures(block.code, file, failures, allowsByLine, {
+                baseOffset: block.offset,
+                lineText: text,
+            });
         }
     }
 
@@ -587,6 +597,7 @@ async function runThemeLint(root, notes = []) {
         collectInvalidRgbAlphaFailures(text, file, failures, allowsByLine);
         collectSettingsChainCssFailures(text, file, failures, allowsByLine);
         collectCssFontWeightFailures(text, file, failures, allowsByLine);
+        collectCssRawColourFailures(text, file, failures, allowsByLine);
     }
 
     const hasThemeLayout = await fs
@@ -609,6 +620,7 @@ async function runThemeLint(root, notes = []) {
     }
 
     collectSectionColorSchemeFailures(root, failures);
+    collectColourRoleSyncFailures(root, failures);
     collectMigrationFailures(root, failures, notes);
 
     if (hasAssets && hasVendorNotices) {
