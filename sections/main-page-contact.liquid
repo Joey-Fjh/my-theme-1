@@ -43,18 +43,18 @@
                     %}
                 </div>
                 {%- comment -%} Right: Form {%- endcomment -%}
-                {%- assign form_bg = section.settings.form_background_color | default: '#ffffff' -%}
-                {%- assign form_text = section.settings.form_text_color | default: '#1a1a1a' -%}
+                {%- liquid
+                    assign form_color_scheme = section.settings.form_color_scheme | default: section.settings.color_scheme
+                -%}
                 <div
-                    class="flex flex-col justify-center bg-(--contact-form-bg) px-6 py-8 text-(--contact-form-text) pc:px-10 pc:py-10 fw:px-12"
-                    style="--contact-form-bg: {{ form_bg }}; --contact-form-text: {{ form_text }};"
+                    class="color-{{ form_color_scheme }} flex flex-col justify-center px-6 py-8 text-theme-text pc:px-10 pc:py-10 fw:px-12"
                 >
                     {%- assign heading_fallback = 'sections.main-page-contact.defaults.heading'
                         | t
                     -%}
                     <div>
                         <h1
-                            class="{{ contact_heading_class }} text-center text-(--contact-form-text)"
+                            class="{{ contact_heading_class }} text-center text-theme-text"
                         >
                             {{ section.settings.heading | default: heading_fallback }}
                         </h1>
@@ -226,16 +226,16 @@
 
 {% stylesheet %}
     .main-page-contact-section .rte :is(h1, h2, h3, h4, h5, h6) {
-        color: var(--contact-form-text);
+        color: rgb(var(--color-foreground));
     }
     .main-page-contact-section .rte blockquote {
-        color: var(--contact-form-text);
+        color: rgb(var(--color-foreground));
     }
     .main-page-contact-section .rte figcaption {
-        color: var(--contact-form-text);
+        color: rgb(var(--color-foreground));
     }
     .main-page-contact-section .rte :is(code, pre) {
-        color: var(--contact-form-text);
+        color: rgb(var(--color-foreground));
     }
 {% endstylesheet %}
 
@@ -255,16 +255,10 @@
             "default": "scheme-2"
         },
         {
-            "type": "color",
-            "id": "form_background_color",
-            "label": "t:sections.main-page-contact.settings.form_background_color",
-            "default": "#ffffff"
-        },
-        {
-            "type": "color",
-            "id": "form_text_color",
-            "label": "t:sections.main-page-contact.settings.form_text_color",
-            "default": "#1a1a1a"
+            "type": "color_scheme",
+            "id": "form_color_scheme",
+            "label": "t:sections.main-page-contact.settings.form_color_scheme",
+            "default": "scheme-5"
         },
         {
             "type": "image_picker",

@@ -170,7 +170,7 @@ const ROLE_SOURCE = 'tailwind/tailwind.input.css';
 const ROLE_RUNTIME = 'snippets/css-variables.liquid';
 const ROLE_DECLARATION_RE = /^[ \t]*(--(?:color|shadow)-[a-z0-9-]+)\s*:\s*([^;]+);/gm;
 // Layer 2 roles sit on a step; layer 0 bridge tokens are utility-only (raw-colour rejects var() on them in CSS).
-const SCHEME_DEPENDENT_RE = /var\(--(?:color-(?:foreground|border|background)|alpha-shadow-[a-z]+)\)/;
+const SCHEME_DEPENDENT_RE = /var\(--(?:color-(?:foreground|border|background|card-background)|alpha-shadow-[a-z]+)\)/;
 const ROLE_STEP_RE = /var\(--alpha-/;
 
 function roleDeclarations(text, onlySchemeDependent) {
@@ -179,7 +179,9 @@ function roleDeclarations(text, onlySchemeDependent) {
         const value = match[2].replace(/\s+/g, ' ').trim();
         // Layer 0 triplets from settings are not roles.
         if (value.includes('{{')) continue;
-        if (onlySchemeDependent && !(SCHEME_DEPENDENT_RE.test(value) && ROLE_STEP_RE.test(value))) continue;
+        // The card role carries its own scheme field, so it needs no alpha step.
+        const isRole = ROLE_STEP_RE.test(value) || value.includes('var(--color-card-background)');
+        if (onlySchemeDependent && !(SCHEME_DEPENDENT_RE.test(value) && isRole)) continue;
         const offset = match.index + match[0].indexOf(match[1]);
         roles.set(match[1], { value, line: lineAt(text, offset), offset, count: (roles.get(match[1])?.count ?? 0) + 1 });
     }

@@ -2678,6 +2678,70 @@ test('6-C5 review 2: comment, whitespace and quoting edge cases', async () => {
     });
 });
 
+test('colour-setting: allowlisted global badge colours pass', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeGlobalSettingsSchema(
+            root,
+            [
+                { type: 'color', id: 'badge_sale_background', default: '#000' },
+                { type: 'color', id: 'badge_sale_text', default: '#fff' },
+            ],
+            {},
+        );
+        const colour = (await runThemeLint(root)).filter((f) => f.checkId === 'colour-setting');
+        assert.equal(colour.length, 0, colour.map((f) => f.message).join('\n'));
+    });
+});
+
+test('colour-setting: a non-allowlisted colour setting in section schema fails', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(
+            root,
+            'sections/fixture.liquid',
+            [
+                '{% schema %}',
+                '{ "name": "Fixture", "settings": [{ "type": "color", "id": "accent_override", "label": "Accent" }] }',
+                '{% endschema %}',
+                '',
+            ].join('\n'),
+        );
+        const colour = (await runThemeLint(root)).filter((f) => f.checkId === 'colour-setting');
+        assert.equal(colour.length, 1);
+        assert.match(colour[0].message, /accent_override/);
+    });
+});
+
+test('6-C9 review: the badge allowlist is global only, and {%- schema -%} is read', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(
+            root,
+            'sections/fixture.liquid',
+            [
+                '{%- schema -%}',
+                '{ "name": "Fixture", "settings": [{ "type": "color", "id": "badge_sale_background", "label": "A" }],',
+                '  "blocks": [{ "type": "b", "name": "B", "settings": [{ "type": "color_background", "id": "badge_sale_text", "label": "B" }] }] }',
+                '{%- endschema -%}',
+                '',
+            ].join('\n'),
+        );
+        const colour = (await runThemeLint(root)).filter((f) => f.checkId === 'colour-setting');
+        assert.equal(colour.length, 2, colour.map((f) => f.message).join('\n'));
+    });
+});
+
+test('6-C9 review: colour-role-sync guards the card role', async () => {
+    const card = '    --color-card: rgb(var(--color-card-background));';
+    const sync = (failures) => failures.filter((f) => f.checkId === 'colour-role-sync').map((f) => f.message);
+    await withTempThemeAsync(async (root) => {
+        writeRoleFiles(root, [card], [card]);
+        assert.deepEqual(sync(await runThemeLint(root)), []);
+    });
+    await withTempThemeAsync(async (root) => {
+        writeRoleFiles(root, [card], []);
+        assert.match(sync(await runThemeLint(root)).join('\n'), /--color-card depends on the scheme but is not re-declared/);
+    });
+});
+
 test('6-V2 review: a setting referenced only in a Liquid comment is dead', async () => {
     for (const markup of [
         '{% comment %}{{ section.settings.note }}{% endcomment %}',

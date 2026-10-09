@@ -51,6 +51,7 @@ const {
     collectPageFrameLiquidFailures,
     collectPageFrameCssFailures,
 } = require('./lib/page-frame-lint');
+const { collectColourSettingFailures } = require('./lib/colour-setting-lint');
 
 const LIQUID_GLOBS = [
     'layout/**/*.liquid',
@@ -636,6 +637,7 @@ async function runThemeLint(root, notes = []) {
 
     collectSectionColorSchemeFailures(root, failures);
     collectColourRoleSyncFailures(root, failures);
+    collectColourSettingFailures(root, failures);
     collectMigrationFailures(root, failures, notes);
     collectDeadSettingFailures(root, failures, notes);
 

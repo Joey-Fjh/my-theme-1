@@ -10,13 +10,7 @@
         assign comparison_columns = '1,2,3,4,5,6' | split: ','
         assign comparison_item_count = comparison_columns.size
     endif
-    assign comparison_col_bg = section.settings.comparison_column_bg_color | default: '#F4F1E8'
-    assign comparison_success = section.settings.comparison_success_color | default: '#228E58'
-    assign comparison_danger = section.settings.comparison_danger_color | default: '#E04A4A'
 -%}
-{%- capture comparison_root_style -%}
---comparison-column-bg-color: {{ comparison_col_bg }}; --comparison-success-color: {{ comparison_success }}; --comparison-danger-color: {{ comparison_danger }};
-{%- endcapture -%}
 {%- assign comparison_root_attrs = 'data-component-kind="section" data-component-type="product-comparison-table" data-component-id="'
     | append: section.id
     | append: '"'
@@ -102,7 +96,7 @@
                                         class="
                                             comparison-table__product-cell
                                             border border-line p-3 align-middle pc:p-6
-                                            {% if is_highlight %}bg-(--comparison-column-bg-color){% else %}bg-transparent{% endif %}
+                                            {% if is_highlight %}bg-card{% else %}bg-transparent{% endif %}
                                             {% if block.type != 'header' and block.type != 'metafield_text' %}body-lg{% endif %}
                                         "
                                     >
@@ -240,11 +234,11 @@
                                                         {{- 'products.product.unavailable' | t -}}
                                                     </span>
                                                 {% elsif item.available %}
-                                                    <span class="text-(--comparison-success-color)">
+                                                    <span class="comparison-table__availability--success">
                                                         {{- 'products.comparison.in_stock' | t -}}
                                                     </span>
                                                 {% else %}
-                                                    <span class="text-(--comparison-danger-color)">
+                                                    <span class="comparison-table__availability--danger">
                                                         {{-
                                                             'products.comparison.out_of_stock'
                                                             | t
@@ -274,7 +268,6 @@
     section: section,
     section_class: 'product-comparison-table-section',
     motion: false,
-    root_style: comparison_root_style,
     root_attrs: comparison_root_attrs,
     children: product_comparison_children
 %}
@@ -314,6 +307,12 @@
             gap: 0.2rem;
             margin-bottom: 0;
             line-height: inherit;
+        }
+        .comparison-table__availability--success {
+            color: rgb(var(--color-success-foreground));
+        }
+        .comparison-table__availability--danger {
+            color: rgb(var(--color-error-foreground));
         }
         .comparison-table__rating .stars__icon {
             width: 1.35rem;
@@ -468,24 +467,6 @@
                 }
             ],
             "default": "title-2xl"
-        },
-        {
-            "type": "color",
-            "id": "comparison_column_bg_color",
-            "label": "t:sections.product-comparison-table.settings.highlight_column_background",
-            "default": "#F4F1E8"
-        },
-        {
-            "type": "color",
-            "id": "comparison_success_color",
-            "label": "t:sections.product-comparison-table.settings.availability_in_stock_color",
-            "default": "#228E58"
-        },
-        {
-            "type": "color",
-            "id": "comparison_danger_color",
-            "label": "t:sections.product-comparison-table.settings.availability_out_of_stock_color",
-            "default": "#E04A4A"
         },
         {
             "type": "product_list",
