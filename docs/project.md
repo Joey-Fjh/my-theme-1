@@ -23,7 +23,8 @@ Ceylune, a custom Shopify theme maintained as a multi-industry Shopify Theme Sto
     - **6-V2 validator gaps:** `lint:theme` now guards CustomEvent and section DOM mutation outlets and reports dead settings (0 today); three reference fixes.
     - **6-C5 page frame:** one named page grid, `--screen-height`, and the `page-token-scope`, `screen-height-literal` and `frame-full-allowlist` lints; nothing on the storefront moved. Accepted after three independent review rounds.
     - **6-C7 space scale:** nine fluid steps with semantic aliases, no visual change.
-    - **Next:** 6-C8 type scale, then 6-C9; 6-C6 stylesheet ownership and the design-tool discussion are parked until those are done. Product page batches are interleaved with the CSS batches.
+    - **6-C8 type scale:** eleven fluid steps from the merchant body sizes, semantic size options (8 heading, 4 body) with saved merchant values migrated; a planned visual change, accepted by the user.
+    - **Next:** 6-C9 colour schemes and settings; 6-C6 stylesheet ownership and the design-tool discussion are parked until those are done. Product page batches are interleaved with the CSS batches.
 
 ## Migration Direction (accepted)
 
