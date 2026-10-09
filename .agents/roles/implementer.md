@@ -37,7 +37,7 @@ Use when delegating or when the user requests a portable execution prompt. Give 
 3. **Tasks:** numbered checks from the plan.
 4. **Completion checks:** the plan's validators plus `npx prettier --check` on every changed file.
 5. Record progress and validation in `docs/agent/context.md`.
-6. Do not mark the plan accepted and do not commit unless the user asks.
+6. Do not mark the plan accepted and do not commit unless the user asks. Do not run `git stash`, `checkout`, `reset` or other commands that rewrite the working tree; take any before-measurement before the first edit.
 7. **Report:** outcome, changed files, validation results, unverified items, risks.
 
 ## Output
