@@ -25,7 +25,8 @@ Ceylune, a custom Shopify theme maintained as a multi-industry Shopify Theme Sto
     - **6-C7 space scale:** nine fluid steps with semantic aliases, no visual change.
     - **6-C8 type scale:** eleven fluid steps from the merchant body sizes, semantic size options (8 heading, 4 body) with saved merchant values migrated; a planned visual change, accepted by the user.
     - **6-C9 colour:** five schemes (Sage and Page added, values provisional), a card role, standalone colour settings moved to roles, and a colour-setting lint. The CSS specification batches 6-C1 to 6-C9 are complete.
-    - **Next:** the parked discussions, 6-C6 stylesheet ownership and the design-tool / Figma value pilot, then the product page and the polish pass. Product page batches are interleaved with the CSS batches.
+    - **6-C6 stylesheet ownership:** every `{% stylesheet %}` unlayered and winning over utilities, the `snippets` layer retired, and the `stylesheet-layer`, `stylesheet-font-size` and `mixed-element` lints (ratchets); no visual change except the filter summary states. Accepted after five independent review rounds.
+    - **Next:** the parked design-tool / Figma value pilot discussion, then the product page and the polish pass. Product page batches are interleaved with the CSS batches.
 
 ## Migration Direction (accepted)
 
