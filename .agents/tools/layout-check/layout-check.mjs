@@ -2,6 +2,8 @@
 /**
  * Storefront layout check harness. Optional env: LAYOUT_BASE_URL, STOREFRONT_PASSWORD,
  * LAYOUT_INJECT_STYLE (addStyleTag CSS for local regression probes; not for production CI).
+ * If `<repo root>/.env` exists, it is loaded at startup (`process.loadEnvFile`); variables
+ * already set in the environment keep precedence.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -23,6 +25,11 @@ import { pickArticleHref, pruneRefusalReason, expectedDocumentStatus, validateCo
 export { baselineIdentityKey, compareToBaseline, normalizeRuntimeMessage } from './runtime-keys.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = path.join(__dirname, '../../..');
+const ENV_PATH = path.join(REPO_ROOT, '.env');
+if (fs.existsSync(ENV_PATH)) {
+    process.loadEnvFile(ENV_PATH);
+}
 const CONFIG_PATH = path.join(__dirname, 'layout-check.config.json');
 const BASELINE_PATH = path.join(__dirname, 'layout-check.baseline.json');
 const OUTPUT_DIR = path.join(__dirname, '../../../.tmp-layout-check');

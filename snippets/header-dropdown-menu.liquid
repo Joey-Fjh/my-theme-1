@@ -159,34 +159,37 @@
 </nav>
 
 {% stylesheet %}
-    @layer components {
-        .panel-motion-scale {
-            --panel-motion-dur: var(--panel-motion-duration-scale);
-        }
-        .panel-motion-flyout {
-            --panel-motion-dur: var(--panel-motion-duration-flyout);
-            transform-origin: top inline-start;
-        }
-        [dir='rtl'] .panel-motion-flyout {
-            transform-origin: top inline-end;
-        }
-        details[open] > .panel-motion-flyout[class*='inset-s-full'],
-        [data-dropdown][open] > .panel-motion-flyout[class*='inset-s-full'] {
-            animation: panel-motion-flyout-in var(--panel-motion-dur) var(--panel-motion-ease-enter)
-                both;
-        }
-        [dir='rtl'] details[open] > .panel-motion-flyout[class*='inset-s-full'],
-        [dir='rtl'] [data-dropdown][open] > .panel-motion-flyout[class*='inset-s-full'] {
-            animation-name: panel-motion-flyout-in-rtl;
-        }
-        details[open] > .panel-motion-flyout > li,
-        [data-dropdown][open] > .panel-motion-flyout > li {
-            animation: panel-motion-item-flyout-in var(--panel-motion-duration-item)
-                var(--panel-motion-ease-enter) both;
-        }
-        [dir='rtl'] details[open] > .panel-motion-flyout > li,
-        [dir='rtl'] [data-dropdown][open] > .panel-motion-flyout > li {
-            animation-name: panel-motion-item-flyout-in-rtl;
-        }
+    .panel-motion-scale {
+        --panel-motion-dur: var(--panel-motion-duration-scale);
+    }
+    .panel-motion-flyout {
+        --panel-motion-dur: var(--panel-motion-duration-flyout);
+        transform-origin: top inline-start;
+    }
+    [dir='rtl'] .panel-motion-flyout {
+        transform-origin: top inline-end;
+    }
+    /* Open down-flyouts keep the components-layer origin (tailwind.components.css, directional flyout). */
+    :is(details[open], [aria-expanded='true'], .is-open, [data-dropdown][open])
+        > .panel-motion-flyout:not([class*='inset-s-full']) {
+        transform-origin: top center;
+    }
+    details[open] > .panel-motion-flyout[class*='inset-s-full'],
+    [data-dropdown][open] > .panel-motion-flyout[class*='inset-s-full'] {
+        animation: panel-motion-flyout-in var(--panel-motion-dur) var(--panel-motion-ease-enter)
+            both;
+    }
+    [dir='rtl'] details[open] > .panel-motion-flyout[class*='inset-s-full'],
+    [dir='rtl'] [data-dropdown][open] > .panel-motion-flyout[class*='inset-s-full'] {
+        animation-name: panel-motion-flyout-in-rtl;
+    }
+    details[open] > .panel-motion-flyout > li,
+    [data-dropdown][open] > .panel-motion-flyout > li {
+        animation: panel-motion-item-flyout-in var(--panel-motion-duration-item)
+            var(--panel-motion-ease-enter) both;
+    }
+    [dir='rtl'] details[open] > .panel-motion-flyout > li,
+    [dir='rtl'] [data-dropdown][open] > .panel-motion-flyout > li {
+        animation-name: panel-motion-item-flyout-in-rtl;
     }
 {% endstylesheet %}

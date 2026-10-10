@@ -1918,6 +1918,286 @@ test('migration baseline flags: write refuses an existing file; shrink only lowe
     });
 });
 
+const STYLESHEET_OWNERSHIP_BASELINE =
+    '.agents/skills/check-theme-architecture/scripts/stylesheet-ownership-baseline.json';
+
+function writeStylesheetOwnershipTheme(root, sectionMarkup, baseline) {
+    writeFile(root, 'tailwind/tailwind.typography.css', MIGRATION_TYPOGRAPHY);
+    writeFile(root, 'assets/tailwind.output.css', '@layer utilities {\n  .flex { display: flex; }\n}\n');
+    writeFile(root, 'sections/a.liquid', sectionMarkup);
+    if (baseline) writeFile(root, STYLESHEET_OWNERSHIP_BASELINE, JSON.stringify(baseline));
+}
+
+test('stylesheet-layer lint: @layer inside stylesheet fails', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeStylesheetOwnershipTheme(
+            root,
+            ['{% stylesheet %}', '@layer components { .x { color: red; } }', '{% endstylesheet %}', ''].join('\n'),
+            { 'stylesheet-font-size': {}, 'mixed-element': {} },
+        );
+        const failures = await runThemeLint(root);
+        assert.ok(failures.some((f) => /\[stylesheet-layer\]/.test(f.message)));
+    });
+});
+
+test('stylesheet-font-size lint: new absolute size fails', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeStylesheetOwnershipTheme(
+            root,
+            ['{% stylesheet %}', '.new { font-size: 14px; }', '{% endstylesheet %}', ''].join('\n'),
+            { 'stylesheet-font-size': {}, 'mixed-element': {} },
+        );
+        const failures = await runThemeLint(root);
+        assert.ok(failures.some((f) => /\[stylesheet-font-size\] 1 use\(s\), baseline 0/.test(f.message)));
+    });
+});
+
+test('stylesheet-font-size lint: calc with rem in heading scale counts', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeStylesheetOwnershipTheme(
+            root,
+            [
+                '{% stylesheet %}',
+                '.x { font-size: calc(var(--font-heading-scale) * 6.5rem); }',
+                '{% endstylesheet %}',
+                '',
+            ].join('\n'),
+            { 'stylesheet-font-size': {}, 'mixed-element': {} },
+        );
+        const failures = await runThemeLint(root);
+        assert.ok(failures.some((f) => /\[stylesheet-font-size\] 1 use\(s\), baseline 0/.test(f.message)));
+    });
+});
+
+test('stylesheet-font-size lint: calc with scale ratio and em passes', async () => {
+    const { isAllowedStylesheetFontSize } = require('./lib/stylesheet-ownership-lint');
+    assert.equal(isAllowedStylesheetFontSize('calc(var(--font-body-scale) * var(--x-ratio) * 1em)'), true);
+});
+
+test('mixed-element lint: new mixed region fails', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeStylesheetOwnershipTheme(
+            root,
+            [
+                '<div class="widget flex gap-4"></div>',
+                '{% stylesheet %}',
+                '.widget { display: block; }',
+                '{% endstylesheet %}',
+                '',
+            ].join('\n'),
+            { 'stylesheet-font-size': {}, 'mixed-element': {} },
+        );
+        const failures = await runThemeLint(root);
+        assert.ok(failures.some((f) => /\[mixed-element\] 1 use\(s\), baseline 0/.test(f.message)));
+    });
+});
+
+test('stylesheet ownership ratchet: drop passes with shrink hint', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeStylesheetOwnershipTheme(
+            root,
+            [
+                '<div class="widget flex"></div>',
+                '{% stylesheet %}',
+                '.widget { display: block; }',
+                '{% endstylesheet %}',
+                '',
+            ].join('\n'),
+            { 'stylesheet-font-size': {}, 'mixed-element': { 'sections/a.liquid': 2 } },
+        );
+        const notes = [];
+        const failures = await runThemeLint(root, notes);
+        assert.equal(failures.filter((f) => f.message.startsWith('[mixed-element]')).length, 0);
+        assert.match(notes.join('\n'), /--shrink-stylesheet-ownership-baseline/);
+    });
+});
+
+test('stylesheet-layer lint: bare and comment-separated @layer forms fail', async () => {
+    for (const css of ['@layer{ .x { color: red; } }', '@layer/**/components{ .x { color: red; } }', '@layer a, b;']) {
+        await withTempThemeAsync(async (root) => {
+            writeStylesheetOwnershipTheme(root, `{% stylesheet %}\n${css}\n{% endstylesheet %}\n`, {
+                'stylesheet-font-size': {},
+                'mixed-element': {},
+            });
+            const failures = await runThemeLint(root);
+            assert.ok(
+                failures.some((f) => /\[stylesheet-layer\]/.test(f.message)),
+                css,
+            );
+        });
+    }
+});
+
+test('stylesheet-font-size lint: only type steps, em / % and unitless multipliers pass', () => {
+    const { isAllowedStylesheetFontSize } = require('./lib/stylesheet-ownership-lint');
+    for (const value of [
+        'inherit',
+        'var(--type-step-2)',
+        '1.2em',
+        '90%',
+        'calc(var(--font-body-scale) * var(--x-ratio) * 1em)',
+        'calc(var(--type-step-1) * var(--font-heading-scale))',
+        'clamp(1em, calc(var(--a-scale) * 1em), 2em)',
+    ]) {
+        assert.equal(isAllowedStylesheetFontSize(value), true, value);
+    }
+    for (const value of [
+        '14px',
+        '1rem',
+        'var(--font-heading-scale)',
+        'var(--font-pagination-size)',
+        'calc(var(--font-heading-scale) * 6.5rem)',
+        'calc(var(--font-body-scale) * 1cm)',
+        'calc(var(--font-body-scale) * 1in)',
+        'calc(var(--font-body-scale) * 1dvw)',
+        'calc(var(--font-body-size-mobile) * 0.75)',
+        'calc(var(--font-body-scale) * 2)',
+        'clamp(3rem, 12vw, 7.5rem)',
+    ]) {
+        assert.equal(isAllowedStylesheetFontSize(value), false, value);
+    }
+});
+
+test('stylesheet-font-size lint: a drop passes with a shrink hint', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeStylesheetOwnershipTheme(root, '{% stylesheet %}\n.x { font-size: 14px; }\n{% endstylesheet %}\n', {
+            'stylesheet-font-size': { 'sections/a.liquid': 3 },
+            'mixed-element': {},
+        });
+        const notes = [];
+        const failures = await runThemeLint(root, notes);
+        assert.equal(failures.filter((f) => f.message.startsWith('[stylesheet-font-size]')).length, 0);
+        assert.match(notes.join('\n'), /--shrink-stylesheet-ownership-baseline/);
+    });
+});
+
+test('mixed-element lint: class attributes only, used class captures, compiled utility names', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeStylesheetOwnershipTheme(
+            root,
+            [
+                '<div data-class="widget flex"></div>',
+                '{% capture unused_class %}widget flex{% endcapture %}',
+                '<div class="widget w-1/2"></div>',
+                '<div class="widget mt-0.5"></div>',
+                '<div class="widget {% if x %}flex{% endif %}"></div>',
+                '<div class="widget {{ extra }}"></div>',
+                '{% capture used_class %}widget flex{% endcapture %}',
+                '<div class="{{ used_class }}"></div>',
+                '{% stylesheet %}',
+                '.widget { display: block; }',
+                '{% endstylesheet %}',
+                '',
+            ].join('\n'),
+            { 'stylesheet-font-size': {}, 'mixed-element': {} },
+        );
+        writeFile(
+            root,
+            'assets/tailwind.output.css',
+            '@layer utilities {\n  .flex { display: flex; }\n  .w-1\\/2 { width: 50%; }\n  .mt-0\\.5 { margin-top: 0.125rem; }\n  .group-hover\\:flex { &:is(:where(.group):hover *) { display: flex; } }\n}\n',
+        );
+        const failures = await runThemeLint(root);
+        const mixed = failures.find((f) => f.message.startsWith('[mixed-element]'));
+        // Counted: w-1/2, mt-0.5, the {% if %} literal, the used capture. Not counted: data-class, unused capture, {{ extra }}.
+        assert.ok(mixed, 'expected a mixed-element failure');
+        assert.match(mixed.message, /4 use\(s\), baseline 0/);
+    });
+});
+
+test('mixed-element lint: captures count per element that outputs them; static tokens around Liquid count', () => {
+    const { collectStylesheetOwnershipCounts } = require('./lib/stylesheet-ownership-lint');
+    const cases = [
+        ['{% capture used_class %}flex{% endcapture %}<div class="widget {{ used_class }}"></div>', 1],
+        ['{% capture m_class %}widget flex{% endcapture %}<div class="{{ m_class }}"></div><p class="{{ m_class }}"></p>', 2],
+        ['{% capture m_class %}widget flex{% endcapture %}<div class="widget flex {{ m_class }}"></div>', 1],
+        ['<div class="widget body-lg color-{{ settings.color_scheme }}"></div>', 1],
+        ['<div class="widget {{ settings.size }}"></div>', 0],
+        ['<div class="widget color-{{ x }}"></div>', 0],
+        [
+            '{% capture inner_class %}widget flex{% endcapture %}{% capture outer_class %}{{ inner_class }}{% endcapture %}<div class="{{ outer_class }}"></div>',
+            1,
+        ],
+        [
+            '{% capture inner_class %}widget flex{% endcapture %}{% capture outer_class %}{{ inner_class }}{% endcapture %}<div class="{{ outer_class }}"></div><p class="{{ outer_class }}"></p>',
+            2,
+        ],
+        [
+            '{% capture a_class %}widget {{ b_class }}{% endcapture %}{% capture b_class %}flex {{ a_class }}{% endcapture %}<div class="{{ a_class }}"></div>',
+            1,
+        ],
+        [
+            '{% capture d_class %}flex{% endcapture %}{% capture c_class %}{{ d_class }}{% endcapture %}{% capture b_class %}{{ c_class }}{% endcapture %}{% capture a_class %}widget {{ b_class }}{% endcapture %}<div class="{{ a_class }}"></div>',
+            1,
+        ],
+        [
+            '{% capture inner_class %}widget flex{% endcapture %}{% capture outer_class %}{{ inner_class }}{% endcapture %}<div class="{{ outer_class }} {{ outer_class }}"></div>',
+            1,
+        ],
+        ['{% capture extra %}flex{% endcapture %}<div class="widget {{ extra }}"></div>', 0],
+        [
+            '{% capture extra %}flex{% endcapture %}{% capture outer_class %}widget {{ extra }}{% endcapture %}<div class="{{ outer_class }}"></div>',
+            0,
+        ],
+    ];
+    for (const [markup, expected] of cases) {
+        withTempTheme((root) => {
+            writeStylesheetOwnershipTheme(root, `${markup}\n{% stylesheet %}.widget { display: block; }{% endstylesheet %}\n`);
+            writeFile(
+                root,
+                'assets/tailwind.output.css',
+                '@layer utilities {\n  .flex { display: flex; }\n  .body-lg { font-size: 1rem; }\n}\n',
+            );
+            const counts = collectStylesheetOwnershipCounts(root);
+            assert.equal(counts['mixed-element']['sections/a.liquid']?.count ?? 0, expected, markup);
+        });
+    }
+});
+
+test('stylesheet ownership baseline flags: write refuses an existing file; shrink only lowers and removes', () => {
+    withTempTheme((root) => {
+        writeStylesheetOwnershipTheme(
+            root,
+            [
+                '<div class="widget flex"></div>',
+                '<div class="widget flex"></div>',
+                '{% stylesheet %}',
+                '.widget { display: block; font-size: 14px; }',
+                '{% endstylesheet %}',
+                '',
+            ].join('\n'),
+        );
+        let result = runThemeLintArgs(root, ['--write-stylesheet-ownership-baseline']);
+        assert.equal(result.status, 0, result.stderr);
+        const written = JSON.parse(fs.readFileSync(path.join(root, STYLESHEET_OWNERSHIP_BASELINE), 'utf8'));
+        assert.deepEqual(written, {
+            'mixed-element': { 'sections/a.liquid': 2 },
+            'stylesheet-font-size': { 'sections/a.liquid': 1 },
+        });
+
+        result = runThemeLintArgs(root, ['--write-stylesheet-ownership-baseline']);
+        assert.notEqual(result.status, 0);
+        assert.match(result.stderr, /refused/);
+
+        writeFile(
+            root,
+            'sections/a.liquid',
+            [
+                '<div class="widget flex"></div>',
+                '<div class="widget flex"></div>',
+                '<div class="widget flex"></div>',
+                '{% stylesheet %}',
+                '.widget { display: block; }',
+                '{% endstylesheet %}',
+                '',
+            ].join('\n'),
+        );
+        result = runThemeLintArgs(root, ['--shrink-stylesheet-ownership-baseline']);
+        assert.equal(result.status, 0, result.stderr);
+        const shrunk = JSON.parse(fs.readFileSync(path.join(root, STYLESHEET_OWNERSHIP_BASELINE), 'utf8'));
+        assert.deepEqual(shrunk, { 'mixed-element': { 'sections/a.liquid': 2 }, 'stylesheet-font-size': {} });
+    });
+});
+
 test('stylesheet media queries: tokenized widths and the two hover conditions pass', () => {
     for (const prelude of [
         ' (width >= 48rem) ',

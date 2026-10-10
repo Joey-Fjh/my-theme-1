@@ -218,49 +218,54 @@
 </div>
 
 {% stylesheet %}
-    @layer components {
-        .quantity-selector__input {
-            width: 4ch;
+    .quantity-selector__input {
+        width: 4ch;
+        appearance: none;
+        border-bottom-style: solid;
+        border-bottom-width: 1px;
+        border-color: currentcolor;
+        background-color: transparent;
+        padding: calc(var(--spacing) * 0);
+        text-align: center;
+        color: currentcolor;
+        font-variant-numeric: tabular-nums;
+        &:focus-visible {
+            outline: var(--focus-ring-width) solid
+                rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+            outline-offset: var(--focus-ring-offset);
+        }
+        -moz-appearance: textfield;
+        &:focus {
+            box-shadow: none;
+        }
+        /* Mouse focus only: keyboard focus keeps the :focus-visible outline above. */
+        &:focus:not(:focus-visible) {
+            --tw-outline-style: none;
+            outline-style: none;
+        }
+        &::-webkit-inner-spin-button {
             appearance: none;
-            border-bottom-style: solid;
-            border-bottom-width: 1px;
-            border-color: currentcolor;
-            background-color: transparent;
-            padding: calc(var(--spacing) * 0);
-            text-align: center;
-            color: currentcolor;
-            font-variant-numeric: tabular-nums;
-            &:focus-visible {
-                outline: var(--focus-ring-width) solid
-                    rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
-                outline-offset: var(--focus-ring-offset);
-            }
-            -moz-appearance: textfield;
-            &:focus {
-                box-shadow: none;
-            }
-            /* Mouse focus only: keyboard focus keeps the :focus-visible outline above. */
-            &:focus:not(:focus-visible) {
-                --tw-outline-style: none;
-                outline-style: none;
-            }
-            &::-webkit-inner-spin-button {
-                appearance: none;
-            }
-            &::-webkit-outer-spin-button {
-                appearance: none;
-            }
-            font: inherit;
-            &:focus-visible {
-                position: relative;
-                z-index: 1;
-            }
         }
-        .quantity-selector--static .quantity-selector__input {
-            pointer-events: none;
-            cursor: default;
-            opacity: 100%;
-            -webkit-text-fill-color: currentColor;
+        &::-webkit-outer-spin-button {
+            appearance: none;
         }
+        font: inherit;
+        &:focus-visible {
+            position: relative;
+            z-index: 1;
+        }
+    }
+    .quantity-selector--static .quantity-selector__input {
+        pointer-events: none;
+        cursor: default;
+        opacity: 100%;
+        -webkit-text-fill-color: currentColor;
+    }
+
+    /* Product surface input: moved from tailwind.components.css (6-C6) so it still beats the base input rule. */
+    .quantity-selector[data-qty-surface='product'] .quantity-selector__input {
+        width: 3ch;
+        flex: 1 1 auto;
+        border-bottom-width: 0;
     }
 {% endstylesheet %}

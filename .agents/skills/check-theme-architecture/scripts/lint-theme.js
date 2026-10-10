@@ -52,6 +52,16 @@ const {
     collectPageFrameCssFailures,
 } = require('./lib/page-frame-lint');
 const { collectColourSettingFailures } = require('./lib/colour-setting-lint');
+const {
+    collectStylesheetOwnershipCounts,
+    collectStylesheetOwnershipFailures,
+    baselinePath: stylesheetOwnershipBaselinePath,
+    readBaseline: readStylesheetOwnershipBaseline,
+    shrinkBaseline: shrinkStylesheetOwnershipBaseline,
+    toBaseline: toStylesheetOwnershipBaseline,
+    writeBaselineFile: writeStylesheetOwnershipBaselineFile,
+    RULE: STYLESHEET_OWNERSHIP_RULE,
+} = require('./lib/stylesheet-ownership-lint');
 
 const LIQUID_GLOBS = [
     'layout/**/*.liquid',
@@ -639,6 +649,7 @@ async function runThemeLint(root, notes = []) {
     collectColourRoleSyncFailures(root, failures);
     collectColourSettingFailures(root, failures);
     collectMigrationFailures(root, failures, notes);
+    collectStylesheetOwnershipFailures(root, failures, notes);
     collectDeadSettingFailures(root, failures, notes);
 
     if (hasAssets && hasVendorNotices) {
@@ -673,6 +684,32 @@ function runMigrationBaselineFlag(root, argv) {
 }
 
 /** Returns an exit code, or null when no dead-settings baseline flag was given. */
+function runStylesheetOwnershipBaselineFlag(root, argv) {
+    if (argv.includes('--write-stylesheet-ownership-baseline')) {
+        if (require('node:fs').existsSync(stylesheetOwnershipBaselinePath(root))) {
+            console.error('--write-stylesheet-ownership-baseline refused: the baseline already exists.');
+            return 1;
+        }
+        writeStylesheetOwnershipBaselineFile(root, toStylesheetOwnershipBaseline(collectStylesheetOwnershipCounts(root)));
+        console.log('Stylesheet ownership baseline written.');
+        return 0;
+    }
+    if (argv.includes('--shrink-stylesheet-ownership-baseline')) {
+        const baseline = readStylesheetOwnershipBaseline(root);
+        if (!baseline) {
+            console.error('--shrink-stylesheet-ownership-baseline refused: no baseline exists.');
+            return 1;
+        }
+        writeStylesheetOwnershipBaselineFile(
+            root,
+            shrinkStylesheetOwnershipBaseline(baseline, collectStylesheetOwnershipCounts(root)),
+        );
+        console.log('Stylesheet ownership baseline shrunk to the current counts.');
+        return 0;
+    }
+    return null;
+}
+
 function runDeadSettingsBaselineFlag(root, argv) {
     if (argv.includes('--write-dead-settings-baseline')) {
         if (require('node:fs').existsSync(deadSettingsBaselinePath(root))) {
@@ -706,6 +743,11 @@ async function main(argv = process.argv) {
         return;
     }
     flagExit = runMigrationBaselineFlag(root, argv);
+    if (flagExit !== null) {
+        process.exitCode = flagExit;
+        return;
+    }
+    flagExit = runStylesheetOwnershipBaselineFlag(root, argv);
     if (flagExit !== null) {
         process.exitCode = flagExit;
         return;

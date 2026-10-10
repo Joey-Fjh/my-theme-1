@@ -103,178 +103,176 @@
 {%- endif -%}
 
 {% stylesheet %}
-    @layer components {
-        .pagination__inner {
-            margin-inline: auto;
-            display: flex;
-            width: fit-content;
-            max-width: 100%;
-            align-items: center;
-            gap: 0.25rem;
+    .pagination__inner {
+        margin-inline: auto;
+        display: flex;
+        width: fit-content;
+        max-width: 100%;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    .pagination__button {
+        display: inline-flex;
+        height: calc(var(--spacing) * 10);
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        gap: calc(var(--spacing) * 1);
+        border-radius: 0.25rem;
+        padding-inline: calc(var(--spacing) * 2);
+        white-space: nowrap;
+        font-family: inherit;
+        font-size: var(--font-pagination-size);
+        border-radius: var(--pagination-radius);
+        transition:
+            color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+            background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+            border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+            transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+        &:focus-visible {
+            outline: var(--focus-ring-width) solid
+                rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+            outline-offset: var(--focus-ring-offset);
         }
-        .pagination__button {
-            display: inline-flex;
-            height: calc(var(--spacing) * 10);
-            flex-shrink: 0;
-            align-items: center;
-            justify-content: center;
-            gap: calc(var(--spacing) * 1);
-            border-radius: 0.25rem;
-            padding-inline: calc(var(--spacing) * 2);
-            white-space: nowrap;
-            font-family: inherit;
-            font-size: var(--font-pagination-size);
-            border-radius: var(--pagination-radius);
-            transition:
-                color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
-                background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
-                border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
-                transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
-            &:focus-visible {
-                outline: var(--focus-ring-width) solid
-                    rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
-                outline-offset: var(--focus-ring-offset);
-            }
+        &:active:not(.pagination__button--disabled) {
+            transform: scale(0.98);
+        }
+        @media (prefers-reduced-motion: reduce) {
             &:active:not(.pagination__button--disabled) {
-                transform: scale(0.98);
-            }
-            @media (prefers-reduced-motion: reduce) {
-                &:active:not(.pagination__button--disabled) {
-                    transform: none;
-                }
+                transform: none;
             }
         }
-        .pagination__button--disabled {
-            pointer-events: none;
-            cursor: default;
-            opacity: 0.4;
-        }
-        .pagination__button--hover-default {
-            @media (hover: hover) and (pointer: fine) {
-                &:hover:not(.pagination__button--disabled) {
-                    background-color: var(--color-surface-muted);
-                }
+    }
+    .pagination__button--disabled {
+        pointer-events: none;
+        cursor: default;
+        opacity: 0.4;
+    }
+    .pagination__button--hover-default {
+        @media (hover: hover) and (pointer: fine) {
+            &:hover:not(.pagination__button--disabled) {
+                background-color: var(--color-surface-muted);
             }
         }
-        .pagination__button--hover-minimal {
-            @media (hover: hover) and (pointer: fine) {
-                &:hover:not(.pagination__button--disabled) {
-                    text-decoration: underline;
-                }
-            }
-            &:focus-visible:not(.pagination__button--disabled) {
+    }
+    .pagination__button--hover-minimal {
+        @media (hover: hover) and (pointer: fine) {
+            &:hover:not(.pagination__button--disabled) {
                 text-decoration: underline;
             }
         }
-        .pagination__button--outline {
-            border-style: solid;
-            border-width: 1px;
-            border-color: var(--color-line);
-        }
-        .pagination__button--hover-outline {
-            border-style: solid;
-            border-width: 1px;
-            border-color: var(--color-line);
-            @media (hover: hover) and (pointer: fine) {
-                &:hover:not(.pagination__button--disabled) {
-                    background-color: var(--color-surface-muted);
-                }
-            }
-        }
-        .pagination__page {
-            display: inline-flex;
-            height: calc(var(--spacing) * 10);
-            min-width: calc(var(--spacing) * 10);
-            flex-shrink: 0;
-            align-items: center;
-            justify-content: center;
-            border-radius: 0.25rem;
-            padding-inline: calc(var(--spacing) * 2);
-            font-family: inherit;
-            font-size: var(--font-pagination-size);
-            border-radius: var(--pagination-radius);
-            transition:
-                color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
-                background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
-                border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
-                transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
-            &:focus-visible {
-                outline: var(--focus-ring-width) solid
-                    rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
-                outline-offset: var(--focus-ring-offset);
-            }
-        }
-        a.pagination__page {
-            &:active {
-                transform: scale(0.98);
-            }
-            @media (prefers-reduced-motion: reduce) {
-                &:active {
-                    transform: none;
-                }
-            }
-        }
-        .pagination__page--hover-default {
-            @media (hover: hover) and (pointer: fine) {
-                &:hover {
-                    background-color: var(--color-surface-muted);
-                }
-            }
-        }
-        .pagination__page--hover-minimal {
-            @media (hover: hover) and (pointer: fine) {
-                &:hover {
-                    text-decoration: underline;
-                }
-            }
-            &:focus-visible {
-                text-decoration: underline;
-            }
-        }
-        .pagination__page--hover-outline {
-            border-style: solid;
-            border-width: 1px;
-            border-color: var(--color-line);
-            @media (hover: hover) and (pointer: fine) {
-                &:hover {
-                    background-color: var(--color-surface-muted);
-                }
-            }
-        }
-        .pagination__page--current--minimal {
-            color: rgb(var(--color-foreground));
+        &:focus-visible:not(.pagination__button--disabled) {
             text-decoration: underline;
         }
-        .pagination__page--current--default {
-            background-color: rgb(var(--color-foreground));
-            color: rgb(var(--color-background));
-        }
-        .pagination__page--current--outline {
-            border-style: solid;
-            border-width: 1px;
-            border-color: rgb(var(--color-foreground));
-            color: rgb(var(--color-foreground));
-        }
-        .pagination__page--ellipsis {
-            cursor: default;
-            font-size: var(--font-pagination-size);
-        }
-        .pagination__pages-wrap {
-            max-width: 100%;
-            min-width: calc(var(--spacing) * 0);
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
-            &::-webkit-scrollbar {
-                display: none;
+    }
+    .pagination__button--outline {
+        border-style: solid;
+        border-width: 1px;
+        border-color: var(--color-line);
+    }
+    .pagination__button--hover-outline {
+        border-style: solid;
+        border-width: 1px;
+        border-color: var(--color-line);
+        @media (hover: hover) and (pointer: fine) {
+            &:hover:not(.pagination__button--disabled) {
+                background-color: var(--color-surface-muted);
             }
         }
-        .pagination__pages {
-            margin-inline: auto;
-            display: inline-flex;
-            min-width: max-content;
-            align-items: center;
-            gap: 0.25rem;
+    }
+    .pagination__page {
+        display: inline-flex;
+        height: calc(var(--spacing) * 10);
+        min-width: calc(var(--spacing) * 10);
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.25rem;
+        padding-inline: calc(var(--spacing) * 2);
+        font-family: inherit;
+        font-size: var(--font-pagination-size);
+        border-radius: var(--pagination-radius);
+        transition:
+            color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+            background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+            border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+            transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+        &:focus-visible {
+            outline: var(--focus-ring-width) solid
+                rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+            outline-offset: var(--focus-ring-offset);
         }
+    }
+    a.pagination__page {
+        &:active {
+            transform: scale(0.98);
+        }
+        @media (prefers-reduced-motion: reduce) {
+            &:active {
+                transform: none;
+            }
+        }
+    }
+    .pagination__page--hover-default {
+        @media (hover: hover) and (pointer: fine) {
+            &:hover {
+                background-color: var(--color-surface-muted);
+            }
+        }
+    }
+    .pagination__page--hover-minimal {
+        @media (hover: hover) and (pointer: fine) {
+            &:hover {
+                text-decoration: underline;
+            }
+        }
+        &:focus-visible {
+            text-decoration: underline;
+        }
+    }
+    .pagination__page--hover-outline {
+        border-style: solid;
+        border-width: 1px;
+        border-color: var(--color-line);
+        @media (hover: hover) and (pointer: fine) {
+            &:hover {
+                background-color: var(--color-surface-muted);
+            }
+        }
+    }
+    .pagination__page--current--minimal {
+        color: rgb(var(--color-foreground));
+        text-decoration: underline;
+    }
+    .pagination__page--current--default {
+        background-color: rgb(var(--color-foreground));
+        color: rgb(var(--color-background));
+    }
+    .pagination__page--current--outline {
+        border-style: solid;
+        border-width: 1px;
+        border-color: rgb(var(--color-foreground));
+        color: rgb(var(--color-foreground));
+    }
+    .pagination__page--ellipsis {
+        cursor: default;
+        font-size: var(--font-pagination-size);
+    }
+    .pagination__pages-wrap {
+        max-width: 100%;
+        min-width: calc(var(--spacing) * 0);
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        &::-webkit-scrollbar {
+            display: none;
+        }
+    }
+    .pagination__pages {
+        margin-inline: auto;
+        display: inline-flex;
+        min-width: max-content;
+        align-items: center;
+        gap: 0.25rem;
     }
 {% endstylesheet %}

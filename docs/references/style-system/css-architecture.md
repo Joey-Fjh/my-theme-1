@@ -93,7 +93,9 @@ Don't bridge motion duration or easing into `@theme`; use a recipe class instead
 | `tailwind.components.css` | reusable composite APIs with 2+ unrelated consumers | section-root scoped overrides |
 | `tailwind.utilities.css` | cross-cutting placement/surface/z-index utilities | business BEM styling |
 | `tailwind.animates.css` | motion capabilities, keyframes, reduced-motion rules | trigger logic |
-| section/block/snippet `{% stylesheet %}` | primary home for component-owned CSS scoped to one render tree (plain CSS only) | cross-render-tree selectors, Tailwind directives, shared vocabulary |
+| section/block/snippet `{% stylesheet %}` | primary home for component-owned CSS scoped to one render tree (plain CSS only, **unlayered**; wins over Tailwind utilities) | cross-render-tree selectors, Tailwind directives, shared vocabulary, `@layer` wrappers |
+
+**Tailwind cascade layers** (`tailwind/tailwind.input.css`): `theme, base, components, utilities`. The former `snippets` layer name is retired; shared rules that lived there are `@layer components` in `tailwind/tailwind.components.css`.
 
 ## Promotion Thresholds
 
@@ -215,8 +217,8 @@ Don't use `animate-spin` or `x-transition:*` for ordinary loading or state motio
 
 | Home | Owns |
 | --- | --- |
-| Tailwind utilities in Liquid | Layout and one-off adjustments |
-| Owner `{% stylesheet %}` | Plain CSS on tokens: states, nesting, motion details for one render tree |
+| Owner `{% stylesheet %}` (rule B) | All styles on an element that carries the file's own BEM class (plain CSS on tokens: states, nesting, motion); unlayered, wins over utilities |
+| Tailwind utilities in Liquid | Elements **without** an own class from that file's stylesheet (layout shells, primitives, merchant-setting class strings) |
 | Tailwind build (`tailwind/tailwind.*.css`) | Tokens, typography tiers, surfaces, layout vocabulary, utilities with 2+ unrelated consumers |
 | `snippets/section-frame.liquid` | Section colour scheme, fluid merchant padding, width (`page` / full bleed), height kind (`content`, `media`, `stage`), first-section header offset |
 
@@ -419,6 +421,17 @@ Three Shopify platform constraints govern `{% stylesheet %}` and `{% javascript 
     - `lint:theme` rejects px values, `min-width` / `max-width` spellings and other numbers. Custom properties and Tailwind's theme function do not work in media queries there.
 - **`no-hover` stands alone.** CSS grammar does not allow `not (…)` to be joined by `and` without extra parentheses. To combine it with a width, nest a width query inside the `no-hover` block.
 
+## Stylesheet font sizes (6-C6)
+
+In `{% stylesheet %}` blocks, `font-size` must stay on the type-step system or stay relative:
+
+- `var(--type-step-*)`;
+- `inherit`, `initial`, or `unset`;
+- `em` or `%` values;
+- `calc()` / `clamp()` / `min()` / `max()` built only from numbers, `em` / `%`, `var(--type-step-*)` and unitless `var(--*-scale)` / `var(--*-ratio)` multipliers, with at least one `em`, `%` or type step.
+
+Everything else counts in `lint:theme` (`stylesheet-font-size`, ratcheted baseline): absolute and viewport units of any kind, any other `var()` (for example `var(--font-body-size-mobile)` or `var(--font-pagination-size)`), and a multiplier on its own. The polish pass migrates existing hits.
+
 ## Font weights (6-C3)
 
 - **Loaded faces:** each font role loads its base face, bold (700) and their italics (`snippets/css-variables.liquid`).
@@ -456,6 +469,27 @@ Three Shopify platform constraints govern `{% stylesheet %}` and `{% javascript 
 - **Creating it:** `--write-migration-baseline` refuses when the file exists.
 
 The baseline reaches zero through the breakpoint, type and space batches and the polish pass.
+
+## Stylesheet ownership lints (6-C6)
+
+`lint:theme` enforces three additional rules on `layout/`, `sections/`, and `snippets/`:
+
+| Check | What it does | Baseline |
+| --- | --- | --- |
+| `stylesheet-layer` | Rejects any `@layer` inside `{% stylesheet %}` | None (zero tolerance) |
+| `stylesheet-font-size` | Counts disallowed `font-size` declarations per file (see **Stylesheet font sizes** above) | Ratchet: `.agents/skills/check-theme-architecture/scripts/stylesheet-ownership-baseline.json` |
+| `mixed-element` | Counts static class regions where the file's own stylesheet class and a Tailwind utility appear together | Same ratchet file |
+
+**Ratchet flags:** `--write-stylesheet-ownership-baseline` (create once; refuses when the file exists), `--shrink-stylesheet-ownership-baseline` (lowers entries and removes zeros only). Raising an entry is a manual edit that needs the user's approval.
+
+**`mixed-element` extraction:**
+- **One element per `class` attribute:** quoted `class` attributes only (not `data-class` or other attributes). The body of a `{% capture *class* %}` joins every `class` attribute that outputs it, so a mixed capture output on two elements counts twice, and a capture that is never output does not count. Captures are expanded recursively (a capture may output another class capture); a cycle stops expansion.
+- **Liquid inside a class list:** `{{ … }}` output is not resolved, and a token glued to it (`color-{{ scheme }}`) is dropped; `{% … %}` tags are removed but their string literals count. The static tokens around Liquid always count.
+- **Own class:** a class that the same file's `{% stylesheet %}` styles.
+- **Utility:** the first top-level class of each rule in the `@layer utilities` blocks of `assets/tailwind.output.css`, unescaped (`w-1/2`, `mt-0.5`, `body-lg`); classes inside `:where()` / `:is()` arguments are ignored.
+- **Ignored:** schema, comments, and stylesheet / javascript blocks.
+
+Existing mixed elements and absolute font sizes are frozen at the baseline until the polish pass; new code follows rule B immediately.
 
 ## Decision Flow
 
