@@ -66,18 +66,18 @@ Pattern references: `docs/design/references/` (Isla Beauty, Beautiful, ARTU), re
 
 **Functional colours.** Success, warning, error and info pairs, and product badges (sale, sold out, custom), each keep to their own job and never act as accents.
 
-**Gaps found (to fix in the token batch, not here):**
+**Gaps found (fixed in 6-D1 and 6-D2, 2026-10-11):**
 
-- The colour scheme defaults in `config/settings_schema.json` are the mother template's blue (`#1D4ED8`), so a scheme a merchant adds starts off-palette. They should default to the Ceylune canvas scheme.
-- Product badge defaults are off-palette: sale orange `#C2410C`, sold-out slate `#64748B`, custom brown `#8B5A3C`.
-- The inverse scheme background moves from `#1b2900` to ink `#263d29` (preset change, approved 2026-10-11).
-- Input borders and placeholders are neutral greys (`#767676`, `#717171`) in every scheme, not ink-tinted.
+- The colour scheme defaults in `config/settings_schema.json` are the mother template's blue (`#1D4ED8`), so a scheme a merchant adds starts off-palette. Fixed in 6-D1: they default to the Ceylune canvas scheme.
+- Product badge defaults are off-palette: sale orange `#C2410C`, sold-out slate `#64748B`, custom brown `#8B5A3C`. Fixed in 6-D1 (sale accent on ink, sold out `#677769`, custom 2 sage).
+- The inverse scheme background moves from `#1b2900` to ink `#263d29` (preset change, approved 2026-10-11). Fixed in 6-D2, with every other dark in the schemes (`#1f3223`, `#111827`) and the inverse buttons on white and ink.
+- Input borders and placeholders are neutral greys (`#767676`, `#717171`) in every scheme, not ink-tinted. Fixed: `#677769` (ink at 70%) with ink input text, schema defaults in 6-D1 and every preset scheme in 6-D2.
 
 ## Typography
 
 **One family, few weights.** The default preset uses one sans family for headings, body and labels; hierarchy comes from size, not from mixing families. Weights: 400 for body, 500 for headings and labels, 400 italic for quotes. The home design's stray families (Manrope labels, Roboto Mono, Poppins) are not carried over: labels use the body family.
 
-**Default family: Neue Haas Unica** (agreed 2026-10-11) (`neue_haas_unica_n4`, Shopify font library, Monotype, weights 100–900 with italics). The design's Neue Montreal is commercial and not in the library; Unica is the library's closest neo-grotesque, plain and slightly warm. Alternatives in the library: Instrument Sans (the library's own counterpart to Unica) and Inter (the current preset). Merchants change it through the font pickers.
+**Default family: Instrument Sans** (`instrument_sans_n4`, Shopify font library, open source). The design's Neue Montreal is commercial and not in the library. Neue Haas Unica was agreed first (2026-10-11), but it is on the library's deprecated list with Instrument Sans as its replacement, and Shopify already serves Instrument Sans for it; Theme Store presets may not use deprecated fonts, so the preset names Instrument Sans directly (6-D2). Plain, slightly warm grotesque with 400, 500 and 700 and italics. Merchants change it through the font pickers.
 
 **Scale.** The fluid scale already in code (6-C8): body base 14px at 375 and 16px at 1280 and above, ratio 1.2 rising to 1.25, steps `-2..8`; headings use the `title-*` tiers, text the `copy-*` tiers, and merchants scale both through `heading_scale` and `body_scale`. The design's sizes are read as hierarchy only: a very large hero heading (`title-4xl`, about 60px on mobile to 95px on desktop), section headings two to three steps below it, then body. No size outside the scale.
 
@@ -97,7 +97,7 @@ Pattern references: `docs/design/references/` (Isla Beauty, Beautiful, ARTU), re
 
 **Labels (subtitle role).** Small text above a heading or on a control: body family, weight 500, `copy-s`, title case, slight positive tracking. Not uppercase by default.
 
-**Default settings this implies:** **6-D1 (schema defaults and code, shipped):** heading weight 500, heading letter spacing -0.02em, body line height 1.4, subtitle weight 500 with a medium (500) option, heading line height default 1.0 with stepped tiers in code (`title-xl` and up use the setting; smaller tiers use `max()` floors). **6-D2 (merchant preset):** font picks (`type_header_font`, `type_body_font`) stay on the preset until that batch.
+**Default settings this implies:** **6-D1 (schema defaults and code, shipped):** heading weight 500, heading letter spacing -0.02em, body line height 1.4, subtitle weight 500 with a medium (500) option, heading line height default 1.0 with stepped tiers in code (`title-xl` and up use the setting; smaller tiers use `max()` floors). **6-D2 (merchant preset, shipped):** both font pickers `instrument_sans_n4`.
 
 ## Layout
 
@@ -125,7 +125,7 @@ Every gap picks an intent first and a step second; the design's pixel distances 
 
 **Alignment.** Section headings align to the content edge (left) or centre, chosen per section and kept consistent within it; body copy is left-aligned except in centred statements of three lines or fewer.
 
-**Default settings this implies:** **6-D1 (schema defaults and code, shipped):** page width schema default 1600px; page margin schema default 24px with a fluid `--page-margin` clamp (about 16px at 375px rising to the setting at 1280px; when the setting is below 16px the margin stays constant). **6-D2 (merchant preset):** preset `page_width` / `page_margin` (today 1600 / 10) until that batch.
+**Default settings this implies:** **6-D1 (schema defaults and code, shipped):** page width schema default 1600px; page margin schema default 24px with a fluid `--page-margin` clamp (about 16px at 375px rising to the setting at 1280px; when the setting is below 16px the margin stays constant). **6-D2 (merchant preset, shipped):** `page_width` 1600, `page_margin` 24 (16px at 375, 24px from 1280).
 
 **Every width works (user, 2026-10-11).** The wide page and fluid margin must hold at every width from 320 to 2560, not only at the four design widths: no horizontal scroll, no content outside the margins, no overlapping or clipped text. `npm.cmd run test:layout` checks 320 to 2560 in 40px steps and is the gate for each layout batch; the browser look covers 375, 768, 1024, 1440 and one ultra-wide screen.
 
@@ -161,7 +161,7 @@ Full-bleed media (a section background, a split panel's image half) has no radiu
 
 **Signature shape (optional):** the home design's routine showcase frames its image in a tall capsule (full radius on a 386 x 680 frame), with the product breaking out of the frame at the bottom. It is a section-level option, not a theme-wide shape.
 
-**Default settings this implies:** **6-D1 (schema defaults and code, shipped):** button radius 4px, input radius 4px, product card radius 0, dialog radius 16px, toast radius 8px (unchanged); new `card_radius` default 16px with `--radius-card` and `--radius-media` (half) on feature cards in scroll-categories, testimonial-featured, and scatter-gallery. **6-D2 (merchant preset):** colour scheme values on the preset until that batch.
+**Default settings this implies:** **6-D1 (schema defaults and code, shipped):** button radius 4px, input radius 4px, product card radius 0, dialog radius 16px, toast radius 8px (unchanged); new `card_radius` default 16px with `--radius-card` and `--radius-media` (half) on feature cards in scroll-categories, testimonial-featured, and scatter-gallery. **6-D2 (merchant preset, shipped):** colour schemes on the palette (see Colors, Gaps found).
 
 ## Components
 
