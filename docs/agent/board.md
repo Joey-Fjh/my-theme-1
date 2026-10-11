@@ -40,6 +40,8 @@ Last updated: 2026-10-10.
 
 **Filed for the product page (6-C6, 2026-10-10):** `snippets/buy-buttons.liquid` intended an outlined unbranded payment button in the purchase group (foreground border and text, transparent fill, muted hover). It never took effect because `button.shopify-payment-button__button--unbranded` (`btn-primary`, unlayered) won. 6-C6 deleted the dead declarations for parity; decide the look with the product page design.
 
+**Done: 6-T5 layout check precision** (2026-10-11, `cd35319`; plan and review rounds 1-2: `git show cd35319:docs/agent/context.md`): `sr-only` text skipped, the locked-channel console message excepted, runtime exceptions exact; baseline 63 → 32. **The harness round is closed** (user, 2026-10-11); `test:layout` and Lighthouse in CI (6-T4) are decided before the submission.
+
 **Done: 6-V3 validator tidy-up** (2026-10-11, `6c169d0`; plan and review rounds 1-6: `git show 6c169d0:docs/agent/context.md`): SKILL.md check table complete, `doctor:agent` in CI; the colour merge dropped (complementary checks).
 
 **Done: 6-C10 cleanup** (2026-10-11, `89b5e1a`; plan and review rounds 1-2: `git show 89b5e1a:docs/agent/context.md`): see `docs/project.md` Progress 2026-10-11.
