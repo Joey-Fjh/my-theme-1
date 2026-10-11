@@ -1,0 +1,15 @@
+{% doc %}
+    Renders a Shopify placeholder SVG marked decorative for assistive tech.
+
+    @param {string} placeholder_key - Shopify placeholder name (for example `image`, `product-1`)
+    @param {string} [class] - Optional class list for the SVG root
+{% enddoc %}
+
+{%- assign placeholder_class = class | default: '' -%}
+{%- # lint-allow raw-svg: matches the root tag of Shopify's placeholder_svg_tag output to mark it decorative; no SVG is authored here -%}
+{%- assign svg_open = '<svg' -%}
+{%- assign svg_open_decorative = svg_open | append: ' aria-hidden="true" focusable="false"' -%}
+{%- capture placeholder_markup -%}
+    {{ placeholder_key | placeholder_svg_tag: placeholder_class }}
+{%- endcapture -%}
+{{- placeholder_markup | replace: svg_open, svg_open_decorative -}}

@@ -64,6 +64,10 @@ Liquid files under `layout/`, `sections/`, `snippets/`, `blocks/`, and `template
 | `page-token-scope` | `sections/` and `snippets/` (Liquid comments excepted; CSS and HTML comments fail closed) must not read `--page-width` or `--page-margin` (use `--page-inset` for custom insets). `tailwind/tailwind.components.css` must not read `--page-width`; `--page-margin` stays allowed there as the gutter token. |
 | `screen-height-literal` | Liquid files (`layout/`, `sections/`, `snippets/`, `blocks/`, `templates/`) must not use literal `100svh`, `100vh`, `100lvh`, or `100dvh` for one-screen heights; use `var(--screen-height)`. Named exception: only the exact `sections/header.liquid` menu cap `max-height: calc(100dvh - var(--announcement-bar-height) - var(--header-height))`. |
 | `frame-full-allowlist` | A `render 'section-frame'` (either quote style, tag or `{% liquid %}` form) with a literal `width: 'full'` only in sections listed under Page frame in `css-architecture.md`; never in snippets. |
+| `section-placement-missing` | Sections with a non-empty `presets` array must declare `enabled_on` or `disabled_on`. |
+| `section-placement-both` | Section schema must not declare both `enabled_on` and `disabled_on`. |
+| `section-placement-disabled-groups` | Page sections (`disabled_on`) must list `header`, `footer`, and `custom.overlay`, except `custom-liquid`, which lists only `custom.overlay`. |
+| `section-placement-enabled-groups` | Group sections (`enabled_on.groups`) must name exactly one of `header`, `footer`, or `custom.overlay`. |
 
 ## Reporting
 

@@ -27,6 +27,9 @@ Ceylune, a custom Shopify theme maintained as a multi-industry Shopify Theme Sto
     - **6-C9 colour:** five schemes (Sage and Page added, values provisional), a card role, standalone colour settings moved to roles, and a colour-setting lint. The CSS specification batches 6-C1 to 6-C9 are complete.
     - **6-C6 stylesheet ownership:** every `{% stylesheet %}` unlayered and winning over utilities, the `snippets` layer retired, and the `stylesheet-layer`, `stylesheet-font-size` and `mixed-element` lints (ratchets); no visual change except the filter summary states. Accepted after five independent review rounds.
     - **Next:** the parked design-tool / Figma value pilot discussion, then the product page and the polish pass. Product page batches are interleaved with the CSS batches.
+- Progress (2026-10-11):
+    - **6-C10 cleanup:** `category-grid` and `grid-feature-card` deleted, the lightbox `zoom_overlay_opacity` setting works, the collapsible image `sizes` fixed, placeholders decorative through `snippets/decorative-placeholder-svg.liquid`, stale keys removed from `templates/page.about.json` (user-authorized), the Phosphor notice, `custom-liquid` allowed in header and footer, and the `section-placement` lint. Accepted after two independent review rounds.
+    - **Next** (user, 2026-10-11): the harness first. The lint necessity audit and the layout check tooling, then the parked design-tool / Figma value pilot discussion.
 
 ## Migration Direction (accepted)
 
@@ -54,7 +57,7 @@ Knowledge the old Agent layer held and the skeleton leaves to derived themes; so
 
 - **Merchant motion settings.** `motion_enabled` in `config/settings_schema.json` is the single merchant switch for settings-driven motion. Off (`body[data-motion-enabled='false']`) stops the list/card cascade (`data-motion-cascade` with `data-motion-bound` items) and the decorative loops (watermark marquee, scrolling-icon-with-text, rotating badge). Future GSAP narrative choreography will follow the same switch. It is not a kill switch for hover, focus, dropdown, dialog, drawer, loading, or other state/micro interactions; those follow `prefers-reduced-motion` only.
 - **Ordinary reveal pattern.** Settings-driven reveal is the cascade only: `motionRevealSection()` on a section or nested root with `data-motion-section`, a `data-motion-cascade` container, and `data-motion-bound` row items. The runtime sets `data-motion-state` once per page view. `prefers-reduced-motion: reduce` disables the cascade. Content stays visible without JavaScript until the module sets `data-motion-state="pending"`.
-- **WebKit guards.** `.category-grid__item` keeps a definite full width for WebKit grid intrinsic sizing; custom `<summary>` controls hide the Safari disclosure marker. The skeleton validators do not check these; they are browser checklist rows.
+- **WebKit guards.** Custom `<summary>` controls hide the Safari disclosure marker. The skeleton validators do not check these; they are browser checklist rows.
 - **Acceptance, phase 0.** The merchant motion settings contract above (phase 0 CAP-01) and `docs/migration/phase0/browser-checklist.md` (Retained theme contracts) carry the checks.
 - **Acceptance, phase 3 (guards the skeleton validators dropped).** Cross-component events go through ThemeEvents; `lint:theme` check `js-custom-event` allows `new CustomEvent` only in `assets/events.js`. Section HTML replacement goes through the SectionRefresher; `js-section-mutation` allows `innerHTML =`, `outerHTML =`, and `.replaceWith(` only in `assets/https.js`.
 

@@ -62,6 +62,7 @@ const {
     writeBaselineFile: writeStylesheetOwnershipBaselineFile,
     RULE: STYLESHEET_OWNERSHIP_RULE,
 } = require('./lib/stylesheet-ownership-lint');
+const { collectSectionPlacementFailures } = require('./lib/section-placement-lint');
 
 const LIQUID_GLOBS = [
     'layout/**/*.liquid',
@@ -651,6 +652,7 @@ async function runThemeLint(root, notes = []) {
     collectMigrationFailures(root, failures, notes);
     collectStylesheetOwnershipFailures(root, failures, notes);
     collectDeadSettingFailures(root, failures, notes);
+    collectSectionPlacementFailures(root, failures);
 
     if (hasAssets && hasVendorNotices) {
         collectVendorNoticeFailures(root, failures);

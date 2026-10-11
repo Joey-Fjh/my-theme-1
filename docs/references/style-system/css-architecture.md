@@ -56,6 +56,7 @@ A typography value passes when it derives from the chain or from the inherited, 
 | `snippets/rotating-badge.liquid` (`<svg>`) | `raw-svg` | The circular text path renders merchant badge copy through Liquid; it cannot be a static icon (user, 2026-09-29). |
 | `snippets/rotating-badge.liquid` (center `<span>`) | `settings-chain-liquid` | Center text is sized from the merchant badge size and scale, not a typography tier (user, 2026-09-29). |
 | `snippets/watermark.liquid` (`<svg>`) | `raw-svg` | The SVG text renders merchant watermark copy through Liquid; it cannot be a static icon (user, 2026-09-29). |
+| `snippets/decorative-placeholder-svg.liquid` (`'<svg'` string) | `raw-svg` | Matches the root tag of Shopify's `placeholder_svg_tag` output to add `aria-hidden` and `focusable`; no SVG is authored there (6-C10, user, 2026-10-11). |
 
 ## Bridge and recipe rules
 

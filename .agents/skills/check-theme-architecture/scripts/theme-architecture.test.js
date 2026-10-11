@@ -3022,6 +3022,148 @@ test('6-C9 review: colour-role-sync guards the card role', async () => {
     });
 });
 
+test('6-C10: section-placement fails when presets exist without enabled_on or disabled_on', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(
+            root,
+            'sections/fixture.liquid',
+            [
+                '{% schema %}',
+                '{ "name": "Fixture", "presets": [{ "name": "Fixture" }] }',
+                '{% endschema %}',
+                '',
+            ].join('\n'),
+        );
+        const placement = (await runThemeLint(root)).filter((f) => f.checkId === 'section-placement-missing');
+        assert.equal(placement.length, 1);
+    });
+});
+
+test('6-C10: section-placement passes when presets is an empty array', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(
+            root,
+            'sections/fixture.liquid',
+            [
+                '{% schema %}',
+                '{ "name": "Fixture", "presets": [] }',
+                '{% endschema %}',
+                '',
+            ].join('\n'),
+        );
+        const placement = (await runThemeLint(root)).filter((f) =>
+            String(f.checkId || '').startsWith('section-placement'),
+        );
+        assert.equal(placement.length, 0);
+    });
+});
+
+test('6-C10: section-placement fails when disabled_on omits a required group', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(
+            root,
+            'sections/fixture.liquid',
+            [
+                '{% schema %}',
+                '{ "name": "Fixture", "disabled_on": { "groups": ["header", "footer"] }, "presets": [{ "name": "Fixture" }] }',
+                '{% endschema %}',
+                '',
+            ].join('\n'),
+        );
+        const placement = (await runThemeLint(root)).filter(
+            (f) => f.checkId === 'section-placement-disabled-groups',
+        );
+        assert.equal(placement.length, 1);
+    });
+});
+
+test('6-C10: section-placement fails when enabled_on.groups lists two groups', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(
+            root,
+            'sections/fixture.liquid',
+            [
+                '{% schema %}',
+                '{ "name": "Fixture", "enabled_on": { "groups": ["header", "footer"] }, "presets": [{ "name": "Fixture" }] }',
+                '{% endschema %}',
+                '',
+            ].join('\n'),
+        );
+        const placement = (await runThemeLint(root)).filter(
+            (f) => f.checkId === 'section-placement-enabled-groups',
+        );
+        assert.equal(placement.length, 1);
+    });
+});
+
+test('6-C10: section-placement fails when both enabled_on and disabled_on are declared', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(
+            root,
+            'sections/fixture.liquid',
+            [
+                '{% schema %}',
+                '{ "name": "Fixture", "enabled_on": { "groups": ["header"] }, "disabled_on": { "groups": ["footer"] }, "presets": [{ "name": "Fixture" }] }',
+                '{% endschema %}',
+                '',
+            ].join('\n'),
+        );
+        const placement = (await runThemeLint(root)).filter((f) => f.checkId === 'section-placement-both');
+        assert.equal(placement.length, 1);
+    });
+});
+
+test('6-C10: section-placement allows custom-liquid to disable only custom.overlay', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(
+            root,
+            'sections/custom-liquid.liquid',
+            [
+                '{% schema %}',
+                '{ "name": "Custom liquid", "disabled_on": { "groups": ["custom.overlay"] }, "presets": [{ "name": "Custom liquid" }] }',
+                '{% endschema %}',
+                '',
+            ].join('\n'),
+        );
+        const placement = (await runThemeLint(root)).filter((f) =>
+            String(f.checkId || '').startsWith('section-placement'),
+        );
+        assert.equal(placement.length, 0);
+    });
+});
+
+test('6-C10 review: section-placement reads whitespace-trimmed schema tags', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(
+            root,
+            'sections/fixture.liquid',
+            [
+                '{%- schema -%}',
+                '{ "name": "Fixture", "presets": [{ "name": "Fixture" }] }',
+                '{%- endschema -%}',
+                '',
+            ].join('\n'),
+        );
+        const placement = (await runThemeLint(root)).filter((f) => f.checkId === 'section-placement-missing');
+        assert.equal(placement.length, 1);
+    });
+});
+
+test('6-C10 review: section-placement group rules apply without presets', async () => {
+    const cases = [
+        ['{ "name": "Fixture", "enabled_on": { "groups": ["header"] }, "disabled_on": { "groups": ["footer"] } }', 'section-placement-both'],
+        ['{ "name": "Fixture", "enabled_on": { "groups": ["header", "footer"] }, "presets": [] }', 'section-placement-enabled-groups'],
+        ['{ "name": "Fixture", "disabled_on": { "groups": ["header"] } }', 'section-placement-disabled-groups'],
+    ];
+    for (const [schema, checkId] of cases) {
+        await withTempThemeAsync(async (root) => {
+            writeFile(root, 'sections/fixture.liquid', ['{% schema %}', schema, '{% endschema %}', ''].join('\n'));
+            const placement = (await runThemeLint(root)).filter((f) => f.checkId === checkId);
+            assert.equal(placement.length, 1, checkId);
+        });
+    }
+});
+
 test('6-V2 review: a setting referenced only in a Liquid comment is dead', async () => {
     for (const markup of [
         '{% comment %}{{ section.settings.note }}{% endcomment %}',
