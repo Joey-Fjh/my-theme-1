@@ -17,11 +17,16 @@ import {
     httpRuntimeSelector,
     isFailedLoadResourceConsoleMessage,
     pageErrorRuntimeSelector,
-    runtimeMatchesUrlPattern,
     shouldIgnoreRequestFailure,
 } from './runtime-keys.mjs';
 
-import { pickArticleHref, pruneRefusalReason, expectedDocumentStatus, validateConfig } from './run-rules.mjs';
+import {
+    expectedDocumentStatus,
+    isExcepted,
+    pickArticleHref,
+    pruneRefusalReason,
+    validateConfig,
+} from './run-rules.mjs';
 export { baselineIdentityKey, compareToBaseline, normalizeRuntimeMessage } from './runtime-keys.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -71,18 +76,6 @@ function buildWidthList(config, override) {
 
 function issueKey(pageKey, check, selector) {
     return `${pageKey}\0${check}\0${selector}`;
-}
-
-function isExcepted(issue, pageKey, config) {
-    for (const ex of config.exceptions ?? []) {
-        if (!ex.checks.includes(issue.check)) continue;
-        if (ex.urlPattern && runtimeMatchesUrlPattern(issue, ex.urlPattern)) return true;
-        if (!ex.selector) continue;
-        if (issue.selector === ex.selector) return true;
-        if (issue.selector.startsWith(`${ex.selector} >`)) return true;
-        if (issue.selector.startsWith(`${ex.selector} `)) return true;
-    }
-    return false;
 }
 
 function mergeWidthRanges(widths, step) {
@@ -498,7 +491,7 @@ async function main() {
             collector.stop();
         }
         for (const issue of runtimeIssues) {
-            if (isExcepted(issue, pageKey, config)) continue;
+            if (isExcepted(issue, config)) continue;
             const key = issueKey(pageKey, issue.check, issue.selector);
             const entry = issueMap.get(key) || {
                 page: pageKey,
@@ -516,7 +509,7 @@ async function main() {
             await waitForSettle(page, config.settleMs);
             const rawIssues = await runChecksOnPage(page);
             for (const issue of rawIssues) {
-                if (isExcepted(issue, pageKey, config)) continue;
+                if (isExcepted(issue, config)) continue;
                 const key = issueKey(pageKey, issue.check, issue.selector);
                 const entry = issueMap.get(key) || {
                     page: pageKey,

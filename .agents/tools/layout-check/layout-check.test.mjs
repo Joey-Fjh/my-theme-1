@@ -19,6 +19,7 @@ import {
 import {
     expectedDocumentStatus,
     isArticlePath,
+    isExcepted,
     pickArticleHref,
     pruneRefusalReason,
     validateConfig,
@@ -150,6 +151,26 @@ test('clipped text positive and negative', async () => {
     await openFixture('clipped-text-negative.html');
     issues = await runCheck('checkClippedText');
     assert.equal(issues.length, 0);
+});
+
+test('6-T5 screen-reader-only text is not clipped text; a plain 1px box still is', async () => {
+    await openFixture('clipped-text-sr-only-negative.html');
+    let issues = await runCheck('checkClippedText');
+    assert.equal(issues.length, 0, JSON.stringify(issues));
+
+    await openFixture('clipped-text-tiny-box-positive.html');
+    issues = await runCheck('checkClippedText');
+    assert.ok(hasCheck(issues, 'clipped-text'));
+
+    await openFixture('clipped-text-positive.html');
+    issues = await runCheck('checkClippedText');
+    assert.ok(hasCheck(issues, 'clipped-text'));
+});
+
+test('6-T5 review: text escaping a static clip box or through a fixed child is still reported', async () => {
+    await openFixture('clipped-text-escaping-child-positive.html');
+    const issues = await runCheck('checkClippedText');
+    assert.equal(issues.filter((issue) => issue.check === 'clipped-text').length, 2, JSON.stringify(issues));
 });
 
 test('runtime module mount positive and negative', async () => {
@@ -352,6 +373,24 @@ test('prune-baseline refuses --page and --widths', () => {
         withWidths.stderr + withWidths.stdout,
         /--prune-baseline cannot be used with --page or --widths/,
     );
+});
+
+test('6-T5 the locked-channel console exception matches that exact message only', () => {
+    const config = JSON.parse(fs.readFileSync(path.join(__dirname, 'layout-check.config.json'), 'utf8'));
+    const message =
+        '[shopify-account] Menu "customer-account-main-menu" not found in Storefront API. Falling back to default menu items.';
+    const issue = (text, check = 'runtime') => ({ check, selector: consoleRuntimeSelector(text) });
+
+    assert.equal(isExcepted(issue(message), config), true);
+    assert.equal(isExcepted(issue(message, 'clipped-text'), config), false);
+    for (const other of [
+        message.replace('customer-account-main-menu', 'main-menu'),
+        `${message} Extra`,
+        '[shopify-account] Sign-in failed.',
+        'Uncaught TypeError: x is not a function',
+    ]) {
+        assert.equal(isExcepted(issue(other), config), false, other);
+    }
 });
 
 test('config exception without reason fails validation', () => {

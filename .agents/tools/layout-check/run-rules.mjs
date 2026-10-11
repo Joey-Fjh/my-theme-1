@@ -1,5 +1,26 @@
 /** Pure rules shared by the runner and the harness tests. */
 
+import { runtimeMatchesUrlPattern } from './runtime-keys.mjs';
+
+const RUNTIME_SELECTOR_PREFIX = /^(?:console|pageerror|http):/;
+
+/**
+ * A config exception covers an issue by URL pattern, by exact selector, or (CSS selectors only) by a selector prefix
+ * ending at a combinator. Runtime selectors (console:, pageerror:, http:) match exactly, so a longer message is not covered.
+ */
+export function isExcepted(issue, config) {
+    for (const ex of config.exceptions ?? []) {
+        if (!ex.checks.includes(issue.check)) continue;
+        if (ex.urlPattern && runtimeMatchesUrlPattern(issue, ex.urlPattern)) return true;
+        if (!ex.selector) continue;
+        if (issue.selector === ex.selector) return true;
+        if (RUNTIME_SELECTOR_PREFIX.test(ex.selector)) continue;
+        if (issue.selector.startsWith(`${ex.selector} >`)) return true;
+        if (issue.selector.startsWith(`${ex.selector} `)) return true;
+    }
+    return false;
+}
+
 /** Article links on a blog page: `/blogs/<blog>/<handle>`, never a `/tagged/` listing. */
 export function isArticlePath(href) {
     const raw = String(href || '');

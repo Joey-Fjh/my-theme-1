@@ -127,6 +127,7 @@ export function checkClippedText() {
     for (const el of elements) {
         if (!isElementVisible(el)) continue;
         if (!elementHasOwnText(el)) continue;
+        if (isInsideScreenReaderOnlyBox(el)) continue;
 
         const style = getComputedStyle(el);
         if (style.overflow === 'visible' && style.overflowX === 'visible' && style.overflowY === 'visible') {
@@ -203,6 +204,32 @@ function isElementVisible(el) {
     if (rect.width === 0 && rect.height === 0) return false;
 
     return true;
+}
+
+/**
+ * Screen-reader-only text (Tailwind `sr-only`): an absolutely or fixed positioned box of at most 1×1px that hides its
+ * overflow and is clipped by `clip-path` or `clip`. Its text is clipped on purpose, so it is not a clipped-text defect.
+ * Positioning is required: `clip` has no effect on a static box, and a positioned box contains (and so clips) its
+ * absolutely positioned children.
+ */
+function isScreenReaderOnlyBox(el) {
+    const style = getComputedStyle(el);
+    if (style.position !== 'absolute' && style.position !== 'fixed') return false;
+    const hidesOverflow = ['hidden', 'clip'].includes(style.overflowX) && ['hidden', 'clip'].includes(style.overflowY);
+    if (!hidesOverflow) return false;
+    const clipped = (style.clipPath && style.clipPath !== 'none') || (style.clip && style.clip !== 'auto');
+    if (!clipped) return false;
+    const rect = el.getBoundingClientRect();
+    return rect.width <= 1 && rect.height <= 1;
+}
+
+/** A fixed positioned element between the text and the box escapes the box's overflow, so it does not count as inside. */
+function isInsideScreenReaderOnlyBox(el) {
+    for (let node = el; node instanceof Element; node = node.parentElement) {
+        if (isScreenReaderOnlyBox(node)) return true;
+        if (getComputedStyle(node).position === 'fixed') return false;
+    }
+    return false;
 }
 
 function ancestorClipsHorizontal(style) {
