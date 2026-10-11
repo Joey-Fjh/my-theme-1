@@ -23,7 +23,7 @@ Last updated: 2026-10-10.
 
 **Filed for the product page (6-C6, 2026-10-10):** `snippets/buy-buttons.liquid` intended an outlined unbranded payment button in the purchase group (foreground border and text, transparent fill, muted hover). It never took effect because `button.shopify-payment-button__button--unbranded` (`btn-primary`, unlayered) won. 6-C6 deleted the dead declarations for parity; decide the look with the product page design.
 
-**Done: 6-C10 cleanup** (2026-10-11; plan and review rounds 1-2: `git show <6-C10 feat commit>:docs/agent/context.md`, hash filled at commit): see `docs/project.md` Progress 2026-10-11.
+**Done: 6-C10 cleanup** (2026-10-11, `89b5e1a`; plan and review rounds 1-2: `git show 89b5e1a:docs/agent/context.md`): see `docs/project.md` Progress 2026-10-11.
 
 **Done: 6-C6 stylesheet ownership** (2026-10-10, `e75f4d1`; plan and review rounds 1-5: `git show e75f4d1:docs/agent/context.md`): every `{% stylesheet %}` unlayered and winning over utilities, the `snippets` layer retired, rule B and the font-size rule in `css-architecture.md`, lints `stylesheet-layer`, `stylesheet-font-size` (ratchet 15 / 6 files) and `mixed-element` (ratchet 137 / 41 files). The polish pass migrates the mixed elements, the font sizes and the Tailwind single-owner blocks. Lesson for later batches: unlayered Tailwind rules (reduced motion, motion switch, marquees) compete with unlayered stylesheets by specificity and source order; a reduced-motion override a stylesheet must not beat goes under `prefers-reduced-motion: no-preference` in the owner.
 
