@@ -17,13 +17,15 @@ Last updated: 2026-10-10.
     - **Doc gap (proven):** 11 check ids run but are missing from the SKILL.md table (`colour-setting`, `unloaded-font-weight`, `stylesheet-media-query`, the three migration and three stylesheet-ownership ids).
     - **CI gap:** `doctor:agent` is not in CI (cheap to add). `test:layout` (178s, 63 baselined entries, needs a dev server) is the only costly tool; it stays local until 6-T4.
     - **Disagreements with the report:** `tap-targets` entries are accessibility debt, not noise, so they stay a gate; the ratchet "demote" verdicts change nothing, because the ratchets only block increases and retire when their counts reach 0 in the polish pass; `scan:contrast` already is a report.
-    - **Accepted (user, 2026-10-11):** (1) the small validator batch is 6-V3 in `docs/agent/context.md`. **Open, for the user:** (2) ratchet goal: drive 1558 + 150 to 0 in the polish pass and then delete those checks, or freeze; (3) layout tool: the rail false positives, baseline triage, and 6-T4.
+    - **Done:** (1) the small validator batch, 6-V3 (see the Done line). **Open, for the user:** (2) ratchet goal: drive 1558 + 150 to 0 in the polish pass and then delete those checks, or freeze; (3) layout tool: the rail false positives, baseline triage, and 6-T4.
 
 **Open: layout check rail false positives** (6-C10, 2026-10-11): `page-margin` flags elements of the peeking card in horizontal rails (`routine-showcase`, `ritual-steps`), at widths that depend on text width; three such baseline entries exist. Proposal: skip elements inside a horizontal scroll container. Necessity to be discussed before any work.
 
 **Known limitation, accepted (6-V3, 2026-10-11):** the colour lints match CSS values with regular expressions, not a CSS tokenizer. Review rounds 1-5 of 6-V3 showed that identifier boundaries and CSS escapes cannot be modelled that way without new false positives: a longer function name with a numeric argument (`custom-hsl(1)`) is rejected, and escaped forms (`\rgb(1 2 3)`, `\68sl(1)`) are not decoded. Both behave as on HEAD; theme code has none of them. Revisit only if real code hits one (then a tokenizer such as postcss-value-parser, as its own batch).
 
 **Filed for the product page (6-C6, 2026-10-10):** `snippets/buy-buttons.liquid` intended an outlined unbranded payment button in the purchase group (foreground border and text, transparent fill, muted hover). It never took effect because `button.shopify-payment-button__button--unbranded` (`btn-primary`, unlayered) won. 6-C6 deleted the dead declarations for parity; decide the look with the product page design.
+
+**Done: 6-V3 validator tidy-up** (2026-10-11, `6c169d0`; plan and review rounds 1-6: `git show 6c169d0:docs/agent/context.md`): SKILL.md check table complete, `doctor:agent` in CI; the colour merge dropped (complementary checks).
 
 **Done: 6-C10 cleanup** (2026-10-11, `89b5e1a`; plan and review rounds 1-2: `git show 89b5e1a:docs/agent/context.md`): see `docs/project.md` Progress 2026-10-11.
 
