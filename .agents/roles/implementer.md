@@ -18,6 +18,8 @@ filesystem-profile: workspace-write
 - Inspect repository facts before asking the user. Ask before editing when the unknown is merchant-owned configuration, product or design preference, architecture direction, or launch-risk tradeoff.
 - For complex, risky, cross-session, or broad cleanup work, classify purpose, ownership, risk, and allowed action before editing.
 - Select the smallest justified action; do not repeat a failed action without new evidence.
+- Take every count in a validation result (files, uses, issues, assertions) from a command's output and name the command; never count by hand.
+- Cite open decisions on `docs/agent/board.md` as context only; when a task needs one decided, stop and report it instead of choosing.
 
 ## Boundaries
 
@@ -35,7 +37,7 @@ Use when delegating or when the user requests a portable execution prompt. Give 
 1. Read `AGENTS.md`, then `docs/agent/context.md` for the active plan and acceptance boundary.
 2. **Implementation surface:** list allowed paths. **Forbidden:** `config/settings_data.json`, `templates/*.json`, `sections/*-group.json`, vendor/generated assets, and anything outside the surface unless the user widens it.
 3. **Tasks:** numbered checks from the plan.
-4. **Completion checks:** the plan's validators plus `npx prettier --check` on every changed file.
+4. **Completion checks:** the plan's validators plus `npx prettier --check` on every changed file. Counts come from command output, with the command named. Open board decisions may be cited, never decided.
 5. Record progress and validation in `docs/agent/context.md`.
 6. Do not mark the plan accepted and do not commit unless the user asks. Do not run `git stash`, `checkout`, `reset` or other commands that rewrite the working tree; take any before-measurement before the first edit.
 7. **Report:** outcome, changed files, validation results, unverified items, risks.

@@ -30,6 +30,11 @@ Ceylune, a custom Shopify theme maintained as a multi-industry Shopify Theme Sto
 - Progress (2026-10-11):
     - **6-C10 cleanup:** `category-grid` and `grid-feature-card` deleted, the lightbox `zoom_overlay_opacity` setting works, the collapsible image `sizes` fixed, placeholders decorative through `snippets/decorative-placeholder-svg.liquid`, stale keys removed from `templates/page.about.json` (user-authorized), the Phosphor notice, `custom-liquid` allowed in header and footer, and the `section-placement` lint. Accepted after two independent review rounds.
     - **Next** (user, 2026-10-11): the harness first. The lint necessity audit and the layout check tooling, then the parked design-tool / Figma value pilot discussion.
+- Progress (2026-10-12):
+    - **Harness round closed:** 6-V3 validator tidy-up (`6c169d0`), 6-T5 layout check precision (`cd35319`, baseline 63 → 32).
+    - **Design language:** `docs/design/design.md` (Google DESIGN.md format, agreed section by section; we replace the designer, the Figma home design is a visual reference only), with the home design snapshot and three style references (`405d2b1`).
+    - **6-D1 design tokens** (`1e8ebfd`): schema defaults, weight 500 loading, stepped heading line heights, fluid page margin, card radius. **6-D2 design preset** (`ff76f3f`): Instrument Sans, one dark, ink-tinted inputs, page margin 24; layout baseline 32 → 38 (six page-margin entries, user-approved, polish-pass items). Both accepted by the user in one browser look.
+    - **Next** (user, 2026-10-12): migration debt to 0 (neutral ratchets first), then what is decided but not built, then the home polish pass last (order on `docs/agent/board.md`).
 
 ## Migration Direction (accepted)
 
