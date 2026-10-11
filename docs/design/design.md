@@ -97,11 +97,11 @@ Pattern references: `docs/design/references/` (Isla Beauty, Beautiful, ARTU), re
 
 **Labels (subtitle role).** Small text above a heading or on a control: body family, weight 500, `copy-s`, title case, slight positive tracking. Not uppercase by default.
 
-**Default settings this implies (preset, for the token batch):** heading weight 500 (now 700), heading letter spacing -0.02em (now -0.01em), body line height 1.4 (now 1.6), subtitle weight 500 (the setting offers only 400 and 700, so a 500 option is added), heading line height stepped by tier in code with the setting as the large-size value (now one value, 1.2, for every tier).
+**Default settings this implies:** **6-D1 (schema defaults and code, shipped):** heading weight 500, heading letter spacing -0.02em, body line height 1.4, subtitle weight 500 with a medium (500) option, heading line height default 1.0 with stepped tiers in code (`title-xl` and up use the setting; smaller tiers use `max()` floors). **6-D2 (merchant preset):** font picks (`type_header_font`, `type_body_font`) stay on the preset until that batch.
 
 ## Layout
 
-**Wide page, small margins.** Content runs almost edge to edge: in the home design every section's content spans the 1440 frame minus a small side margin (about 24px), not a narrow centred column. The page grid (6-C5: `--page-grid-columns` with `full` and `content` lines, `page_width` and `page_margin` settings) already expresses this; the default preset moves from a 1200px page width to a wide one, so the margin, not the max width, frames the content on common laptop and desktop screens. Very wide screens (2560) still cap the content width so lines and grids do not stretch.
+**Wide page, small margins.** Content runs almost edge to edge: in the home design every section's content spans the 1440 frame minus a small side margin (about 24px), not a narrow centred column. The page grid (6-C5: `--page-grid-columns` with `full` and `content` lines, `page_width` and `page_margin` settings) already expresses this; the wide page width (1600px, in the preset and as the schema default) means the margin, not the max width, frames the content on common laptop and desktop screens. Very wide screens (2560) still cap the content width so lines and grids do not stretch.
 
 **A screen-sized rhythm, not a rule.** Most home sections are about one desktop viewport tall (about 900px at 1440): a statement, a product, a gallery, a set of steps. That is the home page's usual rhythm, chosen per section, not enforced: a section may run taller than a screen, and listing pages (collection, search, blog) flow continuously. Where a section is meant to fill the screen, `section-frame` height `stage` (or `stage-pc`, content-sized on mobile) does it.
 
@@ -125,7 +125,7 @@ Every gap picks an intent first and a step second; the design's pixel distances 
 
 **Alignment.** Section headings align to the content edge (left) or centre, chosen per section and kept consistent within it; body copy is left-aligned except in centred statements of three lines or fewer.
 
-**Default settings this implies (preset, for the token batch, values tuned at the browser look):** page width 1600px (now 1200), page margin 24px (now 20). The margin is one fixed value at every width today; it becomes fluid in code, about 16px at 375 rising to the setting value at 1280, so mobile keeps its content width.
+**Default settings this implies:** **6-D1 (schema defaults and code, shipped):** page width schema default 1600px; page margin schema default 24px with a fluid `--page-margin` clamp (about 16px at 375px rising to the setting at 1280px; when the setting is below 16px the margin stays constant). **6-D2 (merchant preset):** preset `page_width` / `page_margin` (today 1600 / 10) until that batch.
 
 **Every width works (user, 2026-10-11).** The wide page and fluid margin must hold at every width from 320 to 2560, not only at the four design widths: no horizontal scroll, no content outside the margins, no overlapping or clipped text. `npm.cmd run test:layout` checks 320 to 2560 in 40px steps and is the gate for each layout batch; the browser look covers 375, 768, 1024, 1440 and one ultra-wide screen.
 
@@ -139,7 +139,7 @@ Every gap picks an intent first and a step second; the design's pixel distances 
 
 **Overlays float.** Drawers, dialogs, popovers and toasts are the only elements that sit above the page, and they show it: a scrim behind modal layers (`--color-scrim`), and one soft shadow on the panel itself so it separates from what it covers. Their stacking follows the `--z-layer-*` scale in `tailwind/tailwind.input.css`.
 
-**Default settings this implies (preset, for the token batch):** button, input and product card shadow opacity stay 0; dialog and toast keep one soft shadow (today 10% opacity, 24px and 16px blur).
+**Default settings this implies:** **6-D1:** unchanged from prior schema (button, input and product card shadow opacity 0; dialog and toast soft shadow 10% / 24px and 16px blur). **6-D2:** no shadow changes planned in preset batch.
 
 ## Shapes
 
@@ -161,7 +161,7 @@ Full-bleed media (a section background, a split panel's image half) has no radiu
 
 **Signature shape (optional):** the home design's routine showcase frames its image in a tall capsule (full radius on a 386 x 680 frame), with the product breaking out of the frame at the bottom. It is a section-level option, not a theme-wide shape.
 
-**Default settings this implies (preset, for the token batch):** button radius 4px (now 8), input radius 4px (now 8), product card radius 0 (now 8), dialog radius 16px (now 12), toast radius 8px (unchanged). The Medium and Large radii have no merchant setting today; a new card radius setting (default 16px) drives Large, with Medium derived from it at half, so a merchant who squares the feature cards squares the media with them. Product cards keep their own `product_card_radius`.
+**Default settings this implies:** **6-D1 (schema defaults and code, shipped):** button radius 4px, input radius 4px, product card radius 0, dialog radius 16px, toast radius 8px (unchanged); new `card_radius` default 16px with `--radius-card` and `--radius-media` (half) on feature cards in scroll-categories, testimonial-featured, and scatter-gallery. **6-D2 (merchant preset):** colour scheme values on the preset until that batch.
 
 ## Components
 

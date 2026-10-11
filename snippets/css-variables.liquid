@@ -4,9 +4,17 @@
         assign body_font_italic = settings.type_body_font | font_modify: 'style', 'italic'
         assign body_font_bold_italic = body_font_bold | font_modify: 'style', 'italic'
 
+        assign heading_font_selected = settings.type_header_font | font_modify: 'weight', settings.heading_weight
         assign heading_font_bold = settings.type_header_font | font_modify: 'weight', 'bold'
         assign heading_font_italic = settings.type_header_font | font_modify: 'style', 'italic'
         assign heading_font_bold_italic = heading_font_bold | font_modify: 'style', 'italic'
+
+        if settings.subtitle_font_source == 'body'
+            assign subtitle_font_source = settings.type_body_font
+        else
+            assign subtitle_font_source = settings.type_header_font
+        endif
+        assign subtitle_font_selected = subtitle_font_source | font_modify: 'weight', settings.subtitle_weight
     %}
 
     {{ settings.type_body_font | font_face: font_display: 'swap' }}
@@ -21,6 +29,9 @@
     {%- endif -%}
 
     {{ settings.type_header_font | font_face: font_display: 'swap' }}
+    {%- if heading_font_selected -%}
+        {{ heading_font_selected | font_face: font_display: 'swap' }}
+    {%- endif -%}
     {%- if heading_font_bold -%}
         {{ heading_font_bold | font_face: font_display: 'swap' }}
     {%- endif -%}
@@ -29,6 +40,10 @@
     {%- endif -%}
     {%- if heading_font_bold_italic -%}
         {{ heading_font_bold_italic | font_face: font_display: 'swap' }}
+    {%- endif -%}
+
+    {%- if subtitle_font_selected -%}
+        {{ subtitle_font_selected | font_face: font_display: 'swap' }}
     {%- endif -%}
 
     {% comment %} color schemes (last result: :root, .color-scheme-1{} .color-scheme-2{} ...) {% endcomment %}
@@ -134,7 +149,35 @@
 
         {% comment %} layout Variables {% endcomment %}
         --page-width: {{ settings.page_width | divided_by: 10}}rem;
-        --page-margin: {{ settings.page_margin | divided_by: 10 }}rem;
+        {%- liquid
+            assign page_margin_v = settings.page_margin | plus: 0
+            assign page_margin_min_px = 16
+            if page_margin_v < page_margin_min_px
+                assign page_margin_min_px = page_margin_v
+            endif
+            assign page_margin_min_r = page_margin_min_px | times: 1.0 | divided_by: 10
+            assign page_margin_max_r = page_margin_v | times: 1.0 | divided_by: 10
+            if page_margin_min_r == page_margin_max_r
+                assign page_margin_clamp = page_margin_max_r | append: 'rem'
+            else
+                assign page_margin_diff_r = page_margin_max_r | minus: page_margin_min_r
+                assign page_margin_b_vw = page_margin_diff_r | divided_by: 0.905
+                assign page_margin_b_at_min = page_margin_b_vw | times: 0.375
+                assign page_margin_a_rem = page_margin_min_r | minus: page_margin_b_at_min
+                capture page_margin_clamp
+                    echo 'clamp('
+                    echo page_margin_min_r | round: 4
+                    echo 'rem, '
+                    echo page_margin_a_rem | round: 4
+                    echo 'rem + '
+                    echo page_margin_b_vw | round: 4
+                    echo 'vw, '
+                    echo page_margin_max_r | round: 4
+                    echo 'rem)'
+                endcapture
+            endif
+        -%}
+        --page-margin: {{ page_margin_clamp }};
 
         {% comment %} font Variables {% endcomment %}
         --font-body-family: {{ settings.type_body_font.family }}, {{ settings.type_body_font.fallback_families }};
@@ -242,6 +285,8 @@
         {% comment %} Product card Variables {% endcomment %}
         --product-card-border-width: {{ settings.product_card_border_thickness }}px;
         --product-card-radius: {{ settings.product_card_radius }}px;
+        --radius-card: {{ settings.card_radius }}px;
+        --radius-media: {{ settings.card_radius | divided_by: 2 }}px;
 
         --product-card-shadow-opacity: {{ settings.product_card_shadow_opacity | divided_by: 100.0 }};
         --product-card-shadow-horizontal-offset: {{ settings.product_card_shadow_horizontal_offset }}px;
