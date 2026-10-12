@@ -76,11 +76,11 @@
                                 <a
                                     href="{{ a.url }}"
                                     class="
-                                        article-sidebar__link inline-block max-w-full truncate underline-offset-4 hover:underline
+                                        article-sidebar__link
                                         {% if a.id == article.id %}
-                                          text-muted underline
+                                          article-sidebar__link--current
                                         {% else %}
-                                          text-subtle hover:text-muted
+                                          article-sidebar__link--other
                                         {% endif %}
                                     "
                                 >
@@ -413,6 +413,34 @@
 
     .article-sidebar__link {
         transition: color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+    }
+
+    .article-sidebar__link--current {
+        color: var(--color-muted);
+        text-decoration: underline;
+    }
+
+    .article-sidebar__link--other {
+        color: var(--color-subtle);
+    }
+
+    :where(.article-sidebar__link) {
+        display: inline-block;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        text-underline-offset: 4px;
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+        :where(.article-sidebar__link):hover {
+            text-decoration: underline;
+        }
+
+        :where(.article-sidebar__link--other):hover {
+            color: var(--color-muted);
+        }
     }
 
     .article-mobile-nav__row {

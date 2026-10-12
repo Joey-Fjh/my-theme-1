@@ -2107,22 +2107,36 @@ test('mixed-element lint: new mixed region fails', async () => {
     });
 });
 
+test('mixed-element lint: strict, a baseline allowance is ignored', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeStylesheetOwnershipTheme(
+            root,
+            ['<div class="widget flex"></div>', '{% stylesheet %}', '.widget { display: block; }', '{% endstylesheet %}', ''].join(
+                '\n',
+            ),
+            { 'stylesheet-font-size': {}, 'mixed-element': { 'sections/a.liquid': 5 } },
+        );
+        const failures = await runThemeLint(root);
+        assert.ok(failures.some((f) => /\[mixed-element\] 1 use\(s\), baseline 0/.test(f.message)));
+    });
+});
+
 test('stylesheet ownership ratchet: drop passes with shrink hint', async () => {
     await withTempThemeAsync(async (root) => {
         writeStylesheetOwnershipTheme(
             root,
             [
-                '<div class="widget flex"></div>',
+                '<div class="widget"></div>',
                 '{% stylesheet %}',
-                '.widget { display: block; }',
+                '.widget { display: block; font-size: 14px; }',
                 '{% endstylesheet %}',
                 '',
             ].join('\n'),
-            { 'stylesheet-font-size': {}, 'mixed-element': { 'sections/a.liquid': 2 } },
+            { 'stylesheet-font-size': { 'sections/a.liquid': 2 } },
         );
         const notes = [];
         const failures = await runThemeLint(root, notes);
-        assert.equal(failures.filter((f) => f.message.startsWith('[mixed-element]')).length, 0);
+        assert.equal(failures.filter((f) => f.message.startsWith('[stylesheet-font-size]')).length, 0);
         assert.match(notes.join('\n'), /--shrink-stylesheet-ownership-baseline/);
     });
 });
@@ -2258,6 +2272,43 @@ test('mixed-element lint: project vocabulary on an own class is not mixed', () =
     }
 });
 
+test('mixed-element lint: sr-only and comparison literals are not mixed; cycle and branch literals still count', () => {
+    const { collectStylesheetOwnershipCounts } = require('./lib/stylesheet-ownership-lint');
+    // Every exempted name is a generated utility here, so each 0 below proves the exemption, not a missing rule.
+    const output =
+        '@layer utilities {\n  .flex { display: flex; }\n  .grid { display: grid; }\n  .outline { outline-style: solid; }\n  .sr-only { position: absolute; }\n  .not-sr-only { position: static; }\n}\n';
+    const cases = [
+        ['<div class="widget sr-only"></div>', 0],
+        ['<div class="widget not-sr-only"></div>', 0],
+        ['<div class="widget outline"></div>', 1],
+        ["<div class=\"widget {% if pagination_style == 'outline' %}pagination__button--outline{% endif %}\"></div>", 0],
+        ["<div class=\"widget {% if x=='outline' %}a{% endif %}\"></div>", 0],
+        ["<div class=\"widget {% if 'outline' != x %}a{% endif %}\"></div>", 0],
+        ["<div class=\"widget {% if list contains 'outline' %}a{% endif %}\"></div>", 0],
+        ["<div class=\"widget {% if 'outline' contains x %}a{% endif %}\"></div>", 0],
+        ["<div class=\"widget {% if 'outline'contains'grid' %}a{% endif %}\"></div>", 0],
+        ["<div class=\"widget {% if 'outline'=='grid' %}a{% endif %}\"></div>", 0],
+        ["<div class=\"widget {% if 'outline'!='grid' %}a{% endif %}\"></div>", 0],
+        ["<div class=\"widget {% if 'outline' <> x %}a{% endif %}\"></div>", 0],
+        ["<div class=\"widget {% if x >= 'outline' %}a{% endif %}\"></div>", 0],
+        ["<div class=\"widget {% if a == 'x' and 'outline' %}a{% endif %}\"></div>", 1],
+        ["<div class=\"widget {% case x %}{% when 'outline' %}pagination__button--outline{% endcase %}\"></div>", 0],
+        ["<div class=\"widget {% case x %}{% when 'nope', 'outline' %}a{% endcase %}\"></div>", 0],
+        ["<div class=\"widget {% case x %}{% when 'nope' or 'outline' %}a{% endcase %}\"></div>", 0],
+        ["<div class=\"widget {% cycle 'flex', 'grid' %}\"></div>", 1],
+        ['<div class="widget {% if a %}flex{% endif %}"></div>', 1],
+        ['<div class="widget flex"></div>', 1],
+    ];
+    for (const [markup, expected] of cases) {
+        withTempTheme((root) => {
+            writeStylesheetOwnershipTheme(root, `${markup}\n{% stylesheet %}.widget { display: block; }{% endstylesheet %}\n`);
+            writeFile(root, 'assets/tailwind.output.css', output);
+            const counts = collectStylesheetOwnershipCounts(root);
+            assert.equal(counts['mixed-element']['sections/a.liquid']?.count ?? 0, expected, markup);
+        });
+    }
+});
+
 test('mixed-element lint: captures count per element that outputs them; static tokens around Liquid count', () => {
     const { collectStylesheetOwnershipCounts } = require('./lib/stylesheet-ownership-lint');
     const cases = [
@@ -2323,14 +2374,30 @@ test('stylesheet ownership baseline flags: write refuses an existing file; shrin
         let result = runThemeLintArgs(root, ['--write-stylesheet-ownership-baseline']);
         assert.equal(result.status, 0, result.stderr);
         const written = JSON.parse(fs.readFileSync(path.join(root, STYLESHEET_OWNERSHIP_BASELINE), 'utf8'));
-        assert.deepEqual(written, {
-            'mixed-element': { 'sections/a.liquid': 2 },
-            'stylesheet-font-size': { 'sections/a.liquid': 1 },
-        });
+        // mixed-element is strict: it is never written as an allowance.
+        assert.deepEqual(written, { 'stylesheet-font-size': { 'sections/a.liquid': 1 } });
 
         result = runThemeLintArgs(root, ['--write-stylesheet-ownership-baseline']);
         assert.notEqual(result.status, 0);
         assert.match(result.stderr, /refused/);
+
+        // A rising count never raises the allowance.
+        writeFile(
+            root,
+            'sections/a.liquid',
+            [
+                '{% stylesheet %}',
+                '.widget { font-size: 14px; }',
+                '.other { font-size: 12px; }',
+                '{% endstylesheet %}',
+                '',
+            ].join('\n'),
+        );
+        result = runThemeLintArgs(root, ['--shrink-stylesheet-ownership-baseline']);
+        assert.equal(result.status, 0, result.stderr);
+        assert.deepEqual(JSON.parse(fs.readFileSync(path.join(root, STYLESHEET_OWNERSHIP_BASELINE), 'utf8')), {
+            'stylesheet-font-size': { 'sections/a.liquid': 1 },
+        });
 
         writeFile(
             root,
@@ -2348,7 +2415,7 @@ test('stylesheet ownership baseline flags: write refuses an existing file; shrin
         result = runThemeLintArgs(root, ['--shrink-stylesheet-ownership-baseline']);
         assert.equal(result.status, 0, result.stderr);
         const shrunk = JSON.parse(fs.readFileSync(path.join(root, STYLESHEET_OWNERSHIP_BASELINE), 'utf8'));
-        assert.deepEqual(shrunk, { 'mixed-element': { 'sections/a.liquid': 2 }, 'stylesheet-font-size': {} });
+        assert.deepEqual(shrunk, { 'stylesheet-font-size': {} });
     });
 });
 

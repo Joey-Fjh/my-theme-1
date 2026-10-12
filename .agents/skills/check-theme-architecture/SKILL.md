@@ -76,7 +76,7 @@ Liquid files under `layout/`, `sections/`, `snippets/`, `blocks/`, and `template
 | `legacy-breakpoint` | Ratchet (`migration-baseline.json`): per-file count of `pc:` / `max-pc:` / `fw:` / `max-fw:` variants may only fall. Retires at 0. |
 | `stylesheet-layer` | No `@layer` inside `{% stylesheet %}` (zero tolerance, 6-C6). |
 | `stylesheet-font-size` | Ratchet (`stylesheet-ownership-baseline.json`): per-file count of disallowed `font-size` declarations in `{% stylesheet %}` may only fall (6-C6). |
-| `mixed-element` | Ratchet (`stylesheet-ownership-baseline.json`): per-file count of elements mixing the file's own stylesheet class with a Tailwind utility may only fall (6-C6). |
+| `mixed-element` | Strict (6-R4): any element mixing the file's own stylesheet class with a core Tailwind utility fails `lint:theme`. It has no entry in `stylesheet-ownership-baseline.json`, and the lint neither reads nor writes one. `sr-only` / `not-sr-only` and Liquid comparison literals do not count. |
 
 ## Reporting
 

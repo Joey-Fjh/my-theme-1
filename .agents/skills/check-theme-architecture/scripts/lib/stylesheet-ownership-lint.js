@@ -191,16 +191,46 @@ function isProjectVocabulary(token, vocabulary) {
 
 const OUTPUT_MARK = '\u0000';
 
+const COMPARISON_BEFORE_RE = /(==|!=|<>|<=|>=|<|>|\bcontains)\s*$/i;
+const COMPARISON_AFTER_RE = /^\s*(==|!=|<>|<=|>=|<|>|contains\b)/i;
+
+/**
+ * String literals of a Liquid tag that can be class names. A literal is a comparison operand, and is dropped, when
+ * the text right before or after it (spaces optional) is a comparison operator (`==`, `!=`, `<>`, `<`, `>`, `<=`,
+ * `>=`, `contains`); every value of a `when` tag (`when 'a', 'b' or 'c'`) is one too. Each literal is judged against
+ * the original tag, so both operands of `'a'=='b'` are dropped.
+ */
+function classLiteralsOfLiquidTag(tag) {
+    if (/^{%-?\s*when\b/i.test(tag)) return [];
+    const literals = [];
+    for (const m of tag.matchAll(/"([^"]*)"|'([^']*)'/g)) {
+        const before = tag.slice(0, m.index);
+        const after = tag.slice(m.index + m[0].length);
+        if (COMPARISON_BEFORE_RE.test(before) || COMPARISON_AFTER_RE.test(after)) continue;
+        literals.push(m[1] ?? m[2]);
+    }
+    return literals;
+}
+
 /**
  * Static class tokens of a class list. {{ … }} output is unresolvable: it is replaced by a mark, and any token that
  * touches it (for example "color-{{ scheme }}") is dropped, while the static tokens around it still count.
- * {% … %} tags are removed but their string literals count.
+ * {% … %} tags are removed but their string literals count, except comparison operands.
  */
 function staticClassTokens(raw) {
     const text = raw
         .replace(/{{[\s\S]*?}}/g, OUTPUT_MARK)
-        .replace(/{%[\s\S]*?%}/g, (tag) => ` ${[...tag.matchAll(/"([^"]*)"|'([^']*)'/g)].map((m) => m[1] ?? m[2]).join(' ')} `);
+        .replace(/{%[\s\S]*?%}/g, (tag) => ` ${classLiteralsOfLiquidTag(tag).join(' ')} `);
     return text.split(/\s+/).filter((t) => t && !t.includes(OUTPUT_MARK));
+}
+
+const ACCESSIBILITY_UTILITY_NAMES = new Set(['sr-only', 'not-sr-only']);
+
+function countsAsMixedUtilityToken(token, utilityNames, vocabulary) {
+    const { utility } = splitVariants(token);
+    if (ACCESSIBILITY_UTILITY_NAMES.has(utility)) return false;
+    if (isProjectVocabulary(token, vocabulary)) return false;
+    return isUtilityToken(token, utilityNames);
 }
 
 /**
@@ -244,7 +274,7 @@ function countMixedElements(text, styledClasses, utilityNames, vocabulary) {
     let count = 0;
     for (const tokens of elementClassLists(text)) {
         const own = tokens.some((t) => styledClasses.has(splitVariants(t).utility));
-        if (own && tokens.some((t) => !isProjectVocabulary(t, vocabulary) && isUtilityToken(t, utilityNames))) count += 1;
+        if (own && tokens.some((t) => countsAsMixedUtilityToken(t, utilityNames, vocabulary))) count += 1;
     }
     return count;
 }
@@ -279,7 +309,7 @@ function collectStylesheetOwnershipCounts(root) {
 function toBaseline(counts) {
     const baseline = {};
     for (const rule of Object.values(RULE).sort()) {
-        if (rule === RULE.STYLESHEET_LAYER) continue;
+        if (rule === RULE.STYLESHEET_LAYER || rule === RULE.MIXED_ELEMENT) continue;
         baseline[rule] = {};
         for (const file of Object.keys(counts[rule]).sort()) {
             baseline[rule][file] = counts[rule][file].count;
@@ -307,7 +337,8 @@ function compareWithBaseline(counts, baseline) {
     const failures = [];
     const drops = [];
     for (const rule of [RULE.STYLESHEET_FONT_SIZE, RULE.MIXED_ELEMENT]) {
-        const known = baseline[rule] ?? {};
+        // mixed-element is strict (6-R4): no baseline allowance is read, whatever the file holds.
+        const known = rule === RULE.MIXED_ELEMENT ? {} : (baseline[rule] ?? {});
         for (const [file, { count, lines }] of Object.entries(counts[rule])) {
             const allowed = known[file] ?? 0;
             if (count > allowed) {

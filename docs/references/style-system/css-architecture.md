@@ -485,13 +485,14 @@ After batch **6-R2** (2026-10-12), markup `raw-spacing` is **2** (`tablet:px-[8v
 | --- | --- | --- |
 | `stylesheet-layer` | Rejects any `@layer` inside `{% stylesheet %}` | None (zero tolerance) |
 | `stylesheet-font-size` | Counts disallowed `font-size` declarations per file (see **Stylesheet font sizes** above) | Ratchet: `.agents/skills/check-theme-architecture/scripts/stylesheet-ownership-baseline.json` |
-| `mixed-element` | Counts static class regions where the file's own stylesheet class and a core Tailwind utility appear together. Project vocabulary (`@utility` names in `tailwind/*.css`) may sit on that element and does not count | Same ratchet file |
+| `mixed-element` | Counts static class regions where the file's own stylesheet class and a core Tailwind utility appear together. Project vocabulary (`@utility` names in `tailwind/*.css`) may sit on that element and does not count. Strict since 6-R4: any mixed element fails `lint:theme`; no baseline allowance is read or written | None (strict) |
 
 **Ratchet flags:** `--write-stylesheet-ownership-baseline` (create once; refuses when the file exists), `--shrink-stylesheet-ownership-baseline` (lowers entries and removes zeros only). Raising an entry is a manual edit that needs the user's approval.
 
 **`mixed-element` extraction:**
 - **One element per `class` attribute:** quoted `class` attributes only (not `data-class` or other attributes). The body of a `{% capture *class* %}` joins every `class` attribute that outputs it, so a mixed capture output on two elements counts twice, and a capture that is never output does not count. Captures are expanded recursively (a capture may output another class capture); a cycle stops expansion.
-- **Liquid inside a class list:** `{{ … }}` output is not resolved, and a token glued to it (`color-{{ scheme }}`) is dropped; `{% … %}` tags are removed but their string literals count. The static tokens around Liquid always count.
+- **Liquid inside a class list:** `{{ … }}` output is not resolved, and a token glued to it (`color-{{ scheme }}`) is dropped; `{% … %}` tags are removed but their string literals count, except string literals that are only comparison operands (`== 'x'`, `!= 'x'`, `when 'x'`, `contains 'x'`). The static tokens around Liquid always count.
+- **Accessibility utilities:** `sr-only` and `not-sr-only` do not count as mixed utilities (stylesheet `clip-path` is rejected by embedded compat).
 - **Own class:** a class that the same file's `{% stylesheet %}` styles.
 - **Utility:** the first top-level class of each rule in the `@layer utilities` blocks of `assets/tailwind.output.css`, unescaped (`w-1/2`, `mt-0.5`, `body-lg`); classes inside `:where()` / `:is()` arguments are ignored.
 - **Project vocabulary:** a token whose utility part, after variants are stripped, is an `@utility` name in `tailwind/*.css` (`title-m`, `focus-ring`, `tablet:title-l`). It may sit on an own-class element and does not count. A core utility, including one with a breakpoint variant (`tablet:gap-step-m`, `flex`), still counts.
@@ -500,7 +501,7 @@ After batch **6-R2** (2026-10-12), markup `raw-spacing` is **2** (`tablet:px-[8v
 
 Existing absolute font sizes stay frozen at the baseline until the polish pass. New code follows rule B immediately: an own-class element carries project vocabulary only, and its core utilities live in `:where(.own-class)`.
 
-After batch **6-R3** (2026-10-12), `mixed-element` is **27**. Excluding project vocabulary took the count from 135 to 113; moving core utilities into `:where(.own-class)` took it to 27. `stylesheet-font-size` stays **15**.
+After batch **6-R4** (2026-10-12), `mixed-element` is **0** and strict (no baseline allowance). Batch **6-R3** had brought it to **27**; **6-R4** moved the remainder into `:where(.own-class)` (or fixed lint false positives). `stylesheet-font-size` stays **15**.
 
 ## Decision Flow
 
