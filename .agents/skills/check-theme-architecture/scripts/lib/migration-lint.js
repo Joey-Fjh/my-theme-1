@@ -200,6 +200,7 @@ function collectMigrationCounts(root) {
 function toBaseline(counts) {
     const baseline = {};
     for (const rule of Object.values(RULE).sort()) {
+        if (rule === RULE.BREAKPOINT) continue;
         baseline[rule] = {};
         for (const file of Object.keys(counts[rule]).sort()) {
             baseline[rule][file] = counts[rule][file].count;
@@ -228,7 +229,8 @@ function compareWithBaseline(counts, baseline) {
     const failures = [];
     const drops = [];
     for (const rule of Object.values(RULE)) {
-        const known = baseline[rule] ?? {};
+        // legacy-breakpoint is strict (6-V6): no baseline allowance is read, whatever the file holds.
+        const known = rule === RULE.BREAKPOINT ? {} : (baseline[rule] ?? {});
         for (const [file, { count, lines }] of Object.entries(counts[rule])) {
             const allowed = known[file] ?? 0;
             if (count > allowed) {

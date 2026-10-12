@@ -1794,8 +1794,7 @@ function runThemeLintArgs(root, args) {
 
 test('migration lint: a count above the baseline fails', async () => {
     await withTempThemeAsync(async (root) => {
-        writeMigrationTheme(root, '<div class="mt-4 gap-6 pc:flex heading-h2"></div>', {
-            'legacy-breakpoint': { 'sections/a.liquid': 1 },
+        writeMigrationTheme(root, '<div class="mt-4 gap-6 heading-h2"></div>', {
             'legacy-type-tier': { 'sections/a.liquid': 1 },
             'raw-spacing': { 'sections/a.liquid': 1 },
         });
@@ -1804,6 +1803,18 @@ test('migration lint: a count above the baseline fails', async () => {
         assert.equal(migration.length, 1);
         assert.match(migration[0].message, /2 use\(s\), baseline 1/);
         assert.equal(failures.filter((f) => /^\[legacy-/.test(f.message)).length, 0);
+    });
+});
+
+test('legacy-breakpoint lint: strict, a baseline allowance is ignored', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeMigrationTheme(root, '<div class="pc:flex"></div>', {
+            'legacy-breakpoint': { 'sections/a.liquid': 5 },
+            'legacy-type-tier': {},
+            'raw-spacing': {},
+        });
+        const failures = await runThemeLint(root);
+        assert.ok(failures.some((f) => /\[legacy-breakpoint\] 1 use\(s\), baseline 0/.test(f.message)));
     });
 });
 
@@ -2010,8 +2021,8 @@ test('migration baseline flags: write refuses an existing file; shrink only lowe
         let result = runThemeLintArgs(root, ['--write-migration-baseline']);
         assert.equal(result.status, 0, result.stderr);
         const written = JSON.parse(fs.readFileSync(path.join(root, MIGRATION_BASELINE), 'utf8'));
+        // legacy-breakpoint is strict: it is never written as an allowance.
         assert.deepEqual(written, {
-            'legacy-breakpoint': { 'sections/a.liquid': 1 },
             'legacy-type-tier': {},
             'raw-spacing': { 'sections/a.liquid': 1 },
         });
@@ -2020,15 +2031,24 @@ test('migration baseline flags: write refuses an existing file; shrink only lowe
         assert.notEqual(result.status, 0);
         assert.match(result.stderr, /refused/);
 
+        // A rising count never raises the allowance. A new file is not added.
         writeFile(root, 'sections/a.liquid', '<div class="mt-4 mb-2 gap-6"></div>');
         writeFile(root, 'sections/b.liquid', '<div class="mt-4"></div>');
         result = runThemeLintArgs(root, ['--shrink-migration-baseline']);
         assert.equal(result.status, 0, result.stderr);
-        const shrunk = JSON.parse(fs.readFileSync(path.join(root, MIGRATION_BASELINE), 'utf8'));
-        assert.deepEqual(shrunk, {
-            'legacy-breakpoint': {},
+        assert.deepEqual(JSON.parse(fs.readFileSync(path.join(root, MIGRATION_BASELINE), 'utf8')), {
             'legacy-type-tier': {},
             'raw-spacing': { 'sections/a.liquid': 1 },
+        });
+
+        // Removal at 0: the file entry is dropped when the count hits 0.
+        writeFile(root, 'sections/a.liquid', '<div class="flex"></div>');
+        result = runThemeLintArgs(root, ['--shrink-migration-baseline']);
+        assert.equal(result.status, 0, result.stderr);
+        const shrunk = JSON.parse(fs.readFileSync(path.join(root, MIGRATION_BASELINE), 'utf8'));
+        assert.deepEqual(shrunk, {
+            'legacy-type-tier': {},
+            'raw-spacing': {},
         });
     });
 });

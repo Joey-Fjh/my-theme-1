@@ -73,7 +73,7 @@ Liquid files under `layout/`, `sections/`, `snippets/`, `blocks/`, and `template
 | `stylesheet-media-query` | `{% stylesheet %}` media queries are either `not ((hover: hover) and (pointer: fine))` alone, or `and`-joined atoms from `(width >= 48rem)` / `(width < 48rem)` (also 64rem and 80rem), `(prefers-reduced-motion: reduce)` / `(… no-preference)`, and the pair `(hover: hover) and (pointer: fine)` (6-C2). |
 | `legacy-type-tier` | Ratchet (`migration-baseline.json`): per-file count of `heading-*` / `body-*` tier utilities may only fall. Retires at 0. |
 | `raw-spacing` | Ratchet (`migration-baseline.json`): per-file count of gap, padding, margin and `space-*` utilities with a numeric or arbitrary value may only fall. Retires at 0. |
-| `legacy-breakpoint` | Ratchet (`migration-baseline.json`): per-file count of `pc:` / `max-pc:` / `fw:` / `max-fw:` variants may only fall. Retires at 0. |
+| `legacy-breakpoint` | Strict (6-V6): any `pc:` / `max-pc:` / `fw:` / `max-fw:` variant in markup fails `lint:theme`. It has no entry in `migration-baseline.json`, and the lint neither reads nor writes one. |
 | `stylesheet-layer` | No `@layer` inside `{% stylesheet %}` (zero tolerance, 6-C6). |
 | `stylesheet-font-size` | Ratchet (`stylesheet-ownership-baseline.json`): per-file count of disallowed `font-size` declarations in `{% stylesheet %}` may only fall (6-C6). |
 | `mixed-element` | Strict (6-R4): any element mixing the file's own stylesheet class with a core Tailwind utility fails `lint:theme`. It has no entry in `stylesheet-ownership-baseline.json`, and the lint neither reads nor writes one. `sr-only` / `not-sr-only` and Liquid comparison literals do not count. |

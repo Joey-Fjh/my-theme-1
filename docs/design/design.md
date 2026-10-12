@@ -190,7 +190,7 @@ Each component is described by its role and look; sizes, gaps and radii come fro
 
 **Numbered list.** Large rows of index number and name (01 Cleanser), the active row in ink and the rest in faint ink, paired with an image that follows the active row.
 
-**Carousel controls.** Thin arrows aligned to the content edge; dots (round, active one elongated or filled); a fraction counter with short progress bars (01 / 03); a thumbnail strip with captions for product or routine slides. Every control is a button with an accessible name; autoplay has a visible pause (WCAG 2.2.2).
+**Carousel controls.** Thin arrows aligned to the content edge; dots (round, active one elongated or filled); a fraction counter with short progress bars (01 / 03); a thumbnail strip with captions for product or routine slides. Every control is a button with an accessible name. Autoplay always has a way to pause (WCAG 2.2.2): with a mouse, hovering the active control and keyboard focus pause it and no pause button is shown; on devices that cannot hover (touch), a pause button appears beside the dots.
 
 **Product form controls.** Variant options as outlined small-radius boxes (with a colour dot for swatch values), size options as smaller boxes, quantity as one outlined group with minus and plus icon buttons. Selected state: ink border and ink text; unavailable: faint text with a strike, still focusable.
 
@@ -282,7 +282,7 @@ Rules across widths:
 
 - Scroll reveal: headings and blocks rise slightly and fade in, once, in reading order. First-viewport content is visible without it (no reveal on the hero's heading and image).
 - Hover: the small changes in Component States, within the fast duration.
-- Rails and slideshows: slide on request (arrows, swipe, dots). Autoplay, where a merchant enables it, is slow, pauses on hover and focus, and has a visible pause control.
+- Rails and slideshows: slide on request (arrows, swipe, dots). Autoplay, where a merchant enables it, is slow and pauses on hover and focus; on devices that cannot hover it shows a pause button.
 - Marquee: slow continuous scroll of one line.
 - Overlays: drawers slide from their edge, dialogs fade and rise slightly, scrims fade.
 - The 3D moment: a slight tilt and the backdrop appearing, within the base duration.

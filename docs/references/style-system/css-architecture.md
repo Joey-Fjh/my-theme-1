@@ -446,7 +446,7 @@ Everything else counts in `lint:theme` (`stylesheet-font-size`, ratcheted baseli
 
 - `legacy-type-tier`: the `heading-*` / `body-*` tier utilities, read from `tailwind/tailwind.typography.css` (not the `*-base` mixins);
 - `raw-spacing`: gap, padding, margin and `space-*` utilities with a numeric or arbitrary value (`0`, `px`, `auto` and token aliases do not count);
-- `legacy-breakpoint`: class tokens with the `pc:`, `max-pc:`, `fw:` or `max-fw:` variant.
+- `legacy-breakpoint`: class tokens with the `pc:`, `max-pc:`, `fw:` or `max-fw:` variant. Strict since 6-V6: any such variant fails `lint:theme`; no baseline allowance is read or written.
 
 **What is counted:**
 - **Counted:** tokens in three places:
@@ -465,15 +465,15 @@ Everything else counts in `lint:theme` (`stylesheet-font-size`, ratcheted baseli
     - a `{% capture %}` whose name does not contain `class` is treated as text, even if it is later used as a class list;
     - every quoted attribute value and Liquid string literal is a candidate whatever its purpose. A `data-*` value such as `pc:flex` counts.
 
-**The baseline is a ratchet:** `.agents/skills/check-theme-architecture/scripts/migration-baseline.json`.
+**The baseline is a ratchet** for `legacy-type-tier` and `raw-spacing`: `.agents/skills/check-theme-architecture/scripts/migration-baseline.json`. `legacy-breakpoint` is strict (6-V6): it has no entry, and the lint neither reads nor writes one.
 - **Fails:** a file whose count rises above its entry, or a file with no entry that uses a pattern.
 - **Falls:** a lower count passes, with a hint to run `node .agents/skills/check-theme-architecture/scripts/lint-theme.js --shrink-migration-baseline`. That flag only lowers entries and removes zeros.
 - **Raising an entry:** a manual edit, and it needs the user's approval.
 - **Creating it:** `--write-migration-baseline` refuses when the file exists.
 
-The baseline reaches zero through the breakpoint, type and space batches and the polish pass.
+The `legacy-type-tier` and `raw-spacing` baselines reach zero through the type and space batches and the polish pass.
 
-After batch **6-R1** (2026-10-12), markup counts are `legacy-breakpoint` **0** and `legacy-type-tier` **6** (`body-size-custom` only, in `sections/about-stats.liquid`, `sections/blog.liquid`, and `sections/promotion-countdown.liquid`).
+After batch **6-R1** (2026-10-12), markup counts are `legacy-breakpoint` **0** and `legacy-type-tier` **6** (`body-size-custom` only, in `sections/about-stats.liquid`, `sections/blog.liquid`, and `sections/promotion-countdown.liquid`). Since 6-V6, `legacy-breakpoint` is strict: no baseline allowance is read or written.
 
 After batch **6-R2** (2026-10-12), markup `raw-spacing` is **2** (`tablet:px-[8vw]` and `tablet:py-[5vh]` in `snippets/product-card.liquid` only).
 
