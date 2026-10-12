@@ -169,6 +169,26 @@ function isUtilityToken(token, utilityNames) {
     return false;
 }
 
+/**
+ * Project vocabulary: `@utility <name>` in `tailwind/*.css`, read from source the way `readTypeTiers`
+ * reads the typography source. A token is vocabulary when its utility part (after `splitVariants`) is one of these names.
+ */
+function readProjectVocabulary(root) {
+    const names = new Set();
+    const dir = path.join(root, 'tailwind');
+    if (!fs.existsSync(dir)) return names;
+    for (const fileName of fs.readdirSync(dir).sort()) {
+        if (!fileName.endsWith('.css')) continue;
+        const css = fs.readFileSync(path.join(dir, fileName), 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ');
+        for (const match of css.matchAll(/@utility\s+([a-zA-Z0-9_-]+\*?)/g)) names.add(match[1]);
+    }
+    return names;
+}
+
+function isProjectVocabulary(token, vocabulary) {
+    return vocabulary.has(splitVariants(token).utility);
+}
+
 const OUTPUT_MARK = '\u0000';
 
 /**
@@ -219,18 +239,19 @@ function elementClassLists(text) {
     return elements;
 }
 
-function countMixedElements(text, styledClasses, utilityNames) {
+function countMixedElements(text, styledClasses, utilityNames, vocabulary) {
     if (!styledClasses.size) return 0;
     let count = 0;
     for (const tokens of elementClassLists(text)) {
         const own = tokens.some((t) => styledClasses.has(splitVariants(t).utility));
-        if (own && tokens.some((t) => isUtilityToken(t, utilityNames))) count += 1;
+        if (own && tokens.some((t) => !isProjectVocabulary(t, vocabulary) && isUtilityToken(t, utilityNames))) count += 1;
     }
     return count;
 }
 
 function collectStylesheetOwnershipCounts(root) {
     const utilityNames = readUtilityClassNames(root);
+    const vocabulary = readProjectVocabulary(root);
     const counts = { [RULE.STYLESHEET_LAYER]: {}, [RULE.STYLESHEET_FONT_SIZE]: {}, [RULE.MIXED_ELEMENT]: {} };
 
     for (const file of listMarkupFiles(root)) {
@@ -249,7 +270,7 @@ function collectStylesheetOwnershipCounts(root) {
         if (layerHits) counts[RULE.STYLESHEET_LAYER][file] = { count: layerHits, lines: [1] };
         if (fontHits) counts[RULE.STYLESHEET_FONT_SIZE][file] = { count: fontHits, lines: [1] };
 
-        const mixed = countMixedElements(text, styledClasses, utilityNames);
+        const mixed = countMixedElements(text, styledClasses, utilityNames, vocabulary);
         if (mixed) counts[RULE.MIXED_ELEMENT][file] = { count: mixed, lines: [1] };
     }
     return counts;
@@ -359,6 +380,7 @@ module.exports = {
     collectStylesheetOwnershipCounts,
     collectStylesheetOwnershipFailures,
     isAllowedStylesheetFontSize,
+    readProjectVocabulary,
     readUtilityClassNames,
     readBaseline,
     shrinkBaseline,

@@ -102,7 +102,7 @@
             endif
         -%}
             <div
-                class="collection-list__module flex flex-col gap-step-l tablet:gap-step-xl"
+                class="collection-list__module"
                 data-module-id="collection-list"
                 x-data="collectionList()"
                 data-swiper-src="{{ 'vendor-swiper.min.js' | asset_url }}"
@@ -132,7 +132,7 @@
                             <div class="swiper-wrapper collection-list__fallback-track">
                                 {%- if collection_list_use_placeholders -%}
                                     {%- for placeholder_index in (1..5) -%}
-                                        <div class="swiper-slide h-auto">
+                                        <div class="swiper-slide collection-list__slide">
                                             {% render 'collection-card',
                                                 placeholder: true,
                                                 placeholder_index: placeholder_index,
@@ -142,7 +142,7 @@
                                     {%- endfor -%}
                                 {%- else -%}
                                     {%- for collection in collection_list_collections -%}
-                                        <div class="swiper-slide h-auto">
+                                        <div class="swiper-slide collection-list__slide">
                                             {% render 'collection-card',
                                                 collection: collection,
                                                 title_class: collection_list_card_title_class
@@ -155,7 +155,7 @@
                     </div>
 
                     {%- if section.settings.show_arrows -%}
-                        <div class="collection-list__nav flex items-center justify-end gap-step-xs">
+                        <div class="collection-list__nav">
                             <button
                                 type="button"
                                 class="collection-list__nav-button focus-ring"
@@ -260,6 +260,26 @@
     .collection-list__nav-button.swiper-button-disabled {
         opacity: 0.35;
         cursor: not-allowed;
+    }
+
+    :where(.collection-list__module) {
+        display: flex;
+        flex-direction: column;
+        gap: clamp(1.2rem, 0.8685rem + 0.884vw, 2rem);
+        @media (width >= 48rem) {
+            gap: clamp(1.8rem, 1.3028rem + 1.326vw, 3rem);
+        }
+    }
+
+    :where(.collection-list__slide) {
+        height: auto;
+    }
+
+    :where(.collection-list__nav) {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: clamp(0.45rem, 0.3257rem + 0.331vw, 0.75rem);
     }
 {% endstylesheet %}
 

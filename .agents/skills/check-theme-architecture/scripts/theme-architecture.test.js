@@ -2219,6 +2219,45 @@ test('mixed-element lint: class attributes only, used class captures, compiled u
     });
 });
 
+test('mixed-element lint: project vocabulary on an own class is not mixed', () => {
+    const { collectStylesheetOwnershipCounts } = require('./lib/stylesheet-ownership-lint');
+    const output = [
+        '@layer utilities {',
+        '  .flex { display: flex; }',
+        '  .title-m { color: red; }',
+        '  .focus-ring { color: red; }',
+        '  .title-l { color: red; }',
+        '  .gap-step-m { gap: 1rem; }',
+        '  .tablet\\:gap-step-m { gap: 1rem; }',
+        '  .tablet\\:title-l { color: red; }',
+        '}',
+        '',
+    ].join('\n');
+    const cases = [
+        ['<div class="widget title-m"></div>', 0],
+        ['<div class="widget focus-ring"></div>', 0],
+        ['<div class="widget flex"></div>', 1],
+        ['<div class="widget tablet:gap-step-m"></div>', 1],
+        ['<div class="widget tablet:title-l"></div>', 0],
+    ];
+    for (const [markup, expected] of cases) {
+        withTempTheme((root) => {
+            writeStylesheetOwnershipTheme(
+                root,
+                `${markup}\n{% stylesheet %}.widget { display: block; }{% endstylesheet %}\n`,
+            );
+            writeFile(
+                root,
+                'tailwind/vocabulary.css',
+                '@utility title-m { color: red; }\n@utility focus-ring { color: red; }\n@utility title-l { color: red; }\n',
+            );
+            writeFile(root, 'assets/tailwind.output.css', output);
+            const counts = collectStylesheetOwnershipCounts(root);
+            assert.equal(counts['mixed-element']['sections/a.liquid']?.count ?? 0, expected, markup);
+        });
+    }
+});
+
 test('mixed-element lint: captures count per element that outputs them; static tokens around Liquid count', () => {
     const { collectStylesheetOwnershipCounts } = require('./lib/stylesheet-ownership-lint');
     const cases = [

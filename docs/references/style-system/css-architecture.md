@@ -218,7 +218,7 @@ Don't use `animate-spin` or `x-transition:*` for ordinary loading or state motio
 
 | Home | Owns |
 | --- | --- |
-| Owner `{% stylesheet %}` (rule B) | All styles on an element that carries the file's own BEM class (plain CSS on tokens: states, nesting, motion); unlayered, wins over utilities |
+| Owner `{% stylesheet %}` (rule B) | All styles on an element that carries the file's own BEM class, except project vocabulary (`@utility` names in `tailwind/*.css`), which may stay on that element. Core utilities move into `:where(.own-class)` (specificity 0, so they still lose to every other unlayered rule and still beat layered utilities). Plain CSS on tokens |
 | Tailwind utilities in Liquid | Elements **without** an own class from that file's stylesheet (layout shells, primitives, merchant-setting class strings) |
 | Tailwind build (`tailwind/tailwind.*.css`) | Tokens, typography tiers, surfaces, layout vocabulary, utilities with 2+ unrelated consumers |
 | `snippets/section-frame.liquid` | Section colour scheme, fluid merchant padding, width (`page` / full bleed), height kind (`content`, `media`, `stage`), first-section header offset |
@@ -485,7 +485,7 @@ After batch **6-R2** (2026-10-12), markup `raw-spacing` is **2** (`tablet:px-[8v
 | --- | --- | --- |
 | `stylesheet-layer` | Rejects any `@layer` inside `{% stylesheet %}` | None (zero tolerance) |
 | `stylesheet-font-size` | Counts disallowed `font-size` declarations per file (see **Stylesheet font sizes** above) | Ratchet: `.agents/skills/check-theme-architecture/scripts/stylesheet-ownership-baseline.json` |
-| `mixed-element` | Counts static class regions where the file's own stylesheet class and a Tailwind utility appear together | Same ratchet file |
+| `mixed-element` | Counts static class regions where the file's own stylesheet class and a core Tailwind utility appear together. Project vocabulary (`@utility` names in `tailwind/*.css`) may sit on that element and does not count | Same ratchet file |
 
 **Ratchet flags:** `--write-stylesheet-ownership-baseline` (create once; refuses when the file exists), `--shrink-stylesheet-ownership-baseline` (lowers entries and removes zeros only). Raising an entry is a manual edit that needs the user's approval.
 
@@ -494,9 +494,13 @@ After batch **6-R2** (2026-10-12), markup `raw-spacing` is **2** (`tablet:px-[8v
 - **Liquid inside a class list:** `{{ … }}` output is not resolved, and a token glued to it (`color-{{ scheme }}`) is dropped; `{% … %}` tags are removed but their string literals count. The static tokens around Liquid always count.
 - **Own class:** a class that the same file's `{% stylesheet %}` styles.
 - **Utility:** the first top-level class of each rule in the `@layer utilities` blocks of `assets/tailwind.output.css`, unescaped (`w-1/2`, `mt-0.5`, `body-lg`); classes inside `:where()` / `:is()` arguments are ignored.
+- **Project vocabulary:** a token whose utility part, after variants are stripped, is an `@utility` name in `tailwind/*.css` (`title-m`, `focus-ring`, `tablet:title-l`). It may sit on an own-class element and does not count. A core utility, including one with a breakpoint variant (`tablet:gap-step-m`, `flex`), still counts.
+- **Where a counted utility goes:** into that file's stylesheet as plain CSS inside `:where(.own-class)`, which has specificity 0. It still loses to every other unlayered rule and still beats layered CSS, the place the utility occupied. A shared own class with different utility sets gets a new BEM class for the moved declarations; existing classes stay.
 - **Ignored:** schema, comments, and stylesheet / javascript blocks.
 
-Existing mixed elements and absolute font sizes are frozen at the baseline until the polish pass; new code follows rule B immediately.
+Existing absolute font sizes stay frozen at the baseline until the polish pass. New code follows rule B immediately: an own-class element carries project vocabulary only, and its core utilities live in `:where(.own-class)`.
+
+After batch **6-R3** (2026-10-12), `mixed-element` is **60**. Excluding project vocabulary took the count from 135 to 113; moving core utilities into `:where(.own-class)` took it to 60. `stylesheet-font-size` stays **15**.
 
 ## Decision Flow
 

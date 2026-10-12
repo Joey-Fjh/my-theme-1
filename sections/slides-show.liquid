@@ -110,7 +110,7 @@
                             | default: shop.name
                             | escape
                         -%}
-                        <div class="slides-show__media absolute inset-0">
+                        <div class="slides-show__media">
                             {%- render 'image',
                                 image: block.settings.slide_image,
                                 mobile_image: block.settings.slide_image_mobile,
@@ -128,7 +128,7 @@
                         </div>
 
                         <div class="section-frame__overlay-padding section-frame__overlay-safe-top pointer-events-none container-page absolute inset-0">
-                            <div class="slides-show__content-grid{% if slides_show_multi_slide %} slides-show__content-grid--with-controls{% endif %} grid h-full min-h-0 grid-cols-1 grid-rows-3 text-theme-text tablet:grid-cols-3">
+                            <div class="slides-show__content-grid{% if slides_show_multi_slide %} slides-show__content-grid--with-controls{% endif %}">
                                 <div
                                     class="slides-show__headline-group {{ block.settings.heading_position }} pointer-events-auto flex h-full min-h-0 w-full max-w-3xl flex-col items-start justify-start gap-step-s tablet:max-w-4xl"
                                     data-slides-show-text-motion
@@ -492,6 +492,23 @@
             grid-row-start: 3;
             align-self: end;
             justify-self: end;
+        }
+    }
+
+    :where(.slides-show__media) {
+        position: absolute;
+        inset: calc(var(--spacing) * 0);
+    }
+
+    :where(.slides-show__content-grid--with-controls) {
+        display: grid;
+        height: 100%;
+        min-height: calc(var(--spacing) * 0);
+        grid-template-columns: repeat(1, minmax(0, 1fr));
+        grid-template-rows: repeat(3, minmax(0, 1fr));
+        color: rgb(var(--color-foreground));
+        @media (width >= 48rem) {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
         }
     }
 {% endstylesheet %}
