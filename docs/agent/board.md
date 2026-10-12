@@ -24,7 +24,7 @@ Last updated: 2026-10-12.
   - 2 state variants (`hover:` on article sidebar link, collections card): would become `can-hover`, a behaviour change on touch devices.
   - 1 Alpine `:class` (`filters-field` option `hidden` versus `flex`), 1 Liquid `{{ class }}` (`product-gallery`), 1 lint conflict (`sr-only` on the variant-picker input: `clip-path` rejected by embedded compat).
   - 6 false positives: Liquid string `'outline'` in `pagination.liquid` (5), exclusive `{% if %}` branches in `featured-products.liquid` (1). Fixing them is a lint change (user decision).
-- **Done: 6-R5** (2026-10-13; independent review PASS on the first round): `stylesheet-font-size` 15 → 1 on the type steps; the `promotion-countdown` hit waits for `body-size-custom` (polish pass), then the check becomes strict like `mixed-element`.
+- **Done: 6-R5** (`a4a1ff4`; plan and review: `git show a4a1ff4:docs/agent/context.md`; 2026-10-13; independent review PASS on the first round): `stylesheet-font-size` 15 → 1 on the type steps; the `promotion-countdown` hit waits for `body-size-custom` (polish pass), then the check becomes strict like `mixed-element`.
 - **Decided (user, 2026-10-12): no computed-style tool.** The 6-R3 scripts are deleted. A batch that must prove "no rendering change" rewrites a comparison from the 6-R3 record (`git show 9bf1b64:docs/agent/context.md`): noise per (slot, element path, property), both sides through the online preview, the first slot of a run lands on `/`.
 
 **Decided: order after 6-D2** (user, 2026-10-12: migration debt first, then build what is decided, the polish pass last, so the polish tunes code that is already on the framework and is not done twice). Coordinator inventory, 2026-10-12:
