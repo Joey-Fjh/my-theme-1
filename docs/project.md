@@ -35,6 +35,7 @@ Ceylune, a custom Shopify theme maintained as a multi-industry Shopify Theme Sto
     - **Design language:** `docs/design/design.md` (Google DESIGN.md format, agreed section by section; we replace the designer, the Figma home design is a visual reference only), with the home design snapshot and three style references (`405d2b1`).
     - **6-D1 design tokens** (`1e8ebfd`): schema defaults, weight 500 loading, stepped heading line heights, fluid page margin, card radius. **6-D2 design preset** (`ff76f3f`): Instrument Sans, one dark, ink-tinted inputs, page margin 24; layout baseline 32 → 38 (six page-margin entries, user-approved, polish-pass items). Both accepted by the user in one browser look.
     - **6-R1 renames** (`7b835e3`): markup uses only `tablet:` / `desktop:` / `wide:` and `title-*` / `copy-*`. `legacy-breakpoint` 502 → 0, `legacy-type-tier` 398 → 6 (`body-size-custom`). There is no rendering change, which two independent review rounds confirmed.
+    - **6-V5 class tokens** (`336090b`): the class token extraction behind the migration, raw colour and font weight lints keeps Tailwind arbitrary values whole, so values with `%`, commas or parentheses are no longer missed. No count changed.
     - **Next** (user, 2026-10-12): migration debt to 0 (neutral ratchets first), then what is decided but not built, then the home polish pass last (order on `docs/agent/board.md`).
 
 ## Migration Direction (accepted)
