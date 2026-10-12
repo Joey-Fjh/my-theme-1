@@ -18,6 +18,7 @@ define('routineShowcase', () => ({
     _thumbPointerPaused: false,
     _thumbSuppressPauseUntilLeave: false,
     _focusVisiblePaused: false,
+    _userPaused: false,
     _viewportPaused: true,
     _hiddenPaused: false,
     _reducedMotion: false,
@@ -63,11 +64,22 @@ define('routineShowcase', () => ({
         observer.observe(this._root);
         this._viewportObserver = observer;
 
-        this.on(this._desktopMql, 'change', () => this._rebindMobileRail());
+        this.on(this._desktopMql, 'change', () => {
+            this._rebindMobileRail();
+            // The mobile rail sets activeIndex alone; back on desktop, resync the tabs and restart the active bar.
+            if (this._desktopMql.matches) this.setActive(this.activeIndex);
+            this._syncPauseButton();
+        });
+
+        const pauseButton = this._root.querySelector('[data-autoplay-pause]');
+        if (pauseButton) {
+            this.on(pauseButton, 'click', () => this._toggleUserPause());
+        }
 
         this.$nextTick(() => {
             this._applyStaticA11y();
             this._applyBarStates(true);
+            this._syncPauseButton();
             this._bindMobileDots();
             this._rebindMobileRail();
         });
@@ -348,12 +360,31 @@ define('routineShowcase', () => ({
         return this._barFills[this.activeIndex] ?? null;
     },
 
+    _pauseButton() {
+        return this._root?.querySelector('[data-autoplay-pause]') ?? null;
+    },
+
+    // Shown only while autoplay can run, including the desktop media query. Hover devices hide it in CSS.
+    _syncPauseButton() {
+        const button = this._pauseButton();
+        if (!button) return;
+        button.hidden = !this._canRunAutoplayAnimation();
+    },
+
+    _toggleUserPause() {
+        this._userPaused = !this._userPaused;
+        const button = this._pauseButton();
+        if (button) button.setAttribute('aria-pressed', this._userPaused ? 'true' : 'false');
+        this._updateAutoplayPauseClass();
+    },
+
     _isAutoplayFrozen() {
         return (
             this._thumbPointerPaused ||
             this._focusVisiblePaused ||
             this._viewportPaused ||
-            this._hiddenPaused
+            this._hiddenPaused ||
+            this._userPaused
         );
     },
 

@@ -61,11 +61,13 @@ define('slidesShow', () => ({
     _swiperContainer: null,
     _onSlideChange: null,
     _onAutoplayTimeLeft: null,
+    _onUserPauseHold: null,
     _onKeydown: null,
     _hoverPaused: false,
     _hoverSuppressedUntilLeave: false,
     _focusPaused: false,
     _viewportPaused: false,
+    _userPaused: false,
     _viewportObserver: null,
     _editorPaused: false,
     _hasSlideChanged: false,
@@ -215,15 +217,36 @@ define('slidesShow', () => ({
         // the first slide at page load never reaches this path.
         this._hasSlideChanged = true;
         this._updateTextMotionClasses();
+        // A slide change must not clear a user pause if Swiper resumes on its own.
+        if (this._userPaused) this._syncAutoplay();
     },
 
     _isInteractionPaused() {
-        return this._hoverPaused || this._focusPaused || this._viewportPaused;
+        return this._hoverPaused || this._focusPaused || this._viewportPaused || this._userPaused;
+    },
+
+    _pauseButton() {
+        return this._root?.querySelector('[data-autoplay-pause]') ?? null;
+    },
+
+    // Shown only while autoplay can run. Hover devices hide it in CSS.
+    _syncPauseButton() {
+        const button = this._pauseButton();
+        if (!button) return;
+        button.hidden = !this._shouldRunAutoplay(this._readConfig());
+    },
+
+    _toggleUserPause() {
+        this._userPaused = !this._userPaused;
+        const button = this._pauseButton();
+        if (button) button.setAttribute('aria-pressed', this._userPaused ? 'true' : 'false');
+        this._syncAutoplay();
     },
 
     // Same pause model as routine-showcase: the Theme Editor stops autoplay;
-    // pointer on the active dot, keyboard focus and leaving the viewport only pause it, so the
-    // remaining time is kept. A manual slide change never turns autoplay off.
+    // pointer on the active dot, keyboard focus, leaving the viewport, and the pause button
+    // only pause it, so the remaining time is kept. Only the button clears a user pause.
+    // A manual slide change never turns autoplay off.
     _syncAutoplay() {
         const autoplay = this._swiper?.autoplay;
         if (!autoplay) return;
@@ -253,9 +276,21 @@ define('slidesShow', () => ({
         const root = this._root;
         if (!root) return;
 
+        const pauseButton = this._pauseButton();
+        if (pauseButton) {
+            this.on(pauseButton, 'click', () => this._toggleUserPause());
+        }
+
         // Mouse clicks also move focus; only keyboard focus (:focus-visible) pauses.
+        // The pause button is excluded: while it is focused, only its pressed state pauses,
+        // so a second activation can resume.
         this.on(root, 'focusin', (event) => {
-            this._focusPaused = Boolean(event.target?.matches?.(':focus-visible'));
+            const target = event.target;
+            if (target?.closest?.('[data-autoplay-pause]')) {
+                this._focusPaused = false;
+            } else {
+                this._focusPaused = Boolean(target?.matches?.(':focus-visible'));
+            }
             this._syncAutoplay();
         });
         this.on(root, 'focusout', (event) => {
@@ -327,6 +362,7 @@ define('slidesShow', () => ({
                         this._swiper.slideTo(index);
                     }
                     this._restartAutoplayDelay();
+                    if (this._userPaused) this._syncAutoplay();
                 });
             });
     },
@@ -378,11 +414,18 @@ define('slidesShow', () => ({
             }
 
             this._showControls();
+            this._syncPauseButton();
             this._bindInteractionPause();
             this._bindPagination();
 
             this._onSlideChange = () => this._onSlideChanged();
             this._swiper?.on?.('slideChange', this._onSlideChange);
+            // Swiper resumes autoplay on its own after a manual slide. Re-apply a user pause.
+            this._onUserPauseHold = () => {
+                if (this._userPaused) this._syncAutoplay();
+            };
+            this._swiper?.on?.('slideChangeTransitionEnd', this._onUserPauseHold);
+            this._swiper?.on?.('autoplayResume', this._onUserPauseHold);
 
             // With motion off (theme switch or reduced motion) the pill stays full and still.
             const animateProgress = motionEnabled();
@@ -444,12 +487,17 @@ define('slidesShow', () => ({
             if (this._onAutoplayTimeLeft) {
                 this._swiper.off('autoplayTimeLeft', this._onAutoplayTimeLeft);
             }
+            if (this._onUserPauseHold) {
+                this._swiper.off('slideChangeTransitionEnd', this._onUserPauseHold);
+                this._swiper.off('autoplayResume', this._onUserPauseHold);
+            }
         }
 
         destroySwiper(this._swiper);
         this._swiper = null;
         this._onSlideChange = null;
         this._onAutoplayTimeLeft = null;
+        this._onUserPauseHold = null;
         this._onKeydown = null;
         this._swiperContainer = null;
     },
