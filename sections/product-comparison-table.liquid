@@ -54,10 +54,7 @@
                                     class="
                                         comparison-table__sticky-col
                                         comparison-table__row-header
-                                        comparison-table__sticky-col-shadow sticky left-0
-                                        z-10 border border-line
-                                        bg-theme-bg px-step-s py-step-m align-middle whitespace-normal
-                                        tablet:px-step-m tablet:py-step-l
+                                        comparison-table__sticky-col-shadow
                                         {% unless block.type == 'metafield_text' %}copy-l{% endunless %}
                                     "
                                 >
@@ -95,8 +92,7 @@
                                     <td
                                         class="
                                             comparison-table__product-cell
-                                            border border-line p-step-xs align-middle tablet:p-step-m
-                                            {% if is_highlight %}bg-card{% else %}bg-transparent{% endif %}
+                                            {% if is_highlight %}comparison-table__product-cell--highlight{% endif %}
                                             {% if block.type != 'header' and block.type != 'metafield_text' %}copy-l{% endif %}
                                         "
                                     >
@@ -126,7 +122,7 @@
                                                 {%- else -%}
                                                     <a
                                                         href="{{ item.url }}"
-                                                        class="comparison-table-product-link media-interaction flex w-full cursor-pointer flex-col items-center gap-step-s text-inherit no-underline tablet:gap-step-m"
+                                                        class="comparison-table-product-link media-interaction"
                                                     >
                                                         <div class="flex h-44 w-full items-center justify-center tablet:h-[260px]">
                                                             <div class="h-full w-full max-w-[76%] tablet:max-w-[74%]">
@@ -417,6 +413,54 @@
         align-items: center;
         gap: clamp(0.15rem, 0.1086rem + 0.11vw, 0.25rem);
         white-space: nowrap;
+    }
+
+    :where(.comparison-table__row-header) {
+        position: sticky;
+        left: calc(var(--spacing) * 0);
+        z-index: 10;
+        border-style: var(--tw-border-style);
+        border-width: 1px;
+        border-color: var(--color-line);
+        background-color: rgb(var(--color-background));
+        padding-inline: clamp(0.6rem, 0.4343rem + 0.442vw, 1rem);
+        padding-block: clamp(0.9rem, 0.6514rem + 0.663vw, 1.5rem);
+        vertical-align: middle;
+        white-space: normal;
+        @media (width >= 48rem) {
+            padding-inline: clamp(0.9rem, 0.6514rem + 0.663vw, 1.5rem);
+            padding-block: clamp(1.2rem, 0.8685rem + 0.884vw, 2rem);
+        }
+    }
+
+    :where(.comparison-table__product-cell) {
+        border-style: var(--tw-border-style);
+        border-width: 1px;
+        border-color: var(--color-line);
+        padding: clamp(0.45rem, 0.3257rem + 0.331vw, 0.75rem);
+        vertical-align: middle;
+        background-color: transparent;
+        @media (width >= 48rem) {
+            padding: clamp(0.9rem, 0.6514rem + 0.663vw, 1.5rem);
+        }
+    }
+
+    :where(.comparison-table__product-cell--highlight) {
+        background-color: rgb(var(--color-card-background));
+    }
+
+    :where(.comparison-table-product-link) {
+        display: flex;
+        width: 100%;
+        cursor: pointer;
+        flex-direction: column;
+        align-items: center;
+        gap: clamp(0.6rem, 0.4343rem + 0.442vw, 1rem);
+        color: inherit;
+        text-decoration: none;
+        @media (width >= 48rem) {
+            gap: clamp(0.9rem, 0.6514rem + 0.663vw, 1.5rem);
+        }
     }
 
     :where(.comparison-table__rating-value) {

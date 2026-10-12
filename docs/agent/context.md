@@ -114,3 +114,141 @@ Validators: `test:theme-architecture` 235 pass; `lint:theme`, `test:theme-check`
 - **Layout baseline:** the one approved selector edit is applied by script. The script checks that the entry is unique and that the new selector equals the old one with `div.swiper-slide` replaced by `div.collection-list__slide`; nothing else differs. Still 42 entries. `npm.cmd run test:layout -- --page home`: 0 new; the other pages had 0 new in the subagent's two full runs.
 - **Three baseline entries that did not match in the subagent's runs** (home featured-products tab-2 at 760, collection-all nav link 5 at 1040, blog tab-1 at 360) are left in place and not pruned. They are issues that did not fire, not new issues. All three are scroller or tab-strip entries whose widths already moved between earlier runs (6-R1: 1280 → 1320). The computed-style diff shows no rendering change on those pages. Pruning flaky entries would make later runs fail.
 - **Computed-style differences:** 16 remain at home 375 after one rerun. They are `width` / `inline-size` on four `swiper-slide h-auto` elements inside a featured-products tab panel hidden by `x-show` (`display: none`). Both values (`calc(50% - 1.5px)` and `162.5px`) are inline widths written by Swiper. The slides' markup did not change in this batch; their parent's `w-full` became the equivalent `:where(.featured-products__swiper) { width: 100% }`. The same differences moved between loads: 375 and 1440 for the first executor, 375 and 1024 for the subagent, with 1024 at 0 on rerun. A probe load on the current tree reproduced the before value. Classified as Swiper initialisation timing, so noise, limited to those four elements and two properties. Every other element and property on all 7 pages × 5 widths: 0 differences.
+
+**Independent review 1 (2026-10-12): FAIL.** Findings:
+1. `sections/slides-show.liquid`: the moved content-grid declarations sat on `:where(.slides-show__content-grid--with-controls)`, a class rendered only with several slides. With one slide the grid became `display: block`, height 300px → 18px (fresh Chromium probe, CSS from each commit). The record's computed-style diff missed it.
+2. Remaining elements outside the four approved reasons: `header-mobile-menu-drawer__chevron` (dynamic `rotate-180` does not conflict with `inline-flex`) and `image-magnifier__preview-layer` (dynamic opacity does not conflict with `absolute inset-0`). The record has no per-element inventory with reasons.
+3. Unproven: `%TEMP%\6-r3-computed-style.mjs` and `run1` are missing, so the computed-style claim cannot be rerun. The record also says the featured-products slide widths are inline Swiper widths, but `featured-products.liquid` supplies fallback `calc(...)` widths.
+Proven by the reviewer: counts 135 → 113 → 60 and font-size 15; fixtures; declaration values of the 133 moved utilities; no renamed classes; no `:where()` leak; deleted output utilities unused; one baseline selector edit, 42 entries; scope and rule text; all validators; `test:layout` 0 new.
+
+**Coordinator corrections after review 1 (2026-10-12):**
+- Slideshow: the selector is now `:where(.slides-show__content-grid)` (the class on every branch).
+- `header-mobile-menu-drawer__chevron` (`inline-flex`) and `image-magnifier__preview-layer` (`absolute inset-0`) moved into `:where()` rules in their own stylesheets; both classes are single-use (`git grep`).
+- `mixed-element` 58 after these (listing script built on the lint's internals, `elementClassLists` regexes, scratch copy outside the repo; the baseline is not yet shrunk).
+- Coordinator audit of the 58: many do not fit the four reasons either. Examples: `password-section__status` / `password-header-section__errors` (only `copy-s`, which sets `font-size`, beside moved border, padding and colour); `ritual-steps__badge`, `routine-showcase__mobile-badge` (`uppercase` beside `copy-*`); `ritual-steps__product-title` (`text-theme-text` beside `title-xs`, which sets `font-size` and `line-height`); `search-results-tabs__tab` (`whitespace-nowrap`). Other groups are not real mixes: `pagination.liquid` `outline` is a Liquid string literal (`pagination_style == 'outline'`) read as a token; `featured-products.liquid:78/105/119` hold the own class and the utilities in exclusive `{% if %}` branches. Neither "string literal" nor "exclusive branch" is one of the plan's four reasons.
+
+**Correction round 2 (plan, inside the authorized surface):**
+1. Inventory every remaining mixed element in this file: `file:line`, own class, core tokens, and one of the four approved reasons with the conflicting class and property named; or "not a real mix" (literal or exclusive branch) with the evidence.
+2. Every element that fits no reason and is a real mix is moved by the item 3 method (a single-use own class, or a new BEM class where the own class is shared or conditional, as in the slideshow).
+3. Not-a-real-mix entries stay counted and are listed; changing the lint to skip them is a validator change for the user to decide, not part of this round.
+4. Computed-style evidence rebuilt at a stable path outside the repo and outside `%TEMP%`: `D:/project/shopify_project/6-r3-evidence/` (script, before, after, report). Before = `fe53509` (a separate `git worktree` pushed as an unpublished theme, previewed by `preview_theme_id`; push approved by the user 2026-10-12: themes of this branch on the development store may be used; the theme that tracks `main` must not be pushed to, edited or deleted); after = the corrected tree via `shopify:dev`. Pages from the layout-check config plus a single-slide slideshow state (the slideshow's single-slide branch must be exercised: a page or a section render with one slide, else listed as unproven). The record's Swiper wording is corrected.
+5. `--shrink-stylesheet-ownership-baseline`, `build:tw`, the plan's validators, `test:layout`.
+
+**Round 2 authorized (user, 2026-10-12):** run from an external execution prompt; push approval as in item 4.
+
+## Correction round 2: executed
+
+Not accepted. Not committed.
+
+### Themes
+
+`shopify theme list` before the push: live main `my-theme-1/main` is `141848084554` (not pushed, edited, or deleted). Branch unpublished `my-theme-1/refactor/skeleton-shell` is `188890841162` (not used as the before theme). Before theme created this round: unpublished `6-r3-before-fe53509`, id `189063266378`, commit `fe5350908d764207babc59a7fe927a3c8c413c7c`, worktree `D:/project/shopify_project/6-r3-before-fe53509` (`git -c core.symlinks=false worktree add --detach`). After snapshots use local `shopify theme dev` (`http://127.0.0.1:9292`), theme id `156450390090`.
+
+### Inventory
+
+Listing command: `node D:/project/shopify_project/6-r3-evidence/list-mixed.cjs`. It loads the lint's `collectStylesheetOwnershipCounts`, `elementClassLists`, and `splitVariants` from a scratch copy outside the repo. At the start of the round the command reported `mixed-element` 58 and `stylesheet-font-size` 15. After the moves, the same command and `node -e` calling `collectStylesheetOwnershipCounts` on the repo both report `mixed-element` 27 and `stylesheet-font-size` 15.
+
+Still counted, leave as-is (a), 21:
+
+| file:line | own class | core tokens | reason |
+| --- | --- | --- | --- |
+| sections/article.liquid:78 | article-sidebar__link | inline-block, max-w-full, truncate, underline-offset-4, hover:underline, text-muted, underline, text-subtle, hover:text-muted | state variant: `hover:underline` and `hover:text-muted` |
+| sections/collections.liquid:59 | collections-section__card | block, overflow-hidden, bg-theme-bg, hover:shadow-md, max-tablet:shadow-md | state variant: `hover:shadow-md` |
+| sections/password.liquid:57 | password-section__submit | uppercase, tablet:min-w-40 | `uppercase` and `typo-subtitle` both set `text-transform` |
+| sections/ritual-steps.liquid:190 | ritual-steps__badge | uppercase | `uppercase` and `copy-s` / `tablet:copy-l` both set `text-transform` |
+| sections/ritual-steps.liquid:217 | ritual-steps__product-title | text-theme-text, uppercase | `text-theme-text` and `title-xs` both set `color`; `uppercase` and `title-xs` both set `text-transform` |
+| sections/ritual-steps.liquid:343 | ritual-steps__badge | uppercase | same as line 190 |
+| sections/ritual-steps.liquid:505 | ritual-steps__badge | uppercase | same as line 190 |
+| sections/ritual-steps.liquid:509 | ritual-steps__product-title | text-theme-text, uppercase | same as line 217 |
+| sections/routine-showcase.liquid:201 | routine-showcase__mobile-badge | uppercase | `uppercase` and `copy-s` both set `text-transform` |
+| sections/routine-showcase.liquid:269 | routine-showcase__heading | text-theme-text | `text-theme-text` and `routine_heading_class` (`title-*`) both set `color` |
+| sections/routine-showcase.liquid:542 | routine-showcase__side-label, routine-showcase__side-label--inactive, is-active | uppercase, text-theme-text | `uppercase` and `copy-s` / `tablet:copy-m` both set `text-transform` |
+| sections/scroll-categories.liquid:68 | scroll-categories__heading | flex, items-end, justify-between, gap-step-m, text-theme-text | `text-theme-text` and `scroll_categories_heading_tiers` (`title-*`) both set `color` |
+| sections/testimonial-featured.liquid:67 | testimonial-featured__heading | text-theme-text | `text-theme-text` and the title tier both set `color` |
+| sections/testimonial-featured.liquid:210 | testimonial-featured__quote, rte | text-theme-text, italic | `italic` and `copy-m` / `tablet:copy-l` both set `font-style` |
+| snippets/buy-buttons.liquid:470 | btn-primary | pointer-events-none, relative, w-full, cursor-default | `cursor-default` and `btn` both set `cursor` |
+| snippets/buy-buttons.liquid:479 | btn-primary | pointer-events-none, relative, w-full, cursor-default | same as line 470 |
+| snippets/collection-card.liquid:108 | collection-card__title | px-step-s, pt-step-s, pb-step-m, text-center, font-normal | `font-normal` and `collection_card_title_class` (default `title-xs`) both set `font-weight` |
+| snippets/filters-field.liquid:72 | filters-field__option--disabled | flex, items-center, gap-step-xs | Alpine `:class` `hidden` (from `visibilityClassFor` in `assets/progressive-list.js`) and `flex` both set `display` |
+| snippets/product-card-badge.liquid:55 | product-card-shell__badge | font-normal, tracking-wide, uppercase | `tracking-wide` and `copy-s` both set `letter-spacing`; `uppercase` and `copy-s` both set `text-transform` |
+| snippets/product-gallery.liquid:76 | product-gallery | h-full, w-full, min-w-0 | `{{ class }}` is Liquid output, unresolvable; it can set `height`, `width`, or `min-width` |
+| snippets/product-variant-picker.liquid:164 | peer | sr-only | reason 3: `sr-only` uses `clip-path: inset(50%)`, and embedded compat rejects `css-clip-path` in a stylesheet. The utility stays. |
+
+Not a real mix (b), 6, left unchanged. The lint was not changed.
+
+| file:line | evidence |
+| --- | --- |
+| snippets/pagination.liquid:41, 48, 62, 88, 95 | core token `outline` is the Liquid string `'outline'` in `{% when 'outline' %}` or `pagination_style == 'outline'`. The rendered class is `pagination__button--hover-outline` or `pagination__button--outline`. |
+| sections/featured-products.liquid:78 | `{% if use_slider %}w-full relative{% else %}product-grid{% endif %}`. `product-grid` and the utilities are exclusive branches. Lines 105 and 119 are the same `{% if %}` but `swiper-slide` and `h-auto` share one branch, so those two were moved. |
+
+Moved (c), 31. Each lost its core utilities. Declarations went to `:where(.own-class)` in that file's stylesheet, with `@media (width >= 48rem)` only where the utility was `tablet:`. A new BEM class was used when the own class was shared, conditional, or would leak (`peer`, `btn`, `swiper-slide`). `git grep` of every new and shared `:where()` class found no markup outside the owner file (`6-r3-evidence/grep-where.cjs`).
+
+| element | where it went |
+| --- | --- |
+| announcement-bar grid | `:where(.announcement-bar__grid)` plus `__cols-2` / `__cols-3` |
+| article hero | `:where(.article-hero)` |
+| featured-product layout | utilities removed; `.featured-product__layout` already set `width: 100%` and `min-width: 0` |
+| featured-product media panel | `:where(.featured-product__media-panel)` |
+| featured-products tab | `:where(.featured-products__tab)` |
+| featured-products slides (two) | new `featured-products__slide` |
+| google-map preview | `:where(.google-map-section__embed--preview)` |
+| header columns | `:where(.header__cols)` |
+| password status (two) and password-header errors | `:where` on those own classes |
+| pickup disclosure | `:where(.panel-motion-disclosure)` |
+| comparison row header, product cell, product link | `:where` on those classes; highlight is `__product-cell--highlight` |
+| routine divider | `border-line` removed; `:where(.routine-showcase__product-divider)` sets `border-top-color: var(--color-line)` at every width. The existing rule is inside `@media (width >= 64rem)` |
+| routine tab caption | `:where(.routine-showcase__tab-caption)` |
+| scroll rows (two) and details (two) | `:where` on `__row` and `__details` |
+| video banner external | `:where(.video-banner__external)` |
+| buy-buttons cart submit | new `buy-buttons__cart-submit` |
+| filters horizontal summary | new `filters-field__summary--horizontal` |
+| header dropdown scale and flyout | `:where(.panel-motion-scale)` and `:where(.panel-motion-flyout)` |
+| super-menu panel | `:where(.panel-motion-layered)` |
+| search result tabs (three) | `:where(.search-results-tabs__tab)` |
+
+`node .agents/skills/check-theme-architecture/scripts/lint-theme.js --shrink-stylesheet-ownership-baseline` then `collectStylesheetOwnershipCounts`: `mixed-element` 27, `stylesheet-font-size` 15. The first shrink ran before the variant-picker revert. The baseline file was restored from `git show HEAD` (not checkout) and shrunk again so the ratchet matches the final 27.
+
+### Evidence
+
+`D:/project/shopify_project/6-r3-evidence/`: `computed-style.mjs`, `before-1/`, `before-2/`, `after/`, `summary.json`, `noise-properties.json`, `unstable-before-paths.json`, `differences.jsonl`, `structural.jsonl`, `REPORT.md`. Single-slide is unproven (section render returned 0 blocks on both themes). Compared 7 pages × 5 widths, 55857 elements, 34240341 properties, 1507981 raw differences, 326 structural paths. Classification is in `REPORT.md`. The painted divider colour matches (`rgba(38, 61, 41, 0.2)`, width `1px`). Side-border colour differs on edges whose width is `0px`.
+
+### Validation
+
+- `npm.cmd run test:theme-architecture`: 235 pass.
+- `npm.cmd run lint:theme`: passed.
+- `npm.cmd run test:theme-check`: 151 files, no offenses.
+- `npm.cmd run lint:liquid-syntax`: passed.
+- `npm.cmd run scan:compat`: passed after `text-decoration: none` replaced `text-decoration-line` (embedded compat rejects the longhand) and the `clip-path` move was reverted.
+- `npm.cmd run lint:doc-paths`: passed.
+- `git diff HEAD -- tailwind config templates locales "assets/*.js"`: empty.
+- Schema and javascript blocks: compared with `git show HEAD` for every changed Liquid file; no mismatch.
+- `npx prettier --check` on the changed files: passed.
+- `npm.cmd run test:layout`: 0 new issues against the 42-entry baseline. The baseline file was not edited. Summary: home 14 page-margin / 15 tap-targets / 1 clipped-text, collection-all 3 page-margin, not-found 3 page-margin, page-about-view 1 page-margin, product 1 page-margin, blog 1 page-margin; every page's New column is 0.
+
+### Cleanup
+
+`shopify theme list --json` still showed `189063266378` as unpublished `6-r3-before-fe53509` and `141848084554` as live. `shopify theme delete --theme 189063266378 --force --no-input` deleted only that theme. `git worktree remove` then `git worktree remove --force` removed `D:/project/shopify_project/6-r3-before-fe53509`. The force flag was required because `core.symlinks=false` left `T` (symlink/file) changes on `.claude/skills` and `CLAUDE.md` only. `git worktree list` now shows only this repo at `808af16`.
+
+**Coordinator check of round 2 (2026-10-12):**
+- **Noise method was wrong (plan defect, item 4 / acceptance check 1):** excluding a property *by name* everywhere when it differs between the two before-runs removed `display`, `flex-direction`, `align-items`, `top`, `left`, `z-index` and others from the whole comparison: the moved properties themselves. That comparison could not have caught the slideshow regression. Re-analysis on the same snapshots, noise per (slot, element path, property), custom properties skipped, `color(srgb …)` normalised to `rgb()`: `node D:/project/shopify_project/6-r3-evidence/recheck-per-cell.cjs <outdir>` → compared 26699414 cells, noise cells 232, differences 1056 (rows in `6-r3-evidence/recheck-rows.json`). **Count corrected after review 2:** 23 page/element paths, 58 slot/element paths (the earlier 22 merged paths sharing their last four segments):
+  - `body > div:nth-of-type(1)` / `(2)` on 13 slots (754 cells): the two siblings swap order (each takes the other's `display`, `top`, `visibility`, …). Not theme sections; online preview versus local dev injection order.
+  - `filters-drawer__footer-button` and its `sup` on collection-all and search: text and border colours `#fff` → `#f1f1f1` (260 cells). `git diff fe53509` is empty for `filters-drawer.liquid`, `tailwind/`, `assets/base.css` and `layout/`; the generated-CSS diff is deletions only, none on this element. ~~Runtime-state explanation~~ withdrawn after review 2 (both before-runs had `animation-name: none`; unproven). Cause settled below.
+  - Routine dividers at home 375 / 768: unpainted side-border colours (widths 0px); the painted top edge matches after the round-2 fix.
+  - `interactivity` on six home 375 elements (6 cells): runtime `inert` state.
+  - Every moved property on every other element: 0 differences.
+- Removed generated utilities: each has 0 users in Liquid, JSON and `assets/*.js` (`git grep`); look-alikes `tablet:px-0` and `top-[calc(100%+1rem)]` are still in the output.
+- Inventory spot-check: `copy-*` `@apply body-base` (sets `text-transform`, `letter-spacing`, `font-style`); `title-*` `@apply heading-base` (sets `color`, `font-weight`, `text-transform`); so those (a) reasons hold.
+- Still unproven: the single-slide slideshow branch (no single-slide page; section render returned no blocks). Static fact: the declarations sit on `.slides-show__content-grid`, the class every branch renders, where the utilities sat before 6-R3.
+- Verdict: round 2 ready for independent review 2.
+
+**Independent review 2 (2026-10-12): FAIL.** Implementation defects of review 1 fixed (slideshow Chromium probe matches `fe53509` for one and several slides at all five widths; inventory 27 / 15 and every row checked; moves, classes, generated CSS, baseline, cleanup all proven). Blockers: (1) the filter-button colour cause was unproven; (2) record counts (22 elements, five inert, six slots) were wrong; (3) `css-architecture.md` still said `mixed-element` 60.
+
+**Coordinator corrections after review 2 (2026-10-12):**
+- Counts in the round-2 check corrected above (`recheck-rows.json`: 23 page/element paths, 58 slot/element paths, 6 inert elements, 13 swap slots; cells 754 / 260 / 36 / 6).
+- `docs/references/style-system/css-architecture.md` count line: 60 → 27.
+- **Filter-button colour, same serving pipeline:** the working tree was pushed as unpublished theme `6-r3-after-worktree` (`189066346570`; this branch's use, approved), and `computed-style.mjs run --label after-online --preview-theme-id 189066346570 --only collection-all|search` captured all ten slots online, like the before-runs. `AFTER=after-online node recheck-per-cell-2.cjs online-check` against `before-1`: compared 6925568 cells, noise 174, differences 290, all on `body > div:nth-of-type(1|2)` (the sibling swap: 10 slot/element paths in 5 slots, 29 cells each). Filter button and `sup`: **0 differences**. So `#fff → #f1f1f1` comes from the local `theme dev` serving pipeline, not from theme code. Structural: search 375 lacks five head `link` nodes and has the swapped iframe/template pair only.
+- Script artefact found and avoided: the first slot of every `computed-style.mjs run` lands on `/` (the preview redirect); slots were re-run so each file's recorded `url` is its page (checked per file). Checked: every slot file in `before-1`, `before-2` and `after` records its own page URL (0 mismatches), so the redirect only hit the new single-page runs.
+- `shopify theme delete --theme 189066346570` removed only that theme; `shopify theme list`: `my-theme-1/main` (`141848084554`) still live, no `6-r3-*` theme left.
+- Verdict: ready for independent review 3.
+
+**Independent review 3 (2026-10-12): PASS.** One nonblocking wording fix (online swap rows span 5 slots and 10 slot/element paths), applied above. Batch complete; awaiting the user's commit.

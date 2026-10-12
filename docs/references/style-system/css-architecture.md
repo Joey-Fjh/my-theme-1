@@ -500,7 +500,7 @@ After batch **6-R2** (2026-10-12), markup `raw-spacing` is **2** (`tablet:px-[8v
 
 Existing absolute font sizes stay frozen at the baseline until the polish pass. New code follows rule B immediately: an own-class element carries project vocabulary only, and its core utilities live in `:where(.own-class)`.
 
-After batch **6-R3** (2026-10-12), `mixed-element` is **60**. Excluding project vocabulary took the count from 135 to 113; moving core utilities into `:where(.own-class)` took it to 60. `stylesheet-font-size` stays **15**.
+After batch **6-R3** (2026-10-12), `mixed-element` is **27**. Excluding project vocabulary took the count from 135 to 113; moving core utilities into `:where(.own-class)` took it to 27. `stylesheet-font-size` stays **15**.
 
 ## Decision Flow
 
