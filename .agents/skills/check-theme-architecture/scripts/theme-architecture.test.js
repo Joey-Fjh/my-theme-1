@@ -1881,6 +1881,121 @@ test('migration lint: token aliases, 0, px and auto are not raw spacing', async 
     });
 });
 
+test('class tokens: arbitrary values with %, commas and parentheses stay whole (6-V5)', () => {
+    const { classCandidateTokens, countMigrationHits } = require('./lib/migration-lint');
+    const values = (text) => classCandidateTokens(text).map((t) => t.value);
+
+    assert.deepEqual(values('<div class="p-[5%] px-[calc(100%-2rem)]"></div>'), ['p-[5%]', 'px-[calc(100%-2rem)]']);
+    assert.deepEqual(values("{% render 'x', class: 'pc:grid-cols-[36%_minmax(0,1fr)] max-pc:h-[48%]' %}"), [
+        'x',
+        'pc:grid-cols-[36%_minmax(0,1fr)]',
+        'max-pc:h-[48%]',
+    ]);
+
+    const hits = countMigrationHits(
+        '<div class="p-[5%] px-[calc(100%-2rem)] pc:grid-cols-[36%_minmax(0,1fr)] max-pc:h-[48%]"></div>',
+        new Set(),
+    );
+    assert.equal(hits['raw-spacing'].length, 2);
+    assert.equal(hits['legacy-breakpoint'].length, 2);
+});
+
+test('class tokens: Alpine objects, unbalanced brackets and Liquid-glued tokens (6-V5)', () => {
+    const { classCandidateTokens } = require('./lib/migration-lint');
+    const values = (text) => classCandidateTokens(text).map((t) => t.value);
+
+    assert.deepEqual(values(`<div :class="{ 'pc:flex': open, 'hidden': !open }"></div>`), [
+        'pc:flex',
+        ':',
+        'open',
+        'hidden',
+        ':',
+        '!open',
+    ]);
+    // An unbalanced `[` ends at whitespace instead of swallowing the next tokens.
+    assert.deepEqual(values('<div class="w-[3rem mt-4"></div>'), ['w-[3rem', 'mt-4']);
+    // A brace inside brackets is Liquid glued to the token: skipped.
+    assert.deepEqual(values("{% assign c = 'w-[{x}] mt-4' %}"), ['mt-4']);
+});
+
+test('class tokens: JavaScript arrays, computed keys and property access still split (6-V5 review)', () => {
+    const { classCandidateTokens, countMigrationHits } = require('./lib/migration-lint');
+    const values = (text) => classCandidateTokens(text).map((t) => t.value);
+
+    assert.deepEqual(values(`<div :class="['body-md','pc:p-4']"></div>`), ['[', 'body-md', 'pc:p-4', ']']);
+    assert.deepEqual(values(`<div :class="{ ['font-medium']: open }"></div>`), ['[', 'font-medium', ']:', 'open']);
+    assert.deepEqual(values(`<div :class="sizes['pc:p-4']"></div>`), ['sizes[', 'pc:p-4', ']']);
+    // Tailwind brackets at a token start: arbitrary variants and properties stay whole.
+    assert.deepEqual(values('<div class="[&>*]:p-4 [mask-type:luminance] [--x:1]"></div>'), [
+        '[&>*]:p-4',
+        '[mask-type:luminance]',
+        '[--x:1]',
+    ]);
+
+    const hits = countMigrationHits(`<div :class="['body-md','pc:p-4']"></div>`, new Set(['body-md']));
+    assert.equal(hits['legacy-type-tier'].length, 1);
+    assert.equal(hits['raw-spacing'].length, 1);
+    assert.equal(hits['legacy-breakpoint'].length, 1);
+
+    const { collectMarkupRawColourFailures } = require('./lib/raw-colour-lint');
+    const { collectMarkupFontWeightFailures } = require('./lib/font-weight-lint');
+    const colour = [];
+    const weight = [];
+    collectMarkupRawColourFailures(`<div :class="['text-black']"></div>`, 'sections/a.liquid', colour, new Map());
+    collectMarkupFontWeightFailures(`<div :class="['font-medium']"></div>`, 'sections/a.liquid', weight, new Map());
+    assert.equal(colour.length, 1);
+    assert.equal(weight.length, 1);
+});
+
+test('class tokens: compact objects, ternaries and nested arrays yield every quoted class (6-V5 review 2)', () => {
+    const { classCandidateTokens } = require('./lib/migration-lint');
+    const values = (text) => classCandidateTokens(text).map((t) => t.value);
+
+    assert.deepEqual(values(`<div x-data="{classes:['body-md','pc:p-4']}"></div>`), [
+        'classes:[',
+        'body-md',
+        'pc:p-4',
+        ']',
+    ]);
+    assert.deepEqual(values(`<div :class="open?['mt-2']:['pc:p-4']"></div>`), ['open?[', 'mt-2', ']:[', 'pc:p-4', ']']);
+    // Words inside one Tailwind arbitrary value are not classes.
+    assert.deepEqual(values('<div class="[mask:url(text-black)]"></div>'), ['[mask:url(text-black)]']);
+
+    // Property: in generated Alpine expressions, every quoted class string is its own token at its own offset.
+    let seed = 6;
+    const random = () => {
+        seed = (seed * 1103515245 + 12345) % 2147483648;
+        return seed / 2147483648;
+    };
+    const pick = (list) => list[Math.floor(random() * list.length)];
+    const classes = ['body-md', 'pc:p-4', 'text-black', 'p-[5%]', 'bg-ink/[40%]', '[&>*]:p-4', 'grid-cols-[1fr,2fr]'];
+    const names = ['open', 'classes', 'sizes', '0'];
+    const list = (depth, make) => Array.from({ length: 1 + Math.floor(random() * 3) }, () => make(depth + 1));
+    const expression = (depth) => {
+        const roll = random();
+        if (depth > 3 || roll < 0.3) return random() < 0.7 ? `'${pick(classes)}'` : pick(names);
+        if (roll < 0.45) return `[${list(depth, expression).join(pick([',', ', ']))}]`;
+        if (roll < 0.6) return `{${list(depth, (d) => `${pick(names)}:${expression(d)}`).join(',')}}`;
+        if (roll < 0.7) return `{[${expression(depth + 1)}]:${pick(names)}}`;
+        if (roll < 0.85) return `${pick(names)}?${expression(depth + 1)}:${expression(depth + 1)}`;
+        return `${pick(names)}[${expression(depth + 1)}]`;
+    };
+    for (let i = 0; i < 2000; i++) {
+        const text = `<div :class="${expression(0)}"></div>`;
+        const tokens = new Set(classCandidateTokens(text).map((t) => `${t.offset}:${t.value}`));
+        for (const match of text.matchAll(/'([^']+)'/g)) {
+            assert.ok(tokens.has(`${match.index + 1}:${match[1]}`), `${match[1]} missing in ${text}`);
+        }
+    }
+});
+
+test('raw-colour: opacity modifiers with % or parentheses are seen (6-V5)', () => {
+    const { collectMarkupRawColourFailures } = require('./lib/raw-colour-lint');
+    const failures = [];
+    collectMarkupRawColourFailures('<div class="text-ink/[40%] bg-ink/(--alpha)"></div>', 'sections/a.liquid', failures, new Map());
+    assert.equal(failures.length, 2);
+});
+
 test('migration lint: a theme without a baseline fails', async () => {
     await withTempThemeAsync(async (root) => {
         writeMigrationTheme(root, '<div></div>');

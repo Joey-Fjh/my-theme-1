@@ -52,7 +52,49 @@ const LIQUID_REGION_RE = /{{[\s\S]*?}}|{%[\s\S]*?%}/g;
 const HTML_TAG_RE = /<[a-zA-Z](?:[^>"']|"[^"]*"|'[^']*')*>/g;
 const ATTRIBUTE_VALUE_RE = /=\s*(?:"([^"]*)"|'([^']*)')/g;
 const CLASS_CAPTURE_RE = /{%-?\s*capture\s+([\w-]*class[\w-]*)\s*-?%}([\s\S]*?){%-?\s*endcapture\s*-?%}/gi;
-const TOKEN_RE = /[^\s"'`{},()]+/g;
+// Whitespace and quotes always end a token: class strings in JavaScript are always quoted, so no
+// bracket can hide one. Braces, commas and parentheses end a token only outside a Tailwind bracket.
+const ALWAYS_SPLIT_RE = /[\s"'`]/;
+const SPLIT_OUTSIDE_BRACKETS_RE = /[{},()]/;
+// A Tailwind bracket opens after `-`, `/` or `:` inside a token (`p-[5%]`, `bg-ink/[40%]`, `md:[mask:x]`),
+// or at a token start as an arbitrary variant or property (`[&>*]:p-4`, `[mask-type:luminance]`, `[--x:1]`).
+const TAILWIND_BRACKET_AFTER = new Set(['-', '/', ':']);
+const ARBITRARY_START_RE = /^\[(?:[&@]|-{0,2}[a-z][a-z-]*:)/;
+
+/** True when the `[` at `i` opens a Tailwind arbitrary value, not a JavaScript array or property access. */
+function opensTailwindBracket(content, i, start) {
+    if (start === i) return ARBITRARY_START_RE.test(content.slice(i, i + 64));
+    return TAILWIND_BRACKET_AFTER.has(content[i - 1]);
+}
+
+/**
+ * Split a region into class tokens. Whitespace and quotes always split; braces, commas and parentheses
+ * split only outside a Tailwind `[...]`, so arbitrary values such as `grid-cols-[36%_minmax(0,1fr)]`
+ * stay whole while JavaScript arrays (`{classes:['p-4','mt-2']}`) still yield their strings.
+ * Bracket depth resets at every split, so an unbalanced `[` ends at the next whitespace or quote.
+ */
+function splitClassTokens(content) {
+    const tokens = [];
+    let start = -1;
+    let depth = 0;
+    const end = (index) => {
+        if (start !== -1) tokens.push({ value: content.slice(start, index), index: start });
+        start = -1;
+        depth = 0;
+    };
+    for (let i = 0; i < content.length; i++) {
+        const ch = content[i];
+        if (ALWAYS_SPLIT_RE.test(ch) || (depth === 0 && SPLIT_OUTSIDE_BRACKETS_RE.test(ch))) {
+            end(i);
+            continue;
+        }
+        if (start === -1) start = i;
+        if (ch === '[' && (depth > 0 || opensTailwindBracket(content, i, start))) depth++;
+        else if (ch === ']' && depth > 0) depth--;
+    }
+    end(content.length);
+    return tokens;
+}
 
 function pushQuotedContents(text, baseOffset, regex, regions) {
     for (const match of text.matchAll(regex)) {
@@ -84,9 +126,10 @@ function classCandidateTokens(text) {
     }
     const tokens = [];
     for (const { content, offset } of regions) {
-        for (const match of content.matchAll(TOKEN_RE)) {
-            if (match[0].includes('{') || match[0].includes('%')) continue;
-            tokens.push({ value: match[0], offset: offset + match.index, line: lineAt(masked, offset + match.index) });
+        for (const { value, index } of splitClassTokens(content)) {
+            // A brace inside brackets means the token is glued to Liquid and cannot be resolved.
+            if (value.includes('{')) continue;
+            tokens.push({ value, offset: offset + index, line: lineAt(masked, offset + index) });
         }
     }
     return tokens;

@@ -452,6 +452,7 @@ Everything else counts in `lint:theme` (`stylesheet-font-size`, ratcheted baseli
     - quoted HTML attribute values;
     - string literals inside Liquid tags and outputs (assigns, `case` values, `render` parameters);
     - the body of `{% capture *class* %}` blocks.
+- **Tokens:** whitespace and quotes always split, so every quoted class string in a JavaScript expression (`{classes:['p-4','mt-2']}`, `open?['a']:['b']`) is its own token. Braces, commas and parentheses split only outside a Tailwind `[...]`, so `grid-cols-[36%_minmax(0,1fr)]` and `p-[5%]` stay whole. A Tailwind bracket opens after `-`, `/` or `:`, or at a token start as an arbitrary variant or property (`[&>*]:`, `[mask-type:…]`). Words inside one arbitrary value (`[mask:url(text-black)]`) are not classes. A `%` is no reason to skip a token; only a token with a brace inside brackets (glued to Liquid) is skipped. The raw colour and font weight lints read the same tokens.
 - **Variants and the important modifier are stripped first:** `pc:mt-4!` counts as `mt-4`. The font weight lint uses the same extraction.
 - **Not counted:**
     - text content;
