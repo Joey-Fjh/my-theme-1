@@ -377,8 +377,8 @@ Eleven fluid steps `--type-step--2` .. `--type-step-8` in `snippets/css-variable
 | Snippet | Role |
 | --- | --- |
 | `snippets/section-frame.liquid` | Section root frame; optional `background` slot before `container-page` inner |
-| `snippets/heading.liquid` | Semantic `h1`–`h6` + visual `heading-*` tier |
-| `snippets/text.liquid` | Body / RTE copy + `body-*` tier |
+| `snippets/heading.liquid` | Semantic `h1`–`h6` + visual `title-*` tier |
+| `snippets/text.liquid` | Body / RTE copy + `copy-*` tier |
 | `snippets/button.liquid` | `btn` / `btn-primary` / `btn-secondary`; not plain text links (`snippets/link.liquid`) |
 | `snippets/content-group.liquid` | Vertical stack with relationship gaps (3+ section consumers in inventory) |
 | `snippets/image.liquid` | Image display; ratio vocabulary keywords mapped in one place |
@@ -470,6 +470,8 @@ Everything else counts in `lint:theme` (`stylesheet-font-size`, ratcheted baseli
 - **Creating it:** `--write-migration-baseline` refuses when the file exists.
 
 The baseline reaches zero through the breakpoint, type and space batches and the polish pass.
+
+After batch **6-R1** (2026-10-12), markup counts are `legacy-breakpoint` **0** and `legacy-type-tier` **6** (`body-size-custom` only, in `sections/about-stats.liquid`, `sections/blog.liquid`, and `sections/promotion-countdown.liquid`).
 
 ## Stylesheet ownership lints (6-C6)
 
