@@ -38,6 +38,14 @@ Ceylune, a custom Shopify theme maintained as a multi-industry Shopify Theme Sto
     - **6-V5 class tokens** (`336090b`): the class token extraction behind the migration, raw colour and font weight lints keeps Tailwind arbitrary values whole, so values with `%`, commas or parentheses are no longer missed. No count changed.
     - **6-R2 spacing** (`46358d3`): markup spacing on the fluid space scale (`raw-spacing` 658 → 2), new `step-4xl`; spacing shrinks below 1280px by design, calibrated in the polish pass. Layout baseline 38 → 42.
     - **Next** (user, 2026-10-12): migration debt to 0 (neutral ratchets first), then what is decided but not built, then the home polish pass last (order on `docs/agent/board.md`).
+- Progress (2026-10-13):
+    - **6-R3 / 6-R4 one owner per element** (`9bf1b64`, `b9ddd22`): `mixed-element` 135 → 0, now strict in code (no baseline allowance read or written); `sr-only` and Liquid comparison literals exempt. Rendering unchanged below 48rem; at 48rem and up three user-accepted changes (uppercase ritual and routine labels, italic testimonial quote, collection card title 400).
+    - **6-R5 stylesheet font sizes** (`a4a1ff4`): `stylesheet-font-size` 15 → 1 on the fluid type steps; pagination keeps its merchant setting through a unitless ratio.
+    - **6-V6** (`1370beb`): `legacy-breakpoint` strict like `mixed-element`.
+    - **Migration debt closed** (user, 2026-10-13). What remains is design and moves to the polish pass: `body-size-custom` (6 `legacy-type-tier` hits and the countdown size), the quick-view viewport padding (`raw-spacing` 2), raw radii, and the italic and chip details of `ritual-steps`.
+    - **6-A1 autoplay pause button** (`2c7e28b`): shown only where no other way to pause exists (devices that cannot hover), in `slides-show` and `routine-showcase`; `design.md` updated to match.
+    - **6-D3** (`b04dba5`): both font pickers default to Instrument Sans instead of system monospace.
+    - **Next:** the external skills batch (decided adoptions and triggers) and 6-T4 CI (waits for the user's dedicated store and Dev Dashboard app); then the polish pass. The user's look at this round's visible changes goes to the consolidated browser pass.
 
 ## Migration Direction (accepted)
 
