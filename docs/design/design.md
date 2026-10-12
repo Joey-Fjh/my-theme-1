@@ -105,7 +105,7 @@ Pattern references: `docs/design/references/` (Isla Beauty, Beautiful, ARTU), re
 
 **A screen-sized rhythm, not a rule.** Most home sections are about one desktop viewport tall (about 900px at 1440): a statement, a product, a gallery, a set of steps. That is the home page's usual rhythm, chosen per section, not enforced: a section may run taller than a screen, and listing pages (collection, search, blog) flow continuously. Where a section is meant to fill the screen, `section-frame` height `stage` (or `stage-pc`, content-sized on mobile) does it.
 
-**Spacing scale.** The fluid space scale already in code (6-C7: `--spacing-step-3xs` to `--spacing-step-3xl`, about 6px at 375 to 10px at 1280 per step unit), used through its four intents:
+**Spacing scale.** The fluid space scale already in code (6-C7: `--spacing-step-3xs` to `--spacing-step-4xl`, about 6px at 375 to 10px at 1280 per step unit), used through its four intents:
 
 | Intent | Token | Use |
 | --- | --- | --- |

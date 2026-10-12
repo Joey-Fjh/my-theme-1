@@ -310,6 +310,7 @@ One fluid scale in `tailwind/tailwind.input.css` (`@theme inline`). Each step is
 | `step-xl` | 3 | 18px | 30px |
 | `step-2xl` | 4 | 24px | 40px |
 | `step-3xl` | 6 | 36px | 60px |
+| `step-4xl` | 8 | 48px | 80px |
 
 **Why `step-`.** A bare `--spacing-xl` or `--spacing-2xl` makes Tailwind resolve `max-w-xl` / `max-w-2xl` to the spacing value instead of `--container-*`. Keep the prefix for any new step.
 
@@ -324,7 +325,7 @@ One fluid scale in `tailwind/tailwind.input.css` (`@theme inline`). Each step is
 
 `snippets/content-group.liquid` maps its `gap` parameter to `gap-tight`, `gap-related`, and `gap-group`.
 
-**Old-to-new table** (raw Tailwind unit `--spacing: 0.25rem`, 2.5px on the 62.5% root; convert with that unit, not 4px): `1`→`3xs`, `2`→`2xs`, `3`→`xs`, `4`→`s`, `5`→`m`, `6`→`m`, `8`→`l`, `10`→`xl`, `12`→`xl`, `16`→`2xl`, `20`→`3xl`, `24`→`3xl`. Larger values and positioning offsets (`inset`, `top`, `left`, …) are named exceptions. Raw values are fixed and steps are fluid, so a migrated value shrinks to 0.6× on mobile; the polish pass owns that change. `lint:theme` `raw-spacing` (a ratchet baseline) keeps new raw spacing utilities out. Values map today's rendering; calibration comes from the design.
+**Raw-to-step mapping** (raw Tailwind unit `--spacing: 0.25rem`, 2.5px on the 62.5% root; convert with that unit, not 4px): `0.5`→`3xs`, `1`→`3xs`, `1.5`→`2xs`, `2`→`2xs`, `2.5`→`xs`, `3`→`xs`, `3.5`→`s`, `4`→`s`, `5`→`m`, `6`→`m`, `7`→`l`, `8`→`l`, `9`→`l`, `10`→`xl`, `12`→`xl`, `14`→`2xl`, `16`→`2xl`, `20`→`3xl`, `24`→`3xl`, `25`→`3xl`, `28`→`4xl`, `30`→`4xl`, `32`→`4xl`, `40`→`4xl`. Each value maps to the nearest step on a log scale (geometric midpoint), so `25` (62.5px) stays at `3xl` and only `28`, `30`, `32` and `40` map to `4xl` (batch 6-R2). Positioning offsets (`inset`, `top`, `left`, …) are named exceptions. The viewport-relative paddings `tablet:px-[8vw]` and `tablet:py-[5vh]` in `snippets/product-card.liquid` stay raw. Steps are fluid, so a migrated value shrinks to 0.6× on mobile; the polish pass owns calibration. `lint:theme` `raw-spacing` (a ratchet baseline) keeps new raw spacing utilities out.
 
 ## Type scale (6-C8)
 
@@ -473,6 +474,8 @@ Everything else counts in `lint:theme` (`stylesheet-font-size`, ratcheted baseli
 The baseline reaches zero through the breakpoint, type and space batches and the polish pass.
 
 After batch **6-R1** (2026-10-12), markup counts are `legacy-breakpoint` **0** and `legacy-type-tier` **6** (`body-size-custom` only, in `sections/about-stats.liquid`, `sections/blog.liquid`, and `sections/promotion-countdown.liquid`).
+
+After batch **6-R2** (2026-10-12), markup `raw-spacing` is **2** (`tablet:px-[8vw]` and `tablet:py-[5vh]` in `snippets/product-card.liquid` only).
 
 ## Stylesheet ownership lints (6-C6)
 

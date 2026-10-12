@@ -34,7 +34,7 @@
 
         <div class="article-hero__overlay absolute inset-0 z-10">
             <div
-                class="article-hero__content mx-auto flex h-full w-full max-w-lg flex-col items-center justify-center gap-4 px-6 text-center tablet:max-w-1/2 tablet:gap-5"
+                class="article-hero__content mx-auto flex h-full w-full max-w-lg flex-col items-center justify-center gap-step-s px-step-m text-center tablet:max-w-1/2 tablet:gap-step-m"
             >
                 {%- if section.settings.eyebrow != blank -%}
                     <p class="{{ article_subtitle_class }}">
@@ -57,8 +57,8 @@
         </div>
     </div>
 
-    <div class="section-frame__overlay-padding-bottom container-page relative mt-12 overflow-clip!">
-        <div class="flex flex-col gap-16 tablet:flex-row tablet:gap-24 wide:gap-32">
+    <div class="section-frame__overlay-padding-bottom container-page relative mt-step-xl overflow-clip!">
+        <div class="flex flex-col gap-step-2xl tablet:flex-row tablet:gap-step-3xl wide:gap-step-4xl">
             {% comment %} Aside Bar {% endcomment %}
             <aside class="shrink-0 copy-l max-tablet:hidden tablet:w-72 wide:w-80">
                 <nav
@@ -68,7 +68,7 @@
                 >
                     <ul
                         id="toc-container"
-                        class="flex w-fit max-w-full flex-row gap-9 overflow-x-auto tablet:w-full tablet:flex-col tablet:overflow-x-hidden"
+                        class="flex w-fit max-w-full flex-row gap-step-l overflow-x-auto tablet:w-full tablet:flex-col tablet:overflow-x-hidden"
                     >
                         {% # theme-check-disable-next-line LiquidHTMLSyntaxError %}
                         {%- for a in blog.articles limit: section.settings.max_items -%}
@@ -95,17 +95,17 @@
             {% comment %} Article  {% endcomment %}
             <article class="article-content min-w-0 flex-1">
                 <div
-                    class="flex items-center justify-end border-b border-line pb-3 copy-l"
+                    class="flex items-center justify-end border-b border-line pb-step-xs copy-l"
                 >
                     {%- assign date = article.published_at | time_tag: format: 'date' -%}
                     <p>
                         {{ 'blog.article_metadata_html' | t: date: date, author: article.author }}
                     </p>
                 </div>
-                <div class="rte py-10">
+                <div class="rte py-step-xl">
                     {{ article.content }}
                 </div>
-                <div class="flex flex-col gap-3 border-t border-line pt-3">
+                <div class="flex flex-col gap-step-xs border-t border-line pt-step-xs">
                     {%- if section.settings.show_social -%}
                         {%- render 'social-icons', type: 'icon', class: 'copy-l self-end' -%}
                     {%- endif -%}
@@ -114,24 +114,24 @@
                 {%- if blog.comments_enabled? -%}
                     <section
                         id="ArticleComments-{{ section.id }}"
-                        class="article-comments mt-14"
+                        class="article-comments mt-step-2xl"
                         aria-labelledby="ArticleCommentsHeading-{{ section.id }}"
                     >
                         <h2
                             id="ArticleCommentsHeading-{{ section.id }}"
-                            class="mb-8 title-s"
+                            class="mb-step-l title-s"
                         >
                             {{ 'blog.comments_count_heading' | t: count: article.comments_count }}
                         </h2>
 
                         {% paginate article.comments by 5 %}
                             {%- if article.comments.size > 0 -%}
-                                <ol class="article-comments__list flex list-none flex-col gap-5">
+                                <ol class="article-comments__list flex list-none flex-col gap-step-m">
                                     {%- for comment in article.comments -%}
                                         <li>
                                             <article
                                                 id="comment-{{ comment.id }}"
-                                                class="article-comments__item flex flex-col gap-3 rounded-sm bg-surface-muted p-5 tablet:p-6"
+                                                class="article-comments__item flex flex-col gap-step-xs rounded-sm bg-surface-muted p-step-m tablet:p-step-m"
                                             >
                                                 <div class="rte copy-l text-theme-text">
                                                     {{ comment.content }}
@@ -159,15 +159,15 @@
                             {%- endif -%}
                         {% endpaginate %}
 
-                        <div class="article-comments__form mt-10">
-                            <h3 class="mb-6 title-xs">
+                        <div class="article-comments__form mt-step-xl">
+                            <h3 class="mb-step-m title-xs">
                                 {{ 'blog.comment_form_title' | t }}
                             </h3>
 
-                            {%- form 'new_comment', article, class: 'flex flex-col gap-5' -%}
+                            {%- form 'new_comment', article, class: 'flex flex-col gap-step-m' -%}
                                 {%- if form.posted_successfully? -%}
                                     <div
-                                        class="rounded border border-line bg-surface-muted p-4 copy-l text-theme-text"
+                                        class="rounded border border-line bg-surface-muted p-step-s copy-l text-theme-text"
                                         role="status"
                                         aria-live="polite"
                                         tabindex="-1"
@@ -184,7 +184,7 @@
                                 {%- if form.errors -%}
                                     <div
                                         id="CommentFormErrors-{{ section.id }}"
-                                        class="rounded border border-line bg-surface-muted p-4 text-theme-text"
+                                        class="rounded border border-line bg-surface-muted p-step-s text-theme-text"
                                         role="alert"
                                         tabindex="-1"
                                         autofocus
@@ -192,7 +192,7 @@
                                         <h4 class="title-xs">
                                             {{ 'blog.comment_form_error_title' | t }}
                                         </h4>
-                                        <ul class="mt-3 list-disc ps-5 copy-s">
+                                        <ul class="mt-step-xs list-disc ps-step-m copy-s">
                                             {%- for field in form.errors -%}
                                                 {%- if field == 'form' -%}
                                                     <li>
@@ -232,7 +232,7 @@
                                     </div>
                                 {%- endif -%}
 
-                                <div class="flex flex-col gap-1.5">
+                                <div class="flex flex-col gap-step-2xs">
                                     <label for="CommentFormAuthor-{{ section.id }}">
                                         {{- 'blog.comment_form_name' | t -}}
                                     </label>
@@ -259,7 +259,7 @@
                                     {%- endif -%}
                                 </div>
 
-                                <div class="flex flex-col gap-1.5">
+                                <div class="flex flex-col gap-step-2xs">
                                     <label for="CommentFormEmail-{{ section.id }}">
                                         {{- 'blog.comment_form_email' | t -}}
                                     </label>
@@ -286,7 +286,7 @@
                                     {%- endif -%}
                                 </div>
 
-                                <div class="flex flex-col gap-1.5">
+                                <div class="flex flex-col gap-step-2xs">
                                     <label for="CommentFormBody-{{ section.id }}">
                                         {{- 'blog.comment_form_body' | t -}}
                                     </label>
@@ -323,7 +323,7 @@
 
                 {%- if blog.previous_article or blog.next_article or blog.url != blank -%}
                     <nav
-                        class="article-mobile-nav mt-14 tablet:hidden"
+                        class="article-mobile-nav mt-step-2xl tablet:hidden"
                         aria-label="{{ 'blog.article_navigation' | t }}"
                     >
                         {%- if blog.previous_article or blog.next_article -%}
