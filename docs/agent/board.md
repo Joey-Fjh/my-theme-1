@@ -11,13 +11,14 @@ Last updated: 2026-10-13.
 - **Track A, framework (reusable by every theme): five items to 100%, in this order.**
   1. **Framework browser smoke pass.** It checks that the framework works, not the design: module loading, dialogs, cart, variant change, console errors. It runs first, so a framework defect is fixed once, before the backport. Read-only, run from an external execution prompt (user, 2026-10-13: costly tasks get a prompt).
   2. **6-T4b**, `test:layout` in CI.
-  3. **Repository setup automation**: ruleset JSON, setup script, and a `doctor:agent` check (see the backport candidates).
+  3. **Repository setup**: the ruleset file, the README steps and a local `doctor:agent` check (done as 6-T6; see the backport candidates).
   4. **Redundancy audit and tidy-up** (user, 2026-10-13): survey the lint tools and the documents (`AGENTS.md`, `docs/references/`, `.agents/`, this board) for redundant or stale content and tidy them, so the skeleton receives a clean set.
   5. **The skeleton backport itself**: settle the candidate list, move the files, and run the skeleton's validators. After it, new themes can be developed from the skeleton in parallel with this theme.
 - **Track A state (2026-10-13):**
   - **Done:** item 1 (the smoke pass, one framework defect found) and item 4 (the tidy-up).
   - **Done: 6-F1 framework defect fixes** (`528a715`; plan and reviews: `git show 528a715:docs/agent/context.md`; independent review PASS on round 2): the menu triggers report `aria-expanded`, and the loading indicators rotate through the `spinner` recipe. Not exercised in a browser: the plain dropdown menu with a real second level (the store's header uses the super menu; both share `assets/dropdown.js`). It goes to the consolidated browser pass.
-  - **Next:** item 3 (repository setup, the small version: 6-T6, in execution; plan and status in `docs/agent/context.md`), item 2 (6-T4b, after a local trial of `test:layout` against `ci-test`), item 5 (the backport).
+  - **Done: item 3, 6-T6 repository setup, the small version** (`86ae604`; plan and reviews: `git show 86ae604:docs/agent/context.md`; independent review PASS on round 5).
+  - **Next:** item 2 (6-T4b, after a local trial of `test:layout` against `ci-test`), then item 5 (the backport).
 - **Track B, this theme:** the polish pass (home, then product and collection), the consolidated browser pass with the full Lighthouse measurement including desktop, the readiness review, and the second submission. None of it changes the framework.
 - **Accepted risk:** a framework defect found during the polish pass after the backport is fixed in both repositories.
 
@@ -387,20 +388,12 @@ Design phase inputs:
     - H (5-H, `2683402`): `holdUntilReady` in the adapter, `holdForModule` and download-ahead `scanModules` in `base.js`, no mount after a failed import, the moved-lazy-root observer fix, and the matching `javascript-runtime.md` contract. H also closes two skeleton gaps found here: `scanModules` activating an already-loaded container root before deferring its descendants, and module roots in `<template>` content never being scanned;
     - the validator additions that guard the items above (in `theme-contracts.js`, `theme-architecture.test.js`, `doctor-agent.mjs`); the style ownership and settings-chain additions stay here;
     - the Chrome DevTools MCP adapter entries (5-T1) and the `frontend-design` skill.
-    - **Repository setup automation (user, 2026-10-13; proposal, not built):** a new theme repository should not depend on remembering today's manual steps.
-        - The `Lighthouse` workflow (`.github/workflows/lighthouse.yml`) travels with the skeleton. Its handles are constant, because every theme uses the same `ci-test` store.
-        - The `main` ruleset is kept as a JSON file and imported by a setup script through the GitHub API. Today's ruleset is id 13447964: no deletion, no force push, pull request required, required checks `Lint`, `Theme Check` and `Lighthouse`, strict up-to-date, admin bypass for pull requests only.
-        - The same script prompts for the three secrets (`SHOP_STORE`, `SHOP_ACCESS_TOKEN`, `SHOP_PASSWORD`). The values go straight to GitHub and never into a file.
-        - `doctor:agent` fails when a secret name or the ruleset is missing, and names the setup script.
-        - A short README section, "new theme repository setup", points to the script.
+    - **Repository setup (user, 2026-10-13): done as 6-T6, the small version** (`86ae604`), so a new theme repository does not depend on remembering manual steps.
+        - **Travels with the code:** `.github/rulesets/main.json` (the `main` ruleset in GitHub's import format; the user compared it with an export of the live ruleset 13447964, no difference), the `Lighthouse` workflow (its handles are constant, because every theme uses the same `ci-test` store), and the README section "New theme repository setup" (import the ruleset, add the secrets `SHOP_STORE`, `SHOP_ACCESS_TOKEN` and `SHOP_PASSWORD`, run Lighthouse once).
+        - **Check:** `doctor:agent` (CLI mode) fails when a check the ruleset file requires is not the name of a workflow job (`.agents/tools/ci-contract.mjs`, parsed with `js-yaml`). It reads files only.
+        - **Not built (user, 2026-10-13):** a setup script and a remote check of the secrets or the live ruleset. `gh` is not installed here, a remote check would make `doctor:agent` slow and failing when offline or signed out, and the setup runs once per repository. Revisit when a second repository shows the manual steps are a real cost.
+        - **Not proven:** an actual import of the ruleset file into a new repository; the first new theme repository proves it.
         - This is not a Batch SOP step: it is a one-time bootstrap. The one-time store setup (store, CSV, Theme Access) is not repeated.
-        - **Necessity and cost, facts (coordinator, 2026-10-13); the user decides the size:**
-            - `gh` is not installed on this machine, so a setup script through the GitHub API needs either `gh` installed and signed in, or a personal access token.
-            - `doctor:agent` is a local file check today and also runs as a hook. Listing secrets needs an authenticated admin call, and a ruleset is readable without sign-in only on a public repository, so a remote check would make it slow, and failing when offline or signed out.
-            - The ruleset is readable today (`GET /repos/Joey-Fjh/my-theme-1/rulesets/13447964`, no sign-in), and GitHub imports a ruleset JSON from the repository settings page without any tool.
-            - The setup runs once per new theme repository.
-            - **Coordinator proposal, the small version:** the ruleset JSON in the repository, a README section "New theme repository setup" (import the ruleset, add the three secrets, run Lighthouse once), and one local check that the ruleset's required checks match the workflow job names (`Lint`, `Theme Check`, `Lighthouse`), so a renamed job cannot silently block every merge. No setup script and no remote `doctor:agent` check until a second repository shows the manual steps are a real cost.
-            - **Decided (user, 2026-10-13): the small version.** In execution as 6-T6; plan and status in `docs/agent/context.md`.
         - **Hotfix flow, explained to the user:** with protection on, a fix on `main` goes through a short `fix/` branch and a pull request. The admin pull-request bypass is the emergency path. Afterwards, merge `main` back into the development branch.
     - Not a candidate (user, 2026-10-04): the CSS step 3 rules and primitive snippets (5-C3a–5-C3g, 5-B1). They serve this theme's section-block model; the skeleton composes with Theme Blocks as components (as Horizon does) and keeps snippets as code fragments. A GSAP adapter is judged after the home page narrative is built.
     - Timing: Track A item 5, see "Decided: order of work, revised" above (this replaces the earlier coordinator proposal of after the second submission).
