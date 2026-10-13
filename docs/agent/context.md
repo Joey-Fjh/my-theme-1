@@ -134,4 +134,6 @@ Independent review round 2: pending.
 - The waiver sentence above ("A step that deletes all development themes could remove...") describes that blanket variant only.
 - The user was told of the correction and the waiver stands unless they say otherwise.
 
-Independent review round 3: pending.
+**Independent review round 3 (2026-10-13): PASS**, no findings. The corrected cleanup statement was verified against the Shopify CLI docs and the action's `action.yml`. The user's waiver stands. `ci.yml` is byte-identical to `851ca19` (blob `4da5677f`).
+
+**Batch complete.**
