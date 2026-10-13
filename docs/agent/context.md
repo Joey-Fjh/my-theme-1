@@ -89,3 +89,32 @@ Static checks, all passed:
 **Correction approved (user, 2026-10-13):** the user installed Theme Access on ci-test, added `SHOP_ACCESS_TOKEN`, and asked to continue ("这一步已经配置好了，接下来了？").
 - The `lighthouse` job now uses `access_token: secrets.SHOP_ACCESS_TOKEN` with `product_handle: amazing-cotton-bag-collection15` and `collection_handle: collection1`.
 - Acceptance check 2 now reads: the job references only `secrets.SHOP_STORE`, `secrets.SHOP_ACCESS_TOKEN` and `secrets.SHOP_PASSWORD`.
+
+**Run 2:** `gh run view 38363613541`, commit `851ca19`. All four jobs succeeded.
+- The theme push created development theme `190864032057` on ci-test.
+- Three URLs were audited three times each: `/`, `/products/amazing-cotton-bag-collection15` and `/collections/collection1` (the D1 handle).
+- "Checking assertions against 3 URL(s), 9 total run(s)" was followed by "All results processed!".
+
+Median-run scores, read from the three uploaded reports (`window.__LIGHTHOUSE_JSON__`, mobile form factor):
+
+| Page | Performance | Accessibility | Best practices | SEO | LCP | TBT | CLS |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Home | 0.72 | 0.93 | 0.59 | 0.90 | 2.4 s | 560 ms | 0 |
+| Product | 0.67 | 0.97 | 0.59 | 0.98 | 3.5 s | 480 ms | 0 |
+| Collection | 0.48 | 0.96 | 0.59 | 0.98 | 5.5 s | 890 ms | 0 |
+
+**Two plan facts were wrong; corrected after run 2:**
+
+1. **The gate is not "per page on the median run, stricter than the Theme Store".**
+   - lhci's category assertion reads all runs (`getCategoryAssertionResults` in `packages/utils/src/assertions.js`). `aggregationMethod: median-run` is not a value `getValueForAggregationMethod` handles for it, so the result falls through to `Math.max`.
+   - The job therefore passes when the **best of three runs** meets the threshold. That is how the collection page passed with a median of 0.48.
+   - The `launch-gate.md` line is rewritten to say this.
+   - The mobile average of the three medians is 0.62. The collection median of 0.48 is a theme finding for the polish pass and the readiness review. It still needs ownership classification, because the CI store's content differs from the design content. It is not a defect of this batch.
+2. **The action does not delete its development theme.**
+   - `cleanup()` runs `shopify theme delete -d -f` only when a variable `theme` is set, and `entrypoint.sh` never sets it. The run 2 log has no "Disposing development theme" step.
+   - Each run therefore leaves one development theme on ci-test. Per Shopify's CLI docs, development themes do not count toward the theme limit and are deleted after seven days of inactivity.
+   - Acceptance check 4 ("no leftover development theme") cannot be met by this action. Whether to add a cleanup step is filed on the board as an open choice.
+
+Best practices 0.59 on all three pages is not gated by the action; it is filed with the Lighthouse findings.
+
+Checks 1, 2 (as corrected), 3 and 5 pass. Check 4 is not met; the reason is above, and it is the user's decision. Check 6 (independent review) is pending.
