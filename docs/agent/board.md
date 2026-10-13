@@ -57,6 +57,10 @@ Last updated: 2026-10-13.
     - the Lighthouse handles.
 - **Also for the backport:** the candidate list under Evidence (checked 2026-10-04) predates `test:layout`, Lighthouse CI, `review-animations`, the 6-C and 6-V lints, the dialog layer and the design chain, and its "not a candidate: CSS step 3 rules and primitive snippets" conflicts with treating `css-architecture.md` as framework.
 
+**Done: tidy-up batches A and 6-V9** (2026-10-13).
+- **A:** the board and `docs/project.md` pruned of finished history (`e1bb95d`).
+- **6-V9:** the references, the check-theme-architecture `SKILL.md`, `README.md` and `docs/project.md` corrected against the code, and the phase 0 browser checklist deleted (`23486ed`, `fad2935`; plan and reviews: `git show b07c323:docs/agent/context.md`; independent review PASS on round 2).
+
 **Open: findings from 6-V9 (2026-10-13), for the user.**
 
 - **Possible defect, loading spinners do not rotate.** `snippets/loading.liquid` and `snippets/buy-buttons.liquid` use the class `animate-spin`. `tailwind/tailwind.input.css` resets `--animate-*: initial`, and `assets/tailwind.output.css` has no `.animate-spin` rule (`grep -c` gives 0; only `.animate-spin-slow` exists). The `.spinner` / `.spinner-lg` recipe in `tailwind/tailwind.animates.css` has no consumer. Not confirmed in a browser. It is framework-level, because the loading snippet is shared, so classify and fix it before the backport.
