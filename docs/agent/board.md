@@ -17,6 +17,46 @@ Last updated: 2026-10-13.
 - **Track B, this theme:** the polish pass (home, then product and collection), the consolidated browser pass with the full Lighthouse measurement including desktop, the readiness review, and the second submission. None of it changes the framework.
 - **Accepted risk:** a framework defect found during the polish pass after the backport is fixed in both repositories.
 
+**Open: redundancy audit results (Track A item 4; two read-only surveys at `fccc794`, 2026-10-13; the full reports were given in chat and are not kept).** Nothing is changed yet; the user decides what the tidy-up batches take.
+
+- **Documents:** 24 duplications, 27 stale statements, 12 contradictions between documents.
+  - **This board:** of 487 non-blank lines, about 280 are finished history already in Git, about 74 hold durable decisions that should move to an owner first (`docs/project.md`, `AGENTS.md`, a reference), and about 127 are open or deferred. Two blocks titled "Open" are closed.
+  - **`docs/project.md` Progress:** about 8 of 40 lines carry current status.
+  - **`docs/references/style-system/css-architecture.md`:**
+    - the `lint-allow` table lists 3 exceptions that no longer exist and omits 11 real ones;
+    - the font weight rule is stated three ways (400 and 700 only, against the 500 that ships);
+    - the typography section still describes the legacy tiers as the system;
+    - the "Skeleton carry-over decisions" table splits the "Layer Ownership" table.
+  - **`docs/references/architecture/javascript-runtime.md`:** omits the toast store, the dialog layer and the Intersect plugin, and says the cart page is the only cart presentation.
+  - **`docs/references/architecture/motion-architecture.md`:** says the template ships no drawer or dialog overlay.
+  - **`docs/migration/phase0/browser-checklist.md`:** lists deleted sections and targets commit `926dddb`.
+  - **Not portable to the skeleton as written:** batch ids used as section names and reasons (31 in `css-architecture.md`, 8 in the check-theme-architecture `SKILL.md`), and theme or machine specifics in `AGENTS.md` (`assets/scatter-gallery.js`, the Windows workspace).
+- **Tooling:** 75 checks: 64 strict, 10 ratchet, 1 report-only; 65 generic, 10 carrying theme data. The earlier audit's conclusions still hold.
+  - **Two latent defects (no theme file triggers them today):**
+    1. Five schema-block extractors behave two ways. A section written with `{%- schema -%}` silently skips `dead-setting` and `section-color-scheme`.
+    2. Two font-size rules disagree in stylesheet blocks. `font-size: var(--type-step-1)` is documented as allowed but fails `settings-chain-css-typography`.
+  - **Dead or inert code, about 190 lines:**
+    - the ratchet machinery for `dead-setting`, whose baseline is empty;
+    - the strict checks `legacy-breakpoint` and `mixed-element` still running through the ratchet loop, with hints that say "once 6-C2 / 6-C8 lands";
+    - a function used only by its own test;
+    - unused imports;
+    - 37 exports with no importer.
+  - **Copied helpers:** `lineAt` ×12, `formatPath` ×8, the baseline machinery ×3, three class-token extractors, five Liquid file lists that differ (`templates/gift_card.liquid` and a future `blocks/` fall outside the migration and ownership checks).
+  - **Gaps:**
+    - `test:layout-harness` runs nowhere;
+    - the tooling's own code is neither linted nor format-checked;
+    - `lint:theme` prints the check id only for the bracketed checks;
+    - the `AGENTS.md` Validation table omits `test:validators`, `test:layout-harness` and `scan:contrast`.
+  - **Theme data inside the tooling, to move to config at the backport:**
+    - the `width: 'full'` allowlist (8 sections);
+    - the badge colour allowlist;
+    - the `recipient.form.` locale prefix;
+    - the placement groups;
+    - the layout-check config and baseline;
+    - the contrast pairs;
+    - the Lighthouse handles.
+- **Also for the backport:** the candidate list under Evidence (checked 2026-10-04) predates `test:layout`, Lighthouse CI, `review-animations`, the 6-C and 6-V lints, the dialog layer and the design chain, and its "not a candidate: CSS step 3 rules and primitive snippets" conflicts with treating `css-architecture.md` as framework.
+
 **Open decisions reviewed with the user (2026-10-12):**
 
 - **CI (6-T4):** Shopify's official Lighthouse CI GitHub Action (`shopify/lighthouse-ci-action@v1`, Shopify Dev MCP, 2026-10-12) is wanted. It needs a development store dedicated to it, loaded with Shopify's test product CSV and nothing else, a Dev Dashboard app with `read_products` and `write_themes` (client ID and secret as repository secrets) and the store password; it audits home, a product and a collection on every push. The store and the app are the user's to create. `test:layout` is a geometry check (horizontal scroll, overflow, content outside the page margin, tap targets, clipped text, runtime errors), not a visual comparison; in CI it would need a storefront the runner can reach (the Lighthouse action's preview theme or a pushed theme). **Decided (user, 2026-10-12): `test:layout` joins CI** too, against a storefront the runner can reach. Explained to the user: CI does not stop a push (the commit still reaches GitHub); it blocks the merge into `main` once branch protection requires the checks, and the store only receives code that is deployed to it. CD (continuous deployment) is that deploy step (`shopify theme push` with a Theme Access password, or Shopify's GitHub integration syncing a branch to a theme); none exists today, and the Theme Store submission is a ZIP upload. **Decided (user, 2026-10-12): CI only, no CD.**
