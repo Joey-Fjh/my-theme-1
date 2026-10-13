@@ -29,7 +29,7 @@ Last updated: 2026-10-13.
 ### Known limits (not defects)
 
 - `workflow_dispatch` and the `pull_request` trigger read the workflow from the default branch or the pull request merge. The manual "Run workflow" button therefore appears only after this file reaches `main`. Until then, Lighthouse runs for this branch only through a pull request into `main`; a draft works.
-- **Proposal for the user, not done:** `AGENTS.md` (Authority) and `.agents/roles/verifier.md` name `.github/workflows/ci.yml` as the validator wiring. With a second workflow file, the wording should become `.github/workflows/`. That is a rule change and needs explicit approval.
+- **Rule wording, approved by the user 2026-10-13 ("可以") and applied:** `AGENTS.md` (Authority) and `.agents/roles/verifier.md` named `.github/workflows/ci.yml` as the validator wiring. With a second workflow file, both now say the workflows under `.github/workflows/`. The surface gains these two one-phrase edits.
 
 ### Acceptance checks
 
