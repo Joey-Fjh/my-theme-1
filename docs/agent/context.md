@@ -108,4 +108,4 @@ Implementer run, 2026-10-13. No commits. All edits are in the surface; the JSON 
   - New test: "standalone CSS font-size with a type step still fails the settings chain".
 - **Proof:** with the two source files stashed back to `584fdfc`, that test fails (`not ok`, 0 pass, 1 fail). On the corrected code, `npm.cmd run test:validators` gives 33, 243, 3 and 7 tests with 0 failures, and `lint:theme` passes.
 
-Round 2: pending.
+**Round 2 (2026-10-13): PASS**, no findings. Only the stylesheet-block caller sets the option. Standalone CSS (`tailwind/`, `assets/base.css`, `assets/gift-card.css`) rejects the type-step form again, and the new test fails against `584fdfc`. **6-V10 complete.**
