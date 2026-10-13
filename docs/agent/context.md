@@ -118,3 +118,12 @@ Median-run scores, read from the three uploaded reports (`window.__LIGHTHOUSE_JS
 Best practices 0.59 on all three pages is not gated by the action; it is filed with the Lighthouse findings.
 
 Checks 1, 2 (as corrected), 3 and 5 pass. Check 4 is not met; the reason is above, and it is the user's decision. Check 6 (independent review) is pending.
+
+**Independent review round 1 (2026-10-13): FAIL.** The job, the run evidence, the score table and both corrected facts were re-proven. Two findings:
+
+1. Acceptance check 4 is unmet and no user disposition is recorded. It is waiting on the user: waive it (accept leftover development themes, which Shopify removes after seven idle days) or approve a cleanup step.
+2. `docs/agent/board.md` still said each run "deletes" its theme. Corrected: the sentence now says the action does not delete it.
+
+**Check 4 waived (user, 2026-10-13, "A"):** leftover development themes on ci-test are accepted. Shopify removes them after seven idle days, they do not count toward the theme limit, and ci-test serves CI only. The matching clause of check 3 (the cleanup step ran) is waived for the same reason. No cleanup step is added. A step that deletes all development themes could remove a theme another concurrent run is using. Revisit only if the leftovers cause a real problem.
+
+Independent review round 2: pending.
