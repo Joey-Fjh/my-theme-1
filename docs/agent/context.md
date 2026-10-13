@@ -74,3 +74,25 @@ Every correction is verified against the code before the edit. References cite p
 4. No rule changed meaning: for each reference, the report lists rule statements removed or reworded and says why each is a fact correction.
 5. `npm.cmd run lint:doc-paths` and `npm.cmd run doctor:agent` pass; `npm.cmd run lint:theme` passes (unchanged code); `git diff --check` is clean; `git diff --stat` shows only the surface.
 6. Independent review (Ask) reports PASS.
+
+## 6-V9: executed
+
+**Changed (each statement verified against code first):**
+- `docs/references/style-system/css-architecture.md`: `lint-allow` table rebuilt (15 `git grep -n "lint-allow"` hits, 15 rows; removed the three `settings-chain-css-typography` rows); font weights stated once in "Font weights (6-C3)" (merchant 400/500/700 settings through `font_modify` and `--font-*-weight`; elsewhere only 400/700 by `unloaded-font-weight`), contradicting sentences removed or pointed there; Typography tier-size sentence corrected (aliases of `title-*` / `copy-*`, no pixel floors); `pc` / `fw` text corrected (tokens remain, variants rejected); "40 section schemas" count removed; carry-over block moved below the whole Layer Ownership table; scheme names `scheme-2` Canvas and `scheme-5` Surface; 6-R4 date 2026-10-13.
+- `docs/references/architecture/javascript-runtime.md`: skeleton voice replaced; static graph lists `dialog.js`, `toast.js` and the Intersect plugin; `toast` store added; cart presentation described (`cart_type`, `cart-overlay`, `cart`); notification sentence corrected; `innerSelectors` callers listed.
+- `docs/references/architecture/motion-architecture.md`: loading-recipe sentence and the "no drawer or dialog overlay" sentence corrected.
+- `docs/references/style-system/image-display-contract.md`: `placeholder_style`, `position` and `mode: 'natural'` consumers.
+- `.agents/skills/check-theme-architecture/SKILL.md`: rows `typography-tier-heading`, `stylesheet-directive`, `settings-chain-liquid`.
+- `README.md`: `sections/*-group.json`; `docs/agent/board.md` in Documentation.
+- `docs/project.md`: Identity tense; 3D pointer; phase 5 order note; backport timing; phase 0 and browser checklist citations as `git show 3652441:...`.
+- `docs/agent/board.md`: header matches the `AGENTS.md` exception; backport candidates' "on hold" and timing point to the revised order; browser checklist citations reworded.
+- `docs/migration/phase0/browser-checklist.md`: deleted with `git rm` (staged, not committed).
+
+**Validation:** `npm.cmd run lint:doc-paths` passed; `npm.cmd run doctor:agent` passed; `npm.cmd run lint:theme` passed ("Theme architecture lint passed."); `git diff --check` clean. `git grep -n "browser-checklist"` leaves only `git show 3652441:...` citations and this file.
+
+**Deviations:** `snippets/loading.liquid` and `snippets/buy-buttons.liquid` use `animate-spin`, not `.spinner`; the motion sentence says so instead of keeping the survey's wording. The `docs/project.md` phase 0 line no longer cites the `docs/migration/phase0/` directory (`lint:doc-paths` rejects a missing path).
+
+**Reported, not decided:**
+- `motion_enabled`: off (`body[data-motion-enabled='false']`) is read by `motion-reveal.js`, `scrolling-marquee.js`, `slides-show.js`, `before-after-comparison.js`, `card-rail.js`, `ritual-steps.js`, `scatter-gallery.js`, `promo-bannder.js`, the product gallery zoom, and CSS for the rotating badge, watermark marquee, scrolling icons, routine-showcase and testimonial-featured. `dialog-motion.js` and `drawer-motion.js` read only `prefers-reduced-motion`, and `tailwind.animates.css` comments call dialog and drawer motion independent of `motion_enabled`. So `project.md` is right for overlays; `design.md` ("overlays appear without travel" when off) is not implemented; `project.md`'s list of what the switch stops is shorter than the code.
+- Extraction threshold: `abstraction-boundaries.md` waits for a third real consumer for a JS abstraction; the board (shared carousel controls, 2026-10-04) says extract with the second.
+- Check widths: `AGENTS.md` says 390 and 1440; `design.md` says 375, 768, 1024 and 1440.

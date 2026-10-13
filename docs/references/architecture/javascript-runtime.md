@@ -6,14 +6,15 @@ Inspect current source for exact method lists, tuning constants, and implementat
 
 ## Architecture
 
-The Skeleton runtime is a no-bundler ES module graph. Liquid markup declares behaviour; the core discovers roots from the DOM and loads component modules on demand. Third-party UI libraries are touched only through the adapter.
+This theme runs a no-bundler ES module graph. Liquid markup declares behaviour; the core discovers roots from the DOM and loads component modules on demand. Third-party UI libraries are touched only through the adapter.
 
 | Layer | Files | Loading | Responsibility |
 | --- | --- | --- | --- |
 | Core | `base.js`, `events.js` | Static | Layout measurement, module scanning and lazy loading, DOM teardown coordination, Theme Editor event forwarding, store bootstrap |
 | Adapter | `alpine.adapter.js` | Static | Sole Alpine touchpoint: `define`, `holdUntilReady`, `mount`, `releaseHold`, `unmount`, `store`, `data` |
 | Platform state | `cart.contract.js`, `https.js` | Static | Cart API ownership hydrated from `body.dataset.initialCart`, and the HTTP / Section Rendering helpers it depends on |
-| UI state bridges | `alpine.store.cart.js` | Static | Cart UI store registered by the core through the adapter |
+| UI state bridges | `alpine.store.cart.js`, `dialog.js`, `toast.js` | Static | Cart, dialog, and toast stores created and registered by the core through the adapter |
+| Vendor plugin | `vendor-alpine-intersect.min.js` | Static | Alpine Intersect plugin (`x-intersect`), imported by `base.js` for its side effect |
 | On-demand modules | `utils.js`, feature entry files (`accordion.js`, `buy-buttons.js`, …) | Dynamic | Shared utilities and Alpine factories, imported when markup asks for them |
 
 Every file marked Static is reached from `base.js` through a static `import`, so it downloads and parses on every page regardless of what the page renders. Only the last row uses dynamic `import()`. Keep the static graph small; measure file sizes when a change adds a static import.
@@ -153,7 +154,7 @@ After a section refresh, `SectionRefresher` rescans module roots inside the repl
 
 When `innerSelectors` is set, the refresher clones only those descendants from the Section Rendering response. Shopify nests `<style data-section-stylesheet>` inside the `#shopify-section-<id>` wrapper; the `innerSelectors` path carries that style node from the parsed Section Rendering document into the live section when the response includes one. The lookup is document-scoped (`doc.querySelector('style[data-section-stylesheet]')`) and does not depend on `targetSelector` shape, so callers that pass an inner element as `targetSelector` receive the stylesheet the same way as wrapper-target callers. The full-section path (`innerSelectors` empty) already copies the wrapper `innerHTML` and carries the style; do not extend the document-scoped lookup to that path.
 
-The live `innerSelectors` callers are the collection and blog sections. They declare selectors in markup through `data-pagination-selectors`, which `assets/section-pagination.js` hydrates before `buildDomMap()` passes them to the refresher. Collection pagination mounts `sectionPagination()` at the section root with `data-module-id="section-pagination"`. Before judging this path unused, search for `data-pagination-selectors` and for other dataset-driven configuration, not only for call arguments.
+The `innerSelectors` callers are `assets/cart-overlay.js`, `assets/pickup-availability.js` and `assets/related-products.js`, which pass selectors in code, and the collection and blog sections and `snippets/search-results-tabs.liquid`, which declare selectors in markup through `data-pagination-selectors`. `assets/collection-filters.js` (shared with `assets/search-filters.js`) and `assets/section-pagination.js` hydrate the markup selectors before `buildDomMap()` passes them to the refresher. Blog pagination mounts `sectionPagination()` on the element that declares them, with `data-module-id="section-pagination"`. Before judging this path unused, search for `data-pagination-selectors` and for other dataset-driven configuration, not only for call arguments.
 
 ### Transitional status
 
@@ -176,11 +177,11 @@ Any approved `{% partial %}` trial must be low risk and verify:
 
 Platform cart state lives in `cart.contract.js`. The contract hydrates from `document.body.dataset.initialCart`, mutates through the Cart API, and notifies subscribers.
 
-The Alpine `$store.cart` bridge in `alpine.store.cart.js` mirrors contract state into reactive UI properties and owns merchant-facing error copy. Mutation failures normalize into `err.displayMessage`; each caller renders that message beside its own control. The cart page is the only built-in cart presentation. Storefront cart mutations must go through `$store.cart` (which delegates to the contract), not direct Cart API calls from component code.
+The Alpine `$store.cart` bridge in `alpine.store.cart.js` mirrors contract state into reactive UI properties and owns merchant-facing error copy. Mutation failures normalize into `err.displayMessage`; each caller renders that message beside its own control. The cart is presented as the cart overlay drawer (`sections/cart-overlay.liquid`, placed in `sections/overlay-group.json`, driven by `cart-overlay.js`) or as the cart page (`sections/cart.liquid`, `cart-page.js`), chosen by the merchant setting `cart_type`. Storefront cart mutations must go through `$store.cart` (which delegates to the contract), not direct Cart API calls from component code.
 
 Cart error copy is configured from `body` `data-cart-error-*` attributes rendered in `layout/theme.liquid` and read during `setupStores()` in `base.js`.
 
-Action feedback (add to cart success, quantity limits, cart line errors, contact form success) stays local to the triggering control or form through button state, inline messages, and polite `aria-live` regions — not a global notification layer.
+Action feedback (add to cart success, quantity limits, cart line errors, contact form success) stays local to the triggering control or form through button state, inline messages, and polite `aria-live` regions. The `toast` store (`toast.js`, rendered by `snippets/ui-toast.liquid` and `toast-container.js`) additionally shows add-to-cart success, quantity-limit notices, cart mutation errors, predictive search failures, and newsletter and contact form success.
 
 ## Global UI Stores
 
@@ -190,6 +191,7 @@ The core registers stores during startup:
 | --- | --- | --- |
 | `cart` | `alpine.store.cart.js` | UI bridge over `createCartContract()` |
 | `dialog` | `dialog.js` | Global modal and drawer layer (`open`, `close`, stacking) |
+| `toast` | `toast.js` | Toast notifications (`show`, `configure`), rendered by `snippets/ui-toast.liquid` |
 
 Inspect the store module for configure/init APIs instead of copying historical examples.
 
@@ -235,7 +237,7 @@ Components may read the DOM (`document.querySelector`, `this.$el`). Only global 
 - Every import-map entry is referenced by a `data-module-id` or a static `import` in `assets/*.js`.
 - Below-the-fold or non-critical modules should carry `data-module-lazy`; the core loads them through `IntersectionObserver`.
 - Preload a first-viewport module chain only when the page truly needs it before interaction (for example `modulepreload` on the product form chain, or preload on hover for a predictable next step). Do not preload every module on every page.
-- The cart contract and `base.js` stay in the static graph because derived themes keep cart drawer or redirect logic on every page.
+- The cart contract and `base.js` stay in the static graph because the cart overlay and the add-to-cart flows (drawer or redirect to the cart page, per `cart_type`) need cart state on every page.
 
 Alpine remains the deliberate UI runtime for this theme; do not add parallel Web Components for the same responsibilities.
 

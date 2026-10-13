@@ -4,7 +4,7 @@ This reference stores motion decision boundaries that are too long for `AGENTS.m
 
 Inspect current source for exact selectors, timing values, and runtime internals.
 
-The mother template ships one loading recipe: `.spinner` / `.spinner-lg` in `tailwind/tailwind.animates.css`, used by `snippets/buy-buttons.liquid` and `snippets/loading.liquid`. Derived themes add further recipes under this policy.
+`tailwind/tailwind.animates.css` holds the theme's motion recipes: icon animations (`icons-animate-*`), `animate-spin-slow`, `is-paused` / `is-running`, the panel, dialog and drawer motion keyframes, the watermark marquee, and a `.spinner` / `.spinner-lg` loading recipe. No Liquid or JavaScript file uses `.spinner` / `.spinner-lg` today; `snippets/loading.liquid` and `snippets/buy-buttons.liquid` use `animate-spin`. Further recipes are added under this policy.
 
 ## Motion Goals
 
@@ -36,7 +36,7 @@ Alpine/CSS and GSAP must not control `opacity` or `transform` on the same elemen
 
 ## Drawer And Overlay Motion
 
-The mother template ships no drawer or dialog overlay. Derived themes that add one own its motion under the existing `prefers-reduced-motion` policy and must not rely on removed drawer infrastructure from this repository.
+The theme ships drawer and dialog overlays. Their motion runs through `assets/dialog.js`, `assets/dialog-motion.js` and `assets/drawer-motion.js`, with the `dialog-motion-*`, `drawer-motion-*` and `panel-motion-*` keyframes in `tailwind/tailwind.animates.css`, under the existing `prefers-reduced-motion` policy.
 
 ## GSAP Boundary
 

@@ -30,11 +30,11 @@ Tailwind scans every token in the `@source` Liquid files, including `{% schema %
 
 ## Global settings chain
 
-Typography and color flow through `config/settings_schema.json` → `snippets/css-variables.liquid` → tokens → tier or scheme classes. Prefer that chain for theme-linked copy. Local intent may use the Tailwind weight, leading, and tracking scales in Liquid, and matching literals in first-party CSS; colour goes through the roles under **Color, Surface, And Inline Style** (see **Style ownership** and `settings-chain-*` in `check-theme-architecture` SKILL.md). Still reject arbitrary values (`text-[14px]`, `bg-[#f00]`), default text sizes, default font families, other palette colours, and non-chain `font-size` / `font-family` literals.
+Typography and color flow through `config/settings_schema.json` → `snippets/css-variables.liquid` → tokens → tier or scheme classes. Prefer that chain for theme-linked copy. Local intent may use the Tailwind leading and tracking scales in Liquid, and matching literals in first-party CSS (font weights follow the Font weights section); colour goes through the roles under **Color, Surface, And Inline Style** (see **Style ownership** and `settings-chain-*` in `check-theme-architecture` SKILL.md). Still reject arbitrary values (`text-[14px]`, `bg-[#f00]`), default text sizes, default font families, other palette colours, and non-chain `font-size` / `font-family` literals.
 
 `tailwind/tailwind.input.css` resets Tailwind default namespaces to `initial` for breakpoints, font family (`--font-*`), font size (`--text-*`), easing, and animation. The `--font-weight-*`, `--leading-*`, `--tracking-*`, and `--color-*` namespace resets are **not adopted**: Tailwind's default scales remain the project scales for local utility intent (batch 5-C3f). When a palette reset is adopted later, re-declare the keyword colors `transparent`, `current`, and `inherit` after it so utilities such as `text-current` keep working.
 
-A typography value passes when it derives from the chain or from the inherited, already-derived value: `var(--font-*)` alone or inside `calc()` / `max()` / `min()` / `clamp()`, `inherit`, `unset`, `bolder`, `lighter`, or an `em` / `%` size. `font-weight` may also use the numeric scale (`100`–`900`), `normal`, or `bold`. `line-height` may be unitless or `normal`. `font-size` literals such as `1rem` or `14px` still fail.
+A typography value passes when it derives from the chain or from the inherited, already-derived value: `var(--font-*)` alone or inside `calc()` / `max()` / `min()` / `clamp()`, `inherit`, `unset`, `bolder`, `lighter`, or an `em` / `%` size. `font-weight` may also use `normal`, `bold`, `400`, or `700` (see the Font weights section). `line-height` may be unitless or `normal`. `font-size` literals such as `1rem` or `14px` still fail.
 
 ```css
 /* Don't: a literal size bypasses body/heading sliders */
@@ -50,13 +50,21 @@ A typography value passes when it derives from the chain or from the inherited, 
 
 | Location | Check id | Reason |
 | --- | --- | --- |
-| `sections/search.liquid` (`{% stylesheet %}`) | `settings-chain-css-typography` | iOS Safari zoom floor for search inputs (`max(16px, …)`). |
-| `snippets/quantity-selector.liquid` (`{% stylesheet %}`) | `settings-chain-css-typography` | iOS Safari zoom floor for quantity inputs. |
-| `tailwind/tailwind.elements.css` (`.field`) | `settings-chain-css-typography` | iOS Safari zoom floor for native fields. |
-| `snippets/rotating-badge.liquid` (`<svg>`) | `raw-svg` | The circular text path renders merchant badge copy through Liquid; it cannot be a static icon (user, 2026-09-29). |
-| `snippets/rotating-badge.liquid` (center `<span>`) | `settings-chain-liquid` | Center text is sized from the merchant badge size and scale, not a typography tier (user, 2026-09-29). |
-| `snippets/watermark.liquid` (`<svg>`) | `raw-svg` | The SVG text renders merchant watermark copy through Liquid; it cannot be a static icon (user, 2026-09-29). |
-| `snippets/decorative-placeholder-svg.liquid` (`'<svg'` string) | `raw-svg` | Matches the root tag of Shopify's `placeholder_svg_tag` output to add `aria-hidden` and `focusable`; no SVG is authored there (6-C10, user, 2026-10-11). |
+| `snippets/decorative-placeholder-svg.liquid` (`'<svg'` string) | `raw-svg` | Matches the root tag of Shopify's `placeholder_svg_tag` output to mark it decorative; no SVG is authored here. |
+| `snippets/filters-drawer.liquid` (`.filters-drawer__footer-button`, `background-color`) | `raw-colour` | Setting-driven button reverse fill, out of the role set. |
+| `snippets/filters-drawer.liquid` (`.filters-drawer__footer-button`, `color`) | `raw-colour` | Setting-driven button reverse fill, out of the role set. |
+| `snippets/filters-drawer.liquid` (`.filters-drawer__footer-button`, `border-color`) | `raw-colour` | Setting-driven button reverse fill, out of the role set. |
+| `snippets/predictive-search-product-card.liquid` (first `<img>`) | `bare-img` | Predictive search results are JSON-driven; `image.liquid` has no URL at render time. |
+| `snippets/predictive-search-product-card.liquid` (second `<img>`, the no-image fallback) | `bare-img` | Predictive search results are JSON-driven; `image.liquid` has no URL at render time. |
+| `snippets/rotating-badge.liquid` (`<svg>`) | `raw-svg` | The circular text path renders merchant badge copy through Liquid, so it cannot be a static icon. |
+| `snippets/rotating-badge.liquid` (center text) | `settings-chain-liquid` | Center text is sized from the merchant badge size and scale, not a typography tier. |
+| `snippets/watermark.liquid` (`<svg>`) | `raw-svg` | The SVG text renders merchant watermark copy through Liquid, so it cannot be a static icon. |
+| `tailwind/tailwind.elements.css` (`btn` hover, `background-color`) | `raw-colour` | Setting-driven button reverse fill, out of the role set. |
+| `tailwind/tailwind.elements.css` (`btn` hover, `color`) | `raw-colour` | Setting-driven button reverse fill, out of the role set. |
+| `tailwind/tailwind.elements.css` (`btn` hover, `border-color`) | `raw-colour` | Setting-driven button reverse fill, out of the role set. |
+| `tailwind/tailwind.elements.css` (`button.shopify-payment-button__button--unbranded:hover`, `background-color`) | `raw-colour` | Setting-driven button reverse fill, out of the role set. |
+| `tailwind/tailwind.elements.css` (`button.shopify-payment-button__button--unbranded:hover`, `color`) | `raw-colour` | Setting-driven button reverse fill, out of the role set. |
+| `tailwind/tailwind.elements.css` (`button.shopify-payment-button__button--unbranded:hover`, `border-color`) | `raw-colour` | Setting-driven button reverse fill, out of the role set. |
 
 ## Bridge and recipe rules
 
@@ -79,22 +87,22 @@ Don't bridge motion duration or easing into `@theme`; use a recipe class instead
 | Layer/file | Owns | Does not own |
 | --- | --- | --- |
 | `assets/base.css` | document defaults, native elements, global `:focus-visible`, `body > main { flex-grow: 1 }`, `[x-cloak]`, universal helpers | reusable component chrome |
-
-### Skeleton carry-over decisions (5-C3f)
-
-| Rule (skeleton `5191a50`) | Decision | Reason |
-| --- | --- | --- |
-| `.section { padding; background-image }` | **Not adopted** | Superseded by `section-frame`; 40 section schemas use `"class": "section"` and would double padding. |
-| `.gift-card-page main { … }` | **Not adopted** | Theme `gift-card-page__main` owns layout. |
-| `.gift-card-page [data-gift-card-qr] svg { … }` | **Not adopted** | Theme `gift-card-page__qr` owns sizing. |
-| `body > main { flex-grow: 1 }` | **Adopted** in `assets/base.css` | Matches the `<main>` in `layout/theme.liquid` and in `templates/gift_card.liquid`; both bodies use the base grid, so `flex-grow` has no effect today. `layout/password.liquid` has a `flex flex-col` body, but its `<main>` is rendered inside a `.shopify-section` wrapper, so the selector does not match. |
-| `:focus-visible { outline … }` | **Adopted** in `assets/base.css` (`@layer base` via import) | Any focus style in a higher layer still wins (`btn`, `field`, `links`, `focus-ring`, `skip-link`, component rings). Elements without one gain the outline, including component triggers with no ring (for example `accordion__trigger`, `dropdown-trigger`, `active-filter-chip`). A component that removes the outline on `:focus` must scope that to `:focus:not(:focus-visible)` so keyboard focus keeps a ring (`quantity-selector__input`, `sort-by-dropdown__trigger`). |
 | `tailwind.typography.css` | project typography tiers and custom size tiers | section-specific headings or Tailwind `text-*` heading shortcuts |
 | `tailwind.elements.css` | single-element base styles for native controls | composite layouts |
 | `tailwind.components.css` | reusable composite APIs with 2+ unrelated consumers | section-root scoped overrides |
 | `tailwind.utilities.css` | cross-cutting placement/surface/z-index utilities | business BEM styling |
 | `tailwind.animates.css` | motion capabilities, keyframes, reduced-motion rules | trigger logic |
 | section/block/snippet `{% stylesheet %}` | primary home for component-owned CSS scoped to one render tree (plain CSS only, **unlayered**; wins over Tailwind utilities) | cross-render-tree selectors, Tailwind directives, shared vocabulary, `@layer` wrappers |
+
+### Skeleton carry-over decisions (5-C3f)
+
+| Rule (skeleton `5191a50`) | Decision | Reason |
+| --- | --- | --- |
+| `.section { padding; background-image }` | **Not adopted** | Superseded by `section-frame`; section schemas use `"class": "section"` and would double padding. |
+| `.gift-card-page main { … }` | **Not adopted** | Theme `gift-card-page__main` owns layout. |
+| `.gift-card-page [data-gift-card-qr] svg { … }` | **Not adopted** | Theme `gift-card-page__qr` owns sizing. |
+| `body > main { flex-grow: 1 }` | **Adopted** in `assets/base.css` | Matches the `<main>` in `layout/theme.liquid` and in `templates/gift_card.liquid`; both bodies use the base grid, so `flex-grow` has no effect today. `layout/password.liquid` has a `flex flex-col` body, but its `<main>` is rendered inside a `.shopify-section` wrapper, so the selector does not match. |
+| `:focus-visible { outline … }` | **Adopted** in `assets/base.css` (`@layer base` via import) | Any focus style in a higher layer still wins (`btn`, `field`, `links`, `focus-ring`, `skip-link`, component rings). Elements without one gain the outline, including component triggers with no ring (for example `accordion__trigger`, `dropdown-trigger`, `active-filter-chip`). A component that removes the outline on `:focus` must scope that to `:focus:not(:focus-visible)` so keyboard focus keeps a ring (`quantity-selector__input`, `sort-by-dropdown__trigger`). |
 
 **Tailwind cascade layers** (`tailwind/tailwind.input.css`): `theme, base, components, utilities`. The former `snippets` layer name is retired; shared rules that lived there are `@layer components` in `tailwind/tailwind.components.css`.
 
@@ -113,9 +121,7 @@ These thresholds are complementary. A pattern can be promoted to the components 
 
 **Snippets carry structure and behaviour, not a forced style entry.** Primitives (`heading`, `text`, `button`, `link`, `image`, `content-group`, `section-frame`) hold shared tags, ARIA, link `rel`, image sizing, and motion attributes. They are the preferred entry for section-level composition; raw element classes remain valid for Alpine bindings, `<template>` contents, and component internals.
 
-**Local overrides.** Tailwind weight, leading, tracking, and `transparent` utilities may express one-off intent; black and white only through the scrim roles. An override that repeats across files becomes a variant in `tailwind.typography.css` or `tailwind.elements.css`. `lint:theme` (`settings-chain-liquid`, `settings-chain-css-typography`, `settings-chain-css-color`) allows the same scales in Liquid classes and first-party CSS (black/white literals pass it but fail `raw-colour`); it still rejects default text sizes, font families, other palette colours, arbitrary `[…]` utilities, and non-chain `font-size` / `font-family` literals.
-
-**Loaded font weights.** `snippets/css-variables.liquid` loads the base weight and `bold` via `font_modify` only. Weights without a face match by CSS font matching (`font-medium` / 500 uses the 400 face; `font-semibold` / 600 uses the 700 face). Loading additional weights is a design-phase decision.
+**Local overrides.** Tailwind leading, tracking, and `transparent` utilities may express one-off intent (weights follow the Font weights section); black and white only through the scrim roles. An override that repeats across files becomes a variant in `tailwind.typography.css` or `tailwind.elements.css`. `lint:theme` (`settings-chain-liquid`, `settings-chain-css-typography`, `settings-chain-css-color`) allows the same leading and tracking scales in Liquid classes and first-party CSS (black/white literals pass it but fail `raw-colour`); it still rejects default text sizes, font families, other palette colours, arbitrary `[…]` utilities, and non-chain `font-size` / `font-family` literals.
 
 ## Typography
 
@@ -137,7 +143,7 @@ The Skeleton's stable typography interface is `--font-body-*` and `--font-headin
 <h2 class="heading-h6">{{ product.title }}</h2>
 ```
 
-Tier sizes are computed in `tailwind/tailwind.typography.css` from `--font-heading-scale` and `--font-body-size` / `--font-body-size-mobile`. `body-md`, `body-sm`, and `body-xs` keep mobile floors of 14px, 13px, and 12px through `max()`.
+The `heading-*` and `body-*` tiers are aliases in `tailwind/tailwind.typography.css` of the `title-*` and `copy-*` utilities, whose sizes come from `--type-step-*` multiplied by `--font-heading-scale` or `--font-body-scale` (see the Type scale section). The aliases carry no pixel floors.
 
 Add a tier only in `tailwind/tailwind.typography.css` on the `heading-base` / `body-base` stack; do not add unbounded tiers such as `body-8xl`. A one-off size keeps the tier stack and overrides `font-size` through a local CSS variable derived from `--font-*`.
 
@@ -183,9 +189,9 @@ Tint steps are one set for every scheme: a tint's strength already follows the s
 
 **Out of the role set:** setting-driven alphas (`rgba(var(--color-*), var(--…))` for focus rings and the merchant shadow settings) and the button reverse-fill mixes, which carry `lint-allow raw-colour` with that reason.
 
-**Schemes (6-C9):** five merchant colour schemes in `config/settings_data.json`: `scheme-1` (dark green canvas), `scheme-2` (light grey page), `scheme-3` (lime accent), `scheme-4` Sage (provisional sage canvas), and `scheme-5` Page (white canvas). Home sections on the design sage background use `scheme-4` in `templates/index.json`.
+**Schemes (6-C9):** five merchant colour schemes in `config/settings_data.json`: `scheme-1` (dark green canvas), `scheme-2` Canvas (light grey page), `scheme-3` (lime accent), `scheme-4` Sage (provisional sage canvas), and `scheme-5` Surface (white). Home sections on the design sage background use `scheme-4` in `templates/index.json`.
 
-**Standalone colour settings:** the only `color` / `color_background` settings outside the `color_scheme_group` definition are the eight global product-badge colours (`badge_sale_*`, `badge_sold_out_*`, `badge_custom_1_*`, `badge_custom_2_*`), each allowlisted in `colour-setting-lint.js` with a reason. The allowlist applies to `config/settings_schema.json` only; the same IDs in a section or block schema fail. `lint:theme` `colour-setting` rejects any other colour setting in `config/settings_schema.json` or section and block schemas. A section that needs its own colours offers a scheme picker instead: `main-page-contact` `form_color_scheme` (default `scheme-5`, the white Page scheme) colours the form panel.
+**Standalone colour settings:** the only `color` / `color_background` settings outside the `color_scheme_group` definition are the eight global product-badge colours (`badge_sale_*`, `badge_sold_out_*`, `badge_custom_1_*`, `badge_custom_2_*`), each allowlisted in `colour-setting-lint.js` with a reason. The allowlist applies to `config/settings_schema.json` only; the same IDs in a section or block schema fail. `lint:theme` `colour-setting` rejects any other colour setting in `config/settings_schema.json` or section and block schemas. A section that needs its own colours offers a scheme picker instead: `main-page-contact` `form_color_scheme` (default `scheme-5`, the white Surface scheme) colours the form panel.
 
 **Enforcement:** `lint:theme` `raw-colour`, `colour-role-sync`, and `colour-setting` (see `check-theme-architecture` SKILL.md). `npm.cmd run scan:contrast` reports WCAG contrast for each scheme's key pairs from `config/settings_data.json`, including `text-muted` and `text-subtle` composited on the background; it reports and never fails.
 - Allowed inline styles: scoped CSS custom properties from Liquid, platform-required media values, and per-render geometry that static utilities cannot express.
@@ -409,8 +415,8 @@ Three Shopify platform constraints govern `{% stylesheet %}` and `{% javascript 
 ## Breakpoints and hover (6-C2)
 
 - **Breakpoints:** `--breakpoint-tablet` 48rem (768px), `--breakpoint-desktop` 64rem (1024px) and `--breakpoint-wide` 80rem (1280px), in `tailwind/tailwind.input.css`. Media query `rem` follows the user's default font size (16px), not the 62.5% root.
-    - `pc` (48rem) and `fw` (80rem) remain as legacy aliases for existing classes. New markup uses `tablet:`, `desktop:` and `wide:`.
-    - The migration lint counts `pc:` / `fw:`.
+    - The tokens `--breakpoint-pc` (48rem) and `--breakpoint-fw` (80rem) still exist in `tailwind/tailwind.input.css`, but no markup uses the `pc:` / `fw:` variants. Markup uses `tablet:`, `desktop:` and `wide:`.
+    - The `legacy-breakpoint` lint rejects `pc:` / `fw:` (see the Migration lints section).
 - **Hover:** `can-hover` is `(hover: hover) and (pointer: fine)`; `no-hover` is its negation, `not ((hover: hover) and (pointer: fine))`.
     - They are `@custom-variant`s for classes.
     - Stylesheets write the same two conditions as media queries.
@@ -436,8 +442,9 @@ Everything else counts in `lint:theme` (`stylesheet-font-size`, ratcheted baseli
 
 ## Font weights (6-C3)
 
-- **Loaded faces:** each font role loads its base face, bold (700) and their italics (`snippets/css-variables.liquid`).
-- **What fails:** a weight without a loaded face falls back silently to the nearest loaded one. So markup, `@apply` and stylesheets use only `font-normal` / `font-bold` (400 / 700). `lint:theme` rejects every other weight utility and numeric `font-weight`.
+- **Loaded faces:** `snippets/css-variables.liquid` loads, through `font_modify`, the body font's base face, bold (700) and italics; the heading font's base face, the weight selected by `heading_weight`, bold and italics; and the subtitle font's face for the weight selected by `subtitle_weight`.
+- **Merchant weights:** `heading_weight` and `subtitle_weight` in `config/settings_schema.json` offer 400, 500 and 700. The selected values reach CSS as `--font-heading-weight` and `--font-subtitle-weight`, which `tailwind/tailwind.typography.css` applies.
+- **Everywhere else:** a weight without a loaded face falls back silently to the nearest loaded one. So markup, `@apply` and stylesheets use only `font-normal` / `font-bold` (400 / 700). `lint:theme` (`unloaded-font-weight`) rejects every other weight utility and numeric `font-weight`.
 - **Adding a weight:** load its face per role first (a design decision with a font payload cost), then widen the lint.
 
 ## Migration lints (6-C1)
@@ -501,7 +508,7 @@ After batch **6-R2** (2026-10-12), markup `raw-spacing` is **2** (`tablet:px-[8v
 
 Existing absolute font sizes stay frozen at the baseline until the polish pass. New code follows rule B immediately: an own-class element carries project vocabulary only, and its core utilities live in `:where(.own-class)`.
 
-After batch **6-R4** (2026-10-12), `mixed-element` is **0** and strict (no baseline allowance). Batch **6-R3** had brought it to **27**; **6-R4** moved the remainder into `:where(.own-class)` (or fixed lint false positives). After batch **6-R5** (2026-10-13), `stylesheet-font-size` is **1** (`sections/promotion-countdown.liquid`).
+After batch **6-R4** (2026-10-13), `mixed-element` is **0** and strict (no baseline allowance). Batch **6-R3** had brought it to **27**; **6-R4** moved the remainder into `:where(.own-class)` (or fixed lint false positives). After batch **6-R5** (2026-10-13), `stylesheet-font-size` is **1** (`sections/promotion-countdown.liquid`).
 
 ## Decision Flow
 

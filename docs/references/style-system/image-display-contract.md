@@ -81,8 +81,8 @@ Callers that already pass slash ratios (for example `3/4`, `16/9`) are unchanged
 ## Current Contract
 
 - `image.liquid` is the base image primitive.
-- Frame mode is the default for current callers: product media, the product card, cart line items, collection and blog cards, and the article image. The header logo passes `mode: 'natural'`.
-- `placeholder_style: 'plain'` is used by `sections/brand-statement.liquid` and `sections/newsletter-banner.liquid`, and `position` by the same two sections; keep both working when changing the snippet.
+- Frame mode is the default for current callers: product media, the product card, cart line items, collection and blog cards, and the article image. The header logo (`sections/header.liquid`), the footer brush-stroke image (`sections/footer.liquid`), and the scatter gallery decoration image (`sections/scatter-gallery.liquid`) pass `mode: 'natural'`.
+- `placeholder_style: 'plain'` is used by `sections/brand-statement.liquid`, `sections/newsletter-banner.liquid` and `sections/slides-show.liquid`, and `position` by `sections/brand-statement.liquid`, `sections/newsletter-banner.liquid` and `sections/routine-showcase.liquid`; keep both working when changing the snippet.
 
 ## Review Checklist
 

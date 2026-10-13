@@ -109,13 +109,14 @@ Theme code loads as ES modules through an import map (`snippets/scripts.liquid`,
 
 - [AGENTS.md](AGENTS.md): canonical repository rules and validation commands
 - [docs/project.md](docs/project.md): identity, migration, and skeleton deviations
+- [docs/agent/board.md](docs/agent/board.md): open discussion and pending decisions
 - [docs/agent/context.md](docs/agent/context.md): plan under execution and status
 - [docs/references/](docs/references/): on-demand architecture and review references
 - [Launch gate](docs/references/code-review/launch-gate.md): review and release checks
 
 ## Repository Boundaries
 
-- Do not edit `config/settings_data.json` or `templates/*.json` without explicit authorization.
+- Do not edit `config/settings_data.json`, `templates/*.json` or `sections/*-group.json` without explicit authorization.
 - Do not manually edit generated Tailwind output, generated icons, or minified vendor assets.
 - `shopify.theme.toml` is local-only (gitignored); do not commit store credentials.
 
