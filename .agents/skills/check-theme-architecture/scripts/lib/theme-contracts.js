@@ -311,7 +311,7 @@ function isColorProperty(property) {
     ].includes(property);
 }
 
-function isAllowedTypographyValue(property, value) {
+function isAllowedTypographyValue(property, value, { stylesheetBlock = false } = {}) {
     const trimmed = value.trim();
     if (!trimmed) return true;
     const prop = property.toLowerCase();
@@ -329,8 +329,14 @@ function isAllowedTypographyValue(property, value) {
     // Tailwind's tracking scale includes negative em values (tracking-tight, tracking-tighter).
     if (prop === 'letter-spacing' && /^-[\d.]+em$/.test(trimmed)) return true;
 
-    // Type-step sizes (css-architecture.md, "Stylesheet font sizes"): same verdict as `stylesheet-font-size`.
-    if (prop === 'font-size' && /var\(\s*--type-step-/i.test(trimmed) && isAllowedStylesheetFontSize(trimmed)) {
+    // Type-step sizes in a stylesheet block only (css-architecture.md, "Stylesheet font sizes"): same
+    // verdict as `stylesheet-font-size`. Standalone CSS files keep the settings chain.
+    if (
+        stylesheetBlock &&
+        prop === 'font-size' &&
+        /var\(\s*--type-step-/i.test(trimmed) &&
+        isAllowedStylesheetFontSize(trimmed)
+    ) {
         return true;
     }
 
@@ -371,7 +377,7 @@ function isForbiddenColorValue(value) {
 }
 
 function collectSettingsChainCssFailures(cssText, file, failures, allowsByLine, options = {}) {
-    const { baseOffset = 0, lineText = cssText } = options;
+    const { baseOffset = 0, lineText = cssText, stylesheetBlock = false } = options;
     const lines = cssText.split('\n');
     let offset = 0;
 
@@ -382,7 +388,7 @@ function collectSettingsChainCssFailures(cssText, file, failures, allowsByLine, 
             const property = declMatch[1].toLowerCase();
             const value = declMatch[2];
 
-            if (isTypographyProperty(property) && !isAllowedTypographyValue(property, value)) {
+            if (isTypographyProperty(property) && !isAllowedTypographyValue(property, value, { stylesheetBlock })) {
                 pushFailure(
                     failures,
                     allowsByLine,

@@ -1670,6 +1670,18 @@ test('stylesheet block literal without lint-allow fails', async () => {
     });
 });
 
+test('standalone CSS font-size with a type step still fails the settings chain', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(root, 'tailwind/fixture.css', '.fixture { font-size: var(--type-step-1); }\n');
+        const failures = await runThemeLint(root);
+        assert.equal(
+            failures.filter((failure) => failure.message.includes('Typography property "font-size"')).length,
+            1,
+            failureMessages(failures),
+        );
+    });
+});
+
 test('stylesheet block font-size with a type step passes the settings chain', async () => {
     for (const value of [
         'var(--type-step-1)',

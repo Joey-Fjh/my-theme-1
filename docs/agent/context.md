@@ -98,3 +98,14 @@ Implementer run, 2026-10-13. No commits. All edits are in the surface; the JSON 
 2. The Implementer's proof that the new tests fail on HEAD was an ad-hoc run with no stored output. The reviewer repeats it.
 
 **Waiting on:** the independent review (Ask), run by the user.
+
+**6-V10 independent review round 1 (2026-10-13): FAIL** on one scope defect. Everything else was proven: the six new tests fail on the old code and the guard passes on both; no changed test lost an assertion; the baselines are byte-identical; schema extraction is unified; the `dead-setting` change strengthens fixture roots only; `test:layout-harness` 28/28.
+
+- **Defect:** the type-step font-size allowance sat in the shared `isAllowedTypographyValue`, so it also applied to standalone CSS (`tailwind/**/*.css`, `assets/base.css`, `assets/gift-card.css`). The plan allowed it in stylesheet blocks only.
+- **Correction (coordinator):**
+  - `collectSettingsChainCssFailures` takes a `stylesheetBlock` option, and `isAllowedTypographyValue` applies the allowance only when it is set.
+  - `lint-theme.js` sets it at the stylesheet-block call site only.
+  - New test: "standalone CSS font-size with a type step still fails the settings chain".
+- **Proof:** with the two source files stashed back to `584fdfc`, that test fails (`not ok`, 0 pass, 1 fail). On the corrected code, `npm.cmd run test:validators` gives 33, 243, 3 and 7 tests with 0 failures, and `lint:theme` passes.
+
+Round 2: pending.

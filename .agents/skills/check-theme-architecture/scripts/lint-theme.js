@@ -568,6 +568,7 @@ async function runThemeLint(root, notes = []) {
             collectSettingsChainCssFailures(block.code, file, failures, allowsByLine, {
                 baseOffset: block.offset,
                 lineText: text,
+                stylesheetBlock: true,
             });
             collectStylesheetDirectiveFailures(block.code, file, failures, allowsByLine, {
                 baseOffset: block.offset,
