@@ -127,3 +127,11 @@ Checks 1, 2 (as corrected), 3 and 5 pass. Check 4 is not met; the reason is abov
 **Check 4 waived (user, 2026-10-13, "A"):** leftover development themes on ci-test are accepted. Shopify removes them after seven idle days, they do not count toward the theme limit, and ci-test serves CI only. The matching clause of check 3 (the cleanup step ran) is waived for the same reason. No cleanup step is added. A step that deletes all development themes could remove a theme another concurrent run is using. Revisit only if the leftovers cause a real problem.
 
 Independent review round 2: pending.
+
+**Independent review round 2 (2026-10-13): FAIL** on one record defect. Both round 1 findings were confirmed resolved, and `ci.yml` is byte-identical to `851ca19`.
+- **Defect:** the board said a cleanup step "would have to delete every development theme". Shopify CLI can delete one theme (`shopify theme delete --theme`).
+- **Correction:** the board now says a cleanup step should target the run's own theme, that the action exposes no outputs (`action.yml` has no `outputs` key) so the id must be found another way, and that a blanket delete is only the simpler, riskier variant.
+- The waiver sentence above ("A step that deletes all development themes could remove...") describes that blanket variant only.
+- The user was told of the correction and the waiver stands unless they say otherwise.
+
+Independent review round 3: pending.
