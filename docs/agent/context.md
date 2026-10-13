@@ -96,3 +96,68 @@ Every correction is verified against the code before the edit. References cite p
 - `motion_enabled`: off (`body[data-motion-enabled='false']`) is read by `motion-reveal.js`, `scrolling-marquee.js`, `slides-show.js`, `before-after-comparison.js`, `card-rail.js`, `ritual-steps.js`, `scatter-gallery.js`, `promo-bannder.js`, the product gallery zoom, and CSS for the rotating badge, watermark marquee, scrolling icons, routine-showcase and testimonial-featured. `dialog-motion.js` and `drawer-motion.js` read only `prefers-reduced-motion`, and `tailwind.animates.css` comments call dialog and drawer motion independent of `motion_enabled`. So `project.md` is right for overlays; `design.md` ("overlays appear without travel" when off) is not implemented; `project.md`'s list of what the switch stops is shorter than the code.
 - Extraction threshold: `abstraction-boundaries.md` waits for a third real consumer for a JS abstraction; the board (shared carousel controls, 2026-10-04) says extract with the second.
 - Check widths: `AGENTS.md` says 390 and 1440; `design.md` says 375, 768, 1024 and 1440.
+
+**6-V9 state:** executed and committed (`23486ed`). The coordinator reviewed the diff: the `lint-allow` count (15 grep hits, 15 rows), the `assets/base.js` imports and store registrations, and the table move were spot-checked against the code. **Waiting on:** the independent review (Ask), run by the user in a separate session. The findings are filed on `docs/agent/board.md` ("Open: findings from 6-V9").
+
+## 6-V10 validator fixes and dead code
+
+**Status:** covered by the user's acceptance of the tidy-up split on 2026-10-13, including the decision "fix only the latent defects and delete dead code; no large merge of the copied helpers". Executed by a delegated Implementer on Sonnet; the coordinator reviews the diff and commits. It coexists with 6-V9 under the record-layer exception: 6-V9 is executed and waits on a review the agent cannot perform.
+
+**Outcome:** two latent validator defects are fixed, code with no consumer is removed, and `lint:theme` prints the check id on every failure. No check becomes weaker, and no new rule is introduced.
+
+**Review tier:** Ask (validator code).
+
+### Implementation surface
+
+Paths below are under `.agents/skills/check-theme-architecture/scripts/` unless a full path is given.
+
+1. **Schema block extraction.** One trim-aware extractor that accepts `{% schema %}`, `{%- schema -%}` and mixed forms. It is used by every place that reads a section schema inside this skill: `lib/theme-contracts.js` (`section-color-scheme`), `lib/dead-setting-lint.js` (both sites), `lib/colour-setting-lint.js` and `lib/section-placement-lint.js`. The regex in `.agents/skills/check-i18n/scripts/lint-i18n.js` is made trim-aware in place, with no cross-skill import. New tests show that a section with a trimmed schema tag is checked by `dead-setting`, by `section-color-scheme` and by the i18n schema text check.
+2. **Font-size rules agree in stylesheet blocks.** `settings-chain-css-typography` (`lib/theme-contracts.js`, `isAllowedTypographyValue`) accepts the type-step forms that `stylesheet-font-size` (`lib/stylesheet-ownership-lint.js`, `isAllowedStylesheetFontSize`) and `docs/references/style-system/css-architecture.md` ("Stylesheet font sizes") document as allowed. A value both documents reject stays rejected. A new test covers `font-size: var(--type-step-1)` in a stylesheet block.
+3. **`dead-setting` strict.** Its baseline is empty, so the ratchet is inert.
+   - Remove the baseline read and write, `dead-settings-baseline.json`, and the two CLI flags in `lint-theme.js`.
+   - Any dead setting fails, as today.
+   - Tests that exercised the dead-setting ratchet are replaced by one test that a dead setting fails with no baseline file present.
+   - `.agents/skills/check-theme-architecture/SKILL.md` row and text are updated to match.
+4. **Stale texts and inert fixtures.**
+   - The hints "once 6-C2 lands" and "once 6-C8 lands" in `lib/migration-lint.js` are corrected.
+   - The wrong doc comment on one `run*BaselineFlag` function in `lint-theme.js` is corrected.
+   - Fixture baseline keys `'legacy-breakpoint': {}` and `'mixed-element': {}` are removed where the code no longer reads them. The two tests that assert an allowance is ignored keep theirs.
+5. **Dead code with no consumer** (prove each with a grep before deleting):
+   - `maskNonExecutableLiquid` and its test;
+   - `parseBaselineKey`;
+   - unused imports and the duplicate `require` in `lib/theme-contracts.js`;
+   - the unused `STYLESHEET_OWNERSHIP_RULE` import in `lint-theme.js`;
+   - `normalizeShopifySectionId` in `.agents/tools/layout-check/checks.mjs`;
+   - the re-export nobody imports in `.agents/tools/layout-check/layout-check.mjs`.
+
+   Exports are not trimmed in bulk.
+6. **Check id in output.** `lint-theme.js` prints `[check-id]` on every failure line, not only the bracketed ones. Tests that assert output text are updated.
+7. This file.
+
+**Not in this batch (reported in the survey, left as is):**
+- merging the copied helpers, the three class-token extractors, the three baseline implementations and the Liquid file lists;
+- splitting the strict checks out of the ratchet loops;
+- `lint-allow-reason` for JS files (it would be a new check);
+- wiring `test:layout-harness` (it goes with 6-T4b);
+- linting the tooling's own code;
+- moving theme data to config (backport).
+
+**Forbidden:**
+- theme files;
+- `migration-baseline.json` and `stylesheet-ownership-baseline.json` content;
+- `AGENTS.md`, the roles, the references, `package.json` scripts, the workflows;
+- `--write-*` / `--prune-*` / `--shrink-*` flags against the real theme;
+- commits;
+- `prettier --write`;
+- any file write under theme directories (a dev server is watching them).
+
+### Acceptance checks
+
+1. `npm.cmd run test:validators` passes. State the test counts from the command output, before (HEAD) and after.
+2. Each new test fails against the HEAD version of the code it covers (scratch copy outside the repository) and passes on the new one. Name the tests.
+3. `npm.cmd run lint:theme` passes on the theme, and so do `lint:i18n`, `lint:liquid-syntax` and `lint:doc-paths`. Counts are unchanged, taken from the baselines and a run: `legacy-type-tier` 6, `raw-spacing` 2, `stylesheet-font-size` 1.
+4. No theme section uses a trimmed schema tag today (`git grep -n -E "\{%-\s*schema|schema\s*-%\}" -- sections blocks`). If one does, report the new failures instead of hiding them.
+5. Every deleted symbol: the grep that shows it had no consumer.
+6. For every test removed or changed: its name, and which behaviour it covered that is still asserted elsewhere.
+7. `git diff --check` is clean; `git diff --stat` shows only the surface; `npx prettier --check` is not a validator here (`.agents` is ignored).
+8. Independent review (Ask) reports PASS.
