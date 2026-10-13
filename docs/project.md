@@ -23,8 +23,8 @@ Ceylune, a custom Shopify theme maintained as a multi-industry Shopify Theme Sto
     - **Order revised** (user, 2026-10-13): two tracks. The framework track closes first with five items: a framework browser smoke pass, 6-T4b `test:layout` in CI, repository setup automation, a redundancy audit and tidy-up of the lint tools and documents, then the skeleton backport (after which new themes start from the skeleton in parallel). The theme track (polish pass, consolidated browser pass, readiness review, second submission) follows or runs beside it. Detail on `docs/agent/board.md`.
     - **Redundancy audit and tidy-up** (Track A item 4, 2026-10-13): the board and this file pruned of history; references corrected against the code (6-V9); two latent validator defects fixed and dead code removed (6-V10). What remains from the audit is backport work, listed on `docs/agent/board.md`.
     - **Framework browser smoke pass** (Track A item 1, 2026-10-13): done. It found one framework defect: the desktop menu keeps `aria-expanded="false"` while open. Module loading, the dialog layer, product, cart, collection and section refresh passed at 1440.
-    - **Track A state** (2026-10-13): items 1 and 4 are done. Open: 6-F1, 6-T4b `test:layout` in CI, repository setup automation, and the skeleton backport.
-    - **Next:** 6-F1, the framework defect fixes: the menu `aria-expanded`, and the loading spinner that cannot rotate because `animate-spin` is not generated. It is proposed and not yet authorized. The user's look at this round's visible changes goes to the consolidated browser pass.
+    - **Track A state** (2026-10-13): items 1 and 4 are done, and so is 6-F1, the fix for the two framework defects (`528a715`): the menu triggers report `aria-expanded`, and the loading indicators rotate through the `spinner` recipe. Open: repository setup automation, 6-T4b `test:layout` in CI, and the skeleton backport.
+    - **Next:** repository setup automation (Track A item 3), not yet planned. The user's look at this round's visible changes goes to the consolidated browser pass.
 
 ## Migration Direction (accepted)
 

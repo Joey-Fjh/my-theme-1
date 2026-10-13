@@ -14,10 +14,10 @@ Last updated: 2026-10-13.
   3. **Repository setup automation**: ruleset JSON, setup script, and a `doctor:agent` check (see the backport candidates).
   4. **Redundancy audit and tidy-up** (user, 2026-10-13): survey the lint tools and the documents (`AGENTS.md`, `docs/references/`, `.agents/`, this board) for redundant or stale content and tidy them, so the skeleton receives a clean set.
   5. **The skeleton backport itself**: settle the candidate list, move the files, and run the skeleton's validators. After it, new themes can be developed from the skeleton in parallel with this theme.
-- **Track A state (2026-10-13, end of session):**
+- **Track A state (2026-10-13):**
   - **Done:** item 1 (the smoke pass, one framework defect found) and item 4 (the tidy-up).
-  - **In execution: 6-F1 framework defect fixes** (menu `aria-expanded`, loading spinner). The plan and its status are in `docs/agent/context.md`.
-  - **Then:** item 3 (repository setup automation), item 2 (6-T4b, after a local trial of `test:layout` against `ci-test`), item 5 (the backport).
+  - **Done: 6-F1 framework defect fixes** (`528a715`; plan and reviews: `git show 528a715:docs/agent/context.md`; independent review PASS on round 2): the menu triggers report `aria-expanded`, and the loading indicators rotate through the `spinner` recipe. Not exercised in a browser: the plain dropdown menu with a real second level (the store's header uses the super menu; both share `assets/dropdown.js`). It goes to the consolidated browser pass.
+  - **Next:** item 3 (repository setup automation), item 2 (6-T4b, after a local trial of `test:layout` against `ci-test`), item 5 (the backport).
   - **Also waiting on the user:** the three rule conflicts under "Open: findings from 6-V9".
 - **Track B, this theme:** the polish pass (home, then product and collection), the consolidated browser pass with the full Lighthouse measurement including desktop, the readiness review, and the second submission. None of it changes the framework.
 - **Accepted risk:** a framework defect found during the polish pass after the backport is fixed in both repositories.
@@ -76,7 +76,7 @@ Last updated: 2026-10-13.
 - **Framework defect, desktop menu `aria-expanded`:**
   - The menu opens, but the summary keeps `aria-expanded="false"`, after mouse and after Enter.
   - `snippets/header-dropdown-menu.liquid` binds `:aria-expanded="$el.parentElement.open"`, and Alpine does not track the `open` attribute that `assets/dropdown.js` `open()` sets.
-  - It is an accessibility defect in navigation, so a launch blocker. Fix it before the backport, together with the loading spinner below.
+  - It is an accessibility defect in navigation, so a launch blocker. **Fixed in 6-F1** (`528a715`).
 - **Not a defect, add to cart on the product page:** it shows a success toast and does not open the cart drawer. `snippets/buy-buttons.liquid` defaults `open_cart_on_add` to false, and the product page does not pass it; quick view does. The live theme (`main`) behaves the same, so this is not a migration regression. Whether the product page should open the drawer is a design choice for the polish pass.
 - **Passed at 1440:**
   - module mounting, including a lazy module on scroll;
@@ -97,7 +97,7 @@ Last updated: 2026-10-13.
 
 **Open: findings from 6-V9 (2026-10-13), for the user.**
 
-- **Loading spinners do not rotate:** moved to the 6-F1 plan (`docs/agent/context.md`).
+- **Loading spinners do not rotate: fixed in 6-F1** (`528a715`). Left for the polish pass: under reduced motion the indicator is a still ring at 0.65 opacity, a weak loading signal; and `snippets/loading.liquid` puts `role="status"` and its label inside an `aria-hidden="true"` wrapper, so the label is never announced.
 - **Rule conflicts, reported and not decided:**
   1. **`motion_enabled` scope.** The code stops reveals, marquees, autoplay, tilts and zooms. Dialog and drawer motion follow only `prefers-reduced-motion`. `docs/design/design.md` says overlays appear without travel when the setting is off, which is not implemented. `docs/project.md` is right about overlays, but its list of what the setting stops is shorter than the code.
   2. **Extraction threshold.** `docs/references/architecture/abstraction-boundaries.md` waits for a third consumer before generalizing a JS abstraction. The shared carousel controls entry here says to extract with the second.
