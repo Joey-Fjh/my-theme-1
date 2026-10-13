@@ -105,6 +105,7 @@ The coordinator does not spawn subagents on its own, because each one rebuilds c
 **Sources:**
 
 - Use Shopify Dev MCP for Shopify platform claims. Use Context7 for third-party library docs when current-version sources matter, resolving the library ID at call time. Do not guess framework behavior when the appropriate MCP should be available.
+- Use Chrome DevTools MCP against `shopify theme dev` when a claim depends on rendered or runtime behavior. Examples: console errors, network requests, and focus and keyboard behavior after a JS or interaction change; screenshots at 390 and 1440 for visual batches; performance traces for Lighthouse ownership classification.
 - If an expected MCP is missing, troubleshoot per `README.md` ("MCP servers") before falling back to the official website, and state that degraded source explicitly.
 
 ## Task Routing
@@ -124,7 +125,20 @@ Read only the matching reference for the current task:
 
 ## Agent Skills
 
-Project skills in `.agents/skills/`: the executable validators `check-i18n` and `check-theme-architecture`, and the vendored GreenSock documentation skills `gsap-core`, `gsap-timeline`, `gsap-scrolltrigger`, and `gsap-performance` (MIT; agent documentation only, no storefront payload). Read the GSAP skills only after the motion reference classifies work as complex choreography. The vendored Anthropic skill `frontend-design` (Apache 2.0) is a design reference only: it ranks below Shopify's official sources and the project rules, is not read by default, and its suggestions are discussed with the user before adoption (`.agents/skills/frontend-design/UPSTREAM.md`).
+Project skills in `.agents/skills/`:
+
+- The executable validators `check-i18n` and `check-theme-architecture`.
+- The vendored GreenSock documentation skills `gsap-core`, `gsap-timeline`, `gsap-scrolltrigger`, and `gsap-performance` (MIT). These are agent documentation only, with no storefront payload.
+- The vendored Anthropic skill `frontend-design` (Apache 2.0), a design reference only (`.agents/skills/frontend-design/UPSTREAM.md`).
+- The vendored Emil Kowalski skill `review-animations` (MIT), a motion review aid only (`.agents/skills/review-animations/UPSTREAM.md`).
+
+All vendored skills rank below Shopify's official sources and the project rules.
+
+Triggers. A batch whose surface matches one of these uses the skill and records its output in `docs/agent/context.md`:
+
+- **`review-animations`:** the batch adds or changes motion: CSS `transition`, `animation` or `@keyframes`, motion tokens, reduced-motion handling, Alpine-driven visibility transitions, or GSAP. Read its `SKILL.md` and `STANDARDS.md` by path and review the motion diff before step 7. The motion reference wins on conflict.
+- **GSAP skills:** the work touches a GSAP consumer (`assets/motion-gsap.js`, `assets/scatter-gallery.js`), or the motion reference classifies new work as complex choreography. Read `gsap-core`, plus `gsap-scrolltrigger`, `gsap-timeline`, or `gsap-performance` as the change needs.
+- **`frontend-design`:** a design or polish batch whose plan changes visual direction (typography, layout composition, colour composition). Read it at the start of the batch, and discuss its suggestions with the user before adopting them.
 
 Do not create, install, or approve skills during ordinary theme work. Discuss skill changes only when the user explicitly asks.
 

@@ -20,6 +20,7 @@ filesystem-profile: workspace-write
 - Select the smallest justified action; do not repeat a failed action without new evidence.
 - Take every count in a validation result (files, uses, issues, assertions) from a command's output and name the command; never count by hand.
 - Cite open decisions on `docs/agent/board.md` as context only; when a task needs one decided, stop and report it instead of choosing.
+- Before handing a batch over for review, run each tool that `AGENTS.md` Agent Skills triggers for the batch's surface, and record its output in `docs/agent/context.md`.
 
 ## Boundaries
 

@@ -26,6 +26,7 @@ Apply at SOP step 7 (`AGENTS.md` Batch SOP):
 - Re-run the plan's named validators; do not inherit the implementer's pass/fail claims.
 - Recompute every count the record claims with a command; a count without a command behind it, or one that differs from yours, is a finding.
 - Report as a defect any change that settles a decision still open on `docs/agent/board.md`.
+- Confirm that each tool `AGENTS.md` Agent Skills triggers for the batch's surface ran and that its output is recorded in `docs/agent/context.md`; a missing run is a finding.
 
 ## Boundaries
 
