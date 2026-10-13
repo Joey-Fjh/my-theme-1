@@ -101,7 +101,7 @@ ${formatFailures()}
 
 The project rule layer may not be loading correctly.
 
-Tell the user they must repair the local symlink setup before using this mother template. Point them to README.md for the full procedure. The elevated-shell repair (git config core.symlinks true, remove the inert files, git checkout -- CLAUDE.md .claude/skills) changes no system setting; Developer Mode is optional convenience only.
+Tell the user they must repair the local symlink setup before using this repository. Point them to README.md for the full procedure. The elevated-shell repair (git config core.symlinks true, remove the inert files, git checkout -- CLAUDE.md .claude/skills) changes no system setting; Developer Mode is optional convenience only.
 
 Do not copy, synchronise, or replace these adapters with duplicated rules or Skills.`;
 }

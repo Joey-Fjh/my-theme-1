@@ -162,7 +162,7 @@ The `innerSelectors` callers are `assets/cart-overlay.js`, `assets/pickup-availa
 
 ## Liquid Rendering Features
 
-The Liquid `{% block %}` and `{% partial %}` tags are not required baseline dependencies of this project. Adopting either requires a separately approved decision. Ceylune composes storefront pages with **section** blocks only; it does not ship skeleton-style Theme Blocks. See `docs/project.md` (Deviations From The Skeleton).
+The Liquid `{% block %}` and `{% partial %}` tags are not required baseline dependencies of this project. Adopting either requires a separately approved decision. Ceylune composes storefront pages with **section** blocks only; it does not ship Theme Blocks. See `docs/project.md` (Composition And Local Setup).
 
 Any approved `{% partial %}` trial must be low risk and verify:
 

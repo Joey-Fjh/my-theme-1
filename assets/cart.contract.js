@@ -1,5 +1,5 @@
 /**
- * Skeleton-owned cart state contract.
+ * Theme-owned cart state contract.
  * Hydrates from Liquid, reads state, mutates through the Cart API, and notifies subscribers.
  * Owns platform cart state; UI layers subscribe to it instead of owning it themselves.
  */

@@ -10,7 +10,7 @@ const MIRRORED_KEYS = [
 ];
 
 /**
- * UI bridge over the Skeleton-owned cart contract.
+ * UI bridge over the theme-owned cart contract.
  *
  * The contract owns platform cart state and every Cart API mutation. This store only
  * mirrors that state into reactive UI properties and owns merchant-facing error copy.

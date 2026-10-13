@@ -6,170 +6,45 @@ Last updated: 2026-10-13.
 
 ## Open decisions
 
-**Decided: order of work, revised (user, 2026-10-13).** The work is two tracks. The framework track closes first; the theme track follows or runs beside it. This replaces "finish this repository first, then the skeleton backport" (2026-10-08) and the "after the second submission" timing under the backport candidates.
+**Work now: the theme track (user, 2026-10-13).** The framework track is closed in this repository, and what remains here is this theme: the polish pass (home, then product and collection), the consolidated browser pass with the full Lighthouse measurement including desktop, the readiness review, and the second submission.
 
-- **Track A, framework (reusable by every theme): five items to 100%, in this order.**
-  1. **Framework browser smoke pass.** It checks that the framework works, not the design: module loading, dialogs, cart, variant change, console errors. It runs first, so a framework defect is fixed once, before the backport. Read-only, run from an external execution prompt (user, 2026-10-13: costly tasks get a prompt).
-  2. **6-T4b**, `test:layout` in CI. **Deferred (user, 2026-10-13)**; see the trial result and the triggers under 6-T4.
-  3. **Repository setup**: the ruleset file, the README steps and a local `doctor:agent` check (done as 6-T6; see the backport candidates).
-  4. **Redundancy audit and tidy-up** (user, 2026-10-13): survey the lint tools and the documents (`AGENTS.md`, `docs/references/`, `.agents/`, this board) for redundant or stale content and tidy them, so the skeleton receives a clean set.
-  5. **The skeleton backport itself**: settle the candidate list, move the files, and run the skeleton's validators. After it, new themes can be developed from the skeleton in parallel with this theme.
-- **Track A state (2026-10-13):**
-  - **Done:** item 1 (the smoke pass, one framework defect found) and item 4 (the tidy-up).
-  - **Done: 6-F1 framework defect fixes** (`528a715`; plan and reviews: `git show 528a715:docs/agent/context.md`; independent review PASS on round 2): the menu triggers report `aria-expanded`, and the loading indicators rotate through the `spinner` recipe. Not exercised in a browser: the plain dropdown menu with a real second level (the store's header uses the super menu; both share `assets/dropdown.js`). It goes to the consolidated browser pass.
-  - **Done: item 3, 6-T6 repository setup, the small version** (`86ae604`; plan and reviews: `git show 86ae604:docs/agent/context.md`; independent review PASS on round 5).
-  - **Deferred: item 2, 6-T4b** (user, 2026-10-13, after the trial on ci-test).
-  - **Open, framework defect found by the BP-2 review in the skeleton (2026-10-13), the same code here:** `assets/section-pagination.js` asks for `<page url>?sections=<id>` through `ShopifyHttp.getJSON`, whose default header is `Accept: application/json` (`assets/https.js`). The dev storefront answers such a request 404 (reproduced with `curl` on the skeleton's dev server: 200 with no `Accept` or `*/*`, 404 with any `Accept` that names JSON), and the module then falls back to a full-page navigation, so pagination works but never through the section refresh. Not seen here because the smoke pass did not cover pagination, and the collection filters use `section_id=` instead. Fixed in the skeleton's BP-2 with `headers: { Accept: '*/*' }` on that one request. **Proposed here:** the same one-line change as a small batch (Ask tier, `assets/*.js`), verified by paginating a collection and the blog in the browser.
-  - **In progress: item 5, the backport** (user, 2026-10-13: finish it before the theme track). It runs by layer, each layer a batch planned, executed and reviewed in `../my-skeleton-theme` under that repository's own record files:
-    1. **BP-1, agent layer and harness:** the roles, the `review-animations` and `frontend-design` skills with their triggers, the Chrome DevTools MCP entries, `doctor:agent` with the MCP and ruleset checks, the Lighthouse workflow, the ruleset file, the README setup section. **Done** on the skeleton's branch `backport/agent-layer` (`b676754`; plan and reviews: `git -C ../my-skeleton-theme show b676754:docs/agent/context.md`; independent review PASS, and PASS on the amendment). Not merged into the skeleton's `main` until the last layer. Amendment (user, 2026-10-13): the skeleton is a template, so its `Lighthouse` job is skipped by repository name and it imports no ruleset; both travel for the themes made from it.
-    2. **Validators:** the nine new checks, with the theme data moved to configuration first.
-        - **Measured (coordinator, 2026-10-13):** this repository's validator scripts (`388f58e`) were copied into a scratch clone of the skeleton's `backport/agent-layer` and run on the skeleton's code. The skeleton's own lint passes; with these scripts `lint-theme.js` exits 1 with 45 failure lines over 9 checks (counted with `grep -oE` on the output). The validator test suites pass there unchanged (243 and 33 tests), and `lint-i18n.js` passes.
-            - **Tied to layer 3 (runtime):** `module-import-map` 11, because the checks expect `snippets/scripts.liquid`.
-            - **Tied to layer 4 (CSS and tokens):** `legacy-type-tier` 14, `stylesheet-font-size` 2, `raw-colour` 2, `raw-spacing` 1, `screen-height-literal` 1, `page-token-scope` 1.
-            - **Real skeleton debt, check is generic:** `dead-setting` 9, the nine `social_*_link` settings in the skeleton's `config/settings_schema.json` that nothing reads.
-            - **Theme data in a check:** `section-placement-disabled-groups` 1, because the group `custom.overlay` is this theme's.
-        - **Consequence, for the user to decide:** the validators cannot go as a layer of their own before the code they check. Each check travels with its layer: the import-map checks with the runtime, the CSS checks with the CSS and tokens. Only the checks that already pass on the skeleton, `dead-setting` (with the nine settings removed or wired), the shared schema extractor, the check ids in the output and the i18n trim fix can go first.
-    3. **Runtime JavaScript:** the changed core modules and the new framework modules, judged one by one.
-    4. **CSS and tokens**, with `layout-check` and `contrast-report`, which depend on the page frame and the colour tokens. The user re-decides here the 2026-10-04 "not a candidate: CSS step 3 rules and primitive snippets", because the skeleton composes with Theme Blocks.
-    5. **The design chain** (`design.md` → tokens → preset).
-    - Correction to the first size estimate given in chat: layer 1 is about 20 files, not 70; the 35 `layout-check` files belong to layer 4.
-    - **Order revised (user, 2026-10-13):** validators do not go as a layer of their own; each check travels with the code it checks. The user's interest is the backport as a whole, not the per-item choices, which the coordinator makes and records.
-    - **Decided (user, 2026-10-13): the skeleton stays thin.** The backport brings the outer framework, which the user defines as everything not tied to the business: skills, MCP, documents, lint, CI, and the JavaScript and CSS frameworks. This theme's business organization is different from the skeleton's, the use of blocks first of all (section blocks here, Theme Blocks there), so sections, feature modules and their snippets do not go back. The coordinator's proposal to strip this theme down into a full skeleton was rejected. Consequences:
-        - A module arrives in the skeleton only with a consumer there. The dialog layer, the toast store, the Intersect plugin and the Swiper and GSAP adapters stay here.
-        - A validator goes back only when the skeleton's own code passes it; the 45 failures measured today (entry under layer 2) mark which ones cannot yet.
-        - **BP-2, planned in the skeleton's `docs/agent/context.md`:** the entry scripts snippet (5-S, `2e0cddd`), the loader by init interception (5-H, `2683402`), their validator and reference changes, and the two 6-F1 framework defects (`528a715`): the skeleton has the same menu `aria-expanded` binding and the same spinner recipe timing.
-        - **Clarified (user, 2026-10-13): the architecture goes back, not the content.** The skeleton builds its own concrete content (values, component CSS, sections) on that architecture through the design-to-delivery procedure ("Conclusion: design input", the seven steps, and the `design.md` → tokens → preset chain). The coordinator's first BP-3 scope, which sorted this theme's 4794 lines of Tailwind source into framework and business, was too wide and is dropped.
-        - **After BP-2, in this order:**
-            - **BP-3, CSS architecture:** the rules (`css-architecture.md` and the other references, without this theme's batch ids and section names), the chain and its vocabulary (settings → `css-variables` → token → class: the names of the colour roles, the space and type steps, the breakpoints and the hover variants, with neutral default values), and the checks that enforce them. Not this theme's component CSS, motion recipes, section frame markup or setting inventory.
-                - **Revised (user, 2026-10-13): the skeleton keeps the smallest set of checks, and later themes add to it.** The checks and baselines here were accumulated by this project. So: no baseline goes back; a check is switched on in the skeleton only when it is generic and the skeleton's code passes it; the others are available but off, and a theme switches them on as it takes up the matching part of the architecture; data that belongs to one theme (the full-width section list, the badge colour list, the placement groups, the locale prefix) sits in configuration, not in the check. This replaces the coordinator's "arrives with a baseline of that debt".
-                - **What that needs first, here:** the checks cannot be switched or configured today; each is wired in `lint-theme.js`, and the theme data is written inside the check files. A small batch in this repository adds one configuration file (which checks are on, and the theme data), with this theme's configuration reproducing today's behaviour exactly. After it, the validator part of BP-3 is a copy plus a skeleton configuration.
-            - **BP-4, the procedure and its tools:** the design-to-delivery procedure as a skeleton document, the `design.md` format, the stage-1 skills the user adopts, and `layout-check` and `contrast-report` with skeleton configuration.
-        - **Stage-1 skills, research result (external read-only session, 2026-10-13; from the repositories, licence files, READMEs and npm registry entries; the full report was given in chat and is not kept).** Coordinator recommendation: adopt none, so BP-4 carries no stage-1 skill. The user decides.
-            - **`ui-ux-pro-max`** (MIT): at least 2.84 MB and 25 files for the skill directory, needs Python 3, triggers on any interface request by description match, and generates its own colours and type. Its stack list as far as read has no Liquid. It would take over the step this project keeps for the user: `design.md` first, then values mapped to our scales.
-            - **`taste-skill` `design-taste-frontend`** (MIT): one 89 KB file that generates whole pages, defaulting to React / Next.js and Tailwind through PostCSS or Vite, with its own motion and GSAP rules. It overlaps `frontend-design` and would conflict with the motion reference.
-            - **`taste-skill` `stitch-skill`** (two files, about 24 KB): says it exports a DESIGN.md. Whether that is Google Labs' DESIGN.md format was not checked; read it once before BP-4 if a `design.md` drafting aid is wanted.
-            - **Playwright MCP** (Apache-2.0, an `npx` package, version 0.0.83): overlaps Chrome DevTools MCP for console, network, screenshots and evaluation; its one addition, WebKit and Firefox, is already reachable through `playwright-core` in `layout-check`. A new server would also have to be added to all three client configs, which `doctor:agent` checks.
-            - **Not read by the research:** whether the `ui-ux-pro-max` plugin manifest installs hooks; the content of `stitch-skill/DESIGN.md`; when Playwright MCP downloads its browser.
-        - **Facts kept from the dropped inventory:** the skeleton resets the Tailwind namespaces `--font-weight-*`, `--leading-*`, `--tracking-*` and `--color-*` and this theme does not; the skeleton keeps its stricter reset.
-- **Track B, this theme:** the polish pass (home, then product and collection), the consolidated browser pass with the full Lighthouse measurement including desktop, the readiness review, and the second submission. None of it changes the framework.
-- **Accepted risk:** a framework defect found during the polish pass after the backport is fixed in both repositories.
+- **Framework track, how it ended:** the browser smoke pass, the tidy-up (6-V9, 6-V10), the defect fixes (6-F1, `528a715`) and the repository setup (6-T6, `86ae604`) are done. Nothing more is planned for it here. Its discussion up to the close is in `git show 9d366d5:docs/agent/board.md`.
+- **Deferred: `test:layout` in CI (6-T4b)** (user, 2026-10-13). A trial on `ci-test` stopped at page discovery, and CI adds no cover while every layout batch runs the check locally. Build it when a change can reach `main` without the local check: another contributor, unattended agents, or work without a local dev server. Detail: `git show 9d366d5:docs/agent/board.md`.
+- **Polish pass, first step:** run `impeccable` `critique` once on the home page in a separate session, with no hook installed and no files written to the repository. Its design-specificity verdict answers the Theme Store rejection. File the report here as evidence; adoption is decided on that evidence. `impeccable` is not vendored (user, 2026-10-13).
 
-**Open: redundancy audit results (Track A item 4; two read-only surveys at `fccc794`, 2026-10-13; the full reports were given in chat and are not kept).** Nothing is changed yet; the user decides what the tidy-up batches take.
+**Open defects and leftovers, for the polish pass or a small batch:**
 
-- **Documents:** 24 duplications, 27 stale statements, 12 contradictions between documents.
-  - **This board:** of 487 non-blank lines, about 280 are finished history already in Git, about 74 hold durable decisions that should move to an owner first (`docs/project.md`, `AGENTS.md`, a reference), and about 127 are open or deferred. Two blocks titled "Open" are closed.
-  - **`docs/project.md` Progress:** about 8 of 40 lines carry current status.
-  - **`docs/references/style-system/css-architecture.md`:**
-    - the `lint-allow` table lists 3 exceptions that no longer exist and omits 11 real ones;
-    - the font weight rule is stated three ways (400 and 700 only, against the 500 that ships);
-    - the typography section still describes the legacy tiers as the system;
-    - the "Skeleton carry-over decisions" table splits the "Layer Ownership" table.
-  - **`docs/references/architecture/javascript-runtime.md`:** omits the toast store, the dialog layer and the Intersect plugin, and says the cart page is the only cart presentation.
-  - **`docs/references/architecture/motion-architecture.md`:** says the template ships no drawer or dialog overlay.
-  - **The phase 0 browser checklist (deleted in 6-V9):** listed deleted sections and targeted commit `926dddb`.
-  - **Not portable to the skeleton as written:** batch ids used as section names and reasons (31 in `css-architecture.md`, 8 in the check-theme-architecture `SKILL.md`), and theme or machine specifics in `AGENTS.md` (`assets/scatter-gallery.js`, the Windows workspace).
-- **Tooling:** 75 checks: 64 strict, 10 ratchet, 1 report-only; 65 generic, 10 carrying theme data. The earlier audit's conclusions still hold.
-  - **Two latent defects (no theme file triggers them today):**
-    1. Five schema-block extractors behave two ways. A section written with `{%- schema -%}` silently skips `dead-setting` and `section-color-scheme`.
-    2. Two font-size rules disagree in stylesheet blocks. `font-size: var(--type-step-1)` is documented as allowed but fails `settings-chain-css-typography`.
-  - **Dead or inert code, about 190 lines:**
-    - the ratchet machinery for `dead-setting`, whose baseline is empty;
-    - the strict checks `legacy-breakpoint` and `mixed-element` still running through the ratchet loop, with hints that say "once 6-C2 / 6-C8 lands";
-    - a function used only by its own test;
-    - unused imports;
-    - 37 exports with no importer.
-  - **Copied helpers:** `lineAt` ×12, `formatPath` ×8, the baseline machinery ×3, three class-token extractors, five Liquid file lists that differ (`templates/gift_card.liquid` and a future `blocks/` fall outside the migration and ownership checks).
-  - **Gaps:**
-    - `test:layout-harness` runs nowhere;
-    - the tooling's own code is neither linted nor format-checked;
-    - `lint:theme` prints the check id only for the bracketed checks;
-    - the `AGENTS.md` Validation table omits `test:validators`, `test:layout-harness` and `scan:contrast`.
-  - **Theme data inside the tooling, to move to config at the backport:**
-    - the `width: 'full'` allowlist (8 sections);
-    - the badge colour allowlist;
-    - the `recipient.form.` locale prefix;
-    - the placement groups;
-    - the layout-check config and baseline;
-    - the contrast pairs;
-    - the Lighthouse handles.
-- **Also for the backport:** the candidate list under Evidence (checked 2026-10-04) predates `test:layout`, Lighthouse CI, `review-animations`, the 6-C and 6-V lints, the dialog layer and the design chain, and its "not a candidate: CSS step 3 rules and primitive snippets" conflicts with treating `css-architecture.md` as framework.
-
-**Done: tidy-up batches A, 6-V9 and 6-V10** (2026-10-13). Track A item 4 is closed, except what is listed for the backport in the audit entry below.
-- **A:** the board and `docs/project.md` pruned of finished history (`e1bb95d`).
-- **6-V9:** the references, the check-theme-architecture `SKILL.md`, `README.md` and `docs/project.md` corrected against the code, and the phase 0 browser checklist deleted (`23486ed`, `fad2935`; plan and reviews: `git show b07c323:docs/agent/context.md`; independent review PASS on round 2).
-- **6-V10:** the two latent validator defects fixed and dead code removed (`584fdfc`, `f61731e`; plan and reviews: `git show 7ebda29:docs/agent/context.md`; independent review PASS on round 2). In detail:
-    - one trim-aware schema extractor;
-    - type-step font sizes allowed in stylesheet blocks only;
-    - `dead-setting` strict, with its baseline and flags removed;
-    - `lint:theme` prints the check id on every failure.
-
-**Framework browser smoke pass, done (Track A item 1; external read-only session, 2026-10-13, against `shopify theme dev`; the report was given in chat and is not kept).** Verdict: one framework defect. No theme-asset 4xx, no failed module import and no Alpine expression error on home, product, collection, cart and search.
-
-- **Framework defect, desktop menu `aria-expanded`:**
-  - The menu opens, but the summary keeps `aria-expanded="false"`, after mouse and after Enter.
-  - `snippets/header-dropdown-menu.liquid` binds `:aria-expanded="$el.parentElement.open"`, and Alpine does not track the `open` attribute that `assets/dropdown.js` `open()` sets.
-  - It is an accessibility defect in navigation, so a launch blocker. **Fixed in 6-F1** (`528a715`).
+- **Pagination never uses the section refresh (found 2026-10-13).** `assets/section-pagination.js` asks for `<page url>?sections=<id>` through `ShopifyHttp.getJSON`, whose default header is `Accept: application/json` (`assets/https.js`). The dev storefront answers such a request 404 (reproduced with `curl`: 200 with no `Accept` or `*/*`, 404 with any `Accept` that names JSON), and the module falls back to a full-page navigation. Proposed: `headers: { Accept: '*/*' }` on that one request, as a small batch (Ask tier, `assets/*.js`), verified by paginating a collection and the blog in the browser.
+- **Loading indicator:** under reduced motion it is a still ring at 0.65 opacity, a weak loading signal; and `snippets/loading.liquid` puts `role="status"` and its label inside an `aria-hidden="true"` wrapper, so the label is never announced.
+- **`docs/project.md`, Merchant motion settings:** its list of what `motion_enabled` stops is shorter than the code, which also stops autoplay, tilts and zooms. The file is the user's; the correction waits for approval.
+- **Plain dropdown menu with a real second level:** not exercised in a browser (the store's header uses the super menu; both share `assets/dropdown.js`). It goes to the consolidated browser pass.
 - **Not a defect, add to cart on the product page:** it shows a success toast and does not open the cart drawer. `snippets/buy-buttons.liquid` defaults `open_cart_on_add` to false, and the product page does not pass it; quick view does. The live theme (`main`) behaves the same, so this is not a migration regression. Whether the product page should open the drawer is a design choice for the polish pass.
-- **Passed at 1440:**
-  - module mounting, including a lazy module on scroll;
-  - the dialog layer (search, cart drawer, lightbox, quick view: focus in, Tab wrap, Escape, focus return, scroll lock);
-  - variant change, quantity limits and the sold-out state;
-  - the cart page;
-  - collection filter, sort and section refresh;
-  - accordion, tabs, lightbox and carousel next.
-- **Passed at 390:** module loading, the mobile menu drawer, variant URL and sold-out, collection filter and sort.
-- **Not covered, goes to the consolidated browser pass:**
-  - no-JavaScript (Chrome DevTools MCP cannot turn JavaScript off);
-  - a blog article (the store has none reachable);
-  - at 390: the cart page, cart drawer, search, lightbox, quick view, predictive search, localization, accordion, tabs;
-  - carousel pagination and keyboard;
-  - collection pagination with Back and Forward;
-  - the newsletter overlay's Tab trap;
-  - `/favicon.ico` 404 on the first home load (store configuration, to classify);
-  - a 400 from Shopify's hosted `account.js` on home, product and collection, with the account menu falling back (seen in the 6-F1 review, 2026-10-13). Already classified as store configuration, not theme code: the store is password-protected, so the `shopify-account` component's Storefront API request returns 400 "Online Store channel is locked" and it falls back to its default links (the exception in `.agents/tools/layout-check/layout-check.config.json`, 6-T5; user, 2026-10-11). Only confirm it disappears once the password is removed.
 
-**Open: findings from 6-V9 (2026-10-13), for the user.**
+**Consolidated browser pass, rows the framework smoke pass (2026-10-13) did not cover:**
 
-- **Loading spinners do not rotate: fixed in 6-F1** (`528a715`). Left for the polish pass: under reduced motion the indicator is a still ring at 0.65 opacity, a weak loading signal; and `snippets/loading.liquid` puts `role="status"` and its label inside an `aria-hidden="true"` wrapper, so the label is never announced.
-- **Rule conflicts, decided (user, 2026-10-13); `docs/design/design.md` updated:**
-  1. **`motion_enabled` scope:** the code stands. The switch stops decorative motion; overlays follow `prefers-reduced-motion` only. Still open, for the user: the list in `docs/project.md` (Merchant motion settings) of what the switch stops is shorter than the code, which also stops autoplay, tilts and zooms.
-  2. **Extraction threshold:** the third consumer, as `docs/references/architecture/abstraction-boundaries.md` says. The shared carousel indicator is a recorded exception (see its entry below).
-  3. **Check widths:** both stand. 390 and 1440 are the per-batch screenshot minimum; 375, 768, 1024 and 1440 are the design widths for the polish pass and the consolidated browser pass.
+- no-JavaScript (Chrome DevTools MCP cannot turn JavaScript off);
+- a blog article (the store has none reachable);
+- at 390: the cart page, cart drawer, search, lightbox, quick view, predictive search, localization, accordion, tabs;
+- carousel pagination and keyboard;
+- collection pagination with Back and Forward;
+- the newsletter overlay's Tab trap;
+- `/favicon.ico` 404 on the first home load (store configuration, to classify);
+- a 400 from Shopify's hosted `account.js` on home, product and collection, with the account menu falling back (seen in the 6-F1 review, 2026-10-13). Already classified as store configuration, not theme code: the store is password-protected, so the `shopify-account` component's Storefront API request returns 400 "Online Store channel is locked" and it falls back to its default links (the exception in `.agents/tools/layout-check/layout-check.config.json`, 6-T5; user, 2026-10-11). Only confirm it disappears once the password is removed.
 
-**Open decisions reviewed with the user (2026-10-12):**
+**Lighthouse and CI, facts for the polish pass and the readiness review:**
 
-- **CI (6-T4):** Shopify's official Lighthouse CI GitHub Action (`shopify/lighthouse-ci-action@v1`, Shopify Dev MCP, 2026-10-12) is wanted. It needs a development store dedicated to it, loaded with Shopify's test product CSV and nothing else, a Dev Dashboard app with `read_products` and `write_themes` (client ID and secret as repository secrets) and the store password; it audits home, a product and a collection on every push. The store and the app are the user's to create. `test:layout` is a geometry check (horizontal scroll, overflow, content outside the page margin, tap targets, clipped text, runtime errors), not a visual comparison; in CI it would need a storefront the runner can reach (the Lighthouse action's preview theme or a pushed theme). **Decided (user, 2026-10-12): `test:layout` joins CI** too, against a storefront the runner can reach. Explained to the user: CI does not stop a push (the commit still reaches GitHub); it blocks the merge into `main` once branch protection requires the checks, and the store only receives code that is deployed to it. CD (continuous deployment) is that deploy step (`shopify theme push` with a Theme Access password, or Shopify's GitHub integration syncing a branch to a theme); none exists today, and the Theme Store submission is a ZIP upload. **Decided (user, 2026-10-12): CI only, no CD.**
-  - **Split (coordinator, 2026-10-13):** **6-T4a, Lighthouse only, is done** (`851ca19`; plan, runs and reviews: `git show 025f0f6:docs/agent/context.md`; independent review PASS on round 3). **6-T4b `test:layout` in CI** follows it and is not planned yet. Two facts shape it:
-    - The harness targets `shopify theme dev` at `127.0.0.1:9292`. CI would instead push a development theme with the app token, set the preview cookie once, and run against the store URL. That needs a small harness option for the preview theme id, beside the existing `LAYOUT_BASE_URL` and `STOREFRONT_PASSWORD`.
-    - ci-test content differs from the store the current baseline (39) was recorded on, so CI needs its own baseline file.
+- **Lighthouse CI, first green run (2026-10-13, run 38363613541):** mobile medians are home 0.72 / 0.93, product 0.67 / 0.97, collection **0.48** / 0.96 (performance / accessibility); best practices is 0.59 on all three.
+  - The job passes on the best of three runs, so green does not prove the Theme Store bar.
+  - **For the polish pass and the readiness review:** classify the collection performance (LCP 5.5 s, TBT 890 ms) and the best-practices score before any code change.
+  - **Development themes:** the action never deletes its development theme, because its cleanup tests a variable it never sets. Each push leaves one on ci-test until Shopify removes it after seven idle days. **Decided (user, 2026-10-13): leave it.** Revisit only if the leftovers cause a real problem. A later cleanup step should delete the run's own theme (`shopify theme delete --theme <id>`). The action exposes no outputs, so the id would have to be found another way; a blanket delete of all development themes is simpler but could remove one a concurrent run is using.
+  - **Unused after the Theme Access change:** the `lighthouse-ci` Dev Dashboard app and the secrets `SHOP_CLIENT_ID` and `SHOP_CLIENT_SECRET`. Removing them is the user's choice.
+- **Branch protection:** `main` requires a pull request and the `Lint`, `Theme Check` and `Lighthouse` checks (ruleset 13447964, kept as `.github/rulesets/main.json`). A fix on `main` goes through a short `fix/` branch and a pull request; the admin pull-request bypass is the emergency path; afterwards merge `main` back into the development branch.
 
-    First step before planning 6-T4b: one local run of `test:layout` against ci-test to see how stable the results are on test data.
+**Decisions that still apply:**
 
-    **Trial result (2026-10-13, `shopify theme dev` on ci-test, `npm.cmd run test:layout -- --widths 390,768,1440`):** the run stops before any page is measured, with `Discovery failed: no article link found on blog /blogs/news`. Facts from the run and the harness code:
-    - Discovery needs a product, a blog and an article, and runs before the `--page` filter, so no single page can be measured on ci-test either. No stability data exists yet.
-    - `alternateTemplates` names `/pages/privacy-policy?view=about`, which ci-test is unlikely to have.
-    - The templates in the repository point at the development store's products and collections by handle, so on ci-test many sections would render empty; a CI sweep would cover less than the local one.
-    - Three baseline entries were unstable on the development store this session (see "Pruned 2026-10-13"), and a required check that is unstable blocks every merge.
-    - **Size of the full version (coordinator estimate):** harness changes (tolerate missing page types or a CI page set, a preview-theme target, a second baseline), a workflow that pushes a theme to ci-test and cleans up, the ruleset file and the live ruleset if the check becomes required, and an Ask review. It is the largest remaining Track A item except the backport.
-    - **Decided (user, 2026-10-13): deferred, nothing built.** This revises "`test:layout` joins CI" (user, 2026-10-12). Today every layout batch runs `test:layout` locally with the user present, so CI would add no cover. The storefront sweep in CI becomes worth its cost when a change can reach `main` without the local check: (1) another person contributes; (2) agents produce themes from the skeleton unattended, which is the direction after the backport and the likeliest first; (3) work happens where no local dev server exists (a cloud session, an edit on GitHub). Build it then, once, on the skeleton side. Also not built: `test:layout-harness` in CI (one workflow line; the tool changes rarely and its author can run the suite locally; not worth an Ask review).
-  - **Lighthouse CI, first green run (2026-10-13, run 38363613541):** mobile medians are home 0.72 / 0.93, product 0.67 / 0.97, collection **0.48** / 0.96 (performance / accessibility); best practices is 0.59 on all three.
-    - The job passes on the best of three runs, so green does not prove the Theme Store bar.
-    - **For the polish pass and the readiness review:** classify the collection performance (LCP 5.5 s, TBT 890 ms) and the best-practices score before any code change.
-    - **Development themes:** the action never deletes its development theme, because its cleanup tests a variable it never sets. Each push leaves one on ci-test until Shopify removes it after seven idle days. **Decided (user, 2026-10-13): leave it.** Revisit only if the leftovers cause a real problem. A later cleanup step should delete the run's own theme (`shopify theme delete --theme <id>`). The action exposes no outputs, so the id would have to be found another way; a blanket delete of all development themes is simpler but could remove one a concurrent run is using.
-    - **Unused after the Theme Access change:** the `lighthouse-ci` Dev Dashboard app and the secrets `SHOP_CLIENT_ID` and `SHOP_CLIENT_SECRET`. Removing them is the user's choice.
-  - **Done: 6-T4c Lighthouse trigger timing** (`e5c6ba2`, `1e3bc18`; plan, runs and reviews: `git show 9bd0b26:docs/agent/context.md`; independent review PASS, top-up PASS).
-    - Lighthouse is its own workflow (`.github/workflows/lighthouse.yml`). It runs on pull requests into `main`, on pushes to `main`, and on manual runs. Development branch pushes run `CI` (Lint, Theme Check) only.
-    - The manual run button appears once the file is on `main`.
-    - The pull-request trigger was proven on draft pull request #21, which is closed and was not merged.
-    - Rule wording: the validator wiring is "the workflows under `.github/workflows/`".
-  - **Branch protection (explained to the user, 2026-10-13):** CI cannot stop a push. Only protection on `main` blocks a merge. **Done (user, 2026-10-13):** ruleset 13447964 requires a pull request and the `Lint`, `Theme Check` and `Lighthouse` checks, up to date; it blocks force pushes and deletion; the admin bypass applies to pull requests only. Workflow: `main` plus one short-lived branch per batch, no long-lived develop branch. New theme repositories from the skeleton do the same.
+- **Rule conflicts, decided (user, 2026-10-13):** the `motion_enabled` switch stops decorative motion only, and overlays follow `prefers-reduced-motion`; a JavaScript abstraction is extracted with its third consumer, the shared carousel indicator being a recorded exception; 390 and 1440 are the per-batch screenshot minimum, and 375, 768, 1024 and 1440 are the design widths.
 - **Submission:** the user submits when the theme is nearly done; not a coordinator decision.
-- **External skills: done as 6-V7** (`7593ac0`; plan and reviews: `git show 7593ac0:docs/agent/context.md`; 2026-10-13; independent review PASS on round 2): vendor `review-animations` and give `frontend-design`, the GSAP skills and Chrome DevTools MCP named triggers. **Revised (user, 2026-10-13): `impeccable` is not vendored** (broad auto-trigger, generation commands, runtime binary download and hooks, about 2.2MB; facts in the plan). **Polish pass, first step:** run `impeccable` `critique` once on the home page in a separate session, with no hook installed and no files written to the repository. Its design-specificity verdict answers the Theme Store rejection. File the report here as evidence; adoption is decided on that evidence. `taste-skill` is not adopted (`design.md` holds the design language). A skill or server that finds no use keeps its place in the repository unchanged (user, 2026-10-12).
-  - **Added to the map (user, 2026-10-12):** `taste-skill` joins stage 1 as a candidate beside `ui-ux-pro-max` (not adopted for this theme on 2026-10-12, because `design.md` exists; the same reasoning puts it at the skeleton backport). Playwright: stage 4 already uses it as the `test:layout` runner, and 6-T3 chose a manual checklist over Playwright flows; a Playwright MCP as an agent browser tool would overlap Chrome DevTools MCP, so it is listed for the skeleton evaluation only.
-  - **Decided (user, 2026-10-12): this theme now:** adopt only what has a consumer in the coming polish pass: `review-animations` (`impeccable` revised 2026-10-13 to a one-off critique, above), plus triggers for `frontend-design`, the GSAP skills and Chrome DevTools MCP. Stage-1 generators (`ui-ux-pro-max`, `taste-skill`) and a Playwright MCP wait for the skeleton backport. Also decided: the stage-1 exception to "skills review, never generate" applies to the skeleton (named trigger: new theme or `design.md` draft; values mapped to our scales; the user chooses); those generators are evaluated and adopted with the backport.
 - **Interaction tests (6-T3):** the user asked whether Playwright already covers it. `test:layout` uses Playwright for geometry only; 6-T3 would be scripted flows with assertions (variant change, add to cart, cart drawer, menu and dialogs with keyboard and focus). Coordinator proposal: a small set for launch-blocking flows only; location `.agents/tools/interaction-check/` beside the layout check (same Playwright runner, password handling and config shape), script `npm run test:interaction`, joining CI with `test:layout`. **Decided (user, 2026-10-12): a document, not automation.** The flows become a manual test checklist the user runs (steps and expected results for the launch-blocking flows: variant change, add to cart, cart drawer, menu, dialogs with keyboard and focus), not Playwright scripts. It follows Shopify's official theme testing checklist (user, 2026-10-12: consistent with the official documentation; read through Shopify Dev MCP when written). Location and timing: with the readiness review before the submission.
-- **Skeleton backport** (user, 2026-10-12): when this project is mature. The backport adds the design chain (`design.md` → tokens → preset) to the skeleton; after it, themes are produced in batches and automatically, and the user steps in only where the result differs from the design, not to discuss code or tools again.
-
 - **Decided (user, 2026-10-12): no computed-style tool.** The 6-R3 scripts are deleted. A batch that must prove "no rendering change" rewrites a comparison from the 6-R3 record (`git show 9bf1b64:docs/agent/context.md`): noise per (slot, element path, property), both sides through the online preview, the first slot of a run lands on `/`.
 
 **Decided: order after 6-D2** (user, 2026-10-12: migration debt first, then build what is decided, the polish pass last, so the polish tunes code that is already on the framework and is not done twice). Coordinator inventory, 2026-10-12:
@@ -240,7 +115,7 @@ Last updated: 2026-10-13.
 - **Designs give intent only:** which elements appear, their order, and their relative weight. They never give values. The current designer's work covers appearance, but not type, spacing or colour control, so it is not a value reference.
 - **Values come from our system:** the type and spacing scales, font roles and colour schemes are set once from the user's judgement, and every page uses them. Agents map intent to semantic tokens (main heading → `display`, tight group → `related`).
 - **Design production:** a design comes from the user's base design plus a design tool or agent (for example Stitch), constrained by our system through an SOP that we write, or else a design agent using our vocabulary. Whether Stitch can take our tokens as constraints is checked against its documentation when this step starts.
-- **Base scales** (user, 2026-10-08): set the same way, from the user's base design through an agent-era design tool such as Stitch, not from hand-picked numbers or measured screenshots. The tool choice and the SOP are settled when the pilot starts. **Deferred** to the design-pipeline phase after the skeleton backport ("Decided: order of work"); until then tokens keep today's rendered values.
+- **Base scales** (user, 2026-10-08): set the same way, from the user's base design through an agent-era design tool such as Stitch, not from hand-picked numbers or measured screenshots. The tool choice and the SOP are settled when the pilot starts. **Deferred** to a later design-pipeline phase; until then tokens keep today's rendered values.
 
 - **Conclusion: design input** (user, 2026-10-07):
     - **Inputs:** the designs come from Figma.
@@ -422,36 +297,11 @@ Design phase inputs:
 - Final browser pass, scroll-linked sections (user question, 2026-10-05): GSAP ScrollTrigger behaves the same across desktop engines. iOS Safari can differ through address-bar viewport resizing (ScrollTrigger refresh) and momentum scrolling. In the consolidated pass, scroll `scatter-gallery` and any later narrative section on a real iPhone through an unpublished pushed theme's preview link, because `127.0.0.1` is not reachable from the phone. Per-batch checks stay the user's own Chrome screenshots at 1440 and 390, plus a scroll in device mode.
 - Final browser pass, tablet widths (user, iPad, 2026-10-05): the theme's `pc` breakpoint is 768px, so every section switches to its desktop layout on an iPad in portrait. 6-S6 moved `scroll-categories` to a 1024px layout breakpoint after it crowded there. In the consolidated pass, check each home section at 768–1024 (iPad portrait and landscape) for crowding and for hover-only behaviour on touch.
 - Browser sweep environment: through the `shopify theme dev` proxy with an isolated MCP profile, `/cdn/shop/files/*` images, `/variants/<id>/?section_id=pickup-availability`, and `/search` return 401 until the storefront password is entered, which hides real image and section failures. Before a sweep, restart `shopify theme dev` if needed. The password lives in `.env` (ignored by `.gitignore` and `.shopifyignore`); scripts load it; agents never print its value in chat or records.
-- Skeleton backport candidates (user, 2026-10-03; now Track A item 5, see "Decided: order of work, revised" above; policy in `docs/project.md`; checked against `skeleton/main` `5191a50` on 2026-10-04):
-    - the merchant JSON `.prettierignore` exclusion;
-    - 5-S (entry scripts snippet, `2e0cddd`): the snippet, the layout render, and the lint that reads the import map from it;
-    - H (5-H, `2683402`): `holdUntilReady` in the adapter, `holdForModule` and download-ahead `scanModules` in `base.js`, no mount after a failed import, the moved-lazy-root observer fix, and the matching `javascript-runtime.md` contract. H also closes two skeleton gaps found here: `scanModules` activating an already-loaded container root before deferring its descendants, and module roots in `<template>` content never being scanned;
-    - the validator additions that guard the items above (in `theme-contracts.js`, `theme-architecture.test.js`, `doctor-agent.mjs`); the style ownership and settings-chain additions stay here;
-    - the Chrome DevTools MCP adapter entries (5-T1) and the `frontend-design` skill.
-    - **Repository setup (user, 2026-10-13): done as 6-T6, the small version** (`86ae604`), so a new theme repository does not depend on remembering manual steps.
-        - **Travels with the code:** `.github/rulesets/main.json` (the `main` ruleset in GitHub's import format; the user compared it with an export of the live ruleset 13447964, no difference), the `Lighthouse` workflow (its handles are constant, because every theme uses the same `ci-test` store), and the README section "New theme repository setup" (import the ruleset, add the secrets `SHOP_STORE`, `SHOP_ACCESS_TOKEN` and `SHOP_PASSWORD`, run Lighthouse once).
-        - **Check:** `doctor:agent` (CLI mode) fails when a check the ruleset file requires is not the name of a workflow job (`.agents/tools/ci-contract.mjs`, parsed with `js-yaml`). It reads files only.
-        - **Not built (user, 2026-10-13):** a setup script and a remote check of the secrets or the live ruleset. `gh` is not installed here, a remote check would make `doctor:agent` slow and failing when offline or signed out, and the setup runs once per repository. Revisit when a second repository shows the manual steps are a real cost.
-        - **Not proven:** an actual import of the ruleset file into a new repository; the first new theme repository proves it.
-        - This is not a Batch SOP step: it is a one-time bootstrap. The one-time store setup (store, CSV, Theme Access) is not repeated.
-        - **Hotfix flow, explained to the user:** with protection on, a fix on `main` goes through a short `fix/` branch and a pull request. The admin pull-request bypass is the emergency path. Afterwards, merge `main` back into the development branch.
-    - **File survey for the backport (coordinator, 2026-10-13; `git diff --name-status skeleton/main HEAD`, skeleton at `5191a50`, this branch at `388f58e`):**
-        - **Agent layer and harness:** `.agents` 56 files only here and 9 changed (both roles, the `check-theme-architecture` and `check-i18n` scripts, `doctor-agent.mjs`); new are the `review-animations` and `frontend-design` skills and the tools `ci-contract`, `contrast-report` and `layout-check` (with 29 fixtures). `.github`: `ci.yml` changed, `lighthouse.yml` and `rulesets/main.json` new. Also changed: `AGENTS.md`, `README.md`, `package.json`, the three MCP configs, `.gitignore`, `.shopifyignore`.
-        - **Validators:** nine new `lib/` checks under the `check-theme-architecture` scripts and two baselines; ten checks carry theme data (audit entry above).
-        - **References:** seven of eight changed; `theme-blocks.md` deleted here.
-        - **Runtime JavaScript:** of the skeleton's 19 modules, 14 changed here (`alpine.adapter.js`, `base.js`, `events.js`, `https.js`, `utils.js`, the cart store, the purchase and gallery modules, `dropdown.js`, `section-pagination.js`); 109 asset files exist only here, a mix of framework modules (the dialog layer, the toast store, the Swiper and GSAP adapters) and theme modules and icons.
-        - **CSS and tokens:** all six `tailwind/` source files changed, with `snippets/css-variables.liquid`, `assets/base.css` and `config/settings_schema.json`.
-        - **Theme layer (does not go back):** 34 sections and 58 snippets only here, the templates, the locales' theme strings, `docs/design/` (17 files).
-        - **Only in the skeleton:** the four Theme Blocks (`blocks/button.liquid`, `group`, `heading`, `text`), `sections/custom-section.liquid` and `theme-blocks.md`. The skeleton composes with Theme Blocks; this theme uses section blocks. Every CSS and snippet item must be judged against that difference.
-        - **Where the work runs:** the backport writes to `../my-skeleton-theme`, a different repository, so each batch is planned and reviewed there under its own record files.
-    - Not a candidate (user, 2026-10-04): the CSS step 3 rules and primitive snippets (5-C3a–5-C3g, 5-B1). They serve this theme's section-block model; the skeleton composes with Theme Blocks as components (as Horizon does) and keeps snippets as code fragments. A GSAP adapter is judged after the home page narrative is built.
-    - Timing: Track A item 5, see "Decided: order of work, revised" above (this replaces the earlier coordinator proposal of after the second submission).
-    - Already covered by the skeleton reference, not applied here: `javascript-runtime.md` recommends `modulepreload` for a first-viewport module chain that the page truly needs before interaction.
 - Layout harness candidate (cross review 2 of 6-T1, 2026-10-08): a scroller item fully inside the viewport but inside the page margin, cut by its own scroller, is still reported under the viewport-based peek rule (2 `collection-all` nav-link entries in the baseline). A scrollport-visibility exclusion would change the plan's page-margin rule; decide it in a later harness plan. Second case (6-C2, 2026-10-08): `ritual_steps_carousel` mobile rail card 2, product title link at 768. The full sweep never tests 768, and the user chose not to add it to the baseline for now.
 
 ## Deferred ideas
 
-- Platform-agnostic front-end engineering skill (user, 2026-10-11): after the skeleton backport, extract what is not Shopify-specific (the `design.md` → tokens → layout primitives → ownership chain with its lints, and the JS model around lifecycle, state ownership, events, network outlets and components) into a skill usable for mini-programs, apps and desktop, with a per-platform adapter layer (rendering model, styling limits, routing, storage, review rules). Extract only after the method has run on at least two consumers (this theme and the skeleton or a second project), so the abstraction follows evidence. Creating a skill needs the user's explicit approval (`AGENTS.md`).
+- Platform-agnostic front-end engineering skill (user, 2026-10-11): later, extract what is not Shopify-specific (the `design.md` → tokens → layout primitives → ownership chain with its lints, and the JS model around lifecycle, state ownership, events, network outlets and components) into a skill usable for mini-programs, apps and desktop, with a per-platform adapter layer (rendering model, styling limits, routing, storage, review rules). Extract only after the method has run on at least two consumers (this theme and a second project), so the abstraction follows evidence. Creating a skill needs the user's explicit approval (`AGENTS.md`).
 
 - Section cleanup sweep (user, 2026-10-05): sections the redesign takes off the home page stay in the theme for now (`category-grid` is deleted in 6-C10). After the design phase, review which sections no template uses or no design needs and decide removals in one batch.
 

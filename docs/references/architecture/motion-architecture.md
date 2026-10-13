@@ -27,7 +27,7 @@ Inspect current source for exact selectors, timing values, and runtime internals
 | --- | --- | --- |
 | Hover/focus, loader, decorative loop, pause/running | CSS capability utility | GSAP |
 | Open/close, show/hide, active/inactive, loading visibility | Alpine state + direct CSS/state classes when needed | GSAP, `x-transition` (`lint:theme`) |
-| Section or media reveal | Derived theme defines it under this policy | GSAP unless classified as complex choreography |
+| Section or media reveal | The list and card cascade (`docs/project.md`, Theme-Specific Contracts) | GSAP unless classified as complex choreography |
 | Complex narrative choreography | GSAP only after explicit classification and approval | — |
 
 ## Conflict Rule
@@ -59,7 +59,7 @@ Implementation rules:
 
 ## Page-Type Policy
 
-Conversion pages such as product, collection, search, cart, and checkout-adjacent flows should use restrained motion: state transitions, interaction feedback, media controls, and below-the-fold motion only when a derived theme adds it.
+Conversion pages such as product, collection, search, cart, and checkout-adjacent flows should use restrained motion: state transitions, interaction feedback, media controls, and below-the-fold motion only where a section's design calls for it.
 
 Home, brand, editorial, campaign, and storytelling pages may use richer choreography when no critical first-viewport content is hidden before JavaScript, no LCP candidate waits for animation, reduced motion is respected, and keyboard and screen-reader access remain intact.
 

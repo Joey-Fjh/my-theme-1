@@ -98,9 +98,9 @@ Don't bridge motion duration or easing into `@theme`; use a recipe class instead
 | `tailwind.animates.css` | motion capabilities, keyframes, reduced-motion rules | trigger logic |
 | section/block/snippet `{% stylesheet %}` | primary home for component-owned CSS scoped to one render tree (plain CSS only, **unlayered**; wins over Tailwind utilities) | cross-render-tree selectors, Tailwind directives, shared vocabulary, `@layer` wrappers |
 
-### Skeleton carry-over decisions (5-C3f)
+### Base rule decisions (5-C3f)
 
-| Rule (skeleton `5191a50`) | Decision | Reason |
+| Rule considered | Decision | Reason |
 | --- | --- | --- |
 | `.section { padding; background-image }` | **Not adopted** | Superseded by `section-frame`; section schemas use `"class": "section"` and would double padding. |
 | `.gift-card-page main { … }` | **Not adopted** | Theme `gift-card-page__main` owns layout. |
@@ -131,7 +131,7 @@ These thresholds are complementary. A pattern can be promoted to the components 
 
 Typography tier CSS lives in `tailwind/tailwind.typography.css`. Native heading defaults live in `assets/base.css`. Liquid must not use Tailwind `text-*` utilities for headings.
 
-The Skeleton's stable typography interface is `--font-body-*` and `--font-heading-*`, emitted from theme settings by `snippets/css-variables.liquid`. Derived themes change the values through settings or by redefining the properties, and add further roles (such as a subtitle or eyebrow style) themselves.
+The stable typography interface is `--font-body-*` and `--font-heading-*`, emitted from theme settings by `snippets/css-variables.liquid`. The values change through settings or by redefining the properties; further roles (such as a subtitle or eyebrow style) are added on top of it.
 
 - Semantic `h1`–`h6` level is chosen for document outline; visual `heading-h*` tier is chosen independently for design size. Example: `<h3 class="heading-h2">` when outline needs `h3` but the visual target is a larger tier.
 - `heading-h*` classes remain restricted to semantic heading elements (`lint:theme`, `typography-tier-heading`).

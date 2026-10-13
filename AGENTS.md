@@ -1,6 +1,6 @@
 # Agent Entry Guide
 
-This file is the always-on entry point and the canonical rule source for agents working in this repository. It holds only rules shared by every theme built from this codebase; keep it lean. **Before any task, read `docs/project.md`** for this repository's identity, inventory boundary, and accepted scope. Supporting docs under `docs/references/` provide details; if one conflicts with this file, follow this file.
+This file is the always-on entry point and the canonical rule source for agents working in this repository. It holds only rules; keep it lean. **Before any task, read `docs/project.md`** for this repository's identity, inventory boundary, and accepted scope. Supporting docs under `docs/references/` provide details; if one conflicts with this file, follow this file.
 
 ## Tech Stack
 
@@ -115,7 +115,7 @@ Read only the matching reference for the current task:
 - JS runtime, lifecycle, events, HTTP, SectionRefresher, `{% block %}` / `{% partial %}` adoption, Alpine stores/components, Swiper/GSAP adoption: `docs/references/architecture/javascript-runtime.md`
 - Motion policy, choreography, reduced motion, animation ownership, duplication: `docs/references/architecture/motion-architecture.md`
 - Shared abstraction boundaries, snippet parameter API, and whether to extend an existing utility/component: `docs/references/architecture/abstraction-boundaries.md`
-- Section block composition (this theme uses section blocks, not skeleton Theme Blocks): `docs/project.md` (Deviations From The Skeleton)
+- Section block composition (this theme uses section blocks, not Theme Blocks): `docs/project.md` (Composition And Local Setup)
 - CSS layer ownership, typography tiers, color/surface rules, token/bridge contract, placement audits: `docs/references/style-system/css-architecture.md`
 - Image snippet display behavior and `image.liquid` mode/fit contract: `docs/references/style-system/image-display-contract.md`
 - i18n keys, locale structure, schema translation, hardcoded copy review: `docs/references/code-review/i18n-checklist.md`

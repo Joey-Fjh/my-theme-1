@@ -68,7 +68,7 @@ Pattern references: `docs/design/references/` (Isla Beauty, Beautiful, ARTU), re
 
 **Gaps found (fixed in 6-D1 and 6-D2, 2026-10-11):**
 
-- The colour scheme defaults in `config/settings_schema.json` are the mother template's blue (`#1D4ED8`), so a scheme a merchant adds starts off-palette. Fixed in 6-D1: they default to the Ceylune canvas scheme.
+- The colour scheme defaults in `config/settings_schema.json` were a placeholder blue (`#1D4ED8`), so a scheme a merchant adds starts off-palette. Fixed in 6-D1: they default to the Ceylune canvas scheme.
 - Product badge defaults are off-palette: sale orange `#C2410C`, sold-out slate `#64748B`, custom brown `#8B5A3C`. Fixed in 6-D1 (sale accent on ink, sold out `#677769`, custom 2 sage).
 - The inverse scheme background moves from `#1b2900` to ink `#263d29` (preset change, approved 2026-10-11). Fixed in 6-D2, with every other dark in the schemes (`#1f3223`, `#111827`) and the inverse buttons on white and ink.
 - Input borders and placeholders are neutral greys (`#767676`, `#717171`) in every scheme, not ink-tinted. Fixed: `#677769` (ink at 70%) with ink input text, schema defaults in 6-D1 and every preset scheme in 6-D2.

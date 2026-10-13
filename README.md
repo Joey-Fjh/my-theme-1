@@ -2,7 +2,7 @@
 
 Ceylune is a custom Shopify Online Store 2.0 theme built with Liquid, Tailwind CSS v4, Alpine.js, and a lifecycle-aware JavaScript runtime. The repository is maintained as a Shopify Theme Store candidate.
 
-Project rules and implementation constraints live in [AGENTS.md](AGENTS.md). Identity, migration status, and skeleton deviations: [docs/project.md](docs/project.md).
+Project rules and implementation constraints live in [AGENTS.md](AGENTS.md). Identity, scope, and status: [docs/project.md](docs/project.md).
 
 ## Requirements
 
@@ -118,7 +118,7 @@ Theme code loads as ES modules through an import map (`snippets/scripts.liquid`,
 ## Documentation
 
 - [AGENTS.md](AGENTS.md): canonical repository rules and validation commands
-- [docs/project.md](docs/project.md): identity, migration, and skeleton deviations
+- [docs/project.md](docs/project.md): identity, scope, and status
 - [docs/agent/board.md](docs/agent/board.md): open discussion and pending decisions
 - [docs/agent/context.md](docs/agent/context.md): plan under execution and status
 - [docs/references/](docs/references/): on-demand architecture and review references

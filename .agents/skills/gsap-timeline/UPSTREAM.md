@@ -10,7 +10,7 @@
 
 ## Project boundary
 
-This skill is agent documentation reference only. It does not authorize vendoring or loading the GSAP runtime, and it does not add storefront payload. Project motion policy in `docs/references/architecture/motion-architecture.md` takes precedence: the mother template ships no section reveal, and derived themes define ordinary reveal under that policy; use this skill only after that reference classifies work as explicit complex choreography.
+This skill is agent documentation reference only. It does not authorize vendoring or loading the GSAP runtime, and it does not add storefront payload. Project motion policy in `docs/references/architecture/motion-architecture.md` takes precedence: ordinary reveal is the cascade defined under that policy; use this skill only after that reference classifies work as explicit complex choreography.
 
 ## When to use (project routing)
 
