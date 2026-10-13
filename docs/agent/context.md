@@ -41,3 +41,10 @@ Last updated: 2026-10-13.
 6. Independent review (Ask) reports PASS.
 
 **Check 3 (2026-10-13):** commit `e5c6ba2` pushed. `gh run list --commit e5c6ba2` shows one run, `CI` 38370212672. Its jobs are Lint and Theme Check (Theme Check Report is added by the action when it finishes), with no Lighthouse job. There is no `Lighthouse` workflow run for the commit. Checks 1, 2 and 5 pass with the commands named above. Check 4 is unproven by design. Check 6 is pending.
+
+**Independent review round 1 (2026-10-13): PASS** for `a641b27..dfad11c`, no findings.
+- It confirmed the separate-file reasoning and the `workflow_dispatch` limit against GitHub's documentation, and the fork skip.
+- It noted that the fork skip also means a fork pull request is not held to a Lighthouse audit. That is accepted: the repository has a single developer.
+- **Outside that review:** commit `1e3bc18` (the approved rule wording) and the pull-request run below. A short top-up review covers both.
+
+**Check 4, pull-request trigger:** the user's "可以" (2026-10-13) was taken to cover the offered draft pull request. Draft pull request #21 (`refactor/skeleton-shell` → `main`, marked do not merge) was opened. It started the `Lighthouse` workflow on the `pull_request` event (run 38370537425) beside `CI`. The result is recorded when the run finishes.
