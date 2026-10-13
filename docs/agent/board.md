@@ -14,6 +14,14 @@ Last updated: 2026-10-13.
   3. **Repository setup automation**: ruleset JSON, setup script, and a `doctor:agent` check (see the backport candidates).
   4. **Redundancy audit and tidy-up** (user, 2026-10-13): survey the lint tools and the documents (`AGENTS.md`, `docs/references/`, `.agents/`, this board) for redundant or stale content and tidy them, so the skeleton receives a clean set.
   5. **The skeleton backport itself**: settle the candidate list, move the files, and run the skeleton's validators. After it, new themes can be developed from the skeleton in parallel with this theme.
+- **Track A state (2026-10-13, end of session):**
+  - **Done:** item 1 (the smoke pass, one framework defect found) and item 4 (the tidy-up).
+  - **Proposed, waiting for the user's authorization: 6-F1 framework defect fixes.**
+    - **Menu `aria-expanded`:** `assets/dropdown.js` sets `aria-expanded` on the trigger when it opens and closes, and the Alpine binding in `snippets/header-dropdown-menu.liquid` goes.
+    - **Loading spinner:** `snippets/loading.liquid` and `snippets/buy-buttons.liquid` use `animate-spin`, which is not generated.
+    - Ask tier. Verified with Chrome DevTools MCP and `test:layout`, so it needs `shopify:dev` running.
+  - **Then:** item 3 (repository setup automation), item 2 (6-T4b, after a local trial of `test:layout` against `ci-test`), item 5 (the backport).
+  - **Also waiting on the user:** the three rule conflicts under "Open: findings from 6-V9".
 - **Track B, this theme:** the polish pass (home, then product and collection), the consolidated browser pass with the full Lighthouse measurement including desktop, the readiness review, and the second submission. None of it changes the framework.
 - **Accepted risk:** a framework defect found during the polish pass after the backport is fixed in both repositories.
 
