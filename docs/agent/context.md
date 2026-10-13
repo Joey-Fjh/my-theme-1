@@ -193,3 +193,9 @@ Implementer run, 2026-10-13. No commits. All edits are in the surface; the JSON 
 2. The Implementer's proof that the new tests fail on HEAD was an ad-hoc run with no stored output. The reviewer repeats it.
 
 **Waiting on:** the independent review (Ask), run by the user.
+
+**6-V9 independent review round 1 (2026-10-13): FAIL** on the rebuilt `lint-allow` table. Every other fact correction was proven, and the spinner finding was confirmed from the files.
+1. **Wrong locations.** The three `btn` exceptions sit in `@utility btn` inside its `@supports` block, before the nested hover rule, not in a hover rule. The payment button selector is `…--unbranded:hover:not([disabled])`. Both location labels are corrected.
+2. **Lost provenance.** The rebuild dropped the approval notes "(user, 2026-09-29)" on three rows and "(6-C10, user, 2026-10-11)" on one. They exist nowhere else in the live documents, so they are restored on those four rows.
+
+Round 2: pending.

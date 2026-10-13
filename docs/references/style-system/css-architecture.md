@@ -50,21 +50,21 @@ A typography value passes when it derives from the chain or from the inherited, 
 
 | Location | Check id | Reason |
 | --- | --- | --- |
-| `snippets/decorative-placeholder-svg.liquid` (`'<svg'` string) | `raw-svg` | Matches the root tag of Shopify's `placeholder_svg_tag` output to mark it decorative; no SVG is authored here. |
+| `snippets/decorative-placeholder-svg.liquid` (`'<svg'` string) | `raw-svg` | Matches the root tag of Shopify's `placeholder_svg_tag` output to mark it decorative; no SVG is authored here (6-C10, user, 2026-10-11). |
 | `snippets/filters-drawer.liquid` (`.filters-drawer__footer-button`, `background-color`) | `raw-colour` | Setting-driven button reverse fill, out of the role set. |
 | `snippets/filters-drawer.liquid` (`.filters-drawer__footer-button`, `color`) | `raw-colour` | Setting-driven button reverse fill, out of the role set. |
 | `snippets/filters-drawer.liquid` (`.filters-drawer__footer-button`, `border-color`) | `raw-colour` | Setting-driven button reverse fill, out of the role set. |
 | `snippets/predictive-search-product-card.liquid` (first `<img>`) | `bare-img` | Predictive search results are JSON-driven; `image.liquid` has no URL at render time. |
 | `snippets/predictive-search-product-card.liquid` (second `<img>`, the no-image fallback) | `bare-img` | Predictive search results are JSON-driven; `image.liquid` has no URL at render time. |
-| `snippets/rotating-badge.liquid` (`<svg>`) | `raw-svg` | The circular text path renders merchant badge copy through Liquid, so it cannot be a static icon. |
-| `snippets/rotating-badge.liquid` (center text) | `settings-chain-liquid` | Center text is sized from the merchant badge size and scale, not a typography tier. |
-| `snippets/watermark.liquid` (`<svg>`) | `raw-svg` | The SVG text renders merchant watermark copy through Liquid, so it cannot be a static icon. |
-| `tailwind/tailwind.elements.css` (`btn` hover, `background-color`) | `raw-colour` | Setting-driven button reverse fill, out of the role set. |
-| `tailwind/tailwind.elements.css` (`btn` hover, `color`) | `raw-colour` | Setting-driven button reverse fill, out of the role set. |
-| `tailwind/tailwind.elements.css` (`btn` hover, `border-color`) | `raw-colour` | Setting-driven button reverse fill, out of the role set. |
-| `tailwind/tailwind.elements.css` (`button.shopify-payment-button__button--unbranded:hover`, `background-color`) | `raw-colour` | Setting-driven button reverse fill, out of the role set. |
-| `tailwind/tailwind.elements.css` (`button.shopify-payment-button__button--unbranded:hover`, `color`) | `raw-colour` | Setting-driven button reverse fill, out of the role set. |
-| `tailwind/tailwind.elements.css` (`button.shopify-payment-button__button--unbranded:hover`, `border-color`) | `raw-colour` | Setting-driven button reverse fill, out of the role set. |
+| `snippets/rotating-badge.liquid` (`<svg>`) | `raw-svg` | The circular text path renders merchant badge copy through Liquid, so it cannot be a static icon (user, 2026-09-29). |
+| `snippets/rotating-badge.liquid` (center text) | `settings-chain-liquid` | Center text is sized from the merchant badge size and scale, not a typography tier (user, 2026-09-29). |
+| `snippets/watermark.liquid` (`<svg>`) | `raw-svg` | The SVG text renders merchant watermark copy through Liquid, so it cannot be a static icon (user, 2026-09-29). |
+| `tailwind/tailwind.elements.css` (`@utility btn`, inside its `@supports (background-color: color-mix(…))` block, `background-color`) | `raw-colour` | Setting-driven button reverse fill, out of the role set. |
+| `tailwind/tailwind.elements.css` (`@utility btn`, inside its `@supports (background-color: color-mix(…))` block, `color`) | `raw-colour` | Setting-driven button reverse fill, out of the role set. |
+| `tailwind/tailwind.elements.css` (`@utility btn`, inside its `@supports (background-color: color-mix(…))` block, `border-color`) | `raw-colour` | Setting-driven button reverse fill, out of the role set. |
+| `tailwind/tailwind.elements.css` (`button.shopify-payment-button__button--unbranded:hover:not([disabled])`, `background-color`) | `raw-colour` | Setting-driven button reverse fill, out of the role set. |
+| `tailwind/tailwind.elements.css` (`button.shopify-payment-button__button--unbranded:hover:not([disabled])`, `color`) | `raw-colour` | Setting-driven button reverse fill, out of the role set. |
+| `tailwind/tailwind.elements.css` (`button.shopify-payment-button__button--unbranded:hover:not([disabled])`, `border-color`) | `raw-colour` | Setting-driven button reverse fill, out of the role set. |
 
 ## Bridge and recipe rules
 
