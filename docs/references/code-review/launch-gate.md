@@ -58,3 +58,4 @@ Reviews use the output format in the Output section of `.agents/roles/verifier.m
 
 - Commands per change surface and for release gates: `AGENTS.md` Validation. Icon import: `css-architecture.md` "SVG Icons".
 - Tooling enforces many architecture, i18n, and compatibility rules; review-only gaps remain launch blockers when user-facing.
+- The CI `lighthouse` job (`.github/workflows/ci.yml`, `shopify/lighthouse-ci-action`) runs on every push. It audits home, product and collection on the dedicated CI store, which holds Shopify's performance test product CSV. It fails below performance 0.6 or accessibility 0.9 per page on the median run, stricter than the Theme Store's average across pages. It previews the Theme Store Lighthouse bar; it is not the review itself, and its scores are classified under "Lighthouse Issue Classification" before any code change.
