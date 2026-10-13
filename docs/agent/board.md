@@ -16,10 +16,7 @@ Last updated: 2026-10-13.
   5. **The skeleton backport itself**: settle the candidate list, move the files, and run the skeleton's validators. After it, new themes can be developed from the skeleton in parallel with this theme.
 - **Track A state (2026-10-13, end of session):**
   - **Done:** item 1 (the smoke pass, one framework defect found) and item 4 (the tidy-up).
-  - **Proposed, waiting for the user's authorization: 6-F1 framework defect fixes.**
-    - **Menu `aria-expanded`:** `assets/dropdown.js` sets `aria-expanded` on the trigger when it opens and closes, and the Alpine binding in `snippets/header-dropdown-menu.liquid` goes.
-    - **Loading spinner:** `snippets/loading.liquid` and `snippets/buy-buttons.liquid` use `animate-spin`, which is not generated.
-    - Ask tier. Verified with Chrome DevTools MCP and `test:layout`, so it needs `shopify:dev` running.
+  - **In execution: 6-F1 framework defect fixes** (menu `aria-expanded`, loading spinner). The plan and its status are in `docs/agent/context.md`.
   - **Then:** item 3 (repository setup automation), item 2 (6-T4b, after a local trial of `test:layout` against `ci-test`), item 5 (the backport).
   - **Also waiting on the user:** the three rule conflicts under "Open: findings from 6-V9".
 - **Track B, this theme:** the polish pass (home, then product and collection), the consolidated browser pass with the full Lighthouse measurement including desktop, the readiness review, and the second submission. None of it changes the framework.
@@ -100,7 +97,7 @@ Last updated: 2026-10-13.
 
 **Open: findings from 6-V9 (2026-10-13), for the user.**
 
-- **Possible defect, loading spinners do not rotate.** `snippets/loading.liquid` and `snippets/buy-buttons.liquid` use the class `animate-spin`. `tailwind/tailwind.input.css` resets `--animate-*: initial`, and `assets/tailwind.output.css` has no `.animate-spin` rule (`grep -c` gives 0; only `.animate-spin-slow` exists). The `.spinner` / `.spinner-lg` recipe in `tailwind/tailwind.animates.css` has no consumer. Not confirmed in a browser. It is framework-level, because the loading snippet is shared, so classify and fix it before the backport.
+- **Loading spinners do not rotate:** moved to the 6-F1 plan (`docs/agent/context.md`).
 - **Rule conflicts, reported and not decided:**
   1. **`motion_enabled` scope.** The code stops reveals, marquees, autoplay, tilts and zooms. Dialog and drawer motion follow only `prefers-reduced-motion`. `docs/design/design.md` says overlays appear without travel when the setting is off, which is not implemented. `docs/project.md` is right about overlays, but its list of what the setting stops is shorter than the code.
   2. **Extraction threshold.** `docs/references/architecture/abstraction-boundaries.md` waits for a third consumer before generalizing a JS abstraction. The shared carousel controls entry here says to extract with the second.

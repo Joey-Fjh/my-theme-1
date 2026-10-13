@@ -8,6 +8,21 @@ define('dropdown', () => {
         openEls: [],
         hoverOpened: false,
 
+        init() {
+            this.$el.querySelectorAll('[data-dropdown]').forEach((el) => {
+                this.setExpanded(el, el.hasAttribute('open'));
+            });
+        },
+
+        // The `open` attribute is not reactive state, so the trigger's expanded state is written here.
+        setExpanded(target, expanded) {
+            const trigger = target.querySelector(':scope > summary.dropdown-trigger');
+
+            if (!trigger) return;
+
+            trigger.setAttribute('aria-expanded', String(expanded));
+        },
+
         emitHeaderMenuActive(active) {
             ThemeEvents.emit(headerMenuActiveEvent, { active: Boolean(active) });
         },
@@ -208,6 +223,7 @@ define('dropdown', () => {
             }
 
             current.setAttribute('open', '');
+            this.setExpanded(current, true);
 
             if (replayMotion) {
                 this.replayLayeredPanelMotion(current);
@@ -229,12 +245,14 @@ define('dropdown', () => {
                 if (el) {
                     this.resetLayeredPanelMotion(el);
                     el.removeAttribute('open');
+                    this.setExpanded(el, false);
                 }
             }
 
             this.openEls.length = Math.min(this.openEls.length, deep + 1);
 
             current.setAttribute('open', '');
+            this.setExpanded(current, true);
 
             if (replayMotion) {
                 this.replayLayeredPanelMotion(current);
@@ -247,6 +265,7 @@ define('dropdown', () => {
             if (previous && previous !== current) {
                 this.resetLayeredPanelMotion(previous);
                 previous.removeAttribute('open');
+                this.setExpanded(previous, false);
             }
         },
 
@@ -300,6 +319,7 @@ define('dropdown', () => {
                 if (el) {
                     this.resetLayeredPanelMotion(el);
                     el.removeAttribute('open');
+                    this.setExpanded(el, false);
                 }
             }
 

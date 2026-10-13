@@ -77,8 +77,12 @@ Don't bridge motion duration or easing into `@theme`; use a recipe class instead
 
 ```css
 /* tailwind/tailwind.animates.css */
-@utility spinner {
-    animation: spinner-turn var(--motion-duration-base) var(--motion-ease) infinite;
+@utility icons-animate-pop {
+    & .icons {
+        transition:
+            color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+            opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+    }
 }
 ```
 
@@ -214,7 +218,7 @@ Branded accelerated checkout buttons render in closed shadow DOM; only supported
 ```text
 Theme setting / token source
   -> css-variables.liquid (`--motion-duration-*`, `--motion-ease-*`)
-  -> tailwind.animates.css recipe classes (for example `.spinner`)
+  -> tailwind.animates.css recipe classes (for example `.icons-animate-pop`)
   -> Alpine component factories own trigger state and teardown
 ```
 

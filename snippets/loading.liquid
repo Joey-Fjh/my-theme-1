@@ -4,22 +4,22 @@
 
     @param {boolean} [overlay] - If true, render semi-transparent overlay and center spinner.
     @param {string} [overlay_class] - Tailwind background class for overlay.
-    @param {string} [spinner_color] - Tailwind border color class for spinner (e.g. 'border-theme-text', 'border-black').
+    @param {string} [spinner_color] - Tailwind text color class for spinner (e.g. 'text-theme-text'); the spinner draws in currentColor.
     @param {string} [size] - 'small' | 'medium' | 'large' for spinner size.
 {% enddoc %}
 {%- liquid
     assign use_overlay = overlay | default: false
     assign overlay_class = overlay_class | default: 'bg-veil backdrop-blur-sm'
-    assign color_class = spinner_color | default: 'border-theme-text'
+    assign color_class = spinner_color | default: 'text-theme-text'
     assign size_key = size | default: 'medium'
 
     case size_key
         when 'small'
-            assign size_class = 'w-6 h-6 border-2'
+            assign size_class = 'w-6 h-6'
         when 'large'
-            assign size_class = 'w-12 h-12 border-2'
+            assign size_class = 'w-12 h-12'
         else
-            assign size_class = 'w-10 h-10 border-2'
+            assign size_class = 'w-10 h-10'
     endcase
 -%}
 <div
@@ -29,7 +29,7 @@
     aria-hidden="true"
 >
     <div
-        class="{{ size_class }} {{ color_class }} animate-spin rounded-full border-t-transparent"
+        class="spinner {{ size_class }} {{ color_class }}"
         role="status"
         aria-label="{{ 'accessibility.loading' | t }}"
     ></div>

@@ -4,7 +4,7 @@ This reference stores motion decision boundaries that are too long for `AGENTS.m
 
 Inspect current source for exact selectors, timing values, and runtime internals.
 
-`tailwind/tailwind.animates.css` holds the theme's motion recipes: icon animations (`icons-animate-*`), `animate-spin-slow`, `is-paused` / `is-running`, the panel, dialog and drawer motion keyframes, the watermark marquee, and a `.spinner` / `.spinner-lg` loading recipe. No Liquid or JavaScript file uses `.spinner` / `.spinner-lg` today; `snippets/loading.liquid` and `snippets/buy-buttons.liquid` use `animate-spin`. Further recipes are added under this policy.
+`tailwind/tailwind.animates.css` holds the theme's motion recipes: icon animations (`icons-animate-*`), `animate-spin-slow`, `is-paused` / `is-running`, the panel, dialog and drawer motion keyframes, the watermark marquee, and a `.spinner` / `.spinner-lg` loading recipe. `snippets/loading.liquid` and `snippets/buy-buttons.liquid` use `.spinner`; no file uses `.spinner-lg` today. Further recipes are added under this policy.
 
 ## Motion Goals
 
