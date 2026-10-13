@@ -47,7 +47,9 @@ Ceylune, a custom Shopify theme maintained as a multi-industry Shopify Theme Sto
     - **6-D3** (`b04dba5`): both font pickers default to Instrument Sans instead of system monospace.
     - **6-V7 external skills** (`7593ac0`): `review-animations` vendored; named triggers for it, the GSAP skills, `frontend-design` and Chrome DevTools MCP; `impeccable` not vendored, one-off critique at the polish-pass start.
     - **6-T4a Lighthouse CI** (`851ca19`): every push audits home, product and collection on the dedicated CI store (`ci-test`, Shopify's performance test CSV), authenticated with a Theme Access password. The job passes on the best of three runs, so green does not prove the Theme Store bar. First medians (mobile): performance 0.72 / 0.67 / 0.48, accessibility 0.93 / 0.97 / 0.96.
-    - **Next:** the polish pass (first step: the one-off `impeccable` critique); 6-T4b `test:layout` in CI after a local trial against the CI store. The user turns on branch protection for `main` in the GitHub UI. The user's look at this round's visible changes goes to the consolidated browser pass.
+    - **Branch protection on `main`** (user, GitHub ruleset): pull request required; `Lint`, `Theme Check` and `Lighthouse` required and up to date; no force push or deletion; admin bypass for pull requests only.
+    - **Order revised** (user, 2026-10-13): two tracks. The framework track closes first with five items: a framework browser smoke pass, 6-T4b `test:layout` in CI, repository setup automation, a redundancy audit and tidy-up of the lint tools and documents, then the skeleton backport (after which new themes start from the skeleton in parallel). The theme track (polish pass, consolidated browser pass, readiness review, second submission) follows or runs beside it. Detail on `docs/agent/board.md`.
+    - **Next:** the framework browser smoke pass. The user's look at this round's visible changes goes to the consolidated browser pass.
 
 ## Migration Direction (accepted)
 

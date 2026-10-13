@@ -6,6 +6,17 @@ Last updated: 2026-10-13.
 
 ## Open decisions
 
+**Decided: order of work, revised (user, 2026-10-13).** The work is two tracks. The framework track closes first; the theme track follows or runs beside it. This replaces "finish this repository first, then the skeleton backport" (2026-10-08) and the "after the second submission" timing under the backport candidates.
+
+- **Track A, framework (reusable by every theme): five items to 100%, in this order.**
+  1. **Framework browser smoke pass.** It checks that the framework works, not the design: module loading, dialogs, cart, variant change, console errors. It runs first, so a framework defect is fixed once, before the backport. Read-only, run from an external execution prompt (user, 2026-10-13: costly tasks get a prompt).
+  2. **6-T4b**, `test:layout` in CI.
+  3. **Repository setup automation**: ruleset JSON, setup script, and a `doctor:agent` check (see the backport candidates).
+  4. **Redundancy audit and tidy-up** (user, 2026-10-13): survey the lint tools and the documents (`AGENTS.md`, `docs/references/`, `.agents/`, this board) for redundant or stale content and tidy them, so the skeleton receives a clean set.
+  5. **The skeleton backport itself**: settle the candidate list, move the files, and run the skeleton's validators. After it, new themes can be developed from the skeleton in parallel with this theme.
+- **Track B, this theme:** the polish pass (home, then product and collection), the consolidated browser pass with the full Lighthouse measurement including desktop, the readiness review, and the second submission. None of it changes the framework.
+- **Accepted risk:** a framework defect found during the polish pass after the backport is fixed in both repositories.
+
 **Open decisions reviewed with the user (2026-10-12):**
 
 - **CI (6-T4):** Shopify's official Lighthouse CI GitHub Action (`shopify/lighthouse-ci-action@v1`, Shopify Dev MCP, 2026-10-12) is wanted. It needs a development store dedicated to it, loaded with Shopify's test product CSV and nothing else, a Dev Dashboard app with `read_products` and `write_themes` (client ID and secret as repository secrets) and the store password; it audits home, a product and a collection on every push. The store and the app are the user's to create. `test:layout` is a geometry check (horizontal scroll, overflow, content outside the page margin, tap targets, clipped text, runtime errors), not a visual comparison; in CI it would need a storefront the runner can reach (the Lighthouse action's preview theme or a pushed theme). **Decided (user, 2026-10-12): `test:layout` joins CI** too, against a storefront the runner can reach. Explained to the user: CI does not stop a push (the commit still reaches GitHub); it blocks the merge into `main` once branch protection requires the checks, and the store only receives code that is deployed to it. CD (continuous deployment) is that deploy step (`shopify theme push` with a Theme Access password, or Shopify's GitHub integration syncing a branch to a theme); none exists today, and the Theme Store submission is a ZIP upload. **Decided (user, 2026-10-12): CI only, no CD.**
@@ -502,6 +513,14 @@ Design phase inputs:
     - H (5-H, `2683402`): `holdUntilReady` in the adapter, `holdForModule` and download-ahead `scanModules` in `base.js`, no mount after a failed import, the moved-lazy-root observer fix, and the matching `javascript-runtime.md` contract. H also closes two skeleton gaps found here: `scanModules` activating an already-loaded container root before deferring its descendants, and module roots in `<template>` content never being scanned;
     - the validator additions that guard the items above (in `theme-contracts.js`, `theme-architecture.test.js`, `doctor-agent.mjs`); the style ownership and settings-chain additions stay here;
     - the Chrome DevTools MCP adapter entries (5-T1) and the `frontend-design` skill.
+    - **Repository setup automation (user, 2026-10-13; proposal, not built):** a new theme repository should not depend on remembering today's manual steps.
+        - The `lighthouse` job in `.github/workflows/ci.yml` travels with the skeleton. Its handles are constant, because every theme uses the same `ci-test` store.
+        - The `main` ruleset is kept as a JSON file and imported by a setup script through the GitHub API. Today's ruleset is id 13447964: no deletion, no force push, pull request required, required checks `Lint`, `Theme Check` and `Lighthouse`, strict up-to-date, admin bypass for pull requests only.
+        - The same script prompts for the three secrets (`SHOP_STORE`, `SHOP_ACCESS_TOKEN`, `SHOP_PASSWORD`). The values go straight to GitHub and never into a file.
+        - `doctor:agent` fails when a secret name or the ruleset is missing, and names the setup script.
+        - A short README section, "new theme repository setup", points to the script.
+        - This is not a Batch SOP step: it is a one-time bootstrap. The one-time store setup (store, CSV, Theme Access) is not repeated.
+        - **Hotfix flow, explained to the user:** with protection on, a fix on `main` goes through a short `fix/` branch and a pull request. The admin pull-request bypass is the emergency path. Afterwards, merge `main` back into the development branch.
     - Not a candidate (user, 2026-10-04): the CSS step 3 rules and primitive snippets (5-C3a–5-C3g, 5-B1). They serve this theme's section-block model; the skeleton composes with Theme Blocks as components (as Horizon does) and keeps snippets as code fragments. A GSAP adapter is judged after the home page narrative is built.
     - Timing (coordinator proposal): after the second submission, unless a new theme starts from the skeleton earlier.
     - Already covered by the skeleton reference, not applied here: `javascript-runtime.md` recommends `modulepreload` for a first-viewport module chain that the page truly needs before interaction.
