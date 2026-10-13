@@ -5,7 +5,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { test } = require('node:test');
 
-const { runThemeLint, maskNonExecutableLiquid, isAllowedStylesheetMedia } = require('./lint-theme.js');
+const { runThemeLint, isAllowedStylesheetMedia } = require('./lint-theme.js');
 const {
     getLiquidSyntaxFailures,
     isRubyCompatibilityFallback,
@@ -323,14 +323,6 @@ test('tab missing aria-controls fails', async () => {
         const failures = await runThemeLint(root);
         assert.match(failureMessages(failures), /role="tab" is missing aria-controls/);
     });
-});
-
-test('maskNonExecutableLiquid preserves line breaks and length', () => {
-    const source = ['line1', '{% comment %}', 'hidden', '{% endcomment %}', 'line5', ''].join('\n');
-    const masked = maskNonExecutableLiquid(source);
-
-    assert.equal(masked.split('\n').length, source.split('\n').length);
-    assert.equal(masked.length, source.length);
 });
 
 test('quoted liquid filter argument name fails syntax lint', () => {
@@ -1368,6 +1360,26 @@ test('section color scheme missing on frame fails', async () => {
     });
 });
 
+test('section color scheme missing on frame fails in a whitespace-trimmed schema block', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(
+            root,
+            'sections/fixture.liquid',
+            [
+                '<div class="section">',
+                '  <p>Content</p>',
+                '</div>',
+                '{%- schema -%}',
+                '{"name":"t:x","settings":[{"type":"color_scheme","id":"color_scheme","label":"t:x"}]}',
+                '{%- endschema -%}',
+                '',
+            ].join('\n'),
+        );
+        const failures = await runThemeLint(root);
+        assert.match(failureMessages(failures), /color_scheme setting must apply/);
+    });
+});
+
 test('section color scheme on frame passes', async () => {
     await withTempThemeAsync(async (root) => {
         writeFile(
@@ -1658,6 +1670,46 @@ test('stylesheet block literal without lint-allow fails', async () => {
     });
 });
 
+test('stylesheet block font-size with a type step passes the settings chain', async () => {
+    for (const value of [
+        'var(--type-step-1)',
+        'calc(var(--type-step-1) * var(--font-body-scale))',
+        'clamp(1em, var(--type-step-2), 2em)',
+    ]) {
+        await withTempThemeAsync(async (root) => {
+            writeFile(
+                root,
+                'snippets/fixture.liquid',
+                ['<div class="fixture"></div>', '{% stylesheet %}', `    .fixture { font-size: ${value}; }`, '{% endstylesheet %}', ''].join(
+                    '\n',
+                ),
+            );
+            const failures = await runThemeLint(root);
+            assert.equal(
+                failures.filter((failure) => failure.message.includes('Typography property')).length,
+                0,
+                `${value}: ${failureMessages(failures)}`,
+            );
+        });
+    }
+});
+
+test('stylesheet block font-size literals and arbitrary vars still fail the settings chain', async () => {
+    for (const value of ['16px', '1rem', 'var(--other-size)', 'calc(var(--type-step-1) * 1px)']) {
+        await withTempThemeAsync(async (root) => {
+            writeFile(
+                root,
+                'snippets/fixture.liquid',
+                ['<div class="fixture"></div>', '{% stylesheet %}', `    .fixture { font-size: ${value}; }`, '{% endstylesheet %}', ''].join(
+                    '\n',
+                ),
+            );
+            const failures = await runThemeLint(root);
+            assert.match(failureMessages(failures), /Typography property "font-size"/, value);
+        });
+    }
+});
+
 test('module data-module-id on a child does not satisfy the x-data root', async () => {
     await withTempThemeAsync(async (root) => {
         writeMinimalImportMap(root);
@@ -1821,7 +1873,6 @@ test('legacy-breakpoint lint: strict, a baseline allowance is ignored', async ()
 test('migration lint: a drop passes with a shrink hint', async () => {
     await withTempThemeAsync(async (root) => {
         writeMigrationTheme(root, '<div class="mt-4"></div>', {
-            'legacy-breakpoint': {},
             'legacy-type-tier': {},
             'raw-spacing': { 'sections/a.liquid': 3 },
         });
@@ -1835,7 +1886,6 @@ test('migration lint: a drop passes with a shrink hint', async () => {
 test('migration lint: a file not in the baseline fails on its first use', async () => {
     await withTempThemeAsync(async (root) => {
         writeMigrationTheme(root, '<p class="body-sm"></p>', {
-            'legacy-breakpoint': {},
             'legacy-type-tier': {},
             'raw-spacing': {},
         });
@@ -1853,9 +1903,10 @@ test('migration lint: schema option values, comments and stylesheets are not cou
                 '<!-- <div class="gap-6"></div> -->',
                 '{% # pc:mt-2 %}',
                 '{% stylesheet %}.x { --a: mt-4; }{% endstylesheet %}',
+                '<p>{{ section.settings.s }}</p>',
                 '{% schema %}{"settings":[{"type":"select","id":"s","options":[{"value":"heading-h2","label":"x"}],"default":"heading-h2"}]}{% endschema %}',
             ].join('\n'),
-            { 'legacy-breakpoint': {}, 'legacy-type-tier': {}, 'raw-spacing': {} },
+            { 'legacy-type-tier': {}, 'raw-spacing': {} },
         );
         const failures = await runThemeLint(root);
         assert.equal(failures.filter((f) => f.message.startsWith('[')).length, 0);
@@ -1865,7 +1916,6 @@ test('migration lint: schema option values, comments and stylesheets are not cou
 test('migration lint: tiers come from the typography source, not a fixed list', async () => {
     await withTempThemeAsync(async (root) => {
         writeMigrationTheme(root, '<h2 class="heading-h3 heading-base"></h2>', {
-            'legacy-breakpoint': {},
             'legacy-type-tier': {},
             'raw-spacing': {},
         });
@@ -2068,7 +2118,7 @@ test('stylesheet-layer lint: @layer inside stylesheet fails', async () => {
         writeStylesheetOwnershipTheme(
             root,
             ['{% stylesheet %}', '@layer components { .x { color: red; } }', '{% endstylesheet %}', ''].join('\n'),
-            { 'stylesheet-font-size': {}, 'mixed-element': {} },
+            { 'stylesheet-font-size': {} },
         );
         const failures = await runThemeLint(root);
         assert.ok(failures.some((f) => /\[stylesheet-layer\]/.test(f.message)));
@@ -2080,7 +2130,7 @@ test('stylesheet-font-size lint: new absolute size fails', async () => {
         writeStylesheetOwnershipTheme(
             root,
             ['{% stylesheet %}', '.new { font-size: 14px; }', '{% endstylesheet %}', ''].join('\n'),
-            { 'stylesheet-font-size': {}, 'mixed-element': {} },
+            { 'stylesheet-font-size': {} },
         );
         const failures = await runThemeLint(root);
         assert.ok(failures.some((f) => /\[stylesheet-font-size\] 1 use\(s\), baseline 0/.test(f.message)));
@@ -2097,7 +2147,7 @@ test('stylesheet-font-size lint: calc with rem in heading scale counts', async (
                 '{% endstylesheet %}',
                 '',
             ].join('\n'),
-            { 'stylesheet-font-size': {}, 'mixed-element': {} },
+            { 'stylesheet-font-size': {} },
         );
         const failures = await runThemeLint(root);
         assert.ok(failures.some((f) => /\[stylesheet-font-size\] 1 use\(s\), baseline 0/.test(f.message)));
@@ -2120,7 +2170,7 @@ test('mixed-element lint: new mixed region fails', async () => {
                 '{% endstylesheet %}',
                 '',
             ].join('\n'),
-            { 'stylesheet-font-size': {}, 'mixed-element': {} },
+            { 'stylesheet-font-size': {} },
         );
         const failures = await runThemeLint(root);
         assert.ok(failures.some((f) => /\[mixed-element\] 1 use\(s\), baseline 0/.test(f.message)));
@@ -2166,7 +2216,6 @@ test('stylesheet-layer lint: bare and comment-separated @layer forms fail', asyn
         await withTempThemeAsync(async (root) => {
             writeStylesheetOwnershipTheme(root, `{% stylesheet %}\n${css}\n{% endstylesheet %}\n`, {
                 'stylesheet-font-size': {},
-                'mixed-element': {},
             });
             const failures = await runThemeLint(root);
             assert.ok(
@@ -2211,7 +2260,6 @@ test('stylesheet-font-size lint: a drop passes with a shrink hint', async () => 
     await withTempThemeAsync(async (root) => {
         writeStylesheetOwnershipTheme(root, '{% stylesheet %}\n.x { font-size: 14px; }\n{% endstylesheet %}\n', {
             'stylesheet-font-size': { 'sections/a.liquid': 3 },
-            'mixed-element': {},
         });
         const notes = [];
         const failures = await runThemeLint(root, notes);
@@ -2238,7 +2286,7 @@ test('mixed-element lint: class attributes only, used class captures, compiled u
                 '{% endstylesheet %}',
                 '',
             ].join('\n'),
-            { 'stylesheet-font-size': {}, 'mixed-element': {} },
+            { 'stylesheet-font-size': {} },
         );
         writeFile(
             root,
@@ -2509,7 +2557,6 @@ test('unloaded font weights: markup classes, stylesheet weights and @apply fail'
 test('cross review C1-C3 F1: the important modifier does not bypass the lints', async () => {
     await withTempThemeAsync(async (root) => {
         writeMigrationTheme(root, '<p class="font-medium! hover:font-semibold! heading-h2! mt-4!">x</p>', {
-            'legacy-breakpoint': {},
             'legacy-type-tier': {},
             'raw-spacing': {},
         });
@@ -2534,7 +2581,7 @@ test('cross review C1-C3 F2: liquid comment lines and text content are not class
                 '<p>Please remove mt-4 and font-medium from this example.</p>',
                 '<div class="{{ extra }} gap-6" data-note="pc:flex"></div>',
             ].join('\n'),
-            { 'legacy-breakpoint': {}, 'legacy-type-tier': {}, 'raw-spacing': {} },
+            { 'legacy-type-tier': {}, 'raw-spacing': {} },
         );
         const failures = await runThemeLint(root);
         const spacing = failures.filter((f) => f.message.startsWith('[raw-spacing]'));
@@ -2572,7 +2619,7 @@ test('cross review C1-C3 F2: class lists in {% capture *class* %} blocks are cou
                 '{% capture item_classes %}block px-4 font-medium {% if x %}py-2{% endif %}{% endcapture %}',
                 '{% capture intro %}Use px-4 in copy.{% endcapture %}',
             ].join('\n'),
-            { 'legacy-breakpoint': {}, 'legacy-type-tier': {}, 'raw-spacing': {} },
+            { 'legacy-type-tier': {}, 'raw-spacing': {} },
         );
         const failures = await runThemeLint(root);
         assert.ok(failures.some((f) => /^\[raw-spacing\] 2 use\(s\)/.test(f.message)), failureMessages(failures));
@@ -2588,7 +2635,7 @@ test('cross review 2 of C1-C3: a quoted > inside an attribute does not end the t
                 '<div title="a > b" class="mt-4 font-medium"></div>',
                 `<div :class="count > 1 ? 'gap-6' : 'gap-related'"></div>`,
             ].join('\n'),
-            { 'legacy-breakpoint': {}, 'legacy-type-tier': {}, 'raw-spacing': {} },
+            { 'legacy-type-tier': {}, 'raw-spacing': {} },
         );
         const failures = await runThemeLint(root);
         assert.ok(failures.some((f) => /^\[raw-spacing\] 2 use\(s\)/.test(f.message)), failureMessages(failures));
@@ -2798,31 +2845,22 @@ test('colour-role-sync review round 2: a conditional or repeated per-scheme role
     });
 });
 
-const DEAD_SETTINGS_BASELINE =
-    '.agents/skills/check-theme-architecture/scripts/dead-settings-baseline.json';
-
 function writeJsOutletFixture(root, jsFile, jsBody) {
     writeFile(root, 'assets/events.js', 'export {};\n');
     writeFile(root, 'assets/https.js', 'export {};\n');
     writeFile(root, jsFile, jsBody);
 }
 
-function writeDeadSettingSection(root, markup, schema, baseline) {
+function writeDeadSettingSection(root, markup, schema) {
     writeFile(
         root,
         'sections/fixture.liquid',
         `${markup}\n{% schema %}${JSON.stringify(schema)}{% endschema %}\n`,
     );
-    if (baseline !== undefined) {
-        writeFile(root, DEAD_SETTINGS_BASELINE, JSON.stringify(baseline));
-    }
 }
 
-function writeGlobalSettingsSchema(root, settings, baseline) {
+function writeGlobalSettingsSchema(root, settings) {
     writeFile(root, 'config/settings_schema.json', JSON.stringify([{ name: 'theme', settings }]));
-    if (baseline !== undefined) {
-        writeFile(root, DEAD_SETTINGS_BASELINE, JSON.stringify(baseline));
-    }
 }
 
 test('js-custom-event: CustomEvent outside events.js fails; inside passes', async () => {
@@ -2876,13 +2914,12 @@ test('js-section-mutation: lint-allow suppresses a violation', async () => {
     });
 });
 
-test('dead-setting: unused section setting fails when not baselined', async () => {
+test('dead-setting: unused section setting fails', async () => {
     await withTempThemeAsync(async (root) => {
         writeDeadSettingSection(
             root,
             '<div>{{ section.settings.used }}</div>',
             { settings: [{ type: 'text', id: 'used' }, { type: 'text', id: 'unused' }] },
-            { 'dead-setting': {} },
         );
         const dead = (await runThemeLint(root)).filter((f) => f.checkId === 'dead-setting');
         assert.equal(dead.length, 1, dead.map((f) => f.message).join('\n'));
@@ -2898,7 +2935,6 @@ test('dead-setting: setting used only in a rendered snippet passes', async () =>
             root,
             "{% render 'child', section: section %}",
             { settings: [{ type: 'text', id: 'from_snippet' }] },
-            { 'dead-setting': {} },
         );
         const failures = await runThemeLint(root);
         assert.equal(failures.filter((f) => f.checkId === 'dead-setting').length, 0);
@@ -2913,19 +2949,17 @@ test('dead-setting: setting used through a two-level render chain passes', async
             root,
             "{% render 'mid', section: section %}",
             { settings: [{ type: 'text', id: 'deep' }] },
-            { 'dead-setting': {} },
         );
         const failures = await runThemeLint(root);
         assert.equal(failures.filter((f) => f.checkId === 'dead-setting').length, 0);
     });
 });
 
-test('dead-setting: unused global setting fails when not baselined', async () => {
+test('dead-setting: unused global setting fails', async () => {
     await withTempThemeAsync(async (root) => {
         writeGlobalSettingsSchema(
             root,
             [{ type: 'text', id: 'live' }, { type: 'text', id: 'dead_global' }],
-            { 'dead-setting': {} },
         );
         writeFile(root, 'sections/fixture.liquid', '{{ settings.live }}\n');
         const failures = await runThemeLint(root);
@@ -2939,7 +2973,6 @@ test('dead-setting: dynamic settings access is reported as unprovable in notes',
             root,
             '{% assign k = "x" %}{{ settings[k] }}',
             { settings: [{ type: 'text', id: 'maybe' }] },
-            { 'dead-setting': {} },
         );
         const notes = [];
         const failures = await runThemeLint(root, notes);
@@ -2948,26 +2981,61 @@ test('dead-setting: dynamic settings access is reported as unprovable in notes',
     });
 });
 
-test('dead-setting baseline: write refuses an existing file; new dead entry fails the ratchet', async () => {
+test('dead-setting: a dead setting fails with no baseline file and no allowance', async () => {
     await withTempThemeAsync(async (root) => {
-        writeDeadSettingSection(
-            root,
-            '<div></div>',
-            { settings: [{ type: 'text', id: 'orphan' }] },
-            { 'dead-setting': { 'sections/fixture.liquid|section|orphan': 1 } },
+        writeDeadSettingSection(root, '<div></div>', { settings: [{ type: 'text', id: 'orphan' }] });
+        assert.equal(
+            fs.existsSync(path.join(root, '.agents/skills/check-theme-architecture/scripts/dead-settings-baseline.json')),
+            false,
         );
-        const refused = runThemeLintArgs(root, ['--write-dead-settings-baseline']);
-        assert.notEqual(refused.status, 0);
-        assert.match(refused.stderr, /refused/);
+        const dead = (await runThemeLint(root)).filter((f) => f.checkId === 'dead-setting');
+        assert.equal(dead.length, 1, dead.map((f) => f.message).join('\n'));
+        assert.match(dead[0].message, /orphan/);
+        assert.equal((await runThemeLint(root)).filter((f) => /baseline/i.test(f.message)).length, 0);
+    });
+});
 
+test('lint-theme CLI: every failure line carries its check id once', async () => {
+    await withTempThemeAsync(async (root) => {
         writeFile(
             root,
             'sections/fixture.liquid',
-            '<div></div>\n{% schema %}{"settings":[{"type":"text","id":"orphan"},{"type":"text","id":"new_dead"}]}{% endschema %}\n',
+            [
+                '<div class="section"></div>',
+                '{% schema %}{"name":"t:x","settings":[{"type":"color_scheme","id":"color_scheme","label":"t:x"},{"type":"text","id":"orphan","label":"t:x"}]}{% endschema %}',
+                '',
+            ].join('\n'),
         );
-        const failures = await runThemeLint(root);
-        assert.ok(failures.some((f) => f.checkId === 'dead-setting' && /new_dead/.test(f.message)));
-        assert.equal(failures.filter((f) => /orphan/.test(f.message)).length, 0);
+        const result = runThemeLintArgs(root, []);
+        assert.notEqual(result.status, 0);
+        const lines = result.stderr.split('\n');
+        assert.ok(
+            lines.some((line) =>
+                /^sections\/fixture\.liquid:\d+: \[section-color-scheme\] Sections with a color_scheme/.test(line),
+            ),
+            result.stderr,
+        );
+        assert.ok(
+            lines.some((line) =>
+                /^sections\/fixture\.liquid:\d+: \[dead-setting\] unused section setting "orphan"/.test(line),
+            ),
+            result.stderr,
+        );
+        assert.equal(lines.filter((line) => /\[[\w-]+\] \[[\w-]+\]/.test(line)).length, 0, result.stderr);
+    });
+});
+
+test('dead-setting: a section with a whitespace-trimmed schema tag is checked', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeFile(
+            root,
+            'sections/trimmed.liquid',
+            '<div>{{ section.settings.used }}</div>\n{%- schema -%}{"settings":[{"type":"text","id":"used"},{"type":"text","id":"unused_trimmed"}]}{%- endschema -%}\n',
+        );
+        const dead = (await runThemeLint(root)).filter((f) => f.checkId === 'dead-setting');
+        assert.equal(dead.length, 1, dead.map((f) => f.message).join('\n'));
+        assert.equal(dead[0].file, 'sections/trimmed.liquid');
+        assert.match(dead[0].message, /unused_trimmed/);
     });
 });
 
@@ -2993,7 +3061,6 @@ test('dead-setting: block settings read through any loop variable pass; an unuse
                     },
                 ],
             },
-            { 'dead-setting': {} },
         );
         const dead = (await runThemeLint(root)).filter((f) => f.checkId === 'dead-setting');
         assert.equal(dead.length, 1, dead.map((f) => f.message).join('\n'));
@@ -3021,7 +3088,6 @@ test('6-V2 review: a same-named setting in another scope does not count as usage
             root,
             '{% for block in section.blocks %}{{ block.settings.title }}{% endfor %}',
             { settings: [{ type: 'text', id: 'title' }], blocks: [{ type: 'b', settings: [{ type: 'text', id: 'title' }] }] },
-            { 'dead-setting': {} },
         );
         const dead = await deadIds(root);
         assert.equal(dead.length, 1, dead.join('\n'));
@@ -3033,7 +3099,6 @@ test('6-V2 review: a same-named setting in another scope does not count as usage
             root,
             '{{ section.settings.title }}',
             { settings: [{ type: 'text', id: 'title' }], blocks: [{ type: 'b', settings: [{ type: 'text', id: 'title' }] }] },
-            { 'dead-setting': {} },
         );
         const dead = await deadIds(root);
         assert.equal(dead.length, 1, dead.join('\n'));
@@ -3041,7 +3106,7 @@ test('6-V2 review: a same-named setting in another scope does not count as usage
     });
     // Global setting read only as a section setting.
     await withTempThemeAsync(async (root) => {
-        writeGlobalSettingsSchema(root, [{ type: 'text', id: 'title' }], { 'dead-setting': {} });
+        writeGlobalSettingsSchema(root, [{ type: 'text', id: 'title' }]);
         writeDeadSettingSection(root, '{{ section.settings.title }}', { settings: [{ type: 'text', id: 'title' }] });
         const dead = await deadIds(root);
         assert.equal(dead.length, 1, dead.join('\n'));
@@ -3412,7 +3477,7 @@ test('6-V2 review: a setting referenced only in a Liquid comment is dead', async
         '{% liquid\n  # assign x = section.settings.note\n  echo 1\n%}',
     ]) {
         await withTempThemeAsync(async (root) => {
-            writeDeadSettingSection(root, markup, { settings: [{ type: 'text', id: 'note' }] }, { 'dead-setting': {} });
+            writeDeadSettingSection(root, markup, { settings: [{ type: 'text', id: 'note' }] });
             const dead = (await runThemeLint(root)).filter((f) => f.checkId === 'dead-setting');
             assert.equal(dead.length, 1, markup);
         });

@@ -243,6 +243,20 @@ test('hardcoded schema translatable label fails', () => {
     });
 });
 
+test('hardcoded schema label inside a whitespace-trimmed schema block fails', () => {
+    withTempTheme((root) => {
+        expectFailure(
+            root,
+            (dir) => {
+                writeBaseTheme(dir, {
+                    'sections/fixture.liquid': `<p>{{ 'general.ok' | t }}</p>\n{%- schema -%}{"name":"t:sections.fixture.name","settings":[{"type":"text","id":"heading","label":"Heading text"}],"presets":[{"name":"t:sections.fixture.presets.default.name"}]}{%- endschema -%}\n`,
+                });
+            },
+            /Hardcoded schema text "Heading text"/,
+        );
+    });
+});
+
 test('schema config defaults pass for link_list url and select', () => {
     withTempTheme((root) => {
         expectPass(root, (dir) => {

@@ -6,6 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const fg = require('fast-glob');
 const { parseTree, getNodeValue } = require('jsonc-parser');
+const { matchSchemaBlock } = require('./schema-block');
 
 const CHECK_ID = 'colour-setting';
 const SETTINGS_SCHEMA = 'config/settings_schema.json';
@@ -87,7 +88,7 @@ function collectFromSectionSchemas(root, failures) {
     for (const rel of files) {
         const file = formatPath(rel);
         const text = fs.readFileSync(path.join(root, rel), 'utf8');
-        const match = text.match(/{%-?\s*schema\s*-?%}([\s\S]*?){%-?\s*endschema\s*-?%}/);
+        const match = matchSchemaBlock(text);
         if (!match) continue;
         const schema = parseSchemaJson(match[1]);
         if (!schema) continue;

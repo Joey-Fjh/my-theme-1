@@ -29,15 +29,7 @@ const {
     toBaseline,
     writeBaselineFile,
 } = require('./lib/migration-lint');
-const {
-    collectDeadSettingEntries,
-    collectDeadSettingFailures,
-    baselinePath: deadSettingsBaselinePath,
-    readBaseline: readDeadSettingsBaseline,
-    shrinkBaseline: shrinkDeadSettingsBaseline,
-    toBaseline: toDeadSettingsBaseline,
-    writeBaselineFile: writeDeadSettingsBaselineFile,
-} = require('./lib/dead-setting-lint');
+const { collectDeadSettingFailures } = require('./lib/dead-setting-lint');
 const {
     collectCssFontWeightFailures,
     collectMarkupFontWeightFailures,
@@ -60,7 +52,6 @@ const {
     shrinkBaseline: shrinkStylesheetOwnershipBaseline,
     toBaseline: toStylesheetOwnershipBaseline,
     writeBaselineFile: writeStylesheetOwnershipBaselineFile,
-    RULE: STYLESHEET_OWNERSHIP_RULE,
 } = require('./lib/stylesheet-ownership-lint');
 const { collectSectionPlacementFailures } = require('./lib/section-placement-lint');
 
@@ -193,23 +184,6 @@ function lineAt(text, offset) {
 
 function formatPath(file) {
     return file.replaceAll('\\', '/');
-}
-
-function maskNonExecutableLiquid(text) {
-    let masked = text;
-
-    for (const [openTag, closeTag] of [
-        ['comment', 'endcomment'],
-        ['doc', 'enddoc'],
-    ]) {
-        const re = new RegExp(
-            `{%-?\\s*${openTag}\\s*-?%}[\\s\\S]*?{%-?\\s*${closeTag}\\s*-?%}`,
-            'gi',
-        );
-        masked = masked.replace(re, (match) => match.replace(/[^\n\r]/g, ' '));
-    }
-
-    return masked;
 }
 
 function collectProtectedRuntimeNameFailures(ast, text, file, failures, allowsByLine) {
@@ -685,7 +659,7 @@ function runMigrationBaselineFlag(root, argv) {
     return null;
 }
 
-/** Returns an exit code, or null when no dead-settings baseline flag was given. */
+/** Returns an exit code, or null when no stylesheet ownership baseline flag was given. */
 function runStylesheetOwnershipBaselineFlag(root, argv) {
     if (argv.includes('--write-stylesheet-ownership-baseline')) {
         if (require('node:fs').existsSync(stylesheetOwnershipBaselinePath(root))) {
@@ -712,39 +686,15 @@ function runStylesheetOwnershipBaselineFlag(root, argv) {
     return null;
 }
 
-function runDeadSettingsBaselineFlag(root, argv) {
-    if (argv.includes('--write-dead-settings-baseline')) {
-        if (require('node:fs').existsSync(deadSettingsBaselinePath(root))) {
-            console.error('--write-dead-settings-baseline refused: the baseline already exists.');
-            return 1;
-        }
-        const { entries } = collectDeadSettingEntries(root);
-        writeDeadSettingsBaselineFile(root, toDeadSettingsBaseline(entries));
-        console.log('Dead-settings baseline written.');
-        return 0;
-    }
-    if (argv.includes('--shrink-dead-settings-baseline')) {
-        const baseline = readDeadSettingsBaseline(root);
-        if (!baseline) {
-            console.error('--shrink-dead-settings-baseline refused: no baseline exists.');
-            return 1;
-        }
-        const { entries } = collectDeadSettingEntries(root);
-        writeDeadSettingsBaselineFile(root, shrinkDeadSettingsBaseline(baseline, entries));
-        console.log('Dead-settings baseline shrunk to the current entries.');
-        return 0;
-    }
-    return null;
+/** `file:line: [check-id] message`; the id is not repeated when the message already starts with a bracketed id. */
+function formatFailureLine(failure) {
+    const prefix = failure.checkId && !failure.message.startsWith('[') ? `[${failure.checkId}] ` : '';
+    return `${failure.file}:${failure.line}: ${prefix}${failure.message}`;
 }
 
 async function main(argv = process.argv) {
     const root = parseRootArg(argv);
-    let flagExit = runDeadSettingsBaselineFlag(root, argv);
-    if (flagExit !== null) {
-        process.exitCode = flagExit;
-        return;
-    }
-    flagExit = runMigrationBaselineFlag(root, argv);
+    let flagExit = runMigrationBaselineFlag(root, argv);
     if (flagExit !== null) {
         process.exitCode = flagExit;
         return;
@@ -766,7 +716,7 @@ async function main(argv = process.argv) {
 
     console.error(`Theme architecture lint found ${failures.length} issue(s):`);
     for (const failure of failures) {
-        console.error(`${failure.file}:${failure.line}: ${failure.message}`);
+        console.error(formatFailureLine(failure));
     }
 
     process.exitCode = 1;
@@ -783,7 +733,6 @@ module.exports = {
     PROTECTED_RUNTIME_NAMES,
     CHECK,
     LEGACY_CHECK,
-    maskNonExecutableLiquid,
     runThemeLint,
     collectProtectedRuntimeNameFailures,
     collectBundledAssetTagFailures,

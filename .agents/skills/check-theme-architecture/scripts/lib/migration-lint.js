@@ -17,9 +17,9 @@ const RULE = {
 };
 
 const RULE_HINT = {
-    [RULE.TYPE_TIER]: 'use the type scale aliases once 6-C8 lands; until then reuse an existing tier only where the file already does',
+    [RULE.TYPE_TIER]: 'use the title-* / copy-* utilities instead of the heading-* / body-* tiers',
     [RULE.RAW_SPACING]: 'use a spacing token alias (for example gap-related) instead of a numeric scale value',
-    [RULE.BREAKPOINT]: 'use the tokenized breakpoint variants once 6-C2 lands; do not add new pc:/fw: usage',
+    [RULE.BREAKPOINT]: 'use the tablet: / desktop: / wide: variants instead of pc: / max-pc: / fw: / max-fw:',
 };
 
 const BREAKPOINT_VARIANTS = new Set(['pc', 'max-pc', 'fw', 'max-fw']);

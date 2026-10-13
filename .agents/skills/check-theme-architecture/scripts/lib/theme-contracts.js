@@ -1,9 +1,9 @@
-const fs = require('node:fs/promises');
 const path = require('node:path');
 const fg = require('fast-glob');
-const { parseTree, getNodeValue } = require('jsonc-parser');
 const { parseLiquidAst, walk } = require('./liquid-ast');
 const { parseLineAllows, pushFailure } = require('./lint-allow');
+const { matchSchemaBlock } = require('./schema-block');
+const { isAllowedStylesheetFontSize } = require('./stylesheet-ownership-lint');
 
 const CHECK = {
     SETTINGS_CHAIN_LIQUID: 'settings-chain-liquid',
@@ -329,6 +329,11 @@ function isAllowedTypographyValue(property, value) {
     // Tailwind's tracking scale includes negative em values (tracking-tight, tracking-tighter).
     if (prop === 'letter-spacing' && /^-[\d.]+em$/.test(trimmed)) return true;
 
+    // Type-step sizes (css-architecture.md, "Stylesheet font sizes"): same verdict as `stylesheet-font-size`.
+    if (prop === 'font-size' && /var\(\s*--type-step-/i.test(trimmed) && isAllowedStylesheetFontSize(trimmed)) {
+        return true;
+    }
+
     // Otherwise: settings chain and relative values only.
     if (/^var\(--font-/.test(trimmed)) return true;
     if (/^(calc|max|min|clamp)\(/i.test(trimmed) && /var\(--font-/.test(trimmed)) return true;
@@ -560,7 +565,6 @@ function collectStylesheetDirectiveFailures(cssText, file, failures, allowsByLin
 }
 
 function collectJsOutletFailures(root, failures) {
-    const { parseLineAllows, pushFailure } = require('./lint-allow');
     const files = fg.sync('assets/*.js', { cwd: root, onlyFiles: true }).map(formatPath);
 
     for (const file of files) {
@@ -927,7 +931,7 @@ function collectSectionColorSchemeFailures(root, failures) {
 
     for (const file of files) {
         const text = require('node:fs').readFileSync(path.join(root, file), 'utf8');
-        const schemaMatch = text.match(/{%\s*schema\s*%}([\s\S]*?){%\s*endschema\s*%}/);
+        const schemaMatch = matchSchemaBlock(text);
         if (!schemaMatch) continue;
         if (!sectionHasColorSchemeSetting(schemaMatch[1])) continue;
 

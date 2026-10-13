@@ -512,7 +512,7 @@ async function checkSchemaTranslationKeys(schemaKeys) {
 
 function getSchemaBlocks(text) {
     const blocks = [];
-    const re = /{%\s*schema\s*%}([\s\S]*?){%\s*endschema\s*%}/g;
+    const re = /{%-?\s*schema\s*-?%}([\s\S]*?){%-?\s*endschema\s*-?%}/g;
 
     for (const match of text.matchAll(re)) {
         blocks.push({

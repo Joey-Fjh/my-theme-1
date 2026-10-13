@@ -464,10 +464,6 @@ function classesForSelector(el) {
     return '';
 }
 
-export function normalizeShopifySectionId(id) {
-    return normalizeShopifyElementId(id);
-}
-
 /** Strip theme template / section-group numeric segments from any element or section id. */
 export function normalizeShopifyElementId(id) {
     return String(id)

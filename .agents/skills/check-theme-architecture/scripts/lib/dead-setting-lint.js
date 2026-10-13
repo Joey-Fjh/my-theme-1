@@ -1,6 +1,6 @@
 /**
  * Dead settings: section/block schema ids and global settings_schema ids must appear
- * in Liquid usage (section closure or theme-wide for globals). Ratcheted baseline.
+ * in Liquid usage (section closure or theme-wide for globals). Strict: no baseline.
  */
 
 const fs = require('node:fs');
@@ -8,9 +8,8 @@ const path = require('node:path');
 const fg = require('fast-glob');
 const { parseTree, getNodeValue } = require('jsonc-parser');
 const { maskNonMarkup } = require('./migration-lint');
+const { matchSchemaBlock } = require('./schema-block');
 
-const BASELINE_RELATIVE_PATH =
-    '.agents/skills/check-theme-architecture/scripts/dead-settings-baseline.json';
 const SETTINGS_SCHEMA = 'config/settings_schema.json';
 const CHECK_ID = 'dead-setting';
 const CHECK_UNPROVABLE = 'dead-setting-unprovable';
@@ -60,7 +59,7 @@ function idsFromSettingsArray(settings) {
 }
 
 function extractSectionSchema(sectionText) {
-    const match = sectionText.match(/{%\s*schema\s*%}([\s\S]*?){%\s*endschema\s*%}/);
+    const match = matchSchemaBlock(sectionText);
     if (!match) return { sectionIds: [], blockIds: [], schemaLine: null };
     const schema = parseSchemaJson(match[1]);
     if (!schema) return { sectionIds: [], blockIds: [], schemaLine: lineAt(sectionText, match.index ?? 0) };
@@ -159,17 +158,11 @@ function readAllLiquidMarkup(root) {
     return { byFile, combined };
 }
 
-function baselineKey(file, kind, id) {
+function entryKey(file, kind, id) {
     return `${file}|${kind}|${id}`;
 }
 
-function parseBaselineKey(key) {
-    const parts = key.split('|');
-    if (parts.length !== 3) return null;
-    return { file: parts[0], kind: parts[1], id: parts[2] };
-}
-
-/** { [key]: 1 } for each dead setting currently in the tree. */
+/** Map of key -> { file, line, kind, id } for each dead setting currently in the tree. */
 function collectDeadSettingEntries(root) {
     const entries = new Map();
     const unprovableFiles = new Set();
@@ -178,8 +171,8 @@ function collectDeadSettingEntries(root) {
 
     for (const file of sectionFiles) {
         const fullText = fs.readFileSync(path.join(root, file), 'utf8');
-        const schemaIndex = fullText.search(/{%\s*schema\s*%}/);
-        const sectionMarkup = stripNonMarkupBlocks(schemaIndex >= 0 ? fullText.slice(0, schemaIndex) : fullText);
+        const schemaBlock = matchSchemaBlock(fullText);
+        const sectionMarkup = stripNonMarkupBlocks(schemaBlock ? fullText.slice(0, schemaBlock.index) : fullText);
         const { sectionIds, blockIds, schemaLine } = extractSectionSchema(fullText);
         if (!sectionIds.length && !blockIds.length) continue;
 
@@ -190,7 +183,7 @@ function collectDeadSettingEntries(root) {
 
         for (const id of sectionIds) {
             if (!usesSectionSetting(closure, id)) {
-                entries.set(baselineKey(file, 'section', id), {
+                entries.set(entryKey(file, 'section', id), {
                     file,
                     line: schemaLine ?? 1,
                     kind: 'section',
@@ -200,7 +193,7 @@ function collectDeadSettingEntries(root) {
         }
         for (const id of blockIds) {
             if (!usesBlockSetting(closure, id)) {
-                entries.set(baselineKey(file, 'block', id), {
+                entries.set(entryKey(file, 'block', id), {
                     file,
                     line: schemaLine ?? 1,
                     kind: 'block',
@@ -220,7 +213,7 @@ function collectDeadSettingEntries(root) {
     const globalIds = readGlobalSettingIds(root);
     for (const id of globalIds) {
         if (!usesGlobalSetting(combined, id)) {
-            entries.set(baselineKey('config/settings_schema.json', 'global', id), {
+            entries.set(entryKey('config/settings_schema.json', 'global', id), {
                 file: SETTINGS_SCHEMA,
                 line: 1,
                 kind: 'global',
@@ -232,78 +225,7 @@ function collectDeadSettingEntries(root) {
     return { entries, unprovableFiles };
 }
 
-function toBaseline(entries) {
-    const baseline = { [CHECK_ID]: {} };
-    for (const key of [...entries.keys()].sort()) {
-        baseline[CHECK_ID][key] = 1;
-    }
-    return baseline;
-}
-
-function baselinePath(root) {
-    return path.join(root, BASELINE_RELATIVE_PATH);
-}
-
-function readBaseline(root) {
-    const file = baselinePath(root);
-    if (!fs.existsSync(file)) return null;
-    return JSON.parse(fs.readFileSync(file, 'utf8'));
-}
-
-function writeBaselineFile(root, baseline) {
-    fs.mkdirSync(path.dirname(baselinePath(root)), { recursive: true });
-    fs.writeFileSync(baselinePath(root), `${JSON.stringify(baseline, null, 4)}\n`, 'utf8');
-}
-
-function compareWithBaseline(entries, baseline) {
-    const failures = [];
-    const drops = [];
-    const known = baseline?.[CHECK_ID] ?? {};
-
-    for (const [key, meta] of entries) {
-        if (!known[key]) {
-            failures.push({
-                file: meta.file,
-                line: meta.line,
-                checkId: CHECK_ID,
-                message: `[${CHECK_ID}] unused ${meta.kind} setting "${meta.id}" (not in baseline).`,
-            });
-        }
-    }
-
-    for (const key of Object.keys(known)) {
-        if (!entries.has(key)) {
-            drops.push({ key, from: known[key] });
-        }
-    }
-
-    return { failures, drops };
-}
-
-function shrinkBaseline(baseline, entries) {
-    const next = { [CHECK_ID]: {} };
-    const known = baseline[CHECK_ID] ?? {};
-    for (const key of Object.keys(known).sort()) {
-        if (entries.has(key)) next[CHECK_ID][key] = 1;
-    }
-    return next;
-}
-
 function collectDeadSettingFailures(root, failures, notes = []) {
-    const isTheme = fs.existsSync(path.join(root, SETTINGS_SCHEMA));
-    const baseline = readBaseline(root);
-    if (!baseline) {
-        if (isTheme) {
-            failures.push({
-                file: BASELINE_RELATIVE_PATH,
-                line: 1,
-                checkId: CHECK_ID,
-                message: 'Dead-settings baseline is missing. Create it once with --write-dead-settings-baseline.',
-            });
-        }
-        return;
-    }
-
     const { entries, unprovableFiles } = collectDeadSettingEntries(root);
     for (const file of [...unprovableFiles].sort()) {
         notes.push(
@@ -311,25 +233,19 @@ function collectDeadSettingFailures(root, failures, notes = []) {
         );
     }
 
-    const result = compareWithBaseline(entries, baseline);
-    failures.push(...result.failures);
-    if (result.drops.length) {
-        notes.push(
-            `Dead-settings baseline has ${result.drops.length} resolved entry(ies); run lint-theme.js --shrink-dead-settings-baseline to lock them in.`,
-        );
+    for (const meta of entries.values()) {
+        failures.push({
+            file: meta.file,
+            line: meta.line,
+            checkId: CHECK_ID,
+            message: `[${CHECK_ID}] unused ${meta.kind} setting "${meta.id}".`,
+        });
     }
 }
 
 module.exports = {
-    BASELINE_RELATIVE_PATH,
     CHECK_ID,
     CHECK_UNPROVABLE,
-    baselinePath,
     collectDeadSettingEntries,
     collectDeadSettingFailures,
-    compareWithBaseline,
-    readBaseline,
-    shrinkBaseline,
-    toBaseline,
-    writeBaselineFile,
 };

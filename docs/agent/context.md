@@ -161,3 +161,35 @@ Paths below are under `.agents/skills/check-theme-architecture/scripts/` unless 
 6. For every test removed or changed: its name, and which behaviour it covered that is still asserted elsewhere.
 7. `git diff --check` is clean; `git diff --stat` shows only the surface; `npx prettier --check` is not a validator here (`.agents` is ignored).
 8. Independent review (Ask) reports PASS.
+
+## 6-V10: executed
+
+Implementer run, 2026-10-13. No commits. All edits are in the surface; the JSON deletion is staged (`git rm`).
+
+**Baseline before edits (HEAD):** `test:validators` = i18n 32, theme-architecture 238, section-stylesheet-carry 3, doc-paths 7, all pass; `lint:theme` passed.
+**After:** i18n 33, theme-architecture 242, carry 3, doc-paths 7, all pass; `lint:theme`, `lint:i18n`, `lint:liquid-syntax`, `lint:doc-paths`, `doctor:agent` pass; `test:layout-harness` 28/28 pass. Ratchets untouched (`legacy-type-tier` 6, `raw-spacing` 2, `stylesheet-font-size` 1).
+
+1. **Schema extraction.** New `lib/schema-block.js` (`matchSchemaBlock`, trim-aware). Used by `theme-contracts.js` (`section-color-scheme`), `dead-setting-lint.js` (`extractSectionSchema` and the markup cut-off that was a fifth, `search`-based regex), `colour-setting-lint.js`, `section-placement-lint.js`. `lint-i18n.js`: regex made trim-aware in place.
+2. **Font size.** `isAllowedTypographyValue` accepts `font-size` values that contain `var(--type-step-` and pass `isAllowedStylesheetFontSize` (imported; no cycle). Literals, arbitrary vars and other properties keep their verdicts. `isAllowedStylesheetFontSize` unchanged. No disagreement left over.
+3. **dead-setting strict.** Removed the baseline read/write/compare/shrink, `parseBaselineKey`, `runDeadSettingsBaselineFlag` and both flags, `dead-settings-baseline.json`; SKILL.md row updated. `collectDeadSettingFailures` now runs on every root (it used to skip a root with no baseline unless it had `config/settings_schema.json`). The failure message lost "(not in baseline)". No other document names the file or flags.
+4. **Stale texts.** `RULE_HINT` for type tier and breakpoint reworded (title-* / copy-*, tablet: / desktop: / wide:). Doc comment of `runStylesheetOwnershipBaselineFlag` corrected. Removed 8 `'legacy-breakpoint': {}` and 7 `'mixed-element': {}` fixture keys; the three non-empty allowance fixtures stay.
+5. **Dead code removed.** `maskNonExecutableLiquid` (+ export, test, import), `parseBaselineKey`, `fs`/`parseTree`/`getNodeValue` imports and the shadowing `require('./lint-allow')` in `theme-contracts.js`, `STYLESHEET_OWNERSHIP_RULE` import, `normalizeShopifySectionId`, the unused re-export in `layout-check.mjs`. Each had no consumer at HEAD (`git grep ... HEAD`).
+6. **Check id in output.** `formatFailureLine` in `lint-theme.js` prints `file:line: [check-id] message`, skipping the prefix when the message already starts with `[` or the failure has no `checkId`. No existing test asserted CLI output text.
+
+**Tests added:** i18n `hardcoded schema label inside a whitespace-trimmed schema block fails`; theme-architecture `section color scheme missing on frame fails in a whitespace-trimmed schema block`, `stylesheet block font-size with a type step passes the settings chain`, `stylesheet block font-size literals and arbitrary vars still fail the settings chain` (guard, passes on HEAD too), `dead-setting: a dead setting fails with no baseline file and no allowance`, `dead-setting: a section with a whitespace-trimmed schema tag is checked`, `lint-theme CLI: every failure line carries its check id once`.
+**HEAD-fails evidence** (HEAD `.agents/skills` in the scratchpad with the new test files, `NODE_PATH` to the repo `node_modules`): all of the above fail on HEAD except the guard test.
+**Tests removed:** `maskNonExecutableLiquid preserves line breaks and length` (function deleted); `dead-setting baseline: write refuses an existing file; new dead entry fails the ratchet` (flag and ratchet deleted; "new dead entry fails" is still asserted by the unused-section-setting tests and the no-baseline test).
+**Tests changed:** `dead-setting: unused section/global setting fails when not baselined` renamed (suffix dropped); the dead-setting fixtures no longer write a baseline; `migration lint: schema option values, comments and stylesheets are not counted` gained `<p>{{ section.settings.s }}</p>` so its fixture has no dead setting now that the check runs on every root.
+
+**Deviations:** none from the plan beyond the two notes above (check runs on every root; fixture tweak).
+
+**6-V10 state:** executed. The coordinator re-ran the validators on the working tree (2026-10-13):
+- `npm.cmd run test:validators`: 33, 242, 3 and 7 tests, 0 failures.
+- `lint:theme` passes, with the three existing `dead-setting-unprovable` notes.
+- `lint:i18n` and `lint:doc-paths` pass; `git diff --check` is clean.
+
+**Two points for the reviewer:**
+1. `dead-setting` now runs on every root, where before it ran only when a baseline file or `config/settings_schema.json` existed. The real theme was always checked; fixture roots are stricter.
+2. The Implementer's proof that the new tests fail on HEAD was an ad-hoc run with no stored output. The reviewer repeats it.
+
+**Waiting on:** the independent review (Ask), run by the user.

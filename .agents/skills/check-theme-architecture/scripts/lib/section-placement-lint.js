@@ -8,6 +8,7 @@ const path = require('node:path');
 const fg = require('fast-glob');
 const { parseTree, getNodeValue } = require('jsonc-parser');
 const { pushFailure } = require('./lint-allow');
+const { matchSchemaBlock } = require('./schema-block');
 
 const CHECK = {
     PLACEMENT_MISSING: 'section-placement-missing',
@@ -40,7 +41,7 @@ function parseSchemaJson(schemaText) {
 }
 
 function extractSectionSchema(sectionText) {
-    const match = sectionText.match(/{%-?\s*schema\s*-?%}([\s\S]*?){%-?\s*endschema\s*-?%}/);
+    const match = matchSchemaBlock(sectionText);
     if (!match) return null;
     const schema = parseSchemaJson(match[1]);
     if (!schema) return null;

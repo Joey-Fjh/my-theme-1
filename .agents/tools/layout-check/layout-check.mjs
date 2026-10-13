@@ -27,7 +27,6 @@ import {
     pruneRefusalReason,
     validateConfig,
 } from './run-rules.mjs';
-export { baselineIdentityKey, compareToBaseline, normalizeRuntimeMessage } from './runtime-keys.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.join(__dirname, '../../..');
