@@ -198,4 +198,4 @@ Implementer run, 2026-10-13. No commits. All edits are in the surface; the JSON 
 1. **Wrong locations.** The three `btn` exceptions sit in `@utility btn` inside its `@supports` block, before the nested hover rule, not in a hover rule. The payment button selector is `…--unbranded:hover:not([disabled])`. Both location labels are corrected.
 2. **Lost provenance.** The rebuild dropped the approval notes "(user, 2026-09-29)" on three rows and "(6-C10, user, 2026-10-11)" on one. They exist nowhere else in the live documents, so they are restored on those four rows.
 
-Round 2: pending.
+**Round 2 (2026-10-13): PASS**, no findings. The corrected locations and the four restored approval notes were verified against `tailwind/tailwind.elements.css` and the old table. The reviewer noted that the range `23486ed..fad2935` also contains 6-V10 (`584fdfc`), which this verdict does not cover. **6-V9 complete.**
