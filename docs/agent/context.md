@@ -62,3 +62,30 @@ Last updated: 2026-10-13.
 4. After the run, ci-test has no leftover development theme. The user checks Online Store → Themes, or the log shows the delete.
 5. `npm.cmd run lint:doc-paths` and `npm.cmd run doctor:agent` pass; `git diff --check HEAD` is clean; `git diff --stat HEAD` shows only the surface.
 6. Independent review (Ask) reports PASS.
+
+## 6-T4a: executed, first run failed (authentication)
+
+Authorized 2026-10-13 ("可以啊，执行并推送，只要不影响主分支就可以"): implement and push `refactor/skeleton-shell`; `main` untouched. Commit `6ceb2b6`, pushed.
+
+Static checks, all passed:
+- `js-yaml` parses the workflow into the jobs `lint`, `theme-check` and `lighthouse`.
+- `git grep -n -i 'myshopify\|rjx6y0iz' .github` returns nothing (exit 1).
+- `lint:doc-paths` passes; `doctor:agent` exits 0; `git diff --check` is clean.
+- `npx prettier --check .github/workflows/ci.yml` passes; Prettier does cover this file.
+
+**Run 1:** `gh run view 38362521872`. Lint, Theme Check and Theme Check Report succeeded; **Lighthouse failed**.
+- **Cause:** the Lighthouse step "Creating development theme" stopped on `themeCreate`: "Access denied ... The user needs write_themes and an exemption from Shopify to modify themes". A Dev Dashboard app with `write_themes` is not enough. Modifying themes through an app token needs an exemption from Shopify, granted through a request form.
+- The action then continued. It resolved the product handle through the app token (`amazing-cotton-bag-collection15`) and set the password cookie. It failed at the preview cookie, because no theme was created, so the preview URL was invalid.
+- No theme was created on ci-test, so there was nothing to clean up.
+- This is a platform permission problem, not a theme finding.
+
+**Proposed correction (needs the user's approval):** authenticate with a **Theme Access password** instead of the Dev Dashboard app.
+- Shopify's docs, through the Dev MCP: the Theme Access app generates passwords scoped to `write_themes` for Shopify CLI, used in CI through `SHOPIFY_CLI_THEME_TOKEN`. The action exports exactly that from its `access_token` input.
+- A Theme Access password cannot read products through the Admin API. The action calls that API only when no handle is given, so the job passes both `product_handle: amazing-cotton-bag-collection15` and `collection_handle: collection1`.
+- **User steps:** install the Theme Access app on ci-test; create a password for the user's own email; add it as the repository secret `SHOP_ACCESS_TOKEN`.
+- **Workflow change:** `access_token: ${{ secrets.SHOP_ACCESS_TOKEN }}` replaces `client_id` and `client_secret`, and `product_handle` is added.
+- The `lighthouse-ci` app and its two secrets are then unused. Removing them is the user's choice.
+
+**Correction approved (user, 2026-10-13):** the user installed Theme Access on ci-test, added `SHOP_ACCESS_TOKEN`, and asked to continue ("这一步已经配置好了，接下来了？").
+- The `lighthouse` job now uses `access_token: secrets.SHOP_ACCESS_TOKEN` with `product_handle: amazing-cotton-bag-collection15` and `collection_handle: collection1`.
+- Acceptance check 2 now reads: the job references only `secrets.SHOP_STORE`, `secrets.SHOP_ACCESS_TOKEN` and `secrets.SHOP_PASSWORD`.
