@@ -10,7 +10,7 @@ Last updated: 2026-10-13.
 
 - **Track A, framework (reusable by every theme): five items to 100%, in this order.**
   1. **Framework browser smoke pass.** It checks that the framework works, not the design: module loading, dialogs, cart, variant change, console errors. It runs first, so a framework defect is fixed once, before the backport. Read-only, run from an external execution prompt (user, 2026-10-13: costly tasks get a prompt).
-  2. **6-T4b**, `test:layout` in CI.
+  2. **6-T4b**, `test:layout` in CI. **Deferred (user, 2026-10-13)**; see the trial result and the triggers under 6-T4.
   3. **Repository setup**: the ruleset file, the README steps and a local `doctor:agent` check (done as 6-T6; see the backport candidates).
   4. **Redundancy audit and tidy-up** (user, 2026-10-13): survey the lint tools and the documents (`AGENTS.md`, `docs/references/`, `.agents/`, this board) for redundant or stale content and tidy them, so the skeleton receives a clean set.
   5. **The skeleton backport itself**: settle the candidate list, move the files, and run the skeleton's validators. After it, new themes can be developed from the skeleton in parallel with this theme.
@@ -18,7 +18,14 @@ Last updated: 2026-10-13.
   - **Done:** item 1 (the smoke pass, one framework defect found) and item 4 (the tidy-up).
   - **Done: 6-F1 framework defect fixes** (`528a715`; plan and reviews: `git show 528a715:docs/agent/context.md`; independent review PASS on round 2): the menu triggers report `aria-expanded`, and the loading indicators rotate through the `spinner` recipe. Not exercised in a browser: the plain dropdown menu with a real second level (the store's header uses the super menu; both share `assets/dropdown.js`). It goes to the consolidated browser pass.
   - **Done: item 3, 6-T6 repository setup, the small version** (`86ae604`; plan and reviews: `git show 86ae604:docs/agent/context.md`; independent review PASS on round 5).
-  - **Next:** item 2 (6-T4b, after a local trial of `test:layout` against `ci-test`), then item 5 (the backport).
+  - **Deferred: item 2, 6-T4b** (user, 2026-10-13, after the trial on ci-test).
+  - **In progress: item 5, the backport** (user, 2026-10-13: finish it before the theme track). It runs by layer, each layer a batch planned, executed and reviewed in `../my-skeleton-theme` under that repository's own record files:
+    1. **BP-1, agent layer and harness:** the roles, the `review-animations` and `frontend-design` skills with their triggers, the Chrome DevTools MCP entries, `doctor:agent` with the MCP and ruleset checks, the Lighthouse workflow, the ruleset file, the README setup section. **Done** on the skeleton's branch `backport/agent-layer` (`b676754`; plan and reviews: `git -C ../my-skeleton-theme show b676754:docs/agent/context.md`; independent review PASS, and PASS on the amendment). Not merged into the skeleton's `main` until the last layer. Amendment (user, 2026-10-13): the skeleton is a template, so its `Lighthouse` job is skipped by repository name and it imports no ruleset; both travel for the themes made from it.
+    2. **Validators:** the nine new checks, with the theme data moved to configuration first.
+    3. **Runtime JavaScript:** the changed core modules and the new framework modules, judged one by one.
+    4. **CSS and tokens**, with `layout-check` and `contrast-report`, which depend on the page frame and the colour tokens. The user re-decides here the 2026-10-04 "not a candidate: CSS step 3 rules and primitive snippets", because the skeleton composes with Theme Blocks.
+    5. **The design chain** (`design.md` → tokens → preset).
+    - Correction to the first size estimate given in chat: layer 1 is about 20 files, not 70; the 35 `layout-check` files belong to layer 4.
 - **Track B, this theme:** the polish pass (home, then product and collection), the consolidated browser pass with the full Lighthouse measurement including desktop, the readiness review, and the second submission. None of it changes the framework.
 - **Accepted risk:** a framework defect found during the polish pass after the backport is fixed in both repositories.
 
@@ -94,7 +101,7 @@ Last updated: 2026-10-13.
   - collection pagination with Back and Forward;
   - the newsletter overlay's Tab trap;
   - `/favicon.ico` 404 on the first home load (store configuration, to classify);
-  - a 400 from Shopify's hosted `account.js` on home, product and collection, with the account menu falling back (seen in the 6-F1 review on `127.0.0.1`, 2026-10-13). Re-check through a preview link before classifying: two earlier dev-only errors came from the `127.0.0.1` origin.
+  - a 400 from Shopify's hosted `account.js` on home, product and collection, with the account menu falling back (seen in the 6-F1 review, 2026-10-13). Already classified as store configuration, not theme code: the store is password-protected, so the `shopify-account` component's Storefront API request returns 400 "Online Store channel is locked" and it falls back to its default links (the exception in `.agents/tools/layout-check/layout-check.config.json`, 6-T5; user, 2026-10-11). Only confirm it disappears once the password is removed.
 
 **Open: findings from 6-V9 (2026-10-13), for the user.**
 
@@ -112,6 +119,14 @@ Last updated: 2026-10-13.
     - ci-test content differs from the store the current baseline (39) was recorded on, so CI needs its own baseline file.
 
     First step before planning 6-T4b: one local run of `test:layout` against ci-test to see how stable the results are on test data.
+
+    **Trial result (2026-10-13, `shopify theme dev` on ci-test, `npm.cmd run test:layout -- --widths 390,768,1440`):** the run stops before any page is measured, with `Discovery failed: no article link found on blog /blogs/news`. Facts from the run and the harness code:
+    - Discovery needs a product, a blog and an article, and runs before the `--page` filter, so no single page can be measured on ci-test either. No stability data exists yet.
+    - `alternateTemplates` names `/pages/privacy-policy?view=about`, which ci-test is unlikely to have.
+    - The templates in the repository point at the development store's products and collections by handle, so on ci-test many sections would render empty; a CI sweep would cover less than the local one.
+    - Three baseline entries were unstable on the development store this session (see "Pruned 2026-10-13"), and a required check that is unstable blocks every merge.
+    - **Size of the full version (coordinator estimate):** harness changes (tolerate missing page types or a CI page set, a preview-theme target, a second baseline), a workflow that pushes a theme to ci-test and cleans up, the ruleset file and the live ruleset if the check becomes required, and an Ask review. It is the largest remaining Track A item except the backport.
+    - **Decided (user, 2026-10-13): deferred, nothing built.** This revises "`test:layout` joins CI" (user, 2026-10-12). Today every layout batch runs `test:layout` locally with the user present, so CI would add no cover. The storefront sweep in CI becomes worth its cost when a change can reach `main` without the local check: (1) another person contributes; (2) agents produce themes from the skeleton unattended, which is the direction after the backport and the likeliest first; (3) work happens where no local dev server exists (a cloud session, an edit on GitHub). Build it then, once, on the skeleton side. Also not built: `test:layout-harness` in CI (one workflow line; the tool changes rarely and its author can run the suite locally; not worth an Ask review).
   - **Lighthouse CI, first green run (2026-10-13, run 38363613541):** mobile medians are home 0.72 / 0.93, product 0.67 / 0.97, collection **0.48** / 0.96 (performance / accessibility); best practices is 0.59 on all three.
     - The job passes on the best of three runs, so green does not prove the Theme Store bar.
     - **For the polish pass and the readiness review:** classify the collection performance (LCP 5.5 s, TBT 890 ms) and the best-practices score before any code change.
@@ -395,6 +410,15 @@ Design phase inputs:
         - **Not proven:** an actual import of the ruleset file into a new repository; the first new theme repository proves it.
         - This is not a Batch SOP step: it is a one-time bootstrap. The one-time store setup (store, CSV, Theme Access) is not repeated.
         - **Hotfix flow, explained to the user:** with protection on, a fix on `main` goes through a short `fix/` branch and a pull request. The admin pull-request bypass is the emergency path. Afterwards, merge `main` back into the development branch.
+    - **File survey for the backport (coordinator, 2026-10-13; `git diff --name-status skeleton/main HEAD`, skeleton at `5191a50`, this branch at `388f58e`):**
+        - **Agent layer and harness:** `.agents` 56 files only here and 9 changed (both roles, the `check-theme-architecture` and `check-i18n` scripts, `doctor-agent.mjs`); new are the `review-animations` and `frontend-design` skills and the tools `ci-contract`, `contrast-report` and `layout-check` (with 29 fixtures). `.github`: `ci.yml` changed, `lighthouse.yml` and `rulesets/main.json` new. Also changed: `AGENTS.md`, `README.md`, `package.json`, the three MCP configs, `.gitignore`, `.shopifyignore`.
+        - **Validators:** nine new `lib/` checks under the `check-theme-architecture` scripts and two baselines; ten checks carry theme data (audit entry above).
+        - **References:** seven of eight changed; `theme-blocks.md` deleted here.
+        - **Runtime JavaScript:** of the skeleton's 19 modules, 14 changed here (`alpine.adapter.js`, `base.js`, `events.js`, `https.js`, `utils.js`, the cart store, the purchase and gallery modules, `dropdown.js`, `section-pagination.js`); 109 asset files exist only here, a mix of framework modules (the dialog layer, the toast store, the Swiper and GSAP adapters) and theme modules and icons.
+        - **CSS and tokens:** all six `tailwind/` source files changed, with `snippets/css-variables.liquid`, `assets/base.css` and `config/settings_schema.json`.
+        - **Theme layer (does not go back):** 34 sections and 58 snippets only here, the templates, the locales' theme strings, `docs/design/` (17 files).
+        - **Only in the skeleton:** the four Theme Blocks (`blocks/button.liquid`, `group`, `heading`, `text`), `sections/custom-section.liquid` and `theme-blocks.md`. The skeleton composes with Theme Blocks; this theme uses section blocks. Every CSS and snippet item must be judged against that difference.
+        - **Where the work runs:** the backport writes to `../my-skeleton-theme`, a different repository, so each batch is planned and reviewed there under its own record files.
     - Not a candidate (user, 2026-10-04): the CSS step 3 rules and primitive snippets (5-C3a–5-C3g, 5-B1). They serve this theme's section-block model; the skeleton composes with Theme Blocks as components (as Horizon does) and keeps snippets as code fragments. A GSAP adapter is judged after the home page narrative is built.
     - Timing: Track A item 5, see "Decided: order of work, revised" above (this replaces the earlier coordinator proposal of after the second submission).
     - Already covered by the skeleton reference, not applied here: `javascript-runtime.md` recommends `modulepreload` for a first-viewport module chain that the page truly needs before interaction.
