@@ -39,3 +39,5 @@ Last updated: 2026-10-13.
 4. The pull-request trigger is proven at the first pull request into `main`. It is not part of this batch, because opening one is the user's decision. State it as unproven.
 5. `npx prettier --check .github/workflows/*.yml`, `npm.cmd run lint:doc-paths` and `npm.cmd run doctor:agent` pass; `git diff --check` is clean; `git diff --stat` shows only the surface.
 6. Independent review (Ask) reports PASS.
+
+**Check 3 (2026-10-13):** commit `e5c6ba2` pushed. `gh run list --commit e5c6ba2` shows one run, `CI` 38370212672. Its jobs are Lint and Theme Check (Theme Check Report is added by the action when it finishes), with no Lighthouse job. There is no `Lighthouse` workflow run for the commit. Checks 1, 2 and 5 pass with the commands named above. Check 4 is unproven by design. Check 6 is pending.
