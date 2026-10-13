@@ -57,3 +57,7 @@ Last updated: 2026-10-13.
 Top-up review pending, covering commit `1e3bc18` and this run.
 
 **Pull request #21 closed (user, 2026-10-13):** it was closed after the trigger proof, and the branch was kept. GitHub cannot delete a pull request, only close it. From here a push to this branch runs `CI` only.
+
+**Top-up review (2026-10-13): PASS**, no findings in `dfad11c..40ff4d6`. It confirmed the two-phrase rule wording change, the approval record, the pull-request run and its association with #21, and that the workflows were unchanged. It saw #21 closed and not merged.
+
+**Batch complete.**
