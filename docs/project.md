@@ -45,7 +45,8 @@ Ceylune, a custom Shopify theme maintained as a multi-industry Shopify Theme Sto
     - **Migration debt closed** (user, 2026-10-13). What remains is design and moves to the polish pass: `body-size-custom` (6 `legacy-type-tier` hits and the countdown size), the quick-view viewport padding (`raw-spacing` 2), raw radii, and the italic and chip details of `ritual-steps`.
     - **6-A1 autoplay pause button** (`2c7e28b`): shown only where no other way to pause exists (devices that cannot hover), in `slides-show` and `routine-showcase`; `design.md` updated to match.
     - **6-D3** (`b04dba5`): both font pickers default to Instrument Sans instead of system monospace.
-    - **Next:** the external skills batch (decided adoptions and triggers) and 6-T4 CI (waits for the user's dedicated store and Dev Dashboard app); then the polish pass. The user's look at this round's visible changes goes to the consolidated browser pass.
+    - **6-V7 external skills** (`7593ac0`): `review-animations` vendored; named triggers for it, the GSAP skills, `frontend-design` and Chrome DevTools MCP; `impeccable` not vendored, one-off critique at the polish-pass start.
+    - **Next:** 6-T4 CI (waits for the user's dedicated store and Dev Dashboard app); then the polish pass. The user's look at this round's visible changes goes to the consolidated browser pass.
 
 ## Migration Direction (accepted)
 
