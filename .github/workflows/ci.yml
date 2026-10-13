@@ -37,24 +37,3 @@ jobs:
               uses: shopify/theme-check-action@v2
               with:
                   token: ${{ github.token }}
-
-    lighthouse:
-        name: Lighthouse
-        if: github.event_name == 'push'
-        runs-on: ubuntu-latest
-        concurrency:
-            group: lighthouse-${{ github.ref }}
-            cancel-in-progress: true
-        steps:
-            - uses: actions/checkout@v4
-
-            - name: Lighthouse
-              uses: shopify/lighthouse-ci-action@v1
-              with:
-                  store: ${{ secrets.SHOP_STORE }}
-                  access_token: ${{ secrets.SHOP_ACCESS_TOKEN }}
-                  password: ${{ secrets.SHOP_PASSWORD }}
-                  product_handle: amazing-cotton-bag-collection15
-                  collection_handle: collection1
-                  lhci_min_score_performance: 0.6
-                  lhci_min_score_accessibility: 0.9

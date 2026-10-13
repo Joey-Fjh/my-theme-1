@@ -4,4 +4,38 @@ Holds the plan currently under execution and its status. Nothing else. Unresolve
 
 Last updated: 2026-10-13.
 
-No plan under execution.
+## 6-T4c Lighthouse trigger timing
+
+**Status:** proposed, accepted and authorized by the user 2026-10-13 ("是的，可以。… 这个lighthouse就没必要这个分支触发了。lint 和 theme check你来判断"). Executed by the coordinator; waiting on independent review (Ask).
+
+**Outcome:** Lighthouse runs only where it gates a merge: pull requests into `main`, pushes to `main`, and manual runs. Development branch pushes no longer trigger it, so there is no 4 to 5 minute audit and no leftover development theme on ci-test per push. Lint and Theme Check stay on every push (the coordinator's call: they are cheap and give early feedback).
+
+**Why a separate workflow file:** a job-level condition inside `ci.yml` would still report a skipped `Lighthouse` check on every branch push. GitHub counts skipped as passing, and that check would sit beside the real pull-request result under the same required name. In 6-T4a the job was `push`-only, so on a pull request it was skipped and the required check relied on the push run. A separate workflow does not run at all on branch pushes.
+
+**Review tier:** Ask (validator wiring).
+
+### Implementation surface
+
+- `.github/workflows/ci.yml`: the `lighthouse` job is removed. The file is byte-identical to `c5869ae`, the state before 6-T4a.
+- `.github/workflows/lighthouse.yml` (new):
+  - Triggers: `push` to `main`, `pull_request` into `main`, and `workflow_dispatch`.
+  - Concurrency: one group per ref, with cancel-in-progress.
+  - Job `Lighthouse`: the same name the `main` ruleset requires. It is skipped for fork pull requests, which get no secrets. Its steps and inputs are identical to the 6-T4a job.
+- `docs/references/code-review/launch-gate.md`: the Lighthouse line names the new file and the triggers.
+- Record files.
+
+**Forbidden:** theme files, `package.json`, secrets, the GitHub ruleset, `AGENTS.md` and the roles.
+
+### Known limits (not defects)
+
+- `workflow_dispatch` and the `pull_request` trigger read the workflow from the default branch or the pull request merge. The manual "Run workflow" button therefore appears only after this file reaches `main`. Until then, Lighthouse runs for this branch only through a pull request into `main`; a draft works.
+- **Proposal for the user, not done:** `AGENTS.md` (Authority) and `.agents/roles/verifier.md` name `.github/workflows/ci.yml` as the validator wiring. With a second workflow file, the wording should become `.github/workflows/`. That is a rule change and needs explicit approval.
+
+### Acceptance checks
+
+1. `git diff c5869ae -- .github/workflows/ci.yml` is empty.
+2. `js-yaml` parses both files. `lighthouse.yml` triggers are exactly `push` (branches `main`), `pull_request` (branches `main`) and `workflow_dispatch`. Its step inputs equal the 6-T4a job's (`git show 851ca19:.github/workflows/ci.yml`). It references only `secrets.SHOP_STORE`, `secrets.SHOP_ACCESS_TOKEN` and `secrets.SHOP_PASSWORD`.
+3. After the push of this change, the `CI` run for the new commit has the jobs Lint, Theme Check and Theme Check Report and no Lighthouse job, and `gh run list --workflow Lighthouse` shows no run for that commit.
+4. The pull-request trigger is proven at the first pull request into `main`. It is not part of this batch, because opening one is the user's decision. State it as unproven.
+5. `npx prettier --check .github/workflows/*.yml`, `npm.cmd run lint:doc-paths` and `npm.cmd run doctor:agent` pass; `git diff --check` is clean; `git diff --stat` shows only the surface.
+6. Independent review (Ask) reports PASS.
