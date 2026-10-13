@@ -49,6 +49,7 @@ Ceylune, a custom Shopify theme maintained as a multi-industry Shopify Theme Sto
     - **6-T4a Lighthouse CI** (`851ca19`): every push audits home, product and collection on the dedicated CI store (`ci-test`, Shopify's performance test CSV), authenticated with a Theme Access password. The job passes on the best of three runs, so green does not prove the Theme Store bar. First medians (mobile): performance 0.72 / 0.67 / 0.48, accessibility 0.93 / 0.97 / 0.96.
     - **Branch protection on `main`** (user, GitHub ruleset): pull request required; `Lint`, `Theme Check` and `Lighthouse` required and up to date; no force push or deletion; admin bypass for pull requests only.
     - **Order revised** (user, 2026-10-13): two tracks. The framework track closes first with five items: a framework browser smoke pass, 6-T4b `test:layout` in CI, repository setup automation, a redundancy audit and tidy-up of the lint tools and documents, then the skeleton backport (after which new themes start from the skeleton in parallel). The theme track (polish pass, consolidated browser pass, readiness review, second submission) follows or runs beside it. Detail on `docs/agent/board.md`.
+    - **6-T4c Lighthouse trigger timing** (`e5c6ba2`): Lighthouse is its own workflow and runs on pull requests into `main`, pushes to `main` and manual runs; development branch pushes run Lint and Theme Check only.
     - **Next:** the framework browser smoke pass. The user's look at this round's visible changes goes to the consolidated browser pass.
 
 ## Migration Direction (accepted)
