@@ -80,6 +80,16 @@ A client loads MCP servers when a session starts, so restart it after a config c
 
 If an expected MCP is missing, check client configuration, project trust, client restart, Node/npm, and network before falling back to official documentation.
 
+## New theme repository setup
+
+Do this once when a new GitHub repository is created from this code. The CI store (`ci-test`, loaded with Shopify's performance test CSV) and its Theme Access password are shared by every theme and are not set up again.
+
+1. **Protect `main`.** In the repository on GitHub: Settings, Rules, Rulesets, New ruleset, Import a ruleset, and choose `.github/rulesets/main.json`. It requires a pull request and the `Lint`, `Theme Check` and `Lighthouse` checks (up to date), and blocks force pushes and deletion; repository admins may bypass it for pull requests only.
+2. **Add the Actions secrets** (Settings, Secrets and variables, Actions) that `.github/workflows/lighthouse.yml` reads: `SHOP_STORE`, `SHOP_ACCESS_TOKEN` and `SHOP_PASSWORD`. Enter the values on GitHub only; never put them in a file.
+3. **Run the `Lighthouse` workflow once by hand** (Actions, Lighthouse, Run workflow) to prove the secrets work. The button appears once the workflow file is on `main`.
+
+`npm.cmd run doctor:agent` fails when a check the ruleset file requires is not the name of a workflow job, because such a merge would wait forever. It reads files only: it does not see the live ruleset or the secrets, so change the file and the live ruleset together.
+
 ## Commands
 
 ```powershell
@@ -92,7 +102,7 @@ npm.cmd run lint                # Repository lint and format checks
 npm.cmd run test:validators     # Project validator fixture tests
 npm.cmd test                    # Validators, Liquid syntax guard, Theme Check
 npm.cmd run test:theme-check    # Shopify Theme Check only
-npm.cmd run doctor:agent        # Verify CLAUDE.md / .claude/skills symlinks and matching MCP lists
+npm.cmd run doctor:agent        # Verify CLAUDE.md / .claude/skills symlinks, matching MCP lists, ruleset checks against job names
 npm.cmd run test:layout-harness # Layout-check fixture suite (Chrome required; no dev server)
 npm.cmd run test:layout         # Storefront layout scan (Chrome + shopify:dev). Optional LAYOUT_INJECT_STYLE for local regression CSS probes.
 ```

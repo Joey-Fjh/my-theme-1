@@ -114,6 +114,8 @@ if (hookMode) {
 // Hook mode exits above, so a session start never depends on installed tooling.
 const { parse: parseToml } = await import('smol-toml');
 const mcpFailures = collectMcpFailures(parseToml);
+const { collectCiContractFailures } = await import('./ci-contract.mjs');
+const ciFailures = collectCiContractFailures(repoRoot);
 
 if (failures.length > 0) console.error(buildCliRemediation());
 
@@ -126,4 +128,13 @@ Declare the same servers in .mcp.json, .cursor/mcp.json, and .codex/config.toml.
 `);
 }
 
-process.exit(failures.length > 0 || mcpFailures.length > 0 ? 1 : 0);
+if (ciFailures.length > 0) {
+    console.error(`Branch ruleset check failed:
+
+${formatFailures(ciFailures)}
+
+A merge into the protected branch waits for every required check, so each one must be the name of a workflow job. Rename the job back, or update the ruleset file and the live ruleset together. See README.md ("New theme repository setup").
+`);
+}
+
+process.exit(failures.length > 0 || mcpFailures.length > 0 || ciFailures.length > 0 ? 1 : 0);
