@@ -218,7 +218,7 @@ Each component is described by its role and look; sizes, gaps and radii come fro
 - Use the arrow link for editorial calls to action and filled buttons for commerce actions.
 - Round feature cards and editorial media; keep product and article tiles square.
 - Let photography carry the mood: real materials, natural light, products large.
-- Check every change from 320 to 2560 wide (`test:layout`), and at 375, 768, 1024 and 1440 by eye.
+- Check every change from 320 to 2560 wide (`test:layout`), and at 375, 768, 1024 and 1440 by eye. These four are the widths the design must cover, used in the polish pass and the consolidated browser pass; the per-batch screenshots at 390 and 1440 (`AGENTS.md`, Sources) are the minimum for a visual batch, not a second set of design widths.
 
 **Don't**
 
@@ -287,7 +287,7 @@ Rules across widths:
 - Overlays: drawers slide from their edge, dialogs fade and rise slightly, scrims fade.
 - The 3D moment: a slight tilt and the backdrop appearing, within the base duration.
 
-**Reduced motion and the switch.** Under `prefers-reduced-motion: reduce`, and when the merchant turns `motion_enabled` off, reveals show content at once, the marquee and autoplay stop, tilts and zooms are removed, and overlays appear without travel (a short fade at most). No state or content depends on an animation finishing.
+**Reduced motion and the switch.** Under `prefers-reduced-motion: reduce`, and when the merchant turns `motion_enabled` off, reveals show content at once, the marquee and autoplay stop, and tilts and zooms are removed. Overlays (dialogs, drawers, dropdowns) are state feedback, not decoration, so the merchant switch does not change them; they follow `prefers-reduced-motion` only, and under it they appear without travel (a short fade at most). No state or content depends on an animation finishing.
 
 ## Design Defects
 
