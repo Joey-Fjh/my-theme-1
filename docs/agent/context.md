@@ -48,3 +48,10 @@ Last updated: 2026-10-13.
 - **Outside that review:** commit `1e3bc18` (the approved rule wording) and the pull-request run below. A short top-up review covers both.
 
 **Check 4, pull-request trigger:** the user's "可以" (2026-10-13) was taken to cover the offered draft pull request. Draft pull request #21 (`refactor/skeleton-shell` → `main`, marked do not merge) was opened. It started the `Lighthouse` workflow on the `pull_request` event (run 38370537425) beside `CI`. The result is recorded when the run finishes.
+
+**Check 4 proven (2026-10-13):** run 38370537425 (event `pull_request`, pull request #21) succeeded.
+- It audited `/`, `/products/amazing-cotton-bag-collection15` and `/collections/collection1`, three runs each.
+- "Checking assertions against 3 URL(s), 9 total run(s)" was followed by "All results processed!".
+- `gh pr checks 21` shows Lighthouse, Lint, Theme Check and Theme Check Report passing. Lint and Theme Check appear twice, once for the push and once for the pull request, as expected while a pull request is open.
+
+Top-up review pending, covering commit `1e3bc18` and this run.
