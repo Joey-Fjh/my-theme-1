@@ -55,3 +55,5 @@ Last updated: 2026-10-13.
 - `gh pr checks 21` shows Lighthouse, Lint, Theme Check and Theme Check Report passing. Lint and Theme Check appear twice, once for the push and once for the pull request, as expected while a pull request is open.
 
 Top-up review pending, covering commit `1e3bc18` and this run.
+
+**Pull request #21 closed (user, 2026-10-13):** it was closed after the trigger proof, and the branch was kept. GitHub cannot delete a pull request, only close it. From here a push to this branch runs `CI` only.
