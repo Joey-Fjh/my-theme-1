@@ -57,9 +57,14 @@ Last updated: 2026-10-13.
     - the Lighthouse handles.
 - **Also for the backport:** the candidate list under Evidence (checked 2026-10-04) predates `test:layout`, Lighthouse CI, `review-animations`, the 6-C and 6-V lints, the dialog layer and the design chain, and its "not a candidate: CSS step 3 rules and primitive snippets" conflicts with treating `css-architecture.md` as framework.
 
-**Done: tidy-up batches A and 6-V9** (2026-10-13).
+**Done: tidy-up batches A, 6-V9 and 6-V10** (2026-10-13). Track A item 4 is closed, except what is listed for the backport in the audit entry below.
 - **A:** the board and `docs/project.md` pruned of finished history (`e1bb95d`).
 - **6-V9:** the references, the check-theme-architecture `SKILL.md`, `README.md` and `docs/project.md` corrected against the code, and the phase 0 browser checklist deleted (`23486ed`, `fad2935`; plan and reviews: `git show b07c323:docs/agent/context.md`; independent review PASS on round 2).
+- **6-V10:** the two latent validator defects fixed and dead code removed (`584fdfc`, `f61731e`; plan and reviews: `git show 7ebda29:docs/agent/context.md`; independent review PASS on round 2). In detail:
+    - one trim-aware schema extractor;
+    - type-step font sizes allowed in stylesheet blocks only;
+    - `dead-setting` strict, with its baseline and flags removed;
+    - `lint:theme` prints the check id on every failure.
 
 **Open: findings from 6-V9 (2026-10-13), for the user.**
 
