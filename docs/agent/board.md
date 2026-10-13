@@ -66,6 +66,30 @@ Last updated: 2026-10-13.
     - `dead-setting` strict, with its baseline and flags removed;
     - `lint:theme` prints the check id on every failure.
 
+**Framework browser smoke pass, done (Track A item 1; external read-only session, 2026-10-13, against `shopify theme dev`; the report was given in chat and is not kept).** Verdict: one framework defect. No theme-asset 4xx, no failed module import and no Alpine expression error on home, product, collection, cart and search.
+
+- **Framework defect, desktop menu `aria-expanded`:**
+  - The menu opens, but the summary keeps `aria-expanded="false"`, after mouse and after Enter.
+  - `snippets/header-dropdown-menu.liquid` binds `:aria-expanded="$el.parentElement.open"`, and Alpine does not track the `open` attribute that `assets/dropdown.js` `open()` sets.
+  - It is an accessibility defect in navigation, so a launch blocker. Fix it before the backport, together with the loading spinner below.
+- **Not a defect, add to cart on the product page:** it shows a success toast and does not open the cart drawer. `snippets/buy-buttons.liquid` defaults `open_cart_on_add` to false, and the product page does not pass it; quick view does. The live theme (`main`) behaves the same, so this is not a migration regression. Whether the product page should open the drawer is a design choice for the polish pass.
+- **Passed at 1440:**
+  - module mounting, including a lazy module on scroll;
+  - the dialog layer (search, cart drawer, lightbox, quick view: focus in, Tab wrap, Escape, focus return, scroll lock);
+  - variant change, quantity limits and the sold-out state;
+  - the cart page;
+  - collection filter, sort and section refresh;
+  - accordion, tabs, lightbox and carousel next.
+- **Passed at 390:** module loading, the mobile menu drawer, variant URL and sold-out, collection filter and sort.
+- **Not covered, goes to the consolidated browser pass:**
+  - no-JavaScript (Chrome DevTools MCP cannot turn JavaScript off);
+  - a blog article (the store has none reachable);
+  - at 390: the cart page, cart drawer, search, lightbox, quick view, predictive search, localization, accordion, tabs;
+  - carousel pagination and keyboard;
+  - collection pagination with Back and Forward;
+  - the newsletter overlay's Tab trap;
+  - `/favicon.ico` 404 on the first home load (store configuration, to classify).
+
 **Open: findings from 6-V9 (2026-10-13), for the user.**
 
 - **Possible defect, loading spinners do not rotate.** `snippets/loading.liquid` and `snippets/buy-buttons.liquid` use the class `animate-spin`. `tailwind/tailwind.input.css` resets `--animate-*: initial`, and `assets/tailwind.output.css` has no `.animate-spin` rule (`grep -c` gives 0; only `.animate-spin-slow` exists). The `.spinner` / `.spinner-lg` recipe in `tailwind/tailwind.animates.css` has no consumer. Not confirmed in a browser. It is framework-level, because the loading snippet is shared, so classify and fix it before the backport.
