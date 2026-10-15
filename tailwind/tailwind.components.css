@@ -1132,6 +1132,28 @@ Not included: pickup-availability-inline__retry-action (pickup owner delta in sn
     .buy-buttons__label.is-loading {
         @apply opacity-0;
     }
+
+    .buy-buttons__actions--purchase-group button.shopify-payment-button__button--unbranded {
+        @apply btn-secondary w-full text-theme-text;
+        border-color: var(--color-line);
+        background-color: transparent;
+    }
+
+    .buy-buttons__actions--purchase-group
+        button.shopify-payment-button__button--unbranded:hover:not([disabled]) {
+        @apply text-theme-text;
+        border-color: var(--color-line);
+        background-color: var(--color-surface-muted);
+        filter: none;
+        transform: none;
+        box-shadow: none;
+        animation: none;
+    }
+
+    .buy-buttons__actions--purchase-group
+        button.shopify-payment-button__button--unbranded:focus-visible {
+        @apply focus-ring;
+    }
 }
 
 /* =========================================================
@@ -1736,7 +1758,9 @@ Shared primitives (valid cross-snippet — not orphans):
 ========================================================= */
 @layer components {
     .product-info-blocks {
-        --product-block-row-gap: 1.25rem;
+        --product-block-row-gap: var(--spacing-step-2xl);
+        --product-block-row-gap-tight: var(--spacing-step-2xs);
+        --product-block-row-gap-box: var(--spacing-step-m);
 
         @apply flex flex-col pc:max-h-full pc:min-h-0 pc:overflow-hidden;
 
@@ -1747,10 +1771,19 @@ Shared primitives (valid cross-snippet — not orphans):
         }
     }
 
-    @media (width >= theme(--breakpoint-tablet)) {
-        .product-info-blocks {
-            --product-block-row-gap: 1.5rem;
-        }
+    .product-info-blocks__block--vendor + .product-info-blocks__block--title,
+    .product-info-blocks__block--title + .product-info-blocks__block--inventory_notice {
+        margin-top: calc(var(--product-block-row-gap-tight) - var(--product-block-row-gap));
+    }
+
+    .product-info-blocks__block--box + .product-info-blocks__block--box {
+        margin-top: calc(var(--product-block-row-gap-box) - var(--product-block-row-gap));
+    }
+
+    .featured-product-section--carousel
+        .product-info-blocks--featured
+        > .product-info-blocks__block {
+        margin-top: 0;
     }
 
     .product-info-blocks__title {
@@ -1801,7 +1834,8 @@ Shared primitives (valid cross-snippet — not orphans):
     }
 
     .product-info-blocks__purchase {
-        @apply mt-auto w-full pt-6;
+        @apply mt-auto w-full;
+        padding-top: var(--spacing-step-m);
     }
 
     .product-info-blocks__quantity {
@@ -1822,26 +1856,58 @@ Shared primitives (valid cross-snippet — not orphans):
         background-color: rgb(var(--color-warning-foreground));
     }
 
-    .product-info-blocks__share {
-        @apply flex items-center gap-4 text-subtle;
+    .product-info-blocks__share-links {
+        @apply flex flex-wrap items-center gap-step-s text-theme-text;
     }
 
+    /* Round icon buttons in the share box (design). */
     .product-info-blocks__share-link {
-        @apply flex h-10 w-10 items-center justify-center transition-opacity hover:opacity-70;
+        @apply flex items-center justify-center border border-line transition-opacity hover:opacity-70;
+        width: 3.2rem;
+        height: 3.2rem;
+        border-radius: 50%;
+    }
+
+    .product-info-blocks__share-link .icons {
+        width: 1.6rem;
+        height: 1.6rem;
     }
 
     .product-info-blocks__callout {
-        @apply flex items-center gap-4 rounded-sm px-5 py-4;
+        @apply flex items-start gap-step-s;
         background-color: rgb(var(--color-info-background));
         color: rgb(var(--color-info-foreground));
+        padding: var(--spacing-step-s);
     }
 
+    /* Bordered: the same box as payment icons and social links (design). */
     .product-info-blocks__callout--bordered {
         @apply border border-line;
+        border-radius: var(--radius-media);
+        padding: var(--spacing-step-m);
+        background-color: transparent;
+        color: rgb(var(--color-foreground));
+    }
+
+    .product-info-blocks__box {
+        @apply flex flex-col gap-step-s border border-line;
+        border-radius: var(--radius-media);
+        padding: var(--spacing-step-m);
+    }
+
+    .product-info-blocks__payment-icons-list {
+        @apply flex flex-wrap items-center gap-step-s;
+    }
+
+    /* Shopify's payment SVGs carry their own 38 x 24 card frame; keep that size. */
+    .product-info-blocks__payment-icons-list svg {
+        display: block;
+        width: 3.8rem;
+        height: 2.4rem;
     }
 
     .product-info-blocks__callout-icon {
-        @apply self-center;
+        @apply self-start;
     }
 
     .product-info-blocks__callout-content {
@@ -1849,7 +1915,7 @@ Shared primitives (valid cross-snippet — not orphans):
     }
 
     .product-info-blocks__callout-text {
-        @apply max-w-none opacity-100;
+        @apply max-w-none copy-s opacity-100;
     }
 
     .product-info-blocks__icon-with-text-group {
@@ -1945,7 +2011,7 @@ Shared primitives (valid cross-snippet — not orphans):
     }
 
     .product-info-blocks__price-divider {
-        @apply mt-3 h-px w-full bg-line;
+        @apply mt-step-xs h-px w-full bg-line;
     }
 
     .product-info-blocks--gallery {
@@ -2152,6 +2218,19 @@ Mobile card rail (ritual-steps, routine-showcase)
     .card-rail__dot.is-active .card-rail__dot-visual {
         transform: scale(1.15);
         background-color: rgb(var(--color-foreground));
+    }
+}
+
+/* =========================================================
+Owner: carousel pagination dots (every Swiper consumer)
+Declared on the pagination element so the colours resolve in the section's
+colour scheme; a :root declaration would freeze the root scheme.
+========================================================= */
+@layer components {
+    .swiper-pagination {
+        --swiper-pagination-color: rgb(var(--color-foreground));
+        --swiper-pagination-bullet-inactive-color: rgb(var(--color-foreground));
+        --swiper-pagination-bullet-inactive-opacity: 0.3;
     }
 }
 

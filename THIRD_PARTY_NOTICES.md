@@ -67,7 +67,7 @@ SOFTWARE.
 ## Phosphor Icons
 
 - Version: not pinned in this repository; regular weight SVGs optimized via `npm.cmd run build:svg` from staged sources in `icons/` (when present).
-- Files: `assets/icon-content-*.svg` (23 icons; added between 2026-08-05 and 2026-10-06 per Git history; notice added 2026-10-11)
+- Files: `assets/icon-content-*.svg` (24 icons; added between 2026-08-05 and 2026-10-16 per Git history; notice added 2026-10-11; `icon-content-flask.svg` added and `icon-content-recycle.svg` replaced with the upstream glyph on 2026-10-16 from `assets/regular/`, single-file svgo runs with `svgo.config.cjs`)
 - Source: https://github.com/phosphor-icons/core
 - License text: https://github.com/phosphor-icons/core/blob/main/LICENSE (MIT)
 

@@ -68,7 +68,7 @@
             {%- when 'vendor' -%}
                 {%- if product_data != blank and product_data.vendor != blank -%}
                     <div
-                        class="product-info-blocks__vendor"
+                        class="product-info-blocks__vendor product-info-blocks__block product-info-blocks__block--vendor"
                         {{ block.shopify_attributes }}
                     >
                         {{ product_data.vendor }}
@@ -86,7 +86,10 @@
                         endif
                     endif
                 -%}
-                <div {{ block.shopify_attributes }}>
+                <div
+                    class="product-info-blocks__block product-info-blocks__block--title"
+                    {{ block.shopify_attributes }}
+                >
                     {%- if product_data != blank -%}
                         {%- if context == 'product' -%}
                             <h1 class="product-info-blocks__title {{ product_title_heading_class }}">
@@ -111,7 +114,10 @@
                         assign show_product_rating = false
                     endif
                 -%}
-                <div {{ block.shopify_attributes }}>
+                <div
+                    class="product-info-blocks__block product-info-blocks__block--price"
+                    {{ block.shopify_attributes }}
+                >
                     {%- if product_data != blank -%}
                         {%- assign current_variant = product_data.selected_or_first_available_variant -%}
                         {%- capture unit_prices_json -%}
@@ -288,12 +294,14 @@
                         assign callout_heading_class = callout_heading_class | append: ' font-bold'
                     endif
                     assign callout_border_class = ''
+                    assign callout_block_class = 'product-info-blocks__block product-info-blocks__block--callout'
                     if block.settings.show_border
                         assign callout_border_class = 'product-info-blocks__callout--bordered'
+                        assign callout_block_class = callout_block_class | append: ' product-info-blocks__block--box'
                     endif
                 -%}
                 <div
-                    class="product-info-blocks__callout {{ callout_border_class }}"
+                    class="product-info-blocks__callout {{ callout_border_class }} {{ callout_block_class }}"
                     {{ block.shopify_attributes }}
                 >
                     {%- render 'content-icon',
@@ -325,7 +333,7 @@
                         assign icon_with_text_gap = block.settings.icon_text_gap | default: 8 | plus: 0
                     -%}
                     <div
-                        class="product-info-blocks__icon-with-text-group"
+                        class="product-info-blocks__icon-with-text-group product-info-blocks__block product-info-blocks__block--icon_with_text_group"
                         {{ block.shopify_attributes }}
                     >
                         {%- render 'icon-with-text-item',
@@ -517,21 +525,23 @@
                             assign variant_gallery_id = 'product-gallery-featured-' | append: section.id
                         endif
                     -%}
-                    {%- render 'product-variant-picker',
-                        product: product_data,
-                        block: block,
-                        product_form_id: product_form_id,
-                        section_id: section.id,
-                        context: context,
-                        gallery_id: variant_gallery_id,
-                        update_url: variant_update_url
-                    -%}
+                    <div class="product-info-blocks__block product-info-blocks__block--variant_picker">
+                        {%- render 'product-variant-picker',
+                            product: product_data,
+                            block: block,
+                            product_form_id: product_form_id,
+                            section_id: section.id,
+                            context: context,
+                            gallery_id: variant_gallery_id,
+                            update_url: variant_update_url
+                        -%}
+                    </div>
                 {%- endif -%}
 
             {%- when 'quantity_selector' -%}
                 {%- if purchase_anchor_type == 'quantity_selector' -%}
                     {%- if buy_buttons_block != blank -%}
-                        <div class="product-info-blocks__purchase">
+                        <div class="product-info-blocks__purchase product-info-blocks__block product-info-blocks__block--purchase">
                             {%- render 'buy-buttons',
                                 product: product_data,
                                 block: buy_buttons_block,
@@ -543,7 +553,7 @@
                             -%}
                         </div>
                     {%- else -%}
-                        <div class="product-info-blocks__purchase">
+                        <div class="product-info-blocks__purchase product-info-blocks__block product-info-blocks__block--purchase">
                             <div
                                 class="product-info-blocks__quantity"
                                 {{ block.shopify_attributes }}
@@ -565,7 +575,7 @@
 
             {%- when 'buy_buttons' -%}
                 {%- if purchase_anchor_type == 'buy_buttons' -%}
-                    <div class="product-info-blocks__purchase">
+                    <div class="product-info-blocks__purchase product-info-blocks__block product-info-blocks__block--purchase">
                         {%- render 'buy-buttons',
                             product: product_data,
                             block: block,
@@ -578,43 +588,16 @@
                     </div>
                 {%- endif -%}
 
-            {%- when 'inventory_notice' -%}
-                {%- liquid
-                    assign current_variant = product_data.selected_or_first_available_variant
-                    assign low_stock_threshold = block.settings.low_stock_threshold | default: 5 | plus: 0
-                    assign show_inventory_notice = false
-                    assign inventory_quantity = current_variant.inventory_quantity | default: 0 | plus: 0
-                    assign alignment = block.settings.alignment | default: 'left'
-                    assign alignment_class = 'justify-start text-start'
-
-                    if alignment == 'center'
-                        assign alignment_class = 'justify-center text-center'
-                    elsif alignment == 'right'
-                        assign alignment_class = 'justify-end text-end'
-                    endif
-
-                    if current_variant.inventory_management != blank and current_variant.inventory_policy == 'deny' and inventory_quantity > 0 and inventory_quantity <= low_stock_threshold
-                        assign show_inventory_notice = true
-                    endif
-                -%}
-                {%- if show_inventory_notice -%}
-                    <div
-                        class="product-info-blocks__inventory-notice {{ alignment_class }}"
-                        {{ block.shopify_attributes }}
-                    >
-                        <span class="product-info-blocks__inventory-dot" aria-hidden="true"></span>
-                        <span>
-                            {%- if block.settings.show_stock_number -%}
-                                {{
-                                    'products.product.only_in_stock_html'
-                                    | t: quantity: inventory_quantity
-                                }}
-                            {%- else -%}
-                                {{ 'products.product.low_stock' | t }}
-                            {%- endif -%}
-                        </span>
-                    </div>
+            {%- when 'payment_icons' -%}
+                {%- if context == 'product' -%}
+                    {%- render 'product-info-payment-icons', block: block -%}
                 {%- endif -%}
+
+            {%- when 'inventory_notice' -%}
+                {%- render 'product-info-inventory-notice',
+                    product_data: product_data,
+                    block: block
+                -%}
 
             {%- else -%}
                 <div {{ block.shopify_attributes }}>

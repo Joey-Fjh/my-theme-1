@@ -1,0 +1,40 @@
+{% doc %}
+    Inventory notice block for product-info-blocks.
+
+    @param {product} product_data - Product object
+    @param {object} block - Inventory notice block
+{% enddoc %}
+
+{%- liquid
+    assign current_variant = product_data.selected_or_first_available_variant
+    assign low_stock_threshold = block.settings.low_stock_threshold | default: 5 | plus: 0
+    assign show_inventory_notice = false
+    assign inventory_quantity = current_variant.inventory_quantity | default: 0 | plus: 0
+    assign alignment = block.settings.alignment | default: 'left'
+    assign alignment_class = 'justify-start text-start'
+
+    if alignment == 'center'
+        assign alignment_class = 'justify-center text-center'
+    elsif alignment == 'right'
+        assign alignment_class = 'justify-end text-end'
+    endif
+
+    if current_variant.inventory_management != blank and current_variant.inventory_policy == 'deny' and inventory_quantity > 0 and inventory_quantity <= low_stock_threshold
+        assign show_inventory_notice = true
+    endif
+-%}
+{%- if show_inventory_notice -%}
+    <div
+        class="product-info-blocks__inventory-notice product-info-blocks__block product-info-blocks__block--inventory_notice {{ alignment_class }}"
+        {{ block.shopify_attributes }}
+    >
+        <span class="product-info-blocks__inventory-dot" aria-hidden="true"></span>
+        <span>
+            {%- if block.settings.show_stock_number -%}
+                {{ 'products.product.only_in_stock_html' | t: quantity: inventory_quantity }}
+            {%- else -%}
+                {{ 'products.product.low_stock' | t }}
+            {%- endif -%}
+        </span>
+    </div>
+{%- endif -%}

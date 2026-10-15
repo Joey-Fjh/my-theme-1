@@ -181,7 +181,7 @@
                         :hidden="!isActive(panelIndexFor($el))"
                         {% unless forloop.first %}hidden{% endunless %}
                     >
-                        <div class="feature-tabs__panel-inner">
+                        <div class="feature-tabs__panel-inner{% if feature_tabs_decoration_markup != blank %} feature-tabs__panel-inner--decorated{% endif %}">
                             {{- feature_tabs_decoration_markup -}}
                             <p class="feature-tabs__counter">
                                 <span class="feature-tabs__counter-current copy-m">{{ feature_tabs_index_label }}</span>
@@ -222,7 +222,7 @@
                         :hidden="!isActive(panelIndexFor($el))"
                         {% unless forloop.first %}hidden{% endunless %}
                     >
-                        <div class="feature-tabs__panel-inner">
+                        <div class="feature-tabs__panel-inner{% if feature_tabs_decoration_markup != blank %} feature-tabs__panel-inner--decorated{% endif %}">
                             {{- feature_tabs_decoration_markup -}}
                             <p class="feature-tabs__counter">
                                 <span class="feature-tabs__counter-current copy-m">{{ feature_tabs_index_label }}</span>
@@ -410,8 +410,19 @@
             position: absolute;
             top: var(--spacing-step-4xl);
             right: var(--spacing-step-xl);
-            width: min(28%, 9rem);
+            width: var(--feature-tabs-decoration-width);
             z-index: 0;
+        }
+
+        /* Text keeps clear of the decoration at every width. */
+        .feature-tabs__panel-inner--decorated {
+            --feature-tabs-decoration-width: min(22%, 8rem);
+        }
+
+        .feature-tabs__panel-inner--decorated .feature-tabs__eyebrow,
+        .feature-tabs__panel-inner--decorated .feature-tabs__heading,
+        .feature-tabs__panel-inner--decorated .feature-tabs__body {
+            padding-inline-end: calc(var(--feature-tabs-decoration-width) + var(--spacing-step-m));
         }
 
         .feature-tabs__panel-inner > :not(.feature-tabs__decoration) {
@@ -436,7 +447,6 @@
 
     .feature-tabs__heading {
         margin-block-end: clamp(1.2rem, 0.903rem + 0.762vw, 2rem);
-        padding-inline-end: clamp(0rem, -2.229rem + 5.714vw, 6rem);
         color: rgb(var(--color-foreground));
     }
 
