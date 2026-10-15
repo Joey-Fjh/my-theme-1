@@ -295,6 +295,7 @@ Layer order: merchant settings → `snippets/css-variables.liquid` (`--page-widt
 | `ritual-steps` | Stage background; copy inset with `--page-inset` |
 | `promo-bannder` | Edge-to-edge panel media |
 | `google-map` | Map is the content (named exception) |
+| `formula-details` | Band background spans the viewport; content inset with `--page-inset` (6-P4, user, 2026-10-15) |
 
 Placement utilities (`place-top-left`, `place-center`, …) in `tailwind/tailwind.utilities.css` position content inside stage and media frames.
 

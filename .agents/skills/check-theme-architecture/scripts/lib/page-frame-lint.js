@@ -28,6 +28,7 @@ const FRAME_FULL_ALLOWLIST = new Set([
     'ritual-steps',
     'promo-bannder',
     'google-map',
+    'formula-details',
 ]);
 
 const FRAME_RENDER_RE = /\brender\s+(['"])section-frame\1/g;

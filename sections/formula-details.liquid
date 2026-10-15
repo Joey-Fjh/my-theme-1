@@ -1,0 +1,629 @@
+{%- liquid
+    assign formula_details_heading_class = section.settings.heading_size | default: 'title-xl'
+    case formula_details_heading_class
+        when 'title-4xl'
+            assign formula_details_heading_tiers = 'title-l desktop:title-4xl'
+        when 'title-3xl'
+            assign formula_details_heading_tiers = 'title-l desktop:title-3xl'
+        when 'title-2xl'
+            assign formula_details_heading_tiers = 'title-m desktop:title-2xl'
+        when 'title-xl'
+            assign formula_details_heading_tiers = 'title-m desktop:title-xl'
+        when 'title-l'
+            assign formula_details_heading_tiers = 'title-m desktop:title-l'
+        when 'title-m'
+            assign formula_details_heading_tiers = 'title-s desktop:title-m'
+        when 'title-s'
+            assign formula_details_heading_tiers = 'title-s desktop:title-s'
+        when 'title-xs'
+            assign formula_details_heading_tiers = 'title-xs desktop:title-xs'
+        else
+            assign formula_details_heading_tiers = 'title-m desktop:title-xl'
+    endcase
+
+    if section.settings.band_heading != blank
+        assign formula_details_band_heading = section.settings.band_heading
+    else
+        assign formula_details_band_heading = 'sections.formula-details.defaults.band_heading' | t
+    endif
+
+    if section.settings.band_text != blank
+        assign formula_details_band_body = section.settings.band_text
+    else
+        assign formula_details_band_body = 'sections.formula-details.defaults.band_text' | t | prepend: '<p>' | append: '</p>'
+    endif
+
+    if section.settings.ingredients_heading != blank
+        assign formula_details_ingredients_heading = section.settings.ingredients_heading
+    else
+        assign formula_details_ingredients_heading = 'sections.formula-details.defaults.ingredients_heading' | t
+    endif
+
+    if section.settings.ingredients_subtitle != blank
+        assign formula_details_ingredients_subtitle = section.settings.ingredients_subtitle
+    else
+        assign formula_details_ingredients_subtitle = 'sections.formula-details.defaults.ingredients_subtitle' | t
+    endif
+
+    assign formula_details_band_image = section.settings.band_image
+    assign formula_details_band_image_alt = formula_details_band_image.alt | escape
+
+    assign formula_details_attribute_count = 0
+    assign formula_details_ingredient_count = 0
+    for formula_details_block in section.blocks
+        if formula_details_block.type == 'attribute'
+            assign formula_details_attribute_count = formula_details_attribute_count | plus: 1
+        endif
+        if formula_details_block.type == 'ingredient'
+            assign formula_details_ingredient_count = formula_details_ingredient_count | plus: 1
+        endif
+    endfor
+
+    if formula_details_attribute_count == 0
+        assign formula_details_attribute_count = 3
+    endif
+    if formula_details_ingredient_count == 0
+        assign formula_details_ingredient_count = 3
+    endif
+-%}
+
+{%- capture formula_details_children -%}
+    <div class="formula-details">
+        <div class="formula-details__band color-{{ section.settings.band_color_scheme }}">
+            <div class="formula-details__band-inner">
+                <div class="formula-details__band-grid">
+                    <div class="flex flex-col gap-step-s">
+                        <h2 class="text-theme-text">
+                            <span class="{{ formula_details_heading_tiers }}">{{ formula_details_band_heading }}</span>
+                        </h2>
+                        <div class="rte copy-m text-theme-text">{{ formula_details_band_body }}</div>
+                    </div>
+
+                    <div class="formula-details__attributes" data-motion-cascade>
+                        {%- if section.blocks.size > 0 -%}
+                            {%- assign formula_details_attribute_index = 0 -%}
+                            {%- for block in section.blocks -%}
+                                {%- if block.type != 'attribute' -%}
+                                    {%- continue -%}
+                                {%- endif -%}
+                                {%- liquid
+                                    assign formula_details_attribute_index = formula_details_attribute_index | plus: 1
+                                    assign formula_details_attribute_number = formula_details_attribute_index
+                                    if formula_details_attribute_index < 10
+                                        assign formula_details_attribute_number = formula_details_attribute_index | prepend: '0'
+                                    endif
+                                    assign formula_details_attribute_name = block.settings.name
+                                    if formula_details_attribute_name == blank
+                                        assign formula_details_attribute_name = 'sections.formula-details.defaults.attribute_name' | t: index: formula_details_attribute_index
+                                    endif
+                                    assign formula_details_attribute_text = block.settings.text
+                                    if formula_details_attribute_text == blank
+                                        assign formula_details_attribute_text = 'sections.formula-details.defaults.attribute_text' | t
+                                    else
+                                        assign formula_details_attribute_text = block.settings.text | escape
+                                    endif
+                                -%}
+                                <div
+                                    class="formula-details__attribute"
+                                    data-motion-bound
+                                    {{ block.shopify_attributes }}
+                                >
+                                    <p class="copy-s text-theme-text">
+                                        <span class="formula-details__number">{{ formula_details_attribute_number }}</span>
+                                    </p>
+                                    <h3 class="title-s text-theme-text">{{ formula_details_attribute_name }}</h3>
+                                    <p class="copy-s text-theme-text">{{ formula_details_attribute_text }}</p>
+                                </div>
+                            {%- endfor -%}
+                        {%- else -%}
+                            {%- for placeholder_index in (1..3) -%}
+                                {%- liquid
+                                    assign formula_details_attribute_number = placeholder_index
+                                    if placeholder_index < 10
+                                        assign formula_details_attribute_number = placeholder_index | prepend: '0'
+                                    endif
+                                    assign formula_details_attribute_name = 'sections.formula-details.defaults.attribute_name' | t: index: placeholder_index
+                                    assign formula_details_attribute_text = 'sections.formula-details.defaults.attribute_text' | t
+                                -%}
+                                <div class="formula-details__attribute" data-motion-bound>
+                                    <p class="copy-s text-theme-text">
+                                        <span class="formula-details__number">{{ formula_details_attribute_number }}</span>
+                                    </p>
+                                    <h3 class="title-s text-theme-text">{{ formula_details_attribute_name }}</h3>
+                                    <p class="copy-s text-theme-text">{{ formula_details_attribute_text }}</p>
+                                </div>
+                            {%- endfor -%}
+                        {%- endif -%}
+                    </div>
+
+                    <div class="formula-details__band-media">
+                        <div class="formula-details__media formula-details__media--band">
+                            {%- if formula_details_band_image != blank -%}
+                                {%- render 'image',
+                                    image: formula_details_band_image,
+                                    alt: formula_details_band_image_alt,
+                                    mode: 'frame',
+                                    fit: 'cover',
+                                    loading: 'lazy',
+                                    sizes: '(min-width: 64rem) 33vw, 100vw',
+                                    widths: '400,600,800,1000,1200,1600',
+                                    wrapper: 'div',
+                                    wrapper_class: 'formula-details__image-wrap',
+                                    img_class: 'formula-details__img'
+                                -%}
+                            {%- else -%}
+                                <div class="formula-details__image-wrap formula-details__image-wrap--placeholder">
+                                    {% render 'decorative-placeholder-svg',
+                                        placeholder_key: 'lifestyle-1',
+                                        class: 'formula-details__placeholder-svg'
+                                    %}
+                                </div>
+                            {%- endif -%}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="formula-details__ingredients">
+            <div class="formula-details__ingredients-inner">
+                <header class="flex flex-col gap-step-xs">
+                    <h2 class="title-l text-theme-text uppercase">{{ formula_details_ingredients_heading }}</h2>
+                    <p class="copy-m text-theme-text">{{ formula_details_ingredients_subtitle }}</p>
+                </header>
+
+                <div
+                    class="formula-details__ingredient-grid"
+                    data-motion-cascade
+                >
+                    {%- if section.blocks.size > 0 -%}
+                        {%- assign formula_details_ingredient_index = 0 -%}
+                        {%- for block in section.blocks -%}
+                            {%- if block.type != 'ingredient' -%}
+                                {%- continue -%}
+                            {%- endif -%}
+                            {%- liquid
+                                assign formula_details_ingredient_index = formula_details_ingredient_index | plus: 1
+                                assign formula_details_ingredient_number = formula_details_ingredient_index
+                                if formula_details_ingredient_index < 10
+                                    assign formula_details_ingredient_number = formula_details_ingredient_index | prepend: '0'
+                                endif
+                                assign formula_details_ingredient_name = block.settings.name
+                                if formula_details_ingredient_name == blank
+                                    assign formula_details_ingredient_name = 'sections.formula-details.defaults.ingredient_name' | t: index: formula_details_ingredient_index
+                                endif
+                                assign formula_details_ingredient_text = block.settings.text
+                                if formula_details_ingredient_text == blank
+                                    assign formula_details_ingredient_text = 'sections.formula-details.defaults.ingredient_text' | t
+                                else
+                                    assign formula_details_ingredient_text = block.settings.text | escape
+                                endif
+                                assign formula_details_ingredient_image = block.settings.image
+                                assign formula_details_ingredient_alt = formula_details_ingredient_image.alt | escape
+                                assign formula_details_placeholder_mod = formula_details_ingredient_index | minus: 1 | modulo: 2 | plus: 1
+                                assign formula_details_placeholder_key = 'lifestyle-' | append: formula_details_placeholder_mod
+                            -%}
+                            <article
+                                class="formula-details__card"
+                                data-motion-bound
+                                {{ block.shopify_attributes }}
+                            >
+                                <div class="formula-details__media formula-details__media--ingredient">
+                                    {%- if formula_details_ingredient_image != blank -%}
+                                        {%- render 'image',
+                                            image: formula_details_ingredient_image,
+                                            alt: formula_details_ingredient_alt,
+                                            mode: 'frame',
+                                            fit: 'cover',
+                                            loading: 'lazy',
+                                            sizes: '(min-width: 64rem) 33vw, 100vw',
+                                            widths: '400,600,800,1000,1200,1600,2000',
+                                            wrapper: 'div',
+                                            wrapper_class: 'formula-details__image-wrap',
+                                            img_class: 'formula-details__img'
+                                        -%}
+                                    {%- else -%}
+                                        <div class="formula-details__image-wrap formula-details__image-wrap--placeholder">
+                                            {% render 'decorative-placeholder-svg',
+                                                placeholder_key: formula_details_placeholder_key,
+                                                class: 'formula-details__placeholder-svg'
+                                            %}
+                                        </div>
+                                    {%- endif -%}
+                                </div>
+                                <div class="flex flex-col gap-step-2xs">
+                                    <p class="copy-s text-theme-text">
+                                        <span class="formula-details__number">{{ formula_details_ingredient_number }}</span>
+                                    </p>
+                                    <h3 class="title-s text-theme-text">{{ formula_details_ingredient_name }}</h3>
+                                    <p class="copy-s text-theme-text">{{ formula_details_ingredient_text }}</p>
+                                </div>
+                            </article>
+                        {%- endfor -%}
+                    {%- else -%}
+                        {%- for placeholder_index in (1..3) -%}
+                            {%- liquid
+                                assign formula_details_ingredient_number = placeholder_index
+                                if placeholder_index < 10
+                                    assign formula_details_ingredient_number = placeholder_index | prepend: '0'
+                                endif
+                                assign formula_details_ingredient_name = 'sections.formula-details.defaults.ingredient_name' | t: index: placeholder_index
+                                assign formula_details_ingredient_text = 'sections.formula-details.defaults.ingredient_text' | t
+                                assign formula_details_placeholder_mod = placeholder_index | minus: 1 | modulo: 2 | plus: 1
+                                assign formula_details_placeholder_key = 'lifestyle-' | append: formula_details_placeholder_mod
+                            -%}
+                            <article class="formula-details__card" data-motion-bound>
+                                <div class="formula-details__media formula-details__media--ingredient">
+                                    <div class="formula-details__image-wrap formula-details__image-wrap--placeholder">
+                                        {% render 'decorative-placeholder-svg',
+                                            placeholder_key: formula_details_placeholder_key,
+                                            class: 'formula-details__placeholder-svg'
+                                        %}
+                                    </div>
+                                </div>
+                                <div class="flex flex-col gap-step-2xs">
+                                    <p class="copy-s text-theme-text">
+                                        <span class="formula-details__number">{{ formula_details_ingredient_number }}</span>
+                                    </p>
+                                    <h3 class="title-s text-theme-text">{{ formula_details_ingredient_name }}</h3>
+                                    <p class="copy-s text-theme-text">{{ formula_details_ingredient_text }}</p>
+                                </div>
+                            </article>
+                        {%- endfor -%}
+                    {%- endif -%}
+                </div>
+            </div>
+        </div>
+    </div>
+{%- endcapture -%}
+
+{% render 'section-frame',
+    section: section,
+    section_class: 'formula-details-section',
+    width: 'full',
+    height_kind: 'content',
+    motion: true,
+    children: formula_details_children
+%}
+
+{% stylesheet %}
+    .formula-details__band-inner {
+        padding-block: var(--spacing-step-xl);
+        padding-inline: var(--page-inset);
+    }
+
+    .formula-details__ingredients-inner {
+        padding-inline: var(--page-inset);
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-step-l);
+        padding-block: var(--spacing-step-xl);
+    }
+
+    .formula-details__band-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--spacing-step-l);
+    }
+
+    .formula-details__attributes {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-step-m);
+    }
+
+    .formula-details__attribute {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-step-2xs);
+        padding-block: var(--spacing-step-s);
+        border-block-start: 1px solid var(--color-line);
+    }
+
+    .formula-details__attribute:first-child {
+        border-block-start: none;
+        padding-block-start: 0;
+    }
+
+    .formula-details__ingredient-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--spacing-step-l);
+    }
+
+    .formula-details__card {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-step-s);
+    }
+
+    .formula-details__media {
+        overflow: hidden;
+        border-radius: var(--radius-card);
+    }
+
+    .formula-details__media--band {
+        aspect-ratio: 417 / 254;
+    }
+
+    .formula-details__media--ingredient {
+        aspect-ratio: 16 / 9;
+    }
+
+    .formula-details__image-wrap {
+        height: 100%;
+        width: 100%;
+    }
+
+    .formula-details__img {
+        height: 100%;
+        width: 100%;
+        object-fit: cover;
+    }
+
+    .formula-details__placeholder-svg {
+        height: 100%;
+        width: 100%;
+        object-fit: cover;
+    }
+
+    .formula-details__image-wrap--placeholder {
+        display: flex;
+        height: 100%;
+        width: 100%;
+        background-color: var(--color-surface-muted);
+    }
+
+    @media (width >= 64rem) {
+        .formula-details__band-grid {
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+            align-items: start;
+            gap: var(--spacing-step-l);
+        }
+
+        .formula-details__attributes {
+            flex-direction: row;
+            gap: 0;
+        }
+
+        .formula-details__attribute {
+            flex: 1 1 0;
+            min-width: 0;
+            padding-block: 0;
+            padding-inline: var(--spacing-step-m);
+            border-block-start: none;
+            border-inline-start: 1px solid var(--color-line);
+        }
+
+        .formula-details__attribute:first-child {
+            padding-inline-start: 0;
+            border-inline-start: none;
+        }
+
+        .formula-details__ingredient-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: var(--spacing-step-l);
+        }
+    }
+{% endstylesheet %}
+
+{% schema %}
+{
+    "name": "t:sections.formula-details.name",
+    "tag": "section",
+    "class": "section",
+    "max_blocks": 8,
+    "disabled_on": {
+        "groups": ["header", "footer", "custom.overlay"]
+    },
+    "settings": [
+        {
+            "type": "color_scheme",
+            "id": "color_scheme",
+            "label": "t:sections.formula-details.settings.color_scheme",
+            "default": "scheme-2"
+        },
+        {
+            "type": "color_scheme",
+            "id": "band_color_scheme",
+            "label": "t:sections.formula-details.settings.band_color_scheme",
+            "default": "scheme-4"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.formula-details.content.band"
+        },
+        {
+            "type": "text",
+            "id": "band_heading",
+            "label": "t:sections.formula-details.settings.band_heading"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.slides-show.content.heading"
+        },
+        {
+            "type": "select",
+            "id": "heading_size",
+            "label": "t:sections.slides-show.settings.heading_size",
+            "options": [
+                {
+                    "value": "title-4xl",
+                    "label": "t:settings.type_size.title_4xl"
+                },
+                {
+                    "value": "title-3xl",
+                    "label": "t:settings.type_size.title_3xl"
+                },
+                {
+                    "value": "title-2xl",
+                    "label": "t:settings.type_size.title_2xl"
+                },
+                {
+                    "value": "title-xl",
+                    "label": "t:settings.type_size.title_xl"
+                },
+                {
+                    "value": "title-l",
+                    "label": "t:settings.type_size.title_l"
+                },
+                {
+                    "value": "title-m",
+                    "label": "t:settings.type_size.title_m"
+                },
+                {
+                    "value": "title-s",
+                    "label": "t:settings.type_size.title_s"
+                },
+                {
+                    "value": "title-xs",
+                    "label": "t:settings.type_size.title_xs"
+                }
+            ],
+            "default": "title-xl"
+        },
+        {
+            "type": "richtext",
+            "id": "band_text",
+            "label": "t:sections.formula-details.settings.band_text"
+        },
+        {
+            "type": "image_picker",
+            "id": "band_image",
+            "label": "t:sections.formula-details.settings.band_image"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.formula-details.content.ingredients"
+        },
+        {
+            "type": "text",
+            "id": "ingredients_heading",
+            "label": "t:sections.formula-details.settings.ingredients_heading"
+        },
+        {
+            "type": "text",
+            "id": "ingredients_subtitle",
+            "label": "t:sections.formula-details.settings.ingredients_subtitle"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.formula-details.content.padding"
+        },
+        {
+            "type": "range",
+            "id": "padding_top",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "t:sections.formula-details.settings.padding_top",
+            "default": 32
+        },
+        {
+            "type": "range",
+            "id": "padding_bottom",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "t:sections.formula-details.settings.padding_bottom",
+            "default": 32
+        }
+    ],
+    "blocks": [
+        {
+            "type": "attribute",
+            "name": "t:sections.formula-details.blocks.attribute",
+            "settings": [
+                {
+                    "type": "text",
+                    "id": "name",
+                    "label": "t:sections.formula-details.block_settings.name"
+                },
+                {
+                    "type": "text",
+                    "id": "text",
+                    "label": "t:sections.formula-details.block_settings.text"
+                }
+            ]
+        },
+        {
+            "type": "ingredient",
+            "name": "t:sections.formula-details.blocks.ingredient",
+            "settings": [
+                {
+                    "type": "image_picker",
+                    "id": "image",
+                    "label": "t:sections.formula-details.block_settings.image"
+                },
+                {
+                    "type": "text",
+                    "id": "name",
+                    "label": "t:sections.formula-details.block_settings.name"
+                },
+                {
+                    "type": "text",
+                    "id": "text",
+                    "label": "t:sections.formula-details.block_settings.text"
+                }
+            ]
+        }
+    ],
+    "presets": [
+        {
+            "name": "t:sections.formula-details.presets.formula_details",
+            "settings": {
+                "band_heading": "A Closer Look at the Formula.",
+                "band_text": "<p>Lightweight, refreshing, and thoughtfully crafted. Every texture, ingredient and detail is designed to bring out your skin's natural glow.</p>",
+                "ingredients_heading": "THE FORMULA",
+                "ingredients_subtitle": "Powered by nature. Backed by science."
+            },
+            "blocks": [
+                {
+                    "type": "attribute",
+                    "settings": {
+                        "name": "Texture",
+                        "text": "A cooling gel-cream texture that melts into the skin."
+                    }
+                },
+                {
+                    "type": "attribute",
+                    "settings": {
+                        "name": "Formula",
+                        "text": "Botanical extracts and lightweight hydration for everyday use."
+                    }
+                },
+                {
+                    "type": "attribute",
+                    "settings": {
+                        "name": "Finish",
+                        "text": "Soft. Fresh. Never heavy."
+                    }
+                },
+                {
+                    "type": "ingredient",
+                    "settings": {
+                        "name": "Aloe Vera",
+                        "text": "Soothes and hydrates."
+                    }
+                },
+                {
+                    "type": "ingredient",
+                    "settings": {
+                        "name": "Green Tea",
+                        "text": "Helps refresh the skin."
+                    }
+                },
+                {
+                    "type": "ingredient",
+                    "settings": {
+                        "name": "Botanical Extracts",
+                        "text": "Supports a healthy-looking glow."
+                    }
+                }
+            ]
+        }
+    ]
+}
+{% endschema %}
