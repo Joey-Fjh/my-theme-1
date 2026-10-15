@@ -53,6 +53,8 @@ A typography value passes when it derives from the chain or from the inherited, 
 | `snippets/decorative-placeholder-svg.liquid` (`'<svg'` string) | `raw-svg` | Matches the root tag of Shopify's `placeholder_svg_tag` output to mark it decorative; no SVG is authored here (6-C10, user, 2026-10-11). |
 | `sections/feature-tabs.liquid` (`.feature-tabs__tab-label` span, block rows) | `typography-tier-heading` | The tab row label is set in the heading face by design; it is a tab button, not a heading (6-P1, user, 2026-10-15). |
 | `sections/feature-tabs.liquid` (`.feature-tabs__tab-label` span, placeholder rows) | `typography-tier-heading` | The tab row label is set in the heading face by design; it is a tab button, not a heading (6-P1, user, 2026-10-15). |
+| `sections/mood-finder.liquid` (quadrant phrase span, block quadrants) | `typography-tier-heading` | The quadrant phrase is set in the heading face by design; it sits inside a tab button, not a heading (6-P2, user, 2026-10-15). |
+| `sections/mood-finder.liquid` (quadrant phrase span, placeholder quadrants) | `typography-tier-heading` | The quadrant phrase is set in the heading face by design; it sits inside a tab button, not a heading (6-P2, user, 2026-10-15). |
 | `snippets/filters-drawer.liquid` (`.filters-drawer__footer-button`, `background-color`) | `raw-colour` | Setting-driven button reverse fill, out of the role set. |
 | `snippets/filters-drawer.liquid` (`.filters-drawer__footer-button`, `color`) | `raw-colour` | Setting-driven button reverse fill, out of the role set. |
 | `snippets/filters-drawer.liquid` (`.filters-drawer__footer-button`, `border-color`) | `raw-colour` | Setting-driven button reverse fill, out of the role set. |

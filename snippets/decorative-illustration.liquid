@@ -1,0 +1,55 @@
+{% doc %}
+    Default sketch decoration with optional merchant image override.
+
+    @param {boolean} show - When false, renders nothing
+    @param {image} [image] - Optional merchant image override
+    @param {string} mask_asset - Asset filename for the bundled alpha mask (WebP)
+    @param {string} [ratio] - Aspect ratio of the bundled mask, for example `241 / 480` (the default)
+    @param {string} class - Outer wrapper classes (positioning owned by the section)
+    @param {string} [sizes] - `sizes` for override image
+    @param {string} [widths] - `widths` for override image
+{% enddoc %}
+
+{%- liquid
+    assign decorative_show = true
+    if show == false or show == 'false'
+        assign decorative_show = false
+    endif
+
+    assign decorative_sizes = sizes | default: '(min-width: 48rem) 20vw, 0px'
+    assign decorative_widths = widths | default: '200,400,600,800'
+-%}
+
+{%- if decorative_show -%}
+    {%- if image != blank -%}
+        <div class="{{ class }} decorative-illustration" aria-hidden="true">
+            {%- render 'image',
+                image: image,
+                alt: '',
+                mode: 'natural',
+                fit: 'contain',
+                loading: 'lazy',
+                sizes: decorative_sizes,
+                widths: decorative_widths,
+                wrapper_class: 'h-full w-full',
+                img_class: 'h-full w-full object-contain'
+            -%}
+        </div>
+    {%- else -%}
+        <div
+            class="{{ class }} decorative-illustration decorative-illustration--default"
+            aria-hidden="true"
+            style="--decorative-illustration-mask: url('{{ mask_asset | asset_url }}'); --decorative-illustration-ratio: {{ ratio | default: '241 / 480' }}"
+        ></div>
+    {%- endif -%}
+{%- endif -%}
+
+{% stylesheet %}
+    .decorative-illustration--default {
+        aspect-ratio: var(--decorative-illustration-ratio, 241 / 480);
+        background-color: currentColor;
+        opacity: 0.8;
+        -webkit-mask: var(--decorative-illustration-mask) center / contain no-repeat;
+        mask: var(--decorative-illustration-mask) center / contain no-repeat;
+    }
+{% endstylesheet %}

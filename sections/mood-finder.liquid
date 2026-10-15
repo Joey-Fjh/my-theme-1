@@ -1,0 +1,1062 @@
+{%- liquid
+    assign mood_finder_heading_class = section.settings.heading_size | default: 'title-xl'
+    case mood_finder_heading_class
+        when 'title-4xl'
+            assign mood_finder_heading_tiers = 'title-l desktop:title-4xl'
+        when 'title-3xl'
+            assign mood_finder_heading_tiers = 'title-l desktop:title-3xl'
+        when 'title-2xl'
+            assign mood_finder_heading_tiers = 'title-m desktop:title-2xl'
+        when 'title-xl'
+            assign mood_finder_heading_tiers = 'title-m desktop:title-xl'
+        when 'title-l'
+            assign mood_finder_heading_tiers = 'title-m desktop:title-l'
+        when 'title-m'
+            assign mood_finder_heading_tiers = 'title-s desktop:title-m'
+        when 'title-s'
+            assign mood_finder_heading_tiers = 'title-s desktop:title-s'
+        when 'title-xs'
+            assign mood_finder_heading_tiers = 'title-xs desktop:title-xs'
+        else
+            assign mood_finder_heading_tiers = 'title-m desktop:title-2xl'
+    endcase
+
+    assign mood_finder_mood_count = 0
+    for mood_finder_block in section.blocks
+        if mood_finder_block.type == 'mood'
+            assign mood_finder_mood_count = mood_finder_mood_count | plus: 1
+        endif
+    endfor
+    if mood_finder_mood_count == 0
+        assign mood_finder_mood_count = 4
+    endif
+
+    assign mood_finder_decorative = section.settings.decoration_image
+-%}
+
+{%- assign mood_finder_root_attrs = 'data-component-kind="section" data-component-type="mood-finder" data-component-id="'
+    | append: section.id
+    | append: '"'
+-%}
+
+{%- capture mood_finder_link_icon -%}
+    {%- render 'icons', icon: 'icon-arrow2', class: 'ms-step-2xs', size: 'sm' -%}
+{%- endcapture -%}
+
+{%- capture mood_finder_children -%}
+    <div
+        class="mood-finder__frame"
+        style="--mood-finder-connector-mask: url('{{ 'mood-finder-arrow.webp' | asset_url }}')"
+        data-module-id="tab-control"
+        x-data="tabControl()"
+        data-tab-initial-strategy="first"
+        @pointerdown.once="$el.classList.add('is-live')"
+        @keydown.once="$el.classList.add('is-live')"
+    >
+        <div class="mood-finder__layout">
+            <header class="mood-finder__header">
+                {%- if section.settings.eyebrow != blank -%}
+                    <p class="mood-finder__eyebrow">
+                        <span class="copy-s uppercase">{{ section.settings.eyebrow }}</span>
+                    </p>
+                {%- endif -%}
+                {%- if section.settings.heading != blank -%}
+                    <h2 class="mood-finder__heading">
+                        <span class="{{ mood_finder_heading_tiers }}">{{ section.settings.heading }}</span>
+                    </h2>
+                {%- endif -%}
+                {%- if section.settings.subtext != blank -%}
+                    <div class="mood-finder__subtext">
+                        <div class="rte copy-m">{{ section.settings.subtext }}</div>
+                    </div>
+                {%- endif -%}
+            </header>
+
+            <div class="mood-finder__stage">
+                <div
+                    class="mood-finder__wheel"
+                    :data-active-index="activeIndex"
+                >
+                    <div
+                        role="tablist"
+                        aria-orientation="horizontal"
+                        aria-label="{{ 'sections.mood-finder.accessibility.tablist' | t }}"
+                        class="mood-finder__tablist"
+                    >
+                        {%- if section.blocks.size > 0 -%}
+                            {%- for block in section.blocks -%}
+                                {%- if block.type != 'mood' -%}
+                                    {%- continue -%}
+                                {%- endif -%}
+                                {%- liquid
+                                    assign mood_tab_eyebrow = block.settings.eyebrow
+                                    if mood_tab_eyebrow == blank
+                                        assign mood_tab_eyebrow = 'sections.mood-finder.defaults.mood_eyebrow' | t: index: forloop.index
+                                    endif
+                                    assign mood_tab_phrase = block.settings.phrase
+                                    if mood_tab_phrase == blank
+                                        assign mood_tab_phrase = 'sections.mood-finder.defaults.mood_phrase' | t: index: forloop.index
+                                    endif
+                                    assign mood_texture_alt = block.settings.image.alt
+                                    if mood_texture_alt == blank
+                                        assign mood_texture_alt = mood_tab_phrase | strip_html | strip | escape
+                                    endif
+                                    assign mood_placeholder_index = forloop.index | minus: 1 | modulo: 2 | plus: 1
+                                    assign mood_placeholder_key = 'lifestyle-' | append: mood_placeholder_index
+                                -%}
+                                <button
+                                    type="button"
+                                    role="tab"
+                                    id="mood-finder-{{ section.id }}-tab-{{ forloop.index0 }}"
+                                    aria-controls="mood-finder-{{ section.id }}-panel-{{ forloop.index0 }}"
+                                    class="mood-finder__tab mood-finder__tab--{{ forloop.index }}"
+                                    x-init="registerTab($el)"
+                                    @click="setActive(tabIndexFor($el))"
+                                    @focusin="setActive(tabIndexFor($el))"
+                                    :tabindex="isFocusable(tabIndexFor($el)) ? 0 : -1"
+                                    :aria-selected="isActive(tabIndexFor($el))"
+                                    :class="{ 'is-active': isActive(tabIndexFor($el)), 'is-dimmed': !isActive(tabIndexFor($el)) }"
+                                    {{ block.shopify_attributes }}
+                                >
+                                    <span class="mood-finder__tab-veil" aria-hidden="true"></span>
+                                    {%- if block.settings.image != blank -%}
+                                        {%- render 'image',
+                                            image: block.settings.image,
+                                            alt: mood_texture_alt,
+                                            mode: 'frame',
+                                            fit: 'cover',
+                                            loading: 'lazy',
+                                            sizes: '(min-width: 64rem) 18vw, 88vw',
+                                            widths: '240,360,480,640,800',
+                                            wrapper_class: 'mood-finder__tab-media',
+                                            img_class: 'h-full w-full object-cover'
+                                        -%}
+                                    {%- else -%}
+                                        <span class="mood-finder__tab-media mood-finder__tab-media--placeholder">
+                                            {% render 'decorative-placeholder-svg',
+                                                placeholder_key: mood_placeholder_key,
+                                                class: 'mood-finder__tab-placeholder'
+                                            %}
+                                        </span>
+                                    {%- endif -%}
+                                    <span class="mood-finder__tab-copy">
+                                        <span class="mood-finder__tab-eyebrow">
+                                            <span class="copy-xs uppercase">{{ mood_tab_eyebrow }}</span>
+                                        </span>
+                                        <span class="mood-finder__tab-phrase">
+                                            {%- # lint-allow typography-tier-heading: quadrant phrase uses the heading face inside a tab button, not a heading -%}
+                                            <span class="title-s">{{ mood_tab_phrase }}</span>
+                                        </span>
+                                    </span>
+                                </button>
+                            {%- endfor -%}
+                        {%- else -%}
+                            {%- for placeholder_index in (1..4) -%}
+                                {%- liquid
+                                    assign mood_tab_eyebrow = 'sections.mood-finder.defaults.mood_eyebrow' | t: index: placeholder_index
+                                    assign mood_tab_phrase = 'sections.mood-finder.defaults.mood_phrase' | t: index: placeholder_index
+                                    assign mood_placeholder_index = placeholder_index | minus: 1 | modulo: 2 | plus: 1
+                                    assign mood_placeholder_key = 'lifestyle-' | append: mood_placeholder_index
+                                -%}
+                                <button
+                                    type="button"
+                                    role="tab"
+                                    id="mood-finder-{{ section.id }}-tab-{{ forloop.index0 }}"
+                                    aria-controls="mood-finder-{{ section.id }}-panel-{{ forloop.index0 }}"
+                                    class="mood-finder__tab mood-finder__tab--{{ forloop.index }}"
+                                    x-init="registerTab($el)"
+                                    @click="setActive(tabIndexFor($el))"
+                                    @focusin="setActive(tabIndexFor($el))"
+                                    :tabindex="isFocusable(tabIndexFor($el)) ? 0 : -1"
+                                    :aria-selected="isActive(tabIndexFor($el))"
+                                    :class="{ 'is-active': isActive(tabIndexFor($el)), 'is-dimmed': !isActive(tabIndexFor($el)) }"
+                                >
+                                    <span class="mood-finder__tab-veil" aria-hidden="true"></span>
+                                    <span class="mood-finder__tab-media mood-finder__tab-media--placeholder">
+                                        {% render 'decorative-placeholder-svg',
+                                            placeholder_key: mood_placeholder_key,
+                                            class: 'mood-finder__tab-placeholder'
+                                        %}
+                                    </span>
+                                    <span class="mood-finder__tab-copy">
+                                        <span class="mood-finder__tab-eyebrow">
+                                            <span class="copy-xs uppercase">{{ mood_tab_eyebrow }}</span>
+                                        </span>
+                                        <span class="mood-finder__tab-phrase">
+                                            {%- # lint-allow typography-tier-heading: quadrant phrase uses the heading face inside a tab button, not a heading -%}
+                                            <span class="title-s">{{ mood_tab_phrase }}</span>
+                                        </span>
+                                    </span>
+                                </button>
+                            {%- endfor -%}
+                        {%- endif -%}
+                    </div>
+                    <div class="mood-finder__wheel-centre" aria-hidden="true">
+                        <span class="mood-finder__centre-ring"></span>
+                        <span class="mood-finder__centre-arrow">
+                            {%- render 'icons', icon: 'icon-arrow2', size: 'sm' -%}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mood-finder__aside">
+                {%- render 'decorative-illustration',
+                    show: section.settings.show_decoration,
+                    image: mood_finder_decorative,
+                    mask_asset: 'mood-finder-botanical.webp',
+                    ratio: '225 / 480',
+                    class: 'mood-finder__decoration',
+                    sizes: '(min-width: 48rem) 18vw, 0px',
+                    widths: '200,400,600,800'
+                -%}
+                {%- if section.settings.caption != blank -%}
+                    <p class="mood-finder__caption">
+                        <span class="copy-s">{{ section.settings.caption }}</span>
+                    </p>
+                {%- endif -%}
+            </div>
+
+            <div class="mood-finder__connector" aria-hidden="true"></div>
+
+            <div class="mood-finder__card">
+                {%- if section.blocks.size > 0 -%}
+                    {%- for block in section.blocks -%}
+                        {%- if block.type != 'mood' -%}
+                            {%- continue -%}
+                        {%- endif -%}
+                        {%- liquid
+                            assign mood_product = block.settings.product
+                            assign mood_is_placeholder = false
+                            if mood_product == blank
+                                assign mood_is_placeholder = true
+                            endif
+
+                            assign mood_card_title = mood_product.title
+                            assign mood_card_url = routes.all_products_collection_url
+                            if mood_is_placeholder
+                                assign mood_card_title = 'sections.mood-finder.placeholder_product_title' | t: index: forloop.index
+                            else
+                                assign mood_card_url = mood_product.url
+                            endif
+
+                            assign mood_tag_line = block.settings.tag_line
+                            if mood_tag_line == blank and mood_is_placeholder == false
+                                assign mood_tag_line = mood_product.type
+                            endif
+                            if mood_tag_line == blank
+                                assign mood_tag_line = 'sections.mood-finder.defaults.tag_line' | t
+                            endif
+
+                            assign mood_card_description = block.settings.description
+                            if mood_card_description == blank and mood_is_placeholder == false
+                                assign mood_card_description = mood_product.description | strip_html | strip | truncatewords: 28
+                            endif
+                            if mood_card_description == blank
+                                assign mood_card_description = 'sections.mood-finder.placeholder_description' | t
+                            endif
+
+                            assign mood_card_image = blank
+                            assign mood_card_image_alt = mood_card_title | escape
+                            if mood_is_placeholder == false
+                                assign mood_card_image = mood_product.featured_image
+                                if mood_card_image.alt != blank
+                                    assign mood_card_image_alt = mood_card_image.alt | escape
+                                endif
+                            endif
+
+                            assign mood_show_size_chip = false
+                            assign mood_size_label = ''
+                            if mood_is_placeholder == false and mood_product.has_only_default_variant == false
+                                assign mood_card_variant = mood_product.selected_or_first_available_variant
+                                assign mood_size_label = mood_card_variant.option1
+                                if mood_size_label != blank
+                                    assign mood_show_size_chip = true
+                                endif
+                            endif
+
+                            assign mood_product_placeholder_index = forloop.index | minus: 1 | modulo: 6 | plus: 1
+                            assign mood_product_placeholder_key = 'product-' | append: mood_product_placeholder_index
+
+                            assign mood_link_aria_label = 'sections.mood-finder.product_link_aria' | t: product: mood_card_title
+
+                            if forloop.first
+                                assign mood_card_image_loading = 'eager'
+                            else
+                                assign mood_card_image_loading = 'lazy'
+                            endif
+                        -%}
+                        <div
+                            role="tabpanel"
+                            id="mood-finder-{{ section.id }}-panel-{{ forloop.index0 }}"
+                            aria-labelledby="mood-finder-{{ section.id }}-tab-{{ forloop.index0 }}"
+                            class="mood-finder__panel{% if forloop.first %} is-active{% endif %}"
+                            tabindex="0"
+                            x-init="registerPanel($el)"
+                            :class="{ 'is-active': isActive(panelIndexFor($el)) }"
+                            :hidden="!isActive(panelIndexFor($el))"
+                            {% unless forloop.first %}hidden{% endunless %}
+                        >
+                            <article class="mood-finder__panel-card">
+                                <div class="mood-finder__panel-layer">
+                                    <div class="mood-finder__panel-media">
+                                        {%- if mood_card_image != blank -%}
+                                            {%- render 'image',
+                                                image: mood_card_image,
+                                                alt: mood_card_image_alt,
+                                                mode: 'frame',
+                                                fit: 'cover',
+                                                loading: mood_card_image_loading,
+                                                sizes: '(min-width: 64rem) 22vw, 92vw',
+                                                widths: '320,480,640,800,1000',
+                                                wrapper_class: 'h-full w-full',
+                                                img_class: 'h-full w-full object-cover'
+                                            -%}
+                                        {%- else -%}
+                                            {% render 'decorative-placeholder-svg',
+                                                placeholder_key: mood_product_placeholder_key,
+                                                class: 'mood-finder__card-placeholder'
+                                            %}
+                                        {%- endif -%}
+                                    </div>
+                                    <p class="mood-finder__panel-tag">
+                                        <span class="copy-xs uppercase">{{ mood_tag_line }}</span>
+                                    </p>
+                                    <h3 class="mood-finder__panel-title title-m">{{ mood_card_title }}</h3>
+                                    <p class="mood-finder__panel-description">
+                                        <span class="copy-m">{{ mood_card_description }}</span>
+                                    </p>
+                                    {%- unless mood_is_placeholder -%}
+                                        <div class="mood-finder__panel-price">
+                                            {%- render 'product-card-price', product: mood_product, class: 'copy-m' -%}
+                                        </div>
+                                    {%- endunless -%}
+                                    <div class="mood-finder__panel-footer">
+                                        {%- if mood_show_size_chip -%}
+                                            <span class="mood-finder__size-chip">
+                                                <span class="copy-xs">{{ mood_size_label }}</span>
+                                            </span>
+                                        {%- endif -%}
+                                        {%- render 'link',
+                                            href: mood_card_url,
+                                            variant: 'default',
+                                            class: 'link-with-icon-motion copy-s uppercase self-end',
+                                            aria_label: mood_link_aria_label,
+                                            content: mood_finder_link_icon
+                                        -%}
+                                    </div>
+                                </div>
+                            </article>
+                        </div>
+                    {%- endfor -%}
+                {%- else -%}
+                    {%- for placeholder_index in (1..4) -%}
+                        {%- liquid
+                            assign mood_card_title = 'sections.mood-finder.placeholder_product_title' | t: index: placeholder_index
+                            assign mood_tag_line = 'sections.mood-finder.defaults.tag_line' | t
+                            assign mood_card_description = 'sections.mood-finder.placeholder_description' | t
+                            assign mood_product_placeholder_index = placeholder_index | minus: 1 | modulo: 6 | plus: 1
+                            assign mood_product_placeholder_key = 'product-' | append: mood_product_placeholder_index
+                            assign mood_link_aria_label = 'sections.mood-finder.product_link_aria' | t: product: mood_card_title
+                            if placeholder_index == 1
+                                assign mood_card_image_loading = 'eager'
+                            else
+                                assign mood_card_image_loading = 'lazy'
+                            endif
+                        -%}
+                        <div
+                            role="tabpanel"
+                            id="mood-finder-{{ section.id }}-panel-{{ forloop.index0 }}"
+                            aria-labelledby="mood-finder-{{ section.id }}-tab-{{ forloop.index0 }}"
+                            class="mood-finder__panel{% if forloop.first %} is-active{% endif %}"
+                            tabindex="0"
+                            x-init="registerPanel($el)"
+                            :class="{ 'is-active': isActive(panelIndexFor($el)) }"
+                            :hidden="!isActive(panelIndexFor($el))"
+                            {% unless forloop.first %}hidden{% endunless %}
+                        >
+                            <article class="mood-finder__panel-card">
+                                <div class="mood-finder__panel-layer">
+                                    <div class="mood-finder__panel-media">
+                                        {% render 'decorative-placeholder-svg',
+                                            placeholder_key: mood_product_placeholder_key,
+                                            class: 'mood-finder__card-placeholder'
+                                        %}
+                                    </div>
+                                    <p class="mood-finder__panel-tag">
+                                        <span class="copy-xs uppercase">{{ mood_tag_line }}</span>
+                                    </p>
+                                    <h3 class="mood-finder__panel-title title-m">{{ mood_card_title }}</h3>
+                                    <p class="mood-finder__panel-description">
+                                        <span class="copy-m">{{ mood_card_description }}</span>
+                                    </p>
+                                    <div class="mood-finder__panel-footer">
+                                        {%- render 'link',
+                                            href: routes.all_products_collection_url,
+                                            variant: 'default',
+                                            class: 'link-with-icon-motion copy-s uppercase self-end',
+                                            aria_label: mood_link_aria_label,
+                                            content: mood_finder_link_icon
+                                        -%}
+                                    </div>
+                                </div>
+                            </article>
+                        </div>
+                    {%- endfor -%}
+                {%- endif -%}
+            </div>
+        </div>
+    </div>
+{%- endcapture -%}
+
+{% render 'section-frame',
+    section: section,
+    section_class: 'mood-finder-section',
+    width: 'page',
+    height_kind: 'content',
+    motion: false,
+    clip: false,
+    root_attrs: mood_finder_root_attrs,
+    children: mood_finder_children
+%}
+
+{% stylesheet %}
+    .mood-finder__layout {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-step-xl);
+    }
+
+    .mood-finder__header {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-step-m);
+    }
+
+    .mood-finder__eyebrow {
+        letter-spacing: 0.2em;
+        color: rgb(var(--color-foreground));
+        opacity: 0.85;
+    }
+
+    .mood-finder__heading {
+        color: rgb(var(--color-foreground));
+    }
+
+    .mood-finder__subtext {
+        color: rgb(var(--color-foreground));
+        max-width: 40rem;
+    }
+
+    .mood-finder__decoration {
+        color: rgb(var(--color-foreground));
+        pointer-events: none;
+    }
+
+    @media (width < 48rem) {
+        .mood-finder__aside .mood-finder__decoration {
+            display: none;
+        }
+    }
+
+    .mood-finder__caption {
+        color: rgb(var(--color-foreground));
+        opacity: 0.72;
+    }
+
+    .mood-finder__stage {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--spacing-step-m);
+    }
+
+    .mood-finder__aside {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-step-m);
+    }
+
+    .mood-finder__wheel {
+        position: relative;
+        width: 100%;
+        max-width: 48rem;
+        aspect-ratio: 1;
+        margin-inline: auto;
+    }
+
+    .mood-finder__tablist {
+        position: relative;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-rows: repeat(2, minmax(0, 1fr));
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 1px solid rgb(var(--color-foreground));
+        background-color: rgb(var(--color-background));
+    }
+
+    .mood-finder__tablist::before,
+    .mood-finder__tablist::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        z-index: 2;
+    }
+
+    .mood-finder__tablist::before {
+        top: 50%;
+        bottom: auto;
+        height: 1px;
+        background-color: rgb(var(--color-foreground));
+        transform: translateY(-50%);
+    }
+
+    .mood-finder__tablist::after {
+        left: 50%;
+        right: auto;
+        width: 1px;
+        background-color: rgb(var(--color-foreground));
+        transform: translateX(-50%);
+    }
+
+    .mood-finder__tab {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 0;
+        padding: var(--spacing-step-s) var(--spacing-step-m);
+        border: 0;
+        background: transparent;
+        color: rgb(var(--color-foreground));
+        text-align: center;
+        cursor: pointer;
+        overflow: hidden;
+    }
+
+    .mood-finder__tab > :not(.mood-finder__tab-copy) {
+        pointer-events: none;
+    }
+
+    .mood-finder__tab:focus-visible {
+        outline: var(--focus-ring-width) solid
+            rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+        outline-offset: calc(var(--focus-ring-offset) * -1);
+        z-index: 3;
+    }
+
+    /* Scoped to the tab so it outranks snippets/image.liquid's `.theme-image { position: relative }`. */
+    .mood-finder__tab .mood-finder__tab-media {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+    }
+
+    .mood-finder__tab-media--placeholder {
+        display: flex;
+        align-items: stretch;
+        background-color: rgb(var(--color-background));
+
+        @supports (background-color: color-mix(in oklab, white, black)) {
+            background-color: var(--color-surface-muted);
+        }
+    }
+
+    .mood-finder__tab-placeholder,
+    .mood-finder__card-placeholder {
+        width: 100%;
+        height: 100%;
+        display: block;
+        pointer-events: none;
+    }
+
+    .mood-finder__tab-copy {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--spacing-step-3xs);
+        width: min(100%, 11rem);
+        margin-inline: auto;
+        text-align: center;
+    }
+
+    .mood-finder__tab--1 .mood-finder__tab-copy,
+    .mood-finder__tab--2 .mood-finder__tab-copy {
+        margin-block-start: var(--spacing-step-l);
+    }
+
+    .mood-finder__tab--3 .mood-finder__tab-copy,
+    .mood-finder__tab--4 .mood-finder__tab-copy {
+        margin-block-end: var(--spacing-step-l);
+    }
+
+    .mood-finder__tab-eyebrow {
+        opacity: 0.9;
+    }
+
+    .mood-finder__tab-phrase {
+        color: rgb(var(--color-foreground));
+    }
+
+    .mood-finder__tab-veil {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        background-color: rgb(var(--color-background));
+        opacity: 0;
+        transition: opacity var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease-out);
+        pointer-events: none;
+    }
+
+    .mood-finder__tab.is-dimmed .mood-finder__tab-veil {
+        opacity: 0.84;
+    }
+
+    .mood-finder__tab.is-dimmed .mood-finder__tab-copy {
+        padding: var(--spacing-step-3xs) var(--spacing-step-xs);
+        border-radius: var(--radius-media);
+        background-color: rgb(var(--color-background));
+    }
+
+    .mood-finder__tab.is-active .mood-finder__tab-veil {
+        opacity: 0;
+    }
+
+    .mood-finder__wheel-centre {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        z-index: 4;
+        display: grid;
+        place-items: center;
+        width: 3.6rem;
+        height: 3.6rem;
+        transform: translate(-50%, -50%);
+        pointer-events: none;
+    }
+
+    .mood-finder__centre-ring {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        border: 1px solid rgb(var(--color-foreground));
+        background-color: rgb(var(--color-background));
+    }
+
+    .mood-finder__centre-arrow {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform var(--motion-duration-base, 400ms) var(--motion-ease-enter, ease-out);
+    }
+
+    .mood-finder__wheel[data-active-index='0'] .mood-finder__centre-arrow {
+        transform: rotate(-135deg);
+    }
+
+    .mood-finder__wheel[data-active-index='1'] .mood-finder__centre-arrow {
+        transform: rotate(-45deg);
+    }
+
+    .mood-finder__wheel[data-active-index='2'] .mood-finder__centre-arrow {
+        transform: rotate(135deg);
+    }
+
+    .mood-finder__wheel[data-active-index='3'] .mood-finder__centre-arrow {
+        transform: rotate(45deg);
+    }
+
+    .mood-finder__connector {
+        display: none;
+        pointer-events: none;
+    }
+
+    .mood-finder__card {
+        position: relative;
+        width: 100%;
+        max-width: 48rem;
+        margin-inline: auto;
+    }
+
+    .mood-finder__panel {
+        width: 100%;
+    }
+
+    .mood-finder__panel[hidden] {
+        display: none;
+    }
+
+    .mood-finder__panel-card {
+        height: 100%;
+        border-radius: var(--radius-card);
+        background-color: rgb(var(--color-background));
+        box-shadow: var(--shadow-md);
+        overflow: hidden;
+    }
+
+    .mood-finder__panel-layer {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-step-s);
+        height: 100%;
+        padding: var(--spacing-step-l);
+    }
+
+    .mood-finder__frame.is-live .mood-finder__panel.is-active .mood-finder__panel-layer {
+        animation: mood-finder-card-in var(--motion-duration-base, 400ms)
+            var(--motion-ease-enter, ease-out) both;
+    }
+
+    @keyframes mood-finder-card-in {
+        from {
+            opacity: 0;
+            transform: rotate(2deg);
+        }
+    }
+
+    .mood-finder__panel-media {
+        aspect-ratio: 39 / 34;
+        width: 100%;
+        overflow: hidden;
+        border-radius: var(--radius-media);
+        background-color: rgb(var(--color-background));
+
+        @supports (background-color: color-mix(in oklab, white, black)) {
+            background-color: var(--color-surface-muted);
+        }
+    }
+
+    .mood-finder__panel-tag {
+        letter-spacing: 0.16em;
+        color: rgb(var(--color-foreground));
+        opacity: 0.8;
+    }
+
+    .mood-finder__panel-title {
+        color: rgb(var(--color-foreground));
+    }
+
+    .mood-finder__panel-description {
+        color: rgb(var(--color-foreground));
+        flex: 1;
+    }
+
+    .mood-finder__panel-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--spacing-step-m);
+        margin-block-start: var(--spacing-step-s);
+    }
+
+    .mood-finder__size-chip {
+        display: inline-flex;
+        align-items: center;
+        padding: var(--spacing-step-3xs) var(--spacing-step-s);
+        border-radius: var(--radius-media);
+        border: 1px solid var(--color-line);
+        color: rgb(var(--color-foreground));
+    }
+
+    .mood-finder__product-link {
+        margin-inline-start: auto;
+    }
+
+    @media (width >= 48rem) {
+        .mood-finder__aside .mood-finder__decoration {
+            display: block;
+            width: min(100%, 11rem);
+            margin-inline-start: var(--spacing-step-3xl);
+        }
+    }
+
+    @media (width >= 80rem) {
+        .mood-finder__layout {
+            display: grid;
+            grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.05fr) minmax(0, 0.38fr) minmax(
+                    39rem,
+                    0.92fr
+                );
+            grid-template-areas:
+                'intro wheel arrow card'
+                'aside wheel arrow card';
+            align-items: start;
+            column-gap: var(--spacing-step-xl);
+            row-gap: var(--spacing-step-l);
+            min-height: 70rem;
+        }
+
+        .mood-finder__header {
+            grid-area: intro;
+            align-self: start;
+        }
+
+        .mood-finder__aside {
+            grid-area: aside;
+            align-self: start;
+            padding-block-start: var(--spacing-step-m);
+        }
+
+        .mood-finder__stage {
+            grid-area: wheel;
+            justify-self: center;
+            align-self: center;
+            width: 100%;
+        }
+
+        .mood-finder__wheel {
+            width: min(100%, 33vw);
+        }
+
+        .mood-finder__connector {
+            display: block;
+            grid-area: arrow;
+            align-self: center;
+            justify-self: center;
+            width: min(100%, 12.5rem);
+            aspect-ratio: 744 / 240;
+            color: rgb(var(--color-foreground));
+            background-color: currentColor;
+            -webkit-mask: var(--mood-finder-connector-mask) center / contain no-repeat;
+            mask: var(--mood-finder-connector-mask) center / contain no-repeat;
+        }
+
+        .mood-finder__card {
+            grid-area: card;
+            position: relative;
+            width: 100%;
+            max-width: 39rem;
+            min-height: 52rem;
+            justify-self: center;
+            align-self: center;
+        }
+
+        .mood-finder__panel {
+            position: absolute;
+            inset: 0;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .mood-finder__centre-arrow,
+        .mood-finder__tab-veil {
+            transition: none;
+        }
+
+        .mood-finder__frame.is-live .mood-finder__panel.is-active .mood-finder__panel-layer {
+            animation: none;
+        }
+    }
+{% endstylesheet %}
+
+{% schema %}
+{
+    "name": "t:sections.mood-finder.name",
+    "tag": "section",
+    "class": "mood-finder-section",
+    "enabled_on": {
+        "templates": ["product", "index", "page"]
+    },
+    "settings": [
+        {
+            "type": "header",
+            "content": "t:sections.mood-finder.content.general"
+        },
+        {
+            "type": "color_scheme",
+            "id": "color_scheme",
+            "label": "t:sections.mood-finder.settings.color_scheme",
+            "default": "scheme-2"
+        },
+        {
+            "type": "text",
+            "id": "eyebrow",
+            "label": "t:sections.mood-finder.settings.eyebrow",
+            "default": "t:sections.mood-finder.defaults.eyebrow"
+        },
+        {
+            "type": "inline_richtext",
+            "id": "heading",
+            "label": "t:sections.mood-finder.settings.heading",
+            "default": "t:sections.mood-finder.defaults.heading"
+        },
+        {
+            "type": "select",
+            "id": "heading_size",
+            "label": "t:sections.mood-finder.settings.heading_size",
+            "options": [
+                {
+                    "value": "title-4xl",
+                    "label": "t:settings.type_size.title_4xl"
+                },
+                {
+                    "value": "title-3xl",
+                    "label": "t:settings.type_size.title_3xl"
+                },
+                {
+                    "value": "title-2xl",
+                    "label": "t:settings.type_size.title_2xl"
+                },
+                {
+                    "value": "title-xl",
+                    "label": "t:settings.type_size.title_xl"
+                },
+                {
+                    "value": "title-l",
+                    "label": "t:settings.type_size.title_l"
+                },
+                {
+                    "value": "title-m",
+                    "label": "t:settings.type_size.title_m"
+                },
+                {
+                    "value": "title-s",
+                    "label": "t:settings.type_size.title_s"
+                },
+                {
+                    "value": "title-xs",
+                    "label": "t:settings.type_size.title_xs"
+                }
+            ],
+            "default": "title-xl"
+        },
+        {
+            "type": "richtext",
+            "id": "subtext",
+            "label": "t:sections.mood-finder.settings.subtext",
+            "default": "t:sections.mood-finder.defaults.subtext"
+        },
+        {
+            "type": "text",
+            "id": "caption",
+            "label": "t:sections.mood-finder.settings.caption",
+            "default": "t:sections.mood-finder.defaults.caption"
+        },
+        {
+            "type": "checkbox",
+            "id": "show_decoration",
+            "label": "t:sections.mood-finder.settings.show_decoration",
+            "default": true
+        },
+        {
+            "type": "image_picker",
+            "id": "decoration_image",
+            "label": "t:sections.mood-finder.settings.decoration_image",
+            "info": "t:sections.mood-finder.settings.decoration_image_info"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.mood-finder.content.padding"
+        },
+        {
+            "type": "range",
+            "id": "padding_top",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "t:sections.mood-finder.settings.padding_top",
+            "default": 32
+        },
+        {
+            "type": "range",
+            "id": "padding_bottom",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "t:sections.mood-finder.settings.padding_bottom",
+            "default": 32
+        }
+    ],
+    "blocks": [
+        {
+            "type": "mood",
+            "name": "t:sections.mood-finder.blocks.mood",
+            "settings": [
+                {
+                    "type": "image_picker",
+                    "id": "image",
+                    "label": "t:sections.mood-finder.block_settings.image"
+                },
+                {
+                    "type": "text",
+                    "id": "eyebrow",
+                    "label": "t:sections.mood-finder.block_settings.eyebrow",
+                    "default": "t:sections.mood-finder.blocks_defaults.eyebrow"
+                },
+                {
+                    "type": "inline_richtext",
+                    "id": "phrase",
+                    "label": "t:sections.mood-finder.block_settings.phrase",
+                    "default": "t:sections.mood-finder.blocks_defaults.phrase"
+                },
+                {
+                    "type": "product",
+                    "id": "product",
+                    "label": "t:sections.mood-finder.block_settings.product"
+                },
+                {
+                    "type": "text",
+                    "id": "tag_line",
+                    "label": "t:sections.mood-finder.block_settings.tag_line"
+                },
+                {
+                    "type": "textarea",
+                    "id": "description",
+                    "label": "t:sections.mood-finder.block_settings.description"
+                }
+            ]
+        }
+    ],
+    "max_blocks": 4,
+    "presets": [
+        {
+            "name": "t:sections.mood-finder.presets.mood_finder",
+            "blocks": [
+                {
+                    "type": "mood",
+                    "settings": {
+                        "eyebrow": "Energized",
+                        "phrase": "Brighten the look",
+                        "tag_line": "Balm · Restore"
+                    }
+                },
+                {
+                    "type": "mood",
+                    "settings": {
+                        "eyebrow": "Calm",
+                        "phrase": "Restore balance",
+                        "tag_line": "Serum · Illuminate"
+                    }
+                },
+                {
+                    "type": "mood",
+                    "settings": {
+                        "eyebrow": "Comfort",
+                        "phrase": "Grounded warmth",
+                        "tag_line": "Oil · Nourish"
+                    }
+                },
+                {
+                    "type": "mood",
+                    "settings": {
+                        "eyebrow": "Clarity",
+                        "phrase": "Fresh focus",
+                        "tag_line": "Mist · Awaken"
+                    }
+                }
+            ]
+        }
+    ]
+}
+{% endschema %}

@@ -46,31 +46,17 @@
 -%}
 
 {%- capture feature_tabs_decoration_markup -%}
-    {%- if section.settings.show_decoration -%}
-        {%- if feature_tabs_decorative != blank -%}
-            <div class="feature-tabs__decoration" aria-hidden="true">
-                {%- render 'image',
-                    image: feature_tabs_decorative,
-                    alt: '',
-                    mode: 'natural',
-                    fit: 'contain',
-                    loading: 'lazy',
-                    sizes: '(min-width: 48rem) 20vw, 0px',
-                    widths: '200,400,600,800',
-                    wrapper_class: 'h-full w-full',
-                    img_class: 'h-full w-full object-contain'
-                -%}
-            </div>
-        {%- else -%}
-            <div class="feature-tabs__decoration feature-tabs__decoration--default" aria-hidden="true"></div>
-        {%- endif -%}
-    {%- endif -%}
+    {%- render 'decorative-illustration',
+        show: section.settings.show_decoration,
+        image: feature_tabs_decorative,
+        mask_asset: 'feature-tabs-botanical.webp',
+        class: 'feature-tabs__decoration'
+    -%}
 {%- endcapture -%}
 
 {%- capture feature_tabs_children -%}
     <div
         class="feature-tabs__frame"
-        style="--feature-tabs-decoration-mask: url('{{ 'feature-tabs-botanical.webp' | asset_url }}')"
         data-module-id="tab-control"
         x-data="tabControl()"
         data-tab-initial-strategy="first"
@@ -426,14 +412,6 @@
             right: var(--spacing-step-xl);
             width: min(28%, 9rem);
             z-index: 0;
-        }
-
-        .feature-tabs__decoration--default {
-            aspect-ratio: 241 / 480;
-            background-color: currentColor;
-            opacity: 0.8;
-            -webkit-mask: var(--feature-tabs-decoration-mask) center / contain no-repeat;
-            mask: var(--feature-tabs-decoration-mask) center / contain no-repeat;
         }
 
         .feature-tabs__panel-inner > :not(.feature-tabs__decoration) {
