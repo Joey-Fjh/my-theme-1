@@ -45,6 +45,7 @@ Last updated: 2026-10-20.
 
 ## Defects
 
+- `motion_enabled` off does not stop the `slides-show` and `routine-showcase` autoplay (they follow `prefers-reduced-motion` only: `_shouldRunAutoplay`, `_canRunAutoplayAnimation`), while `design.md` (Motion) says autoplay stops; `docs/project.md` now describes the code. Decide code or `design.md` before fixing. Source: H4, 2026-10-20. Surface: `assets/` slideshow and routine-showcase modules, or `docs/design/design.md`.
 - Pagination never uses the section refresh: `ShopifyHttp.getJSON` sends `Accept: application/json`, the dev storefront answers `?sections=` with 404, and the module falls back to full navigation. Proposed: `headers: { Accept: '*/*' }` on that request (Ask tier), verified by paginating a collection and the blog. Source: 2026-10-13. Surface: `assets/section-pagination.js`.
 - Loading indicator: under reduced motion a still ring at 0.65 opacity (weak signal); `role="status"` and its label sit inside an `aria-hidden="true"` wrapper, so the label is never announced. Source: 2026-10-13. Surface: `snippets/loading.liquid`.
 

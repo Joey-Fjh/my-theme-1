@@ -270,3 +270,9 @@ Illustrative map of core outlets and a few feature modules. The full module inve
 ## Inspection Rule
 
 For section lifecycle, cart flow, HTTP refresh, events, accessibility semantics, and script loading, inspect current `layout/theme.liquid`, `sections/`, `snippets/`, and `assets/` implementations.
+
+## Loader and library upgrades
+
+The theme keeps its own module loader (the `base.js` init interceptor). Async Alpine is not used: it would change every module. Revisit only if loading strategies grow beyond eager, visible, and idle, or if `interceptInit` changes in an Alpine upgrade.
+
+Vendored Alpine, Swiper, and GSAP are not upgraded by default. Upgrade one only to fix a bug in that library. The theme needs only what a Shopify storefront uses.

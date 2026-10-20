@@ -8,75 +8,23 @@ when_to_use: >
 
 # Check Theme Architecture
 
-Use this skill for project-level architecture and static compatibility validation. Shopify Theme Check remains the platform authority for schema validity, parser-blocking scripts, and other built-in theme rules. This skill supplements Theme Check with project contracts enforced by `lint:theme`.
+Use this skill when Liquid, embedded stylesheet or javascript blocks, tab markup, or the architecture checks change. Shopify Theme Check remains the platform authority. This skill adds the project contracts in `lint:theme`.
 
 ## Commands
 
-Which command proves which change: `AGENTS.md` Validation. Skill-specific additions:
+Which command proves which change: `AGENTS.md` Validation.
 
 - `npm.cmd run test:theme-architecture` — fixture tests for `lint:theme`, `lint:liquid-syntax`, and `lint:compat:embedded`; run after changing those scripts.
 - `npm.cmd run test:section-stylesheet-carry` — DOM tests for `SectionRefresher.carryInnerSectionStylesheet` in `assets/https.js`; run after changing it.
 - `lint:compat:embedded` is part of `lint:compat`, not `lint:theme`.
 
-## Exception comments
+## What `lint:theme` covers
 
-Place a `lint-allow` comment on the line **before** the flagged line:
+`lint:theme` is `.agents/skills/check-theme-architecture/scripts/lint-theme.js`. Fixture tests are `.agents/skills/check-theme-architecture/scripts/theme-architecture.test.js`. Check ids and the rules they enforce live in that script and `.agents/skills/check-theme-architecture/scripts/lib/raw-colour-lint.js` (and the other files in that `lib` directory).
 
-- CSS: `/* lint-allow <check-id>: <reason> */`
-- Liquid: `{% # lint-allow <check-id>: <reason> %}`
+Place a `lint-allow` comment on the line before the flagged line: CSS `/* lint-allow <check-id>: <reason> */`, Liquid `{% # lint-allow <check-id>: <reason> %}`. A comment without a reason fails `lint-allow-reason`. Document every accepted exception in `docs/references/style-system/css-architecture.md`.
 
-A comment without a reason fails `lint-allow-reason`. Document every accepted exception in `docs/references/style-system/css-architecture.md`.
-
-## What `lint:theme` Covers
-
-Liquid files under `layout/`, `sections/`, `snippets/`, `blocks/`, and `templates/`; first-party CSS in `tailwind/**/*.css`, `assets/base.css`, `assets/gift-card.css`, and Liquid `{% stylesheet %}` blocks; first-party `assets/*.js` except `vendor-*`, `*.min.js`, and `gift-card.js`. A Liquid file that fails to parse is reported.
-
-| Check id | Rule |
-| --- | --- |
-| `protected-runtime-name` | Do not `assign` or `capture` over protected Shopify Liquid runtime names. |
-| `tab-aria` | Static `role="tab"` elements must include `aria-selected` and `aria-controls` (`aria-*`, `:*`, or `x-bind:*` forms). |
-| `bundled-asset-tag` | At most one `{% stylesheet %}` and one `{% javascript %}` per file; no Liquid inside them. |
-| `invalid-rgb-alpha` | Scheme colors use `rgba(var(--color-*), alpha)`, never `rgb(var(--color-*) / alpha)`. |
-| `alpine-expression` | Alpine attributes hold one simple JS expression; no Liquid, functions, or statements (`AGENTS.md`, `javascript-runtime.md`). |
-| `settings-chain-liquid` | Rejects arbitrary `text-[…]` / `font-[…]` / `leading-[…]` / `tracking-[…]` / colour `[…]` utilities, default Tailwind text sizes (`text-xs` … `text-9xl`), default font families (`font-sans` / `serif` / `mono`), and palette colours other than black and white (with optional `/opacity`). Allows the default weight utilities (`font-thin` … `font-black`) as far as this check goes, but `unloaded-font-weight` then rejects every one except `font-normal` and `font-bold`, so those two are what passes in effect. Allows `leading-*` scale (`none`, `tight`, `snug`, `normal`, `relaxed`, `loose`, numeric), `tracking-*` scale (`tighter` … `widest`, `normal`), and `black` / `white` on every colour utility prefix, which `raw-colour` then rejects. Use tier and scheme utilities for sizes and theme colours. |
-| `settings-chain-css-typography` | `font-family` and `font-size` derive from `var(--font-*)` (alone or in `calc`/`max`/`min`/`clamp`) or relative sizing (`inherit`, `unset`, `em`, `%`). `font-weight` may be `100`–`900` (step 100), `normal`, `bold`, `bolder`, or `lighter`. `line-height` may be unitless or `normal`. `letter-spacing` may be `em`/`%` or `var(--font-*)`. |
-| `settings-chain-css-color` | Colour properties use scheme tokens (`var(--color-*)` / `rgb(var(--color-*))`) or pure black/white literals (`#000`/`#fff` and long forms, keywords `black`/`white`, `rgb`/`rgba` of 0 or 255 channels, `color-mix(in <space>, black\|white <n>%, transparent)`). Other hex/rgb/hsl/named colours fail. The black/white literals it lets through are rejected by `raw-colour`. |
-| `raw-colour` | 6-C4 colour roles. In Liquid markup (classes and inline `style` attributes), `{% stylesheet %}` blocks, `tailwind/*.css` and `assets/base.css` (not the token file `tailwind/tailwind.input.css`, not `assets/gift-card.css`): no opacity modifier on a colour utility (`/80`, `/12.5`, `/[…]`, `/(--x)`), no `black` / `white` colour utility, no shadow utility other than `shadow-sm` / `-md` / `-lg` / `-none`; in CSS values and `@apply`, no `rgba(var(--color-*), <alpha>)` whose alpha is not a `var()` (numbers, `calc()`; spaces inside `var( … )` included), `color-mix(`, hex, literal colour function (`rgb(0 …)`, `hsl()`, `oklch()`, `color()`, …), a CSS named colour (any of the 148, `black` and `white` included) in a colour-bearing property (`color`, `background`, `border*`, `outline*`, `fill`, `stroke`, `*shadow`, `*decoration*`, `caret`, `accent`, `column-rule`, `scrollbar*`) or as the whole value of a custom property, `currentColor` in a shadow, direct `var(--alpha-<step>)`, or `var()` on a layer 0 bridge token (`--color-theme-*`, `--color-field*`, `--color-primary`, …), which resolves at `:root`. `url(…)` contents and quoted strings are ignored. Setting-driven alphas (`rgba(var(--color-*), var(--…))`) pass. Use the roles in `css-architecture.md`. |
-| `colour-role-sync` | Every layer 2 role in `tailwind/tailwind.input.css` that depends on the scheme (uses a scheme triplet or a shadow step, and a `--alpha-*` step) is re-declared once, outside any `{% if %}` / `{% unless %}` / `{% case %}`, with the identical value in the `snippets/css-variables.liquid` scheme loop, and the loop re-declares nothing else, so `var()` consumers resolve against their own scheme. |
-| `typography-tier-heading` | `heading-h1`–`heading-h6` and `title-xs` … `title-4xl` only on `h1`–`h6`. |
-| `typography-tier-body-on-heading` | No `body-*` tiers on headings. |
-| `stylesheet-directive` | No `@apply`, `@utility`, or `@variant`, and no Tailwind `theme()`, `--spacing()`, or `--alpha()` functions, inside `{% stylesheet %}`. |
-| `liquid-style-tag` | No ad-hoc `<style>` in Liquid. |
-| `executable-inline-script` | No executable inline `<script>` (`importmap` and `application/ld+json` allowed). |
-| `raw-svg` | No raw `<svg>` outside `snippets/icons.liquid`. |
-| `bare-img` | No bare `<img>` outside `snippets/image.liquid` (`templates/gift_card.liquid` excepted). |
-| `x-transition` | No `x-transition*` in Liquid; use CSS motion recipes. |
-| `js-alpine-outlet`, `js-fetch-outlet`, `js-cart-route-outlet`, `js-document-outlet` | One outlet per side effect (Alpine, HTTP, cart routes, global listeners); owners in `javascript-runtime.md` "One outlet per side effect". |
-| `js-custom-event` | `new CustomEvent`, including `new window.CustomEvent`, `new globalThis.CustomEvent` and `new self.CustomEvent`, only in `assets/events.js` (ThemeEvents). Same file skips as other JS outlet checks (`vendor-*`, `*.min.js`, `gift-card.js`). |
-| `js-section-mutation` | `innerHTML =`, `outerHTML =`, and `.replaceWith(` only in `assets/https.js` (SectionRefresher). Same skips and `lint-allow` handling as other JS checks. |
-| `dead-setting` | Each schema `id` must be read in its own scope, in Liquid with comments, `{% doc %}`, `{% schema %}`, `{% stylesheet %}` and `{% javascript %}` removed: section settings as `section.settings.<id>` (or `section.settings['<id>']`); block settings as `<variable>.settings.<id>` through any loop variable except `section` and `scheme`; global `config/settings_schema.json` settings as bare `settings.<id>` anywhere under `layout/`, `sections/`, `snippets/`, `templates/`. Section and block settings are searched in the section plus the snippets reached by static `{% render 'name' %}` (transitive). A same-named setting in another scope does not count. Strict: any dead setting fails; no baseline or allowance is read. |
-| `dead-setting-unprovable` | Not a failure: logged when a Liquid file uses dynamic `settings[…]` / `section.settings[…]` access; section dead-setting analysis is skipped when that pattern appears anywhere in the section's render closure. |
-| `js-user-visible-copy` | No user-visible string literals in `textContent` / `innerText` / `innerHTML`, `setAttribute` for `aria-label` / `title` / `placeholder` / `alt`, or `alert(`. |
-| `module-data-module-id`, `module-import-map`, `module-import-map-unused` | Module registration and import-map mapping; contract in `javascript-runtime.md` "Module graph contracts". |
-| `section-color-scheme` | Sections with a `color_scheme` setting apply `color-{{ section.settings.color_scheme }}` on the frame. |
-| `vendor-notices` | Every `assets/vendor-*` file has a `THIRD_PARTY_NOTICES.md` entry. |
-| `lint-allow-reason` | `lint-allow` comments must include a check id and reason. |
-| `page-token-scope` | `sections/` and `snippets/` (Liquid comments excepted; CSS and HTML comments fail closed) must not read `--page-width` or `--page-margin` (use `--page-inset` for custom insets). `tailwind/tailwind.components.css` must not read `--page-width`; `--page-margin` stays allowed there as the gutter token. |
-| `screen-height-literal` | Liquid files (`layout/`, `sections/`, `snippets/`, `blocks/`, `templates/`) must not use literal `100svh`, `100vh`, `100lvh`, or `100dvh` for one-screen heights; use `var(--screen-height)`. Named exception: only the exact `sections/header.liquid` menu cap `max-height: calc(100dvh - var(--announcement-bar-height) - var(--header-height))`. |
-| `frame-full-allowlist` | A `render 'section-frame'` (either quote style, tag or `{% liquid %}` form) with a literal `width: 'full'` only in sections listed under Page frame in `css-architecture.md`; never in snippets. |
-| `section-placement-missing` | Sections with a non-empty `presets` array must declare `enabled_on` or `disabled_on`. |
-| `section-placement-both` | Section schema must not declare both `enabled_on` and `disabled_on`. |
-| `section-placement-disabled-groups` | Page sections (`disabled_on`) must list `header`, `footer`, and `custom.overlay`, except `custom-liquid`, which lists only `custom.overlay`. |
-| `section-placement-enabled-groups` | Group sections (`enabled_on.groups`) must name exactly one of `header`, `footer`, or `custom.overlay`. |
-| `colour-setting` | `color` / `color_background` settings only inside the colour scheme group, except the named global product badge allowlist (6-C9). |
-| `unloaded-font-weight` | Only the regular and bold faces each font role loads: the `font-thin`, `-extralight`, `-light`, `-medium`, `-semibold`, `-extrabold` and `-black` utilities in markup, and a numeric CSS `font-weight` other than 400 or 700, fail (6-C3). |
-| `stylesheet-media-query` | `{% stylesheet %}` media queries are either `not ((hover: hover) and (pointer: fine))` alone, or `and`-joined atoms from `(width >= 48rem)` / `(width < 48rem)` (also 64rem and 80rem), `(prefers-reduced-motion: reduce)` / `(… no-preference)`, and the pair `(hover: hover) and (pointer: fine)` (6-C2). |
-| `legacy-type-tier` | Ratchet (`migration-baseline.json`): per-file count of `heading-*` / `body-*` tier utilities may only fall. Retires at 0. |
-| `raw-spacing` | Ratchet (`migration-baseline.json`): per-file count of gap, padding, margin and `space-*` utilities with a numeric or arbitrary value may only fall. Retires at 0. |
-| `legacy-breakpoint` | Strict (6-V6): any `pc:` / `max-pc:` / `fw:` / `max-fw:` variant in markup fails `lint:theme`. It has no entry in `migration-baseline.json`, and the lint neither reads nor writes one. |
-| `stylesheet-layer` | No `@layer` inside `{% stylesheet %}` (zero tolerance, 6-C6). |
-| `stylesheet-font-size` | Ratchet (`stylesheet-ownership-baseline.json`): per-file count of disallowed `font-size` declarations in `{% stylesheet %}` may only fall (6-C6). |
-| `mixed-element` | Strict (6-R4): any element mixing the file's own stylesheet class with a core Tailwind utility fails `lint:theme`. It has no entry in `stylesheet-ownership-baseline.json`, and the lint neither reads nor writes one. `sr-only` / `not-sr-only` and Liquid comparison literals do not count. |
+Colour lints match CSS values with regular expressions, not a CSS tokenizer. A longer function name with a numeric argument (`custom-hsl(1)`) is rejected, and escaped forms (`\rgb(1 2 3)`, `\68sl(1)`) are not decoded. Theme code has neither. Revisit only if real code hits one; then use a tokenizer such as postcss-value-parser, as its own batch.
 
 ## Reporting
 

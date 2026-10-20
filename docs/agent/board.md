@@ -17,20 +17,8 @@ Last updated: 2026-10-20.
     - Per-scheme `badge_*` colours (`snippets/css-variables.liquid`) have no consumer since 6-S4: retire them or not (schema removal, Ask tier).
 - **Lighthouse CI leftovers (user's choice, 2026-10-13):** remove the `lighthouse-ci` Dev Dashboard app and the secrets `SHOP_CLIENT_ID` and `SHOP_CLIENT_SECRET`, unused since the Theme Access change, or keep them.
 - **Layout harness page-margin rule (decide in a later harness plan; 6-T1 cross review 2, 6-C2, 2026-10-08):** a scroller item fully in the viewport but inside the page margin, cut by its own scroller, is still reported (2 `collection-all` nav-link entries); a scrollport-visibility exclusion would change the rule. Second case: `ritual_steps_carousel` mobile card 2 product title at 768 (the sweep never tests 768; not baselined, user's choice).
-- **Batch SOP always-on (user's call, 2026-10-20):** whether the Batch SOP table in `AGENTS.md` (~526 words) stays always-on or moves to read-on-demand when a batch starts. Separate from the harness round; not decided.
 
 ## Pending migration
-
-Approve in one bundle at the end of a stage (not per batch). Full text: `git show 0a5fd1d:docs/agent/board.md`.
-
-- **`docs/references/architecture/motion-architecture.md`:** motion CSS gates on `body:not([data-motion-enabled='false'])`; GSAP sections load one viewport ahead through the section module's own observer (not the core 200px lazy margin).
-- **`docs/references/architecture/abstraction-boundaries.md`:** shared carousel indicator is an exception to the third-consumer threshold (extract with the second real consumer, confirmed 2026-10-13); decorative full-bleed shapes use the `section-frame` `background` slot with icon assets.
-- **`docs/references/style-system/css-architecture.md`:** CSS readiness definition (four criteria, hard requirements vs open choices); 6-C6 lesson (unlayered `{% stylesheet %}` competes with unlayered Tailwind; reduced-motion overrides a stylesheet must not beat go under `prefers-reduced-motion: no-preference` in the owner); never `container-page` on a custom grid; sticky child needs a parent spanning the scroll range; heading tiers on `h*` only with uppercase from a section rule; percentage margins resolve against width; hide inactive content with CSS `visibility` under the layout media query, not JS `inert`.
-- **`docs/references/architecture/javascript-runtime.md`:** own module loader over Async Alpine; vendored Alpine, Swiper and GSAP upgrade only for a library bug (user, 2026-10-07).
-- **`docs/references/code-review/launch-gate.md`:** no computed-style tool (6-R3 scripts deleted); comparison recipe from `git show 9bf1b64:docs/agent/context.md`; browser sweep uses the `shopify theme dev` proxy with password from `.env` (never printed), restart dev server before a sweep.
-- **`AGENTS.md`:** audit practice (per CSS batch three-part audit; cross-domain pass before second submission; closed areas one external read-only audit); per CSS batch also runs lints, `test:layout` at key widths, and the user's browser look; Gotchas: `inline_richtext` rejects `<br>` and a rejected template blocks upload; Theme Editor saves need `--theme-editor-sync`; `main` fixes through a `fix/` branch and pull request; plan numeric targets against the section's real container.
-- **`docs/project.md`:** correct the `motion_enabled` list; design workflow (2026-10-04, section screenshots in `docs/design/`); design source (2026-10-08, intent not values); design input (2026-10-11: PNGs plus the committed home Figma JSON, later pages PNGs only; a designer handoff checklist); the second submission is the user's to make when the theme is nearly done, not a coordinator decision (2026-10-13).
-- **`.agents/skills/check-theme-architecture/SKILL.md`:** colour lints use regexes, not a CSS tokenizer (6-V3 accepted limitation; revisit with postcss-value-parser if real code hits an edge case).
 
 ## Evidence
 
@@ -38,6 +26,7 @@ Approve in one bundle at the end of a stage (not per batch). Full text: `git sho
 
 ## Deferred ideas
 
+- **Check candidates from H4 (2026-10-20):** a global DOM listener inside a Liquid `{% javascript %}` block (`executable-inline-script` matches only `<script>` bodies); preset or block values equal to the schema default, and empty block `settings` objects, are not required to be omitted. Prose stays until a check exists.
 - **`test:layout` in CI (6-T4b)** (user, 2026-10-13): trial on `ci-test` stopped at page discovery; build when `main` can change without a local layout check. Detail: `git show 9d366d5:docs/agent/board.md`.
 - **Base scales and design pipeline (Stitch):** set scales from the base design through an agent-era tool, not hand-picked numbers; tool and SOP when the pilot starts (user, 2026-10-08). Until then tokens keep today's rendered values.
 - **Platform-agnostic front-end engineering skill** (user, 2026-10-11): extract non-Shopify-specific harness patterns after two consumers; needs explicit approval to create a skill.
@@ -66,6 +55,6 @@ Next plan after H1: H2 hooks and checks (Claude Code only). Discussion closed on
 - **Decided (user, 2026-10-20): Claude Code hooks first;** Cursor and Codex later per client.
 - **H1 (record layer):** closed 2026-10-20 (`d31acef`).
 - **H2 (Claude Code hooks and record checks):** closed 2026-10-20 (`aa14969`). `PostToolUse` per-file `lint:theme` not added: one full run takes about 10 to 16 s.
-- **H3 (CI merchant-path guard, reference table pointers):** implemented 2026-10-20, awaiting Ask review and check 8 (plan in `docs/agent/context.md`).
-- **H4 (closes the round, user 2026-10-20):** prose slimming per the per-section classification (D duplicated or stale first, then A restating a check), with the bundled Pending migration approval in the same batch.
+- **H3 (CI merchant-path guard, reference table pointers):** closed 2026-10-20 (`3503596`, CI run 39450026571 green).
+- **H4 (closes the round, user 2026-10-20):** implemented 2026-10-20, awaiting review. Plan in `docs/agent/context.md`.
 - **Deferred within the round:** shrink `AGENTS.md` routing tables until Cursor and Codex have hooks or tables are generated; Cursor and Codex hook configs.

@@ -8,15 +8,8 @@ when_to_use: >
 
 # Check I18n
 
-Use this skill for project-level i18n validation. Read `docs/references/code-review/i18n-checklist.md` for locale ownership, classification, and review boundaries.
+Use this skill when locale files, translated Liquid, schema copy, or hardcoded user-visible text change. Read `docs/references/code-review/i18n-checklist.md` for ownership and the review gaps. Which command to run: `AGENTS.md` Validation (`npm.cmd run lint:i18n`). Run `npm.cmd run test:i18n` after validator changes.
 
-## Commands
+`lint:i18n` (`.agents/skills/check-i18n/scripts/lint-i18n.js`, tests in `scripts/lint-i18n.test.js`) guards duplicate keys, missing project locale keys, unused keys (`lint-i18n-unused.js`; intentional keeps go in its `ALLOWLISTED_PREFIXES` with a reason), hardcoded user-visible copy, and the schema/preset boundary. Shopify Theme Check remains the platform authority. Merchant-owned content, product data, and runtime variables are out of scope. Do not rewrite theme files just to satisfy the linter.
 
-- `npm.cmd run lint:i18n` after the changes listed in the checklist's "Read when" line; `npm.cmd run test:i18n` after validator changes.
-- Merchant-owned content, product data, and runtime variables are out of scope. Do not rewrite theme files just to satisfy the linter.
-
-Shopify Theme Check remains the platform authority. This validator supplements Theme Check with duplicate keys, missing project locale keys, unused locale keys (`lint-i18n-unused.js`; intentional keeps go in its `ALLOWLISTED_PREFIXES` with a reason), hardcoded user-visible copy, and schema/preset boundary checks.
-
-## Reporting
-
-Report missing keys, duplicate keys, hardcoded text, and preset/default instance `t:` misuse with file and line. State whether failures are new, touched, or pre-existing when that is clear.
+Report missing keys, duplicate keys, hardcoded text, and preset or default `t:` misuse with file and line. State whether failures are new, touched, or pre-existing when that is clear.

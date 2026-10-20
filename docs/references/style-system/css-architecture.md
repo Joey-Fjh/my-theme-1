@@ -531,3 +531,22 @@ After batch **6-R4** (2026-10-13), `mixed-element` is **0** and strict (no basel
 8. Must it survive subsetting when the defining Liquid file is absent? Keep it in the Tailwind build (steps 2–4, 6, or 7). Do not place it in a `{% stylesheet %}` block outside its render tree.
 
 Never edit `vendor-*.min.css` manually. CSS source changes require `npm.cmd run build:tw`; never manually edit `assets/tailwind.output.css`.
+
+## Readiness
+
+CSS is ready for design-to-theme batches when all four hold on the pilot page:
+
+1. **Fluid and adaptive.** Layout follows content and container: fluid type and spacing, container queries for components, and layout switches only at the token breakpoints. The layout harness sweeps every template from 320 to 2560 in 40px steps for horizontal page scroll, clipped or overlapping content, content off the page margin, and tap targets under 24px.
+2. **Settings chain, and settings that are visible.** Every merchant-facing appearance decision runs `settings_schema` → `css-variables` → token → class. Sections hard-code no colour, font, or spacing values. Needed settings are exposed, and every exposed setting takes effect.
+3. **One owner per pattern.** A pattern with two consumers is extracted. Duplicated patterns go on the verifier checklist.
+4. **Outcome.** A design-to-delivery batch needs at most one correction round caused by CSS.
+
+Hard requirements come only from Shopify's official sources: typography through `font_picker`, colour through schemes and settings, accessibility (contrast, focus, 24px targets), browser support, and performance. Third-party practice is an open choice, weighed and decided together.
+
+An unlayered `{% stylesheet %}` competes with unlayered Tailwind by specificity and source order. A reduced-motion override that a stylesheet must not beat goes under `prefers-reduced-motion: no-preference` in the owner.
+
+- Never put `container-page` on a custom grid. Its direct-child column rule collapses the custom columns. Inset with `--page-inset` (`max(var(--page-margin), calc((100% - var(--page-width)) / 2))` in `assets/base.css`).
+- A sticky child needs a parent that spans the scroll range (`align-items: stretch`).
+- Heading tiers go on `h*` elements only (`lint:theme` `typography-tier-heading`). They take `text-transform` from a theme variable, so uppercase comes from a section rule. A decorative copy uses the `heading` snippet with `attrs: 'aria-hidden="true"'`.
+- Percentage margins resolve against width, so vertical placement inside a fixed-height panel uses a height variable.
+- Hide inactive content with CSS `visibility` under the layout media query. Do not use a JavaScript `inert` that stays stale on resize.

@@ -4,117 +4,143 @@ Holds the plan currently under execution and its status. Nothing else. Unresolve
 
 Last updated: 2026-10-20.
 
-Previous batch: H2 (Claude Code hooks and record checks), closed with Ask review PASS and the user's live check; record: `git show aa14969:docs/agent/context.md`.
+Previous batch: H3 (CI merchant-path guard, reference table pointers) closed: Ask review PASS in round 3, and acceptance 8 passed on GitHub (CI run 39450026571, `Lint` with `npm run lint:merchant` green: https://github.com/Joey-Fjh/my-theme-1/actions/runs/39450026571). Plan, fixes and review rounds: `git show 3503596:docs/agent/context.md`.
 
-## Batch H3: CI merchant-path guard and reference table pointers
+## Batch H4: prose slimming and the bundled Pending migration (closes the harness round)
 
-**Status:** executed and reviewed (2026-10-20): Ask review PASS in round 3; acceptance 8 (GitHub `Lint` run) owed after push.
+**Status:** executed and reviewed (2026-10-21): Ask review PASS in round 3.
 
-**Outcome.** A change to merchant-owned files can no longer reach a branch silently: CI fails when a commit in the pushed or pull-request range touches `config/settings_data.json`, `templates/*.json` or `sections/*-group.json` without either coming from the Shopify GitHub integration or carrying an authorization trailer. The H2 shell check stays advisory; this is the hard gate. Separately, the references stop copying snippet `{% doc %}` parameter tables (two copies have already drifted) and point to the snippet instead.
+**Outcome.** The always-on and routed prose says each rule once, in its owner, and stops restating what a check or a source file already enforces. The eight Pending migration rules move into their targets in the same batch, so additions and cuts are counted together. The board's Pending migration section ends empty. After H4 the harness round closes; Cursor and Codex hooks and the `AGENTS.md` routing-table cut stay deferred on the board.
 
-**Decisions:** the guard and the table pointers were agreed in the harness round (user, 2026-10-20; board). H3 runs before H4, the prose slimming that closes the round (user, 2026-10-20).
+**Decisions so far (user, 2026-10-20, board):** prose shrinks only where its rule is enforced elsewhere or is duplicated or stale; Pending migration is approved in one bundle at the end of the stage; H4 closes the round.
 
-**Coordinator choices in this plan (the user may change them when authorizing):**
-- **Marker form:** a Git commit trailer `Merchant-Change: <reason>` in the commit that touches a merchant path. It lives in history, needs no extra file, and `git interpret-trailers` can read it. An agent adds it only when the user authorized that merchant change in the batch plan or in chat; the trailer reason names the authorization.
-- **Exemption:** commits authored by the Shopify GitHub integration (`shopify[bot]`, 95 of the merchant-path commits in history) pass without a trailer; they are the merchant's editor writes.
-- **Range:** pull requests: `base.sha..head.sha`; pushes: `before..sha`, or, for a new branch (`before` all zeros), commits not on the default branch. Merge commits are skipped (their content is checked through the commits they bring in); a hand-edited conflict resolution in a merge is a known gap, recorded.
-- **Where:** a step in the existing `Lint` job (no new required check, so the ruleset and `ci-contract` stay unchanged); checkout gets `fetch-depth: 0`.
+**User decisions needed when authorizing:**
+1. **The Pending migration bundle.** Authorizing H4 approves the eight lines on the board (targets: `motion-architecture.md`, `abstraction-boundaries.md`, `css-architecture.md`, `javascript-runtime.md`, `launch-gate.md`, `AGENTS.md`, `docs/project.md`, `check-theme-architecture/SKILL.md`), unless the user strikes any line. `docs/project.md` is the user's file; the approval covers only that line's edits.
+2. **Batch SOP placement.** Coordinator recommendation: keep it in `AGENTS.md` (Cursor and Codex read only that file, and the hooks do not drive the SOP), but compress it: the step table stays, the prose around it that repeats the table goes. Alternative: move it to `.agents/roles/` or a reference read when a batch starts, leaving a three-line pointer.
+3. **Optional scope:** also classify and slim `css-architecture.md` (7,541 words) and `javascript-runtime.md` (3,133 words), which the 2026-10-20 classification did not cover. Coordinator recommendation: not in H4; only their Pending migration additions are. A later batch can do them if the user wants.
 
-**Dependencies:** the user authorizes the batch. Nothing else.
+**Classification rules (from the 2026-10-20 per-section classification, A to D):**
+- **D, duplicated or stale:** delete. Duplicated text keeps one owner (the more specific file wins, `AGENTS.md` keeps a pointer if routing needs it); stale text includes migration markers (`HEAD`, `CAP-01`, `5-C3a`, `6-C4` and similar batch IDs used as context) and descriptions of states that no longer exist.
+- **A, restates an existing check:** cut to one line naming the check (script or test) and what it guards, only when the named check covers it; the implementer proves coverage by citing the check's code or test case. `check-theme-architecture/SKILL.md` "What lint:theme Covers" (about 1,400 words) becomes a short pointer to the script and its test file; `check-i18n/SKILL.md` keeps its trigger and points to the Validation table.
+- **B, judgment with a decidable trigger:** keep. In `AGENTS.md` its routing tables stay (other clients read them); trim wording only.
+- **C, judgment or process without a trigger:** keep, compress wording.
+- Nothing changes meaning. A rule moved or cut names where it now lives.
 
-**Design:**
-1. **`.agents/tools/merchant-guard.mjs`** (`npm run lint:merchant`): takes `--range <a>..<b>` (or reads the GitHub event from `GITHUB_EVENT_PATH` and `GITHUB_EVENT_NAME` in CI); lists non-merge commits in the range with `git log -z`; for each commit whose changed paths (`git diff-tree -z --no-commit-id --name-only -r`) match a merchant glob, passes when the author email is the Shopify integration's (`79544226+shopify[bot]@users.noreply.github.com`) or the message has a `Merchant-Change:` trailer with a non-empty reason; otherwise prints `<sha> <subject>: <paths>` and exits 1. Merchant globs are read from `.agents/tools/harness/routes.json` (one source). Node ESM, no new dependencies, a `node:test` file with disposable repositories.
-2. **`.github/workflows/ci.yml`:** `fetch-depth: 0` on the `Lint` checkout and one step `npm run lint:merchant` (CI mode). Job names unchanged.
-3. **`package.json`:** `lint:merchant`; its test joins `test:validators`. `lint:merchant` does not join `lint` (it needs a range, which local `lint` has none of).
-4. **`AGENTS.md`:** Core Rules, the merchant-owned list: one sentence naming the `Merchant-Change:` trailer and that CI enforces it; one Validation table row for `.agents/tools/merchant-guard.mjs`. `routes.json` gains a route for the new script (validators: its test).
-5. **References:** every table in `docs/references/**` that restates a snippet's `{% doc %}` parameters (known: the `section-frame` table in `abstraction-boundaries.md`, the Parameters table in `image-display-contract.md`) is replaced by a pointer to the snippet's `{% doc %}` block plus only the guidance that the `{% doc %}` does not carry. The implementer lists every such table found, with the search used.
-
-**Implementation surface:** `.agents/tools/merchant-guard.mjs` and its test (new), `.agents/tools/harness/routes.json`, `.github/workflows/ci.yml` (the `Lint` job only), `package.json` (scripts), `AGENTS.md` (the two places in item 4), `docs/references/**` (the tables in item 5 only), `docs/agent/context.md`, `docs/agent/board.md`. Not in the surface: snippets and every other theme file (a `{% doc %}` block that lacks a parameter the reference had is reported, not edited), `.github/rulesets/**`, `.claude/**`, `.cursor/**`, `.codex/**`.
+**Implementation surface:** `AGENTS.md` (`CLAUDE.md` is a symlink), `docs/project.md` (the approved Pending migration line only), `docs/references/**`, `.agents/skills/check-theme-architecture/SKILL.md`, `.agents/skills/check-i18n/SKILL.md`, `docs/agent/board.md` (Pending migration emptied; harness round closed), `docs/agent/context.md`. Not in the surface: `.agents/roles/**` (unless the user picks the Batch SOP alternative), vendored skills, scripts and tests, `.claude/**`, `routes.json`, theme files. If a cut needs a check that does not exist, keep the prose and list the check as a candidate.
 
 **Acceptance checks:**
-1. `git diff --name-only` plus untracked files list only surface files.
-2. The guard's test passes and asserts, against disposable repositories: a commit touching `templates/index.json` without a trailer fails; with `Merchant-Change: user approved X` passes; with an empty trailer fails; a `shopify[bot]` commit passes; a commit touching only `sections/foo.liquid` passes; `sections/header-group.json` and `config/settings_data.json` are guarded; a merge commit is skipped; the new-branch range (`before` all zeros) is resolved against the default branch; paths with spaces and non-ASCII names are read correctly.
-3. `npm.cmd run lint:merchant -- --range 0a5fd1d..HEAD` exits 0 on this branch (no merchant changes since then), and the same command over a range that includes a past human merchant commit without a trailer exits 1 and names it (proves the guard on real history).
-4. `npm.cmd run test:ci-contract` passes (job names unchanged); `ci.yml` diff is limited to the `Lint` checkout and the new step.
-5. No table in `docs/references/**` restates `{% doc %}` parameters (search recorded); each replaced table's guidance not in the `{% doc %}` is kept as prose; `npm.cmd run lint:doc-paths` passes.
-6. `npm.cmd run test:validators`, `npm.cmd run test:harness`, `npm.cmd run doctor:agent` pass; `npx.cmd prettier --check --ignore-path NUL` on the new script, its test, `routes.json` and `package.json`; `git diff --check` clean.
-7. `AGENTS.md` diff touches only the two places in item 4.
-8. After commit and push of the batch, the `Lint` job on GitHub passes with the new step (run link recorded; the user pushes or approves the push).
+1. `git diff --name-only` lists only surface files.
+2. Word counts before and after (`wc -w`) for every changed file and in total, recorded in Progress; the total for the classified set (`AGENTS.md`, `i18n-checklist.md`, `abstraction-boundaries.md`, `browser-compatibility.md`, `image-display-contract.md`, both `check-*` `SKILL.md`) falls, net of the migrated rules.
+3. A cut table in Progress: every removed or rewritten paragraph or table row → class (A, B, C or D) → where the rule now lives (check name with file, other doc path, or "stale, why"). The verifier samples it against `git diff`.
+4. Each of the eight Pending migration lines (or those the user kept) is present in its target with the same meaning; the board's Pending migration section is empty; `npm.cmd run lint:records` prints 0 pending migration lines.
+5. No migration marker left in `docs/references/**` and the two `SKILL.md` files (search recorded, with any intentional exception named).
+6. `AGENTS.md` keeps every hook-routed item `routes.json` points to (pointers resolve; `npm.cmd run test:harness` passes) and every Validation table command (`npm.cmd run test:harness` integrity test).
+7. `npm.cmd run lint:doc-paths`, `npm.cmd run doctor:agent`, `npm.cmd run test:validators` pass; `git diff --check` clean; Markdown structure intact.
+8. Board size recorded; if it falls below the 1865 baseline, `npm.cmd run lint:records -- --prune-baseline` lowers it.
 
-**Review tier:** Ask (workflow, validator wiring, agent rules). Execution: external prompt, then a separate verifier; complete only on PASS and check 8.
-
-**Next (board):** H4, prose slimming with the bundled Pending migration approval; it closes the harness round.
+**Review tier:** Ask (agent rules and references). Execution: external prompt, then a separate verifier; complete only on PASS. Commit and push afterwards; CI must stay green (checked through the public API).
 
 ## Progress
 
-- Authorized (user, 2026-10-20): the four coordinator choices stand. Standing guidance from H2: the leanest implementation that meets the checks; record any simplification as a deviation.
-- Implemented (2026-10-20). Not committed, not pushed, not accepted. No Agent Skills trigger (no motion, GSAP consumer, or visual-direction change).
+- Authorized (user, 2026-10-20) with the coordinator's recommendations: (1) all eight Pending migration lines approved as a bundle, none struck; (2) Batch SOP stays in `AGENTS.md`, compressed (the step table stays, prose repeating it goes); (3) `css-architecture.md` and `javascript-runtime.md` are not slimmed in H4, they only receive their migrated rules. Standing guidance: the leanest result that meets the checks; record deviations here.
+- Before counts (`D:\git_download\Git\usr\bin\wc.exe -w`, before the first content edit): `AGENTS.md` 2753; `docs/project.md` 1328; `docs/references/code-review/i18n-checklist.md` 493; `docs/references/architecture/abstraction-boundaries.md` 865; `docs/references/code-review/browser-compatibility.md` 466; `docs/references/style-system/image-display-contract.md` 912; `docs/references/architecture/motion-architecture.md` 771; `docs/references/code-review/launch-gate.md` 659; `docs/references/style-system/css-architecture.md` 7541; `docs/references/architecture/javascript-runtime.md` 3133; `.agents/skills/check-theme-architecture/SKILL.md` 1620; `.agents/skills/check-i18n/SKILL.md` 180; `docs/agent/board.md` 1878; `docs/agent/context.md` 908; total 23507. Classified set (`AGENTS.md`, `i18n-checklist.md`, `abstraction-boundaries.md`, `browser-compatibility.md`, `image-display-contract.md`, both `check-*` `SKILL.md`): 7289.
+- After counts (same `wc.exe -w`, after the content edits, before this Progress close-out): `AGENTS.md` 2773; `docs/project.md` 1598; `i18n-checklist.md` 326; `abstraction-boundaries.md` 797; `browser-compatibility.md` 383; `image-display-contract.md` 770; `motion-architecture.md` 754; `launch-gate.md` 727; `css-architecture.md` 7864; `javascript-runtime.md` 3207; `check-theme-architecture/SKILL.md` 279; `check-i18n/SKILL.md` 178; `docs/agent/board.md` 1517; `docs/agent/context.md` 959. Classified set from a second `wc.exe -w` on those seven files: total 5506 (7289 − 5506 = 1783). The set falls with the migrated rules included. `docs/agent/context.md` after this close-out: 2212.
+- Cut-table rows (node match on the table): 35. A 7, B 1, C 8, D 10, migration 9.
+- Implemented, awaiting review. Not accepted. No commit. Open board decisions were not decided. The Batch SOP always-on decision stays open; this batch kept the step table in `AGENTS.md` because the authorization said to. No Agent Skills trigger applies (no motion, GSAP consumer, or visual-direction change).
 
 ### Deviations
 
-- The layout-primitives table is one table for five snippets (`section-frame`, `heading`, `text`, `button`, `content-group`). The whole table was replaced; a `section-frame`-only edit would have left the other rows restating `{% doc %}` parameters.
-- Image `## Parameters` is a pointer only. Cells that repeated the `{% doc %}` or a section that remains were not copied again. Two phrases were treated as already covered: `mobile_image` "byte-identical to the pre-parameter path" (the doc says output is unchanged from the desktop-only path) and `wrapper_class` "preferred" (the doc says `class` is a deprecated alias and `wrapper_class` is canonical). Display Modes and the ratio-vocabulary table stay; they are not parameter lists.
-- This Git's `git interpret-trailers --parse` still prints `Merchant-Change:` when the value is empty or whitespace. The guard treats a whitespace-only value as missing, which is the plan's non-empty reason.
-- A `Merchant-Change:` line above the trailer block is a test, from the engineering constraint, in addition to the numbered checks.
-- An all-zero `before` of 64 characters resolves like one of 40, so a SHA-256 new-branch push uses `origin/<default_branch>` too.
+- **`motion_enabled` list.** The 0a5fd1d source says the code also stops autoplay, tilts, and zooms. Current code stops the promo-banner zoom (`assets/promo-bannder.js`) and the ritual-steps packshot tilt (`assets/ritual-steps.js`). It does not stop slideshow or routine autoplay (`assets/slides-show.js` `_shouldRunAutoplay`, `assets/routine-showcase.js` `_canRunAutoplayAnimation` read reduced motion only). The list follows the code.
+- **Migration markers in `css-architecture.md`.** User decision 3 limits that file, and `javascript-runtime.md`, to migrated rules. Markers were removed from the slimmed references and both `SKILL.md` files. They remain in `css-architecture.md`. `javascript-runtime.md` had none.
+- **Check 8 prune not run.** `npm.cmd run lint:records` printed `board words: 1517`, `baseline: 1865`, `pending migration lines: 0`. Prune would write `.agents/tools/harness/records.baseline.json`, which the task forbids and which would fail check 1. Needs the user to allow that one write.
 
-### `{% doc %}` comparison
+### Check candidates
 
-No `{% doc %}` block lacks a parameter the reference table had. Snippets were not edited. The tables were subsets of the docs. Parameters present in the doc and absent from the table: `section-frame` `section_class`, `root_class`, `inner_class`; `heading` `class`; `text` `element`, `class`, `style`; `button` `type`, `class`, `aria_label`; `content-group` `class`; `image` `url`, `interactive`, `wrapper`, `width`, `height`, `crop`, `decoding`, `placeholder_key`, `placeholder_class`, `placeholder_aspect_ratio`, `extra_attributes`.
+- Bare global DOM listeners inside a Liquid `{% javascript %}` block. `executable-inline-script` matches `<script>` bodies only (`.agents/skills/check-theme-architecture/scripts/lib/theme-contracts.js`). The Liquid sentence stays in `AGENTS.md`.
+- Omitting a preset or default setting that already equals the schema default, and omitting an empty block `settings` object. `lint:i18n` rejects `t:` in those values and does not require the omission. The two sentences stay in `i18n-checklist.md`.
 
-Guidance kept because the `{% doc %}` does not carry it: `scheme_target: none` keeps `HEAD`'s colour-scheme placement; `section-frame__overlay-safe-top` on a top block for the first-section header offset when padding is overlay; `clip: false` adds `section-frame--no-clip`; Alpine mount attributes belong on an inner element in `children`; `content-group` is not a generic flex wrapper.
+### Marker search
 
-### Parameter-table search
+Command: `rg -n -e "HEAD|CAP-01|\b[0-9]+-[A-Z][0-9]+"` on `docs/references` and the two `SKILL.md` files, piped to `wc -l`. Before, `git grep` of the same pattern on `HEAD` for those paths: 43 lines. After: 32 lines, all in `docs/references/style-system/css-architecture.md` (the exception above). No hit in the slimmed references or either `SKILL.md`. No living-name exception was kept in those files.
 
-Command: `rg -n --glob "*.md" -e "Parameters \(semantic\)" -e "^\| Parameter \| Meaning \|" -e "^## Parameters$" docs/references`
+### Cut table
 
-Before:
-
-- `docs/references/style-system/image-display-contract.md:18:## Parameters`
-- `docs/references/style-system/image-display-contract.md:20:| Parameter | Meaning |`
-- `docs/references/architecture/abstraction-boundaries.md:60:| Snippet | Parameters (semantic) | Notes |`
-
-After: one hit, `docs/references/style-system/image-display-contract.md:18:## Parameters` (the pointer heading, not a table). A follow-up `rg -n --glob "*.md" "^\| (Snippet \| Parameters|Parameter \| Meaning)" docs/references` exited 1 with no hits.
+| Removed or rewritten | Class | Where the rule lives now |
+| --- | --- | --- |
+| `check-theme-architecture/SKILL.md` "What lint:theme Covers" table (check ids and rule text) | A | `.agents/skills/check-theme-architecture/scripts/lint-theme.js` and `.agents/skills/check-theme-architecture/scripts/theme-architecture.test.js`; the skill now points at them |
+| Same file, batch ids on check rows (`6-C4`, `6-C9`, `6-C3`, `6-C2`, `6-V6`, `6-C6`, `6-R4`) | D | stale batch context; the check ids remain in the script |
+| Same file, colour-lint regex limitation added | migration | `.agents/skills/check-theme-architecture/SKILL.md` "What lint:theme covers" |
+| `check-i18n/SKILL.md` restatement of what the validator supplements | A | `.agents/skills/check-i18n/scripts/lint-i18n.js`; one line kept, plus the Validation pointer |
+| `i18n-checklist.md` locale table, schema-localizable field list, preset `t:` rules, Unicode and uppercase notes | A | `lint-i18n.test.js` cases named in the checklist (`duplicate locale JSON key fails`, `preset settings with t: value fails`, `lowercase text setting defaults require translation`, `uppercase visible html text fails`, and the others listed there); `shouldRequireSchemaTranslation` in `lint-i18n.js` |
+| Same file, JS copy row | A | `lint:theme` `js-user-visible-copy` in `theme-contracts.js`; the `data-*` path stays as one sentence |
+| Same file, "omit preset/default when already the schema default" and "omit empty settings" | C | kept, compressed, under "Review judgment the check does not make" |
+| `browser-compatibility.md` enumerated Safari/Chrome/Firefox/Edge/webview list | D | the linked Shopify requirements section is the owner; the "follow the current page" sentence stays |
+| Same file, build-boundary, static-scope, adoption, and evidence paragraphs | C | same file, compressed; Vite/Autoprefixer/Browserslist sentence kept |
+| Same file, commands paragraph | A | `AGENTS.md` Validation |
+| `image-display-contract.md` Decision Flow steps 1–5 | D | Display Modes table and Object-position / Fit sections in the same file |
+| Same file, "caller decides the mode" | C | kept as one sentence under Display Modes |
+| Same file, "do not default position before detecting" review row | D | Object-position section, same file |
+| Same file, raw `<img>` review row | A | `lint:theme` `bare-img` in `theme-contracts.js` |
+| Same file, heading `Ratio vocabulary (5-C3a)` | D | stale batch id; the ratio table stays |
+| `abstraction-boundaries.md` principle, gate, resolution, snippet rules | C | same file, compressed |
+| Same file, anti-pattern table rows | C | same table, shorter cells; third-consumer row kept |
+| Same file, `HEAD` and `(5-C3a)` | D | stale; `scheme_target: none` now states the section writes the scheme class (`snippets/section-frame.liquid` `{% doc %}`) |
+| Same file, carousel-indicator exception and full-bleed background slot | migration | same file, after the anti-pattern table |
+| `motion-architecture.md` goals, ownership, decision table, page-type, tokens, performance | C | same file, compressed |
+| Same file, "generous rootMargin" loading bullet | D | replaced by the migrated rule: one viewport in `assets/scatter-gallery.js` `preloadRootMargin()`, not the 200px margin in `assets/base.js` |
+| Same file, motion CSS gate sentence | migration | same file, intro: `body:not([data-motion-enabled='false'])` |
+| `launch-gate.md` classification, accessibility, cleanup, ignore files, Lighthouse workflow | C | same file, compressed |
+| Same file, "AGENTS.md already requires semantic interactive elements…" | D | `AGENTS.md` Hard implementation rules |
+| Same file, computed-style recipe and browser-sweep password rules | migration | same file, "Lighthouse Issue Classification" and "Browser sweep" |
+| `AGENTS.md` two Batch SOP intro paragraphs | D | the step table (kept verbatim); the subagent proposal sentence stays |
+| `AGENTS.md` runtime load-order and Vite/Browserslist sentences | D | `javascript-runtime.md` and `browser-compatibility.md`; one-line pointers kept |
+| `AGENTS.md` Sources examples | C | same section, compressed |
+| `AGENTS.md` Agent Skills inventory wording | B | same section; trigger conditions kept |
+| `AGENTS.md` inline-script sentence | A | `executable-inline-script` in `theme-contracts.js`; listener half kept (see check candidates) |
+| `AGENTS.md` audit practice, CSS-batch checks, and four Gotchas | migration | `AGENTS.md` "Audit practice" and "Gotchas" |
+| `css-architecture.md` readiness, stylesheet-vs-Tailwind lesson, grid/sticky/heading/margin/visibility rules | migration | new "Readiness" section; file not otherwise slimmed |
+| `javascript-runtime.md` own loader and library-upgrade rule | migration | new "Loader and library upgrades" |
+| `docs/project.md` `motion_enabled` sentence, design workflow, design source, design input, second submission | migration | Theme-Specific Contracts and Accepted Direction |
+| `docs/agent/board.md` eight Pending migration lines | migration | the targets above; section heading kept, body empty |
 
 ### Validation
 
-| Check | Command | Result |
-| --- | --- | --- |
-| Surface | `git diff --name-only` and `git status --short` | Tracked: `.agents/tools/harness/routes.json`, `.github/workflows/ci.yml`, `AGENTS.md`, `docs/agent/board.md`, `docs/agent/context.md`, `docs/references/architecture/abstraction-boundaries.md`, `docs/references/style-system/image-display-contract.md`, `package.json`. Untracked: `.agents/tools/merchant-guard.mjs`, `.agents/tools/merchant-guard.test.mjs`. `board.md` and `context.md` were already modified before this execution (H3 plan; H2 closed and H4 on the board). This execution added Progress and changed the H3 board line to implemented, awaiting review. |
-| `AGENTS.md` | `git diff -- AGENTS.md` | Two hunks: the merchant-list sentence, and one Validation row for `.agents/tools/merchant-guard.mjs` |
-| `ci.yml` | `git diff -- .github/workflows/ci.yml` | Lint checkout `fetch-depth: 0`, and one step `npm run lint:merchant`. Job names unchanged |
-| Guard tests | `npm.cmd run test:merchant` | 12 pass, 0 fail |
-| Passing range | `npm.cmd run lint:merchant -- --range 0a5fd1d..HEAD` | `Merchant path guard passed.` Exit 0 |
-| Failing range | `npm.cmd run lint:merchant -- --range 0ea9051aedcdf4a10a20a87b22db782c40612b08..0ff2b99eba1fa969acda01461de389d4b673403e` | Exit 1. `0ff2b99eba1fa969acda01461de389d4b673403e feat(6-P5..6-P7): carousel dots, product page right column, template: templates/product.json`. Human commit `0ff2b99eba1fa969acda01461de389d4b673403e` (`1834879843@qq.com`, one parent `0ea9051aedcdf4a10a20a87b22db782c40612b08`, path `templates/product.json`, no trailer). Found with `git log -z --format=%H%x00%ae%x00%s%x00%B` over `config/settings_data.json`, `:(glob)templates/*.json`, and `:(glob)sections/*-group.json`, excluding `79544226+shopify[bot]@users.noreply.github.com` |
-| CI contract | `npm.cmd run test:ci-contract` | 18 pass, 0 fail |
-| Validators | `npm.cmd run test:validators` | Exit 0. Nested: `test:i18n` 33 pass; `test:theme-architecture` 243 pass; `test:section-stylesheet-carry` 3 pass; `test:doc-paths` 7 pass; `test:ci-contract` 18 pass; `test:harness` 7 pass; `test:merchant` 12 pass |
-| Harness | `npm.cmd run test:harness` | 7 pass, 0 fail |
-| Doc paths | `npm.cmd run lint:doc-paths` | `Doc path lint passed.` |
-| Doctor | `npm.cmd run doctor:agent` | Exit 0 |
-| Prettier | `npx.cmd prettier --check --ignore-path NUL` on the new script, its test, `routes.json`, and `package.json` | `All matched files use Prettier code style!` |
-| Whitespace | `git diff --check` | Exit 0, no output |
+- `git diff --name-only` and `git status --short`: the 14 surface files only (the two `SKILL.md` files, `AGENTS.md`, `docs/project.md`, six references, `css-architecture.md`, `javascript-runtime.md`, `board.md`, `context.md`). No forbidden path.
+- `git diff --check`: no output, exit 0.
+- `npm.cmd run lint:records`: `board words: 1517`, `baseline: 1865`, `pending migration lines: 0`. Exit 0.
+- `npm.cmd run test:harness`: 7 tests, 7 pass, 0 fail. Exit 0. Includes `routes.json matches package scripts, pointers, validation commands, and merchant paths`.
+- `npm.cmd run lint:doc-paths`: `Doc path lint passed.`
+- `npm.cmd run doctor:agent`: exit 0, no failure printed.
+- `npm.cmd run test:validators`: exit 0. Nested totals from that command: `test:i18n` 33 pass / 0 fail; `test:theme-architecture` 243 pass / 0 fail; `test:section-stylesheet-carry` 3 pass / 0 fail; `test:doc-paths` 7 pass / 0 fail; `test:ci-contract` 18 pass / 0 fail; `test:harness` 7 pass / 0 fail; `test:merchant` 18 pass / 0 fail.
 
-### Check 8 (owed after commit and push)
+**Coordinator review (2026-10-20):** (1) Check 8: the plan left `records.baseline.json` outside the surface, a planning error; the coordinator ran `npm.cmd run lint:records -- --prune-baseline` (board 1517, baseline 1865 → 1517). (2) The board's open decision on Batch SOP placement removed: the user decided it in the authorization. (3) The `motion_enabled` autoplay mismatch the implementer found (code vs `design.md`) filed in `backlog.md` Defects. (4) The two check candidates filed under board Deferred ideas.
 
-This session did not commit or push. After the user asks for both:
+**Verifier round 1 (external session, 2026-10-21): FAIL**, all automated checks passed; three meanings lost, restored by the coordinator: (1) `AGENTS.md` Batch SOP: "roles stay model-agnostic" restored; (2) migrated rules: the closed-area audit runs in an external Sonnet session with its report outside the repository (`AGENTS.md`), and the design workflow allows reference sites inspected for motion with Chrome DevTools MCP (`docs/project.md`); (3) `check-theme-architecture/SKILL.md` Reporting: a pre-existing finding is again classified as a warning or follow-up per `AGENTS.md`. Cut-table additions: the Batch SOP row now keeps the model-agnostic sentence; the SKILL.md Reporting rewrite is a C-row compression with meaning unchanged.
 
-1. Commit the batch.
-2. Push the branch (the user pushes or approves the push).
-3. Open the GitHub Actions run for that push.
-4. Confirm the job named `Lint` passed, including the step `npm run lint:merchant`.
-5. Record the run URL in this Progress section.
+**Final word counts (coordinator, 2026-10-21, after the round-1 restorations; `git show HEAD:<file> | wc -w` against `wc -w <file>`; these supersede the implementer's after column):**
 
-### Not decided
+| File | HEAD | Final |
+| --- | ---: | ---: |
+| `AGENTS.md` | 2753 | 2787 |
+| `docs/project.md` | 1328 | 1611 |
+| `docs/references/code-review/i18n-checklist.md` | 493 | 326 |
+| `docs/references/architecture/abstraction-boundaries.md` | 865 | 797 |
+| `docs/references/code-review/browser-compatibility.md` | 466 | 383 |
+| `docs/references/style-system/image-display-contract.md` | 912 | 770 |
+| `docs/references/architecture/motion-architecture.md` | 771 | 754 |
+| `docs/references/code-review/launch-gate.md` | 659 | 727 |
+| `docs/references/style-system/css-architecture.md` | 7541 | 7864 |
+| `docs/references/architecture/javascript-runtime.md` | 3133 | 3207 |
+| `.agents/skills/check-theme-architecture/SKILL.md` | 1620 | 290 |
+| `.agents/skills/check-i18n/SKILL.md` | 180 | 178 |
+| `docs/agent/board.md` | 1896 | 1532 |
+| `docs/agent/backlog.md` | 1733 | 1778 |
+| `docs/agent/context.md` | 2189 | 2382 (before this table) |
+| `.agents/tools/harness/records.baseline.json` | 4 | 4 |
+| **All 16 changed files** | **26543** | **25390** |
 
-Open board decisions were not decided: stylesheet raw spacing, `impeccable` adoption, the polish design choices, Lighthouse CI leftovers, the layout harness page-margin rule, and whether the Batch SOP stays always-on.
+Classified set (`AGENTS.md`, `i18n-checklist.md`, `abstraction-boundaries.md`, `browser-compatibility.md`, `image-display-contract.md`, both `check-*` `SKILL.md`): **7289 → 5531**, net of the migrated rules.
 
-**Coordinator review (2026-10-20), two fixes before the verifier:**
-1. **Pre-guard history.** The future pull request of this branch into `main` (`origin/main..HEAD`, 253 commits) failed on past human commits that changed merchant paths before the trailer rule existed (24 violations with `merchantGuardFrom` disabled; the earlier "15" came from truncated output, corrected in verifier round 2). Fixed: `routes.json` `merchantGuardFrom` (`aa14969`, the last commit before H3); commits reachable from it are excluded (`git log ... --not <sha>` when the commit exists in the clone). `npm.cmd run lint:merchant -- --range origin/main..HEAD`: `Merchant path guard passed.` Test added.
-2. **Force-pushed `before`.** A push whose `before` is not in the clone made `git log` fail and the job red. Fixed: such a push resolves like a new branch (`origin/<default branch>..after`). Test added.
-Acceptance check 3 now proves the guard on real history with the start commit disabled: `collectMerchantViolations(root, '0ea9051..0ff2b99', null)` returns `0ff2b99 ... templates/product.json` (the CLI over that range passes, as the commit predates the guard). After: `npm.cmd run test:merchant` 14 pass 0 fail; `npm.cmd run test:validators` exit 0; `npm.cmd run test:harness` 7 pass; prettier on the guard, its test, `routes.json` and `package.json` pass.
+**Verifier round 2 (external session, 2026-10-21): FAIL** only on acceptance check 2 (the after column predated the round-1 restorations); the table above refreshes it. All meaning checks, validators and checks 1 and 3-8 passed.
 
-**Verifier round 1 (external session, 2026-10-20): FAIL.** Findings and coordinator fixes: (1) a root commit on an orphan branch showed no paths (`git diff-tree` without `--root`), so its merchant change passed; fixed with `--root`, orphan-branch test added. (2) A push deleting a branch or tag (`after` all zeros) failed the job with an invalid range; it now passes as a no-op, test added and the CLI run with such an event prints `Merchant path guard passed: the push deletes a ref.` After: `npm.cmd run test:merchant` 16 pass 0 fail; `npm.cmd run test:validators` exit 0.
-
-**Verifier round 2 (external session, 2026-10-20): FAIL.** Round-1 fixes confirmed; acceptance 1-7 passed. Findings and coordinator fixes: (1) a fork pull request may arrive with an empty `pull_request` payload, which made the job fail; it now falls back to the checked-out PR merge commit's parents (`HEAD^1..HEAD^2`), and only throws when neither exists; tests cover the range and a CLI run that catches a fork merchant change. (2) The deletion test now runs the CLI with event files for a branch and a tag deletion. (3) The pre-guard count above corrected. After: `npm.cmd run test:merchant` 18 pass 0 fail.
-
-**Verifier round 3 (external session, 2026-10-20): PASS**, no findings; acceptance 1-7 proven with fresh evidence. Remaining merge condition: acceptance 8, the `Lint` run on GitHub after commit and push.
+**Verifier round 3 (external session, 2026-10-21): PASS**, no findings.

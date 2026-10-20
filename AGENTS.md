@@ -13,9 +13,9 @@ This file is the always-on entry point and the canonical rule source for agents 
 
 Runtime constraints:
 
-- No bundler. `layout/theme.liquid` renders `snippets/scripts.liquid`, which loads theme code as ES modules through an import map (entry `base.js`). Only the vendored Alpine script is a classic `defer` script, and it runs after the entry. Load order: `docs/references/architecture/javascript-runtime.md`.
-- Do not introduce React, Vue, TypeScript, or nested runtime asset structures unless the user explicitly approves an architecture change. Theme assets stay flat under `assets/`.
-- Do not add Vite, Autoprefixer, or broad polyfills without an explicit architecture decision. Browserslist drives static compatibility checks only, not Tailwind v4's build target.
+- No bundler. Theme code loads as ES modules through the import map in `snippets/scripts.liquid` (entry `base.js`). Load order: `docs/references/architecture/javascript-runtime.md`.
+- No React, Vue, TypeScript, or nested asset trees unless the user approves an architecture change. Theme assets stay flat under `assets/`.
+- No Vite, Autoprefixer, or broad polyfills without an explicit architecture decision. Build boundary: `docs/references/code-review/browser-compatibility.md`.
 
 Third-party libraries are vendored files behind project adapters, not npm runtime packages. A selected library is vendored only when an accepted consumer exists. Every vendored library has an entry in `THIRD_PARTY_NOTICES.md`, updated in the same change that adds, replaces, or upgrades it.
 
@@ -64,19 +64,17 @@ Classify ambiguous issues before fixing them. If an issue could be code, configu
 
 Hard implementation rules:
 
-- Do not write inline executable `<script>` tags or bare global DOM listeners in Liquid. Data-only blocks with `type="importmap"` or `type="application/ld+json"` are allowed.
+- No executable inline `<script>` in Liquid. `lint:theme` `executable-inline-script` (`.agents/skills/check-theme-architecture/scripts/lib/theme-contracts.js`) fails a script that has a body; data-only `importmap` and `application/ld+json` blocks are allowed. No bare global DOM listener in Liquid.
 - Pass Liquid-driven runtime values to JavaScript through `data-*`.
-- Keep Alpine attributes to simple expressions (method calls, state reads, binding objects or ternaries); put logic in the registered component. `lint:theme` enforces this.
+- Alpine attributes stay simple expressions (method calls, state reads, binding objects or ternaries); logic lives in the registered component. `lint:theme` check `alpine-expression` (`.agents/skills/check-theme-architecture/scripts/lint-theme.js`).
 - Critical first-viewport content must render usable and visible without JavaScript or animation completion.
-- User-visible strings, schema labels, ARIA copy, placeholders, and editor text must use locale keys.
+- User-visible strings, schema labels, ARIA copy, placeholders, and editor text use locale keys (`lint:i18n`).
 - Use semantic interactive elements, keyboard access, visible focus, accessible names, and minimal ARIA.
 - Do not manually edit vendor, generated, or optimized icon assets.
 
 ## Batch SOP
 
-The coordinator (the agent the user is talking to) owns steps 1–6 unless execution is delegated. Delegation does not transfer execution authority; one-writer and independent-review rules still apply.
-
-The coordinator does not spawn subagents on its own, because each one rebuilds context and multiplies token use. When a step would benefit from one (step 7 independent review, a broad read-only search, a large batch), propose the role, client, and model and wait for the user's decision. Default model: inherit the main model; for a mechanical, high-volume task whose plan fixes the surface and acceptance checks, propose Sonnet (the latest Sonnet model) instead. Model choice stays out of the adapter files; roles stay model-agnostic.
+Delegating a step does not transfer execution authority. Do not spawn a subagent without proposing the role, client, and model and waiting. Default model: inherit; for a mechanical batch whose plan fixes the surface and the checks, propose Sonnet. Model choice stays out of the adapter files; roles stay model-agnostic. The step table is the procedure.
 
 | Step | Owner | Action | Stop condition |
 | --- | --- | --- | --- |
@@ -106,9 +104,9 @@ The coordinator does not spawn subagents on its own, because each one rebuilds c
 
 **Sources:**
 
-- Use Shopify Dev MCP for Shopify platform claims. Use Context7 for third-party library docs when current-version sources matter, resolving the library ID at call time. Do not guess framework behavior when the appropriate MCP should be available.
-- Use Chrome DevTools MCP against `shopify theme dev` when a claim depends on rendered or runtime behavior. Examples: console errors, network requests, and focus and keyboard behavior after a JS or interaction change; screenshots at 390 and 1440 for visual batches; performance traces for Lighthouse ownership classification.
-- If an expected MCP is missing, troubleshoot per `README.md` ("MCP servers") before falling back to the official website, and state that degraded source explicitly.
+- Shopify platform claims: Shopify Dev MCP. Current third-party library docs: Context7, resolving the library ID at call time. Do not guess framework behavior when that MCP is available.
+- Rendered or runtime claims: Chrome DevTools MCP against `shopify theme dev` (console, network, focus and keyboard, screenshots at 390 and 1440, performance traces for Lighthouse ownership).
+- If an expected MCP is missing, troubleshoot per `README.md` ("MCP servers") before using the official website, and say that the source is degraded.
 
 ## Task Routing
 
@@ -127,20 +125,13 @@ Read only the matching reference for the current task:
 
 ## Agent Skills
 
-Project skills in `.agents/skills/`:
-
-- The executable validators `check-i18n` and `check-theme-architecture`.
-- The vendored GreenSock documentation skills `gsap-core`, `gsap-timeline`, `gsap-scrolltrigger`, and `gsap-performance` (MIT). These are agent documentation only, with no storefront payload.
-- The vendored Anthropic skill `frontend-design` (Apache 2.0), a design reference only (`.agents/skills/frontend-design/UPSTREAM.md`).
-- The vendored Emil Kowalski skill `review-animations` (MIT), a motion review aid only (`.agents/skills/review-animations/UPSTREAM.md`).
-
-All vendored skills rank below Shopify's official sources and the project rules.
+Project skills in `.agents/skills/`: executable validators `check-i18n` and `check-theme-architecture`; vendored docs only (no storefront payload) `gsap-core`, `gsap-timeline`, `gsap-scrolltrigger`, `gsap-performance` (MIT), `frontend-design` (Apache 2.0, `.agents/skills/frontend-design/UPSTREAM.md`), and `review-animations` (MIT, `.agents/skills/review-animations/UPSTREAM.md`). Vendored skills rank below Shopify's official sources and the project rules.
 
 Triggers. A batch whose surface matches one of these uses the skill and records its output in `docs/agent/context.md`:
 
-- **`review-animations`:** the batch adds or changes motion: CSS `transition`, `animation` or `@keyframes`, motion tokens, reduced-motion handling, Alpine-driven visibility transitions, or GSAP. Read its `SKILL.md` and `STANDARDS.md` by path and review the motion diff before step 7. The motion reference wins on conflict.
-- **GSAP skills:** the work touches a GSAP consumer (`assets/motion-gsap.js`, `assets/scatter-gallery.js`), or the motion reference classifies new work as complex choreography. Read `gsap-core`, plus `gsap-scrolltrigger`, `gsap-timeline`, or `gsap-performance` as the change needs.
-- **`frontend-design`:** a design or polish batch whose plan changes visual direction (typography, layout composition, colour composition). Read it at the start of the batch, and discuss its suggestions with the user before adopting them.
+- **`review-animations`:** the batch adds or changes motion (CSS `transition`, `animation` or `@keyframes`, motion tokens, reduced-motion handling, Alpine visibility transitions, or GSAP). Read its `SKILL.md` and `STANDARDS.md` by path and review the motion diff before step 7. The motion reference wins on conflict.
+- **GSAP skills:** the work touches `assets/motion-gsap.js` or `assets/scatter-gallery.js`, or the motion reference classifies it as complex choreography. Read `gsap-core`, plus `gsap-scrolltrigger`, `gsap-timeline`, or `gsap-performance` as the change needs.
+- **`frontend-design`:** the plan changes visual direction (typography, layout composition, colour composition). Read it at the start, and discuss its suggestions with the user before adopting them.
 
 Do not create, install, or approve skills during ordinary theme work. Discuss skill changes only when the user explicitly asks.
 
@@ -163,9 +154,19 @@ Run scripts through `npm.cmd` in this Windows PowerShell workspace. Default to t
 
 Build helpers: `npm.cmd run build:tw` (Tailwind iteration), `npm.cmd run build:svg` (staged icons in `icons/`). Do not run rewriting formatters unless the user asks.
 
+## Audit practice
+
+Per CSS batch, the scope discussion audits that domain for bypasses of the settings chain, redundant or leftover code, and rule holes. Findings go into the plan. The batch's baseline is cleared when it closes. The batch also runs the lints, `test:layout` at the plan's key widths (for example 390, 768, 1024, 1440), and the user's browser look at the pages and widths the plan names. The full 57-width sweep runs before a release.
+
+Before the second submission, one cross-domain consolidation pass covers the polish pass and the readiness review. Closed areas (JS runtime and modules, i18n, schema and settings, assets, and `docs/references/` accuracy) get one read-only audit in an external Sonnet session, with its report kept outside the repository; the coordinator files the findings on `docs/agent/board.md` by domain.
+
 ## Gotchas
 
-- `icons/` is intentionally Git-ignored and may not exist in a clean checkout. Create it only as temporary input for `npm.cmd run build:svg`; committed optimized icons live in `assets/`.
+- `icons/` is Git-ignored and may be absent in a clean checkout. Create it only as temporary input for `npm.cmd run build:svg`. Committed optimized icons live in `assets/`.
 - Do not mix visual redesign, architecture cleanup, Lighthouse fixes, and configuration changes in one batch.
 - Preserve schema IDs, block types, section types, preset names, template references, and storefront behavior during cleanup.
 - `.shopifyignore`, `.gitignore`, and `.prettierignore` have different scopes. Read `docs/references/code-review/launch-gate.md` before changing ignore rules.
+- `inline_richtext` rejects `<br>`. A rejected template blocks the whole `shopify theme dev` upload.
+- Theme Editor saves are written back to local files only when `shopify theme dev` runs with `--theme-editor-sync`.
+- A fix on `main` goes through a `fix/` branch and a pull request.
+- Plan numeric targets against the container the section actually sits in.

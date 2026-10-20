@@ -1,61 +1,58 @@
 # Abstraction Boundary Reference
 
-This reference stores shared-abstraction discipline details that are too long for `AGENTS.md`. `AGENTS.md` remains the rule source. Read this file before extending base classes, registered Alpine components used by multiple sections, public utilities such as `ShopifyHttp` / `SectionRefresher`, or pagination/refresh helpers.
+Shared-abstraction rules that are too long for `AGENTS.md`. `AGENTS.md` remains the rule source. Read this before extending a base class, a shared Alpine component, `ShopifyHttp`, `SectionRefresher`, or a pagination or refresh helper.
 
 ## Boundary Principle
 
-Shared abstractions carry a contract that every consumer silently depends on. Extending the contract for a new use case can break existing consumers in ways that surface far from the change.
+A shared abstraction has a contract every consumer depends on. Extending it for one new case can break other consumers far from the change.
 
-Before adding a new shared abstraction, inspect existing snippets, components, and utilities. Reuse an existing abstraction only when semantics, invariants, lifecycle, and ownership match.
+Inspect existing snippets, components, and utilities before adding one. Reuse one only when semantics, invariants, lifecycle, and ownership match.
 
-Before extending any shared abstraction, apply the three-question gate below. If any answer triggers, do not extend the abstraction.
-
-Extension is allowed only when the new use case shares the same core invariants as the existing callers. If you believe the abstraction can be safely extended, explicitly state which invariants remain unchanged in the task summary or code review notes.
+Run the three-question gate before extending. If any answer triggers, do not extend. Extension is allowed only when the new use case shares the existing callers' core invariants. When you extend, name the invariants that stay unchanged in the task summary or review notes.
 
 ## Three-Question Gate
 
-1. Invariants: does the new use case share the same invariants as existing callers, such as target DOM identity, rendering context, and lifecycle assumptions? Or only surface syntax, such as URL strings, fetch calls, or similar-looking inputs?
-    - Repository example: `sectionPagination` assumes the same section in the same page context is being refreshed with different parameters. A collection tab that changes the collection pathname does not share that invariant, even if it still uses a URL and an HTTP request.
-2. Naming: does the new method or parameter read naturally on the existing class? Awkward names like `sectionPagination.loadCollectionTab()` are early signals of mis-fit.
-3. Branching parameter: are you adding an enum or boolean that switches core behavior, not just a side effect?
-    - Side-effect toggles like `updateHistory`, `silent`, or `signal` are fine.
-    - Core-behavior toggles like `refreshMode: 'full' | 'partial'` or `mode: 'replace' | 'append'` are red flags.
+1. Invariants: does the new use case share the callers' invariants (target DOM identity, rendering context, lifecycle), or only surface syntax such as URL strings and fetch calls?
+    - `sectionPagination` assumes the same section in the same page context, refreshed with different parameters. A collection tab that changes the collection pathname does not share that invariant.
+2. Naming: does the new method or parameter read naturally on the existing class? An awkward name such as `sectionPagination.loadCollectionTab()` is a mis-fit.
+3. Branching parameter: are you adding an enum or boolean that switches core behavior, not a side effect?
+    - Side-effect toggles such as `updateHistory`, `silent`, or `signal` are fine.
+    - Core-behavior toggles such as `refreshMode: 'full' | 'partial'` or `mode: 'replace' | 'append'` are not.
 
 ## Resolution When The Gate Triggers
 
-Pick one, in this order of preference:
+Pick one, in this order:
 
-1. Simpler, non-shared solution, such as native page navigation instead of Section Rendering API refresh, or inline logic at the call site if it is truly one-off.
-2. New dedicated component with a clear single responsibility, even if it duplicates a few lines from an existing component.
-3. Refactor the existing abstraction first, only after the new boundary is well understood.
+1. A simpler local solution: native page navigation, or inline logic at a true one-off call site.
+2. A new component with one responsibility, even if it repeats a few lines.
+3. Refactor the existing abstraction only after the new boundary is understood.
 
-Never add a parameter to an existing public method just to make a divergent new case work.
+Do not add a parameter to a public method just to make a divergent case work.
 
 ## Anti-Patterns
 
-| Bad                                                                                       | Correct                                                                                      |
-| ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| Add `mode: 'a' \| 'b'` to a shared method to support a divergent new case                 | New method or new component with a single responsibility                                     |
-| Add a `data-*` attribute on a shared component root that only one branch reads internally | Pass the value through the call site or scope it to the consumer                             |
-| Reuse a base class because the URL pattern looks similar                                  | Compare invariants, not surface syntax                                                       |
-| Copy a hot snippet of behavior into a shared base class to "make it reusable"             | Wait for a third real consumer before generalizing a JS abstraction (the CSS shared-layer threshold is in `css-architecture.md`) |
-| Create a renamed near-copy of an existing abstraction instead of extending or splitting intentionally | New dedicated component or explicit extension when invariants match                          |
+| Bad | Correct |
+| --- | --- |
+| Add `mode: 'a' \| 'b'` to a shared method for a divergent case | New method or component with one responsibility |
+| Add a `data-*` on a shared root that only one branch reads | Pass it at the call site, or scope it to the consumer |
+| Reuse a base class because the URL pattern looks similar | Compare invariants, not surface syntax |
+| Copy a hot snippet into a shared base class to make it reusable | Wait for a third real consumer before generalizing a JS abstraction (the CSS shared-layer threshold is in `docs/references/style-system/css-architecture.md`) |
+| Rename a near-copy instead of extending or splitting on purpose | New component, or an explicit extension when invariants match |
+
+The shared carousel indicator is an exception to that third-consumer threshold: extract it with the second real consumer (confirmed 2026-10-13). The indicator owns the presentation and accessibility of dots, the progress pill, bars, and the optional pause button (`aria-current`, 24px targets, scheme colours). Its API is set the active index, set progress, and report a selection. Whatever drives the index stays in the section.
+
+Decorative full-bleed shapes use the `section-frame` `background` slot with icon assets rendered through the `icons` snippet. `lint:theme` `raw-svg` forbids inline SVG in Liquid.
 
 ## Snippet API Semantics
 
-Snippets are the theme's reusable UI components. Their parameter contracts follow these rules:
+1. **Semantic variants over raw class params.** Expose semantic parameters (for example `size: 'sm'`, `style: 'outline'`) that map to internal classes. Do not expose a raw `class` parameter as the primary customization.
+2. **Raw `class` is an escape hatch.** It may exist for a documented one-off that does not warrant a new variant. Document it as an escape hatch.
+3. **Do not split a snippet only because it is long.** Split when the parts have different consumers, lifetimes, or contracts.
+4. **Defaults must be safe.** An omitted parameter renders a correct, visible, accessible result. It must not produce broken HTML, invisible content, or missing ARIA.
 
-1. **Semantic variants over raw class params.** When a snippet needs visual variants, expose semantic parameters (e.g., `size: 'sm'`, `style: 'outline'`) that map to internal Tailwind classes. Do not expose raw `class` parameters as the primary way to customize appearance.
+Storefront control appearance and typography tiers are owned by `tailwind/tailwind.elements.css` and `tailwind/tailwind.typography.css` (Style ownership in `docs/references/style-system/css-architecture.md`). Primitives own structure and behaviour. They are preferred entry points, not mandatory ones.
 
-2. **Raw class params as escape hatches.** A `class` parameter MAY exist for documented edge cases where a consumer needs one-off customization that does not warrant a new semantic variant. Document this as an escape hatch, not the primary API.
-
-3. **Do not split snippets only because they are long.** A snippet that is long but has a single coherent responsibility should stay as one file. Split only when the parts have genuinely different consumers, lifetimes, or contracts. Length alone is not a boundary signal.
-
-4. **Parameter defaults must be safe.** Every snippet parameter with a default must render a correct, visible, accessible result when the consumer omits it. An omitted parameter must never produce broken HTML, invisible content, or missing ARIA.
-
-Visual appearance for storefront controls and typography tiers is owned by `tailwind/tailwind.elements.css` and `tailwind/tailwind.typography.css` (see **Style ownership** in `docs/references/style-system/css-architecture.md`). Primitives own structure and behaviour; they are preferred, not mandatory, entry points.
-
-## Layout primitives (5-C3a)
+## Layout primitives
 
 Parameter lists live in each snippet's `{% doc %}` block:
 
@@ -65,6 +62,6 @@ Parameter lists live in each snippet's `{% doc %}` block:
 - `snippets/button.liquid`
 - `snippets/content-group.liquid`
 
-Guidance those blocks do not carry: `scheme_target: none` keeps `HEAD`'s colour-scheme placement; `section-frame__overlay-safe-top` on a top block supplies the first-section header offset when padding is overlay; `clip: false` adds `section-frame--no-clip`. Alpine mount attributes belong on an inner element in `children` so import-map and Alpine expression lints match `HEAD` mount topology. `content-group` is not a generic flex wrapper.
+Guidance those blocks do not carry: `scheme_target: none` leaves the scheme class off the frame and the section writes `color-{{ section.settings.color_scheme }}` itself; `section-frame__overlay-safe-top` on a top block supplies the first-section header offset when padding is overlay; `clip: false` adds `section-frame--no-clip`. Put Alpine mount attributes on an inner element in `children`, so the import-map and Alpine expression lints see the mount on that element. `content-group` is not a generic flex wrapper.
 
 Captured `children` strings are the slot for nested markup. Raw `class` parameters remain escape hatches per the rules above.
