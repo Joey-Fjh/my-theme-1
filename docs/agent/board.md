@@ -64,6 +64,7 @@ Next plan after H1: H2 hooks and checks (Claude Code only). Discussion closed on
 - **Decided (user, 2026-10-20): subagents follow Batch SOP** (propose role, client, model, wait); candidate `ask` on subagent spawn after verifying tool name in Claude Code docs.
 - **Agreed in principle (user, 2026-10-20):** `Stop` record checks when a record file changed or a commit landed since last check; structural violations block, counts prompt; board size ratchet baseline is post-H1 cleanup; checks include no completion records, `Last updated` freshness, `context.md` plan count, `backlog.md` one line per item with source, pending-migration count.
 - **Decided (user, 2026-10-20): Claude Code hooks first;** Cursor and Codex later per client.
-- **H1 (record layer):** accepted; plan in `docs/agent/context.md`.
-- **H2 (Claude Code only):** path-to-validator data file, thin dispatcher, `Stop` record checks and diff-scoped validators, `ask` on subagent and merchant-owned paths, CI merchant-path authorization marker, replace reference `{% doc %}` table copies with pointers; `PostToolUse` per-file `lint:theme` only if single-file check is fast enough.
+- **H1 (record layer):** closed 2026-10-20 (`d31acef`).
+- **H2 (Claude Code hooks and record checks):** implemented 2026-10-20, awaiting Ask review. Plan in `docs/agent/context.md`. `PostToolUse` per-file `lint:theme` stays out of this batch; the measured `lint:theme` time is in the plan's Progress.
+- **H3 (after H2):** CI check for merchant-owned paths with an authorization marker (marker form decided in its plan); the reference copies of `{% doc %}` tables replaced by pointers.
 - **Deferred within the round:** shrink `AGENTS.md` routing tables until Cursor and Codex have hooks or tables are generated; Cursor and Codex hook configs.
