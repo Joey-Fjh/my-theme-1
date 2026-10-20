@@ -42,4 +42,4 @@ Last updated: 2026-10-21.
 
 ## Harness round
 
-Closed 2026-10-21: H1 record layer (`d31acef`), H2 Claude Code hooks and record checks (`aa14969`), H3 CI merchant-path guard (`3503596`), H4 prose slimming and the bundled Pending migration (`69151ad`). Discussion, evidence and transcript statistics: `git show 69151ad:docs/agent/board.md`.
+Closed 2026-10-21: H1 record layer (`d31acef`), H2 Claude Code hooks and record checks (`aa14969`), H3 CI merchant-path guard (`3503596`), H4 prose slimming and the bundled Pending migration (`69151ad`); follow-up H5 pre-push check (`b5a5ae1`). Discussion, evidence and transcript statistics: `git show 69151ad:docs/agent/board.md`.
