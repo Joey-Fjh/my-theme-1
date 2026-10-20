@@ -47,6 +47,7 @@ Do not modify merchant-owned configuration or content unless explicitly authoriz
 - `sections/*-group.json` (section groups the theme editor writes)
 - color scheme values
 - product, collection, page, article, blog, metafield, uploaded media, merchant copy, and navigation/content composition
+- A commit that changes `config/settings_data.json`, `templates/*.json`, or `sections/*-group.json` carries a `Merchant-Change:` trailer naming the authorization, and CI enforces it.
 
 Classify ambiguous issues before fixing them. If an issue could be code, configuration, content, uploaded asset, Shopify platform/vendor, or measurement noise, do not guess. Lighthouse findings are code-fixed only after code ownership is clear.
 
@@ -156,6 +157,7 @@ Run scripts through `npm.cmd` in this Windows PowerShell workspace. Default to t
 | Strict Liquid output parsing (filter-arg guard) | `npm.cmd run lint:liquid-syntax` |
 | Agent rules, skills, roles, adapters, references | Link/syntax check on changed files + `npm.cmd run lint:doc-paths` + `npm.cmd run doctor:agent` |
 | `.agents/tools/harness/**` | `npm.cmd run test:harness` + `npm.cmd run lint:records` |
+| `.agents/tools/merchant-guard.mjs` | `npm.cmd run test:merchant` |
 | Liquid, CSS, or JS that can move layout (end of batch) | `npm.cmd run test:layout` with `npm.cmd run shopify:dev` running; 0 new issues. The baseline may only shrink (`--prune-baseline`); growing it needs the user's approval. |
 | Release / PR / Theme Store gate | `npm.cmd run lint` and `npm.cmd run test` |
 

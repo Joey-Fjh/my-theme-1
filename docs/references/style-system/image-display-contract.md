@@ -17,18 +17,7 @@ Nil images default to the shared `framed` placeholder surface so adjacent empty 
 
 ## Parameters
 
-| Parameter | Meaning |
-| --- | --- |
-| `image` | Shopify image object |
-| `mode` | `frame` or `natural`; defaults to `frame` |
-| `fit` | explicit object-fit intent such as `cover` or `contain` |
-| `position` | optional explicit object-position whitelist value; see Object-position precedence |
-| `placeholder_style` | nil-image surface: `framed` (default) or `plain`; `plain` delegates visible boundary ownership to the caller and framing never affects a real image |
-| `aspect_ratio` | CSS ratio (`16/9`, `3/2`) or vocabulary keyword: `adapt`, `1:1`, `4:5`, `3:2`, `16:9` (mapped in `snippets/image.liquid`; slash forms unchanged) |
-| `class` / `wrapper_class` | wrapper classes; `wrapper_class` is preferred |
-| `img_class` | image element classes |
-| `sizes`, `widths`, `loading`, `fetchpriority`, `alt` | rendering and performance metadata |
-| `mobile_image` | optional Shopify image for viewports below `pc` (48rem); renders `<picture>` with a mobile `<source>` and the desktop `image` on the lone `<img>`. Omit to keep the desktop-only markup byte-identical to the pre-parameter path. |
+The parameter list is the `{% doc %}` block in `snippets/image.liquid`.
 
 ## Sizes and widths
 

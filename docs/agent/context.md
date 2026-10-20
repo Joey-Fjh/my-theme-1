@@ -4,112 +4,117 @@ Holds the plan currently under execution and its status. Nothing else. Unresolve
 
 Last updated: 2026-10-20.
 
-Previous batch: H1 (record layer), closed with Ask review PASS; record: `git show d31acef:docs/agent/context.md`.
+Previous batch: H2 (Claude Code hooks and record checks), closed with Ask review PASS and the user's live check; record: `git show aa14969:docs/agent/context.md`.
 
-## Batch H2: Claude Code hooks and record checks
+## Batch H3: CI merchant-path guard and reference table pointers
 
-**Status:** executed and reviewed (2026-10-20): Ask review PASS in round 5; live check (acceptance 8) done.
+**Status:** executed and reviewed (2026-10-20): Ask review PASS in round 3; acceptance 8 (GitHub `Lint` run) owed after push.
 
-**Outcome.** Claude Code sessions in this repository get rule timing from hooks instead of from prose the model may skip: a pointer to the current plan at prompt submit; a confirmation prompt before any subagent spawn and before writes to merchant-owned files (Edit and Write always; shell writes by an advisory heuristic, with CI in H3 as the hard gate); a once-per-session pointer to the validators, review tier and reference for the paths a change touches; and at `Stop`, the record checks plus the fast validators for the changed files. Rule content stays in project files (`routes.json`, the lint scripts); the hook only dispatches.
+**Outcome.** A change to merchant-owned files can no longer reach a branch silently: CI fails when a commit in the pushed or pull-request range touches `config/settings_data.json`, `templates/*.json` or `sections/*-group.json` without either coming from the Shopify GitHub integration or carrying an authorization trailer. The H2 shell check stays advisory; this is the hard gate. Separately, the references stop copying snippet `{% doc %}` parameter tables (two copies have already drifted) and point to the snippet instead.
 
-**Decisions (user, 2026-10-20, board harness round):** Claude Code only; no git hooks; pointers, not skill bodies, once per session; structural record violations block, counts only prompt; the board ratchet baseline is 1865 words (`wc -w`, after H1); `ask` on subagent spawns and on merchant-owned paths.
+**Decisions:** the guard and the table pointers were agreed in the harness round (user, 2026-10-20; board). H3 runs before H4, the prose slimming that closes the round (user, 2026-10-20).
 
 **Coordinator choices in this plan (the user may change them when authorizing):**
-- **Split.** H2 is the Claude Code hooks and the record checks. The CI check for merchant-owned paths with an authorization marker, and replacing the reference copies of `{% doc %}` tables with pointers, become H3 (they do not depend on hooks).
-- **One mechanism for confirmations.** `PreToolUse` hooks return `ask` (documented to prompt even in auto mode); path permission rules are not used, because they never see shell writes.
-- **No `PostToolUse` per-file lint** in H2. The batch measures one `lint:theme` run and records it; adding it is a later decision.
-- **Hook state** (what was already pointed out, the last checked diff) lives in the OS temp directory keyed by project path and `session_id`, so no ignore file changes.
-
-**Facts checked (Claude Code docs through WebFetch, 2026-10-20):** the subagent tool is `Agent`; `PreToolUse` output `hookSpecificOutput.permissionDecision` `allow | deny | ask | defer` with `permissionDecisionReason`; `UserPromptSubmit` and `PostToolUse` take `hookSpecificOutput.additionalContext`; `Stop` input has `stop_hook_active` and `last_assistant_message`, blocks with top-level `{"decision": "block", "reason": ...}`, and stops after eight consecutive continuations; matcher `Edit|Write` is an exact list, other characters make a regex; command hook default timeout 600 s (30 s on `UserPromptSubmit`); a timed-out `PreToolUse` hook does not block unless `"onFailure": "block"`. The implementer re-checks any field it relies on against `https://code.claude.com/docs/en/hooks`.
+- **Marker form:** a Git commit trailer `Merchant-Change: <reason>` in the commit that touches a merchant path. It lives in history, needs no extra file, and `git interpret-trailers` can read it. An agent adds it only when the user authorized that merchant change in the batch plan or in chat; the trailer reason names the authorization.
+- **Exemption:** commits authored by the Shopify GitHub integration (`shopify[bot]`, 95 of the merchant-path commits in history) pass without a trailer; they are the merchant's editor writes.
+- **Range:** pull requests: `base.sha..head.sha`; pushes: `before..sha`, or, for a new branch (`before` all zeros), commits not on the default branch. Merge commits are skipped (their content is checked through the commits they bring in); a hand-edited conflict resolution in a merge is a known gap, recorded.
+- **Where:** a step in the existing `Lint` job (no new required check, so the ruleset and `ci-contract` stay unchanged); checkout gets `fetch-depth: 0`.
 
 **Dependencies:** the user authorizes the batch. Nothing else.
 
 **Design:**
-1. **`.agents/tools/harness/routes.json`** (data, no logic). Each route: `id`, `paths` (globs), optional `diff` (regex on added lines), `validators` (npm script names), `fast` (the subset safe to run at `Stop`: `lint:theme`, `lint:i18n`, `lint:liquid-syntax`, `lint:doc-paths`, `lint:records`; never `test:theme-check`, `test:layout`, `scan:compat`, `build:*`), `tier` (`Ask | Show | Ship`), `pointers` (reference or skill paths). Routes cover the `AGENTS.md` Validation table rows, the Review tier triggers, the Task Routing references and the skill triggers that a path or diff decides (for example `@keyframes|transition|animation` → `review-animations`; `assets/motion-gsap.js`, `assets/scatter-gallery.js` → GSAP skills). A `merchant` list holds the merchant-owned path globs from `AGENTS.md` Core Rules.
-2. **`.agents/tools/harness/hook.mjs`**, one entry with a subcommand per event, reading the hook JSON on stdin:
-    - `prompt` (`UserPromptSubmit`): once per session, `additionalContext` with the `## Batch` heading and `**Status:**` line of `docs/agent/context.md` (or "no plan under execution").
-    - `pre` (`PreToolUse`, matcher `Agent|Edit|Write|NotebookEdit|Bash|PowerShell`): `ask` with a reason for every `Agent` call; for Edit, Write and NotebookEdit whose `file_path` matches a `merchant` glob; for Bash and PowerShell whose command names a merchant path together with a write form (`>`, `>>`, `sed -i`, `Set-Content`, `Out-File`, `Add-Content`, `Copy-Item`, `Move-Item`, `cp`, `mv`, `rm`, `tee`, `open(` with `'w'` or `'a'`, `git checkout --`, `git restore`) or runs `shopify theme pull`. Read-only commands pass with no output.
-    - `post` (`PostToolUse`, matcher `Edit|Write|NotebookEdit`): for each route the edited path matches and not yet pointed out in this session, `additionalContext` naming its validators, tier and pointers.
-    - `stop` (`Stop`): does nothing unless the working tree diff (tracked plus untracked names and content hash) or `HEAD` changed since the last check in this session. Then: (a) runs `record-check.mjs` when a record file changed or `HEAD` moved; (b) runs the `fast` validators of the routes matched by the changed files, each once, with a total budget of 90 s; (c) reports the highest review tier the changed paths trigger and the non-fast validators still owed. A structural record failure or a failed fast validator blocks (`decision: "block"`, reason with the failing lines, capped); counts and owed validators go to `additionalContext`. With `stop_hook_active` true it never blocks, only reports.
-    - Any internal error exits 0 with a one-line stderr note (fail open; CI stays the hard gate).
-3. **`.agents/tools/harness/record-check.mjs`** (also `npm run lint:records`). Structural, exit 1 on failure: `board.md` has no completion pattern (`Done:|\*\*Done|done \(`); every `backlog.md` list item under a `##` area is one line containing `Source:` and `Surface:`; `context.md` holds at most one `## Batch` section whose status is not "executed" and waiting on named verification; each record file's `Last updated` is not older than the date of the latest commit that changed it. Counts, printed, exit 0: board words against `records.baseline.json` (`{"boardWords": 1865}`; above it prints a prompt line); number of Pending migration lines. A `--prune-baseline` flag lowers the baseline only, as `test:layout` does.
-4. **`.claude/settings.json`**: keep the `SessionStart` doctor hook; add `UserPromptSubmit`, `PreToolUse`, `PostToolUse` and `Stop` entries calling `node "${CLAUDE_PROJECT_DIR}/.agents/tools/harness/hook.mjs" <event>`.
-5. **`package.json`**: `lint:records`, `test:harness` (`node --test .agents/tools/harness/harness.test.mjs`); `test:harness` joins `test:validators`; `lint:records` joins `lint` (structural only, so CI enforces it; the ratchet never fails CI).
-6. **`AGENTS.md`**: one bullet under Agent Adapters (Claude Code hooks in `.claude/settings.json` dispatch from `.agents/tools/harness/`; routes live in `routes.json`; other clients read the prose) and one Validation table row for `.agents/tools/harness/**` (`npm.cmd run test:harness` + `npm.cmd run lint:records`). No other prose changes (prose shrinks only after enforcement, a later decision).
+1. **`.agents/tools/merchant-guard.mjs`** (`npm run lint:merchant`): takes `--range <a>..<b>` (or reads the GitHub event from `GITHUB_EVENT_PATH` and `GITHUB_EVENT_NAME` in CI); lists non-merge commits in the range with `git log -z`; for each commit whose changed paths (`git diff-tree -z --no-commit-id --name-only -r`) match a merchant glob, passes when the author email is the Shopify integration's (`79544226+shopify[bot]@users.noreply.github.com`) or the message has a `Merchant-Change:` trailer with a non-empty reason; otherwise prints `<sha> <subject>: <paths>` and exits 1. Merchant globs are read from `.agents/tools/harness/routes.json` (one source). Node ESM, no new dependencies, a `node:test` file with disposable repositories.
+2. **`.github/workflows/ci.yml`:** `fetch-depth: 0` on the `Lint` checkout and one step `npm run lint:merchant` (CI mode). Job names unchanged.
+3. **`package.json`:** `lint:merchant`; its test joins `test:validators`. `lint:merchant` does not join `lint` (it needs a range, which local `lint` has none of).
+4. **`AGENTS.md`:** Core Rules, the merchant-owned list: one sentence naming the `Merchant-Change:` trailer and that CI enforces it; one Validation table row for `.agents/tools/merchant-guard.mjs`. `routes.json` gains a route for the new script (validators: its test).
+5. **References:** every table in `docs/references/**` that restates a snippet's `{% doc %}` parameters (known: the `section-frame` table in `abstraction-boundaries.md`, the Parameters table in `image-display-contract.md`) is replaced by a pointer to the snippet's `{% doc %}` block plus only the guidance that the `{% doc %}` does not carry. The implementer lists every such table found, with the search used.
 
-**Implementation surface:** `.agents/tools/harness/` (new: `hook.mjs`, `record-check.mjs`, `routes.json`, `records.baseline.json`, `harness.test.mjs`, fixtures if needed), `.claude/settings.json`, `package.json` (scripts only), `AGENTS.md` (the two places in item 6), `docs/agent/context.md`, `docs/agent/board.md` (harness round line). Not in the surface: `.cursor/**`, `.codex/**`, `.github/**`, `docs/references/**`, `.agents/skills/**`, `.agents/roles/**`, every theme file.
+**Implementation surface:** `.agents/tools/merchant-guard.mjs` and its test (new), `.agents/tools/harness/routes.json`, `.github/workflows/ci.yml` (the `Lint` job only), `package.json` (scripts), `AGENTS.md` (the two places in item 4), `docs/references/**` (the tables in item 5 only), `docs/agent/context.md`, `docs/agent/board.md`. Not in the surface: snippets and every other theme file (a `{% doc %}` block that lacks a parameter the reference had is reported, not edited), `.github/rulesets/**`, `.claude/**`, `.cursor/**`, `.codex/**`.
 
 **Acceptance checks:**
 1. `git diff --name-only` plus untracked files list only surface files.
-2. `npm.cmd run test:harness` passes and covers, with stdin fixtures against `hook.mjs`: `prompt` emits the plan pointer once per session and nothing the second time; `pre` returns `ask` for `Agent`, for Edit of `templates/product.json`, `config/settings_data.json` and `sections/header-group.json`, for `echo x > templates/index.json`, `sed -i ... config/settings_data.json` and `shopify theme pull`, and returns nothing for `cat templates/index.json`, `git diff templates/index.json` and Edit of `sections/main-product.liquid`; `post` points out the `lint:theme` route for a `.liquid` edit once and not again; `stop` is silent on an unchanged diff, blocks on a board with `**Done`, blocks on a backlog line without `Source:`, only reports when the board exceeds the baseline, never blocks with `stop_hook_active: true`, and fails open on malformed stdin.
-3. `routes.json` integrity, in the same test: every `validators` entry is a `package.json` script; every `pointers` path exists; every command in the `AGENTS.md` Validation table appears in at least one route; every merchant path in `AGENTS.md` Core Rules appears in `merchant`.
-4. `npm.cmd run lint:records` exits 0 on the current repository and prints the board count (1865 or the current value) and the Pending migration count.
-5. Timing, recorded in Progress with the command: `stop` with an unchanged diff under 1 s; one `npm.cmd run lint:theme` run (for the later `PostToolUse` decision).
-6. `npm.cmd run test:validators`, `npm.cmd run lint:doc-paths`, `npm.cmd run doctor:agent` pass; `npx prettier --check` on every changed file.
-7. `AGENTS.md` diff touches only the two places in Design item 6.
-8. Live check in a new Claude Code session (the user, or the implementer in a fresh session if the client allows): spawning a subagent and editing `templates/index.json` each show a confirmation prompt; editing a section shows the validator pointer once. Recorded in Progress with who ran it.
+2. The guard's test passes and asserts, against disposable repositories: a commit touching `templates/index.json` without a trailer fails; with `Merchant-Change: user approved X` passes; with an empty trailer fails; a `shopify[bot]` commit passes; a commit touching only `sections/foo.liquid` passes; `sections/header-group.json` and `config/settings_data.json` are guarded; a merge commit is skipped; the new-branch range (`before` all zeros) is resolved against the default branch; paths with spaces and non-ASCII names are read correctly.
+3. `npm.cmd run lint:merchant -- --range 0a5fd1d..HEAD` exits 0 on this branch (no merchant changes since then), and the same command over a range that includes a past human merchant commit without a trailer exits 1 and names it (proves the guard on real history).
+4. `npm.cmd run test:ci-contract` passes (job names unchanged); `ci.yml` diff is limited to the `Lint` checkout and the new step.
+5. No table in `docs/references/**` restates `{% doc %}` parameters (search recorded); each replaced table's guidance not in the `{% doc %}` is kept as prose; `npm.cmd run lint:doc-paths` passes.
+6. `npm.cmd run test:validators`, `npm.cmd run test:harness`, `npm.cmd run doctor:agent` pass; `npx.cmd prettier --check --ignore-path NUL` on the new script, its test, `routes.json` and `package.json`; `git diff --check` clean.
+7. `AGENTS.md` diff touches only the two places in item 4.
+8. After commit and push of the batch, the `Lint` job on GitHub passes with the new step (run link recorded; the user pushes or approves the push).
 
-**Review tier:** Ask (adds validator wiring and agent rule text). Execution: external execution prompt (user: large batches), then a separate verifier session; complete only on PASS.
+**Review tier:** Ask (workflow, validator wiring, agent rules). Execution: external prompt, then a separate verifier; complete only on PASS and check 8.
 
-**Next (board):** H3, CI check for merchant-owned paths with an authorization marker, and pointers in place of the reference copies of `{% doc %}` tables.
+**Next (board):** H4, prose slimming with the bundled Pending migration approval; it closes the harness round.
 
 ## Progress
 
-- Authorized (user, 2026-10-20): the four coordinator choices stand. User guidance for execution: aim for the leanest implementation that follows hook best practice; where the design above is heavier than the acceptance checks need, take the simpler form and record the deviation here.
-- Board size when planned: 1874 words (`wc -w`), above the 1865 baseline by the H2/H3 lines; the ratchet only prompts.
-
-### Docs re-check (2026-10-20)
-
-Fetched `https://code.claude.com/docs/en/hooks`. Confirmed and used: `PreToolUse` `hookSpecificOutput.permissionDecision` `ask` with `permissionDecisionReason` and `hookEventName`; `UserPromptSubmit` and `PostToolUse` `hookSpecificOutput.additionalContext`; `Stop` input `stop_hook_active`; `Stop` block is top-level `decision: "block"` plus `reason`; matcher `Edit|Write` is an exact `|` list; command timeout default 600s, 30s on `UserPromptSubmit`; a timed-out `PreToolUse` hook does not block unless `onFailure` is `block` (left unset, so this hook fails open). Docs addition that changes the design: `Stop` `additionalContext` continues the turn under the same 8-continuation cap as `decision: "block"`.
+- Authorized (user, 2026-10-20): the four coordinator choices stand. Standing guidance from H2: the leanest implementation that meets the checks; record any simplification as a deviation.
+- Implemented (2026-10-20). Not committed, not pushed, not accepted. No Agent Skills trigger (no motion, GSAP consumer, or visual-direction change).
 
 ### Deviations
 
-- With `stop_hook_active` true the hook writes one stderr line and returns no JSON. `additionalContext` would continue the turn, so "only reports" stays off the continuation loop.
-- With `stop_hook_active` true, fast validators are not run again.
-- A passing record check does not inject the word count at `Stop` unless the board is above the baseline. `npm run lint:records` still prints the counts.
-- `Stop` calls `checkRecords` in-process. `lint:records` is the CLI for the same function.
-- No `frontend-design` route: the skill trigger is not decided by a path or diff.
-- (Superseded in verifier round 1: `shopify:dev` is no longer routed; see below.) `build:tw` and `build:svg` are named under Validation but outside the table and are not routes.
-- Tests may set `HARNESS_STATE_DIR`. The default state directory is the OS temp directory, keyed by a hash of the project path and `session_id`.
+- The layout-primitives table is one table for five snippets (`section-frame`, `heading`, `text`, `button`, `content-group`). The whole table was replaced; a `section-frame`-only edit would have left the other rows restating `{% doc %}` parameters.
+- Image `## Parameters` is a pointer only. Cells that repeated the `{% doc %}` or a section that remains were not copied again. Two phrases were treated as already covered: `mobile_image` "byte-identical to the pre-parameter path" (the doc says output is unchanged from the desktop-only path) and `wrapper_class` "preferred" (the doc says `class` is a deprecated alias and `wrapper_class` is canonical). Display Modes and the ratio-vocabulary table stay; they are not parameter lists.
+- This Git's `git interpret-trailers --parse` still prints `Merchant-Change:` when the value is empty or whitespace. The guard treats a whitespace-only value as missing, which is the plan's non-empty reason.
+- A `Merchant-Change:` line above the trailer block is a test, from the engineering constraint, in addition to the numbered checks.
+- An all-zero `before` of 64 characters resolves like one of 40, so a SHA-256 new-branch push uses `origin/<default_branch>` too.
 
-### Validation (2026-10-20)
+### `{% doc %}` comparison
+
+No `{% doc %}` block lacks a parameter the reference table had. Snippets were not edited. The tables were subsets of the docs. Parameters present in the doc and absent from the table: `section-frame` `section_class`, `root_class`, `inner_class`; `heading` `class`; `text` `element`, `class`, `style`; `button` `type`, `class`, `aria_label`; `content-group` `class`; `image` `url`, `interactive`, `wrapper`, `width`, `height`, `crop`, `decoding`, `placeholder_key`, `placeholder_class`, `placeholder_aspect_ratio`, `extra_attributes`.
+
+Guidance kept because the `{% doc %}` does not carry it: `scheme_target: none` keeps `HEAD`'s colour-scheme placement; `section-frame__overlay-safe-top` on a top block for the first-section header offset when padding is overlay; `clip: false` adds `section-frame--no-clip`; Alpine mount attributes belong on an inner element in `children`; `content-group` is not a generic flex wrapper.
+
+### Parameter-table search
+
+Command: `rg -n --glob "*.md" -e "Parameters \(semantic\)" -e "^\| Parameter \| Meaning \|" -e "^## Parameters$" docs/references`
+
+Before:
+
+- `docs/references/style-system/image-display-contract.md:18:## Parameters`
+- `docs/references/style-system/image-display-contract.md:20:| Parameter | Meaning |`
+- `docs/references/architecture/abstraction-boundaries.md:60:| Snippet | Parameters (semantic) | Notes |`
+
+After: one hit, `docs/references/style-system/image-display-contract.md:18:## Parameters` (the pointer heading, not a table). A follow-up `rg -n --glob "*.md" "^\| (Snippet \| Parameters|Parameter \| Meaning)" docs/references` exited 1 with no hits.
+
+### Validation
 
 | Check | Command | Result |
 | --- | --- | --- |
-| Surface | `git diff --name-only` and `git status --short` | `.claude/settings.json`, `AGENTS.md`, `docs/agent/board.md`, `docs/agent/context.md`, `package.json`; untracked `.agents/tools/harness/` |
-| `AGENTS.md` | `git diff -- AGENTS.md` | Agent Adapters bullet and one Validation table row only |
-| Harness tests | `npm.cmd run test:harness` | 7 pass, 0 fail |
-| Record check | `npm.cmd run lint:records` | exit 0. `board words: 1882`, `baseline: 1865`, `pending migration lines: 8`, plus the above-baseline prompt line |
-| Validators | `npm.cmd run test:validators` | exit 0 |
-| Doc paths | `npm.cmd run lint:doc-paths` | Doc path lint passed |
-| Doctor | `npm.cmd run doctor:agent` | exit 0 |
-| Unchanged stop | node script in `$env:TEMP\harness-time.mjs`: two `stop` calls on a temp git repo, second call timed | `unchanged_stop_ms=120`, empty stdout, status 0 |
-| `lint:theme` once | `Measure-Command` around `npm.cmd run lint:theme` | `lint:theme_ms=15650` (passed). Not added to `PostToolUse` |
-| Prettier | `npx prettier --write --ignore-path <empty temp ignore>` on the three new `.mjs` files, then `--check` | those files formatted. `AGENTS.md`, `docs/agent/context.md`, and `.claude/settings.json` fail an explicit check; they are listed in `.prettierignore` (CRLF / existing JSON indent). Not rewritten |
+| Surface | `git diff --name-only` and `git status --short` | Tracked: `.agents/tools/harness/routes.json`, `.github/workflows/ci.yml`, `AGENTS.md`, `docs/agent/board.md`, `docs/agent/context.md`, `docs/references/architecture/abstraction-boundaries.md`, `docs/references/style-system/image-display-contract.md`, `package.json`. Untracked: `.agents/tools/merchant-guard.mjs`, `.agents/tools/merchant-guard.test.mjs`. `board.md` and `context.md` were already modified before this execution (H3 plan; H2 closed and H4 on the board). This execution added Progress and changed the H3 board line to implemented, awaiting review. |
+| `AGENTS.md` | `git diff -- AGENTS.md` | Two hunks: the merchant-list sentence, and one Validation row for `.agents/tools/merchant-guard.mjs` |
+| `ci.yml` | `git diff -- .github/workflows/ci.yml` | Lint checkout `fetch-depth: 0`, and one step `npm run lint:merchant`. Job names unchanged |
+| Guard tests | `npm.cmd run test:merchant` | 12 pass, 0 fail |
+| Passing range | `npm.cmd run lint:merchant -- --range 0a5fd1d..HEAD` | `Merchant path guard passed.` Exit 0 |
+| Failing range | `npm.cmd run lint:merchant -- --range 0ea9051aedcdf4a10a20a87b22db782c40612b08..0ff2b99eba1fa969acda01461de389d4b673403e` | Exit 1. `0ff2b99eba1fa969acda01461de389d4b673403e feat(6-P5..6-P7): carousel dots, product page right column, template: templates/product.json`. Human commit `0ff2b99eba1fa969acda01461de389d4b673403e` (`1834879843@qq.com`, one parent `0ea9051aedcdf4a10a20a87b22db782c40612b08`, path `templates/product.json`, no trailer). Found with `git log -z --format=%H%x00%ae%x00%s%x00%B` over `config/settings_data.json`, `:(glob)templates/*.json`, and `:(glob)sections/*-group.json`, excluding `79544226+shopify[bot]@users.noreply.github.com` |
+| CI contract | `npm.cmd run test:ci-contract` | 18 pass, 0 fail |
+| Validators | `npm.cmd run test:validators` | Exit 0. Nested: `test:i18n` 33 pass; `test:theme-architecture` 243 pass; `test:section-stylesheet-carry` 3 pass; `test:doc-paths` 7 pass; `test:ci-contract` 18 pass; `test:harness` 7 pass; `test:merchant` 12 pass |
+| Harness | `npm.cmd run test:harness` | 7 pass, 0 fail |
+| Doc paths | `npm.cmd run lint:doc-paths` | `Doc path lint passed.` |
+| Doctor | `npm.cmd run doctor:agent` | Exit 0 |
+| Prettier | `npx.cmd prettier --check --ignore-path NUL` on the new script, its test, `routes.json`, and `package.json` | `All matched files use Prettier code style!` |
+| Whitespace | `git diff --check` | Exit 0, no output |
 
-### Live check
+### Check 8 (owed after commit and push)
 
-Owed by the user. This session cannot open a new Claude Code process. In a new Claude Code session in this repo: spawning a subagent and editing `templates/index.json` each show a confirmation prompt; editing a section shows the validator pointer once and not on the next edit of a path on the same routes.
+This session did not commit or push. After the user asks for both:
 
-**Unverified:** that live Claude Code prompt. Open board decisions (stylesheet spacing, `impeccable` adoption, Batch SOP always-on, and the other Open decisions) were not decided.
+1. Commit the batch.
+2. Push the branch (the user pushes or approves the push).
+3. Open the GitHub Actions run for that push.
+4. Confirm the job named `Lint` passed, including the step `npm run lint:merchant`.
+5. Record the run URL in this Progress section.
 
-**Verifier round 1 (external session, 2026-10-20): FAIL.** Findings and coordinator fixes:
-1. A passing `Stop` returned `additionalContext`, which continues the turn (one extra model turn per changed diff; observed live in the coordinator session). Fixed: `Stop` blocks only on failures; counts, tier and owed validators go to `systemMessage` (shown to the user, no turn; docs re-checked 2026-10-20). Test asserts a passing stop has no `hookSpecificOutput`.
-2. Route semantics against `AGENTS.md`: `layout` route tier Ask → Show (CSS-only diffs now report Show); `shopify:dev` removed from validators (a prerequisite, not a validator); the `release` route (package.json → `lint`, `test`) removed and `package.json` plus `.github/**` added to the `rules` route (validator wiring, Ask); `lint:compat` added to the `liquid` route (embedded blocks). The integrity test now asserts path → tier and path → validators for CSS, Tailwind, locales, sections, JS and `package.json`, and that `lint`, `test`, `shopify:dev` are routed nowhere.
-3. Shell merchant detection: now destination-aware (redirection target, last argument of copy or move, any argument of an in-place writer such as `sed -i`, `Set-Content`, `Remove-Item`, `writeFileSync`, `git checkout|restore|reset`). The verifier's false positives (`cat ... > /tmp/x`, `cp templates/... /tmp/x`) and false negatives (`echo x>templates/...`, `node -e writeFileSync`, `Remove-Item`, `git checkout HEAD --`) are test cases. The outcome now calls shell coverage advisory; H3 CI is the hard gate.
-4. Live check (acceptance 8) still owed by the user. Partial evidence from the coordinator session (hooks loaded mid-session): `UserPromptSubmit` injected the plan pointer; `PostToolUse` pointed out the `rules` and `harness` routes once each on the first harness edit; `Stop` fired after a changed diff.
-After the fixes: `npm.cmd run test:harness` 7 pass 0 fail; `npm.cmd run test:validators` exit 0; `npm.cmd run lint:doc-paths` pass; `npm.cmd run doctor:agent` exit 0; `npx prettier --check --ignore-path NUL` on the harness files and `package.json` pass.
+### Not decided
 
-**Verifier round 2 (external session, 2026-10-20): FAIL.** Findings and coordinator fixes:
-1. The `Stop` fingerprint missed content changes inside untracked directories (`git status --porcelain` collapses them to `?? dir/`). Fixed: `git status --porcelain -uall`, so each untracked file is hashed. Regression test: changing a file inside an already-untracked directory changes the stored fingerprint.
-2. The stale `shopify:dev` deviation line above is marked superseded.
-Advisory shell gaps the verifier listed (`Copy-Item -Destination ... -Path`, `[IO.File]::WriteAllText`, and false positives such as `echo git checkout templates/index.json`) are accepted under the advisory boundary; H3 CI is the hard gate.
-After: `npm.cmd run test:harness` 7 pass 0 fail.
+Open board decisions were not decided: stylesheet raw spacing, `impeccable` adoption, the polish design choices, Lighthouse CI leftovers, the layout harness page-margin rule, and whether the Batch SOP stays always-on.
 
-**Verifier round 3 (external session, 2026-10-20): FAIL.** Round-2 fixes confirmed (nested untracked, superseded record line); acceptance 1-7 passed. Finding and coordinator fix: git C-quotes non-ASCII paths (`"docs/references/æ..."`), so `Stop` neither routed nor hashed them. Fixed: every git path list is read with `-z` (`status --porcelain -z -uall`, `diff --name-only -z`, `ls-files -z`), with rename and copy entries parsed. Regression test: an untracked `assets/测试.css` reaches its route (`test:layout` owed) and a later edit to it changes the fingerprint. After: `npm.cmd run test:harness` 7 pass 0 fail.
+**Coordinator review (2026-10-20), two fixes before the verifier:**
+1. **Pre-guard history.** The future pull request of this branch into `main` (`origin/main..HEAD`, 253 commits) failed on past human commits that changed merchant paths before the trailer rule existed (24 violations with `merchantGuardFrom` disabled; the earlier "15" came from truncated output, corrected in verifier round 2). Fixed: `routes.json` `merchantGuardFrom` (`aa14969`, the last commit before H3); commits reachable from it are excluded (`git log ... --not <sha>` when the commit exists in the clone). `npm.cmd run lint:merchant -- --range origin/main..HEAD`: `Merchant path guard passed.` Test added.
+2. **Force-pushed `before`.** A push whose `before` is not in the clone made `git log` fail and the job red. Fixed: such a push resolves like a new branch (`origin/<default branch>..after`). Test added.
+Acceptance check 3 now proves the guard on real history with the start commit disabled: `collectMerchantViolations(root, '0ea9051..0ff2b99', null)` returns `0ff2b99 ... templates/product.json` (the CLI over that range passes, as the commit predates the guard). After: `npm.cmd run test:merchant` 14 pass 0 fail; `npm.cmd run test:validators` exit 0; `npm.cmd run test:harness` 7 pass; prettier on the guard, its test, `routes.json` and `package.json` pass.
 
-**Verifier round 4 (external session, 2026-10-20): FAIL.** The non-ASCII fix and all fingerprint fixtures passed; acceptance 1-7 passed. Findings and coordinator fixes: `addedLines()` still listed untracked paths without `-z` (no functional failure, contract unmet), now `ls-files ... -z` parsed with `nulList`; an extra blank line at the end of this file (`git diff --check`), removed.
+**Verifier round 1 (external session, 2026-10-20): FAIL.** Findings and coordinator fixes: (1) a root commit on an orphan branch showed no paths (`git diff-tree` without `--root`), so its merchant change passed; fixed with `--root`, orphan-branch test added. (2) A push deleting a branch or tag (`after` all zeros) failed the job with an invalid range; it now passes as a no-op, test added and the CLI run with such an event prints `Merchant path guard passed: the push deletes a ref.` After: `npm.cmd run test:merchant` 16 pass 0 fail; `npm.cmd run test:validators` exit 0.
 
-**Verifier round 5 (external session, 2026-10-20): PASS**, no findings; acceptance 1-7 proven with fresh evidence. Remaining merge condition: acceptance 8, the user's live check in a new Claude Code session.
+**Verifier round 2 (external session, 2026-10-20): FAIL.** Round-1 fixes confirmed; acceptance 1-7 passed. Findings and coordinator fixes: (1) a fork pull request may arrive with an empty `pull_request` payload, which made the job fail; it now falls back to the checked-out PR merge commit's parents (`HEAD^1..HEAD^2`), and only throws when neither exists; tests cover the range and a CLI run that catches a fork merchant change. (2) The deletion test now runs the CLI with event files for a branch and a tag deletion. (3) The pre-guard count above corrected. After: `npm.cmd run test:merchant` 18 pass 0 fail.
 
-**Acceptance 8, live check (user, new Claude Code session, 2026-10-20): done.** Subagent spawn prompted and was rejected; a shell write to `templates/index.json` (Python `open(...,'w')`) prompted and was rejected. The section-edit step named a nonexistent file (`sections/main-product.liquid`, a coordinator error; the file is `sections/product.liquid`), so the once-per-session pointer is evidenced from the coordinator session instead (rules and harness routes pointed out once on the first harness edit, not again).
+**Verifier round 3 (external session, 2026-10-20): PASS**, no findings; acceptance 1-7 proven with fresh evidence. Remaining merge condition: acceptance 8, the `Lint` run on GitHub after commit and push.

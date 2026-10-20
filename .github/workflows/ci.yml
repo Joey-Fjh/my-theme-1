@@ -14,6 +14,8 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
 
             - uses: actions/setup-node@v4
               with:
@@ -21,6 +23,7 @@ jobs:
                   cache: npm
 
             - run: npm ci
+            - run: npm run lint:merchant
             - run: npm run build:tw
             - run: git diff --exit-code -- assets/tailwind.output.css
             - run: npm run lint

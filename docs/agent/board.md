@@ -65,6 +65,7 @@ Next plan after H1: H2 hooks and checks (Claude Code only). Discussion closed on
 - **Agreed in principle (user, 2026-10-20):** `Stop` record checks when a record file changed or a commit landed since last check; structural violations block, counts prompt; board size ratchet baseline is post-H1 cleanup; checks include no completion records, `Last updated` freshness, `context.md` plan count, `backlog.md` one line per item with source, pending-migration count.
 - **Decided (user, 2026-10-20): Claude Code hooks first;** Cursor and Codex later per client.
 - **H1 (record layer):** closed 2026-10-20 (`d31acef`).
-- **H2 (Claude Code hooks and record checks):** implemented 2026-10-20, awaiting Ask review. Plan in `docs/agent/context.md`. `PostToolUse` per-file `lint:theme` stays out of this batch; the measured `lint:theme` time is in the plan's Progress.
-- **H3 (after H2):** CI check for merchant-owned paths with an authorization marker (marker form decided in its plan); the reference copies of `{% doc %}` tables replaced by pointers.
+- **H2 (Claude Code hooks and record checks):** closed 2026-10-20 (`aa14969`). `PostToolUse` per-file `lint:theme` not added: one full run takes about 10 to 16 s.
+- **H3 (CI merchant-path guard, reference table pointers):** implemented 2026-10-20, awaiting Ask review and check 8 (plan in `docs/agent/context.md`).
+- **H4 (closes the round, user 2026-10-20):** prose slimming per the per-section classification (D duplicated or stale first, then A restating a check), with the bundled Pending migration approval in the same batch.
 - **Deferred within the round:** shrink `AGENTS.md` routing tables until Cursor and Codex have hooks or tables are generated; Cursor and Codex hook configs.
