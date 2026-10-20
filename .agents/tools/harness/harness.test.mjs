@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { globToRegExp } from './hook.mjs';
+import { globToRegExp, prePushFailures, runsGitPush } from './hook.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(HERE, '../../..');
@@ -358,6 +358,93 @@ test('prune-baseline only lowers the stored word count', () => {
             fs.readFileSync(path.join(root, '.agents/tools/harness/records.baseline.json'), 'utf8'),
         );
         assert.equal(still.boardWords, 1);
+    } finally {
+        removeRepo(root);
+    }
+});
+
+test('pre denies a git push when record checks or whitespace checks fail', () => {
+    const root = initRepo(records());
+    const remote = fs.mkdtempSync(path.join(os.tmpdir(), 'harness-remote-'));
+    const stateDir = fs.mkdtempSync(path.join(os.tmpdir(), 'harness-state-'));
+    const push = () =>
+        output(
+            runHook(
+                'pre',
+                {
+                    cwd: root,
+                    session_id: 'push',
+                    tool_name: 'Bash',
+                    tool_input: { command: 'git push origin HEAD' },
+                },
+                stateDir,
+            ),
+        );
+    try {
+        git(remote, ['init', '--bare']);
+        git(root, ['remote', 'add', 'origin', remote]);
+        git(root, ['push', '-u', 'origin', 'HEAD']);
+        assert.equal(push(), null, 'a clean push must pass');
+
+        writeFiles(root, { 'notes.md': 'trailing space \n' });
+        git(root, ['add', 'notes.md']);
+        git(root, ['commit', '-m', 'whitespace']);
+        const whitespace = push();
+        assert.equal(whitespace.hookSpecificOutput.permissionDecision, 'deny');
+        assert.match(whitespace.hookSpecificOutput.permissionDecisionReason, /git diff --check/);
+        git(root, ['reset', '--hard', 'HEAD~1']);
+
+        fs.appendFileSync(path.join(root, 'docs/agent/board.md'), '\n**Done: x**\n');
+        git(root, ['commit', '-am', 'completion record']);
+        const record = push();
+        assert.equal(record.hookSpecificOutput.permissionDecision, 'deny');
+        assert.match(record.hookSpecificOutput.permissionDecisionReason, /completion record/);
+    } finally {
+        removeRepo(root);
+        removeRepo(remote);
+        removeRepo(stateDir);
+    }
+});
+
+test('runsGitPush recognises git push forms and ignores look-alikes', () => {
+    for (const command of [
+        'git push',
+        'git push -u origin HEAD',
+        'git -C D:/repo push',
+        'git -C "dir with space" push',
+        "git -C 'dir with space' push",
+        'git -c x=y -C "C:\\My Repo" push origin HEAD',
+        '& git push',
+        'git.exe push origin main',
+        '"C:\\Program Files\\Git\\cmd\\git.exe" push',
+        '& "C:\\Program Files\\Git\\cmd\\git.exe" push',
+        'git --no-pager push',
+        'git -c core.quotepath=false push',
+        'cd repo && git push',
+        'npm test; git push origin HEAD',
+    ]) {
+        assert.equal(runsGitPush(command), true, command);
+    }
+    for (const command of [
+        'echo git push',
+        'git pushd',
+        'git status',
+        'git log --grep push',
+        'Write-Output "git push"',
+    ]) {
+        assert.equal(runsGitPush(command), false, command);
+    }
+});
+
+test('a git failure in the whitespace check fails open', () => {
+    const root = initRepo(records());
+    try {
+        // A local upstream branch whose ref then points at a missing object: rev-parse may
+        // still resolve it, and `git diff --check` fails with a fatal error and no report.
+        git(root, ['branch', 'up']);
+        git(root, ['branch', '--set-upstream-to=up']);
+        fs.writeFileSync(path.join(root, '.git/refs/heads/up'), `${'1'.repeat(40)}\n`);
+        assert.deepEqual(prePushFailures(root), []);
     } finally {
         removeRepo(root);
     }

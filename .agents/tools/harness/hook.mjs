@@ -208,6 +208,58 @@ function handlePrompt(input) {
     return contextOutput('UserPromptSubmit', planPointer(root));
 }
 
+function deny(reason) {
+    return {
+        hookSpecificOutput: {
+            hookEventName: 'PreToolUse',
+            permissionDecision: 'deny',
+            permissionDecisionReason: reason,
+        },
+    };
+}
+
+// Before a push: the record checks and whitespace errors in the commits being pushed,
+// so CI does not go red on what the Stop hook only sees after the turn.
+export function prePushFailures(root) {
+    const failures = [...checkRecords(root).failures];
+    const run = (args) =>
+        spawnSync('git', args, { cwd: root, encoding: 'utf8', windowsHide: true });
+    if (run(['rev-parse', '--verify', '--quiet', '@{upstream}']).status === 0) {
+        const check = run(['diff', '--check', '@{upstream}...HEAD']);
+        // Only reported whitespace errors block; a git failure (stderr, no report) fails open.
+        const report = (check.stdout || '').trim();
+        if (check.status !== 0 && report) failures.push(`git diff --check:\n${report}`);
+    }
+    return failures;
+}
+
+// Git global options that take a separate value (`git -C dir push`).
+const GIT_OPTIONS_WITH_VALUE = new Set(['-C', '-c', '--git-dir', '--work-tree', '--namespace']);
+
+// Splits a command segment into words, keeping quoted spans (paths with spaces) whole.
+function shellWords(segment) {
+    return (segment.match(/(?:"[^"]*"|'[^']*'|[^\s"'])+/g) || []).map((word) =>
+        word.replace(/"([^"]*)"|'([^']*)'/g, '$1$2'),
+    );
+}
+
+// True when a command segment runs `git push`, allowing `git.exe`, a quoted program path
+// and global options before the subcommand; `echo git push` or `git pushd` do not count.
+export function runsGitPush(command) {
+    for (const segment of command.split(/&&|\|\||[;|\n]/)) {
+        const tokens = shellWords(segment.trim().replace(/^&\s*/, ''));
+        if (!tokens.length) continue;
+        const program = tokens[0].replace(/\\/g, '/').split('/').pop();
+        if (!/^git(\.exe)?$/i.test(program)) continue;
+        let index = 1;
+        while (index < tokens.length && tokens[index].startsWith('-')) {
+            index += GIT_OPTIONS_WITH_VALUE.has(tokens[index]) ? 2 : 1;
+        }
+        if (tokens[index] === 'push') return true;
+    }
+    return false;
+}
+
 function handlePre(input) {
     const tool = input.tool_name || '';
     const routes = loadRoutes();
@@ -220,6 +272,10 @@ function handlePre(input) {
     }
     if (tool === 'Bash' || tool === 'PowerShell') {
         const command = input.tool_input?.command || '';
+        if (runsGitPush(command)) {
+            const failures = prePushFailures(root);
+            if (failures.length > 0) return deny(cap(`Push blocked:\n${failures.join('\n')}`));
+        }
         if (/\bshopify\s+theme\s+pull\b/.test(command))
             return ask('Command runs shopify theme pull.');
         if (writesMerchant(command, routes.merchant)) {

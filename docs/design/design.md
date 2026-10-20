@@ -287,7 +287,7 @@ Rules across widths:
 - Overlays: drawers slide from their edge, dialogs fade and rise slightly, scrims fade.
 - The 3D moment: a slight tilt and the backdrop appearing, within the base duration.
 
-**Reduced motion and the switch.** Under `prefers-reduced-motion: reduce`, and when the merchant turns `motion_enabled` off, reveals show content at once, the marquee and autoplay stop, and tilts and zooms are removed. Overlays (dialogs, drawers, dropdowns) are state feedback, not decoration, so the merchant switch does not change them; they follow `prefers-reduced-motion` only, and under it they appear without travel (a short fade at most). No state or content depends on an animation finishing.
+**Reduced motion and the switch.** Under `prefers-reduced-motion: reduce`, and when the merchant turns `motion_enabled` off, reveals show content at once, the marquee stops, and tilts and zooms are removed. Autoplay is not decorative motion: each section's own autoplay setting controls it, and it stops under `prefers-reduced-motion: reduce` (the merchant switch leaves it alone). Overlays (dialogs, drawers, dropdowns) are state feedback, not decoration, so the merchant switch does not change them; they follow `prefers-reduced-motion` only, and under it they appear without travel (a short fade at most). No state or content depends on an animation finishing.
 
 ## Design Defects
 
