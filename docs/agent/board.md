@@ -14,10 +14,7 @@ None.
 
 ## Deferred ideas
 
-- **Check candidates from H4 (2026-10-20):** a global DOM listener inside a Liquid `{% javascript %}` block (`executable-inline-script` matches only `<script>` bodies); preset or block values equal to the schema default, and empty block `settings` objects, are not required to be omitted. Prose stays until a check exists.
-- **`test:layout` in CI (6-T4b)** (user, 2026-10-13): trial on `ci-test` stopped at page discovery; build when `main` can change without a local layout check. Detail: `git show 9d366d5:docs/agent/board.md`.
 - **Base scales and design pipeline (Stitch):** set scales from the base design through an agent-era tool, not hand-picked numbers; tool and SOP when the pilot starts (user, 2026-10-08). Until then tokens keep today's rendered values.
-- **Platform-agnostic front-end engineering skill** (user, 2026-10-11): extract non-Shopify-specific harness patterns after two consumers; needs explicit approval to create a skill.
 - **Section cleanup sweep** (user, 2026-10-05): after the design phase, review unused sections in one batch. Keep: `custom-liquid`, `pickup-availability`, `collection-navigation-items`, social icons in `snippets/social-icons.liquid`.
 - **Looping media video** (user, 2026-10-05): viewport-triggered play on `snippets/media-video.liquid` when a design needs it; WCAG 2.2.2 pause still required.
 - **Home scroll narrative** (user, 2026-09-30): GSAP ScrollTrigger sections on demand via section modules; Three.js closed (2026-10-08). Constraints: motion reference classifies choreography; first frame in Liquid; `motion_enabled` and reduced motion; no full-page library load.
