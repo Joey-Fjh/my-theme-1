@@ -43,11 +43,6 @@ Last updated: 2026-10-21.
 - Card surface and depth: a card background role in the colour schemes (default white) shared by product and collection cards (collection cards hard-code `bg-white`); optional later a per-card metafield colour; hover depth from flat to raised (reference `docs/design/home/category-grid/hover-depth.png`, local), with a layered shadow measured then; reconcile with `design.md` rule 3 (tinted backdrop, no grey drop shadow). Whether product cards get the depth too is an open decision on the board. Source: user, 2026-10-05. Surface: colour scheme schema, `product-card`, `collection-list`.
 - Shared carousel indicator: dots, progress pill and bars plus the optional pause button (`aria-current`, 24px targets, scheme colours; API: set active index, set progress, report a selection), controllers stay per section. Decided (user, 2026-10-04 and 2026-10-08; exception to the third-consumer threshold, confirmed 2026-10-13): extract with two real consumers, `slides-show` and `card-rail` dots, planned with the touch pause button. Source: 6-S1, 6-A1. Surface: new snippet and helper, `slides-show`, `card-rail`.
 
-## Defects
-
-- Pagination never uses the section refresh: `ShopifyHttp.getJSON` sends `Accept: application/json`, the dev storefront answers `?sections=` with 404, and the module falls back to full navigation. Proposed: `headers: { Accept: '*/*' }` on that request (Ask tier), verified by paginating a collection and the blog. Source: 2026-10-13. Surface: `assets/section-pagination.js`.
-- Loading indicator: under reduced motion a still ring at 0.65 opacity (weak signal); `role="status"` and its label sit inside an `aria-hidden="true"` wrapper, so the label is never announced. Source: 2026-10-13. Surface: `snippets/loading.liquid`.
-
 ## Browser pass
 
 - Rows the 2026-10-13 smoke pass did not cover: no-JavaScript; a blog article (none reachable); at 390 the cart page, cart drawer, search, lightbox, quick view, predictive search, localization, accordion, tabs; carousel pagination and keyboard; collection pagination with Back and Forward; the newsletter overlay's Tab trap; a plain dropdown with a real second level. Source: framework smoke pass, 2026-10-13. Surface: storefront.

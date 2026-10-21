@@ -1,6 +1,7 @@
 {% doc %}
     Generic loading indicator. Parent must provide Alpine scope with `isLoading`.
     x-cloak keeps it hidden until Alpine runs, so content stays visible without JavaScript.
+    The spinner is decorative; a sibling role="status" region, always in the DOM, announces the loading text.
 
     @param {boolean} [overlay] - If true, render semi-transparent overlay and center spinner.
     @param {string} [overlay_class] - Tailwind background class for overlay.
@@ -28,9 +29,8 @@
     class="{% if use_overlay %}absolute inset-0 z-20 flex items-center justify-center {{ overlay_class }} {% else %}inline-flex items-center justify-center{% endif %}"
     aria-hidden="true"
 >
-    <div
-        class="spinner {{ size_class }} {{ color_class }}"
-        role="status"
-        aria-label="{{ 'accessibility.loading' | t }}"
-    ></div>
+    <div class="spinner {{ size_class }} {{ color_class }}"></div>
+</div>
+<div role="status" class="sr-only">
+    <span x-show="isLoading" x-cloak>{{ 'accessibility.loading' | t }}</span>
 </div>

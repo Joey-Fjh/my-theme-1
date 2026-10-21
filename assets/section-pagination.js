@@ -111,6 +111,11 @@ define('sectionPagination', () => ({
             .then((data) => {
                 const sections = data?.sections ?? data;
                 if (!sections || typeof sections !== 'object') return;
+                // A section that fails to render comes back as null with HTTP 200.
+                if (ids.some((id) => sections[id] == null)) {
+                    if (updateHistory) window.location.href = url;
+                    return;
+                }
 
                 SectionRefresher.render(sections, this.buildDomMap());
 
