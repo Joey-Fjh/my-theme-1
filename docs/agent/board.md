@@ -26,7 +26,6 @@ Last updated: 2026-10-21.
 
 ## Deferred ideas
 
-- **`AGENTS.md` routing tables** (harness round, 2026-10-20): with hooks in all three clients (H6), whether the tables shrink or are generated from `routes.json` is a separate decision.
 - **Check candidates from H4 (2026-10-20):** a global DOM listener inside a Liquid `{% javascript %}` block (`executable-inline-script` matches only `<script>` bodies); preset or block values equal to the schema default, and empty block `settings` objects, are not required to be omitted. Prose stays until a check exists.
 - **`test:layout` in CI (6-T4b)** (user, 2026-10-13): trial on `ci-test` stopped at page discovery; build when `main` can change without a local layout check. Detail: `git show 9d366d5:docs/agent/board.md`.
 - **Base scales and design pipeline (Stitch):** set scales from the base design through an agent-era tool, not hand-picked numbers; tool and SOP when the pilot starts (user, 2026-10-08). Until then tokens keep today's rendered values.
