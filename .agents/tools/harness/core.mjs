@@ -81,11 +81,12 @@ export function repoRelative(filePath, root) {
 }
 
 // A workspace root may arrive URI-style (`/d:/repo`); path.resolve would turn that into
-// D:\d:\repo. Without a root, the repository this file belongs to is used.
+// D:\d:\repo, and on POSIX treat `d:/repo` as relative. Without a root, the repository this
+// file belongs to is used.
 export function resolveRoot(candidate) {
     if (typeof candidate !== 'string' || !candidate) return INSTALL_ROOT;
     const drive = candidate.replace(/\\/g, '/').match(/^\/([A-Za-z]:\/.*)$/);
-    return path.resolve(drive ? drive[1] : candidate);
+    return drive ? path.win32.normalize(drive[1]) : path.resolve(candidate);
 }
 
 // Like resolveRoot, but a payload without a root is an error, so a guard that cannot tell
