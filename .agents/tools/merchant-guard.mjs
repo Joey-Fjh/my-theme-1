@@ -9,7 +9,7 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { globToRegExp } from './harness/hook.mjs';
+import { globToRegExp } from './harness/core.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROUTES_PATH = path.join(HERE, 'harness', 'routes.json');

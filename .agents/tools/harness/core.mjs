@@ -1,15 +1,18 @@
-#!/usr/bin/env node
+// Client-neutral harness core. Each client's adapter, in that client's own directory,
+// maps its hook events and payloads onto these functions and maps the returned
+// decisions onto its own output. Decisions are { decision: 'allow' | 'ask' | 'deny', reason }.
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 import { checkRecords } from './record-check.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const INSTALL_ROOT = path.resolve(HERE, '../../..');
 const ROUTES_PATH = path.join(HERE, 'routes.json');
+const DOCTOR = path.join(INSTALL_ROOT, '.agents/tools/doctor-agent.mjs');
 const RECORD_PATHS = new Set([
     'docs/agent/board.md',
     'docs/agent/backlog.md',
@@ -37,6 +40,10 @@ const IN_PLACE_WRITERS = [
     /open\(\s*[^)]*['"][wa]\+?['"]/,
     /\bgit\s+(?:checkout|restore|reset)\b/,
 ];
+
+const ALLOW = Object.freeze({ decision: 'allow', reason: '' });
+const ask = (reason) => ({ decision: 'ask', reason });
+const deny = (reason) => ({ decision: 'deny', reason });
 
 const ESCAPE = new Set(['\\', '.', '+', '^', '$', '{', '}', '(', ')', '|', '[', ']']);
 
@@ -71,6 +78,21 @@ export function repoRelative(filePath, root) {
         return absolute.slice(rootSlash.length + 1);
     }
     return slash;
+}
+
+// A workspace root may arrive URI-style (`/d:/repo`); path.resolve would turn that into
+// D:\d:\repo. Without a root, the repository this file belongs to is used.
+export function resolveRoot(candidate) {
+    if (typeof candidate !== 'string' || !candidate) return INSTALL_ROOT;
+    const drive = candidate.replace(/\\/g, '/').match(/^\/([A-Za-z]:\/.*)$/);
+    return path.resolve(drive ? drive[1] : candidate);
+}
+
+// Like resolveRoot, but a payload without a root is an error, so a guard that cannot tell
+// which repository it protects fails closed instead of guessing.
+export function requireRoot(candidate) {
+    if (typeof candidate !== 'string' || !candidate) throw new Error('no workspace root');
+    return resolveRoot(candidate);
 }
 
 function loadRoutes() {
@@ -121,16 +143,6 @@ export function writesMerchant(command, merchant) {
     return false;
 }
 
-function toolPath(toolInput) {
-    return toolInput?.file_path || toolInput?.notebook_path || toolInput?.path || '';
-}
-
-function addedFromTool(toolInput) {
-    return [toolInput?.new_string, toolInput?.content, toolInput?.new_source]
-        .filter(Boolean)
-        .join('\n');
-}
-
 function matchRoutes(routes, relative, addedText) {
     return routes.filter((route) => {
         if (!(route.paths || []).some((pattern) => matchesGlob(relative, pattern))) return false;
@@ -163,12 +175,6 @@ function writeState(file, state) {
     fs.writeFileSync(file, JSON.stringify(state));
 }
 
-function projectRoot(input) {
-    if (input.cwd) return path.resolve(input.cwd);
-    if (process.env.CLAUDE_PROJECT_DIR) return path.resolve(process.env.CLAUDE_PROJECT_DIR);
-    return INSTALL_ROOT;
-}
-
 function planPointer(root) {
     const contextPath = path.join(root, 'docs/agent/context.md');
     if (!fs.existsSync(contextPath)) return 'docs/agent/context.md has no plan under execution.';
@@ -179,47 +185,48 @@ function planPointer(root) {
     return ['Plan in docs/agent/context.md:', heading[0], status?.[0]].filter(Boolean).join('\n');
 }
 
-function ask(reason) {
-    return {
-        hookSpecificOutput: {
-            hookEventName: 'PreToolUse',
-            permissionDecision: 'ask',
-            permissionDecisionReason: reason,
-        },
-    };
+export function cap(text, limit = 1500) {
+    if (text.length <= limit) return text;
+    return `${text.slice(0, limit)}…`;
 }
 
-function contextOutput(eventName, text) {
-    return {
-        hookSpecificOutput: {
-            hookEventName: eventName,
-            additionalContext: text,
-        },
-    };
-}
-
-function handlePrompt(input) {
-    const root = projectRoot(input);
-    const file = statePath(root, input.session_id);
+// The plan pointer, once per session.
+export function planContext(root, sessionId) {
+    const file = statePath(root, sessionId);
     const state = readState(file);
     if (state.prompted) return null;
     state.prompted = true;
     writeState(file, state);
-    return contextOutput('UserPromptSubmit', planPointer(root));
+    return planPointer(root);
 }
 
-function deny(reason) {
-    return {
-        hookSpecificOutput: {
-            hookEventName: 'PreToolUse',
-            permissionDecision: 'deny',
-            permissionDecisionReason: reason,
-        },
-    };
+// The doctor's hook report, for clients without a separate session-start command.
+export function doctorReport(root) {
+    const result = spawnSync(process.execPath, [DOCTOR, '--hook'], {
+        cwd: root,
+        encoding: 'utf8',
+        timeout: 15_000,
+        windowsHide: true,
+    });
+    if (result.error) return null;
+    return (result.stdout || '').trim() || null;
+}
+
+export function checkSubagent() {
+    return ask('Agent tool spawns a subagent.');
+}
+
+export function checkWrite(root, filePaths) {
+    const { merchant } = loadRoutes();
+    for (const filePath of filePaths) {
+        const relative = repoRelative(filePath, root);
+        if (merchantHit(relative, merchant)) return ask(`Merchant-owned path: ${relative}.`);
+    }
+    return ALLOW;
 }
 
 // Before a push: the record checks and whitespace errors in the commits being pushed,
-// so CI does not go red on what the Stop hook only sees after the turn.
+// so CI does not go red on what the stop check only sees after the turn.
 export function prePushFailures(root) {
     const failures = [...checkRecords(root).failures];
     const run = (args) =>
@@ -260,51 +267,42 @@ export function runsGitPush(command) {
     return false;
 }
 
-function handlePre(input) {
-    const tool = input.tool_name || '';
-    const routes = loadRoutes();
-    if (tool === 'Agent') return ask('Agent tool spawns a subagent.');
-    const root = projectRoot(input);
-    if (tool === 'Edit' || tool === 'Write' || tool === 'NotebookEdit') {
-        const relative = repoRelative(toolPath(input.tool_input), root);
-        if (merchantHit(relative, routes.merchant)) return ask(`Merchant-owned path: ${relative}.`);
-        return null;
+export function checkShell(root, command) {
+    const { merchant } = loadRoutes();
+    if (runsGitPush(command)) {
+        const failures = prePushFailures(root);
+        if (failures.length > 0) return deny(cap(`Push blocked:\n${failures.join('\n')}`));
     }
-    if (tool === 'Bash' || tool === 'PowerShell') {
-        const command = input.tool_input?.command || '';
-        if (runsGitPush(command)) {
-            const failures = prePushFailures(root);
-            if (failures.length > 0) return deny(cap(`Push blocked:\n${failures.join('\n')}`));
-        }
-        if (/\bshopify\s+theme\s+pull\b/.test(command))
-            return ask('Command runs shopify theme pull.');
-        if (writesMerchant(command, routes.merchant)) {
-            return ask('Command writes a merchant-owned path.');
-        }
-    }
-    return null;
+    if (/\bshopify\s+theme\s+pull\b/.test(command)) return ask('Command runs shopify theme pull.');
+    if (writesMerchant(command, merchant)) return ask('Command writes a merchant-owned path.');
+    return ALLOW;
 }
 
-function handlePost(input) {
-    const tool = input.tool_name || '';
-    if (tool !== 'Edit' && tool !== 'Write' && tool !== 'NotebookEdit') return null;
-    const root = projectRoot(input);
-    const relative = repoRelative(toolPath(input.tool_input), root);
+// Route hints for edited files ({ path, added }), each route once per session.
+export function routeHints(root, sessionId, edits) {
     const routes = loadRoutes().routes;
-    const matched = matchRoutes(routes, relative, addedFromTool(input.tool_input));
-    const file = statePath(root, input.session_id);
+    const file = statePath(root, sessionId);
     const state = readState(file);
     const seen = new Set(state.pointed || []);
-    const fresh = matched.filter((route) => !seen.has(route.id));
-    if (fresh.length === 0) return null;
-    state.pointed = [...seen, ...fresh.map((route) => route.id)];
+    const lines = [];
+    for (const edit of edits) {
+        const relative = repoRelative(edit.path, root);
+        const fresh = matchRoutes(routes, relative, edit.added).filter(
+            (route) => !seen.has(route.id),
+        );
+        for (const route of fresh) {
+            seen.add(route.id);
+            const validators = (route.validators || []).join(', ') || 'none';
+            const pointers = (route.pointers || []).join(', ') || 'none';
+            lines.push(
+                `Route ${route.id} matches ${relative}. Validators: ${validators}. Review tier: ${route.tier}. Pointers: ${pointers}.`,
+            );
+        }
+    }
+    if (lines.length === 0) return null;
+    state.pointed = [...seen];
     writeState(file, state);
-    const lines = fresh.map((route) => {
-        const validators = (route.validators || []).join(', ') || 'none';
-        const pointers = (route.pointers || []).join(', ') || 'none';
-        return `Route ${route.id} matches ${relative}. Validators: ${validators}. Review tier: ${route.tier}. Pointers: ${pointers}.`;
-    });
-    return contextOutput('PostToolUse', lines.join('\n'));
+    return lines.join('\n');
 }
 
 function git(root, args) {
@@ -396,14 +394,12 @@ function highestTier(routes) {
     }, null);
 }
 
-function cap(text, limit = 1500) {
-    if (text.length <= limit) return text;
-    return `${text.slice(0, limit)}…`;
-}
-
-function handleStop(input) {
-    const root = projectRoot(input);
-    const file = statePath(root, input.session_id);
+// End-of-turn check. Null when the worktree is unchanged since the last check. Otherwise
+// `failures` should continue the turn, `notice` (record prompts, review tier, owed
+// validators) is for the user only, and `report` is both. `continued` marks a turn the
+// check itself already continued: validators are skipped so it cannot loop.
+export function stopCheck(root, sessionId, { continued = false } = {}) {
+    const file = statePath(root, sessionId);
     const state = readState(file);
     const current = fingerprint(root);
     if (state.fingerprint === current.fingerprint) return null;
@@ -417,7 +413,7 @@ function handleStop(input) {
     const failures = [...(recordResult?.failures || [])];
     let owed = [];
     let tier = null;
-    if (!input.stop_hook_active) {
+    if (!continued) {
         const routes = loadRoutes().routes;
         const matched = [];
         for (const relative of changed) {
@@ -456,21 +452,6 @@ function handleStop(input) {
     writeState(file, state);
 
     const prompts = (recordResult?.notes || []).filter((line) => line.startsWith('prompt:'));
-    const report = [
-        ...failures.map((line) => `fail: ${line}`),
-        ...prompts,
-        tier ? `Review tier: ${tier}.` : '',
-        owed.length ? `Owed validators: ${owed.join(', ')}.` : '',
-    ]
-        .filter(Boolean)
-        .join('\n');
-
-    if (input.stop_hook_active) {
-        if (report) console.error(`harness: ${report.replace(/\n/g, ' | ')}`.slice(0, 500));
-        return null;
-    }
-    // Only failures continue the turn; counts, tier and owed validators go to the user
-    // through systemMessage, which costs no model turn.
     const notice = [
         ...prompts,
         tier ? `Review tier: ${tier}.` : '',
@@ -478,52 +459,82 @@ function handleStop(input) {
     ]
         .filter(Boolean)
         .join('\n');
-    const output = {};
-    if (failures.length > 0) {
-        output.decision = 'block';
-        output.reason = cap(failures.join('\n'));
-    }
-    if (notice) output.systemMessage = `harness: ${notice}`;
-    return Object.keys(output).length ? output : null;
+    const report = [...failures.map((line) => `fail: ${line}`), notice].filter(Boolean).join('\n');
+    return { failures, notice, report };
 }
 
-const HANDLERS = {
-    prompt: handlePrompt,
-    pre: handlePre,
-    post: handlePost,
-    stop: handleStop,
-};
-
-function main() {
-    const event = process.argv[2];
-    let raw = '';
-    try {
-        raw = fs.readFileSync(0, 'utf8');
-    } catch (error) {
-        console.error(`harness: ${error.message}`);
-        process.exit(0);
+function swap16(buffer) {
+    const length = buffer.length - (buffer.length % 2);
+    const swapped = Buffer.alloc(length);
+    for (let index = 0; index < length; index += 2) {
+        swapped[index] = buffer[index + 1];
+        swapped[index + 1] = buffer[index];
     }
+    return swapped;
+}
+
+// Hook stdin as text: UTF-8 with or without a BOM (observed on Windows), or UTF-16
+// detected by its BOM or by NUL bytes.
+export function decodeInput(buffer) {
+    if (!buffer || buffer.length === 0) return '';
+    if (buffer[0] === 0xff && buffer[1] === 0xfe) return buffer.subarray(2).toString('utf16le');
+    if (buffer[0] === 0xfe && buffer[1] === 0xff) {
+        return swap16(buffer.subarray(2)).toString('utf16le');
+    }
+    if (buffer[0] === 0xef && buffer[1] === 0xbb && buffer[2] === 0xbf) {
+        return buffer.subarray(3).toString('utf8');
+    }
+    if (buffer.includes(0)) {
+        let even = 0;
+        let odd = 0;
+        for (let index = 0; index + 1 < buffer.length; index += 2) {
+            if (buffer[index] === 0) even += 1;
+            if (buffer[index + 1] === 0) odd += 1;
+        }
+        if (odd > even) return buffer.toString('utf16le');
+        if (even > odd) return swap16(buffer).toString('utf16le');
+    }
+    return buffer.toString('utf8');
+}
+
+export function parseInput(buffer) {
+    const text = decodeInput(buffer).trim();
+    if (!text) return {};
+    try {
+        const value = JSON.parse(text);
+        return value && typeof value === 'object' ? value : {};
+    } catch {
+        throw new Error('malformed stdin');
+    }
+}
+
+// Runs one hook invocation: event from argv, payload from stdin, output as JSON on stdout,
+// exit code 0. On any error the message goes to stderr under `label`; for an event in
+// `guardEvents`, `denyOutput(reason)` is written as well, so a guard fails closed. With a
+// `denyOutput`, an empty payload on a guard event is an error too.
+export function runHook({ label, handlers, guardEvents = new Set(), denyOutput = null }) {
+    const event = process.argv[2];
+    const fail = (message) => {
+        console.error(`${label}: ${message}`);
+        if (denyOutput && guardEvents.has(event)) {
+            process.stdout.write(JSON.stringify(denyOutput(`${label}: ${message}`)));
+        }
+    };
+    const handler = handlers[event];
+    if (!handler) return fail(`unknown event ${event || '(none)'}`);
     let input;
     try {
-        input = JSON.parse(raw.trim() ? raw : '{}');
-    } catch {
-        console.error('harness: malformed stdin');
-        process.exit(0);
+        input = parseInput(fs.readFileSync(0));
+    } catch (error) {
+        return fail(error.message);
+    }
+    if (denyOutput && guardEvents.has(event) && Object.keys(input).length === 0) {
+        return fail('empty stdin');
     }
     try {
-        const handler = HANDLERS[event];
-        if (!handler) {
-            console.error(`harness: unknown event ${event || '(none)'}`);
-            process.exit(0);
-        }
         const output = handler(input);
         if (output) process.stdout.write(JSON.stringify(output));
     } catch (error) {
-        console.error(`harness: ${error.message}`);
-        process.exit(0);
+        fail(error.message);
     }
 }
-
-const invoked =
-    process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href;
-if (invoked) main();
