@@ -449,6 +449,17 @@ In `{% stylesheet %}` blocks, `font-size` must stay on the type-step system or s
 
 Everything else counts in `lint:theme` (`stylesheet-font-size`, ratcheted baseline): absolute and viewport units of any kind, any other `var()` (for example `var(--font-body-size-mobile)` or `var(--font-pagination-size)`), and a multiplier on its own. The polish pass migrates existing hits.
 
+## Stylesheet spacing (H7)
+
+In `{% stylesheet %}` blocks, `padding`, `margin`, `gap`, `row-gap`, `column-gap` and their side, inline and block longhands (`padding-top`, `margin-inline-start`, and the same family) stay on the spacing scale or stay relative. Each declaration counts at most once. `spacingDeclarationValues` parses the block per CSS Syntax Level 3 with nesting, from `@csstools/css-tokenizer` tokens (a dev dependency), so the declarations it counts are the ones a browser reads: declarations before, between and after nested rules and in at-rule blocks count, escaped property names are read unescaped, and selectors, at-rule preludes, top-level text, comments, strings, `url()` tokens, custom-property values and any `{}`, `()` or `[]` block inside a value do not. A `{}` block next to other values turns the statement into a nested rule, while a `{}` block that is the whole value (a trailing `!important` aside) stays a declaration and counts; a top-level rule whose prelude starts like a custom property (`--foo:hover {…}`) is dropped with its block. Malformed input follows the same parse: an unclosed function runs to the end of the input, and the declaration holding it counts. Values are judged from the same decoded tokens, so escapes, signs and exponents count by their value (`\61uto` is `auto`, `+1e2em` is an `em` length). A trailing `!important` (a `!` and the ident `important`, any case) is removed; what remains holds at most as many top-level component values as the property takes (four for `padding` and `margin`, two for `gap` and the `-block` / `-inline` pairs, one for the rest), and each must be one of:
+
+- `0`, `auto`, `inherit`, `initial`, or `unset`;
+- a `var(--spacing-*)`, `var(--page-*)` or `var(--section-frame-*)` token, prefix in lowercase as custom-property names are case-sensitive, followed by any non-empty decoded name (the section-frame values carry the merchant's section padding from `snippets/section-frame.liquid`), optionally with a `0` fallback;
+- an `em` or `%` value;
+- `calc()` / `clamp()` / `min()` / `max()` built only from those plus unitless numbers. A negative token is `calc(-1 * var(--spacing-related))`.
+
+Everything else counts in `lint:theme` (`stylesheet-spacing`, ratcheted baseline `.agents/skills/check-theme-architecture/scripts/stylesheet-ownership-baseline.json`): `px`, `rem`, viewport units, and any other `var()` (for example `var(--font-body-size)`). `isAllowedStylesheetSpacing` in `.agents/skills/check-theme-architecture/scripts/lib/stylesheet-ownership-lint.js` is the check. Entries only fall, through the same `--write-stylesheet-ownership-baseline` and `--shrink-stylesheet-ownership-baseline` flags as `stylesheet-font-size`. The polish pass migrates existing hits.
+
 ## Font weights (6-C3)
 
 - **Loaded faces:** `snippets/css-variables.liquid` loads, through `font_modify`, the body font's base face, bold (700) and italics; the heading font's base face, the weight selected by `heading_weight`, bold and italics; and the subtitle font's face for the weight selected by `subtitle_weight`.
@@ -495,12 +506,13 @@ After batch **6-R2** (2026-10-12), markup `raw-spacing` is **2** (`tablet:px-[8v
 
 ## Stylesheet ownership lints (6-C6)
 
-`lint:theme` enforces three additional rules on `layout/`, `sections/`, and `snippets/`:
+`lint:theme` enforces four additional rules on `layout/`, `sections/`, and `snippets/`:
 
 | Check | What it does | Baseline |
 | --- | --- | --- |
 | `stylesheet-layer` | Rejects any `@layer` inside `{% stylesheet %}` | None (zero tolerance) |
 | `stylesheet-font-size` | Counts disallowed `font-size` declarations per file (see **Stylesheet font sizes** above) | Ratchet: `.agents/skills/check-theme-architecture/scripts/stylesheet-ownership-baseline.json` |
+| `stylesheet-spacing` | Counts disallowed `padding`, `margin`, `gap`, `row-gap`, `column-gap` and their side, inline and block longhands, once per declaration (see **Stylesheet spacing** above) | Ratchet: `.agents/skills/check-theme-architecture/scripts/stylesheet-ownership-baseline.json` |
 | `mixed-element` | Counts static class regions where the file's own stylesheet class and a core Tailwind utility appear together. Project vocabulary (`@utility` names in `tailwind/*.css`) may sit on that element and does not count. Strict since 6-R4: any mixed element fails `lint:theme`; no baseline allowance is read or written | None (strict) |
 
 **Ratchet flags:** `--write-stylesheet-ownership-baseline` (create once; refuses when the file exists), `--shrink-stylesheet-ownership-baseline` (lowers entries and removes zeros only). Raising an entry is a manual edit that needs the user's approval.

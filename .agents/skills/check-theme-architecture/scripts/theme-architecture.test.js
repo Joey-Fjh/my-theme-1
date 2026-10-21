@@ -2280,6 +2280,269 @@ test('stylesheet-font-size lint: a drop passes with a shrink hint', async () => 
     });
 });
 
+test('stylesheet-spacing lint: only real declarations count, not strings or custom-property values', () => {
+    const { disallowedStylesheetSpacingValues } = require('./lib/stylesheet-ownership-lint');
+    assert.deepEqual(disallowedStylesheetSpacingValues('.x::before { content: "padding: 12px"; }'), []);
+    assert.deepEqual(disallowedStylesheetSpacingValues(".x::before { content: 'margin: 1rem; gap: 4px'; }"), []);
+    assert.deepEqual(disallowedStylesheetSpacingValues('.x { --example: padding: 12px; }'), []);
+    assert.deepEqual(disallowedStylesheetSpacingValues('.x{padding:12px}'), ['12px']);
+    assert.deepEqual(disallowedStylesheetSpacingValues(".x { content: 'a;b'; padding: 2px }"), ['2px']);
+    assert.deepEqual(disallowedStylesheetSpacingValues('.x::before { content: "a\\" padding: 12px"; }'), []);
+    assert.deepEqual(disallowedStylesheetSpacingValues(".x::before { content: 'a\\' margin: 1rem'; }"), []);
+    assert.deepEqual(disallowedStylesheetSpacingValues('.a { &:hover { padding-top: 3px; } }'), ['3px']);
+    assert.deepEqual(disallowedStylesheetSpacingValues('.x { &:hover { color: red } padding: 12px }'), ['12px']);
+    assert.deepEqual(
+        disallowedStylesheetSpacingValues('.x { &:hover { color: red } margin: 1rem; &:focus { color: blue } }'),
+        ['1rem'],
+    );
+    assert.deepEqual(disallowedStylesheetSpacingValues('.x { padding: 12px; &:hover { color: red } }'), ['12px']);
+    // Top-level text after a closed rule or at-rule is not a declaration.
+    assert.deepEqual(disallowedStylesheetSpacingValues('.x{color:red}padding:12px;'), []);
+    assert.deepEqual(disallowedStylesheetSpacingValues('@media (x) {.x{color:red}}margin:1rem;'), []);
+    // Balanced braces stay inside a custom-property value.
+    assert.deepEqual(disallowedStylesheetSpacingValues('.x { --example: { color:red } padding:12px; }'), []);
+    // A statement ending at `{` is a prelude; `;` inside parentheses does not end a declaration.
+    assert.deepEqual(disallowedStylesheetSpacingValues('.x { padding:hover { color: red } }'), []);
+    assert.deepEqual(disallowedStylesheetSpacingValues('.x { background: url(a;b.png); padding: 3px }'), ['3px']);
+    // A `/*` inside a string is not a comment; comments themselves never count.
+    assert.deepEqual(
+        disallowedStylesheetSpacingValues('.x { content:"/*"; padding:26px; /* real comment */ }'),
+        ['26px'],
+    );
+    assert.deepEqual(disallowedStylesheetSpacingValues('.x { /* padding: 3px; */ color: red }'), []);
+    assert.deepEqual(disallowedStylesheetSpacingValues('.x { padding: 1px /* c */ }'), ['1px']);
+    // An escaped `{` in a selector does not open a block.
+    assert.deepEqual(disallowedStylesheetSpacingValues('.foo\\{bar { color:red } padding:30px;'), []);
+    assert.deepEqual(disallowedStylesheetSpacingValues('.w-1\\/2 { margin:14px }'), ['14px']);
+    // Malformed input parses as CSS Syntax 3 does: an unclosed function runs to EOF and the declaration
+    // holding it counts (an unbalanced value is never allowed); an unclosed block counts its last declaration.
+    assert.deepEqual(disallowedStylesheetSpacingValues('.x{padding:calc(var(--spacing-step-m) + 2%}'), [
+        'calc(var(--spacing-step-m) + 2%}',
+    ]);
+    assert.deepEqual(disallowedStylesheetSpacingValues('.x{padding:calc(1em; margin:16px;} .y{gap:17px}'), [
+        'calc(1em; margin:16px;} .y{gap:17px}',
+    ]);
+    assert.deepEqual(disallowedStylesheetSpacingValues('.x { padding:10px'), ['10px']);
+    // A {} block that is the whole value (a trailing `!important` aside) is a declaration; next to other
+    // values it makes a nested rule.
+    assert.deepEqual(disallowedStylesheetSpacingValues('.x{padding:{};}'), ['{}']);
+    assert.deepEqual(disallowedStylesheetSpacingValues('.x{padding: {} !important; margin:1rem}'), [
+        '{} !important',
+        '1rem',
+    ]);
+    assert.deepEqual(disallowedStylesheetSpacingValues('.x{padding:{};gap:17px}'), ['{}', '17px']);
+    assert.deepEqual(disallowedStylesheetSpacingValues('.x { padding: 1em {} }'), []);
+    // A top-level rule whose prelude starts like a custom property is dropped with its block.
+    assert.deepEqual(disallowedStylesheetSpacingValues('--foo:hover{padding:12px}'), []);
+    assert.deepEqual(disallowedStylesheetSpacingValues('--foo:hover{padding:12px} .y{gap:3px}'), ['3px']);
+    // Escaped property names are read unescaped.
+    assert.deepEqual(disallowedStylesheetSpacingValues('.x{paddi\\ng:16px}'), ['16px']);
+    assert.deepEqual(disallowedStylesheetSpacingValues('.x{padd\\69ng:17px}'), ['17px']);
+    assert.deepEqual(disallowedStylesheetSpacingValues('.x{PADDING:4px}'), ['4px']);
+    // Escaped and non-ASCII custom-property names keep their values opaque.
+    assert.deepEqual(disallowedStylesheetSpacingValues('.x{--foo\\{: {color:red} padding:90px;padding:15px}'), [
+        '15px',
+    ]);
+    assert.deepEqual(disallowedStylesheetSpacingValues('.x{--é:{color:red} padding:90px;padding:31px}'), ['31px']);
+    // url() tokens and [] blocks are single component values.
+    assert.deepEqual(disallowedStylesheetSpacingValues('.x{background:url(a}b.png);padding:10px}'), ['10px']);
+    assert.deepEqual(disallowedStylesheetSpacingValues('.x{--x:[;margin:90px;];padding:14px}'), ['14px']);
+    // CR LF, CR and FF are newlines: an escaped CR LF continues a string; a bare CR or FF ends a bad string.
+    assert.deepEqual(disallowedStylesheetSpacingValues('.x{content:"a\\\r\n; padding:90px"; margin:23px}'), ['23px']);
+    assert.deepEqual(disallowedStylesheetSpacingValues('.x{content:"oops\r} .y{padding:26px}'), ['26px']);
+    assert.deepEqual(disallowedStylesheetSpacingValues('.x{content:"oops\f} .y{padding:27px}'), ['27px']);
+    // At-rule blocks, nested or holding declarations directly.
+    assert.deepEqual(disallowedStylesheetSpacingValues('@media (min-width: 1px) { .x { padding: 12px } }'), ['12px']);
+    assert.deepEqual(disallowedStylesheetSpacingValues('@supports (gap: 1px) { .x { gap: 4px } }'), ['4px']);
+    assert.deepEqual(disallowedStylesheetSpacingValues('@container c (width > 1px) { margin: 1rem }'), ['1rem']);
+    assert.deepEqual(disallowedStylesheetSpacingValues('.x { color: red; margin: 1rem 0; gap: 4px }'), [
+        '1rem 0',
+        '4px',
+    ]);
+});
+
+test('stylesheet-spacing lint: allowed forms pass and each disallowed form counts once', () => {
+    const {
+        collectStylesheetOwnershipCounts,
+        disallowedStylesheetSpacingValues,
+        isAllowedStylesheetSpacing,
+    } = require('./lib/stylesheet-ownership-lint');
+    const allowed = [
+        '0',
+        'auto',
+        'inherit',
+        'initial',
+        'unset',
+        'var(--spacing-step-m)',
+        'var(--page-margin)',
+        '2%',
+        '1.2em',
+        '-1.05em',
+        'calc(var(--spacing-group) * 2)',
+        'clamp(var(--spacing-step-s), 2%, var(--spacing-step-l))',
+        'calc(-1 * var(--spacing-related))',
+        '0 auto',
+        '0 !important',
+        'min(var(--spacing-step-m), 50%)',
+        'max(1em, var(--page-margin))',
+        'var(--section-frame-padding-top)',
+        'var(--section-frame-padding-bottom, 0)',
+        'calc(-1 * var(--section-frame-padding-top, 0))',
+        // Judged from decoded tokens: escapes, signs, exponents and spelled-out `!important`.
+        '\\61uto',
+        'var(--spac\\69ng-step-m)',
+        '+1em',
+        '1e2em',
+        '0 !impor\\74 ant',
+        '0 !impor\\tant',
+        '0 ! IMPORTANT',
+        '0/**/auto',
+        'clamp(1em, 2%, (3em + 1em))',
+    ];
+    const disallowed = [
+        '12px',
+        '1.6rem',
+        '2vw',
+        'clamp(1rem, 2vw, 3rem)',
+        'var(--font-body-size)',
+        '0 1.6rem',
+        '-var(--spacing-related)',
+        '12px !important',
+        '1px',
+        '-1px',
+        'var(--spacing)',
+        'var(--spacing-step-m, 1rem)',
+        'var(--announcement-bar-height, 0px)',
+        'var(--SPACING-step-m)',
+        'var(--PAGE-margin)',
+        'var(--SECTION-FRAME-padding-top)',
+        'calc(var(--Spacing-group) * 2)',
+        'var(--spacing-step-m,1px)',
+        'calc(auto)',
+        '0px',
+        '!important',
+        '',
+    ];
+    for (const value of allowed) assert.equal(isAllowedStylesheetSpacing(value), true, value);
+    for (const value of disallowed) assert.equal(isAllowedStylesheetSpacing(value), false, value);
+    // An unclosed function is never allowed; kept out of the fixture below, where it would swallow the rest.
+    assert.equal(isAllowedStylesheetSpacing('calc(1em'), false);
+    // Token suffixes are any decoded ident text; the prefix alone is not a token.
+    assert.equal(isAllowedStylesheetSpacing('var(--spacing-é)'), true);
+    assert.equal(isAllowedStylesheetSpacing('var(--spacing-\\e9)'), true);
+    assert.equal(isAllowedStylesheetSpacing('var(--spacing-)'), false);
+    // Component limits per property: four for padding and margin, two for gap and block/inline pairs, else one.
+    // Each at the limit and one past it, with and without `!important`.
+    const limits = { padding: 4, margin: 4, gap: 2, 'padding-block': 2, 'margin-inline': 2, 'padding-top': 1 };
+    for (const [property, limit] of Object.entries(limits)) {
+        const atLimit = Array.from({ length: limit }, () => '1em').join(' ');
+        for (const suffix of ['', ' !important']) {
+            assert.equal(isAllowedStylesheetSpacing(atLimit + suffix, property), true, `${property}: ${atLimit}${suffix}`);
+            assert.equal(
+                isAllowedStylesheetSpacing(`${atLimit} 1em${suffix}`, property),
+                false,
+                `${property}: ${atLimit} 1em${suffix}`,
+            );
+            assert.deepEqual(disallowedStylesheetSpacingValues(`.x{${property}:${atLimit}${suffix}}`), []);
+            assert.deepEqual(disallowedStylesheetSpacingValues(`.x{${property}:${atLimit} 1em${suffix}}`), [
+                `${atLimit} 1em${suffix}`,
+            ]);
+        }
+    }
+    assert.equal(isAllowedStylesheetSpacing('1em 2em 3em 4em 5em'), false);
+    assert.equal(isAllowedStylesheetSpacing('1em 2em', 'row-gap'), false);
+
+    withTempTheme((root) => {
+        const rules = [
+            '/* padding: 12px; margin: 1.6rem; */',
+            '.note { padding: /* 12px */ 0; }',
+            ...allowed.map(
+                (value, index) =>
+                    `.ok${index} { padding: ${value}; margin: ${value}; gap: ${value}; }`,
+            ),
+            // Three declarations per value. `0 1.6rem` is one of them, so a per-part count would exceed this.
+            ...disallowed.map(
+                (value, index) =>
+                    `.bad${index} { gap: ${value}; padding-top: ${value}; margin-inline-start: ${value}; }`,
+            ),
+            '.edges { padding-block-start: 12px; margin-inline-end: 1.6rem; padding-left: 0; margin-right: auto; column-gap: var(--page-width); }',
+        ];
+        writeStylesheetOwnershipTheme(
+            root,
+            [
+                '<p style="padding: 12px; margin: 1.6rem; gap: 2vw">outside</p>',
+                '{% comment %}padding: 12px{% endcomment %}',
+                '{% stylesheet %}',
+                ...rules,
+                '{% endstylesheet %}',
+                '',
+            ].join('\n'),
+        );
+        const counts = collectStylesheetOwnershipCounts(root);
+        assert.equal(counts['stylesheet-spacing']['sections/a.liquid'].count, disallowed.length * 3 + 2);
+    });
+});
+
+test('stylesheet-spacing lint: a count above the baseline fails', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeStylesheetOwnershipTheme(
+            root,
+            '{% stylesheet %}.x { padding: 12px; margin: 1.6rem; }{% endstylesheet %}\n',
+            { 'stylesheet-font-size': {}, 'stylesheet-spacing': { 'sections/a.liquid': 1 } },
+        );
+        const failures = await runThemeLint(root);
+        assert.ok(failures.some((f) => /\[stylesheet-spacing\] 2 use\(s\), baseline 1/.test(f.message)));
+    });
+});
+
+test('stylesheet-spacing lint: a drop passes with a shrink hint', async () => {
+    await withTempThemeAsync(async (root) => {
+        writeStylesheetOwnershipTheme(root, '{% stylesheet %}.x { padding: 12px; }{% endstylesheet %}\n', {
+            'stylesheet-font-size': {},
+            'stylesheet-spacing': { 'sections/a.liquid': 3 },
+        });
+        const notes = [];
+        const failures = await runThemeLint(root, notes);
+        assert.equal(failures.filter((f) => f.message.startsWith('[stylesheet-spacing]')).length, 0);
+        assert.match(notes.join('\n'), /--shrink-stylesheet-ownership-baseline/);
+    });
+});
+
+test('stylesheet-spacing baseline: write records the count and shrink only lowers it', () => {
+    withTempTheme((root) => {
+        writeStylesheetOwnershipTheme(
+            root,
+            '{% stylesheet %}.x { padding: 12px; margin: 1.6rem; font-size: 14px; }{% endstylesheet %}\n',
+        );
+        let result = runThemeLintArgs(root, ['--write-stylesheet-ownership-baseline']);
+        assert.equal(result.status, 0, result.stderr);
+        let written = JSON.parse(fs.readFileSync(path.join(root, STYLESHEET_OWNERSHIP_BASELINE), 'utf8'));
+        assert.deepEqual(written, {
+            'stylesheet-font-size': { 'sections/a.liquid': 1 },
+            'stylesheet-spacing': { 'sections/a.liquid': 2 },
+        });
+
+        writeFile(
+            root,
+            'sections/a.liquid',
+            '{% stylesheet %}.x { padding: 12px; margin: 2rem; gap: 4px; font-size: 14px; }{% endstylesheet %}\n',
+        );
+        result = runThemeLintArgs(root, ['--shrink-stylesheet-ownership-baseline']);
+        assert.equal(result.status, 0, result.stderr);
+        written = JSON.parse(fs.readFileSync(path.join(root, STYLESHEET_OWNERSHIP_BASELINE), 'utf8'));
+        assert.deepEqual(written, {
+            'stylesheet-font-size': { 'sections/a.liquid': 1 },
+            'stylesheet-spacing': { 'sections/a.liquid': 2 },
+        });
+
+        writeFile(root, 'sections/a.liquid', '{% stylesheet %}.x { padding: 0; }{% endstylesheet %}\n');
+        result = runThemeLintArgs(root, ['--shrink-stylesheet-ownership-baseline']);
+        assert.equal(result.status, 0, result.stderr);
+        written = JSON.parse(fs.readFileSync(path.join(root, STYLESHEET_OWNERSHIP_BASELINE), 'utf8'));
+        assert.deepEqual(written, { 'stylesheet-font-size': {}, 'stylesheet-spacing': {} });
+    });
+});
+
 test('mixed-element lint: class attributes only, used class captures, compiled utility names', async () => {
     await withTempThemeAsync(async (root) => {
         writeStylesheetOwnershipTheme(
@@ -2455,7 +2718,10 @@ test('stylesheet ownership baseline flags: write refuses an existing file; shrin
         assert.equal(result.status, 0, result.stderr);
         const written = JSON.parse(fs.readFileSync(path.join(root, STYLESHEET_OWNERSHIP_BASELINE), 'utf8'));
         // mixed-element is strict: it is never written as an allowance.
-        assert.deepEqual(written, { 'stylesheet-font-size': { 'sections/a.liquid': 1 } });
+        assert.deepEqual(written, {
+            'stylesheet-font-size': { 'sections/a.liquid': 1 },
+            'stylesheet-spacing': {},
+        });
 
         result = runThemeLintArgs(root, ['--write-stylesheet-ownership-baseline']);
         assert.notEqual(result.status, 0);
@@ -2477,6 +2743,7 @@ test('stylesheet ownership baseline flags: write refuses an existing file; shrin
         assert.equal(result.status, 0, result.stderr);
         assert.deepEqual(JSON.parse(fs.readFileSync(path.join(root, STYLESHEET_OWNERSHIP_BASELINE), 'utf8')), {
             'stylesheet-font-size': { 'sections/a.liquid': 1 },
+            'stylesheet-spacing': {},
         });
 
         writeFile(
@@ -2495,7 +2762,7 @@ test('stylesheet ownership baseline flags: write refuses an existing file; shrin
         result = runThemeLintArgs(root, ['--shrink-stylesheet-ownership-baseline']);
         assert.equal(result.status, 0, result.stderr);
         const shrunk = JSON.parse(fs.readFileSync(path.join(root, STYLESHEET_OWNERSHIP_BASELINE), 'utf8'));
-        assert.deepEqual(shrunk, { 'stylesheet-font-size': {} });
+        assert.deepEqual(shrunk, { 'stylesheet-font-size': {}, 'stylesheet-spacing': {} });
     });
 });
 

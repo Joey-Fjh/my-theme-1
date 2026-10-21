@@ -6,6 +6,8 @@ Last updated: 2026-10-21.
 
 ## Theme polish: home
 
+- `impeccable` 4.5.2 home critique as input to the home pass (decided: user, 2026-10-21; advisory, shortening the narrative touches accepted composition): (P1) three `promo-bannder` panels then two `ritual-steps` read as a catalogue; (P1) `slides-show` "MORNINGS" line break at 1440; (P2) inverted heading priority at 390; (P2) `testimonial-featured` clipped side cards on mobile; (P2) full bright accent on a `promo-bannder` panel (may be scheme config). Against `design.md`: accent area misuse, header layout, mobile rails, hero CTA underline, solid buy buttons, small ritual headings. Source: 2026-10-15 critique. Surface: home sections.
+- Design choices to make at the home pass: hero CTA underline (`slides-show` `link` `variant: 'underline'` on hover or focus only, against the design's resting line; 6-S4); section heights for sections other than hero-type (user, 2026-10-03). Source: board, 2026-10-21. Surface: `slides-show`, home sections.
 - Sage backgrounds where the design shows them (the `scheme-4` Sage scheme exists since 6-D2; assigning it is a template change that needs the user's approval). Source: 6-S3, 6-S5, 6-S6, 6-S9, 6-S10, 6-S11, 6-P4. Surface: `collection-list`, `scatter-gallery`, `scroll-categories`, `promo-bannder` panel 1, `icon-with-text`, `ritual-steps`, `formula-details`, `templates/*.json`.
 - Badge colours darkened for contrast: compare with the design. Source: 6-S4. Surface: badge settings, `snippets/product-card-badge.liquid`.
 - Tablet widths 768 to 1024 on every home section (`pc` switches at 768); keep or revise the 6-S6 1024px layout breakpoint; check on a real iPad, portrait and landscape, for crowding. Source: user, 2026-10-05. Surface: home sections.
@@ -18,11 +20,12 @@ Last updated: 2026-10-21.
 - `ritual-steps`: badge fill; proportions and spacing (oval angle and size, ring offset, star size, numeral size, packshot scale); header overlap with the sticky frame and stage. Source: 6-S11. Surface: `sections/ritual-steps.liquid`.
 - `featured-product`: quantity beside add to cart on mobile (product page design) while the home mobile design stacks them; cap the `space-between` gaps on very tall screens; optional sticky add-to-cart bar; price and title sizes. Source: 6-S12. Surface: `sections/featured-product.liquid`, shared purchase snippets.
 - Icon stroke: the design's icons are lighter than Phosphor regular (`flask` not added). Source: 6-S10, 6-S12. Surface: `assets/icon-*.svg` via `build:svg`.
-- Mobile rails, one card per view: the user names three places at the polish pass; candidates `ritual-steps` and `routine-showcase` (`card-rail`), the `collection-list` slide, the `featured-products` tab strip, the `collection-all` nav-link scroller, the `testimonial-featured` marquee; until then their layout entries stay in the baseline. Source: user, 2026-10-11. Surface: those sections.
+- Mobile rails, one card per view: the user names three places at the polish pass; candidates `ritual-steps` and `routine-showcase` (`card-rail`), the `collection-list` slide, the `featured-products` tab strip, the `collection-all` nav-link scroller, the `testimonial-featured` marquee; until then their layout entries stay in the baseline; the two `collection-all` nav-link `page-margin` entries and the `ritual_steps_carousel` 768 title stay baselined, and the page-margin rule is reconsidered only if they remain after this item (decided: user, 2026-10-21). Source: user, 2026-10-11; 6-T1, 6-C2. Surface: those sections.
 - Collection tab bar. Source: order after 6-D2, 2026-10-12. Surface: `collection-all`.
 
 ## Theme polish: product
 
+- Design choice: product page add to cart shows a toast only, or opens the cart drawer like quick view (`open_cart_on_add` in `snippets/buy-buttons.liquid`; live theme the same). Source: 2026-10-13. Surface: `snippets/buy-buttons.liquid`, `sections/main-product.liquid`.
 - `feature-tabs`: fade 400ms onto a motion token; literal `clamp()` spacing onto `--spacing-step-*`. Source: 6-P1. Surface: `sections/feature-tabs.liquid`.
 - `mood-finder`: quadrant labels carry a backing box the design lacks; section 764px against about 700, wheel 408px against about 470 at 1440; card and arrow motion 400ms onto a token; below 80rem the botanical sits between wheel and card. Source: 6-P2. Surface: `sections/mood-finder.liquid`.
 - `formula-details`: band image stays inside the page margins while the design bleeds it to the edge; numbers' monospace italic follows the font-role item below. Source: 6-P4. Surface: `sections/formula-details.liquid`.
@@ -30,6 +33,8 @@ Last updated: 2026-10-21.
 
 ## Theme polish: global
 
+- Serif heading face: the design shows one on many sections while `design.md` fixes one family; one theme-wide font decision at the polish pass. Source: 6-S8, 6-S9, 6-S11, 6-P1 to 6-P4. Surface: font settings, `docs/design/design.md`.
+- Retire the per-scheme `badge_*` colours (`snippets/css-variables.liquid`; no consumer since 6-S4) in the first polish batch; schema removal, Ask tier. Decided: user, 2026-10-21. Source: 6-S4. Surface: `config/settings_schema.json`, `snippets/css-variables.liquid`, locales.
 - Monospace italic in the design (`ritual-steps` step labels, eyebrows, prices; `formula-details` numbers): per `design.md` use the body family, step labels as an ink-tinted chip, tabular figures for numbers (`lint:theme` forbids `font-mono`). Source: 6-S11, 6-P4, order after 6-D2. Surface: `ritual-steps`, `formula-details`.
 - Medium weight: confirm the 500 face `design.md` asks for is loaded (earlier only 400 and 700 were, so `font-medium` rendered at 400). Source: design phase inputs, 2026-10-03. Surface: `layout/theme.liquid` font loading, `snippets/css-variables.liquid`.
 - Migration ratchets to 0: `body-size-custom` and the countdown size (display sizes 24/40, 24/32, 36/120), the `product-card` quick-view viewport padding (`raw-spacing` 2), raw radii (43 `border-radius` declarations, about half semantic) onto the radius tokens; then `legacy-type-tier`, `stylesheet-font-size` and `raw-spacing` reach 0 and become strict. Decided (user, 2026-10-11): each check and its baseline entry are deleted when the count reaches 0, deletion needing the user's approval in that batch. Source: 6-R1 to 6-R5. Surface: sections and snippets stylesheets, lint baselines.
@@ -40,7 +45,7 @@ Last updated: 2026-10-21.
 
 ## Later batches
 
-- Card surface and depth: a card background role in the colour schemes (default white) shared by product and collection cards (collection cards hard-code `bg-white`); optional later a per-card metafield colour; hover depth from flat to raised (reference `docs/design/home/category-grid/hover-depth.png`, local), with a layered shadow measured then; reconcile with `design.md` rule 3 (tinted backdrop, no grey drop shadow). Whether product cards get the depth too is an open decision on the board. Source: user, 2026-10-05. Surface: colour scheme schema, `product-card`, `collection-list`.
+- Card surface and depth: a card background role in the colour schemes (default white) shared by product and collection cards (collection cards hard-code `bg-white`); optional later a per-card metafield colour; hover depth from flat to raised (reference `docs/design/home/category-grid/hover-depth.png`, local), with a layered shadow measured then; reconcile with `design.md` rule 3 (tinted backdrop, no grey drop shadow). Whether product cards get the raised hover too is decided at the polish pass. Source: user, 2026-10-05. Surface: colour scheme schema, `product-card`, `collection-list`.
 - Shared carousel indicator: dots, progress pill and bars plus the optional pause button (`aria-current`, 24px targets, scheme colours; API: set active index, set progress, report a selection), controllers stay per section. Decided (user, 2026-10-04 and 2026-10-08; exception to the third-consumer threshold, confirmed 2026-10-13): extract with two real consumers, `slides-show` and `card-rail` dots, planned with the touch pause button. Source: 6-S1, 6-A1. Surface: new snippet and helper, `slides-show`, `card-rail`.
 
 ## Browser pass
@@ -53,6 +58,7 @@ Last updated: 2026-10-21.
 
 ## Readiness, Lighthouse and CI
 
+- Delete the unused `lighthouse-ci` Dev Dashboard app and the repository secrets `SHOP_CLIENT_ID` and `SHOP_CLIENT_SECRET` (unused since the Theme Access change); user action in the Dev Dashboard and GitHub settings. Decided: user, 2026-10-21. Source: 2026-10-13. Surface: Dev Dashboard, GitHub secrets.
 - Classify the collection performance (LCP 5.5 s, TBT 890 ms; mobile median 0.48) and best practices 0.59 on all three pages before any code change; the job passes on the best of three runs, so green does not prove the Theme Store bar. Source: Lighthouse CI run 38363613541, 2026-10-13. Surface: classification first.
 - Manual test checklist for the launch-blocking flows (variant change, add to cart, cart drawer, menu, dialogs with keyboard and focus), following Shopify's official testing checklist read through Shopify Dev MCP. Decided (user, 2026-10-12): a document, not automation; written with the readiness review. Source: 6-T3. Surface: a new document.
 - Cross-domain consolidation pass before the second submission (polish pass plus readiness review), and one read-only audit of the closed areas (JS runtime and modules, i18n, schema and settings, assets, `docs/references/` accuracy) by an external session, report outside the repo. Decided: user, 2026-10-09. Source: audit practice. Surface: read-only, then findings.

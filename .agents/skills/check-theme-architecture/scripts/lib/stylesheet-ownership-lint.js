@@ -1,9 +1,11 @@
 /**
- * Stylesheet ownership lints (6-C6): no @layer in {% stylesheet %}, font-size ratchet, mixed-element ratchet.
+ * Stylesheet ownership lints (6-C6, H7): no @layer in {% stylesheet %}, font-size ratchet,
+ * spacing ratchet, mixed-element ratchet.
  */
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { tokenize, TokenType } = require('@csstools/css-tokenizer');
 const { splitVariants, maskNonMarkup } = require('./migration-lint');
 
 const BASELINE_RELATIVE_PATH =
@@ -13,6 +15,7 @@ const TAILWIND_OUTPUT = 'assets/tailwind.output.css';
 const RULE = {
     STYLESHEET_LAYER: 'stylesheet-layer',
     STYLESHEET_FONT_SIZE: 'stylesheet-font-size',
+    STYLESHEET_SPACING: 'stylesheet-spacing',
     MIXED_ELEMENT: 'mixed-element',
 };
 
@@ -154,6 +157,282 @@ function countFontSizeViolations(css) {
     return count;
 }
 
+const SPACING_LONGHANDS = ['top', 'right', 'bottom', 'left', 'block-start', 'block-end', 'inline-start', 'inline-end', 'block', 'inline'];
+const SPACING_PROPERTIES = new Set([
+    'padding',
+    'margin',
+    'gap',
+    'row-gap',
+    'column-gap',
+    ...SPACING_LONGHANDS.flatMap((side) => [`padding-${side}`, `margin-${side}`]),
+]);
+
+const BLOCK_CLOSER = {
+    [TokenType.OpenCurly]: TokenType.CloseCurly,
+    [TokenType.OpenParen]: TokenType.CloseParen,
+    [TokenType.OpenSquare]: TokenType.CloseSquare,
+    [TokenType.Function]: TokenType.CloseParen,
+};
+
+function isWhitespaceOrComment(token) {
+    return token[0] === TokenType.Whitespace || token[0] === TokenType.Comment;
+}
+
+/** Index just past the component value at `i`: a single token, or a {} / () / [] / function block up to its closer or EOF. */
+function skipComponentValue(tokens, i) {
+    const closer = BLOCK_CLOSER[tokens[i][0]];
+    if (closer === undefined) return i + 1;
+    let j = i + 1;
+    while (tokens[j][0] !== TokenType.EOF) {
+        if (tokens[j][0] === closer) return j + 1;
+        j = skipComponentValue(tokens, j);
+    }
+    return j;
+}
+
+/** True when the last two significant tokens are `!` and the ident `important` (any case, escapes decoded). */
+function isImportantEnd(tokens) {
+    const [bang, ident] = tokens.slice(-2);
+    return (
+        tokens.length >= 2 &&
+        bang[0] === TokenType.Delim &&
+        bang[4].value === '!' &&
+        ident[0] === TokenType.Ident &&
+        ident[4].value.toLowerCase() === 'important'
+    );
+}
+
+/**
+ * Declaration at `i` (CSS Syntax 3 "consume a declaration"): an ident, a colon, then component values up to a
+ * top-level `;`, `}` or EOF. Returns the end index, or -1 when the tokens are not a declaration (the caller
+ * then reads them as a nested rule). A non-custom value holding a top-level {} block next to anything else
+ * (a trailing `!important` aside) is not a declaration; a {} block that is the whole value is one.
+ */
+function consumeDeclaration(tokens, i, values) {
+    if (tokens[i][0] !== TokenType.Ident) return -1;
+    let j = i + 1;
+    while (isWhitespaceOrComment(tokens[j])) j++;
+    if (tokens[j][0] !== TokenType.Colon) return -1;
+    const valueStart = j + 1;
+    const parts = [];
+    j = valueStart;
+    while (![TokenType.EOF, TokenType.Semicolon, TokenType.CloseCurly].includes(tokens[j][0])) {
+        if (!isWhitespaceOrComment(tokens[j])) parts.push(tokens[j]);
+        j = skipComponentValue(tokens, j);
+    }
+    const name = tokens[i][4].value;
+    if (name.startsWith('--')) return j;
+    if (isImportantEnd(parts)) parts.splice(-2, 2);
+    if (parts.length > 1 && parts.some((token) => token[0] === TokenType.OpenCurly)) return -1;
+    const property = name.toLowerCase();
+    if (SPACING_PROPERTIES.has(property)) {
+        values.push({
+            property,
+            value: tokens
+                .slice(valueStart, j)
+                .map((token) => (token[0] === TokenType.Comment ? ' ' : token[1]))
+                .join('')
+                .trim(),
+        });
+    }
+    return j;
+}
+
+/** At-rule at `i`: prelude up to `;` (statement) or a {} block (read as block contents). */
+function consumeAtRule(tokens, i, values, nested) {
+    let j = i + 1;
+    while (tokens[j][0] !== TokenType.EOF) {
+        const type = tokens[j][0];
+        if (type === TokenType.Semicolon) return j + 1;
+        if (type === TokenType.OpenCurly) return consumeBlockContents(tokens, j + 1, values);
+        if (type === TokenType.CloseCurly && nested) return j;
+        j = skipComponentValue(tokens, j);
+    }
+    return j;
+}
+
+/** True when the prelude from `i` starts with an ident beginning `--` followed by a colon. */
+function startsLikeCustomProperty(tokens, i) {
+    let j = i;
+    while (isWhitespaceOrComment(tokens[j])) j++;
+    if (tokens[j][0] !== TokenType.Ident || !tokens[j][4].value.startsWith('--')) return false;
+    j++;
+    while (isWhitespaceOrComment(tokens[j])) j++;
+    return tokens[j][0] === TokenType.Colon;
+}
+
+/**
+ * Qualified rule at `i`: prelude up to a {} block. Nested, a `;` or `}` ends an invalid rule instead. A
+ * top-level prelude that starts like a custom property (`--foo:hover {…}`) is dropped with its block unread.
+ */
+function consumeQualifiedRule(tokens, i, values, nested) {
+    let j = i;
+    while (tokens[j][0] !== TokenType.EOF) {
+        const type = tokens[j][0];
+        if (type === TokenType.OpenCurly) {
+            if (!nested && startsLikeCustomProperty(tokens, i)) return skipComponentValue(tokens, j);
+            return consumeBlockContents(tokens, j + 1, values);
+        }
+        if (nested && (type === TokenType.Semicolon || type === TokenType.CloseCurly)) return j;
+        j = skipComponentValue(tokens, j);
+    }
+    return j;
+}
+
+/** Contents of a {} block from `i`: declarations, nested rules and at-rules up to the closing `}` or EOF. */
+function consumeBlockContents(tokens, i, values) {
+    let j = i;
+    while (tokens[j][0] !== TokenType.EOF) {
+        const type = tokens[j][0];
+        if (type === TokenType.CloseCurly) return j + 1;
+        if (type === TokenType.Semicolon || isWhitespaceOrComment(tokens[j])) {
+            j++;
+        } else if (type === TokenType.AtKeyword) {
+            j = consumeAtRule(tokens, j, values, true);
+        } else {
+            const end = consumeDeclaration(tokens, j, values);
+            j = end === -1 ? consumeQualifiedRule(tokens, j, values, true) : end;
+        }
+    }
+    return j;
+}
+
+/**
+ * Values of the spacing declarations in a stylesheet, parsed per CSS Syntax Level 3 with nesting from
+ * `@csstools/css-tokenizer` tokens, so the declarations counted are the ones a browser reads. Top-level text,
+ * selectors and at-rule preludes, comments, strings, url() tokens, custom-property values and any {} / () / []
+ * block inside a value never count; escaped property names are read unescaped.
+ */
+function spacingDeclarationValues(css) {
+    // CSS Syntax 3 input preprocessing: CR LF, CR and FF become LF before tokenizing.
+    const tokens = tokenize({ css: css.replace(/\r\n?|\f/g, '\n') });
+    const values = [];
+    let i = 0;
+    while (tokens[i][0] !== TokenType.EOF) {
+        const type = tokens[i][0];
+        if (isWhitespaceOrComment(tokens[i]) || type === TokenType.CDO || type === TokenType.CDC) {
+            i++;
+        } else if (type === TokenType.AtKeyword) {
+            i = consumeAtRule(tokens, i, values, false);
+        } else {
+            i = consumeQualifiedRule(tokens, i, values, false);
+        }
+    }
+    return values;
+}
+
+/** Component values from `i` up to `closer` (or EOF): plain tokens, and blocks with their children and whether they closed. */
+function componentValues(tokens, i, closer) {
+    const nodes = [];
+    let j = i;
+    while (tokens[j][0] !== TokenType.EOF) {
+        if (tokens[j][0] === closer) return { nodes, end: j + 1, closed: true };
+        const blockCloser = BLOCK_CLOSER[tokens[j][0]];
+        if (blockCloser === undefined) {
+            nodes.push({ token: tokens[j] });
+            j++;
+        } else {
+            const inner = componentValues(tokens, j + 1, blockCloser);
+            nodes.push({ token: tokens[j], children: inner.nodes, closed: inner.closed });
+            j = inner.end;
+        }
+    }
+    return { nodes, end: j, closed: closer === undefined };
+}
+
+function significant(nodes) {
+    return nodes.filter((node) => !isWhitespaceOrComment(node.token));
+}
+
+const SPACING_KEYWORDS = new Set(['auto', 'inherit', 'initial', 'unset']);
+const MATH_FUNCTIONS = new Set(['calc', 'clamp', 'min', 'max']);
+const MATH_OPERATORS = new Set(['+', '-', '*', '/']);
+// Custom-property names are case-sensitive, so the prefixes are matched exactly.
+// The suffix is any decoded ident text, non-ASCII included.
+const SPACING_TOKEN_NAME_RE = /^--(?:spacing|page|section-frame)-./su;
+
+function isZeroNumber(token) {
+    return token[0] === TokenType.Number && token[4].value === 0;
+}
+
+function isRelativeLength(token) {
+    return (
+        token[0] === TokenType.Percentage ||
+        (token[0] === TokenType.Dimension && token[4].unit.toLowerCase() === 'em')
+    );
+}
+
+/** var() of a spacing, page or section-frame token, optionally with a 0 fallback. */
+function isAllowedSpacingVar(node) {
+    const args = significant(node.children);
+    if (args[0]?.token[0] !== TokenType.Ident || !SPACING_TOKEN_NAME_RE.test(args[0].token[4].value)) return false;
+    if (args.length === 1) return true;
+    return args.length === 3 && args[1].token[0] === TokenType.Comma && isZeroNumber(args[2].token);
+}
+
+/** Inside calc() / clamp() / min() / max(): numbers, em and % lengths, allowed var()s, operators, commas, nested groups. */
+function isAllowedMathContent(nodes) {
+    return nodes.every(({ token, children, closed }) => {
+        const type = token[0];
+        if (isWhitespaceOrComment(token) || type === TokenType.Number || type === TokenType.Comma) return true;
+        if (isRelativeLength(token)) return true;
+        if (type === TokenType.Delim) return MATH_OPERATORS.has(token[4].value);
+        if (!closed) return false;
+        if (type === TokenType.OpenParen) return isAllowedMathContent(children);
+        if (type !== TokenType.Function) return false;
+        const name = token[4].value.toLowerCase();
+        if (name === 'var') return isAllowedSpacingVar({ children });
+        return MATH_FUNCTIONS.has(name) && isAllowedMathContent(children);
+    });
+}
+
+/**
+ * One top-level component value. Allowed: 0, auto, inherit, initial, unset; var(--spacing-*) / var(--page-*) /
+ * var(--section-frame-*), optionally with a 0 fallback; an em or % length; or calc() / clamp() / min() / max()
+ * built only from those plus unitless numbers. Read from decoded tokens, so escapes, signs and exponents are
+ * judged by their value. A negative token is written calc(-1 * var(--spacing-related)).
+ */
+function isAllowedSpacingPart({ token, children, closed }) {
+    const type = token[0];
+    if (type === TokenType.Ident) return SPACING_KEYWORDS.has(token[4].value.toLowerCase());
+    if (isZeroNumber(token) || isRelativeLength(token)) return true;
+    if (type !== TokenType.Function || !closed) return false;
+    const name = token[4].value.toLowerCase();
+    if (name === 'var') return isAllowedSpacingVar({ children });
+    return MATH_FUNCTIONS.has(name) && isAllowedMathContent(children);
+}
+
+/** Most top-level component values a property takes: four for the box shorthands, two for gap and block/inline pairs. */
+function maxSpacingParts(property) {
+    if (property === undefined || property === 'padding' || property === 'margin') return 4;
+    if (property === 'gap' || /^(?:padding|margin)-(?:block|inline)$/.test(property)) return 2;
+    return 1;
+}
+
+/**
+ * A spacing value: after a trailing `!important` is removed, one to `maxSpacingParts(property)` top-level
+ * component values, each allowed. Without a property the four-value limit applies.
+ */
+function isAllowedStylesheetSpacing(value, property) {
+    const tokens = tokenize({ css: value.replace(/\r\n?|\f/g, '\n') });
+    const parts = significant(componentValues(tokens, 0).nodes);
+    if (isImportantEnd(parts.map((node) => node.token))) parts.splice(-2, 2);
+    return parts.length > 0 && parts.length <= maxSpacingParts(property) && parts.every(isAllowedSpacingPart);
+}
+
+function disallowedStylesheetSpacingValues(css) {
+    const values = [];
+    // The tokenizer reads comments and strings, so a `/*` inside a string is not taken for a comment.
+    for (const { property, value } of spacingDeclarationValues(css)) {
+        if (!isAllowedStylesheetSpacing(value, property)) values.push(value.trim());
+    }
+    return values;
+}
+
+function countSpacingViolations(css) {
+    return disallowedStylesheetSpacingValues(css).length;
+}
+
 function countLayerViolations(css) {
     return [...stripCssComments(css).matchAll(/@layer(?![\w-])/gi)].length;
 }
@@ -282,7 +561,12 @@ function countMixedElements(text, styledClasses, utilityNames, vocabulary) {
 function collectStylesheetOwnershipCounts(root) {
     const utilityNames = readUtilityClassNames(root);
     const vocabulary = readProjectVocabulary(root);
-    const counts = { [RULE.STYLESHEET_LAYER]: {}, [RULE.STYLESHEET_FONT_SIZE]: {}, [RULE.MIXED_ELEMENT]: {} };
+    const counts = {
+        [RULE.STYLESHEET_LAYER]: {},
+        [RULE.STYLESHEET_FONT_SIZE]: {},
+        [RULE.STYLESHEET_SPACING]: {},
+        [RULE.MIXED_ELEMENT]: {},
+    };
 
     for (const file of listMarkupFiles(root)) {
         const text = fs.readFileSync(path.join(root, file), 'utf8');
@@ -291,14 +575,17 @@ function collectStylesheetOwnershipCounts(root) {
 
         let layerHits = 0;
         let fontHits = 0;
+        let spacingHits = 0;
         const styledClasses = new Set();
         for (const block of blocks) {
             layerHits += countLayerViolations(block);
             fontHits += countFontSizeViolations(block);
+            spacingHits += countSpacingViolations(block);
             for (const c of styledClassesFromStylesheet(block)) styledClasses.add(c);
         }
         if (layerHits) counts[RULE.STYLESHEET_LAYER][file] = { count: layerHits, lines: [1] };
         if (fontHits) counts[RULE.STYLESHEET_FONT_SIZE][file] = { count: fontHits, lines: [1] };
+        if (spacingHits) counts[RULE.STYLESHEET_SPACING][file] = { count: spacingHits, lines: [1] };
 
         const mixed = countMixedElements(text, styledClasses, utilityNames, vocabulary);
         if (mixed) counts[RULE.MIXED_ELEMENT][file] = { count: mixed, lines: [1] };
@@ -333,10 +620,15 @@ function writeBaselineFile(root, baseline) {
     fs.writeFileSync(baselinePath(root), `${JSON.stringify(baseline, null, 4)}\n`, 'utf8');
 }
 
+function ownershipFailureSuffix(rule) {
+    if (rule === RULE.STYLESHEET_SPACING) return 'follow css-architecture.md stylesheet spacing.';
+    return 'follow css-architecture.md rule B / font-size policy.';
+}
+
 function compareWithBaseline(counts, baseline) {
     const failures = [];
     const drops = [];
-    for (const rule of [RULE.STYLESHEET_FONT_SIZE, RULE.MIXED_ELEMENT]) {
+    for (const rule of [RULE.STYLESHEET_FONT_SIZE, RULE.STYLESHEET_SPACING, RULE.MIXED_ELEMENT]) {
         // mixed-element is strict (6-R4): no baseline allowance is read, whatever the file holds.
         const known = rule === RULE.MIXED_ELEMENT ? {} : (baseline[rule] ?? {});
         for (const [file, { count, lines }] of Object.entries(counts[rule])) {
@@ -345,7 +637,7 @@ function compareWithBaseline(counts, baseline) {
                 failures.push({
                     file,
                     line: lines[0],
-                    message: `[${rule}] ${count} use(s), baseline ${allowed}; follow css-architecture.md rule B / font-size policy.`,
+                    message: `[${rule}] ${count} use(s), baseline ${allowed}; ${ownershipFailureSuffix(rule)}`,
                 });
             }
         }
@@ -410,7 +702,9 @@ module.exports = {
     baselinePath,
     collectStylesheetOwnershipCounts,
     collectStylesheetOwnershipFailures,
+    disallowedStylesheetSpacingValues,
     isAllowedStylesheetFontSize,
+    isAllowedStylesheetSpacing,
     readProjectVocabulary,
     readUtilityClassNames,
     readBaseline,
