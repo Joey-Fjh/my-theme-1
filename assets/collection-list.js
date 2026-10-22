@@ -28,6 +28,10 @@ define('collectionList', () => ({
         const mobileSlides = parseFloat(this._root.dataset.mobileSlides || '2.3');
         const desktopSlides = parseFloat(this._root.dataset.desktopSlides || '4.4');
         const spaceBetween = parseInt(this._root.dataset.slideGap || '16', 10);
+        const spaceBetweenDesktop = parseInt(
+            this._root.dataset.slideGapDesktop || String(spaceBetween),
+            10,
+        );
         const prevEl = this._root.querySelector('[data-collection-list-prev]');
         const nextEl = this._root.querySelector('[data-collection-list-next]');
 
@@ -43,7 +47,7 @@ define('collectionList', () => ({
                 breakpoints: {
                     768: {
                         slidesPerView: desktopSlides,
-                        spaceBetween,
+                        spaceBetween: spaceBetweenDesktop,
                     },
                 },
             };

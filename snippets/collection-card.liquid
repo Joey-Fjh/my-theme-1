@@ -25,32 +25,36 @@
         assign collection_card_title = collection.title
         assign collection_card_first_product = collection.products.first
 
+        assign collection_card_product_image = blank
+
         if collection.products_count > 0 and collection_card_first_product != blank
             if collection_card_first_product.media.size > 0
-                assign collection_card_rest_image = collection_card_first_product.media.first.preview_image
+                assign collection_card_product_image = collection_card_first_product.media.first.preview_image
             elsif collection_card_first_product.featured_image != blank
-                assign collection_card_rest_image = collection_card_first_product.featured_image
+                assign collection_card_product_image = collection_card_first_product.featured_image
             endif
+        endif
+
+        if collection.image != blank
+            assign collection_card_rest_image = collection.image
+
+            if collection_card_product_image != blank
+                assign collection_card_hover_image = collection_card_product_image
+                assign collection_card_image_rule = 'collection_image_product_hover'
+                assign collection_card_has_swap = true
+            else
+                assign collection_card_image_rule = 'collection_image_only'
+            endif
+        elsif collection_card_product_image != blank
+            assign collection_card_rest_image = collection_card_product_image
 
             if collection_card_first_product.media.size > 1
                 assign collection_card_hover_image = collection_card_first_product.media[1].preview_image
                 assign collection_card_image_rule = 'second_product_media'
                 assign collection_card_has_swap = true
-            elsif collection.featured_image != blank
-                assign collection_card_hover_image = collection.featured_image
-                assign collection_card_image_rule = 'collection_featured_fallback'
-                assign collection_card_has_swap = true
             else
                 assign collection_card_image_rule = 'tilt_only_no_second_media'
             endif
-        elsif collection.featured_image != blank
-            assign collection_card_rest_image = collection.featured_image
-            assign collection_card_image_rule = 'empty_collection_featured'
-        endif
-
-        if collection_card_has_swap and collection_card_hover_image == blank
-            assign collection_card_has_swap = false
-            assign collection_card_image_rule = 'tilt_only_no_hover_image'
         endif
     endif
 
@@ -130,12 +134,32 @@
 </a>
 
 {% stylesheet %}
+    .collection-card {
+        position: relative;
+        isolation: isolate;
+    }
+
+    .collection-card::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        border-radius: 1.6rem;
+        background-color: var(--color-faint);
+        filter: blur(0.2rem);
+        opacity: 0;
+        pointer-events: none;
+        transform: translate(0.8rem, 1rem);
+        transition:
+            opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+            transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        transform-origin: center center;
+    }
+
     .collection-card__surface {
         position: relative;
         aspect-ratio: 3 / 5;
-        transition:
-            transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-            box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         transform-origin: center center;
     }
 
@@ -197,7 +221,11 @@
             rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
         outline-offset: var(--focus-ring-offset);
         transform: translateY(-6px) rotate(2deg);
-        box-shadow: var(--shadow-lg);
+    }
+
+    .collection-card:focus-visible::before {
+        opacity: 1;
+        transform: translateY(-6px) rotate(2deg) translate(0.8rem, 1rem);
     }
 
     .collection-card--has-swap:focus-visible .collection-card__title {
@@ -215,7 +243,11 @@
     @media (hover: hover) and (pointer: fine) {
         .collection-card:hover .collection-card__surface {
             transform: translateY(-6px) rotate(2deg);
-            box-shadow: var(--shadow-lg);
+        }
+
+        .collection-card:hover::before {
+            opacity: 1;
+            transform: translateY(-6px) rotate(2deg) translate(0.8rem, 1rem);
         }
 
         .collection-card--has-swap:hover .collection-card__title {
@@ -232,16 +264,21 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
+        .collection-card::before,
         .collection-card__surface,
         .collection-card__hover-layer,
         .collection-card__image--rest {
             transition: none;
         }
 
+        .collection-card:focus-visible::before,
+        .collection-card:hover::before {
+            transform: translate(0.8rem, 1rem);
+        }
+
         .collection-card:focus-visible .collection-card__surface,
         .collection-card:hover .collection-card__surface {
             transform: none;
-            box-shadow: none;
         }
     }
 

@@ -4,6 +4,7 @@
 -%}
 {%- liquid
     assign collection_list_slide_gap = 16
+    assign collection_list_slide_gap_desktop = 24
     assign collection_list_heading_align = 'text-center'
     assign collection_list_heading_align_param = 'center'
     if section.settings.heading_alignment == 'left'
@@ -91,7 +92,7 @@
     assign collection_list_heading_extra_class = 'collection-list__heading uppercase ' | append: collection_list_heading_align
 -%}
 {%- capture collection_list_root_style -%}
---collection-list-gap: {{ collection_list_slide_gap }}px;
+--collection-list-gap: {{ collection_list_slide_gap }}px; --collection-list-gap-desktop: {{ collection_list_slide_gap_desktop }}px;
 {%- endcapture -%}
 {%- capture collection_list_children -%}
         {%- liquid
@@ -109,6 +110,7 @@
                 data-mobile-slides="2.3"
                 data-desktop-slides="4.4"
                 data-slide-gap="{{ collection_list_slide_gap }}"
+                data-slide-gap-desktop="{{ collection_list_slide_gap_desktop }}"
             >
                 {%- if section.settings.heading != blank -%}
                     {% render 'heading',
@@ -212,6 +214,12 @@
 
     .collection-list__swiper {
         overflow: visible;
+    }
+
+    @media (width >= 48rem) {
+        .collection-list__swiper {
+            --collection-list-gap: var(--collection-list-gap-desktop, 24px);
+        }
     }
 
     .collection-list__swiper:not(.swiper-initialized) .swiper-wrapper {
