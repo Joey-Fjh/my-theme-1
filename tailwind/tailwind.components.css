@@ -1719,6 +1719,7 @@ Layer: snippets temporary owner block
         .product-gallery-carousel--pagination-vertical .product-gallery-carousel__pagination {
             position: absolute;
             top: 50%;
+            bottom: auto;
             left: max(1rem, calc(var(--page-margin) * 0.5));
             z-index: 2;
             display: flex;
@@ -1762,12 +1763,23 @@ Shared primitives (valid cross-snippet — not orphans):
         --product-block-row-gap-tight: var(--spacing-step-2xs);
         --product-block-row-gap-box: var(--spacing-step-m);
 
-        @apply flex flex-col pc:max-h-full pc:min-h-0 pc:overflow-hidden;
+        @apply flex flex-col pc:max-h-full pc:min-h-0;
 
         gap: var(--product-block-row-gap);
 
         > * {
             @apply pc:shrink-0;
+        }
+
+        /* Bound the height only: clip keeps the inline axis visible, so purchase buttons'
+           hover peak, focus ring and shadow are never cut at the column edge. */
+        @media (width >= 48rem) {
+            overflow-x: visible;
+            overflow-y: clip;
+
+            @supports not (overflow: clip) {
+                overflow: hidden;
+            }
         }
     }
 
@@ -2071,6 +2083,7 @@ Layer: snippets temporary owner block
         @apply flex min-h-0 min-w-0 flex-col overflow-y-auto;
 
         gap: var(--product-block-row-gap);
+        padding-inline: var(--spacing-button-edge);
         scrollbar-width: none;
 
         &::-webkit-scrollbar {

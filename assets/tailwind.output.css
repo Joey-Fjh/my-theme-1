@@ -64,6 +64,17 @@
     --spacing-step-2xl: clamp(2.4rem, 1.737rem + 1.768vw, 4rem);
     --spacing-step-3xl: clamp(3.6rem, 2.6055rem + 2.652vw, 6rem);
     --spacing-step-4xl: clamp(4.8rem, 3.474rem + 3.536vw, 8rem);
+    --spacing-button-edge: calc(
+        1% + 1.02 *
+            max(
+                var(--focus-ring-width) + var(--focus-ring-offset),
+                max(
+                        var(--button-shadow-horizontal-offset),
+                        -1 * var(--button-shadow-horizontal-offset)
+                    ) +
+                    var(--button-shadow-blur-radius) * 1.12
+            )
+    );
     --screen-height: 100svh;
     --section-stage-min-height: var(--screen-height);
     --animate-icon-breathe: icon-breathe 0.9s ease-in-out infinite;
@@ -3812,6 +3823,11 @@
       grid-row-start: 2;
     }
   }
+  .desktop\:mt-0 {
+    @media (width >= 64rem) {
+      margin-top: calc(var(--spacing) * 0);
+    }
+  }
   .desktop\:contents {
     @media (width >= 64rem) {
       display: contents;
@@ -7308,6 +7324,7 @@ shopify-accelerated-checkout {
     .product-gallery-carousel--pagination-vertical .product-gallery-carousel__pagination {
       position: absolute;
       top: 50%;
+      bottom: auto;
       left: max(1rem, calc(var(--page-margin) * 0.5));
       z-index: 2;
       display: flex;
@@ -7339,13 +7356,17 @@ shopify-accelerated-checkout {
     @media (width >= 48rem) {
       min-height: calc(var(--spacing) * 0);
     }
-    @media (width >= 48rem) {
-      overflow: hidden;
-    }
     gap: var(--product-block-row-gap);
     > * {
       @media (width >= 48rem) {
         flex-shrink: 0;
+      }
+    }
+    @media (width >= 48rem) {
+      overflow-x: visible;
+      overflow-y: clip;
+      @supports not (overflow: clip) {
+        overflow: hidden;
       }
     }
   }
@@ -7748,6 +7769,7 @@ shopify-accelerated-checkout {
     flex-direction: column;
     overflow-y: auto;
     gap: var(--product-block-row-gap);
+    padding-inline: var(--spacing-button-edge);
     scrollbar-width: none;
     &::-webkit-scrollbar {
       display: none;
