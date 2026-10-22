@@ -2,7 +2,7 @@
 
 Accepted work that no batch has taken yet. One line per item: what, a source (the batch or date it came from), a surface (files, sections or pages), and the governing decision when there is one. Each line ends with labeled source and surface fields per the H1 plan format. An item leaves this file when a batch plan takes it into `docs/agent/context.md`; finished work leaves no record here (history is in Git). Undecided matters stay on `docs/agent/board.md`.
 
-Last updated: 2026-10-22.
+Last updated: 2026-10-23.
 
 ## Theme polish: home
 
