@@ -27,7 +27,6 @@ const FRAME_FULL_ALLOWLIST = new Set([
     'main-page-about',
     'ritual-steps',
     'promo-bannder',
-    'google-map',
     'formula-details',
 ]);
 

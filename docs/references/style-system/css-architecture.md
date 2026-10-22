@@ -294,7 +294,6 @@ Layer order: merchant settings → `snippets/css-variables.liquid` (`--page-widt
 | `main-page-about` | Image behind content |
 | `ritual-steps` | Stage background; copy inset with `--page-inset` |
 | `promo-bannder` | Edge-to-edge panel media |
-| `google-map` | Map is the content (named exception) |
 | `formula-details` | Band background spans the viewport; content inset with `--page-inset` (6-P4, user, 2026-10-15) |
 
 Placement utilities (`place-top-left`, `place-center`, …) in `tailwind/tailwind.utilities.css` position content inside stage and media frames.
@@ -500,7 +499,7 @@ Everything else counts in `lint:theme` (`stylesheet-spacing`, ratcheted baseline
 
 The `legacy-type-tier` and `raw-spacing` baselines reach zero through the type and space batches and the polish pass.
 
-After batch **6-R1** (2026-10-12), markup counts are `legacy-breakpoint` **0** and `legacy-type-tier` **6** (`body-size-custom` only, in `sections/about-stats.liquid`, `sections/blog.liquid`, and `sections/promotion-countdown.liquid`). Since 6-V6, `legacy-breakpoint` is strict: no baseline allowance is read or written.
+As of batch R1 (2026-10-22), markup counts are `legacy-breakpoint` **0** and `legacy-type-tier` **5** (`body-size-custom` only, in `sections/blog.liquid` and `sections/promotion-countdown.liquid`). Since 6-V6, `legacy-breakpoint` is strict: no baseline allowance is read or written.
 
 After batch **6-R2** (2026-10-12), markup `raw-spacing` is **2** (`tablet:px-[8vw]` and `tablet:py-[5vh]` in `snippets/product-card.liquid` only).
 

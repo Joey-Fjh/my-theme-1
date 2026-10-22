@@ -2,7 +2,7 @@
 
 This board holds only what is not yet decided: open decisions, evidence that has not become a plan, rules awaiting migration, deferred ideas, and the active harness round. Accepted work that no batch has scheduled yet lives in `docs/agent/backlog.md` (one line per item). `docs/agent/context.md` holds the plan under execution, or no plan; extra plans may coexist only when each is executed and waiting on verification the agent cannot perform (`AGENTS.md`, Record-layer checks). Recording a plan does not authorize implementation. Project identity, scope, accepted direction, and overall status belong in `docs/project.md`; completed execution history belongs in Git.
 
-Last updated: 2026-10-21.
+Last updated: 2026-10-22.
 
 ## Open decisions
 
@@ -14,14 +14,10 @@ None.
 
 ## Deferred ideas
 
-- **Base scales and design pipeline (Stitch):** set scales from the base design through an agent-era tool, not hand-picked numbers; tool and SOP when the pilot starts (user, 2026-10-08). Until then tokens keep today's rendered values.
 - **Section cleanup sweep** (user, 2026-10-05): after the design phase, review unused sections in one batch. Keep: `custom-liquid`, `pickup-availability`, `collection-navigation-items`, social icons in `snippets/social-icons.liquid`.
 - **Looping media video** (user, 2026-10-05): viewport-triggered play on `snippets/media-video.liquid` when a design needs it; WCAG 2.2.2 pause still required.
 - **Home scroll narrative** (user, 2026-09-30): GSAP ScrollTrigger sections on demand via section modules; Three.js closed (2026-10-08). Constraints: motion reference classifies choreography; first frame in Liquid; `motion_enabled` and reduced motion; no full-page library load.
 - **Lighthouse CI development themes** (user, 2026-10-13): the action never deletes its development theme (its cleanup tests a variable it never sets); left as is, revisit only if the leftovers cause a problem (then delete the run's own theme, not all development themes).
-- **DesignSync** (user): `/design-sync` for claude.ai/design token previews; does not build CSS.
-- **Carried (2026-10-13):** whether the second submission waits for the design pipeline or ships with today's values plus the polish pass.
-- **Carried (2026-10-13):** sites reviewed (Refero, Lovart, Stitch, Godly, Dribbble, Pinterest, React Bits, Aceternity, MotionSites, Uiverse, Utopia, ecomm.design, Commerce Cream, Baymard, Typewolf, Realtime Colors, Theme Store).
 - **Carried (2026-10-13):** root size 62.5% has no primary-source endorsement with Tailwind; px body tokens ignore the user's default font size; revisit with the type token batch.
 
 ## Harness round

@@ -2,7 +2,7 @@
 
 Accepted work that no batch has taken yet. One line per item: what, a source (the batch or date it came from), a surface (files, sections or pages), and the governing decision when there is one. Each line ends with labeled source and surface fields per the H1 plan format. An item leaves this file when a batch plan takes it into `docs/agent/context.md`; finished work leaves no record here (history is in Git). Undecided matters stay on `docs/agent/board.md`.
 
-Last updated: 2026-10-21.
+Last updated: 2026-10-22.
 
 ## Theme polish: home
 
@@ -41,7 +41,7 @@ Last updated: 2026-10-21.
 - Shared component CSS in `tailwind/tailwind.components.css` (product info blocks, quick view, marquee) reworked. Source: user, 2026-10-03. Surface: `tailwind/tailwind.components.css`.
 - Article `padding_top`: decided (user, 2026-10-08) to fix it as a standard section setting; the article top moves by the stored value (32), which the user checks. Source: 5-C3d3. Surface: `sections/article.liquid`.
 - Motion reveal: rewrite `assets/motion-reveal.js` (29.9 KB) smaller once the cascade's look is settled; the entrance `translateY` is clipped by Swiper `overflow: hidden` (for example no vertical offset inside overflow containers). Source: 6-M1, 6-S4 R10. Surface: `assets/motion-reveal.js`.
-- Six optional sections meet the polish standard before submission: `before-after-comparison`, `about-stats`, `newsletter-banner` (placed outside home), `promotion-countdown`, `video-banner`, `google-map` (in no template, kept as merchant options). Decided: user, 2026-10-11. Source: cleanup survey, 2026-10-06. Surface: those sections.
+- Four optional sections meet the polish standard before submission: `before-after-comparison`, `newsletter-banner` (placed outside home), `promotion-countdown`, `video-banner`. Decided: user, 2026-10-11; `about-stats` and `google-map` removed from this list for deletion (user, 2026-10-22). Source: cleanup survey, 2026-10-06. Surface: those sections.
 
 ## Later batches
 
