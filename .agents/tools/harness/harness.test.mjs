@@ -70,12 +70,9 @@ function records(boardBody) {
     };
 }
 
-function initRepo(files, baseline = 100000) {
+function initRepo(files) {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'harness-'));
     writeFiles(root, files);
-    writeFiles(root, {
-        '.agents/tools/harness/records.baseline.json': `${JSON.stringify({ boardWords: baseline }, null, 4)}\n`,
-    });
     git(root, ['init']);
     git(root, ['add', '.']);
     git(root, ['commit', '-m', 'init']);
@@ -89,7 +86,7 @@ function removeRepo(root) {
 test('prompt emits the plan pointer once per session', () => {
     const root = initRepo({
         'docs/agent/context.md': `# Context\n\nLast updated: ${DATE}\n\n## Batch Demo\n\n**Status:** authorized.\n`,
-        'docs/agent/board.md': `# Board\n\nLast updated: ${DATE}\n\n## Pending migration\n`,
+        'docs/agent/board.md': `# Board\n\nLast updated: ${DATE}\n\n## Topics\n\n### Newer\n\nStatus: discussing · Opened: 2026-10-20 · Updated: 2026-10-22\n\n### Older\n\nStatus: awaiting user · Opened: 2026-10-01 · Updated: 2026-10-05\n\n## Pending migration\n`,
         'docs/agent/backlog.md': `# Backlog\n\nLast updated: ${DATE}\n\n## Area\n\n- Item. Source: test. Surface: none.\n`,
     });
     const stateDir = fs.mkdtempSync(path.join(os.tmpdir(), 'harness-state-'));
@@ -98,6 +95,10 @@ test('prompt emits the plan pointer once per session', () => {
         const first = output(runHook('prompt', payload, stateDir));
         assert.match(first.hookSpecificOutput.additionalContext, /## Batch Demo/);
         assert.match(first.hookSpecificOutput.additionalContext, /\*\*Status:\*\* authorized/);
+        assert.match(
+            first.hookSpecificOutput.additionalContext,
+            /board: 2 open topics; oldest updated 2026-10-05 \(Older\)\./,
+        );
         assert.equal(output(runHook('prompt', payload, stateDir)), null);
     } finally {
         removeRepo(root);
@@ -243,17 +244,6 @@ test('stop is silent on an unchanged diff and blocks structural record failures'
         assert.match(backlog.reason, /Source:/);
         removeRepo(backlogRoot);
 
-        const loudRoot = initRepo(records('alpha '.repeat(30)), 1);
-        const loud = output(runHook('stop', { cwd: loudRoot, session_id: 'loud' }, stateDir));
-        assert.equal(loud.decision, undefined);
-        assert.equal(
-            loud.hookSpecificOutput,
-            undefined,
-            'a passing stop must not continue the turn',
-        );
-        assert.match(loud.systemMessage, /prompt:/);
-        removeRepo(loudRoot);
-
         const activeRoot = initRepo(records('**Done: sample\n'));
         const active = runHook(
             'stop',
@@ -337,37 +327,38 @@ test('routes.json matches package scripts, pointers, validation commands, and me
     }
 });
 
-test('prune-baseline only lowers the stored word count', () => {
-    const root = initRepo(records('short board'), 100000);
-    try {
-        const lowered = spawnSync(process.execPath, [RECORD_CHECK, '--prune-baseline'], {
-            cwd: root,
-            encoding: 'utf8',
-            windowsHide: true,
-        });
-        assert.equal(lowered.status, 0, lowered.stdout + lowered.stderr);
-        const baseline = JSON.parse(
-            fs.readFileSync(path.join(root, '.agents/tools/harness/records.baseline.json'), 'utf8'),
-        );
-        assert.ok(baseline.boardWords < 100000);
-        assert.match(lowered.stdout, /pending migration lines: 1/);
-
-        fs.writeFileSync(
-            path.join(root, '.agents/tools/harness/records.baseline.json'),
-            `${JSON.stringify({ boardWords: 1 }, null, 4)}\n`,
-        );
-        const held = spawnSync(process.execPath, [RECORD_CHECK, '--prune-baseline'], {
-            cwd: root,
-            encoding: 'utf8',
-            windowsHide: true,
-        });
-        assert.equal(held.status, 0, held.stdout);
-        const still = JSON.parse(
-            fs.readFileSync(path.join(root, '.agents/tools/harness/records.baseline.json'), 'utf8'),
-        );
-        assert.equal(still.boardWords, 1);
-    } finally {
-        removeRepo(root);
+test('board topics need a status line with an allowed status and ordered dates', () => {
+    const board = (topics) =>
+        `# Board\n\nLast updated: ${DATE}\n\n## Topics\n\n${topics}\n## Pending migration\n\n- **\`AGENTS.md\`:** note.\n`;
+    const cases = [
+        ['well-formed', '### A\n\nStatus: discussing · Opened: 2026-10-01 · Updated: 2026-10-02\n\nEvidence.\n', null],
+        ['no status line', '### A\n\nEvidence first.\n', /topic "A": needs "Status:/],
+        ['unknown status', '### A\n\nStatus: decided · Opened: 2026-10-01 · Updated: 2026-10-02\n', /status "decided"/],
+        ['impossible date', '### A\n\nStatus: discussing · Opened: 2026-02-30 · Updated: 2026-02-30\n', /must be real dates/],
+        ['dates reversed','### A\n\nStatus: awaiting user · Opened: 2026-10-05 · Updated: 2026-10-02\n', /older than Opened/],
+    ];
+    for (const [name, topics, failure] of cases) {
+        const files = records();
+        files['docs/agent/board.md'] = board(topics);
+        const root = initRepo(files);
+        try {
+            const run = spawnSync(process.execPath, [RECORD_CHECK], {
+                cwd: root,
+                encoding: 'utf8',
+                windowsHide: true,
+            });
+            if (failure) {
+                assert.equal(run.status, 1, name);
+                assert.match(run.stdout, failure, name);
+            } else {
+                assert.equal(run.status, 0, `${name}: ${run.stdout}`);
+                assert.match(run.stdout, /board topics: 1/);
+                assert.match(run.stdout, /pending migration lines: 1/);
+                assert.doesNotMatch(run.stdout, /words|baseline/);
+            }
+        } finally {
+            removeRepo(root);
+        }
     }
 });
 

@@ -7,7 +7,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { checkRecords } from './record-check.mjs';
+import { boardTopics, checkRecords } from './record-check.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const INSTALL_ROOT = path.resolve(HERE, '../../..');
@@ -186,6 +186,16 @@ function planPointer(root) {
     return ['Plan in docs/agent/context.md:', heading[0], status?.[0]].filter(Boolean).join('\n');
 }
 
+// Open board topics and the one waiting longest, so drift is visible at session start.
+function boardPointer(root) {
+    const boardPath = path.join(root, 'docs/agent/board.md');
+    if (!fs.existsSync(boardPath)) return null;
+    const topics = boardTopics(fs.readFileSync(boardPath, 'utf8')).filter((topic) => topic.updated);
+    if (topics.length === 0) return 'board: no open topics.';
+    const oldest = topics.reduce((a, b) => (b.updated < a.updated ? b : a));
+    return `board: ${topics.length} open topics; oldest updated ${oldest.updated} (${oldest.title}).`;
+}
+
 export function cap(text, limit = 1500) {
     if (text.length <= limit) return text;
     return `${text.slice(0, limit)}…`;
@@ -198,7 +208,7 @@ export function planContext(root, sessionId) {
     if (state.prompted) return null;
     state.prompted = true;
     writeState(file, state);
-    return planPointer(root);
+    return [planPointer(root), boardPointer(root)].filter(Boolean).join('\n');
 }
 
 // The doctor's hook report, for clients without a separate session-start command.
@@ -452,9 +462,7 @@ export function stopCheck(root, sessionId, { continued = false } = {}) {
     state.head = current.head;
     writeState(file, state);
 
-    const prompts = (recordResult?.notes || []).filter((line) => line.startsWith('prompt:'));
     const notice = [
-        ...prompts,
         tier ? `Review tier: ${tier}.` : '',
         owed.length ? `Owed validators: ${owed.join(', ')}.` : '',
     ]

@@ -6,10 +6,14 @@ import { pathToFileURL } from 'node:url';
 
 const RECORD_FILES = ['docs/agent/board.md', 'docs/agent/backlog.md', 'docs/agent/context.md'];
 const COMPLETION = /Done:|\*\*Done|done \(/;
+const TOPIC_STATUSES = new Set(['discussing', 'awaiting user']);
+const TOPIC_LINE =
+    /^Status:\s*(.+?)\s*·\s*Opened:\s*(\d{4}-\d{2}-\d{2})\s*·\s*Updated:\s*(\d{4}-\d{2}-\d{2})\s*$/;
 
-export function wordCount(text) {
-    const words = text.match(/\S+/g);
-    return words ? words.length : 0;
+// A real calendar date: the parsed date prints back as the same string.
+function isCalendarDate(value) {
+    const date = new Date(`${value}T00:00:00Z`);
+    return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
 }
 
 function readText(root, relative) {
@@ -45,7 +49,24 @@ function lastUpdated(text, relative, failures) {
     return match[1];
 }
 
-export function checkRecords(root, options = {}) {
+// Board topics: each `### ` heading under `## Topics`, with the status line that follows it.
+export function boardTopics(text) {
+    const topics = [];
+    let current = null;
+    for (const line of sectionBody(text, 'Topics').split('\n')) {
+        if (line.startsWith('### ')) {
+            current = { title: line.slice(4).trim(), line: null };
+            topics.push(current);
+        } else if (current && current.line === null && line.trim()) {
+            current.line = line.trim();
+            const match = current.line.match(TOPIC_LINE);
+            if (match) [, current.status, current.opened, current.updated] = match;
+        }
+    }
+    return topics;
+}
+
+export function checkRecords(root) {
     const failures = [];
     const notes = [];
     for (const relative of RECORD_FILES) {
@@ -66,36 +87,15 @@ export function checkRecords(root, options = {}) {
     }
 
     const boardPath = path.join(root, 'docs/agent/board.md');
-    const boardWords = fs.existsSync(boardPath)
-        ? wordCount(readText(root, 'docs/agent/board.md'))
-        : 0;
-    const pending = fs.existsSync(boardPath)
-        ? sectionBody(readText(root, 'docs/agent/board.md'), 'Pending migration')
-              .split('\n')
-              .filter((line) => line.startsWith('- ')).length
-        : 0;
-    const baselinePath = path.join(root, '.agents/tools/harness/records.baseline.json');
-    let baseline = null;
-    if (fs.existsSync(baselinePath)) {
-        baseline = JSON.parse(fs.readFileSync(baselinePath, 'utf8')).boardWords;
-    } else {
-        failures.push('records.baseline.json: missing');
-    }
+    const boardText = fs.existsSync(boardPath) ? readText(root, 'docs/agent/board.md') : '';
+    const pending = sectionBody(boardText, 'Pending migration')
+        .split('\n')
+        .filter((line) => line.startsWith('- ')).length;
+    const topics = boardTopics(boardText);
 
-    if (options.prune && failures.length === 0 && baseline != null && boardWords < baseline) {
-        fs.mkdirSync(path.dirname(baselinePath), { recursive: true });
-        fs.writeFileSync(baselinePath, `${JSON.stringify({ boardWords }, null, 4)}\n`);
-        baseline = boardWords;
-        notes.push(`baseline pruned to ${boardWords}`);
-    }
-
-    notes.push(`board words: ${boardWords}`);
-    notes.push(`baseline: ${baseline}`);
+    notes.push(`board topics: ${topics.length}`);
     notes.push(`pending migration lines: ${pending}`);
-    if (baseline != null && boardWords > baseline) {
-        notes.push(`prompt: board has ${boardWords} words, above baseline ${baseline}`);
-    }
-    return { failures, notes, boardWords, baseline, pending };
+    return { failures, notes, topics, pending };
 }
 
 function checkBoard(text, failures) {
@@ -104,6 +104,18 @@ function checkBoard(text, failures) {
             failures.push(`docs/agent/board.md:${index + 1}: completion record`);
         }
     });
+    for (const topic of boardTopics(text)) {
+        const where = `docs/agent/board.md: topic "${topic.title}"`;
+        if (!topic.status) {
+            failures.push(`${where}: needs "Status: <status> · Opened: <date> · Updated: <date>"`);
+        } else if (!TOPIC_STATUSES.has(topic.status)) {
+            failures.push(`${where}: status "${topic.status}" is not discussing or awaiting user`);
+        } else if (!isCalendarDate(topic.opened) || !isCalendarDate(topic.updated)) {
+            failures.push(`${where}: Opened and Updated must be real dates`);
+        } else if (topic.updated < topic.opened) {
+            failures.push(`${where}: Updated ${topic.updated} is older than Opened ${topic.opened}`);
+        }
+    }
 }
 
 function checkBacklog(text, failures) {
@@ -136,7 +148,7 @@ function checkContext(text, failures) {
 
 function main() {
     const root = process.cwd();
-    const result = checkRecords(root, { prune: process.argv.includes('--prune-baseline') });
+    const result = checkRecords(root);
     for (const line of result.notes) console.log(line);
     for (const line of result.failures) console.log(`fail: ${line}`);
     process.exit(result.failures.length === 0 ? 0 : 1);
