@@ -4,47 +4,59 @@ Holds the plan currently under execution and its status. Nothing else. Unresolve
 
 Last updated: 2026-10-23.
 
-## Batch H8: board as a topic board (status and date per topic, no word ratchet)
+## Batch H9: plan and review weight (estimate, checkpoint, bar; review budget; reviewer without writes)
 
-**Status:** executed by the coordinator (authorized by the user, 2026-10-23); Ask review PASS after round 2 (2026-10-23); not committed (user: hold the commit).
+**Status:** plan recorded, waiting for the user's authorization. H8 committed as `3564715` (its plan and reviews: `git show 3564715:docs/agent/context.md`).
 
-**Why.** The board was designed (2026-09-28, `af05311`) as the place to discuss, research and plan: open decisions with an owner and a deadline, an Evidence section, deferred ideas. H1 (2026-10-20) cleaned a 10,866-word board that had piled up finished records, accepted work and rules, and kept Evidence. H2 then added a shrink-only word ratchet (`records.baseline.json`), and Evidence later disappeared; discussion moved into chat and was lost when a session ended (user, 2026-10-23: items drift and stay unhandled). The ratchet measures size, while the actual failure was decided content not leaving the board.
+**Why.** Board topics "Plan and review weight", "Review findings bar" and "Permission allowlist", plus the tier mismatch in "Remaining harness friction" (2026-10-23), with an independent second opinion on each (`git show 3564715:docs/agent/board.md`). User (2026-10-23): do items 1 to 5; make sure the findings fit this project's own rules and the same problems do not come back. `AGENTS.md` pruning and the Stop hook scope are later (`backlog.md`, Harness).
 
-**Industry practice used (user, 2026-10-23: follow Anthropic or what was found).**
-- Anthropic, "Effective harnesses for long-running agents": a status per item (`passes` in `feature_list.json`), a progress log, git; each session starts by reading them and ends in a clean state.
-- Architecture decision records: each decision carries a status (proposed, accepted, rejected, superseded); the discussion and rationale live in the proposed record; decided records are not kept open.
-- Spec-driven development (Spec Kit, Kiro; Martin Fowler's review): heavy process on small tasks is "a sledgehammer to crack a nut"; the review burden of many Markdown files outweighs it.
+**Project principles kept (user, 2026-10-23).** Best practices are evidence, not authority; where one conflicts with these, the principle wins, and a change that conflicts with one is must-fix:
+1. A team-style workflow: discuss and research on the board, plan in `context.md`, explicit user authorization, execution, review, commit.
+2. The user owns the harness; agents propose and wait.
+3. When a mistake recurs, a computational check (script or hook) before prose.
+4. Execution prompts and separate-session reviews, for token cost.
+5. One writer per worktree.
+6. Records live in the repository, not only in chat; history lives in Git.
+7. Merchant configuration and content are protected.
+8. Shopify's official sources are authority; references and best practices are experience.
+9. Browser checks are consolidated; commits are grouped.
+The theme's technical rules (`AGENTS.md` Tech Stack, Hard implementation rules) are outside this batch. Not adopted from the second opinion: "a direct user request counts as authorization" (conflicts with 1).
+
+**Estimate:** about 2.5 hours of coordinator time in this session, plus one separate-session review.
+**Checkpoint:** after the templates, the `AGENTS.md` lines and the plan-field check (about 1 hour), stop and report to the user before the client permission configuration, which needs each client's official syntax.
+**Bar:** must-fix: a prevention row below without its change, a conflict with an existing project rule (merchant protection, Ask triggers, execution prompts and separate reviews kept by the user), a failing validator, or a permission entry that allows a command which writes outside ignored temp output. Accepted residue: wording preferences; clients without a documented project-level permission mechanism (documented in `README.md` instead).
 
 **Outcome.**
-1. `docs/agent/board.md` holds topics. Each topic is a `###` heading under `## Topics` with one line `Status: <discussing | awaiting user> · Opened: YYYY-MM-DD · Updated: YYYY-MM-DD`, followed by its evidence, options and current leaning. When the user decides, the topic leaves the board in that change: into a plan in `context.md`, one line in `backlog.md`, a line under Pending migration, or deletion. `## Pending migration` and `## Deferred ideas` stay.
-2. `lint:records` checks the topic format instead of the board's size: every topic has the status line with an allowed status and valid dates, and `Updated` is not older than `Opened`. The word ratchet and `records.baseline.json` are removed. The existing date and completion-record checks stay.
-3. The prompt hook (`core.mjs`, all three clients) adds one line next to the context status: `board: N open topics; oldest updated YYYY-MM-DD (<title>)`, so drift is visible at the start of every session.
-4. `AGENTS.md` Batch SOP steps 2 and 3 and Record-layer checks describe the topic board in those terms (no other rule changes).
+1. **Plan fields.** Every plan in `context.md` carries `**Estimate:**`, `**Checkpoint:**` (where the implementer stops and reports) and `**Bar:**` (must-fix versus accepted residue, and the input it is judged on, such as default settings). Detail scales with risk and uncertainty, not line count: a routine plan may be just outcome, surface, checks, review tier, estimate, checkpoint and bar. `lint:records` fails a `## Batch` plan without the three fields (extends the existing `checkContext`; no new tool).
+2. **Before a plan (Batch SOP step 2).** The coordinator gives the scope options with an estimate and expected payoff, and the user picks.
+3. **Implementer template.** One status line per task; stop and report at the checkpoint and whenever a fix needs a method the plan does not name; no files outside the repository and no long-running processes left behind without telling the user; before handoff, build generated output and start the dev server the review needs.
+4. **Verifier template and checklist.** FAIL needs evidence of a violated requirement, rule or correctness problem; the rest are notes; an unfixed defect becomes one `backlog.md` line, a note only when the user names it (board Pending migration, narrowed 2026-10-23). A correction review checks the correction and its regression surface. Budget: one full review plus one correction review; after that, open defects go to the user, who decides (the budget never turns FAIL into PASS). No writes: no builds, formatters or server starts; one status line per item; ask before widening the checks.
+5. **Hook tier computed like the rule (principle 3).** For a Liquid file whose changed lines all fall inside its `{% stylesheet %}` block, the hook suggests Show, as `AGENTS.md` review tiers already allow; any other Liquid change stays Ask. The plan's tier still decides, and may only be raised.
+6. **Named commands preapproved.** Read-only validators whose effects are inspected (script by script) are preapproved per client through its documented project-level mechanism; never blanket `npm`, `node` or shell. Builds, formatters, `shopify` commands and `test:layout` stay prompted.
 
-**Implementation surface.** `docs/agent/board.md` (rewritten in the topic format: the current open decision "Board drift" leaves it into this plan; the harness review becomes a topic), `.agents/tools/harness/record-check.mjs`, `.agents/tools/harness/records.baseline.json` (deleted), `.agents/tools/harness/core.mjs`, `.agents/tools/harness/harness.test.mjs`, `AGENTS.md` (the three places above), `docs/agent/context.md`.
+**Prevention map (acceptance: each row names the change that now prevents it).**
 
-**Out of scope.** Process tiering by task size (an open topic on the new board, for the user to decide); the Stop hook seeing another session's edits; validator friction; rule document length.
+| Incident (2026-10-22/23) | Prevented by |
+| --- | --- |
+| B4 started theme-wide without cost options | Outcome 2; Estimate field (outcome 1) |
+| B4 bar "0 cuts at settings maxima" drove reserves and a regression | Bar field (outcome 1); verifier FAIL rule (outcome 4) |
+| Executor kept adding padding for about an hour | Checkpoint field; implementer stop rule (outcome 3) |
+| Audit scripts created outside the repo without the user knowing | Implementer and verifier no-files rule (outcomes 3, 4) |
+| Reviewer prompted for every command; read-only role asked to build and start a server | Implementer prepares build and server (outcome 3); verifier no-writes (outcome 4); preapproval (outcome 6) |
+| H1 7 rounds, H7 8 rounds, B4 correction rounds | Review budget and correction scope (outcome 4) |
+| Hook reported Ask where the rule allows Show | Outcome 5 (new harness test: stylesheet-only diff gives Show, markup diff gives Ask) |
+| Board discussion lost between sessions | Done in H8 |
+| Stop hook blocks on another session's edits | Not prevented here: `backlog.md`, Harness (later) |
 
-**Review tier: Ask** (agent rules and validator wiring).
+**Implementation surface.** `AGENTS.md` (Batch SOP steps 2, 3, 5, 7 wording and the review tier note on hook hints), `.agents/roles/implementer.md`, `.agents/roles/verifier.md`, `.agents/tools/harness/record-check.mjs`, `.agents/tools/harness/core.mjs` (stylesheet-only tier), `.agents/tools/harness/routes.json` if the route needs a flag, `.agents/tools/harness/harness.test.mjs`, client permission configuration (`.claude/settings.json`, and Cursor and Codex project files only where their official docs define one), `README.md` (setup note for any client without a project-level mechanism), `docs/agent/board.md`, `docs/agent/backlog.md`, `docs/agent/context.md`.
 
-**Cost.** About 45 minutes for the coordinator in this session (small code change, context already here), plus one separate-session review.
+**Review tier: Ask** (agent rules and validator wiring). The review prompt uses the new verifier template.
 
 **Acceptance checks.**
-1. `npm.cmd run lint:records` passes on the new board and prints no word count or baseline; `records.baseline.json` no longer exists and nothing references it (`git grep records.baseline` empty).
-2. `npm.cmd run test:harness` passes, with cases for: a topic without a status line fails; an unknown status fails; `Updated` older than `Opened` fails; a well-formed board passes; the prompt hook prints the topic count and the oldest topic.
-3. The prompt hook output in this session shows the board line.
-4. `npm.cmd run lint:doc-paths` and `npm.cmd run doctor:agent` pass; `npx prettier --check` on the changed files.
+1. Each prevention row maps to a changed line, quoted with its file in the execution log.
+2. No conflict with the project principles above: merchant paths still ask or deny in all three clients (`npm.cmd run test:harness`, `npm.cmd run test:merchant`); Ask triggers, explicit authorization (step 4), execution prompts and separate reviews unchanged; the reviewer checks each changed rule line against the nine principles.
+3. `lint:records` fails a `## Batch` plan missing any of `**Estimate:**`, `**Checkpoint:**`, `**Bar:**` (new harness test cases) and passes this plan.
+4. Every preapproved command is listed in the execution log with what it writes (none, or ignored temp output) and the source of the client syntax.
+5. `npm.cmd run test:harness`, `lint:records`, `lint:doc-paths`, `doctor:agent`, `test:merchant` pass; `npx prettier --check` on the changed files.
 
-**Execution log (2026-10-23).**
-- `record-check.mjs`: word count, `records.baseline.json` and `--prune-baseline` removed; `boardTopics()` exported; `checkBoard` fails a topic without the status line, with a status other than `discussing` or `awaiting user`, or with `Updated` older than `Opened`; notes print `board topics: N` and `pending migration lines: N`. `records.baseline.json` deleted (`git rm`).
-- `core.mjs`: `planContext` adds `board: N open topics; oldest updated <date> (<title>).` (or `board: no open topics.`); the Stop hook's `prompt:` notice is removed, since only the word ratchet produced it.
-- `harness.test.mjs`: `initRepo` writes no baseline; the prune test is replaced by four topic cases (well-formed, no status line, unknown status, dates reversed); the Stop test's word-ratchet case ("loud") is removed with the notice it checked; the prompt test asserts the board line with two topics.
-- `board.md` rewritten: five topics (process weight by change size, awaiting user; review findings bar, `AGENTS.md` length, permission allowlist, remaining harness friction, discussing), each with the evidence from 2026-10-23; Pending migration and Deferred ideas kept; the Pending migration line drops "not under Open decisions" (that section no longer exists).
-- `AGENTS.md`: Batch SOP steps 2 and 3, Record-layer checks (board line).
-- Checks: `npm.cmd run lint:records` pass (`board topics: 5`, `pending migration lines: 1`, no word or baseline line); `npm.cmd run test:harness` pass (19 tests); `lint:doc-paths`, `doctor:agent`, `test:merchant` pass; `npx prettier --check` on the six changed files: all formatted. `git grep records.baseline` hits only this plan's own text. Prompt hook run by hand (`node .claude/claude-hook.mjs prompt` with a Windows `cwd`): prints the plan pointer and `board: 5 open topics; oldest updated 2026-10-23 (Plan and review weight by the size of the change).`
-
-**Ask review round 1 (separate session, 2026-10-23): FAIL, one item.** Topic dates were checked for shape only (`2026-99-99` passed), against outcome 2's "valid dates". Proven: ratchet removal and the other checks unchanged; core change in scope (the ratchet was the only `prompt:` producer); tests; the three `AGENTS.md` places; board content kept; all commands pass; the hook prints the board line. Notes: `git grep records.baseline` hits only this plan's text (acceptance check 1 wording); "Board drift" was an uncommitted board edit, so HEAD shows `None`.
-
-**Fix (coordinator, 2026-10-23).** `record-check.mjs`: `isCalendarDate()` (the parsed date must print back as the same string); a topic with an impossible Opened or Updated fails with "must be real dates". `harness.test.mjs`: case "impossible date" (2026-02-30). `npm.cmd run test:harness` 19 pass, 0 fail; `npm.cmd run lint:records` pass; prettier pass.
-
-**Ask review round 2 (separate session, 2026-10-23): PASS.** The date fix and its test case verified; no other change since round 1.
+**Execution log.** Not started.
