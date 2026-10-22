@@ -525,6 +525,15 @@ removes the browser default outline (outline-none / focus:outline-none).
     }
 }
 
+/* Inset variant for focusables that fill a clipping media or panel shell. */
+@utility focus-ring-inset {
+    &:focus-visible {
+        outline: var(--focus-ring-width) solid
+            rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+        outline-offset: calc(-1 * var(--focus-ring-width));
+    }
+}
+
 /* =========================================================
 media-interaction — opt-in interactive image shell
 
@@ -546,7 +555,7 @@ card-level shadow-sm, arrow motion, or section reveal choreography.
 Exclude: slideshow/hero, logo, static editorial, decorative media, PDP main LCP gallery.
 ========================================================= */
 @utility media-interaction {
-    @apply focus-ring;
+    @apply focus-ring-inset;
 
     --media-interaction-scale-hover: 1.04;
     --media-interaction-scale-focus: 1.02;
@@ -944,5 +953,15 @@ Consumers: product-card-shell pagination dots (is-active stays component-owned).
         &:active:not(:disabled):not([aria-disabled='true']) {
             transform: none;
         }
+    }
+}
+
+/* Tab panels keep overflow-hidden; exterior focus rings are inset. */
+@layer utilities {
+    .tab-content-default :is(a, button):focus-visible,
+    .tab-content-underlined :is(a, button):focus-visible {
+        outline: var(--focus-ring-width) solid
+            rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+        outline-offset: calc(-1 * var(--focus-ring-width));
     }
 }

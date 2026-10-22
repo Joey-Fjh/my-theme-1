@@ -33,7 +33,6 @@ Last updated: 2026-10-22.
 
 ## Theme polish: global
 
-- Audit the two cascade patterns B3 hit three times: an unlayered `{% stylesheet %}` declaration or a utility class overriding a shared component's state or spacing (`.is-active`, `:hover`, `:focus-visible`, padding, margin); and a clipping or scrolling container cutting a scaled button, focus ring or shadow at its edge. List findings for the user before any fix. Decided: user, 2026-10-22. Source: B3. Surface: `{% stylesheet %}` blocks, `tailwind/tailwind.components.css` consumers.
 - Serif heading face: the design shows one on many sections while `design.md` fixes one family; one theme-wide font decision at the polish pass. Source: 6-S8, 6-S9, 6-S11, 6-P1 to 6-P4. Surface: font settings, `docs/design/design.md`.
 - Retire the per-scheme `badge_*` colours (`snippets/css-variables.liquid`; no consumer since 6-S4) in the first polish batch; schema removal, Ask tier. Decided: user, 2026-10-21. Source: 6-S4. Surface: `config/settings_schema.json`, `snippets/css-variables.liquid`, locales.
 - Monospace italic in the design (`ritual-steps` step labels, eyebrows, prices; `formula-details` numbers): per `design.md` use the body family, step labels as an ink-tinted chip, tabular figures for numbers (`lint:theme` forbids `font-mono`). Source: 6-S11, 6-P4, order after 6-D2. Surface: `ritual-steps`, `formula-details`.
@@ -59,7 +58,6 @@ Last updated: 2026-10-22.
 
 ## Readiness, Lighthouse and CI
 
-- Button shadow settings reach past the page margin: `button_shadow_horizontal_offset` (up to 12px) and `button_shadow_blur` (up to 20px, x1.12 on hover) let a button's shadow extend about 40px, while `section-frame__inner` clips the inline axis (`overflow-x: clip`) and a column flush with it (home `featured-product` carousel) has about 24px; any button near a frame edge is cut at high shadow values. Decide at readiness: narrow the setting ranges, or accept. Decided to defer: user, 2026-10-22 (B3). Source: B3 review round 3. Surface: `config/settings_schema.json`, `snippets/css-variables.liquid`, section frames.
 - Classify the collection performance (LCP 5.5 s, TBT 890 ms; mobile median 0.48) and best practices 0.59 on all three pages before any code change; the job passes on the best of three runs, so green does not prove the Theme Store bar. Source: Lighthouse CI run 38363613541, 2026-10-13. Surface: classification first.
 - Manual test checklist for the launch-blocking flows (variant change, add to cart, cart drawer, menu, dialogs with keyboard and focus), following Shopify's official testing checklist read through Shopify Dev MCP. Decided (user, 2026-10-12): a document, not automation; written with the readiness review. Source: 6-T3. Surface: a new document.
 - Cross-domain consolidation pass before the second submission (polish pass plus readiness review), and one read-only audit of the closed areas (JS runtime and modules, i18n, schema and settings, assets, `docs/references/` accuracy) by an external session, report outside the repo. Decided: user, 2026-10-09. Source: audit practice. Surface: read-only, then findings.
