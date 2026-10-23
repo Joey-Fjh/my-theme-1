@@ -6,7 +6,7 @@ Last updated: 2026-10-23.
 
 ## Topics
 
-None open. (Closed 2026-10-23 with no change, judged against official best practice: Stop hook scope, since the whole-worktree scan is the documented practice and parallel writers use separate worktrees; `mixed-element`, since B4's final commit displaced no CSS, the `:where(.own-class)` route exists, and the ban matches the unlayered section stylesheets; the `AGENTS.md` pass, see Deferred ideas. Evidence: git history of this file.)
+None open. (Packshot images decided 2026-10-23, now batch B6 in `docs/agent/context.md`. Closed 2026-10-23 with no change, judged against official best practice: Stop hook scope, since the whole-worktree scan is the documented practice and parallel writers use separate worktrees; `mixed-element`, since B4's final commit displaced no CSS, the `:where(.own-class)` route exists, and the ban matches the unlayered section stylesheets; the `AGENTS.md` pass, see Deferred ideas. Evidence: git history of this file.)
 
 ## Pending migration
 
