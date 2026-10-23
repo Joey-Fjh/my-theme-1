@@ -4,4 +4,4 @@ Holds the plan currently under execution and its status. Nothing else. Unresolve
 
 Last updated: 2026-10-23.
 
-No plan under execution. H9 closed (`704bc35`). The remaining harness items were discussed on 2026-10-23 and closed with no change (board note). Next: the theme polish, as the user chooses.
+No plan under execution. H9 closed (`704bc35`). The remaining harness items were discussed on 2026-10-23 and closed with no change (board note). Next: the theme track, open bug fixes first (reported by the user), then the review feedback and the polish pass (`docs/project.md`).

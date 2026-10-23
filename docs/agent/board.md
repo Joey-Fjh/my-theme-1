@@ -10,7 +10,7 @@ None open. (Closed 2026-10-23 with no change, judged against official best pract
 
 ## Pending migration
 
-- **Review leftovers: defects to the backlog, notes stay notes** (target `AGENTS.md`, Batch SOP step 7; user, 2026-10-21, narrowed 2026-10-23): a defect a batch does not fix leaves the batch as one `backlog.md` line in the matching section; a review note becomes a backlog line only when the user names it. The board gets only a choice the user can make now. Design choices wait in the polish sections of `backlog.md`.
+- **The board holds only choices the user can make now** (target `AGENTS.md`, Batch SOP step 7; user, 2026-10-21, narrowed 2026-10-23): design choices wait in the polish sections of `backlog.md`. (The other half, unfixed defects to one `backlog.md` line and notes only when the user names them, landed in `.agents/roles/verifier.md` with H9, `704bc35`.)
 
 ## Deferred ideas
 
