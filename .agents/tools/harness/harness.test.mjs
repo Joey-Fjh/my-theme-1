@@ -12,6 +12,7 @@ import {
     prePushFailures,
     resolveRoot,
     runsGitPush,
+    stylesheetOnly,
 } from './core.mjs';
 import { patchEdits } from '../../../.codex/codex-hook.mjs';
 
@@ -20,6 +21,8 @@ const REPO = path.resolve(HERE, '../../..');
 const HOOK = path.join(REPO, '.claude', 'claude-hook.mjs');
 const RECORD_CHECK = path.join(HERE, 'record-check.mjs');
 const DATE = '2026-10-20';
+const PLAN_BODY =
+    '**Status:** authorized.\n\n**Estimate:** 1 hour.\n**Checkpoint:** after task 1.\n**Bar:** must-fix: a failing validator.\n';
 
 function runHook(event, payload, stateDir) {
     return spawnSync(process.execPath, [HOOK, event], {
@@ -66,7 +69,7 @@ function records(boardBody) {
     return {
         'docs/agent/board.md': `# Board\n\nLast updated: ${DATE}\n\n## Open decisions\n\n- None.\n\n## Pending migration\n\n- **\`AGENTS.md\`:** note.\n\n## Evidence\n\n## Deferred ideas\n\n${boardBody || ''}`,
         'docs/agent/backlog.md': `# Backlog\n\nLast updated: ${DATE}\n\n## Area\n\n- Item. Source: test. Surface: none.\n`,
-        'docs/agent/context.md': `# Context\n\nLast updated: ${DATE}\n\n## Batch Test\n\n**Status:** authorized.\n`,
+        'docs/agent/context.md': `# Context\n\nLast updated: ${DATE}\n\n## Batch Test\n\n${PLAN_BODY}`,
     };
 }
 
@@ -327,6 +330,44 @@ test('routes.json matches package scripts, pointers, validation commands, and me
     }
 });
 
+test('preapproved validators are read-only scripts allowed only by exact rules', () => {
+    const { preapproved } = JSON.parse(fs.readFileSync(path.join(HERE, 'routes.json'), 'utf8'));
+    const { scripts } = JSON.parse(fs.readFileSync(path.join(REPO, 'package.json'), 'utf8'));
+    const expected = [...preapproved].sort();
+    // A script that builds, rewrites, deploys or measures a running store is never preapproved,
+    // checked through every npm script it runs.
+    const pending = [...preapproved];
+    while (pending.length) {
+        const name = pending.pop();
+        assert.equal(typeof scripts[name], 'string', name);
+        assert.doesNotMatch(
+            scripts[name],
+            /--write|--fix|--cache|tailwindcss|svgo|shopify|layout-check|build:/,
+            name,
+        );
+        pending.push(...[...scripts[name].matchAll(/npm run ([a-z0-9:-]+)/g)].map((m) => m[1]));
+    }
+
+    const claude = JSON.parse(fs.readFileSync(path.join(REPO, '.claude/settings.json'), 'utf8'));
+    for (const tool of ['Bash', 'PowerShell']) {
+        const listed = claude.permissions.allow
+            .map((rule) => rule.match(new RegExp(`^${tool}\\(npm\\.cmd run ([^ )*]+)\\)$`)))
+            .filter(Boolean)
+            .map((match) => match[1]);
+        assert.deepEqual(listed.sort(), expected, `.claude/settings.json ${tool}`);
+    }
+    assert.ok(
+        claude.permissions.allow.every((rule) => /^(Bash|PowerShell)\(npm\.cmd run [^ )*]+\)$/.test(rule)),
+        '.claude/settings.json allows only exact npm.cmd run rules',
+    );
+
+    // Cursor's terminal allowlist and Codex rules match by prefix, so an entry would also allow
+    // extra arguments, and several validators write files when given one
+    // (`lint:theme -- --shrink-migration-baseline`). Neither client gets a committed list.
+    assert.equal(fs.existsSync(path.join(REPO, '.cursor/permissions.json')), false);
+    assert.equal(fs.existsSync(path.join(REPO, '.codex/rules')), false);
+});
+
 test('board topics need a status line with an allowed status and ordered dates', () => {
     const board = (topics) =>
         `# Board\n\nLast updated: ${DATE}\n\n## Topics\n\n${topics}\n## Pending migration\n\n- **\`AGENTS.md\`:** note.\n`;
@@ -355,6 +396,75 @@ test('board topics need a status line with an allowed status and ordered dates',
                 assert.match(run.stdout, /board topics: 1/);
                 assert.match(run.stdout, /pending migration lines: 1/);
                 assert.doesNotMatch(run.stdout, /words|baseline/);
+            }
+        } finally {
+            removeRepo(root);
+        }
+    }
+});
+
+test('stop hints Show for a stylesheet-only Liquid diff and Ask for a markup diff', () => {
+    const liquid = '<div class="demo">Hi</div>\n\n{% stylesheet %}\n  .demo { color: red; }\n  .demo span { margin: 0; }\n{% endstylesheet %}\n';
+    const schema = '[{ "name": "{% stylesheet %}" },\n{ "default": true },\n{ "name": "{% endstylesheet %}" }]\n';
+    const files = records();
+    files['sections/demo.liquid'] = liquid;
+    files['config/settings_schema.json'] = schema;
+    const root = initRepo(files);
+    const stateDir = fs.mkdtempSync(path.join(os.tmpdir(), 'harness-state-'));
+    const target = path.join(root, 'sections/demo.liquid');
+    const tierOf = () =>
+        output(runHook('stop', { cwd: root, session_id: 'tier' }, stateDir))?.systemMessage || '';
+    try {
+        tierOf();
+        fs.writeFileSync(target, liquid.replace('red', 'blue'));
+        assert.equal(stylesheetOnly(root, 'sections/demo.liquid'), true);
+        assert.match(tierOf(), /Review tier: Show\./);
+
+        fs.writeFileSync(target, liquid.replace('  .demo span { margin: 0; }\n', ''));
+        assert.equal(stylesheetOnly(root, 'sections/demo.liquid'), true, 'removed line inside');
+
+        fs.writeFileSync(target, liquid.replace('Hi', 'Hello').replace('red', 'blue'));
+        assert.equal(stylesheetOnly(root, 'sections/demo.liquid'), false);
+        assert.match(tierOf(), /Review tier: Ask\./);
+
+        fs.writeFileSync(target, liquid.replace('{% endstylesheet %}\n', '{% endstylesheet %}\n<p></p>\n'));
+        assert.equal(stylesheetOnly(root, 'sections/demo.liquid'), false, 'markup after the block');
+
+        // Schema stays Ask even when its strings look like stylesheet tags.
+        fs.writeFileSync(target, liquid);
+        fs.writeFileSync(path.join(root, 'config/settings_schema.json'), schema.replace('true', 'false'));
+        assert.equal(stylesheetOnly(root, 'config/settings_schema.json'), false, 'schema');
+        assert.match(tierOf(), /Review tier: Ask\./);
+    } finally {
+        removeRepo(root);
+        removeRepo(stateDir);
+    }
+});
+
+test('context plans need estimate, checkpoint and bar fields', () => {
+    const cases = [
+        ['all fields', PLAN_BODY, null],
+        ['no estimate', PLAN_BODY.replace(/\*\*Estimate:\*\*.*\n/, ''), /plan "Test" needs \*\*Estimate:\*\*/],
+        ['no checkpoint', PLAN_BODY.replace(/\*\*Checkpoint:\*\*.*\n/, ''), /plan "Test" needs \*\*Checkpoint:\*\*/],
+        ['empty bar', PLAN_BODY.replace(/\*\*Bar:\*\*.*\n/, '**Bar:**\n'), /plan "Test" needs \*\*Bar:\*\*/],
+        ['empty estimate before a field', PLAN_BODY.replace(/\*\*Estimate:\*\*.*\n/, '**Estimate:**\n'), /plan "Test" needs \*\*Estimate:\*\*/],
+        ['empty bar before a paragraph', PLAN_BODY.replace(/\*\*Bar:\*\*.*\n/, '**Bar:**  \n\nOutcome.\n'), /plan "Test" needs \*\*Bar:\*\*/],
+    ];
+    for (const [name, body, failure] of cases) {
+        const files = records();
+        files['docs/agent/context.md'] = `# Context\n\nLast updated: ${DATE}\n\n## Batch Test\n\n${body}`;
+        const root = initRepo(files);
+        try {
+            const run = spawnSync(process.execPath, [RECORD_CHECK], {
+                cwd: root,
+                encoding: 'utf8',
+                windowsHide: true,
+            });
+            if (failure) {
+                assert.equal(run.status, 1, name);
+                assert.match(run.stdout, failure, name);
+            } else {
+                assert.equal(run.status, 0, `${name}: ${run.stdout}`);
             }
         } finally {
             removeRepo(root);

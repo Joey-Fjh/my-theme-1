@@ -21,6 +21,10 @@ filesystem-profile: workspace-write
 - Take every count in a validation result (files, uses, issues, assertions) from a command's output and name the command; never count by hand.
 - Cite open decisions on `docs/agent/board.md` as context only; when a task needs one decided, stop and report it instead of choosing.
 - Before handing a batch over for review, run each tool that `AGENTS.md` Agent Skills triggers for the batch's surface, and record its output in `docs/agent/context.md`.
+- Keep one status line per task in the execution log.
+- Stop and report at the plan's `**Checkpoint:**`, and whenever a fix needs a method the plan does not name; do not keep trying variations past it.
+- Create no files outside the repository, and leave no long-running process behind, without telling the user.
+- Before handoff, build any generated output and start the dev server the review needs, so the reviewer only reads and runs checks.
 
 ## Boundaries
 
@@ -37,7 +41,7 @@ Use when delegating or when the user requests a portable execution prompt. Give 
 
 1. Read `AGENTS.md`, then `docs/agent/context.md` for the active plan and acceptance boundary.
 2. **Implementation surface:** list allowed paths. **Forbidden:** `config/settings_data.json`, `templates/*.json`, `sections/*-group.json`, vendor/generated assets, and anything outside the surface unless the user widens it.
-3. **Tasks:** numbered checks from the plan.
+3. **Tasks:** numbered checks from the plan, with its estimate, checkpoint and bar. One status line per task. Stop and report at the checkpoint, and whenever a fix needs a method the plan does not name. No files outside the repository and no long-running process left behind without telling the user. Before handoff, build generated output and start the dev server the review needs.
 4. **Completion checks:** the plan's validators plus `npx prettier --check` on every changed file. Counts come from command output, with the command named. Open board decisions may be cited, never decided.
 5. Record progress and validation in `docs/agent/context.md`.
 6. Do not mark the plan accepted and do not commit unless the user asks. Do not run `git stash`, `checkout`, `reset` or other commands that rewrite the working tree; take any before-measurement before the first edit.

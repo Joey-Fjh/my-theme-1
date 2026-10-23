@@ -80,6 +80,13 @@ A client loads MCP servers when a session starts, so restart it after a config c
 
 If an expected MCP is missing, check client configuration, project trust, client restart, Node/npm, and network before falling back to official documentation.
 
+### Preapproved validators
+
+The read-only validators listed under `preapproved` in `.agents/tools/harness/routes.json` run without a permission prompt. None writes to the repository; `test:harness` and `test:merchant` create temporary Git repositories in the system temp directory and delete them. Builds, formatters, `shopify` commands and `test:layout` always prompt. A preapproval must match the exact command: several of these scripts write files when given an extra argument (for example `lint:theme -- --shrink-migration-baseline` rewrites a tracked baseline). `npm.cmd run test:harness` fails when the Claude Code list differs from `routes.json`, when a listed script (or a script it runs) builds, rewrites or calls `shopify`, or when a prefix-matching allowlist is committed for Cursor or Codex.
+
+- **Claude Code:** `permissions.allow` in `.claude/settings.json`, one exact `npm.cmd run <script>` rule per script for each of the Bash and PowerShell tools ([permissions](https://code.claude.com/docs/en/permissions)).
+- **Cursor and Codex:** no committed list. Cursor's `.cursor/permissions.json` `terminalAllowlist` ([permissions.json](https://cursor.com/docs/reference/permissions)) and Codex's `.codex/rules/` `prefix_rule` ([rules](https://learn.chatgpt.com/docs/agent-configuration/rules)) match by prefix, so they would also allow the writing arguments. The project rules still apply there through the hooks, and the verifier stays read-only through each client's agent file; the commands only prompt (in Codex's read-only sandbox, only the two tests, which write to the system temp directory).
+
 ## New theme repository setup
 
 Do this once when a new GitHub repository is created from this code. The CI store (`ci-test`, loaded with Shopify's performance test CSV) and its Theme Access password are shared by every theme and are not set up again.

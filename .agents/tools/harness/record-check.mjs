@@ -7,6 +7,7 @@ import { pathToFileURL } from 'node:url';
 const RECORD_FILES = ['docs/agent/board.md', 'docs/agent/backlog.md', 'docs/agent/context.md'];
 const COMPLETION = /Done:|\*\*Done|done \(/;
 const TOPIC_STATUSES = new Set(['discussing', 'awaiting user']);
+const PLAN_FIELDS = ['Estimate', 'Checkpoint', 'Bar'];
 const TOPIC_LINE =
     /^Status:\s*(.+?)\s*·\s*Opened:\s*(\d{4}-\d{2}-\d{2})\s*·\s*Updated:\s*(\d{4}-\d{2}-\d{2})\s*$/;
 
@@ -136,6 +137,12 @@ function checkContext(text, failures) {
     const parts = text.split(/^## Batch /m).slice(1);
     let active = 0;
     for (const part of parts) {
+        const title = part.split('\n', 1)[0].trim();
+        for (const field of PLAN_FIELDS) {
+            if (!new RegExp(`^\\*\\*${field}:\\*\\*[ \\t]*\\S`, 'm').test(part)) {
+                failures.push(`docs/agent/context.md: plan "${title}" needs **${field}:**`);
+            }
+        }
         const status = part.match(/\*\*Status:\*\*\s*(.+)/);
         const value = status ? status[1] : '';
         const parked = /executed/i.test(value) && /waiting/i.test(value);

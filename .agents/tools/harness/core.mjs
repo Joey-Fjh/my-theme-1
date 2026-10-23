@@ -305,8 +305,11 @@ export function routeHints(root, sessionId, edits) {
             seen.add(route.id);
             const validators = (route.validators || []).join(', ') || 'none';
             const pointers = (route.pointers || []).join(', ') || 'none';
+            const tier = route.stylesheetTier
+                ? `${route.tier} (${route.stylesheetTier} when only the {% stylesheet %} block changes)`
+                : route.tier;
             lines.push(
-                `Route ${route.id} matches ${relative}. Validators: ${validators}. Review tier: ${route.tier}. Pointers: ${pointers}.`,
+                `Route ${route.id} matches ${relative}. Validators: ${validators}. Review tier: ${tier}. Pointers: ${pointers}.`,
             );
         }
     }
@@ -385,6 +388,53 @@ function addedLines(root, relative) {
         .join('\n');
 }
 
+const STYLESHEET_OPEN = /\{%-?\s*stylesheet\s*-?%\}/;
+const STYLESHEET_CLOSE = /\{%-?\s*endstylesheet\s*-?%\}/;
+
+// 1-based numbers of the lines between a {% stylesheet %} tag and its end tag.
+function stylesheetLines(text) {
+    const inside = new Set();
+    let open = false;
+    text.split('\n').forEach((line, index) => {
+        if (open && STYLESHEET_CLOSE.test(line)) open = false;
+        else if (open) inside.add(index + 1);
+        else if (STYLESHEET_OPEN.test(line)) open = true;
+    });
+    return inside;
+}
+
+// True when a tracked Liquid file changed only inside its {% stylesheet %} block: every
+// removed line (in HEAD) and every added line (in the worktree) lies inside the block.
+export function stylesheetOnly(root, relative) {
+    if (!relative.toLowerCase().endsWith('.liquid')) return false;
+    const absolute = path.join(root, relative);
+    const head = spawnSync('git', ['show', `HEAD:${relative}`], {
+        cwd: root,
+        encoding: 'utf8',
+        windowsHide: true,
+    });
+    if (head.status !== 0 || !fs.existsSync(absolute)) return false;
+    const hunks = [
+        ...git(root, ['diff', '-U0', 'HEAD', '--', relative]).matchAll(
+            /^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/gm,
+        ),
+    ];
+    if (hunks.length === 0) return false;
+    const before = stylesheetLines(head.stdout);
+    const after = stylesheetLines(fs.readFileSync(absolute, 'utf8'));
+    const inside = (lines, start, count) => {
+        for (let line = start; line < start + count; line += 1) {
+            if (!lines.has(line)) return false;
+        }
+        return true;
+    };
+    return hunks.every(
+        ([, oldStart, oldCount = '1', newStart, newCount = '1']) =>
+            inside(before, Number(oldStart), Number(oldCount)) &&
+            inside(after, Number(newStart), Number(newCount)),
+    );
+}
+
 function runFastValidator(root, script, budgetMs) {
     const result = spawnSync('npm.cmd', ['run', script], {
         cwd: root,
@@ -428,10 +478,14 @@ export function stopCheck(root, sessionId, { continued = false } = {}) {
         const routes = loadRoutes().routes;
         const matched = [];
         for (const relative of changed) {
-            matched.push(...matchRoutes(routes, relative, addedLines(root, relative)));
+            for (const route of matchRoutes(routes, relative, addedLines(root, relative))) {
+                // The AGENTS.md review tiers: a Liquid change confined to its stylesheet is Show.
+                const lowered = route.stylesheetTier && stylesheetOnly(root, relative);
+                matched.push(lowered ? { ...route, tier: route.stylesheetTier } : route);
+            }
         }
         const unique = [...new Map(matched.map((route) => [route.id, route])).values()];
-        tier = highestTier(unique);
+        tier = highestTier(matched);
         const validators = [...new Set(unique.flatMap((route) => route.validators || []))];
         const fast = [
             ...new Set(
