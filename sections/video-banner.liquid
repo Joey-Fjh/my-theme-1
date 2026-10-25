@@ -31,6 +31,15 @@
 
     assign aspect_ratio = section.settings.aspect_ratio | default: '16/9'
     assign container_width = section.settings.container_width | default: 'page'
+    assign video_banner_section_height = section.settings.section_height | default: 'adapt'
+
+    assign video_banner_frame_class = 'video-banner__frame'
+    assign video_banner_frame_style = ''
+    if video_banner_section_height == 'adapt'
+        assign video_banner_frame_style = 'aspect-ratio: ' | append: aspect_ratio | append: ';'
+    else
+        assign video_banner_frame_class = video_banner_frame_class | append: ' h-full min-h-0'
+    endif
 
     assign external_video_type = ''
     assign external_video_id = ''
@@ -59,7 +68,7 @@
     endif
 -%}
 {%- capture video_banner_children -%}
-        <div class="video-banner__frame" style="aspect-ratio: {{ aspect_ratio }};">
+        <div class="{{ video_banner_frame_class }}"{% if video_banner_frame_style != blank %} style="{{ video_banner_frame_style }}"{% endif %}>
             {%- if has_hosted_video -%}
                 {%- render 'media-video',
                     video: hosted_video,
@@ -155,6 +164,16 @@
         background: var(--color-surface-muted);
     }
 
+    /* The single row takes the stage height, so the media fills it instead of sizing it. */
+    .video-banner-section.section-frame--height-stage > .section-frame__inner {
+        grid-template-rows: minmax(0, 1fr);
+    }
+
+    .video-banner-section.section-frame--height-stage .video-banner__frame > * {
+        position: absolute;
+        inset: 0;
+    }
+
     .video-banner__play-button {
         position: absolute;
         inset: 0;
@@ -229,6 +248,34 @@
             "id": "color_scheme",
             "label": "t:sections.video-banner.settings.color_scheme",
             "default": "scheme-2"
+        },
+        {
+            "type": "select",
+            "id": "section_height",
+            "label": "t:sections.video-banner.settings.section_height",
+            "options": [
+                {
+                    "value": "adapt",
+                    "label": "t:options.section_height.adapt"
+                },
+                {
+                    "value": "small",
+                    "label": "t:options.section_height.small"
+                },
+                {
+                    "value": "medium",
+                    "label": "t:options.section_height.medium"
+                },
+                {
+                    "value": "large",
+                    "label": "t:options.section_height.large"
+                },
+                {
+                    "value": "full",
+                    "label": "t:options.section_height.full"
+                }
+            ],
+            "default": "adapt"
         },
         {
             "type": "header",

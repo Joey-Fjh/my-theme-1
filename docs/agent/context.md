@@ -4,4 +4,4 @@ Holds the plan currently under execution and its status. Nothing else. Unresolve
 
 Last updated: 2026-10-25.
 
-No plan under execution. B7 to B13 (feature-tabs markers, spacing fixes, scheme-driven product buttons, one-card mobile rails) closed and committed in `1a3c108`; plans, reviews and measurements: `git show 1a3c108:docs/agent/context.md`. Next: the review feedback and the polish pass (`docs/project.md`).
+No plan under execution.

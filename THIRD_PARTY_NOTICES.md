@@ -66,8 +66,9 @@ SOFTWARE.
 
 ## Phosphor Icons
 
-- Version: not pinned in this repository; regular weight SVGs optimized via `npm.cmd run build:svg` from staged sources in `icons/` (when present).
-- Files: `assets/icon-content-*.svg` (24 icons; added between 2026-08-05 and 2026-10-16 per Git history; notice added 2026-10-11; `icon-content-flask.svg` added and `icon-content-recycle.svg` replaced with the upstream glyph on 2026-10-16 from `assets/regular/`, single-file svgo runs with `svgo.config.cjs`)
+- Version: `@phosphor-icons/core@2.1.1` (UI icons, 2026-10-25); earlier content icons vendored from the same upstream without a pinned version in Git.
+- Files (UI, regular weight, optimized via `npm.cmd run build:svg` from staged sources in `icons/` on 2026-10-25): `assets/icon-3d-model.svg`, `assets/icon-account.svg`, `assets/icon-arrow.svg`, `assets/icon-arrow1.svg`, `assets/icon-arrow2.svg`, `assets/icon-cart.svg`, `assets/icon-check.svg`, `assets/icon-check-circle.svg`, `assets/icon-chevron-down.svg`, `assets/icon-chevron-left.svg`, `assets/icon-chevron-right.svg`, `assets/icon-chevron-up.svg`, `assets/icon-close.svg`, `assets/icon-eye.svg`, `assets/icon-facebook.svg`, `assets/icon-filter.svg`, `assets/icon-info-circle.svg`, `assets/icon-instagram.svg`, `assets/icon-menu.svg`, `assets/icon-minus.svg`, `assets/icon-mute.svg`, `assets/icon-pinterest.svg`, `assets/icon-play.svg`, `assets/icon-plus.svg`, `assets/icon-search.svg`, `assets/icon-snapchat.svg`, `assets/icon-sortby.svg`, `assets/icon-sparkle.svg`, `assets/icon-star.svg`, `assets/icon-tiktok.svg`, `assets/icon-trash.svg`, `assets/icon-tumblr.svg`, `assets/icon-twitter.svg`, `assets/icon-unmute.svg`, `assets/icon-x-circle.svg`, `assets/icon-youtube.svg`
+- Files (content blocks, regular weight): `assets/icon-content-*.svg` (24 icons; added between 2026-08-05 and 2026-10-16 per Git history; notice added 2026-10-11; `icon-content-flask.svg` added and `icon-content-recycle.svg` replaced with the upstream glyph on 2026-10-16 from `assets/regular/`, single-file svgo runs with `svgo.config.cjs`)
 - Source: https://github.com/phosphor-icons/core
 - License text: https://github.com/phosphor-icons/core/blob/main/LICENSE (MIT)
 
@@ -93,6 +94,18 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+```
+
+## Simple Icons
+
+- Version: `simple-icons@16.35.0`
+- Files: `assets/icon-vimeo.svg` (Vimeo logo; optimized via `npm.cmd run build:svg` from staged source in `icons/` on 2026-10-25). Phosphor Icons does not ship a Vimeo mark.
+- Source: https://github.com/simple-icons/simple-icons (`icons/vimeo.svg`)
+- License: CC0-1.0 — https://github.com/simple-icons/simple-icons/blob/develop/LICENSE.md
+
+```text
+Simple Icons are released under the Creative Commons CC0 1.0 Universal (public domain).
+See the Simple Icons LICENSE.md in the npm package for the full CC0 1.0 Universal text.
 ```
 
 ## Swiper

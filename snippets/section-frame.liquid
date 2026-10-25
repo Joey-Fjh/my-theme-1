@@ -9,7 +9,7 @@
     @param {string} [background] - Optional captured markup rendered before the inner wrapper (full-bleed behind padding)
     @param {string} [section_class] - BEM section class on the root (for example `brand-statement-section`)
     @param {string} [width] - `page` (default) or `full`
-    @param {string} [height_kind] - `content` (default), `media`, `stage`, or `stage-pc` (desktop-only stage)
+    @param {string} [height_kind] - Base layout: `content` (default), `media`, `stage`, or `stage-pc` (desktop-only stage). Combined with `section.settings.section_height` when present.
     @param {string} [padding_mode] - `default` (root padding) or `overlay` (expose `--section-frame-padding-*` on root; apply via `section-frame__overlay-padding` or the one-sided `section-frame__overlay-padding-top` / `section-frame__overlay-padding-bottom` on descendants)
     @param {boolean} [motion] - When true, mounts `motionRevealSection` for `data-motion-cascade` lists inside the section
     @param {boolean} [safe_top] - When false, adds `section-frame--no-safe-top` (skips first-section header offset)
@@ -26,6 +26,29 @@
 {%- liquid
     assign width_mode = width | default: 'page'
     assign height_kind = height_kind | default: 'content'
+    assign section_height_setting = section.settings.section_height
+    assign effective_height_kind = height_kind
+    assign section_stage_min_height = ''
+
+    case section_height_setting
+        when 'adapt'
+            if height_kind == 'stage'
+                assign effective_height_kind = 'media'
+            endif
+        when 'small'
+            assign effective_height_kind = 'stage'
+            assign section_stage_min_height = 'calc(50 * var(--screen-height) / 100)'
+        when 'medium'
+            assign effective_height_kind = 'stage'
+            assign section_stage_min_height = 'calc(65 * var(--screen-height) / 100)'
+        when 'large'
+            assign effective_height_kind = 'stage'
+            assign section_stage_min_height = 'calc(80 * var(--screen-height) / 100)'
+        when 'full'
+            assign effective_height_kind = 'stage'
+            assign section_stage_min_height = 'var(--screen-height)'
+    endcase
+
     assign padding_mode = padding_mode | default: 'default'
     assign scheme_target = scheme_target | default: 'root'
     assign pad_top_v = section.settings.padding_top | default: 0 | plus: 0
@@ -81,7 +104,7 @@
         assign clip_overflow = false
     endif
 
-    assign root_classes = 'section-frame--height-' | append: height_kind | append: ' full-width'
+    assign root_classes = 'section-frame--height-' | append: effective_height_kind | append: ' full-width'
     if scheme_target == 'inner'
         assign root_classes = root_classes | append: ' section-frame--padding-inner'
     endif
@@ -108,8 +131,13 @@
     if width_mode == 'page'
         assign inner_classes = inner_classes | append: ' container-page'
     endif
-    if height_kind == 'stage' or height_kind == 'stage-pc'
+    if effective_height_kind == 'stage' or effective_height_kind == 'stage-pc'
         assign inner_classes = inner_classes | append: ' section-frame__stage'
+    endif
+
+    assign frame_root_style = root_style | default: ''
+    if section_stage_min_height != blank
+        assign frame_root_style = frame_root_style | append: '--section-stage-min-height: ' | append: section_stage_min_height | append: ';'
     endif
     if inner_class != blank
         assign inner_classes = inner_classes | append: ' ' | append: inner_class
@@ -127,7 +155,7 @@
     style="
         --section-frame-padding-top: {{ pad_top_clamp }};
         --section-frame-padding-bottom: {{ pad_bottom_clamp }};
-        {% if root_style != blank %}{{ root_style }}{% endif %}
+        {% if frame_root_style != blank %}{{ frame_root_style }}{% endif %}
     "
     {% if motion == true or motion == 'true' %}
         data-module-id="motion-reveal"

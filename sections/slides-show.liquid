@@ -1,3 +1,16 @@
+{%- liquid
+    assign slides_show_section_height = section.settings.section_height | default: 'full'
+    assign slides_show_root_style = ''
+    if slides_show_section_height == 'adapt'
+        assign slides_show_adapt_ratio = '4 / 3'
+        assign slides_show_adapt_source = section.blocks.first
+        if slides_show_adapt_source != blank and slides_show_adapt_source.settings.slide_image != blank
+            assign slides_show_adapt_image = slides_show_adapt_source.settings.slide_image
+            assign slides_show_adapt_ratio = slides_show_adapt_image.width | append: ' / ' | append: slides_show_adapt_image.height
+        endif
+        assign slides_show_root_style = '--slides-show-adapt-ratio: ' | append: slides_show_adapt_ratio | append: ';'
+    endif
+-%}
 {%- assign slides_show_root_attrs = 'data-component-kind="section" data-component-type="slides-show" data-component-id="'
     | append: section.id
     | append: '"'
@@ -164,7 +177,7 @@
                                         {%- endcapture -%}
                                         {%- render 'link',
                                             href: cta_href,
-                                            variant: 'underline',
+                                            variant: 'default',
                                             class: 'copy-l uppercase text-theme-text tablet:copy-l',
                                             content: link_content
                                         -%}
@@ -244,6 +257,7 @@
     padding_mode: 'overlay',
     motion: false,
     safe_top: false,
+    root_style: slides_show_root_style,
     root_attrs: slides_show_root_attrs,
     children: slides_show_children
 %}
@@ -507,6 +521,11 @@
         inset: calc(var(--spacing) * 0);
     }
 
+    .slides-show-section.section-frame--height-media > .section-frame__inner {
+        position: relative;
+        aspect-ratio: var(--slides-show-adapt-ratio, 4 / 3);
+    }
+
     :where(.slides-show__content-grid) {
         display: grid;
         height: 100%;
@@ -534,6 +553,34 @@
             "id": "color_scheme",
             "label": "t:sections.slides-show.settings.color_scheme",
             "default": "scheme-1"
+        },
+        {
+            "type": "select",
+            "id": "section_height",
+            "label": "t:sections.slides-show.settings.section_height",
+            "options": [
+                {
+                    "value": "adapt",
+                    "label": "t:options.section_height.adapt"
+                },
+                {
+                    "value": "small",
+                    "label": "t:options.section_height.small"
+                },
+                {
+                    "value": "medium",
+                    "label": "t:options.section_height.medium"
+                },
+                {
+                    "value": "large",
+                    "label": "t:options.section_height.large"
+                },
+                {
+                    "value": "full",
+                    "label": "t:options.section_height.full"
+                }
+            ],
+            "default": "full"
         },
         {
             "type": "header",
