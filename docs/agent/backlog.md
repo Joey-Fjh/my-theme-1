@@ -2,7 +2,7 @@
 
 Accepted work that no batch has taken yet. One line per item: what, a source (the batch or date it came from), a surface (files, sections or pages), and the governing decision when there is one. Each line ends with labeled source and surface fields per the H1 plan format. An item leaves this file when a batch plan takes it into `docs/agent/context.md`; finished work leaves no record here (history is in Git). Undecided matters stay on `docs/agent/board.md`.
 
-Last updated: 2026-10-23.
+Last updated: 2026-10-25.
 
 ## Theme polish: home
 
@@ -20,7 +20,7 @@ Last updated: 2026-10-23.
 - `ritual-steps`: badge fill; proportions and spacing (oval angle and size, ring offset, star size; style B numeral and packshot done in B6, `73aa65d`); header overlap with the sticky frame and stage. Source: 6-S11. Surface: `sections/ritual-steps.liquid`.
 - `featured-product`: quantity beside add to cart on mobile (product page design) while the home mobile design stacks them; cap the `space-between` gaps on very tall screens; optional sticky add-to-cart bar; price and title sizes. Source: 6-S12. Surface: `sections/featured-product.liquid`, shared purchase snippets.
 - Icon stroke: the design's icons are lighter than Phosphor regular (`flask` not added). Source: 6-S10, 6-S12. Surface: `assets/icon-*.svg` via `build:svg`.
-- Mobile rails, one card per view: the user names three places at the polish pass; candidates `ritual-steps` and `routine-showcase` (`card-rail`), the `collection-list` slide, the `featured-products` tab strip, the `collection-all` nav-link scroller, the `testimonial-featured` marquee; until then their layout entries stay in the baseline; the two `collection-all` nav-link `page-margin` entries and the `ritual_steps_carousel` 768 title stay baselined, and the page-margin rule is reconsidered only if they remain after this item (decided: user, 2026-10-21). Source: user, 2026-10-11; 6-T1, 6-C2. Surface: those sections.
+- Mobile rails, one card per view: `ritual-steps` and `routine-showcase` (`card-rail`) done in B13 (2026-10-25); the user names any further places at the polish pass; remaining candidates the `collection-list` slide, the `featured-products` tab strip, the `collection-all` nav-link scroller, the `testimonial-featured` marquee; until then their layout entries stay in the baseline; the two `collection-all` nav-link `page-margin` entries and the `ritual_steps_carousel` 768 title stay baselined, and the page-margin rule is reconsidered only if they remain after this item (decided: user, 2026-10-21). Source: user, 2026-10-11; 6-T1, 6-C2. Surface: those sections.
 - Collection tab bar. Source: order after 6-D2, 2026-10-12. Surface: `collection-all`.
 
 ## Theme polish: product
@@ -33,6 +33,8 @@ Last updated: 2026-10-23.
 
 ## Theme polish: global
 
+- `sections/collection.liquid` filter buttons (two, near lines 649 and 659) add `surface-inverted` and `hover:opacity-90` to `btn-primary`, bypassing the scheme's button colours; decide whether they follow the scheme. Source: B12 audit, 2026-10-25. Surface: `sections/collection.liquid`.
+- `docs/design/design.md` pass: keep principles and capabilities, move case decisions made during batches (named sections, exact factors, per-section exceptions) out to the batch records or the section notes; the design decides per section, the architecture only offers the capability. Source: user, 2026-10-25 (B11). Surface: `docs/design/design.md`.
 - Serif heading face: the design shows one on many sections while `design.md` fixes one family; one theme-wide font decision at the polish pass. Source: 6-S8, 6-S9, 6-S11, 6-P1 to 6-P4. Surface: font settings, `docs/design/design.md`.
 - Retire the per-scheme `badge_*` colours (`snippets/css-variables.liquid`; no consumer since 6-S4) in the first polish batch; schema removal, Ask tier. Decided: user, 2026-10-21. Source: 6-S4. Surface: `config/settings_schema.json`, `snippets/css-variables.liquid`, locales.
 - Monospace italic in the design (`ritual-steps` step labels, eyebrows, prices; `formula-details` numbers): per `design.md` use the body family, step labels as an ink-tinted chip, tabular figures for numbers (`lint:theme` forbids `font-mono`). Source: 6-S11, 6-P4, order after 6-D2. Surface: `ritual-steps`, `formula-details`.
@@ -53,6 +55,7 @@ Last updated: 2026-10-23.
 - Rows the 2026-10-13 smoke pass did not cover: no-JavaScript; a blog article (none reachable); at 390 the cart page, cart drawer, search, lightbox, quick view, predictive search, localization, accordion, tabs; carousel pagination and keyboard; collection pagination with Back and Forward; the newsletter overlay's Tab trap; a plain dropdown with a real second level. Source: framework smoke pass, 2026-10-13. Surface: storefront.
 - Rows still open from the 2026-10-04 pass: live side by side, no-JavaScript at 1440, most of G3 and G5, the 5-C3f keyboard focus sweep, the width matrix, product media Escape, native reduced motion, facet history, stylesheet subsetting on a pushed theme (5-C1), rows Blocked for data, Theme Editor, Safari or configuration. Detail: `git show fe4b986:docs/agent/board.md` and `git show 3652441:docs/migration/phase0/browser-checklist.md`. Source: 2026-10-04. Surface: storefront.
 - Per-section checks not yet seen live: `slides-show` Theme Editor block select and deselect and native reduced motion; accent colour Theme Editor live preview; promo bar hover pause, touch tap not pausing; collection cards real touch tap and real `:hover`; custom badges, badges in recommendations, lite cards in the super menu (Blocked for data); testimonial marquee native reduced motion on a device; `feature-tabs`, `mood-finder` (with real products), `editorial-collage`, `formula-details` with Theme Editor toggles and uploads and in Safari. Source: 6-S1 to 6-S7, 6-P1 to 6-P4. Surface: those sections.
+- `feature-tabs` product markers with real products: native Tab order and focus ring on the marker links, click navigation, alignment on an uploaded image at 390. Source: B7, 2026-10-25. Surface: `sections/feature-tabs.liquid`.
 - Scroll-linked sections (`scatter-gallery` and later narrative sections) on a real iPhone through a pushed unpublished theme's preview link (`127.0.0.1` is unreachable from the phone). Source: user, 2026-10-05. Surface: home.
 - Store configuration to classify or confirm: `/favicon.ico` 404 on the first home load; the 400 from hosted `account.js` (password-protected store; confirm it disappears once the password is removed). Source: 6-F1 review, 2026-10-13. Surface: store settings.
 

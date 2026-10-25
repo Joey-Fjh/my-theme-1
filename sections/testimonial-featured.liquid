@@ -60,10 +60,15 @@
     endif
 
     assign testimonial_global_column_index = 0
+
+    assign testimonial_layout_class = 'testimonial-featured__layout flex flex-col gap-step-xl tablet:gap-step-xl'
+    if section.settings.marquee_width == 'full'
+        assign testimonial_layout_class = 'testimonial-featured__layout testimonial-featured__layout--full container-page'
+    endif
 -%}
 
 {%- capture testimonial_featured_children -%}
-    <div class="testimonial-featured__layout flex flex-col gap-step-xl tablet:gap-step-xl">
+    <div class="{{ testimonial_layout_class }}">
         <h2 class="testimonial-featured__heading {{ testimonial_heading_class }}">
             {{ testimonial_heading_text }}
         </h2>
@@ -266,6 +271,20 @@
             --testimonial-card-width: 36vw;
             --testimonial-card-ratio: 2.209302;
         }
+    }
+
+    /* Full marquee width: the layout spans the page grid's full lines; the heading keeps the content column. */
+    :where(.testimonial-featured__layout--full) {
+        grid-column: full;
+        row-gap: var(--spacing-step-xl);
+    }
+
+    :where(.testimonial-featured__layout--full > *) {
+        grid-column: full;
+    }
+
+    :where(.testimonial-featured__layout--full > .testimonial-featured__heading) {
+        grid-column: content;
     }
 
     .testimonial-featured__heading {
@@ -707,6 +726,22 @@
         {
             "type": "header",
             "content": "t:sections.testimonial-featured.content.marquee"
+        },
+        {
+            "type": "select",
+            "id": "marquee_width",
+            "label": "t:sections.testimonial-featured.settings.marquee_width",
+            "options": [
+                {
+                    "value": "page",
+                    "label": "t:sections.testimonial-featured.options.page_width"
+                },
+                {
+                    "value": "full",
+                    "label": "t:sections.testimonial-featured.options.full_width"
+                }
+            ],
+            "default": "page"
         },
         {
             "type": "select",

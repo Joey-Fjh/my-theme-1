@@ -38,6 +38,21 @@
     endif
 
     assign feature_tabs_decorative = section.settings.decorative_image
+
+    assign feature_tabs_section_image = section.settings.image
+    if feature_tabs_section_image != blank
+        assign feature_tabs_image_aspect_ratio = feature_tabs_section_image.aspect_ratio
+    else
+        assign feature_tabs_image_aspect_ratio = 1.3333333333
+    endif
+
+    if feature_tabs_section_image != blank
+        assign feature_tabs_image_alt = feature_tabs_section_image.alt
+    endif
+    if feature_tabs_image_alt == blank
+        assign feature_tabs_image_alt = 'sections.feature-tabs.defaults.image_alt' | t
+    endif
+    assign feature_tabs_image_alt = feature_tabs_image_alt | escape
 -%}
 
 {%- assign feature_tabs_root_attrs = 'data-component-kind="section" data-component-type="feature-tabs" data-component-id="'
@@ -63,46 +78,19 @@
     >
         <div class="feature-tabs__layout">
             <div class="feature-tabs__media">
-                {%- if section.blocks.size > 0 -%}
-                    {%- for block in section.blocks -%}
-                        {%- if block.type != 'item' -%}
-                            {%- continue -%}
-                        {%- endif -%}
-                        {%- liquid
-                            assign feature_tabs_item_heading = block.settings.heading
-                            if feature_tabs_item_heading == blank
-                                assign feature_tabs_item_heading = 'sections.feature-tabs.defaults.item_heading' | t: index: forloop.index
-                            endif
-                            assign feature_tabs_item_label = block.settings.label
-                            if feature_tabs_item_label == blank
-                                assign feature_tabs_item_label = 'sections.feature-tabs.defaults.item_label' | t: index: forloop.index
-                            endif
-                            assign feature_tabs_image_alt = block.settings.image.alt
-                            if feature_tabs_image_alt == blank
-                                assign feature_tabs_image_alt = feature_tabs_item_heading | strip_html | strip
-                            endif
-                            assign feature_tabs_image_alt = feature_tabs_image_alt | escape
-                            assign feature_tabs_placeholder_index = forloop.index | minus: 1 | modulo: 2 | plus: 1
-                            assign feature_tabs_placeholder_key = 'lifestyle-' | append: feature_tabs_placeholder_index
-                            if forloop.first
-                                assign feature_tabs_image_loading = 'eager'
-                            else
-                                assign feature_tabs_image_loading = 'lazy'
-                            endif
-                        -%}
-                        <div
-                            class="feature-tabs__image-layer{% if forloop.first %} is-active{% endif %}"
-                            data-feature-tabs-image
-                            data-tab-index="{{ forloop.index0 }}"
-                            :class="{ 'is-active': isActive(panelIndexFor($el)) }"
-                        >
-                            {%- if block.settings.image != blank -%}
+                <div class="feature-tabs__cover-box">
+                    <div
+                        class="feature-tabs__cover-inner"
+                        style="--feature-tabs-image-aspect-ratio: {{ feature_tabs_image_aspect_ratio }};"
+                    >
+                        <div class="feature-tabs__cover-image">
+                            {%- if feature_tabs_section_image != blank -%}
                                 {%- render 'image',
-                                    image: block.settings.image,
+                                    image: feature_tabs_section_image,
                                     alt: feature_tabs_image_alt,
                                     mode: 'frame',
                                     fit: 'cover',
-                                    loading: feature_tabs_image_loading,
+                                    loading: 'eager',
                                     sizes: '(min-width: 64rem) 60vw, 100vw',
                                     widths: '400,600,800,1000,1200,1600,2000',
                                     wrapper_class: 'feature-tabs__image-wrap h-full w-full',
@@ -111,40 +99,81 @@
                             {%- else -%}
                                 <div class="feature-tabs__image-wrap feature-tabs__image-wrap--placeholder">
                                     {% render 'decorative-placeholder-svg',
-                                        placeholder_key: feature_tabs_placeholder_key,
+                                        placeholder_key: 'lifestyle-1',
                                         class: 'feature-tabs__placeholder-svg'
                                     %}
                                 </div>
                             {%- endif -%}
                         </div>
-                    {%- endfor -%}
-                {%- else -%}
-                    {%- for placeholder_index in (1..4) -%}
-                        {%- liquid
-                            assign feature_tabs_item_heading = 'sections.feature-tabs.defaults.item_heading' | t: index: placeholder_index
-                            assign feature_tabs_placeholder_index = placeholder_index | minus: 1 | modulo: 2 | plus: 1
-                            assign feature_tabs_placeholder_key = 'lifestyle-' | append: feature_tabs_placeholder_index
-                            if placeholder_index == 1
-                                assign feature_tabs_image_loading = 'eager'
-                            else
-                                assign feature_tabs_image_loading = 'lazy'
-                            endif
-                        -%}
-                        <div
-                            class="feature-tabs__image-layer{% if forloop.first %} is-active{% endif %}"
-                            data-feature-tabs-image
-                            data-tab-index="{{ forloop.index0 }}"
-                            :class="{ 'is-active': isActive(panelIndexFor($el)) }"
-                        >
-                            <div class="feature-tabs__image-wrap feature-tabs__image-wrap--placeholder">
-                                {% render 'decorative-placeholder-svg',
-                                    placeholder_key: feature_tabs_placeholder_key,
-                                    class: 'feature-tabs__placeholder-svg'
-                                %}
-                            </div>
+                        <div class="feature-tabs__markers">
+                            {%- if section.blocks.size > 0 -%}
+                                {%- for block in section.blocks -%}
+                                    {%- if block.type != 'item' -%}
+                                        {%- continue -%}
+                                    {%- endif -%}
+                                    {%- liquid
+                                        assign feature_tabs_marker_number = forloop.index
+                                        if forloop.index < 10
+                                            assign feature_tabs_marker_number = forloop.index | prepend: '0'
+                                        endif
+                                        assign feature_tabs_marker_product = block.settings.product
+                                        assign feature_tabs_marker_x = block.settings.marker_x
+                                        assign feature_tabs_marker_y = block.settings.marker_y
+                                    -%}
+                                    {%- if feature_tabs_marker_product != blank -%}
+                                        {%- capture feature_tabs_marker_label -%}
+                                            {{- 'sections.feature-tabs.accessibility.marker_link' | t: index: feature_tabs_marker_number, title: feature_tabs_marker_product.title -}}
+                                        {%- endcapture -%}
+                                        <a
+                                            href="{{ feature_tabs_marker_product.url }}"
+                                            class="feature-tabs__marker focus-ring{% if forloop.first %} is-active{% endif %}"
+                                            data-tab-index="{{ forloop.index0 }}"
+                                            aria-label="{{ feature_tabs_marker_label | strip }}"
+                                            style="--feature-tabs-marker-x: {{ feature_tabs_marker_x }}; --feature-tabs-marker-y: {{ feature_tabs_marker_y }};"
+                                            :class="{ 'is-active': isActive(tabIndexFor($el)) }"
+                                        >
+                                            <span class="copy-m" aria-hidden="true">{{ feature_tabs_marker_number }}</span>
+                                        </a>
+                                    {%- else -%}
+                                        <span
+                                            class="feature-tabs__marker{% if forloop.first %} is-active{% endif %}"
+                                            data-tab-index="{{ forloop.index0 }}"
+                                            aria-hidden="true"
+                                            style="--feature-tabs-marker-x: {{ feature_tabs_marker_x }}; --feature-tabs-marker-y: {{ feature_tabs_marker_y }};"
+                                            :class="{ 'is-active': isActive(tabIndexFor($el)) }"
+                                        >
+                                            <span class="copy-m">{{ feature_tabs_marker_number }}</span>
+                                        </span>
+                                    {%- endif -%}
+                                {%- endfor -%}
+                            {%- else -%}
+                                {%- liquid
+                                    assign feature_tabs_marker_defaults = '22,28|78,22|28,72|72,68' | split: '|'
+                                -%}
+                                {%- for placeholder_index in (1..4) -%}
+                                    {%- liquid
+                                        assign feature_tabs_marker_number = placeholder_index
+                                        if placeholder_index < 10
+                                            assign feature_tabs_marker_number = placeholder_index | prepend: '0'
+                                        endif
+                                        assign feature_tabs_marker_pair = feature_tabs_marker_defaults[forloop.index0] | split: ','
+                                        assign feature_tabs_marker_x = feature_tabs_marker_pair[0]
+                                        assign feature_tabs_marker_y = feature_tabs_marker_pair[1]
+                                    -%}
+                                    <span
+                                        class="feature-tabs__marker{% if forloop.first %} is-active{% endif %}"
+                                        data-tab-index="{{ forloop.index0 }}"
+                                        aria-hidden="true"
+                                        style="--feature-tabs-marker-x: {{ feature_tabs_marker_x }}; --feature-tabs-marker-y: {{ feature_tabs_marker_y }};"
+                                        :class="{ 'is-active': isActive(tabIndexFor($el)) }"
+                                    >
+                                        <span class="copy-m">{{ feature_tabs_marker_number }}</span>
+                                    </span>
+                                {%- endfor -%}
+                            {%- endif -%}
                         </div>
-                    {%- endfor -%}
-                {%- endif -%}
+                    </div>
+                </div>
             </div>
 
             {%- if section.blocks.size > 0 -%}
@@ -353,31 +382,111 @@
         }
     }
 
-    .feature-tabs__image-layer {
+    .feature-tabs__cover-box {
         position: absolute;
         inset: 0;
-        opacity: 0;
-        visibility: hidden;
-        pointer-events: none;
-        /* The outgoing image stays opaque underneath until the incoming one has faded in on top. */
-        transition:
-            opacity 0s linear var(--motion-duration-base, 400ms),
-            visibility 0s linear var(--motion-duration-base, 400ms);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        container-type: size;
     }
 
-    .feature-tabs__image-layer.is-active {
-        z-index: 1;
-        opacity: 1;
-        visibility: visible;
-        pointer-events: auto;
-        transition:
-            opacity var(--motion-duration-base, 400ms) var(--motion-ease-enter, ease-out),
-            visibility 0s;
+    .feature-tabs__cover-inner {
+        position: relative;
+        flex-shrink: 0;
+        aspect-ratio: var(--feature-tabs-image-aspect-ratio, 4 / 3);
+        min-width: 100%;
+        min-height: 100%;
+    }
+
+    .feature-tabs__cover-image {
+        position: absolute;
+        inset: 0;
     }
 
     .feature-tabs__image-wrap {
         height: 100%;
         width: 100%;
+    }
+
+    .feature-tabs__markers {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        pointer-events: none;
+    }
+
+    /* 0 and 100 put the marker's edge on the image's edge; clamp keeps it inside the visible crop. */
+    .feature-tabs__marker {
+        --feature-tabs-marker-size: 3.6rem;
+        --feature-tabs-marker-gap: 0.8rem;
+        --feature-tabs-cover-w: max(100cqw, 100cqh * var(--feature-tabs-image-aspect-ratio, 4 / 3));
+        --feature-tabs-cover-h: max(100cqh, 100cqw / var(--feature-tabs-image-aspect-ratio, 4 / 3));
+        --feature-tabs-crop-x: calc((var(--feature-tabs-cover-w) - 100cqw) / 2);
+        --feature-tabs-crop-y: calc((var(--feature-tabs-cover-h) - 100cqh) / 2);
+        position: absolute;
+        left: clamp(
+            calc(var(--feature-tabs-crop-x) + var(--feature-tabs-marker-gap)),
+            calc(
+                var(--feature-tabs-marker-x, 50) / 100 *
+                    (var(--feature-tabs-cover-w) - var(--feature-tabs-marker-size))
+            ),
+            calc(
+                var(--feature-tabs-crop-x) + 100cqw - var(--feature-tabs-marker-size) -
+                    var(--feature-tabs-marker-gap)
+            )
+        );
+        top: clamp(
+            calc(var(--feature-tabs-crop-y) + var(--feature-tabs-marker-gap)),
+            calc(
+                var(--feature-tabs-marker-y, 50) / 100 *
+                    (var(--feature-tabs-cover-h) - var(--feature-tabs-marker-size))
+            ),
+            calc(
+                var(--feature-tabs-crop-y) + 100cqh - var(--feature-tabs-marker-size) -
+                    var(--feature-tabs-marker-gap)
+            )
+        );
+        z-index: 1;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: var(--feature-tabs-marker-size);
+        height: var(--feature-tabs-marker-size);
+        border: 1px solid rgb(var(--color-foreground));
+        border-radius: 999px;
+        background-color: rgb(var(--color-background));
+        color: rgb(var(--color-foreground));
+        text-decoration: none;
+        pointer-events: auto;
+        transition:
+            background-color var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease),
+            color var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease),
+            border-color var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease);
+    }
+
+    .feature-tabs__marker.is-active {
+        background-color: rgb(var(--color-foreground));
+        color: rgb(var(--color-background));
+        border-color: rgb(var(--color-foreground));
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+        .feature-tabs__marker:hover {
+            background-color: rgb(var(--color-foreground));
+            color: rgb(var(--color-background));
+            border-color: rgb(var(--color-foreground));
+        }
+    }
+
+    .feature-tabs__marker:focus-visible {
+        background-color: rgb(var(--color-foreground));
+        color: rgb(var(--color-background));
+        border-color: rgb(var(--color-foreground));
+        outline: var(--focus-ring-width) solid
+            rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+        outline-offset: var(--focus-ring-offset, 2px);
     }
 
     .feature-tabs__image-wrap--placeholder {
@@ -573,8 +682,7 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-        .feature-tabs__image-layer,
-        .feature-tabs__image-layer.is-active,
+        .feature-tabs__marker,
         .feature-tabs__tab,
         .feature-tabs__tab-mark {
             transition: none;
@@ -642,6 +750,11 @@
             "default": "title-xl"
         },
         {
+            "type": "image_picker",
+            "id": "image",
+            "label": "t:sections.feature-tabs.settings.image"
+        },
+        {
             "type": "checkbox",
             "id": "show_decoration",
             "label": "t:sections.feature-tabs.settings.show_decoration",
@@ -684,9 +797,29 @@
             "name": "t:sections.feature-tabs.blocks.item",
             "settings": [
                 {
-                    "type": "image_picker",
-                    "id": "image",
-                    "label": "t:sections.feature-tabs.block_settings.image"
+                    "type": "product",
+                    "id": "product",
+                    "label": "t:sections.feature-tabs.block_settings.product"
+                },
+                {
+                    "type": "range",
+                    "id": "marker_x",
+                    "min": 0,
+                    "max": 100,
+                    "step": 1,
+                    "unit": "%",
+                    "label": "t:sections.feature-tabs.block_settings.marker_x",
+                    "default": 22
+                },
+                {
+                    "type": "range",
+                    "id": "marker_y",
+                    "min": 0,
+                    "max": 100,
+                    "step": 1,
+                    "unit": "%",
+                    "label": "t:sections.feature-tabs.block_settings.marker_y",
+                    "default": 28
                 },
                 {
                     "type": "text",
@@ -717,6 +850,8 @@
                 {
                     "type": "item",
                     "settings": {
+                        "marker_x": 22,
+                        "marker_y": 28,
                         "label": "Origin",
                         "heading": "From seed to serum.",
                         "text": "<p>Share a concise benefit, ingredient story, or ritual step that helps customers understand why this detail matters.</p>"
@@ -725,6 +860,8 @@
                 {
                     "type": "item",
                     "settings": {
+                        "marker_x": 78,
+                        "marker_y": 22,
                         "label": "Process",
                         "heading": "Slow-crafted in small batches.",
                         "text": "<p>Share a concise benefit, ingredient story, or ritual step that helps customers understand why this detail matters.</p>"
@@ -733,6 +870,8 @@
                 {
                     "type": "item",
                     "settings": {
+                        "marker_x": 28,
+                        "marker_y": 72,
                         "label": "Texture",
                         "heading": "Lightweight, layerable finish.",
                         "text": "<p>Share a concise benefit, ingredient story, or ritual step that helps customers understand why this detail matters.</p>"
@@ -741,6 +880,8 @@
                 {
                     "type": "item",
                     "settings": {
+                        "marker_x": 72,
+                        "marker_y": 68,
                         "label": "Ritual",
                         "heading": "A moment of calm, daily.",
                         "text": "<p>Share a concise benefit, ingredient story, or ritual step that helps customers understand why this detail matters.</p>"

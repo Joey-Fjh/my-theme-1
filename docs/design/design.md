@@ -29,7 +29,7 @@ Pattern references: `docs/design/references/` (Isla Beauty, Beautiful, ARTU), re
 2. **One accent, used sparingly.** The default palette is a light canvas, one dark ink colour (deep green), and one bright accent for small moments (announcement bar, a highlight, a badge). The accent never fills large areas or carries body text. Functional colours (rating stars, sale, error, success) are not accents: each keeps to its one job.
 3. **Flat, with depth from surfaces.** No drop shadows for elevation. Depth comes from a few surface steps (canvas, card, inverted dark panel) and 1px hairlines. **One exception, a deliberate 3D moment:** an interactive media card may tilt on hover or selection over a soft, tinted backdrop shadow (a colour of the palette behind the card, not a grey drop shadow), as in the home design's category cards.
 4. **Soft shapes, one family.** Cards and media share a small set of moderate radii; controls follow their own consistent shape. No mix of sharp and pill shapes on the same kind of element.
-5. **Space is the separator.** Sections are separated by generous vertical space and background changes, not by rules and boxes. Content stays inside the page margins; only backgrounds and full-bleed media reach the edges.
+5. **Space is the separator.** Sections are separated by generous vertical space and background changes, not by rules and boxes. Content stays inside the page margins by default; backgrounds and full-bleed media reach the edges, and a section may offer a full-width setting where its design needs it.
 
 **Tone:** calm, natural, premium without luxury clichés (no gold, no script fonts, no heavy gradients). Motion is gentle and purposeful: content eases in, carousels move on request, nothing competes with the products.
 
@@ -115,6 +115,8 @@ Pattern references: `docs/design/references/` (Isla Beauty, Beautiful, ARTU), re
 | Section | `--spacing-section` | Between sections and around their content. |
 
 Every gap picks an intent first and a step second; the design's pixel distances are read only as which intent applies. Headings sit at the related distance from their text, never at group distance (rule 1 of the Overview).
+
+**Space after a display heading follows the heading** (user, 2026-10-25). A step token grows with the viewport, not with the type, so a 150px heading and a 16px paragraph would get the same related gap. Below a display heading (`title-xl` and up, or a merchant-sized hero heading) the heading adds `margin-block-end` in `em` of its own size, on top of the related gap: about `0.5em` before body text, about `0.6em` before an action. It follows the merchant's font and `heading_scale` without a setting. Applied first in `slides-show` (B10); other sections adopt it at the polish pass when they show the same gap.
 
 **Composition patterns** seen in the design and kept:
 
@@ -214,7 +216,7 @@ Each component is described by its role and look; sizes, gaps and radii come fro
 - Build hierarchy with size: one very large heading per screen, a clear step down to section headings, plain body.
 - Take every colour from a scheme role; let greys come from the ink at an opacity.
 - Keep the accent small: a strip, a highlight, a badge, text on the inverse panel.
-- Separate sections with space and background changes; keep content inside the page margins.
+- Separate sections with space and background changes; keep content inside the page margins unless the section offers a full-width setting and the merchant chooses it.
 - Use the arrow link for editorial calls to action and filled buttons for commerce actions.
 - Round feature cards and editorial media; keep product and article tiles square.
 - Let photography carry the mood: real materials, natural light, products large.
