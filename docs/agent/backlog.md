@@ -8,7 +8,7 @@ Order (user, 2026-10-26): the numbered groups run in order before the second sub
 
 ## Before submission 1: performance classification
 
-Classified 2026-10-26; the theme-code fixes are plan L1 in `docs/agent/context.md`.
+Classified 2026-10-26; the theme-code fixes closed in L1 (`4c43a39`); the classification is in `git show 4c43a39:docs/agent/context.md`.
 
 ## Before submission 2: fonts and weights (one theme-wide decision)
 
