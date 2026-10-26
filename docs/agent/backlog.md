@@ -12,9 +12,7 @@ Classified 2026-10-26; the theme-code fixes closed in L1 (`4c43a39`); the classi
 
 ## Before submission 2: fonts and weights (one theme-wide decision)
 
-- Medium weight: confirm the 500 face `design.md` asks for is loaded (earlier only 400 and 700 were, so `font-medium` rendered at 400). Source: design phase inputs, 2026-10-03. Surface: `layout/theme.liquid` font loading, `snippets/css-variables.liquid`.
-- Serif heading face: the design shows one on many sections while `design.md` fixes one family; one theme-wide font decision at the polish pass. Source: 6-S8, 6-S9, 6-S11, 6-P1 to 6-P4. Surface: font settings, `docs/design/design.md`.
-- Monospace italic in the design (`ritual-steps` step labels, eyebrows, prices; `formula-details` numbers): per `design.md` use the body family, step labels as an ink-tinted chip, tabular figures for numbers (`lint:theme` forbids `font-mono`). Source: 6-S11, 6-P4, order after 6-D2. Surface: `ritual-steps`, `formula-details`.
+Decided 2026-10-26 (one family); the remaining work is plan F1 in `docs/agent/context.md`.
 
 ## Before submission 3: setting and behaviour fixes
 

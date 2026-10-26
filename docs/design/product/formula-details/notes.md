@@ -13,5 +13,5 @@ Local design input (Git-ignored): `desktop.png` (the Ceylune design). No referen
 - Content: two block types, attribute (name, text) and ingredient (image, name, text); numbers are automatic. Per-product content comes from metafield dynamic sources in the editor.
 - Motion: the existing cascade on the attribute columns and the ingredient cards. No hover effect (images are not links).
 - The band's image stays inside the page margins (only backgrounds go full width); the design shows it bleeding to the right edge.
-- Numbers use the body face for now; the design's monospace italic waits for the font-role decision shared with ritual-steps (`lint:theme` forbids `font-mono`).
+- Numbers use the body face with tabular figures, upright, instead of the design's monospace italic (one family, F1, 2026-10-26; `lint:theme` forbids `font-mono`).
 - Mobile (derived): band: heading and text, the attributes stacked with horizontal rules between them, the image full width; ingredients: heading, then the cards in one column.
