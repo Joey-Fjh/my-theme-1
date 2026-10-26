@@ -4,7 +4,7 @@ Accepted work that no batch has taken yet. One line per item: what, a source (th
 
 Last updated: 2026-10-26.
 
-Plan HP1 in `docs/agent/context.md` holds group 4 part A (contrast, `scroll-categories` touch, sticky overlap, `promo-bannder` link). Order (user, 2026-10-26): the numbered groups run in order before the second submission (target one to two weeks); in groups 4 and 5, items with review risk come first and design-fidelity details are done as time allows. The last group waits until after the submission.
+Group 4 part A (contrast, `scroll-categories` touch, sticky overlap, `promo-bannder` link) done in HP1 (`38fc9d2`; plan and reviews in `git show 38fc9d2:docs/agent/context.md`). Order (user, 2026-10-26): the numbered groups run in order before the second submission (target one to two weeks); in groups 4 and 5, items with review risk come first and design-fidelity details are done as time allows. The last group waits until after the submission.
 
 ## Before submission 1: performance classification
 
@@ -21,6 +21,7 @@ Done 2026-10-26 in G3 (`fdfb7ba`); the plan and its reviews are in `git show fdf
 ## Before submission 4: home polish (tablet and touch first)
 
 - Tablet widths 768 to 1024 on every home section (`pc` switches at 768); keep or revise the 6-S6 1024px layout breakpoint; check on a real iPad, portrait and landscape, for crowding. Source: user, 2026-10-05. Surface: home sections.
+- User look at HP1's two accepted visual changes: inactive `ritual-steps` steps and `scroll-categories` rows dim to a scheme muted colour (weaker than the old opacity 0.3), and the `ritual-steps` badge no longer dims on inactive steps; strengthen the active state another way (weight, an indicator) if needed. Source: HP1, 2026-10-26. Surface: `ritual-steps`, `scroll-categories`.
 - Hover-only behaviour on touch on every home section at tablet widths (iPad), beyond the `scroll-categories` rows taken by HP1. Source: user, 2026-10-05. Surface: home sections.
 - `impeccable` 4.5.2 home critique as input to the home pass (decided: user, 2026-10-21; advisory, shortening the narrative touches accepted composition): (P1) three `promo-bannder` panels then two `ritual-steps` read as a catalogue; (P1) `slides-show` "MORNINGS" line break at 1440; (P2) inverted heading priority at 390; (P2) `testimonial-featured` clipped side cards on mobile; (P2) full bright accent on a `promo-bannder` panel (may be scheme config). Against `design.md`: accent area misuse, header layout, mobile rails, hero CTA underline, solid buy buttons, small ritual headings. Source: 2026-10-15 critique. Surface: home sections.
 - Typography misses: 6-S6 row titles at 40px against about 58, its mobile index and spacing; 6-S3 heading and title sizes. Source: 6-S3, 6-S6. Surface: `collection-list`, `scroll-categories`.
