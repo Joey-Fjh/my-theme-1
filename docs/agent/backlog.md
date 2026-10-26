@@ -12,7 +12,7 @@ Classified 2026-10-26; the theme-code fixes closed in L1 (`4c43a39`); the classi
 
 ## Before submission 2: fonts and weights (one theme-wide decision)
 
-Decided 2026-10-26 (one family); the remaining work is plan F1 in `docs/agent/context.md`.
+Done 2026-10-26 in F1 (`9e6dcc5`); the plan and its reviews are in `git show 9e6dcc5:docs/agent/context.md`.
 
 ## Before submission 3: setting and behaviour fixes
 
