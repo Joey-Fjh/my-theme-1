@@ -558,6 +558,46 @@
         display: grid;
         padding-block: clamp(0.9rem, 0.6514rem + 0.663vw, 1.5rem);
     }
+
+    /* Starting height before assets/base.js measures the header (the first section clears it):
+       row padding plus the taller of an icon button and a body line; the middle-center
+       layout adds its menu row from 48rem. An image logo taller than the row is corrected by the script. */
+    :root:has(.site-header .header__cols) {
+        --header-height: calc(
+            2 * clamp(0.9rem, 0.6514rem + 0.663vw, 1.5rem) +
+                max(
+                    2.5rem,
+                    var(--font-body-size-mobile) * var(--font-body-scale) *
+                        var(--font-body-line-height)
+                )
+        );
+
+        @media (width >= 48rem) {
+            --header-height: calc(
+                2 * clamp(0.9rem, 0.6514rem + 0.663vw, 1.5rem) +
+                    max(
+                        2.5rem,
+                        var(--font-body-size) * var(--font-body-scale) *
+                            var(--font-body-line-height)
+                    )
+            );
+        }
+    }
+
+    @media (width >= 48rem) {
+        :root:has(.site-header .header__cols-middle-center .header-menu nav) {
+            --header-height: calc(
+                2 * clamp(0.9rem, 0.6514rem + 0.663vw, 1.5rem) +
+                    max(
+                        2.5rem,
+                        var(--font-body-size) * var(--font-body-scale) *
+                            var(--font-body-line-height)
+                    ) +
+                    10px + var(--font-body-size) * var(--font-body-scale) *
+                    var(--font-body-line-height)
+            );
+        }
+    }
 {% endstylesheet %}
 
 {%- assign organization_social_setting_ids = 'social_twitter_link,social_facebook_link,social_pinterest_link,social_instagram_link,social_tiktok_link,social_tumblr_link,social_snapchat_link,social_youtube_link,social_vimeo_link'

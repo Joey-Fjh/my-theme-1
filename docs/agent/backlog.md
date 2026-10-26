@@ -8,7 +8,7 @@ Order (user, 2026-10-26): the numbered groups run in order before the second sub
 
 ## Before submission 1: performance classification
 
-- Classify the collection performance (LCP 5.5 s, TBT 890 ms; mobile median 0.48) and best practices 0.59 on all three pages before any code change; the job passes on the best of three runs, so green does not prove the Theme Store bar. Source: Lighthouse CI run 38363613541, 2026-10-13. Surface: classification first.
+Classified 2026-10-26; the theme-code fixes are plan L1 in `docs/agent/context.md`.
 
 ## Before submission 2: fonts and weights (one theme-wide decision)
 
@@ -33,12 +33,15 @@ Order (user, 2026-10-26): the numbered groups run in order before the second sub
 - `routine-showcase`: vertical label shows the step label while the design repeats the heading; badge sage is a scheme mix; arch ratio (the packshot box done in B6, `73aa65d`). Source: 6-S8. Surface: `sections/routine-showcase.liquid`.
 - `promo-bannder`: pale sage panel 1 against lime panel 3 needs scheme assignment (merchant configuration); sticky header overlaps a stuck panel; small image ends at about 72% of the panel against the design's 85%; the optional link's Tab reach untested with a configured link. Source: 6-S9. Surface: `sections/promo-bannder.liquid`.
 - `ritual-steps`: badge fill; proportions and spacing (oval angle and size, ring offset, star size; style B numeral and packshot done in B6, `73aa65d`); header overlap with the sticky frame and stage. Source: 6-S11. Surface: `sections/ritual-steps.liquid`.
+- `ritual-steps` inactive step text contrast (1.5 to 1.7:1 on desktop: section heading, step heading, `rte` text, badge) fails `color-contrast`; decide the dimmed state against the scheme. Source: performance classification, 2026-10-26. Surface: `sections/ritual-steps.liquid`.
+- `featured-product` variant picker option labels fail `color-contrast` (4 nodes on home, desktop Lighthouse 2026-10-26). Source: L1 review. Surface: `featured-product`, shared variant picker snippet.
 - `featured-product`: quantity beside add to cart on mobile (product page design) while the home mobile design stacks them; cap the `space-between` gaps on very tall screens; optional sticky add-to-cart bar; price and title sizes. Source: 6-S12. Surface: `sections/featured-product.liquid`, shared purchase snippets.
 - Mobile rails, one card per view: `ritual-steps` and `routine-showcase` (`card-rail`) done in B13 (2026-10-25); the user names any further places at the polish pass; remaining candidates the `collection-list` slide, the `featured-products` tab strip, the `collection-all` nav-link scroller, the `testimonial-featured` marquee; until then their layout entries stay in the baseline; the two `collection-all` nav-link `page-margin` entries and the `ritual_steps_carousel` 768 title stay baselined, and the page-margin rule is reconsidered only if they remain after this item (decided: user, 2026-10-21). Source: user, 2026-10-11; 6-T1, 6-C2. Surface: those sections.
 - Collection tab bar. Source: order after 6-D2, 2026-10-12. Surface: `collection-all`.
 
 ## Before submission 5: product polish (collection reviewed with it)
 
+- Product info blocks shift when the payment icons box appears (0.021 at 768, 0.013 at 1440, Slow 4G and CPU 4x; Chrome DevTools trace 2026-10-26). Source: L1. Surface: `sections/main-product.liquid` product info blocks, payment icons.
 - `feature-tabs`: fade 400ms onto a motion token; literal `clamp()` spacing onto `--spacing-step-*`. Source: 6-P1. Surface: `sections/feature-tabs.liquid`.
 - `mood-finder`: quadrant labels carry a backing box the design lacks; section 764px against about 700, wheel 408px against about 470 at 1440; card and arrow motion 400ms onto a token; below 80rem the botanical sits between wheel and card. Source: 6-P2. Surface: `sections/mood-finder.liquid`.
 - `formula-details`: band image stays inside the page margins while the design bleeds it to the edge; numbers' monospace italic follows the font-role item below. Source: 6-P4. Surface: `sections/formula-details.liquid`.

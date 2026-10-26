@@ -32,10 +32,13 @@
   When `url` is provided, the snippet renders an `<a>` wrapper and appends `media-interaction`
   unless `interactive: false`. Callers must not duplicate `media-interaction` in `wrapper_class`.
   Use `interactive: false` for logos and other linked images that should not breathe.
+  Use `duplicate_link: true` when the card already has a named link to the same `url`: the image
+  link then leaves the tab order and the accessibility tree, so the destination is announced once.
 
     @param {image} image - The image to be rendered
     @param {string} [url] - An optional destination URL for the image
     @param {boolean} [interactive] - When `url` is set, applies `media-interaction` on the linked wrapper by default. Pass `false` for linked images that should stay static (for example logos).
+    @param {boolean} [duplicate_link] - When `url` is set and the card already has a named link to the same destination, removes the image link from the tab order and the accessibility tree (`tabindex="-1"`, `aria-hidden="true"`).
     @param {string} [wrapper] - An optional wrapper element, either 'a' or 'div'. If not provided, it will be 'a' if url is provided, otherwise 'div'.
     @param {string} [wrapper_class] - Optional class added to the image wrapper. Canonical name; `class` is a deprecated alias merged into this.
     @param {string} [class] - Deprecated alias for `wrapper_class`. If both are provided, they are merged.
@@ -238,6 +241,9 @@
     class="{{ wrapper_class }}"
     {% if url %}
         href="{{ url }}"
+        {%- if duplicate_link == true or duplicate_link == 'true' %}
+            tabindex="-1" aria-hidden="true"
+        {%- endif %}
     {% endif %}
     data-image-mode="{{ mode }}"
     {%- if position_explicit -%}
