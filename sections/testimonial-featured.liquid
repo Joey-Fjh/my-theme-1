@@ -51,10 +51,12 @@
     assign testimonial_block_count = section.blocks.size
     assign testimonial_column_count = testimonial_block_count | plus: 1 | divided_by: 2
 
+    # Each pass must hold a multiple of 4 columns: offset parity and the 4-step bounce phase repeat at the loop seam.
+    assign testimonial_column_parity_check = testimonial_column_count | modulo: 2
     if testimonial_block_count == 1
-        assign testimonial_copies_per_set = 6
-    elsif testimonial_block_count == 2
-        assign testimonial_copies_per_set = 3
+        assign testimonial_copies_per_set = 8
+    elsif testimonial_column_parity_check == 1
+        assign testimonial_copies_per_set = 4
     else
         assign testimonial_copies_per_set = 2
     endif

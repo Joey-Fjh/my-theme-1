@@ -16,10 +16,7 @@ Done 2026-10-26 in F1 (`9e6dcc5`); the plan and its reviews are in `git show 9e6
 
 ## Before submission 3: setting and behaviour fixes
 
-- `sections/collection.liquid` filter buttons (two, near lines 649 and 659) add `surface-inverted` and `hover:opacity-90` to `btn-primary`, bypassing the scheme's button colours; decide whether they follow the scheme. Source: B12 audit, 2026-10-25. Surface: `sections/collection.liquid`.
-- Article `padding_top`: decided (user, 2026-10-08) to fix it as a standard section setting; the article top moves by the stored value (32), which the user checks. Source: 5-C3d3. Surface: `sections/article.liquid`.
-- Testimonial marquee seam: with exactly 2 testimonials, half the track holds 3 columns, so the offset alternation breaks at the loop seam. Source: 6-S7 R4. Surface: `testimonial-featured`.
-- Design choice: product page add to cart shows a toast only, or opens the cart drawer like quick view (`open_cart_on_add` in `snippets/buy-buttons.liquid`; live theme the same). Source: 2026-10-13. Surface: `snippets/buy-buttons.liquid`, `sections/main-product.liquid`.
+Decided 2026-10-26; the work is plan G3 in `docs/agent/context.md`.
 
 ## Before submission 4: home polish (tablet and touch first)
 

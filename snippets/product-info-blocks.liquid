@@ -17,6 +17,15 @@
 {%- assign context_modifier = 'product-info-blocks--' | append: context -%}
 {%- assign column_modifier = 'product-info-blocks--' | append: render_column -%}
 {%- assign purchase_anchor_type = '' -%}
+{%- if settings.cart_type == 'drawer' -%}
+    {%- assign purchase_open_cart = true -%}
+    {%- assign purchase_dialog_id = 'cart-overlay-drawer' -%}
+    {%- assign purchase_success_msg = '' -%}
+{%- else -%}
+    {%- assign purchase_open_cart = false -%}
+    {%- assign purchase_dialog_id = '' -%}
+    {%- assign purchase_success_msg = 'toast.added_to_cart' | t -%}
+{%- endif -%}
 {%- if render_column == 'form' -%}
     {%- for candidate_block in section.blocks -%}
         {%- if candidate_block.type == 'quantity_selector' -%}
@@ -549,6 +558,9 @@
                                 section_id: section.id,
                                 context: context,
                                 quantity_block: quantity_block,
+                                open_cart_on_add: purchase_open_cart,
+                                open_dialog_id: purchase_dialog_id,
+                                success_message: purchase_success_msg,
                                 cart_type: settings.cart_type
                             -%}
                         </div>
@@ -583,6 +595,9 @@
                             section_id: section.id,
                             context: context,
                             quantity_block: quantity_block,
+                            open_cart_on_add: purchase_open_cart,
+                            open_dialog_id: purchase_dialog_id,
+                            success_message: purchase_success_msg,
                             cart_type: settings.cart_type
                         -%}
                     </div>
