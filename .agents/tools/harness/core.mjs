@@ -180,9 +180,9 @@ function planPointer(root) {
     const contextPath = path.join(root, 'docs/agent/context.md');
     if (!fs.existsSync(contextPath)) return 'docs/agent/context.md has no plan under execution.';
     const text = fs.readFileSync(contextPath, 'utf8');
-    const heading = text.match(/^## Batch .+$/m);
+    const heading = text.match(/^## (?:Batch|Plan) .+$/m);
     if (!heading) return 'docs/agent/context.md has no plan under execution.';
-    const status = text.match(/^\*\*Status:\*\*.+$/m);
+    const status = text.match(/^\*\*Status[:.]\*\*.+$/m);
     return ['Plan in docs/agent/context.md:', heading[0], status?.[0]].filter(Boolean).join('\n');
 }
 

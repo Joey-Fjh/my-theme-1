@@ -6,6 +6,7 @@
     assign scroll_categories_link_label_default = 'sections.scroll-categories.defaults.link_label' | t
     assign scroll_categories_link_label = section.settings.link_label | default: scroll_categories_link_label_default
     assign scroll_categories_description_words = 24
+    assign scroll_categories_row_link_attributes = '@pointerdown="onRowLinkPointerDown($event)" @click="onRowLinkClick($event)"'
 
     case scroll_categories_heading_class
         when 'title-3xl'
@@ -115,6 +116,7 @@
                             href: product.url,
                             variant: 'plain',
                             class: 'min-w-0 flex-1',
+                            attributes: scroll_categories_row_link_attributes,
                             content: scroll_categories_row_title
                         -%}
                     </div>
@@ -189,6 +191,7 @@
                                 href: routes.all_products_collection_url,
                                 variant: 'plain',
                                 class: 'min-w-0 flex-1',
+                                attributes: scroll_categories_row_link_attributes,
                                 content: scroll_categories_placeholder_row_title
                             -%}
                         </div>
@@ -268,8 +271,8 @@
     }
 
     .scroll-categories__row {
-        transition: opacity var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease);
-        opacity: 1;
+        transition: color var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease);
+        color: rgb(var(--color-foreground));
     }
 
     @media (width < 64rem) {
@@ -326,11 +329,15 @@
         }
 
         .scroll-categories__row.is-inactive {
-            opacity: 0.3;
+            color: var(--color-muted);
+        }
+
+        .scroll-categories__row.is-inactive h3 {
+            color: inherit;
         }
 
         .scroll-categories__row.is-active {
-            opacity: 1;
+            color: rgb(var(--color-foreground));
         }
 
         .scroll-categories__media,

@@ -134,7 +134,7 @@ function checkBacklog(text, failures) {
 }
 
 function checkContext(text, failures) {
-    const parts = text.split(/^## Batch /m).slice(1);
+    const parts = text.split(/^## (?:Batch|Plan) /m).slice(1);
     let active = 0;
     for (const part of parts) {
         const title = part.split('\n', 1)[0].trim();
@@ -143,7 +143,7 @@ function checkContext(text, failures) {
                 failures.push(`docs/agent/context.md: plan "${title}" needs **${field}:**`);
             }
         }
-        const status = part.match(/\*\*Status:\*\*\s*(.+)/);
+        const status = part.match(/\*\*Status[:.]\*\*\s*(.+)/);
         const value = status ? status[1] : '';
         const parked = /executed/i.test(value) && /waiting/i.test(value);
         if (!parked) active += 1;

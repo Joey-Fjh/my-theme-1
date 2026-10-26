@@ -4,7 +4,7 @@ Accepted work that no batch has taken yet. One line per item: what, a source (th
 
 Last updated: 2026-10-26.
 
-Order (user, 2026-10-26): the numbered groups run in order before the second submission (target one to two weeks); in groups 4 and 5, items with review risk come first and design-fidelity details are done as time allows. The last group waits until after the submission.
+Plan HP1 in `docs/agent/context.md` holds group 4 part A (contrast, `scroll-categories` touch, sticky overlap, `promo-bannder` link). Order (user, 2026-10-26): the numbered groups run in order before the second submission (target one to two weeks); in groups 4 and 5, items with review risk come first and design-fidelity details are done as time allows. The last group waits until after the submission.
 
 ## Before submission 1: performance classification
 
@@ -21,15 +21,13 @@ Done 2026-10-26 in G3 (`fdfb7ba`); the plan and its reviews are in `git show fdf
 ## Before submission 4: home polish (tablet and touch first)
 
 - Tablet widths 768 to 1024 on every home section (`pc` switches at 768); keep or revise the 6-S6 1024px layout breakpoint; check on a real iPad, portrait and landscape, for crowding. Source: user, 2026-10-05. Surface: home sections.
-- Hover-only behaviour on touch for 6-S3 cards and 6-S6 rows, and on every home section at tablet widths (iPad). Source: user, 2026-10-05. Surface: `collection-list`, `scroll-categories`.
+- Hover-only behaviour on touch on every home section at tablet widths (iPad), beyond the `scroll-categories` rows taken by HP1. Source: user, 2026-10-05. Surface: home sections.
 - `impeccable` 4.5.2 home critique as input to the home pass (decided: user, 2026-10-21; advisory, shortening the narrative touches accepted composition): (P1) three `promo-bannder` panels then two `ritual-steps` read as a catalogue; (P1) `slides-show` "MORNINGS" line break at 1440; (P2) inverted heading priority at 390; (P2) `testimonial-featured` clipped side cards on mobile; (P2) full bright accent on a `promo-bannder` panel (may be scheme config). Against `design.md`: accent area misuse, header layout, mobile rails, hero CTA underline, solid buy buttons, small ritual headings. Source: 2026-10-15 critique. Surface: home sections.
 - Typography misses: 6-S6 row titles at 40px against about 58, its mobile index and spacing; 6-S3 heading and title sizes. Source: 6-S3, 6-S6. Surface: `collection-list`, `scroll-categories`.
 - `scroll-categories` `tablet:` tier and flex classes switch at 768 while the two-column layout starts at 1024; the image `sizes` switch at `48rem`. Source: 6-S6 R12. Surface: `sections/scroll-categories.liquid`.
 - `routine-showcase`: vertical label shows the step label while the design repeats the heading; badge sage is a scheme mix; arch ratio (the packshot box done in B6, `73aa65d`). Source: 6-S8. Surface: `sections/routine-showcase.liquid`.
-- `promo-bannder`: pale sage panel 1 against lime panel 3 needs scheme assignment (merchant configuration); sticky header overlaps a stuck panel; small image ends at about 72% of the panel against the design's 85%; the optional link's Tab reach untested with a configured link. Source: 6-S9. Surface: `sections/promo-bannder.liquid`.
-- `ritual-steps`: badge fill; proportions and spacing (oval angle and size, ring offset, star size; style B numeral and packshot done in B6, `73aa65d`); header overlap with the sticky frame and stage. Source: 6-S11. Surface: `sections/ritual-steps.liquid`.
-- `ritual-steps` inactive step text contrast (1.5 to 1.7:1 on desktop: section heading, step heading, `rte` text, badge) fails `color-contrast`; decide the dimmed state against the scheme. Source: performance classification, 2026-10-26. Surface: `sections/ritual-steps.liquid`.
-- `featured-product` variant picker option labels fail `color-contrast` (4 nodes on home, desktop Lighthouse 2026-10-26). Source: L1 review. Surface: `featured-product`, shared variant picker snippet.
+- `promo-bannder`: pale sage panel 1 against lime panel 3 needs scheme assignment (merchant configuration); small image ends at about 72% of the panel against the design's 85%. Source: 6-S9. Surface: `sections/promo-bannder.liquid`.
+- `ritual-steps`: badge fill; proportions and spacing (oval angle and size, ring offset, star size; style B numeral and packshot done in B6, `73aa65d`). Source: 6-S11. Surface: `sections/ritual-steps.liquid`.
 - `featured-product`: quantity beside add to cart on mobile (product page design) while the home mobile design stacks them; cap the `space-between` gaps on very tall screens; optional sticky add-to-cart bar; price and title sizes. Source: 6-S12. Surface: `sections/featured-product.liquid`, shared purchase snippets.
 - Mobile rails, one card per view: `ritual-steps` and `routine-showcase` (`card-rail`) done in B13 (2026-10-25); the user names any further places at the polish pass; remaining candidates the `collection-list` slide, the `featured-products` tab strip, the `collection-all` nav-link scroller, the `testimonial-featured` marquee; until then their layout entries stay in the baseline; the two `collection-all` nav-link `page-margin` entries and the `ritual_steps_carousel` 768 title stay baselined, and the page-margin rule is reconsidered only if they remain after this item (decided: user, 2026-10-21). Source: user, 2026-10-11; 6-T1, 6-C2. Surface: those sections.
 - Collection tab bar. Source: order after 6-D2, 2026-10-12. Surface: `collection-all`.

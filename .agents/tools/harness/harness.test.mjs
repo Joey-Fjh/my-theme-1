@@ -472,6 +472,52 @@ test('context plans need estimate, checkpoint and bar fields', () => {
     }
 });
 
+test('plan headings and status lines also use the Plan and Status. forms', () => {
+    const plan = PLAN_BODY.replace('**Status:**', '**Status.**');
+    const parked = '**Status.** Executed and reviewed; waiting for the commit.\n\n' + PLAN_BODY.replace(/\*\*Status:\*\*.*\n\n/, '');
+    const cases = [
+        ['plan heading, all fields', `## Plan Test\n\n${plan}`, null],
+        ['plan heading, no bar', `## Plan Test\n\n${plan.replace(/\*\*Bar:\*\*.*\n/, '')}`, /plan "Test" needs \*\*Bar:\*\*/],
+        ['parked plan beside an active one', `## Plan Done\n\n${parked}\n## Plan Next\n\n${plan}`, null],
+        ['two active plans', `## Plan One\n\n${plan}\n## Batch Two\n\n${PLAN_BODY}`, /2 plans under execution/],
+    ];
+    for (const [name, body, failure] of cases) {
+        const files = records();
+        files['docs/agent/context.md'] = `# Context\n\nLast updated: ${DATE}\n\n${body}`;
+        const root = initRepo(files);
+        try {
+            const run = spawnSync(process.execPath, [RECORD_CHECK], {
+                cwd: root,
+                encoding: 'utf8',
+                windowsHide: true,
+            });
+            if (failure) {
+                assert.equal(run.status, 1, name);
+                assert.match(run.stdout, failure, name);
+            } else {
+                assert.equal(run.status, 0, `${name}: ${run.stdout}`);
+            }
+        } finally {
+            removeRepo(root);
+        }
+    }
+});
+
+test('prompt names a plan titled with Plan and its Status. line', () => {
+    const files = records();
+    files['docs/agent/context.md'] = `# Context\n\nLast updated: ${DATE}\n\n## Plan Demo\n\n**Status.** authorized.\n`;
+    const root = initRepo(files);
+    const stateDir = fs.mkdtempSync(path.join(os.tmpdir(), 'harness-state-'));
+    try {
+        const first = output(runHook('prompt', { cwd: root, session_id: 'plan-form' }, stateDir));
+        assert.match(first.hookSpecificOutput.additionalContext, /## Plan Demo/);
+        assert.match(first.hookSpecificOutput.additionalContext, /\*\*Status\.\*\* authorized/);
+    } finally {
+        removeRepo(root);
+        removeRepo(stateDir);
+    }
+});
+
 test('pre denies a git push when record checks or whitespace checks fail', () => {
     const root = initRepo(records());
     const remote = fs.mkdtempSync(path.join(os.tmpdir(), 'harness-remote-'));
