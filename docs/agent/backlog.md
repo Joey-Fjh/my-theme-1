@@ -16,7 +16,7 @@ Done 2026-10-26 in F1 (`9e6dcc5`); the plan and its reviews are in `git show 9e6
 
 ## Before submission 3: setting and behaviour fixes
 
-Decided 2026-10-26; the work is plan G3 in `docs/agent/context.md`.
+Done 2026-10-26 in G3 (`fdfb7ba`); the plan and its reviews are in `git show fdfb7ba:docs/agent/context.md`.
 
 ## Before submission 4: home polish (tablet and touch first)
 
