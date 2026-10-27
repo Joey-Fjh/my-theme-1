@@ -20,6 +20,7 @@ Done 2026-10-26 in G3 (`fdfb7ba`); the plan and its reviews are in `git show fdf
 
 ## Before submission 4: home polish (tablet and touch first)
 
+- LS2, queued after group 7 (user, 2026-10-27): containers sized by content (quick view, home `featured-product` carousel, the fixed-height inventory) and a screenshot-led layout pass on home and product, option B; it absorbs the overlapping items of groups 4 and 5 and the `ritual-steps` tall-screen spacing. Source: board topic LS2, plan in `git show 8cb6fe7:docs/agent/context.md`. Surface: per that plan.
 - `featured-products` titles wrap beside the price at 1024. Source: HT1 tablet sweep, 2026-10-26 (the rest of the tablet item closed: swept in HT1, no real-device check, user 2026-10-27). Surface: `sections/featured-products.liquid`.
 - User look at HP1's two accepted visual changes: inactive `ritual-steps` steps and `scroll-categories` rows dim to a scheme muted colour (weaker than the old opacity 0.3), and the `ritual-steps` badge no longer dims on inactive steps; strengthen the active state another way (weight, an indicator) if needed. Source: HP1, 2026-10-26. Surface: `ritual-steps`, `scroll-categories`.
 - Typography misses: 6-S6 row titles at 40px against about 58, its mobile index and spacing; 6-S3 heading and title sizes. Source: 6-S3, 6-S6. Surface: `collection-list`, `scroll-categories`.
@@ -45,18 +46,7 @@ Done 2026-10-26 in G3 (`fdfb7ba`); the plan and its reviews are in `git show fdf
 
 ## Before submission 7: consolidated browser pass
 
-Taken into plan BP1 in `docs/agent/context.md` (user, 2026-10-27). The width matrix and the manual test checklist moved to group 8; the `account.js` 400 moved to After submission; the Safari, real touch, blocked-for-data and 5-C1 rows were dropped (board topic BP1). The pass ran on 2026-10-27, and its defects are below. The evidence for each item is in plan BP1: `git show 4e0884d:docs/agent/context.md`. Batch order (user, 2026-10-27): review risk first (D4, D6, D7, D3, D8), then experience (D9, D10, D5), then no-JavaScript (D1, D2) as time allows.
-
-- D4: no country or language selector below 768; add one to the mobile menu drawer or the footer. Source: BP1. Surface: `sections/announcement-bar.liquid`, the header mobile menu, `snippets/localization-switcher.liquid`.
-- D6: duplicate accordion panel ids in the filter drawer; give each filter group a unique `id_prefix`. Source: BP1. Surface: `snippets/filters-groups.liquid`, `snippets/accordion.liquid`.
-- D7: newsletter overlay focus trap leaks, because `isElementVisible` ignores the element's own `display: none` (hCaptcha textarea). Source: BP1. Surface: `assets/dialog.js`.
-- D3: focus lost to `body` after a section refresh (cart page and drawer quantity and remove, filter change, AJAX pagination, sort). Source: BP1. Surface: the cart and collection refresh paths in `assets/`.
-- D8: `slides-show` autoplay cannot be paused by keyboard on desktop; the focus pause does not reach Swiper, and the pause button is hidden on hover devices. Source: BP1. Surface: `assets/slides-show.js`, `sections/slides-show.liquid`.
-- D9: mid-page reload; the header keeps `is-top` until the first scroll, and the header and main section jump 47px with `--announcement-bar-height`. Source: BP1. Surface: `assets/sticky-header.js`, `sections/header.liquid`, the main section top offset.
-- D10: product magnifier pane stays blank and open after the user's sweep path; add a defensive close. Source: BP1 (user steps). Surface: `assets/image-magnifier.js`, `snippets/image-magnifier.liquid`.
-- D5: AJAX pagination leaves the viewport at the pagination; move to the grid top. Source: BP1. Surface: the collection pagination script.
-- D1: no-JavaScript collection filter and sort unreachable. Source: BP1. Surface: `snippets/filters-groups.liquid`, the collection toolbar.
-- D2: no-JavaScript cart quantity cannot update (`updates[]` and an update submit). Source: BP1. Surface: `sections/cart.liquid`.
+Done in BP1 (`4e0884d`); its defects D1 to D10 moved into plan G7 in `docs/agent/context.md` (user, 2026-10-27).
 
 ## Before submission 8: readiness review
 

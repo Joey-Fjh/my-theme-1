@@ -4,74 +4,69 @@ Holds the plan currently under execution and its status. Nothing else. Unresolve
 
 Last updated: 2026-10-27.
 
-## Plan LS2: containers sized by content, and a screenshot-led layout pass (option B)
+## Plan G7: browser pass defects D1 to D10
 
-**Outcome.**
+**Outcome.** The ten defects from BP1 are fixed: focus, keyboard and autoplay control meet the accessibility baseline (D3, D6, D7, D8), shoppers below 768 can change country and language (D4), mid-page reloads and pagination no longer jump (D9, D5), the magnifier always closes (D10), and collection filter, sort and cart quantity work without JavaScript (D1, D2).
 
-- No container keeps a fixed height that leaves a large empty band under short content: the quick view, the home `featured-product` carousel, and the remaining fixed heights from the inventory either follow content with a cap or are kept with a recorded design reason.
-- Home and product pages are reviewed from screenshots, not only measurements, and the user picks which layout and spacing improvements land in this batch.
+**Decided (user, 2026-10-27).** Group 7 in full before LS2. Evidence: `git show 4e0884d:docs/agent/context.md` (BP1).
 
-**Decided (user, 2026-10-27).** Board topic LS2, option B (A plus a screenshot-led review; C, the shared `section-frame` contract, waits until B settles the standards).
+**Investigation (coordinator, 2026-10-27; root causes confirmed in source, D8 also at runtime).**
 
-**Evidence (from the board topic).**
-
-- **Trigger.** The user's look at LS1 (2026-10-27): the home `featured-product` carousel under `adapt` leaves landscape slides at the top of a fixed 810px frame; `ritual-steps` leaves 300px above and below its text on tall screens; the quick-view dialog is a fixed 90vh panel (`tablet:h-full` in `snippets/product-card.liquid`) with empty space under short content. The user: the discussed units and layout ideas were not applied, and the result lacks aesthetic judgement.
-- **Cause.** Container heights are fixed (full height, one screen, the cap as the frame) instead of sized by content with a cap. LS1 applied its principles only to the flagged sections (A+B); the shared contract (LS1-C, `snippets/section-frame.liquid`) was deferred, and no `frontend-design` read was done.
-- **References so far.** `featured-product`: Dawn shows the first media only, own ratio, constrained to the viewport, `contain`; Horizon `_featured-product-gallery` defaults `image_ratio` to adapt with `constrain_to_viewport` contain and takes the gallery ratio from the featured media. Evidence: `git show 37cff5e:docs/agent/context.md` (Closure).
-- **Approach agreed (user, 2026-10-27).** Research and audit before code: (1) mainstream DTC stores for the home single-product feature, the quick view and full-screen narrative sections, measured on the live pages; (2) every container (sections, dialogs, drawers, galleries) against the LS1 principles plus "height from content, with a cap", each miss measured; (3) a `frontend-design` read discussed with the user; then scope options with estimates. LS1-C folds in here.
-- **Research, quick view (2026-10-27, 1440×900).** Dawn `quick-add.css`: content width 70% (80% at 750px), `max-height` from the modal offset, `overflow-y: auto`, so height follows content. Horizon `theme-styles-variables`: `--quick-add-modal-width: min(54rem, 100vw minus insets)`, `--quick-add-modal-height: min(38.5rem, 96vh)`, gallery column 24rem: a compact fixed box. Princess Polly (live): modal about 871×564, centred, sized by content, image about 336px wide at 3:4. Allbirds (live): a 440px right drawer, full height, content fills it (24px left over). Fashion Nova: a size-only sheet. Rare Beauty: no quick view, add to bag on the card. Ours: wrapper insets `8vw`/`5vh` and `tablet:h-full` on the panel, so about 1210×810 whatever the content.
-- **Research, product media (live, 1440×900).** Allbirds: a fixed landscape main frame (818×467) with `cover` over square sources, a grid below. Princess Polly: two fixed portrait frames (450×610, about 3:4) with `cover`. Brands with art-directed photography pick one fixed ratio; the themes (Dawn, Horizon) default to the image's own ratio because merchant images are unknown. Not yet researched live: home single-product features and full-screen narrative sections.
-- **`frontend-design` read.** Its relevant guidance is process, not numbers: spend boldness in one place and keep the rest quiet; line length under 80 characters; critique the rendered page from screenshots. LS1 was judged by measurements only, never by a screenshot critique.
-- **Fixed-height inventory (static scan of `sections/` and `snippets/`).** Height not from content: quick view (`snippets/product-card.liquid`, `tablet:h-full` + `!max-h-full`); `featured-product` carousel stage `height: min(calc(var(--screen-height) - 6rem), 96rem)`; `promo-bannder` panel `max(40rem, var(--screen-height))` (at least one screen); `ritual-steps` pinned stage (one screen by design); `article` hero `55svh`; `newsletter-overlay` media `tablet:h-full`; `promise-section` media `tablet:h-full`; `search` `min-h-[50svh]` (empty state). Already content-sized with a cap: `image-lightbox` and `product-media-modal` (`max-h-[85vh]`/`90vh`), the header menu (`max-height: calc(100dvh - …)`); `snippets/section-frame.liquid` stage heights are the merchant's `section_height` setting (minimums).
-
-**Dependencies.**
-
-- `npm.cmd run shopify:dev` running; Chrome DevTools MCP for live-store research and screenshots.
-- The user picks items at checkpoint 1 before any change from the screenshot review is made.
+- **D7.** `isElementVisible` in `assets/dialog.js` walks from `el.parentElement`, so an element whose own `display` is `none` (the hCaptcha textarea) counts as focusable and becomes the trap's last stop. `assets/image-lightbox.js` `_isElementVisible` is a copy with the same bug.
+- **D6.** `snippets/filters-groups.liquid` renders one single-item `accordion` per filter with `id_prefix: scope_id`, so every panel is `accordion-panel-<scope>-0`.
+- **D4.** The selectors render only in the announcement bar's `max-tablet:hidden` row; `snippets/header-mobile-menu-drawer.liquid` and the footer have none. A header section cannot read the announcement bar's settings.
+- **D3.** `SectionRefresher.render` (`assets/https.js`) swaps markup through `replaceRegion` and never restores focus. The cart page and drawer (`assets/cart.contract.js`, `assets/cart-overlay.js`), filters (`assets/collection-filters.js`, `assets/search-filters.js`), pagination (`assets/section-pagination.js`) and sort all go through it.
+- **D5.** `assets/section-pagination.js` renders and pushes history but never moves focus or scroll.
+- **D8.** Runtime, 1440×900: with keyboard focus inside the slideshow (`:focus-visible`, `_focusPaused` true), slides still advanced every 5s. Swiper 12 resumes autoplay after each transition, and `_onUserPauseHold` in `assets/slides-show.js` re-applies only the button pause (`if (this._userPaused)`), not focus, hover or viewport pauses. Separately, `snippets/autoplay-pause-button.liquid` hides the button under `(hover: hover) and (pointer: fine)`.
+- **D9.** `assets/sticky-header.js` starts with `isTop: true` and only computes state on scroll. `assets/base.js` sets `--announcement-bar-height` to the bar's visible part on every scroll. Fixed overlays need that, but the in-flow first-section clearance in `snippets/section-frame.liquid` (and the `article` hero padding) also reads it, so a reload below the bar renders 47px less clearance, and the first 47px of a normal scroll shift content.
+- **D10.** `assets/image-magnifier.js` opens only on `pointerenter` and closes only on `pointerleave`. A reload with the pointer already over the image never opens it; a media switch makes the old layer `pointer-events: none`, and its `pointerleave` can be missed, leaving the pane open.
+- **D1.** Filters live in a JavaScript dialog and sort is an Alpine disclosure, so no form or `sort_by` link is reachable without JavaScript.
+- **D2.** `sections/cart.liquid` quantity inputs are `name="quantity"`, with no update submit.
 
 **Implementation surface and method.**
 
-- **Stage 1 (no code).**
-    - Live research still open: home single-product features and full-screen narrative sections, 4 to 6 mainstream stores, measured at 1440×900 (container size, content extent, empty runs).
-    - Screenshot review of home (every section) and the product page (one image and many images) at 1440×900 and 390×844, read against `frontend-design` (one bold element, quiet surroundings, line length, rhythm) and the LS1 principles plus "height from content, with a cap". One row per finding: screenshot, measurement, proposed change, cost.
-- **Stage 2 (code), A, fixed scope:**
-    - Quick view: `snippets/product-card.liquid` dialog classes and the `product-quick-view` component styles in `tailwind/tailwind.components.css`: a centred dialog about 54 to 56rem wide, height from content, capped (about 90svh) with internal scroll; mobile unchanged unless the review says otherwise.
-    - `featured-product` carousel under `adapt`: `sections/featured-product.liquid`, `snippets/product-gallery-carousel.liquid`, `snippets/product-gallery.liquid`: the frame takes the featured media's ratio within the cap (Horizon's approach); other slides are contained and centred; the fixed stage height `min(calc(var(--screen-height) - 6rem), 96rem)` is reviewed.
-    - The other inventory entries (`promo-bannder`, `article` hero, `newsletter-overlay`, `promise-section`, `search` empty state): fix or record a design reason, one row each.
-- **Stage 2 (code), B, the user's picks** from the stage 1 list, including `ritual-steps` empty space on tall screens (212/230px at 1440×900, 309/331px at 1580×1130; pinned one-screen stage, so the fix is in the content, not a cap; `sections/ritual-steps.liquid`). Files outside the named ones are named in the stage 1 list and approved with the pick.
-- Read `frontend-design` before stage 1 (done once, 2026-10-27; reread if the direction changes). Run `review-animations` if any motion changes.
+- **D7:** `assets/dialog.js`, `assets/image-lightbox.js`: the visibility walk starts at the element itself.
+- **D6:** `snippets/filters-groups.liquid`: `id_prefix` gets the filter index.
+- **D8:** `assets/slides-show.js`: the resume hold re-applies any interaction pause (`_isInteractionPaused()`). `snippets/autoplay-pause-button.liquid`: the button also shows on hover devices (the WCAG 2.2.2 pause mechanism; this also affects `routine-showcase`). A visible change; the user confirms it at checkpoint 1.
+- **D4:** `snippets/header-mobile-menu-drawer.liquid` renders `country-localization` and `language-localization` (unique form ids) below the menu. `sections/header.liquid` gains `enable_country_selector` and `enable_language_selector` (default on, as in Dawn), with locale keys in the schema locale files. `assets/localization-switcher.js` changes only if two instances conflict.
+- **D3 and D5:** `assets/https.js` `SectionRefresher.render`: before the swap, record the focused element inside the target (its `id`, else a `data-focus-key`, else `name` plus `value`). After the swap, focus the match with `preventScroll`; else the caller's fallback (`config.focusFallback` selector); else the target. Callers pass fallbacks: a removed cart line goes to the cart heading or the next line; pagination goes to the results grid (`tabindex="-1"`, scrolled to its top below the sticky header, which is D5). `data-focus-key` attributes are added where ids are not stable (cart line controls, filter inputs) in the matching snippets.
+- **D9:** `assets/sticky-header.js` computes `isTop` and `lastY` in `init`. `assets/base.js` also sets `--announcement-bar-offset` (the bar's full height, independent of scroll). The first-section clearance in `snippets/section-frame.liquid` and the hero padding in `sections/article.liquid` use the offset; fixed overlays keep `--announcement-bar-height`.
+- **D10:** `assets/image-magnifier.js`: `moveMagnifier` opens the pane when it is not open yet. While open, a pointer position outside the element's rect (checked on move and on scroll) closes it. It also closes on `blur` and `visibilitychange`.
+- **D1:** the collection and search toolbars get a `<noscript>` fallback: Shopify's storefront filtering form (GET, list filters as checkboxes, price range inputs, a submit button) and a sort `<select name="sort_by">` with a submit. Files: a new `snippets/filters-noscript.liquid`, `snippets/sort-by-dropdown.liquid`, and the collection and search toolbars.
+- **D2:** `sections/cart.liquid`: quantity inputs become `name="updates[]"` with a `<noscript>` update submit, after checking that `assets/cart-page.js` does not depend on `name="quantity"`.
+- Read `docs/references/architecture/javascript-runtime.md` before the JS changes. `review-animations` does not apply unless motion changes.
 
-**Review tier.** Ask: Liquid markup changes. The Verifier runs in a separate session from `.agents/roles/verifier.md`; the user's look at screenshots is part of acceptance.
+**Review tier.** Ask: `assets/*.js`, Liquid markup and schema change. The Verifier runs in a separate session from `.agents/roles/verifier.md`.
 
-**Estimate:** about 8 to 10 hours (stage 1 about 3, A about 4, B picks about 2 to 3), plus the Ask review.
+**Estimate:** about 10 hours (D7, D6 and D8 about 1.5; D4 about 1.5; D3 and D5 about 2.5; D9 about 1.5; D10 about 1; D1 about 2; D2 about 0.5), plus the Ask review.
 
 **Checkpoint:** three stops.
 
-- After stage 1: the research table and the screenshot findings list go to the user, who picks; no code before this.
-- After stage 2 and validators: before and after screenshots at 1440 and 390 to the user, then the Ask review prompt.
-- Whenever a fix needs a file or method not named above or in the approved picks.
+- Before code: the user confirms the two visible changes (D8, the pause button on desktop; D4, selectors in the mobile menu drawer with header settings default on).
+- After the review-risk items (D4, D6, D7, D3, D8) with their checks; then the rest.
+- After all items and validators, before the Ask review prompt; also whenever a fix needs a file or method not named above.
 
-**Bar:** judged on the default preset, the current templates and the demo products, at 1440×900, 1920×1080 and 390×844.
+**Bar:** judged on the default preset and the current templates, at 1440×900 and 390×844, keyboard only where stated.
 
-- **Must fix:**
-    - The quick view leaves an empty band over about 120px under its content on desktop, or its content is unreachable (no scroll) when taller than the cap.
-    - The `featured-product` carousel frame under `adapt` leaves a one-sided empty band over about 120px on any slide.
-    - Any approved pick not delivered, or delivered without its before and after screenshot.
-    - Any cropped product image under `adapt` (the LS1 rule), any new `test:layout` issue, any validator failure, a focus or keyboard regression in the quick view.
-- **Accepted residue:** the `ritual-steps` pinned stage stays one screen tall; picks the user declines; LS2-C (shared contract).
+- **Must fix:** any of the ten defects still reproducible by its check below; any new focus trap leak or focus loss; any new `test:layout` issue; any validator failure; any JavaScript console error on home, product, collection, search and cart.
+- **Accepted residue:** the D1 and D2 fallbacks look plain (they show only without JavaScript). D10 is checked with scripted pointer events and the user's own sweep, since the DevTools hover tool did not reproduce it.
 
 **Acceptance checks.**
 
-1. Research table: one row per store and pattern with the measured size, recorded under Results.
-2. Findings list: one row per finding with a screenshot path, measurement, proposed change and cost; the user's picks recorded.
-3. Quick view at 1440×900 and 1920×1080 with a short-content product and a many-variant product: dialog size, empty run under content, internal scroll works; focus moves in, traps, and returns on close; at 390×844 unchanged or as approved.
-4. Home `featured-product` at 1440×900: every slide, frame size and empty run above and below; nothing cropped.
-5. One row per remaining inventory entry: changed (with measurement) or kept (with reason).
-6. Each approved pick: before and after screenshot and measurement.
-7. Validators: `npm.cmd run lint:theme`, `npm.cmd run test:theme-check`, `npm.cmd run lint:liquid-syntax`, `npm.cmd run lint:i18n`; `npm.cmd run scan:compat` when Tailwind or a stylesheet changes; `npm.cmd run test:layout -- --widths 390,768,1024,1440` 0 new issues.
-8. The Ask review reports PASS; the user looks at home, a product with one image and with many images, and the quick view, at 1440 and the user's own screen.
+1. D7: with the newsletter overlay open, Tab and Shift+Tab cycle only visible controls, and the hCaptcha textarea is never focused. The lightbox the same.
+2. D6: the filter drawer has no duplicate `id` (the count of `[id]` equals the unique count), and every `aria-controls` resolves.
+3. D8: keyboard focus inside the slideshow holds the slide for at least 12s, and focus out resumes. The pause button is visible and toggles at 1440 and 390. `routine-showcase` the same.
+4. D4: at 390 the mobile menu drawer shows country and language selectors; changing the country reloads with the new currency; both are keyboard reachable; the header settings turn them off.
+5. D3: after each of cart page quantity, cart page remove, drawer quantity, drawer remove, filter checkbox, sort option and pagination, `document.activeElement` is the matching control or the named fallback, never `body`. Inside the drawer, focus stays in the dialog.
+6. D5: after pagination at 390 and 1440, the results grid top is in view, below the sticky header.
+7. D9: on reload at a mid-page scroll position on home and a collection, the header has the scrolled state and no layout shift entry over 0.01 occurs in the first second. Scrolling from the top moves content 1:1 with the scroll in the first 47px.
+8. D10: a scripted sequence (pointer over the image, out across the pane, back in, out; and a reload with the pointer over the image) shows an image while over it and leaves the pane closed after leaving. The user repeats their sweep.
+9. D1: with JavaScript disabled (sandboxed `srcdoc` iframe, as in BP1), a collection page offers filter checkboxes, a price range and sort, and submitting them changes the URL and the product list.
+10. D2: with JavaScript disabled, a cart page quantity change plus the update submit changes the line quantity. With JavaScript on, the cart page still updates live.
+11. Validators: `npm.cmd run lint:theme`, `npm.cmd run lint:compat`, `npm.cmd run test:theme-check`, `npm.cmd run lint:liquid-syntax` and `npm.cmd run lint:i18n` pass; `npm.cmd run test:layout -- --widths 390,768,1024,1440` reports 0 new issues; any existing JS unit test touching `assets/https.js` passes.
+12. The Ask review reports PASS.
 
-**History.** Planned 2026-10-27 from board topic LS2 (option B, chosen by the user). Not yet authorized.
+**History.** Planned 2026-10-27 from backlog group 7 (user: complete group 7 before LS2). Not yet authorized.
 
 **Results.**
 
