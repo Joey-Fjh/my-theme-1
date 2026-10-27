@@ -25,10 +25,11 @@ Ceylune, a custom Shopify theme maintained as a multi-industry Shopify Theme Sto
     - **Roadmap to completion** (fixed, 2026-10-28; every open item is placed here, nothing else is pending):
         1. **G7** — done 2026-10-28 (`8182efe`): defects D1 to D10 and the mobile localization panel.
         2. **OS2** — optional sections (backlog group 6): the design pass and heights not set by content.
-        3. **RR1** — readiness review (backlog group 8): the manual test checklist document, the 57-width sweep with the layout baseline to 0 (the two unconfirmed entries classified), the external read-only audit of the closed areas, and fixes for its findings; then the Pending migration line approved.
-        4. **Second submission.**
-        5. **After submission, in order:** LS2 (user, 2026-10-28: not needed before submission) as two batches, LS2-A (containers sized by content, the product card hover actions, the product page and `ritual-steps` load shifts; plan `git show d439f2b:docs/agent/context.md`) then LS2-B (the design items of backlog groups 4 and 5, screenshot-led); confirm the hosted `account.js` 400 is gone; migration ratchets to 0; the shared carousel indicator; the shared component CSS rework; the `motion-reveal` rewrite; card surface and depth; link style variants; social links from the store's Brand settings when the theme settings are empty; the `design.md` pass; the section cleanup sweep.
-        6. **Not planned** (closed unless the user raises them again): the `AGENTS.md` pass, the looping media video, the home scroll narrative, the Lighthouse CI theme cleanup; the 62.5% root size stays.
+        3. **LS2** (user, 2026-10-28: after OS2, not now) — two batches: LS2-A (containers sized by content, the product card hover actions, the product page and `ritual-steps` load shifts; plan `git show d439f2b:docs/agent/context.md`), then LS2-B (the design items of backlog groups 4 and 5, screenshot-led).
+        4. **RR1** — readiness review (backlog group 8): the manual test checklist document, the 57-width sweep with the layout baseline to 0 (the two unconfirmed entries classified), the external read-only audit of the closed areas, and fixes for its findings; then the Pending migration line approved.
+        5. **Second submission.**
+        6. **After submission, in order:** confirm the hosted `account.js` 400 is gone; migration ratchets to 0; the shared carousel indicator; the shared component CSS rework; the `motion-reveal` rewrite; card surface and depth; link style variants; social links from the store's Brand settings when the theme settings are empty; the `design.md` pass; the section cleanup sweep.
+        7. **Not planned** (closed unless the user raises them again): the `AGENTS.md` pass, the looping media video, the home scroll narrative, the Lighthouse CI theme cleanup; the 62.5% root size stays.
     - Accepted work is in `docs/agent/backlog.md`; open decisions on `docs/agent/board.md`.
 
 ## Accepted Direction
