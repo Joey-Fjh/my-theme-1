@@ -1,5 +1,23 @@
 {% assign desktop_media_width = section.settings.desktop_media_width | default: 60 | plus: 0 %}
 {% assign desktop_info_width = 100 | minus: desktop_media_width %}
+{% assign media_aspect_ratio = section.settings.media_aspect_ratio | default: 'adapt' %}
+{% assign gallery_aspect_ratio = 'adapt' %}
+{% case media_aspect_ratio %}
+    {% when 'square_1_1' %}
+        {% assign gallery_aspect_ratio = '1/1' %}
+    {% when 'portrait_3_4' %}
+        {% assign gallery_aspect_ratio = '3/4' %}
+{% endcase %}
+{% assign desktop_media_height = section.settings.desktop_media_height | default: 'balanced' %}
+{% assign desktop_media_max_height = blank %}
+{% case desktop_media_height %}
+    {% when 'compact' %}
+        {% assign desktop_media_max_height = '80svh' %}
+    {% when 'balanced' %}
+        {% assign desktop_media_max_height = '90svh' %}
+    {% when 'full_screen' %}
+        {% assign desktop_media_max_height = 'var(--screen-height)' %}
+{% endcase %}
 {% assign featured_product = section.settings.product %}
 {% assign gallery_layout = section.settings.gallery_layout | default: 'thumbnails' %}
 {% assign featured_use_carousel = false %}
@@ -40,7 +58,9 @@
                                     id: gallery_id,
                                     layout: 'carousel',
                                     pagination: 'vertical',
-                                    class: 'featured-product__gallery h-full'
+                                    class: 'featured-product__gallery h-full',
+                                    aspect_ratio: gallery_aspect_ratio,
+                                    max_height: desktop_media_max_height
                                 -%}
                             {%- else -%}
                                 {%- render 'product-gallery',
@@ -49,7 +69,8 @@
                                     layout: 'thumbnails',
                                     thumb_position: thumb_position,
                                     thumbnail_size: section.settings.thumbnail_size,
-                                    aspect_ratio: '3/4'
+                                    aspect_ratio: gallery_aspect_ratio,
+                                    max_height: desktop_media_max_height
                                 -%}
                             {%- endif -%}
                         {%- else -%}
@@ -66,7 +87,7 @@
             </div>
 
             <div
-                class="featured-product__info-column min-w-0"
+                class="featured-product__info-column min-w-0{% unless featured_use_carousel %} tablet:flex tablet:flex-col tablet:justify-center{% endunless %}"
                 data-product-info-panel
             >
                 <div class="featured-product__info-sticky" data-product-info-sticky-target>
@@ -253,6 +274,50 @@
             "unit": "%",
             "label": "t:sections.featured-product.settings.desktop_media_width",
             "default": 60
+        },
+        {
+            "type": "select",
+            "id": "media_aspect_ratio",
+            "label": "t:sections.product.settings.media_aspect_ratio",
+            "options": [
+                {
+                    "value": "adapt",
+                    "label": "t:options.image_ratio.adapt"
+                },
+                {
+                    "value": "portrait_3_4",
+                    "label": "t:sections.product.options.portrait_3_4"
+                },
+                {
+                    "value": "square_1_1",
+                    "label": "t:sections.product.options.square_1_1"
+                }
+            ],
+            "default": "adapt"
+        },
+        {
+            "type": "select",
+            "id": "desktop_media_height",
+            "label": "t:sections.product.settings.desktop_media_height",
+            "options": [
+                {
+                    "value": "original",
+                    "label": "t:sections.product.options.original"
+                },
+                {
+                    "value": "compact",
+                    "label": "t:sections.product.options.compact"
+                },
+                {
+                    "value": "balanced",
+                    "label": "t:sections.product.options.balanced"
+                },
+                {
+                    "value": "full_screen",
+                    "label": "t:sections.product.options.full_screen"
+                }
+            ],
+            "default": "balanced"
         },
         {
             "type": "select",

@@ -38,6 +38,10 @@
 {%- assign magnifier_preview_height = magnifier_preview_height | default: 0 -%}
 {%- assign magnifier_preview_max_width = magnifier_preview_max_width | default: 560 -%}
 {%- assign zoom_overlay_opacity = zoom_overlay_opacity | default: 90 -%}
+{%- assign gallery_aspect_mode = 'fixed' -%}
+{%- if aspect_ratio == 'adapt' -%}
+    {%- assign gallery_aspect_mode = 'adapt' -%}
+{%- endif -%}
 
 {%- comment -%} Determine gallery items: prefer media, fall back to images {%- endcomment -%}
 {%- assign gallery_items = media -%}
@@ -74,6 +78,7 @@
     data-module-id="product-gallery"
     data-media-count="{{ image_count }}"
     class="product-gallery{% if class %} {{ class }}{% endif %}"
+    data-gallery-aspect-mode="{{ gallery_aspect_mode }}"
     {% if id %}
         id="{{ id }}"
     {% endif %}
@@ -127,6 +132,73 @@
         height: 100%;
         width: 100%;
         min-width: 0;
+    }
+
+    .product-gallery[data-gallery-aspect-mode='adapt'] [role='tabpanel'] {
+        aspect-ratio: auto;
+        height: auto;
+    }
+
+    .product-gallery[data-gallery-aspect-mode='adapt'] .product-gallery__zoom-button {
+        position: absolute;
+        inset: 0;
+        height: 100%;
+    }
+
+    .product-gallery[data-gallery-aspect-mode='adapt'] .product-gallery__zoom-button.is-active {
+        position: relative;
+        inset: auto;
+        height: auto;
+    }
+
+    .product-gallery[data-gallery-aspect-mode='adapt']
+        .product-gallery__zoom-button
+        .theme-image[data-image-mode='natural'] {
+        height: auto;
+    }
+
+    .product-gallery[data-gallery-aspect-mode='adapt'] [data-gallery-swiper] {
+        aspect-ratio: auto;
+        height: auto;
+    }
+
+    /* Adapt never crops: under the desktop height cap each main media box (frame or natural, magnifier and video poster
+       included) narrows to cap × its own ratio instead of overflowing the panel. Stacked and grid mark their item list
+       with [data-gallery-items]. Thumbnails, the lightbox and the media modal sit outside these containers. */
+    @media (width >= 48rem) {
+        .product-gallery[data-gallery-aspect-mode='adapt']
+            :is([role='tabpanel'], [data-gallery-swiper], [data-gallery-items])
+            .theme-image {
+            width: min(
+                100%,
+                calc(var(--product-gallery-max-height, 1000vh) * (var(--aspect-ratio)))
+            );
+            height: auto;
+            max-height: var(--product-gallery-max-height, none);
+            margin-inline: auto;
+        }
+
+        .product-gallery[data-gallery-aspect-mode='adapt']
+            :is([role='tabpanel'], [data-gallery-swiper], [data-gallery-items])
+            .theme-image
+            > .image_img {
+            width: 100%;
+            height: 100%;
+        }
+    }
+
+    /* Grid rows stretch each item to its tallest neighbour at every width; a frame box (magnifier) keeps its own ratio. */
+    .product-gallery[data-gallery-aspect-mode='adapt'] [data-gallery-items] .theme-image {
+        height: auto;
+    }
+
+    /* The vertical-pagination carousel otherwise fills its column (min-height: 100%), which outranks the height cap. */
+    @media (width >= 64rem) {
+        .product-gallery[data-gallery-aspect-mode='adapt']
+            .product-gallery-carousel--pagination-vertical {
+            height: auto;
+            min-height: 0;
+        }
     }
 
     .product-gallery [role='tabpanel'] > .product-gallery__zoom-button:first-child {

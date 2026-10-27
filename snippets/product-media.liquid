@@ -10,6 +10,7 @@
     @param {string} [fetchpriority] - Optional fetchpriority ('high', 'low', 'auto')
     @param {string} [class] - Optional wrapper CSS classes
     @param {string} [img_class] - Optional image CSS classes
+    @param {boolean} [adapt] - When true, render images in natural/contain adapt mode (default: false)
     @param {boolean} [magnifier] - Use image magnifier (default: false)
     @param {number} [magnifier_zoom_scale] - Magnifier zoom scale
     @param {number} [magnifier_preview_width] - Magnifier preview width
@@ -36,6 +37,14 @@
     assign fetchpriority = fetchpriority | default: 'auto'
     assign class = class | default: ''
     assign img_class = img_class | default: 'w-full h-full object-cover'
+    assign gallery_adapt = adapt | default: false
+    assign image_mode = 'frame'
+    assign image_fit = blank
+    if gallery_adapt
+        assign img_class = 'w-full h-auto max-h-full object-contain'
+        assign image_mode = 'natural'
+        assign image_fit = 'contain'
+    endif
     assign magnifier = magnifier | default: false
     assign magnifier_zoom_scale = magnifier_zoom_scale | default: 2
     assign magnifier_preview_width = magnifier_preview_width | default: 0
@@ -69,7 +78,9 @@
                 sizes: sizes,
                 widths: widths,
                 loading: loading,
-                fetchpriority: fetchpriority
+                fetchpriority: fetchpriority,
+                mode: image_mode,
+                fit: image_fit
             -%}
         {%- endif -%}
 
@@ -87,7 +98,9 @@
                 sizes: sizes,
                 widths: widths,
                 loading: loading,
-                fetchpriority: fetchpriority
+                fetchpriority: fetchpriority,
+                mode: image_mode,
+                fit: image_fit
             -%}
             <div class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
                 <span class="flex h-14 w-14 items-center justify-center rounded-full bg-veil text-theme-text shadow-md backdrop-blur-sm">

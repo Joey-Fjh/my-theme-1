@@ -21,10 +21,27 @@
 {%- endif -%}
 
 {%- assign first_img = images.first -%}
+{%- assign gallery_adapt = false -%}
+{%- assign gallery_main_img_class = 'w-full h-full object-cover' -%}
+{%- assign gallery_main_mode = 'frame' -%}
+{%- assign gallery_main_fit = blank -%}
+{%- assign gallery_magnifier_fit = blank -%}
 {%- assign gallery_aspect = aspect_ratio -%}
-{%- if gallery_aspect == blank and first_img.width != blank and first_img.height != blank -%}
+{%- if aspect_ratio == 'adapt' -%}
+    {%- assign gallery_adapt = true -%}
+    {%- assign gallery_main_img_class = 'w-full h-auto max-h-full object-contain' -%}
+    {%- assign gallery_main_mode = 'natural' -%}
+    {%- assign gallery_main_fit = 'contain' -%}
+    {%- assign gallery_magnifier_fit = 'contain' -%}
+    {%- assign gallery_aspect = blank -%}
+{%- endif -%}
+{%- if gallery_aspect == blank
+    and gallery_adapt == false
+    and first_img.width != blank
+    and first_img.height != blank
+-%}
     {%- assign gallery_aspect = first_img.width | append: '/' | append: first_img.height -%}
-{%- elsif gallery_aspect == blank -%}
+{%- elsif gallery_aspect == blank and gallery_adapt == false -%}
     {%- assign gallery_aspect = images.first.aspect_ratio | default: '3/4' -%}
 {%- endif -%}
 
@@ -44,7 +61,9 @@
     aria-label="{{ 'accessibility.product_gallery_carousel' | t }}"
     aria-roledescription="{{ 'accessibility.carousel' | t }}"
     style="
-        aspect-ratio: {{ gallery_aspect }};
+        {% unless gallery_adapt %}
+            aspect-ratio: {{ gallery_aspect }};
+        {% endunless %}
         {% if max_height != blank %}
             --product-gallery-max-height: {{ max_height }};
         {% endif %}
@@ -93,7 +112,7 @@
                         {%- render 'image-magnifier',
                             image: media_image,
                             width: 1200,
-                            img_class: 'w-full h-full object-cover',
+                            img_class: gallery_main_img_class,
                             alt: media_image.alt,
                             sizes: '100vw',
                             widths: '400,600,800,1200',
@@ -102,18 +121,21 @@
                             zoom_scale: magnifier_zoom_scale,
                             preview_width: magnifier_preview_width,
                             preview_height: magnifier_preview_height,
-                            preview_max_width: magnifier_preview_max_width
+                            preview_max_width: magnifier_preview_max_width,
+                            fit: gallery_magnifier_fit
                         -%}
                     {%- else -%}
                         {%- render 'image',
                             image: media_image,
                             width: 1200,
-                            img_class: 'w-full h-full object-cover',
+                            img_class: gallery_main_img_class,
                             alt: media_image.alt,
                             sizes: '100vw',
                             widths: '400,600,800,1200',
                             loading: gallery_loading,
-                            fetchpriority: gallery_fetchpriority
+                            fetchpriority: gallery_fetchpriority,
+                            mode: gallery_main_mode,
+                            fit: gallery_main_fit
                         -%}
                     {%- endif -%}
                 {%- else -%}
@@ -123,7 +145,9 @@
                         sizes: '100vw',
                         widths: '400,600,800,1200',
                         loading: gallery_loading,
-                        fetchpriority: gallery_fetchpriority
+                        fetchpriority: gallery_fetchpriority,
+                        img_class: gallery_main_img_class,
+                        adapt: gallery_adapt
                     -%}
                 {%- endif -%}
 
