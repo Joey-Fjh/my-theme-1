@@ -2,7 +2,7 @@
 
 Accepted work that no batch has taken yet. One line per item: what, a source (the batch or date it came from), a surface (files, sections or pages), and the governing decision when there is one. Each line ends with labeled source and surface fields per the H1 plan format. An item leaves this file when a batch plan takes it into `docs/agent/context.md`; finished work leaves no record here (history is in Git). Undecided matters stay on `docs/agent/board.md`.
 
-Last updated: 2026-10-27.
+Last updated: 2026-10-28.
 
 Group 4 part A (contrast, `scroll-categories` touch, sticky overlap, `promo-bannder` link) done in HP1 (`38fc9d2`; plan and reviews in `git show 38fc9d2:docs/agent/context.md`). Part B composition (order, evening ritual, header logo left, full-width testimonials) done in HC1 (`a38077a`). Order (user, 2026-10-26): the numbered groups run in order before the second submission (target one to two weeks); in groups 4 and 5, items with review risk come first and design-fidelity details are done as time allows. The last group waits until after the submission.
 
@@ -20,7 +20,7 @@ Done 2026-10-26 in G3 (`fdfb7ba`); the plan and its reviews are in `git show fdf
 
 ## Before submission 4: home polish (tablet and touch first)
 
-- LS2-B, after LS2-A (roadmap in `docs/project.md`): the items below and those of group 5, screenshot-led against `frontend-design`; LS2-A (containers, card hover actions, load shifts, `ritual-steps` tall-screen spacing) is the plan in `docs/agent/context.md`. Source: board topic LS2, `git show 8cb6fe7:docs/agent/context.md`. Surface: per item.
+- LS2 after submission (user, 2026-10-28), LS2-B after LS2-A (roadmap in `docs/project.md`; LS2-A plan `git show d439f2b:docs/agent/context.md`): the items below and those of group 5, screenshot-led against `frontend-design`; LS2-A covers the containers, card hover actions, load shifts and `ritual-steps` tall-screen spacing. Source: board topic LS2, `git show 8cb6fe7:docs/agent/context.md`. Surface: per item.
 - `featured-products` titles wrap beside the price at 1024. Source: HT1 tablet sweep, 2026-10-26 (the rest of the tablet item closed: swept in HT1, no real-device check, user 2026-10-27). Surface: `sections/featured-products.liquid`.
 - User look at HP1's two accepted visual changes: inactive `ritual-steps` steps and `scroll-categories` rows dim to a scheme muted colour (weaker than the old opacity 0.3), and the `ritual-steps` badge no longer dims on inactive steps; strengthen the active state another way (weight, an indicator) if needed. Source: HP1, 2026-10-26. Surface: `ritual-steps`, `scroll-categories`.
 - Typography misses: 6-S6 row titles at 40px against about 58, its mobile index and spacing; 6-S3 heading and title sizes. Source: 6-S3, 6-S6. Surface: `collection-list`, `scroll-categories`.
