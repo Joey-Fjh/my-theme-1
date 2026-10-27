@@ -45,7 +45,7 @@ Done 2026-10-26 in G3 (`fdfb7ba`); the plan and its reviews are in `git show fdf
 
 ## Before submission 7: consolidated browser pass
 
-Taken into plan BP1 in `docs/agent/context.md` (user, 2026-10-27). The width matrix and the manual test checklist moved to group 8; the `account.js` 400 moved to After submission; the Safari, real touch, blocked-for-data and 5-C1 rows were dropped (board topic BP1). The pass ran on 2026-10-27, and its defects are below. The evidence for each item is in plan BP1 (`docs/agent/context.md`, then Git once committed). Batch order (user, 2026-10-27): review risk first (D4, D6, D7, D3, D8), then experience (D9, D10, D5), then no-JavaScript (D1, D2) as time allows.
+Taken into plan BP1 in `docs/agent/context.md` (user, 2026-10-27). The width matrix and the manual test checklist moved to group 8; the `account.js` 400 moved to After submission; the Safari, real touch, blocked-for-data and 5-C1 rows were dropped (board topic BP1). The pass ran on 2026-10-27, and its defects are below. The evidence for each item is in plan BP1: `git show 4e0884d:docs/agent/context.md`. Batch order (user, 2026-10-27): review risk first (D4, D6, D7, D3, D8), then experience (D9, D10, D5), then no-JavaScript (D1, D2) as time allows.
 
 - D4: no country or language selector below 768; add one to the mobile menu drawer or the footer. Source: BP1. Surface: `sections/announcement-bar.liquid`, the header mobile menu, `snippets/localization-switcher.liquid`.
 - D6: duplicate accordion panel ids in the filter drawer; give each filter group a unique `id_prefix`. Source: BP1. Surface: `snippets/filters-groups.liquid`, `snippets/accordion.liquid`.
@@ -67,6 +67,7 @@ Taken into plan BP1 in `docs/agent/context.md` (user, 2026-10-27). The width mat
 
 ## After submission
 
+- LS1-C: one shared outer and inner contract (svh cap, content position, gap tokens) in `snippets/section-frame.liquid` for every media-led section. Source: board topic LS1, 2026-10-27 (`git show 4e0884d:docs/agent/board.md`). Surface: `snippets/section-frame.liquid` and the media-led sections.
 - Confirm the 400 from hosted `account.js` disappears once the store password is removed. Source: 6-F1 review, 2026-10-13; moved from group 7 by BP1, 2026-10-27. Surface: store settings.
 - `docs/design/design.md` pass: keep principles and capabilities, move case decisions made during batches (named sections, exact factors, per-section exceptions) out to the batch records or the section notes; the design decides per section, the architecture only offers the capability. Source: user, 2026-10-25 (B11). Surface: `docs/design/design.md`.
 - Migration ratchets to 0: `body-size-custom` and the countdown size (display sizes 24/40, 24/32, 36/120), the `product-card` quick-view viewport padding (`raw-spacing` 2), raw radii (43 `border-radius` declarations, about half semantic) onto the radius tokens; then `legacy-type-tier`, `stylesheet-font-size` and `raw-spacing` reach 0 and become strict. Decided (user, 2026-10-11): each check and its baseline entry are deleted when the count reaches 0, deletion needing the user's approval in that batch. Source: 6-R1 to 6-R5. Surface: sections and snippets stylesheets, lint baselines.
