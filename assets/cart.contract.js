@@ -104,6 +104,49 @@ export function createCartContract(options = {}) {
         );
     }
 
+    function buildSectionRenderDomMap(sectionsPayload, focusDescriptor = null) {
+        if (!sectionsPayload || typeof sectionsPayload !== 'object') return {};
+
+        const focusFallback =
+            '[data-cart-page-heading], [data-cart-lines] [data-focus-key], [data-cart-overlay-lines] [data-focus-key], [data-focus-key="cart-overlay-close"]';
+        const map = {};
+
+        for (const key of Object.keys(sectionsPayload)) {
+            map[key] = {
+                targetSelector: `#shopify-section-${key}`,
+                focusFallback,
+                focusDescriptor,
+            };
+        }
+
+        return map;
+    }
+
+    function captureCartFocusDescriptor(sectionIds = []) {
+        const active = document.activeElement;
+        if (active && active !== document.body) {
+            const focusKey = active.getAttribute?.('data-focus-key') || '';
+            if (
+                focusKey.startsWith('cart-') ||
+                focusKey.startsWith('cart-overlay-') ||
+                active.closest?.('[data-module-id="cart-overlay"], [data-module-id="cart-page"]')
+            ) {
+                const fromActive = SectionRefresher.descriptorFromElement(active);
+                if (fromActive) return fromActive;
+            }
+        }
+
+        const firstId = Array.isArray(sectionIds)
+            ? sectionIds.find((id) => typeof id === 'string' && id.trim())
+            : null;
+        const root = firstId
+            ? document.querySelector(`#shopify-section-${firstId}`)
+            : document.querySelector(
+                  '[data-module-id="cart-page"], [data-module-id="cart-overlay"]',
+              );
+        return SectionRefresher.captureFocusDescriptor(root);
+    }
+
     function fetchCart() {
         const Http = getHttp();
         if (!Http?.getJSON) return Promise.reject(new Error('Http client unavailable'));
@@ -136,6 +179,7 @@ export function createCartContract(options = {}) {
 
         const body = { items };
         const resolvedSections = resolveSections(sections);
+        const retainedFocus = captureCartFocusDescriptor(resolvedSections);
         if (resolvedSections.length > 0) {
             body.sections = resolvedSections.join(',');
         }
@@ -143,7 +187,10 @@ export function createCartContract(options = {}) {
         return Http.postJSON('/cart/add.js', body, { credentials: 'same-origin' })
             .then((data) => {
                 if (data.sections && typeof SectionRefresher?.render === 'function') {
-                    SectionRefresher.render(data.sections);
+                    SectionRefresher.render(
+                        data.sections,
+                        buildSectionRenderDomMap(data.sections, retainedFocus),
+                    );
                 }
                 return fetchCart().then(() => data);
             })
@@ -171,6 +218,7 @@ export function createCartContract(options = {}) {
         }
 
         const resolvedSections = resolveSections(sections);
+        const retainedFocus = captureCartFocusDescriptor(resolvedSections);
         if (resolvedSections.length > 0) {
             bodyData.sections = resolvedSections.join(',');
         }
@@ -178,7 +226,10 @@ export function createCartContract(options = {}) {
         return Http.postJSON('/cart/change.js', bodyData, { credentials: 'same-origin' })
             .then((parsedState) => {
                 if (parsedState.sections && typeof SectionRefresher?.render === 'function') {
-                    SectionRefresher.render(parsedState.sections);
+                    SectionRefresher.render(
+                        parsedState.sections,
+                        buildSectionRenderDomMap(parsedState.sections, retainedFocus),
+                    );
                 }
 
                 setState({

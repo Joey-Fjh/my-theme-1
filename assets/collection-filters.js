@@ -61,6 +61,30 @@ function createPaginationBehavior(sectionId = null, selectors = null) {
             this._debouncedFetch = Utils.debounce((url) => this._executeFetch(url, true), 200);
         },
 
+        _stickyViewportOffset() {
+            const rootStyle = getComputedStyle(document.documentElement);
+            const bar = parseFloat(rootStyle.getPropertyValue('--announcement-bar-height')) || 0;
+            const header = parseFloat(rootStyle.getPropertyValue('--header-height')) || 0;
+            return bar + header;
+        },
+
+        _scrollResultsGridIntoView() {
+            const grid = document.querySelector('[data-collection-dynamic-content]');
+            if (!grid) return;
+            // The user moved focus elsewhere during the request: leave focus and scroll alone.
+            if (SectionRefresher.isFocusElsewhere(this._focusOrigin, grid)) return;
+
+            if (!grid.hasAttribute('tabindex')) {
+                grid.setAttribute('tabindex', '-1');
+            }
+
+            grid.focus({ preventScroll: true });
+
+            const offset = this._stickyViewportOffset();
+            const top = window.scrollY + grid.getBoundingClientRect().top - offset;
+            window.scrollTo({ top: Math.max(0, top), behavior: 'auto' });
+        },
+
         buildDomMap() {
             const ids = Array.isArray(this.sectionId) ? this.sectionId : [this.sectionId];
             const perSection =
@@ -71,6 +95,9 @@ function createPaginationBehavior(sectionId = null, selectors = null) {
             for (const id of ids) {
                 const config = {
                     targetSelector: `#shopify-section-${id}`,
+                    focusFallback:
+                        '[data-sort-by-dropdown] .sort-by-dropdown__trigger, [data-collection-dynamic-content], [data-sort-by-control]',
+                    focusDescriptor: this._retainedFocusDescriptor || null,
                 };
                 const sels = perSection ? this.selectors[id] : this.selectors;
                 if (Array.isArray(sels) && sels.length > 0) {
@@ -158,11 +185,22 @@ export function createCollectionFiltersState(sectionId = null, selectors = null)
             this.abortController = new AbortController();
             const activeController = this.abortController;
 
+            if (!this._retainedFocusDescriptor) {
+                const sectionRoot = document.querySelector(`#shopify-section-${this.sectionId}`);
+                this._retainedFocusDescriptor =
+                    SectionRefresher.captureFocusDescriptor(sectionRoot);
+            }
+
             requestCollectionSectionHtml(ShopifyHttp, url, this.sectionId, activeController.signal)
                 .then((html) => {
                     if (typeof html !== 'string' || !html.trim()) return;
 
                     SectionRefresher.render(html, this.buildDomMap());
+
+                    if (this._scrollAfterFetch) {
+                        this._scrollResultsGridIntoView();
+                        this._scrollAfterFetch = false;
+                    }
 
                     if (updateHistory) {
                         window.history.pushState({ path: url }, '', url);
@@ -176,6 +214,7 @@ export function createCollectionFiltersState(sectionId = null, selectors = null)
                 })
                 .finally(() => {
                     if (this.abortController === activeController) {
+                        this._retainedFocusDescriptor = null;
                         this.isLoading = false;
                         this.abortController = null;
                     }
@@ -184,6 +223,25 @@ export function createCollectionFiltersState(sectionId = null, selectors = null)
 
         onChange(source) {
             const field = source?.target || source;
+            const formId = resolveFiltersFormId(this);
+            const form = formId ? document.getElementById(formId) : null;
+            const pendingFocusKey = form?.getAttribute('data-pending-focus-key');
+            if (pendingFocusKey) {
+                form.removeAttribute('data-pending-focus-key');
+            }
+
+            let descriptor = pendingFocusKey
+                ? { kind: 'focusKey', value: pendingFocusKey }
+                : SectionRefresher.descriptorFromElement(field);
+            const active = document.activeElement;
+            if (!descriptor && active && active !== document.body) {
+                descriptor = SectionRefresher.descriptorFromElement(active);
+            }
+            if (!descriptor) {
+                const sectionRoot = document.querySelector(`#shopify-section-${this.sectionId}`);
+                descriptor = SectionRefresher.captureFocusDescriptor(sectionRoot);
+            }
+            this._retainedFocusDescriptor = descriptor || this._retainedFocusDescriptor;
             syncCollectionControlPeers(field, resolveFiltersFormId(this));
             const params = this._getFormParams();
             params.delete('page');
@@ -214,6 +272,8 @@ export function createCollectionFiltersState(sectionId = null, selectors = null)
             const params = this._getFormParams();
             if (page) params.set('page', page);
             else params.delete('page');
+            this._scrollAfterFetch = true;
+            this._focusOrigin = document.activeElement;
             this.loadUrl(this._buildUrl(params));
         },
 

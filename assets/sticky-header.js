@@ -11,6 +11,12 @@ define('stickyHeader', () => ({
 
     init() {
         const headerMenuActiveEvent = ThemeEvents.events.HEADER_MENU_ACTIVE_CHANGED;
+        const y = window.scrollY;
+
+        this.lastY = y <= 0 ? 0 : y;
+        // A reload below the top starts in the scrolled state, header shown.
+        this.isTop = y < 10;
+        this.isHidden = false;
 
         this.on(window, 'scroll', this.onScroll.bind(this), false);
 

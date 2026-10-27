@@ -35,7 +35,14 @@ define('imageLightbox', () => ({
     openLightbox(index = this.lightboxIndex) {
         const DialogMotion = getDialogMotionAdapter();
 
-        this._returnFocusTo = document.activeElement;
+        const active = document.activeElement;
+        const trigger =
+            active && active !== document.body && this.$el.contains(active)
+                ? active
+                : this.$el.querySelector(
+                      '[data-lightbox-open], [aria-label="Open image zoom"], button[type="button"]',
+                  );
+        this._returnFocusTo = trigger || active;
         this.lightboxIndex = this._normalizeIndex(index);
         this.lightboxOpen = true;
         this.lightboxClosing = false;
@@ -174,6 +181,8 @@ define('imageLightbox', () => ({
     ].join(', '),
 
     _isElementVisible(el) {
+        if (getComputedStyle(el).display === 'none') return false;
+        if (getComputedStyle(el).visibility === 'hidden') return false;
         if (!el.offsetParent && el !== document.body) {
             let ancestor = el.parentElement;
             while (ancestor && ancestor !== document.body) {
@@ -181,7 +190,7 @@ define('imageLightbox', () => ({
                 ancestor = ancestor.parentElement;
             }
         }
-        return getComputedStyle(el).visibility !== 'hidden';
+        return true;
     },
 
     _isFocusable(el) {

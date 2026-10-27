@@ -244,13 +244,152 @@ class SectionRefresher {
     }
 
     /**
+     * Describe a focused element so its replacement can be found after a swap. The descriptor
+     * also keeps the element itself (`origin`, to tell a swap from a user move) and the dialog
+     * it sits in (`scopeSelector`, so focus never leaves an open dialog).
+     */
+    static descriptorFromElement(el) {
+        if (!el || el === document.body) return null;
+
+        let descriptor = null;
+        if (el.id) {
+            descriptor = { kind: 'id', value: el.id };
+        } else if (el.getAttribute('data-focus-key')) {
+            descriptor = { kind: 'focusKey', value: el.getAttribute('data-focus-key') };
+        } else if (el.getAttribute('name') || el.name) {
+            descriptor = {
+                kind: 'nameValue',
+                name: String(el.getAttribute('name') || el.name),
+                value: el.value != null ? String(el.value) : '',
+            };
+        }
+        if (!descriptor) return null;
+
+        descriptor.origin = el;
+        const dialogId = el.closest?.('[data-dialog-root][data-dialog-id]')?.dataset.dialogId;
+        descriptor.scopeSelector = dialogId
+            ? `[data-dialog-root][data-dialog-id="${CSS.escape(dialogId)}"]`
+            : '';
+        return descriptor;
+    }
+
+    static captureFocusDescriptor(container) {
+        if (!container) return null;
+
+        const active = document.activeElement;
+        if (!active || active === document.body || !container.contains(active)) return null;
+
+        return this.descriptorFromElement(active);
+    }
+
+    /**
+     * True when the user moved focus somewhere else while a request was in flight: focus sits
+     * on a live element that is neither the captured one nor inside the region being swapped.
+     * Focus on `body` means the swap removed the focused element, which is ours to restore.
+     */
+    static isFocusElsewhere(origin, region = null) {
+        const active = document.activeElement;
+        if (!active || active === document.body || !active.isConnected) return false;
+        if (origin && active === origin) return false;
+        if (region && region.contains(active)) return false;
+        return true;
+    }
+
+    static _focusScope(descriptor) {
+        if (!descriptor?.scopeSelector) return null;
+        return document.querySelector(descriptor.scopeSelector);
+    }
+
+    static findFocusTarget(container, descriptor, options = {}) {
+        if (!container || !descriptor) return null;
+        const allowGlobal = options.allowGlobal !== false;
+        // Inside a dialog, "global" means the dialog, never the page behind it.
+        const scope = this._focusScope(descriptor);
+        const wide = scope || document;
+        const within = (el) => (el && (!scope || scope.contains(el)) ? el : null);
+
+        if (descriptor.kind === 'id') {
+            const byId = within(document.getElementById(descriptor.value));
+            if (!byId) return null;
+            if (container.contains(byId)) return byId;
+            return allowGlobal ? byId : null;
+        }
+
+        if (descriptor.kind === 'focusKey') {
+            const selector = `[data-focus-key="${CSS.escape(descriptor.value)}"]`;
+            const inContainer = within(container.querySelector(selector));
+            if (inContainer) return inContainer;
+            if (!allowGlobal) return null;
+            return wide.querySelector(selector);
+        }
+
+        if (descriptor.kind === 'nameValue') {
+            const name = `[name="${CSS.escape(descriptor.name)}"]`;
+            let match = null;
+            if (descriptor.value !== '') {
+                match = within(
+                    container.querySelector(`${name}[value="${CSS.escape(descriptor.value)}"]`),
+                );
+            }
+            return match || within(container.querySelector(name));
+        }
+
+        return null;
+    }
+
+    static restoreFocus(container, descriptor, config = {}, options = {}) {
+        if (!container || !descriptor) return false;
+        if (this.isFocusElsewhere(descriptor.origin, container)) return false;
+
+        const allowFallback = options.allowFallback !== false;
+
+        const match = this.findFocusTarget(container, descriptor, { allowGlobal: true });
+        if (match && typeof match.focus === 'function') {
+            match.focus({ preventScroll: true });
+            if (document.activeElement === match) return true;
+        }
+
+        if (!allowFallback) return false;
+
+        const scope = this._focusScope(descriptor);
+        const fallback =
+            typeof config.focusFallback === 'string' && config.focusFallback.trim()
+                ? config.focusFallback.trim()
+                : '';
+        let fallbackEl = null;
+        if (fallback) {
+            fallbackEl = scope
+                ? scope.querySelector(fallback)
+                : container.querySelector(fallback) || document.querySelector(fallback);
+        }
+        // An open dialog keeps focus even when none of the named fallbacks is inside it.
+        if (!fallbackEl && scope) {
+            fallbackEl = scope.querySelector('button:not([disabled]), a[href], [tabindex="-1"]');
+        }
+        if (fallbackEl && typeof fallbackEl.focus === 'function') {
+            fallbackEl.focus({ preventScroll: true });
+            return document.activeElement === fallbackEl;
+        }
+
+        return false;
+    }
+
+    /**
      * Replace a region through the adapter lifecycle: tear the old tree down, swap the
      * markup, start downloading the modules the new markup declares, then initialize it.
      * Component roots whose modules are still loading are held by the runtime's init
      * interceptor and mount when their module arrives.
      */
-    static replaceRegion(target, updater) {
+    static replaceRegion(target, updater, config = {}) {
         if (!target || typeof updater !== 'function') return;
+
+        const localDescriptor = this.captureFocusDescriptor(target);
+        let retainedDescriptor = config.focusDescriptor || null;
+        // A descriptor captured when the request started is dropped once the user has moved on.
+        if (!localDescriptor && retainedDescriptor) {
+            if (this.isFocusElsewhere(retainedDescriptor.origin, target)) retainedDescriptor = null;
+        }
+        const focusDescriptor = localDescriptor || retainedDescriptor || null;
 
         unmount(target);
 
@@ -260,6 +399,28 @@ class SectionRefresher {
 
         scanModules(nextTarget);
         mount(nextTarget);
+        if (!focusDescriptor) return;
+
+        const canRestoreHere = Boolean(
+            localDescriptor ||
+            (retainedDescriptor &&
+                this.findFocusTarget(nextTarget, retainedDescriptor, { allowGlobal: true })),
+        );
+        if (!canRestoreHere) return;
+
+        // Controls that disable themselves while a request runs (cart quantity) come back
+        // disabled; wait up to about 30 frames for them before falling back.
+        const restore = (frame = 0) => {
+            const match = this.findFocusTarget(nextTarget, focusDescriptor, { allowGlobal: true });
+            if (match?.disabled && frame < 30) {
+                requestAnimationFrame(() => restore(frame + 1));
+                return;
+            }
+            this.restoreFocus(nextTarget, focusDescriptor, config, {
+                allowFallback: Boolean(localDescriptor || retainedDescriptor),
+            });
+        };
+        requestAnimationFrame(() => requestAnimationFrame(() => restore()));
     }
 
     static render(data, domMap = {}) {
@@ -313,17 +474,26 @@ class SectionRefresher {
                     const newChild = virtualSourceEl.querySelector(sel);
                     const oldChild = targetEl.querySelector(sel);
                     if (newChild && oldChild) {
-                        this.replaceRegion(oldChild, () => {
-                            const nextChild = newChild.cloneNode(true);
-                            oldChild.replaceWith(nextChild);
-                            return nextChild;
-                        });
+                        this.replaceRegion(
+                            oldChild,
+                            () => {
+                                const nextChild = newChild.cloneNode(true);
+                                oldChild.replaceWith(nextChild);
+                                return nextChild;
+                            },
+                            config,
+                        );
                     }
                 }
             } else {
-                this.replaceRegion(targetEl, () => {
-                    targetEl.innerHTML = virtualSourceEl.innerHTML;
-                });
+                this.replaceRegion(
+                    targetEl,
+                    () => {
+                        targetEl.innerHTML = virtualSourceEl.innerHTML;
+                        return targetEl;
+                    },
+                    config,
+                );
             }
         }
     }

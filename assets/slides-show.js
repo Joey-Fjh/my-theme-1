@@ -422,7 +422,7 @@ define('slidesShow', () => ({
             this._swiper?.on?.('slideChange', this._onSlideChange);
             // Swiper resumes autoplay on its own after a manual slide. Re-apply a user pause.
             this._onUserPauseHold = () => {
-                if (this._userPaused) this._syncAutoplay();
+                if (this._isInteractionPaused()) this._syncAutoplay();
             };
             this._swiper?.on?.('slideChangeTransitionEnd', this._onUserPauseHold);
             this._swiper?.on?.('autoplayResume', this._onUserPauseHold);

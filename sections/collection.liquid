@@ -223,9 +223,13 @@
             endif
         -%}
 
-        <div data-collection-dynamic-content class="flex flex-col gap-step-m tablet:gap-step-m">
+        <div
+            data-collection-dynamic-content
+            class="flex flex-col gap-step-m tablet:gap-step-m"
+            tabindex="-1"
+        >
             {%- comment -%} Hidden form all filter/sort controls {%- endcomment -%}
-            <form id="{{ filters_form_id }}" class="hidden" @change="onChange()"></form>
+            <form id="{{ filters_form_id }}" class="hidden" @change="onChange($event)"></form>
 
             {%- comment -%}
                 Mobile-only (pc:hidden)
@@ -255,6 +259,15 @@
                         -%}
                     {%- endif -%}
                 </div>
+
+                {%- if enable_filtering or enable_sorting -%}
+                    {%- render 'filters-noscript',
+                        filter_host: collection,
+                        form_action: collection.url,
+                        enable_filtering: enable_filtering,
+                        enable_sorting: enable_sorting
+                    -%}
+                {%- endif -%}
             {%- endif -%}
 
             <nav
@@ -298,7 +311,7 @@
 
                     <button
                         type="button"
-                        class="collection-toolbar__action collection__nav-more shrink-0 cursor-pointer"
+                        class="collection-toolbar__action collection__nav-more ms-auto shrink-0 cursor-pointer"
                         data-dialog-id="{{ collection_nav_dialog_id | escape }}"
                         @click="$store.dialog.open($el.dataset.dialogId)"
                         aria-haspopup="dialog"

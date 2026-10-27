@@ -55,6 +55,7 @@
                 <button
                     type="button"
                     class="close-button"
+                    data-focus-key="cart-overlay-close"
                     @click="$store.dialog.close()"
                     aria-label="{{ 'accessibility.close_cart_drawer' | t }}"
                 >
@@ -76,7 +77,11 @@
                     <p>{{ 'cart.empty' | t }}</p>
                 </div>
 
-                <ul x-show="showItems" class="flex flex-col divide-y divide-line">
+                <ul
+                    x-show="showItems"
+                    class="flex flex-col divide-y divide-line"
+                    data-cart-overlay-lines
+                >
                     <template x-for="item in items" :key="item.key">
                         <li
                             class="grid grid-cols-[minmax(6rem,0.95fr)_minmax(0,1.35fr)_auto] gap-step-s py-step-xs"
@@ -205,6 +210,7 @@
                                     class="cart-overlay__remove-button"
                                     @click="remove(item)"
                                     :disabled="$store.cart.loading || pending[item.key] === true"
+                                    :data-focus-key="'cart-overlay-remove-' + item.key"
                                     data-remove-item-label="{{ 'accessibility.remove_item' | t: item: '__ITEM__' | escape }}"
                                     :aria-label="$el.dataset.removeItemLabel.replace('__ITEM__', item.product_title || item.title || $el.closest('li').dataset.cartItemFallback)"
                                 >
@@ -217,6 +223,7 @@
                                         class="quantity-selector__button"
                                         @click="decrement(item)"
                                         :disabled="$store.cart.loading || pending[item.key] || !canDecrement(item)"
+                                        :data-focus-key="'cart-overlay-qty-dec-' + item.key"
                                         aria-label="{{ 'accessibility.decrease_quantity' | t }}"
                                     >
                                         {% render 'icons', icon: 'icon-minus' %}
@@ -233,6 +240,7 @@
                                         class="quantity-selector__button"
                                         @click="increment(item)"
                                         :disabled="$store.cart.loading || pending[item.key] || !canIncrement(item)"
+                                        :data-focus-key="'cart-overlay-qty-inc-' + item.key"
                                         aria-label="{{ 'accessibility.increase_quantity' | t }}"
                                     >
                                         {% render 'icons', icon: 'icon-plus' %}

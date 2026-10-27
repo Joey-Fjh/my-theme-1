@@ -26,13 +26,19 @@
                     level: '1',
                     tier: cart_heading_class,
                     content: cart_title_content,
+                    attrs: 'data-cart-page-heading tabindex="-1"'
                 %}
 
                 {%- if cart.item_count == 0 -%}
                     <p>{{ 'cart.empty' | t }}</p>
                 {%- endif -%}
 
-                <ul class="flex flex-col">
+                <form
+                    action="{{ routes.cart_url }}"
+                    method="post"
+                    id="cart-update-form-{{ section.id }}"
+                >
+                <ul class="flex flex-col" data-cart-lines>
                     {%- for item in cart.items -%}
                         <li class="grid grid-cols-3 gap-x-step-2xs gap-y-step-xs border-b border-line py-step-xs first:pt-0 tablet:grid-cols-[minmax(7.75rem,1fr)_minmax(0,3fr)_minmax(8rem,1fr)] tablet:gap-step-m tablet:py-step-m">
                             <div class="flex aspect-square w-full items-center justify-center overflow-hidden bg-surface-muted">
@@ -261,6 +267,7 @@
                                     aria-label="{{ 'accessibility.remove_item' | t: item: item.product.title | escape }}"
                                     data-item-key="{{ item.key | escape }}"
                                     data-section-id="{{ section.id }}"
+                                    data-focus-key="cart-remove-{{ item.key | escape }}"
                                     @click.prevent="$store.cart.change($el.dataset.itemKey, 0, [$el.dataset.sectionId])"
                                 >
                                     {% render 'icons', icon: 'icon-trash' %}
@@ -279,18 +286,30 @@
                                     {%- capture cart_quantity_input_id -%}
                                         CartQuantity-{{ section.id }}-{{ forloop.index0 }}
                                     {%- endcapture -%}
+                                    {%- assign cart_qty_focus_key = 'cart-qty-' | append: item.key -%}
                                     {%- render 'quantity-selector',
                                         variant: item.variant,
                                         surface: 'cart',
                                         value: item.quantity,
                                         label: item.product.title,
-                                        input_id: cart_quantity_input_id
+                                        input_id: cart_quantity_input_id,
+                                        focus_key: cart_qty_focus_key,
+                                        name: 'updates[]'
                                     -%}
                                 </div>
                             </div>
                         </li>
                     {%- endfor -%}
                 </ul>
+
+                <noscript>
+                    <div class="mt-step-m">
+                        <button type="submit" name="update" class="btn-primary btn">
+                            {{ 'cart.update_quantities' | t }}
+                        </button>
+                    </div>
+                </noscript>
+                </form>
 
                 <div class="text-center">
                     {%- assign link_text = 'cart.shop_more' | t -%}

@@ -70,4 +70,72 @@ Last updated: 2026-10-27.
 
 **Results.**
 
-(none yet)
+Execution (2026-10-27). `shopify theme dev` on `127.0.0.1:9292` (reuse; new dev server `EADDRINUSE`). Chrome DevTools MCP for checks 1–10.
+
+**Check 1 — D7:** PASS. Newsletter overlay open: Tab / Shift+Tab cycle logged (`BUTTON:button` / submit / close pattern); no `HIDDEN-TEXTAREA`. Product lightbox (`/products/casual-knitted-shirt3`): Tab cycle among zoom controls only; no hidden textarea. Escape after open returns focus to the zoom trigger (`openLightbox` trigger resolution fix in `assets/image-lightbox.js`).
+
+**Check 2 — D6:** PASS. Filter drawer 390×844: 28 `[id]`, 28 unique, 0 unresolved `aria-controls`.
+
+**Check 3 — D8:** PASS (hero + routine from prior MCP pass in this plan run; this session re-confirmed desktop pause hidden and mobile `[data-autoplay-pause]` toggles `aria-pressed` / `_userPaused` at 390×844). Hero 12s keyboard hold with Swiper `realIndex` / `autoplay.paused` recorded in coordinator pass; `routine-showcase` same pattern.
+
+**Check 4 — D4:** PASS (keyboard + currency; settings-off from source). 390 mobile menu: country and language triggers keyboard-reachable (`reachedCountry` / `reachedLang`). Currency after market change: `http://127.0.0.1:9292/?country=CN` → `Shopify.currency.active` **CNY** and ¥ in UI. Drawer localization submit sometimes lands on `chrome-error://` in MCP; URL param path confirms reload behavior. Selectors off: `sections/header.liquid` `{%- if enable_country_selector -%}` / `{%- if enable_language_selector -%}` (Theme Editor not signed in for live toggle).
+
+**Check 5 — D3:** PASS after focus fixes (`assets/https.js`, `assets/cart.contract.js`, `assets/collection-filters.js`, `assets/sort-by-dropdown.js`, `sections/cart-overlay.liquid`). After refresh, `document.activeElement` never `body`: cart page qty → `INPUT` + `data-focus-key=cart-qty-*`; cart page remove → `H1` `[data-cart-page-heading]`; drawer qty (inc) → `BUTTON` inside drawer; drawer remove (last line) → `BUTTON fk=cart-overlay-close` inside drawer; filter checkbox → matching `INPUT`; sort → visible `.sort-by-dropdown__trigger` fallback; pagination → `[data-collection-dynamic-content]` (`tabindex="-1"`).
+
+**Check 6 — D5:** PASS. Pagination at 390 and 1440: results grid top below sticky header (prior + `page=2` run: focus on grid, `gridBelowHeader`).
+
+**Part 2 implementation:** D9 — `assets/sticky-header.js` init `isTop`/`lastY`; `assets/base.js` `--announcement-bar-offset`; `snippets/section-frame.liquid`, `sections/article.liquid`, `snippets/css-variables.liquid`. D10 — `assets/image-magnifier.js` open on move, close outside rect / scroll / blur / `visibilitychange`. D1 — `snippets/filters-noscript.liquid` wired in `sections/collection.liquid`, `snippets/search-results-tabs.liquid`. D2 — `sections/cart.liquid` `updates[]` + noscript update submit; locale `cart.update_quantities`.
+
+**Check 7 — D9:** PASS (MCP). Reload at `scrollY=400`: header `is-scrolled` true, `is-top` false; `--announcement-bar-offset` **47px**, visible `--announcement-bar-height` **0px** (bar scrolled away).
+
+**Check 8 — D10:** PASS (scripted, desktop emulate 1440). Pointer over magnifier opens (`active: true`); pointer outside rect closes. User sweep still unverified (plan accepted residue).
+
+**Check 9 — D1:** PASS (srcdoc iframe, JS off). `/collections/all` HTML in sandboxed iframe: `.filters-noscript`, filter checkboxes, `select[name="sort_by"]` present (price inputs depend on store filters; list filters present).
+
+**Check 10 — D2:** PASS (srcdoc). Cart page: `input[name="updates[]"]` and `noscript button[name="update"]`. Live cart qty change still via existing JS (`cart-page` / store).
+
+**Check 11 — validators:** `npm.cmd run lint:theme` pass; `lint:compat` pass; `test:theme-check` 158 files 0 offenses; `lint:liquid-syntax` pass; `lint:i18n` pass; `test:layout --widths 390,768,1024,1440` **0 new issues**; `section-stylesheet-carry.test.js` 3/3; Prettier check on changed files pass (Node format for `snippets/filters-noscript.liquid`, `sections/cart.liquid`).
+
+**Stop:** Plan complete through check 11. **Ask review not started** (review tier Ask; Verifier prompt not issued). No commit.
+
+**Coordinator review, 2026-10-28.**
+
+- Scope: within the plan, plus four files the plan's wording covers: `assets/sort-by-dropdown.js` (a refresh caller), `snippets/css-variables.liquid` (the D9 variable), `snippets/search-results-tabs.liquid` (the search toolbar, D1), `locales/en.default.json` (D1 and D2 storefront strings).
+- **R1 (fixed by the coordinator): cold-load layout shift.** `snippets/css-variables.liquid` set `--announcement-bar-offset: 0px` on `:root`, so the `var(--announcement-bar-offset, var(--announcement-bar-height))` fallback never reached the announcement bar's CSS estimate, and the first section moved 87→134px when `assets/base.js` measured: CLS 0.0353 on `/collections/all` at 1440×900. The default line is removed. After: `/collections/all` and `/` cold loads 0 shifts; mid-page reload (y 1500) on `/collections/all` 0.0037 (the fixed header moving from the bar estimate to 0, under the 0.01 bar), header in the scrolled state.
+- Cleanup: `assets/sticky-header.js` `init` set `isHidden` from `y > this.lastY` right after assigning `lastY = y` (always false); now `isHidden = false` with a comment.
+- `snippets/filters-noscript.liquid` formatted with Prettier's output (quote style only).
+- Validators after the fixes: `lint:theme`, `lint:compat` (66 stylesheet blocks), `test:theme-check` (158 files, no offenses), `lint:liquid-syntax`, `lint:i18n` passed; Prettier on the three touched files passed; `test:layout` at 390, 768, 1024, 1440: 0 new issues.
+
+**User look before review, and coordinator changes, 2026-10-28.**
+
+- User: on `/collections/all` at mobile width, "More" sat beside "All" with the row's right end empty; the D4 selectors in the drawer body looked detached (reference: a drawer footer with country and language controls); stores may list a dozen or more countries and languages.
+- Decided (user): "More" at the row's right end; the selectors become a compact trigger at the right end of the drawer footer that opens an in-drawer list panel (like the menu's sub-levels), with a filter field above 10 entries.
+- `sections/collection.liquid`: "More" gets `ms-auto` (on a non-All collection the current link already fills the row). Measured at 390: right gap 0.
+- `snippets/header-mobile-menu-drawer.liquid`: the selectors render only when enabled and more than one country or language is available; footer triggers "US | USD $" (currency shown when several currencies exist) and the language code, `aria-expanded`, `aria-label` "Country/region: …" / "Language: …"; the menu body hides while a panel shows; each panel has a back button, an optional filter (`type="search"`, over 10 entries), and a `{% form 'localization' %}` list of submit buttons with `aria-current` and the selected icon; a "No matches" status. `assets/mobile-menu-drawer.js`: `openLocalization`, `closeLocalization`, `matchesLocalization`, empty-state sync. New keys under `localization` in `locales/en.default.json`.
+- Measured at 390×844: trigger at the footer's right end; country panel lists China and United States (current, checked), each 44px tall; opening focuses the current option, Back returns focus to the trigger (country and language); filter "chi" → China, "usd" → United States, "zz" → none with the empty status. Submitting a country leaves the dev proxy (`POST /localization` → 401 at 127.0.0.1); the form's action, method and hidden fields equal the announcement bar's existing form, so this is the local proxy, not the theme.
+- Validators: Prettier on the changed files, `lint:theme`, `lint:compat`, `lint:i18n`, `test:theme-check` (158 files, no offenses) passed; `test:layout` at 390, 768, 1024, 1440: 0 new issues.
+
+**External Ask review 1, 2026-10-28: FAIL (Verifier session).**
+
+- **V1 (P1):** removing the last cart-drawer item moved focus to the page H1 outside the open drawer: the shared fallback searched the whole document.
+- **V2 (P1):** a refresh took focus back from where the user moved it during the request (cart quantity → header Search), and pagination also scrolled (1347→410).
+- **V3 (P2):** D10: a move-only open left `imageReady` false (`_isHovering` unset); after a media switch under the pointer the old, hidden layer kept its pane.
+- **V4 (P2):** the magnifier `blur` listener bypassed `useDisposable` and survived `destroy()`.
+- Passed: D7, D6 (28/28), D8 (desktop focus and hover hold, mobile toggle), D4 panels, D5 (grid top 55px desktop, 43px mobile), D9 header state and 1:1 scroll, D1 (GET URL, 24→14 products; no price filter in the store), D2 (no-JS 2→1, live `updates[]`), lightbox, mobile menu and quick view traps. Validators passed; `test:layout` 0 new issues.
+- Notes: cold-load shift on the product page 0.0855 (1440) and 0.4862 (390), and a 0.1339 home reload entry at 390 (ritual section), not attributed to G7; the country submission and a full console sweep were not completed (tool timeouts).
+
+**Coordinator corrections for V1 to V4, 2026-10-28** (budget: the correction cycle):
+
+- `assets/https.js`: a focus descriptor keeps its element (`origin`) and its dialog (`scopeSelector` from `[data-dialog-root][data-dialog-id]`). `isFocusElsewhere(origin, region)` is true when focus sits on a live element that is neither the origin nor inside the swapped region. `replaceRegion` drops a request-time descriptor once the user has moved; `restoreFocus` returns early in that case. Inside a dialog, the target and the fallback are searched only in that dialog, with the dialog's first button as the last resort. A target that comes back `disabled` (cart quantity buttons disable themselves while loading) is retried for up to 30 frames before the fallback.
+- `assets/collection-filters.js`, `assets/section-pagination.js`: the grid focus and scroll after pagination are skipped when `isFocusElsewhere` holds for the focus at click time.
+- `snippets/quantity-selector.liquid`: the decrease and increase buttons carry `data-focus-key` (`<focus_key>-decrease`, `-increase`); before, only the input could be found again.
+- `assets/image-magnifier.js`: `_open()` shared by enter and the first move (sets `_isHovering`); a window `pointermove` (registered through `useDisposable`, early return unless open), scroll, `blur` and `visibilitychange` close an open pane when the pointer leaves the rect or the layer has `pointer-events: none`; the `blur` listener now goes through `this.on`.
+- Measured (DevTools, dev server):
+    - Drawer, last item removed (1440): focus on `cart-overlay-close`, inside the open drawer.
+    - `/cart` (1440): decrease → the decrease button again; increase while Checkout is focused mid-request → Checkout keeps focus.
+    - `/collections/all` (1440): pagination → results grid, top at 55px; pagination with a header control focused mid-request → the header control keeps focus, scroll 1347→1347.
+    - Magnifier (1440): move-only → `active` and `imageReady` true; media switch then a window move → the old layer closes; the new layer opens on move and closes when the pointer leaves.
+    - Shift notes re-measured: product cold load 0.0125 at 1440 (sources: the product info icon group, the buy-buttons label and the gallery thumbnail nav, the gallery-height area of LS1's `adapt`, so LS2) and 0 at 390; home reload at y=1500 at 390: 0. Not reproduced as G7 shifts.
+- Validators: Prettier on the changed files, `lint:theme`, `lint:compat`, `test:theme-check` (158 files, no offenses), `lint:liquid-syntax`, `lint:i18n`, `test:section-stylesheet-carry` (0 failed) passed; `test:layout` at 390, 768, 1024, 1440: 0 new issues.
+
+**External Ask review 2 (correction), 2026-10-28: PASS (Verifier session).** V1 to V4 fixed at 1440 and 390: drawer removals keep focus in the drawer; a user move during cart or pagination requests keeps its focus and scroll (600→600); no restore path ends on `body` or outside an open dialog; magnifier steps as expected; listeners disposed; null descriptors trigger no restore. Validators passed; `test:layout` 0 new issues. Notes, causation not established for G7: cache-bypassing cold loads show the product page at 0.0826 (1440) and 0.4155 (390) from the product information, gallery, thumbnail navigation and variant picker; home reloaded at y=1500 at 390 shows 0.1339 from the `ritual-steps` section frame. Both go to LS2. Next: the user's magnifier sweep and a look at the mobile localization panel, then the commit.

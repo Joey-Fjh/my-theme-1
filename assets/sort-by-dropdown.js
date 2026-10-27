@@ -36,10 +36,18 @@ define('sortByDropdown', () => ({
 
         if (this.formId) {
             this.syncPeers(value);
+            const form = document.getElementById(this.formId);
+            const option = this.$el.querySelector(
+                `[data-option-value="${CSS.escape(String(value))}"]`,
+            );
+            const focusKey = option?.getAttribute('data-focus-key');
+            if (form && focusKey) {
+                form.setAttribute('data-pending-focus-key', focusKey);
+            } else {
+                form?.removeAttribute('data-pending-focus-key');
+            }
             this.$nextTick(() => {
-                document
-                    .getElementById(this.formId)
-                    ?.dispatchEvent(new Event('change', { bubbles: true }));
+                form?.dispatchEvent(new Event('change', { bubbles: true }));
             });
         } else {
             this.$dispatch('sort-change', this.sortBy);

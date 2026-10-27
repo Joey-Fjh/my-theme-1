@@ -37,30 +37,36 @@ define('imageMagnifier', () => ({
         this.previewGap = Math.max(0, Number(this.$el.dataset.previewGap)) || this.previewGap;
         this.zoomImage = this.$el.dataset.zoomImage || '';
         this.disabled = this._detectTouch();
+
+        // Defensive close: `pointerleave` can be missed when the gallery hides this layer
+        // (opacity 0, pointer-events none) under a still pointer, so an open pane also checks
+        // every window pointer move, scroll, blur and tab switch.
+        this.on(window, 'pointermove', this._onWindowPointerMove.bind(this), { passive: true });
+        this.on(window, 'scroll', this._onScrollWhileOpen.bind(this), { passive: true });
+        this.on(document, 'visibilitychange', this._onVisibilityChange.bind(this));
+        this.on(this.$el, 'blur', this._onBlur.bind(this), true);
     },
 
     openMagnifier(event) {
         if (this.disabled || !this._isMousePointer(event)) return;
-        this._isHovering = true;
-        this.imageReady = this.zoomImageLoaded;
-        this.moveMagnifier(event);
-        if (this._syncPreview()) {
-            this.active = true;
-        }
-        this._preloadZoomImage().then(() => {
-            if (!this._isHovering) return;
-            this._syncPreview();
-            this.imageReady = true;
-        });
+        this._setPointer(event);
+        this._open();
     },
 
     moveMagnifier(event) {
         if (this.disabled || !this._isMousePointer(event)) return;
-        this._pointer = {
-            x: event.clientX,
-            y: event.clientY,
-            target: event.currentTarget,
-        };
+        this._setPointer(event);
+
+        if (!this._isPointerOverLiveTarget()) {
+            this.closeMagnifier();
+            return;
+        }
+
+        // A reload under a still pointer gets no `pointerenter`: the first move opens the pane.
+        if (!this.active) {
+            this._open();
+            return;
+        }
 
         if (this._frame) return;
         this._frame = requestAnimationFrame(() => {
@@ -73,6 +79,72 @@ define('imageMagnifier', () => ({
         this.active = false;
         this._isHovering = false;
         this._pointer = null;
+    },
+
+    _open() {
+        this._isHovering = true;
+        this.imageReady = this.zoomImageLoaded;
+        if (this._syncPreview()) {
+            this.active = true;
+        }
+        this._preloadZoomImage().then(() => {
+            if (!this._isHovering) return;
+            this._syncPreview();
+            this.imageReady = true;
+        });
+    },
+
+    _setPointer(event) {
+        this._pointer = {
+            x: event.clientX,
+            y: event.clientY,
+            target: event.currentTarget,
+        };
+    },
+
+    _onWindowPointerMove(event) {
+        if (!this.active || !this._pointer || !this._isMousePointer(event)) return;
+        this._pointer = { ...this._pointer, x: event.clientX, y: event.clientY };
+        if (!this._isPointerOverLiveTarget()) this.closeMagnifier();
+    },
+
+    _onScrollWhileOpen() {
+        if (!this.active || !this._pointer) return;
+        if (!this._isPointerOverLiveTarget()) {
+            this.closeMagnifier();
+        }
+    },
+
+    _onVisibilityChange() {
+        if (document.visibilityState === 'hidden') {
+            this.closeMagnifier();
+        }
+    },
+
+    _onBlur(event) {
+        if (!this.active) return;
+        if (this.$el.contains(event.target)) {
+            this.closeMagnifier();
+        }
+    },
+
+    // The pointer is inside the image and the image is the live layer: a gallery that switches
+    // media leaves the old layer in place with `pointer-events: none` (inherited here).
+    _isPointerOverLiveTarget() {
+        if (getComputedStyle(this.$el).pointerEvents === 'none') return false;
+        return this._pointerInsideTarget(this._pointer);
+    },
+
+    _pointerInsideTarget(pointer) {
+        const target = pointer?.target;
+        if (!target?.getBoundingClientRect) return false;
+        const rect = target.getBoundingClientRect();
+        return (
+            pointer.x >= rect.left &&
+            pointer.x <= rect.right &&
+            pointer.y >= rect.top &&
+            pointer.y <= rect.bottom
+        );
     },
 
     _syncPreview() {

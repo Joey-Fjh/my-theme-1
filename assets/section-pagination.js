@@ -84,6 +84,8 @@ define('sectionPagination', () => ({
         for (const id of ids) {
             const config = {
                 targetSelector: `#shopify-section-${id}`,
+                focusFallback: '[data-collection-dynamic-content]',
+                focusDescriptor: this._retainedFocusDescriptor || null,
             };
             const sels = perSection ? this.selectors[id] : this.selectors;
             if (Array.isArray(sels) && sels.length > 0) {
@@ -94,6 +96,30 @@ define('sectionPagination', () => ({
         return map;
     },
 
+    _stickyViewportOffset() {
+        const rootStyle = getComputedStyle(document.documentElement);
+        const bar = parseFloat(rootStyle.getPropertyValue('--announcement-bar-height')) || 0;
+        const header = parseFloat(rootStyle.getPropertyValue('--header-height')) || 0;
+        return bar + header;
+    },
+
+    _scrollResultsGridIntoView() {
+        const grid = document.querySelector('[data-collection-dynamic-content]');
+        if (!grid) return;
+        // The user moved focus elsewhere during the request: leave focus and scroll alone.
+        if (SectionRefresher.isFocusElsewhere(this._focusOrigin, grid)) return;
+
+        if (!grid.hasAttribute('tabindex')) {
+            grid.setAttribute('tabindex', '-1');
+        }
+
+        grid.focus({ preventScroll: true });
+
+        const offset = this._stickyViewportOffset();
+        const top = window.scrollY + grid.getBoundingClientRect().top - offset;
+        window.scrollTo({ top: Math.max(0, top), behavior: 'auto' });
+    },
+
     _executeFetch(url, updateHistory) {
         if (!ShopifyHttp || !SectionRefresher) return;
 
@@ -102,6 +128,12 @@ define('sectionPagination', () => ({
         const activeController = this.abortController;
 
         const ids = Array.isArray(this.sectionId) ? this.sectionId : [this.sectionId];
+        const primaryId = ids[0];
+        const sectionRoot = primaryId
+            ? document.querySelector(`#shopify-section-${primaryId}`)
+            : null;
+        this._retainedFocusDescriptor = SectionRefresher.captureFocusDescriptor(sectionRoot);
+        this._focusOrigin = document.activeElement;
         const sep = url.includes('?') ? '&' : '?';
         const fetchUrl = url + sep + 'sections=' + ids.map(encodeURIComponent).join(',');
 
@@ -118,6 +150,7 @@ define('sectionPagination', () => ({
                 }
 
                 SectionRefresher.render(sections, this.buildDomMap());
+                this._scrollResultsGridIntoView();
 
                 if (updateHistory) {
                     window.history.pushState({ path: url }, '', url);
@@ -129,6 +162,7 @@ define('sectionPagination', () => ({
             })
             .finally(() => {
                 if (this.abortController === activeController) {
+                    this._retainedFocusDescriptor = null;
                     this.isLoading = false;
                     this.abortController = null;
                 }

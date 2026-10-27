@@ -47,6 +47,8 @@ export function createDialogStore() {
     ].join(', ');
 
     function isElementVisible(el) {
+        if (getComputedStyle(el).display === 'none') return false;
+        if (getComputedStyle(el).visibility === 'hidden') return false;
         if (!el.offsetParent && el !== document.body) {
             let ancestor = el.parentElement;
             while (ancestor && ancestor !== document.body) {
@@ -54,7 +56,7 @@ export function createDialogStore() {
                 ancestor = ancestor.parentElement;
             }
         }
-        return getComputedStyle(el).visibility !== 'hidden';
+        return true;
     }
 
     function isFocusable(el) {

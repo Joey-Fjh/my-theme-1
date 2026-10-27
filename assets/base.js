@@ -98,15 +98,21 @@ class Base {
     }
 
     static updateAnnouncementBarHeight() {
-        if (!this.announcementBar) return this.setCSSVar('--announcement-bar-height', `0px`);
+        if (!this.announcementBar) {
+            this.setCSSVar('--announcement-bar-height', `0px`);
+            this.setCSSVar('--announcement-bar-offset', `0px`);
+            return;
+        }
 
         const rect = this.announcementBar.getBoundingClientRect();
         const announcementHeight = Math.max(
             0,
             Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0),
         );
+        const announcementOffset = Math.max(0, this.announcementBar.offsetHeight);
 
         this.setCSSVar('--announcement-bar-height', `${announcementHeight}px`);
+        this.setCSSVar('--announcement-bar-offset', `${announcementOffset}px`);
     }
 
     static updateHeaderHeight() {

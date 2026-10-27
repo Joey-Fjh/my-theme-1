@@ -17,6 +17,7 @@
     @param {string} [button_class] - Escape hatch button classes
     @param {string} [input_class] - Escape hatch input classes
     @param {string} [label] - Accessible label
+    @param {string} [focus_key] - Optional stable `data-focus-key` for section refresh focus restore
     @param {boolean} [interactive] - Set false for a static visual state without form or Alpine behavior
 {% enddoc %}
 
@@ -152,6 +153,9 @@
     <button
         type="button"
         class="quantity-selector__button {{ button_class }}"
+        {% if focus_key != blank %}
+            data-focus-key="{{ focus_key | append: '-decrease' | escape }}"
+        {% endif %}
         {% if qty_interactive %}
             aria-label="{{ 'accessibility.decrease_quantity' | t }}"
             @click="decrement()"
@@ -171,6 +175,9 @@
         type="number"
         {% if qty_input_id != blank %}
             id="{{ qty_input_id }}"
+        {% endif %}
+        {% if focus_key != blank %}
+            data-focus-key="{{ focus_key | escape }}"
         {% endif %}
         name="{{ name | default: 'quantity' }}"
         class="quantity-selector__input {{ input_class }}"
@@ -204,6 +211,9 @@
     <button
         type="button"
         class="quantity-selector__button {{ button_class }}"
+        {% if focus_key != blank %}
+            data-focus-key="{{ focus_key | append: '-increase' | escape }}"
+        {% endif %}
         {% if qty_interactive %}
             aria-label="{{ 'accessibility.increase_quantity' | t }}"
             @click="increment()"
