@@ -72,6 +72,10 @@
             {%- assign native_qty_blocked = true -%}
         {%- endif -%}
     {%- endif -%}
+    {%- assign payment_button_hidden = true -%}
+    {%- if current_variant.available and native_qty_blocked == false -%}
+        {%- assign payment_button_hidden = false -%}
+    {%- endif -%}
     {%- assign use_secondary_add_button = false -%}
     {%- if context == 'product' -%}
         {%- if show_buy_now == true or show_buy_now == 'true' -%}
@@ -222,7 +226,9 @@
                 {%- if show_dynamic_checkout -%}
                     <div
                         class="shopify-payment-button-wrapper"
-                        hidden
+                        {% if payment_button_hidden %}
+                            hidden
+                        {% endif %}
                         :hidden="!available || !canPurchaseQuantity"
                         :class="{ 'hidden': !available || !canPurchaseQuantity }"
                     >

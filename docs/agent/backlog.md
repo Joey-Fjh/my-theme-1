@@ -33,7 +33,6 @@ Done 2026-10-26 in G3 (`fdfb7ba`); the plan and its reviews are in `git show fdf
 
 ## Before submission 5: product polish (collection reviewed with it)
 
-- Product info blocks shift when the payment icons box appears (0.021 at 768, 0.013 at 1440, Slow 4G and CPU 4x; Chrome DevTools trace 2026-10-26). Source: L1. Surface: `sections/main-product.liquid` product info blocks, payment icons.
 - `feature-tabs`: fade 400ms onto a motion token; literal `clamp()` spacing onto `--spacing-step-*`. Source: 6-P1. Surface: `sections/feature-tabs.liquid`.
 - `mood-finder`: quadrant labels carry a backing box the design lacks; section 764px against about 700, wheel 408px against about 470 at 1440; card and arrow motion 400ms onto a token; below 80rem the botanical sits between wheel and card. Source: 6-P2. Surface: `sections/mood-finder.liquid`.
 - `formula-details`: band image stays inside the page margins while the design bleeds it to the edge; numbers' monospace italic follows the font-role item below. Source: 6-P4. Surface: `sections/formula-details.liquid`.
@@ -53,6 +52,8 @@ Done 2026-10-26 in G3 (`fdfb7ba`); the plan and its reviews are in `git show fdf
 - Scroll-linked sections (`scatter-gallery` and later narrative sections) at 390 with DevTools touch emulation, read with the WebKit guardrails in mind (no real-device check, user 2026-10-27). Source: user, 2026-10-05. Surface: home.
 - Store configuration to classify or confirm: `/favicon.ico` 404 on the first home load; the 400 from hosted `account.js` (password-protected store; confirm it disappears once the password is removed). Source: 6-F1 review, 2026-10-13. Surface: store settings.
 - Manual test checklist for the launch-blocking flows (variant change, add to cart, cart drawer, menu, dialogs with keyboard and focus), following Shopify's official testing checklist read through Shopify Dev MCP. Decided (user, 2026-10-12): a document, not automation; written with the readiness review. Source: 6-T3. Surface: a new document.
+
+- Reload partway down a page jumps: the browser restores the scroll position and the sticky header then settles its shown or hidden state (no jump when reloading at the top; user, product page). Classify with the header's scroll script, then fix or accept; Lighthouse loads at the top and does not see it. Also classify the one-off 0.515 product section shift under Slow 4G and CPU 4x that a repeat run did not reproduce. Source: PS1 review and user look, 2026-10-27. Surface: `sections/header.liquid`, the header scroll script in `assets/`, product page.
 
 ## Before submission 8: readiness review
 
