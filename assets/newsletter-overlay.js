@@ -1,6 +1,10 @@
 import { define } from 'alpine-adapter';
 import { useDisposable } from 'utils';
-import { toastNewsletterPostedSuccess } from 'newsletter-banner';
+import {
+    hideForeignNewsletterStatus,
+    ownsNewsletterReturn,
+    toastNewsletterPostedSuccess,
+} from 'newsletter-banner';
 
 define('newsletterOverlay', () => ({
     ...useDisposable(),
@@ -36,8 +40,21 @@ define('newsletterOverlay', () => ({
 
     init() {
         this._hydrateFromDataset();
-        if (toastNewsletterPostedSuccess(this.successMessage)) {
-            this._setExpired();
+        const formId = this.$root.querySelector('form')?.id;
+        hideForeignNewsletterStatus(this.$root);
+        // Read before the toast removes it: a signup through any form ends the popup for this visitor.
+        const subscribed =
+            new URL(window.location.href).searchParams.get('customer_posted') === 'true';
+        toastNewsletterPostedSuccess(this.successMessage, formId);
+        if (subscribed) this._setExpired();
+        // A rejected signup from this form reloads the page with its error: reopen the overlay there.
+        if (
+            ownsNewsletterReturn(formId) &&
+            this.$root.querySelector('[data-newsletter-form-error]')
+        ) {
+            this._open();
+            this._focusEmailAfterOpen();
+            return;
         }
         if (this.displayMode === 'test') {
             this._open();
@@ -83,6 +100,15 @@ define('newsletterOverlay', () => ({
     _open() {
         if (!this.dialogId) return;
         this.$store?.dialog?.open?.(this.dialogId);
+    },
+
+    _focusEmailAfterOpen() {
+        // The dialog focuses its first control when it opens; the email field takes it after.
+        requestAnimationFrame(() =>
+            requestAnimationFrame(() => {
+                this.$root.querySelector('[data-newsletter-email]')?.focus({ preventScroll: true });
+            }),
+        );
     },
 
     hide() {

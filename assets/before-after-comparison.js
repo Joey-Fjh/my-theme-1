@@ -11,20 +11,6 @@ define('beforeAfterComparison', () => ({
         if (!this._shouldAnimateSweep()) {
             this.position = 50;
         }
-
-        this.on(document, 'mouseup', () => this.endDrag());
-        this.on(document, 'touchend', () => this.endDrag());
-        this.on(document, 'mousemove', (e) => {
-            if (this.isDragging) this.updatePosition(e);
-        });
-        this.on(
-            document,
-            'touchmove',
-            (e) => {
-                if (this.isDragging) this.updatePosition(e);
-            },
-            { passive: true },
-        );
     },
 
     _prefersReducedMotion() {
@@ -71,10 +57,15 @@ define('beforeAfterComparison', () => ({
         this._animateFrame = requestAnimationFrame(animate);
     },
 
+    // Pointer events with capture; the drag area's touch-action: pan-y leaves vertical
+    // swipes to the page, which then cancels the pointer instead of moving the slider.
     startDrag(e) {
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
         this._cancelSweep();
         this.isDragging = true;
-        this.updatePosition(e);
+        this.$refs.container?.setPointerCapture?.(e.pointerId);
+        // A touch only moves the slider once it moves sideways, so a tap or scroll start does not jump it.
+        if (e.pointerType === 'mouse') this.updatePosition(e);
     },
 
     onDrag(e) {
@@ -82,8 +73,11 @@ define('beforeAfterComparison', () => ({
         this.updatePosition(e);
     },
 
-    endDrag() {
+    endDrag(e) {
         this.isDragging = false;
+        if (e?.pointerId !== undefined && this.$refs.container?.hasPointerCapture?.(e.pointerId)) {
+            this.$refs.container.releasePointerCapture(e.pointerId);
+        }
     },
 
     handleKeydown(e) {
@@ -120,13 +114,7 @@ define('beforeAfterComparison', () => ({
         const rect = container.getBoundingClientRect();
         if (!rect || rect.width <= 0) return;
 
-        const clientX = e.type.includes('touch')
-            ? (e.touches?.[0]?.clientX ?? e.changedTouches?.[0]?.clientX)
-            : e.clientX;
-
-        if (clientX == undefined) return;
-
-        const x = clientX - rect.left;
+        const x = e.clientX - rect.left;
         const percentage = Math.max(0, Math.min(100, (x / rect.width) * 100));
 
         this.position = percentage;

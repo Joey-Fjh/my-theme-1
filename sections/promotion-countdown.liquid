@@ -20,10 +20,10 @@
             %}
         </div>
 
-        <div class="flex w-full flex-col items-center gap-step-2xl tablet:gap-step-3xl{% unless section.settings.show_cta %} pb-step-2xl tablet:pb-step-3xl{% endunless %}">
+        <div class="@container flex w-full flex-col items-center gap-step-2xl tablet:gap-step-3xl{% unless section.settings.show_cta %} pb-step-2xl tablet:pb-step-3xl{% endunless %}">
         <div
             class="promotion-countdown-section__timer"
-            data-countdown-end-date="{{ section.settings.end_date }}"
+            data-countdown-end="{{ section.settings.end_date | date: '%s' }}"
             data-module-id="countdown-timer"
             x-data="countdownTimer()"
         >
@@ -120,9 +120,11 @@
 %}
 
 {% stylesheet %}
+    /* The timer row is about ten digit sizes wide; the size follows its @container parent so it never overflows. */
     .promotion-countdown-section__timer {
-        --body-size-custom: 36px;
-        --body-size-custom-pc: 120px;
+        --promotion-countdown-fit: calc(10cqw / var(--font-body-scale, 1));
+        --body-size-custom: min(36px, var(--promotion-countdown-fit));
+        --body-size-custom-pc: max(36px, min(120px, var(--promotion-countdown-fit)));
         --promotion-countdown-size: var(--body-size-custom);
         --promotion-countdown-digit-width-ratio: 0.72;
         --promotion-countdown-tile-scale: 1.14;

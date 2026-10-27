@@ -2,9 +2,9 @@ import { define } from 'alpine-adapter';
 import { useDisposable } from 'utils';
 import 'flip-digit';
 
-define('countdownTimer', (endDate = null) => ({
+define('countdownTimer', () => ({
     ...useDisposable(),
-    endDate: endDate || null,
+    endTime: 0,
     interval: null,
     days: 0,
     hours: 0,
@@ -17,10 +17,10 @@ define('countdownTimer', (endDate = null) => ({
     },
 
     init() {
-        if (!this.endDate) {
-            this.endDate = this.$el?.dataset?.countdownEndDate || null;
-        }
-        if (!this.endDate) return;
+        // Liquid renders the end date as epoch seconds in the store's time zone.
+        const seconds = Number(this.$el?.dataset?.countdownEnd);
+        if (!Number.isFinite(seconds) || seconds <= 0) return;
+        this.endTime = seconds * 1000;
         this.calculateTime();
         this.interval = setInterval(() => {
             this.calculateTime();
@@ -28,9 +28,7 @@ define('countdownTimer', (endDate = null) => ({
     },
 
     calculateTime() {
-        const end = new Date(this.endDate).getTime();
-        const now = Date.now();
-        const distance = end - now;
+        const distance = this.endTime - Date.now();
 
         if (distance <= 0) {
             this.reset();

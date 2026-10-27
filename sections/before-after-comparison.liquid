@@ -79,16 +79,13 @@
             x-data="beforeAfterComparison()"
         >
             <div
-                class="relative cursor-ew-resize overflow-hidden rounded-lg select-none"
+                class="relative cursor-ew-resize touch-pan-y overflow-hidden rounded-lg select-none"
                 style="aspect-ratio: {{ aspect_ratio }};"
                 x-ref="container"
-                @mousedown="startDrag($event)"
-                @touchstart.passive="startDrag($event)"
-                @mousemove="onDrag($event)"
-                @touchmove.passive="onDrag($event)"
-                @mouseup="endDrag()"
-                @touchend="endDrag()"
-                @mouseleave="endDrag()"
+                @pointerdown="startDrag($event)"
+                @pointermove="onDrag($event)"
+                @pointerup="endDrag($event)"
+                @pointercancel="endDrag($event)"
                 x-intersect:enter.once="animateToCenter()"
             >
                 {% comment %} After Image (Background) {% endcomment %}
@@ -139,8 +136,6 @@
                             absolute top-1/2 left-1/2 flex h-24 w-24 -translate-x-1/2 -translate-y-1/2 cursor-grab items-center justify-center gap-0 rounded-full bg-theme-bg focus-ring
                             transition-transform duration-200 hover:scale-110 focus:outline-none active:cursor-grabbing
                         "
-                        @mousedown.stop="startDrag($event)"
-                        @touchstart.stop.passive="startDrag($event)"
                         @keydown="handleKeydown($event)"
                         role="slider"
                         aria-valuemin="0"

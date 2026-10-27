@@ -244,6 +244,11 @@
                                     placeholder="{{ section.settings.placeholder | escape }}"
                                     autocomplete="email"
                                     required
+                                    data-newsletter-email
+                                    {% if form.errors %}
+                                        aria-invalid="true"
+                                        aria-describedby="newsletter-status-{{ section.id }}"
+                                    {% endif %}
                                 >
 
                                 <button
@@ -254,6 +259,19 @@
                                     {%- render 'icons', icon: 'icon-arrow2' -%}
                                 </button>
                             </div>
+
+                            {%- if form.errors -%}
+                                <div
+                                    id="newsletter-status-{{ section.id }}"
+                                    class="mt-step-s copy-s text-error-text"
+                                    role="alert"
+                                    data-newsletter-status
+                                    data-newsletter-form-error
+                                >
+                                    <p>{{ section.settings.error_message }}</p>
+                                    {{ form.errors | default_errors }}
+                                </div>
+                            {%- endif -%}
                         {%- endform -%}
                     </div>
             {%- endcase -%}

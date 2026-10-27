@@ -91,7 +91,6 @@
                 class="w-full max-w-3xl"
                 x-data="newsletterBanner()"
                 data-module-id="newsletter-banner"
-                data-newsletter-success-message="{{ 'newsletter.success_message' | t | escape }}"
             >
                 {%- assign email_placeholder_fallback = 'newsletter.email_placeholder' | t -%}
                 {%- comment -%}
@@ -114,6 +113,10 @@
                             autocomplete="email"
                             required
                             class="inline-submit-field__input"
+                            {% if form.errors %}
+                                aria-invalid="true"
+                                aria-describedby="NewsletterStatus-{{ section.id }}"
+                            {% endif %}
                         >
                         <button
                             type="submit"
@@ -123,6 +126,26 @@
                             {%- render 'icons', icon: 'icon-arrow2' -%}
                         </button>
                     </div>
+
+                    {%- if form.posted_successfully? -%}
+                        <p
+                            id="NewsletterStatus-{{ section.id }}"
+                            class="newsletter-banner__status mt-step-s copy-s"
+                            role="status"
+                            data-newsletter-status
+                        >
+                            {{ 'newsletter.success_message' | t }}
+                        </p>
+                    {%- elsif form.errors -%}
+                        <div
+                            id="NewsletterStatus-{{ section.id }}"
+                            class="newsletter-banner__status mt-step-s copy-s text-error-text"
+                            role="alert"
+                            data-newsletter-status
+                        >
+                            {{ form.errors | default_errors }}
+                        </div>
+                    {%- endif -%}
                 {%- endform -%}
             </div>
         </div>
