@@ -40,16 +40,14 @@ Closed without change (user, 2026-10-28): CS1 put product cards on the white car
 
 ## Before submission 8: readiness review
 
+Done 2026-10-29: RR1-A, the ratchet tidy-up (`48b36cb`); RR1-B, the layout sweep and baseline 40 → 9 user-approved entries (`6103066`, with the testimonial author and the two unconfirmed entries classified there). Left: RR1-C and RR1-D below.
+
 Section cleanup sweep closed without change (user, 2026-10-28): of the 32 addable sections, 29 are used in templates or section groups. The other three are `custom-liquid` (kept by decision), and `promotion-countdown` and `video-banner` (optional, polished in OS1 and OS2). Unused sections were removed earlier in R1 (`44c275d`).
 
 Social links closed without change (2026-10-28). Shopify Theme Store requirements section 13 (Shopify Dev MCP) asks for a set of social icons, Open Graph and Twitter card tags, and empty social placeholder text, not Brand settings. The theme has 9 `social_*_link` settings with empty placeholders (`locales/en.default.schema.json`), and `og:` and `twitter:` tags in `snippets/meta-tags.liquid`.
 
 - Manual test checklist for the launch-blocking flows (variant change, add to cart, cart drawer, menu, dialogs with keyboard and focus), following Shopify's official testing checklist read through Shopify Dev MCP. Decided (user, 2026-10-12): a document, not automation; written with the readiness review. Source: 6-T3. Surface: a new document.
 - Cross-domain consolidation pass before the second submission (polish pass plus readiness review), and one read-only audit of the closed areas (JS runtime and modules, i18n, schema and settings, assets, `docs/references/` accuracy) by an external session, report outside the repo. Decided: user, 2026-10-09. Source: audit practice. Surface: read-only, then findings.
-- Full 57-width layout sweep before a release (it also covers the width matrix left open by the 2026-10-04 pass); the layout baseline to 0 (count from `.agents/tools/layout-check/layout-check.baseline.json` `issues`; mostly home `tap-targets`, `featured-product` Swiper bullets under 24px, `scroll-categories` links, `page-margin` and one `clipped-text`). Source: baseline pruned 2026-10-13. Surface: `.agents/tools/layout-check/layout-check.baseline.json` and the named sections.
-- `.testimonial-featured__author` (third column, first card) past the page margin at 1160–1200 on home: a `test:layout` new issue not in the baseline, pre-existing (same position under `HEAD` CSS). Source: SB1 Review 1 and 2, 2026-10-28. Surface: `sections/testimonial-featured.liquid`.
-- Two unconfirmed layout entries (`featured-products` tab-0 at 680, blog tab-2 at 640, one width each): confirm with `test:layout` before the polish touches them; entries pruned 2026-10-13 (`featured-products` tab-2 at 760, blog tab-1 at 360, fifth `collection-all` nav link at 1040) that reappear are unstable measurements to classify, not regressions. Source: 2026-10-13. Surface: classification.
-- Migration ratchets, tidy-up only (user, 2026-10-28: keep it if simple and invisible): replace a raw value with its token only where the token equals it exactly (the 5 `legacy-type-tier` hits, `raw-spacing` 2 in the `product-card` quick-view padding, the `border-radius` declarations that match a radius token); values with no equal token (the countdown display sizes, odd radii) stay and keep their baseline entries; shrink the baselines afterwards. No rendered change: `test:layout` and the user's look unchanged. Source: 6-R1 to 6-R5; brought back before the submission, 2026-10-28. Surface: sections and snippets stylesheets, `tailwind/` files holding the hits, lint baselines.
 
 ## After submission
 
