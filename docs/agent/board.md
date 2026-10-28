@@ -18,7 +18,6 @@ Earlier topics closed. SB1 (one scrollbar style) was planned and implemented on 
 ## Deferred ideas
 
 - **`AGENTS.md` pass** (user, 2026-10-23): not now. The file is 173 lines (official target: under 200) and about 5.4k tokens; moving the sections needed only sometimes (Agent Adapters, Audit practice) saves about 550 tokens per session for 1.5 hours plus a review. Revisit on a real signal: a rule repeatedly ignored, or the file passing 200 lines; then handle that rule or section only.
-- **Section cleanup sweep** (user, 2026-10-05): after the design phase, review unused sections in one batch. Keep: `custom-liquid`, `pickup-availability`, `collection-navigation-items`, social icons in `snippets/social-icons.liquid`.
 - **Looping media video** (user, 2026-10-05): viewport-triggered play on `snippets/media-video.liquid` when a design needs it; WCAG 2.2.2 pause still required.
 - **Home scroll narrative** (user, 2026-09-30): GSAP ScrollTrigger sections on demand via section modules; Three.js closed (2026-10-08). Constraints: motion reference classifies choreography; first frame in Liquid; `motion_enabled` and reduced motion; no full-page library load.
 - **Lighthouse CI development themes** (user, 2026-10-13): the action never deletes its development theme (its cleanup tests a variable it never sets); left as is, revisit only if the leftovers cause a problem (then delete the run's own theme, not all development themes).
