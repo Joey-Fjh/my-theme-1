@@ -18,6 +18,7 @@
     @param {string} [max_height] - Optional desktop max height for the main gallery media box
     @param {string} [class] - Optional CSS classes for the outermost wrapper
     @param {string} [id] - Optional HTML id for event-targeting (variant mapping)
+    @param {number} [initial_index] - Thumbnails layout: index of the media shown before hydration, the selected variant's featured image (default: 0)
     @param {string} [pagination] - Carousel pagination mode; pass `vertical` for left-stacked dots (default: horizontal below)
 {% enddoc %}
 
@@ -49,6 +50,13 @@
     {%- assign gallery_items = images -%}
 {%- endif -%}
 {%- assign image_count = gallery_items | size -%}
+{%- assign gallery_initial_index = 0 -%}
+{%- if layout == 'thumbnails' -%}
+    {%- assign gallery_initial_index = initial_index | default: 0 | at_least: 0 -%}
+    {%- if gallery_initial_index >= image_count -%}
+        {%- assign gallery_initial_index = 0 -%}
+    {%- endif -%}
+{%- endif -%}
 
 {%- comment -%} Build image-only list for lightbox and count image-only items {%- endcomment -%}
 {%- assign lightbox_images = gallery_items | where: 'media_type', 'image' -%}
@@ -79,6 +87,9 @@
     data-media-count="{{ image_count }}"
     class="product-gallery{% if class %} {{ class }}{% endif %}"
     data-gallery-aspect-mode="{{ gallery_aspect_mode }}"
+    {% if gallery_initial_index > 0 %}
+        data-initial-index="{{ gallery_initial_index }}"
+    {% endif %}
     {% if id %}
         id="{{ id }}"
     {% endif %}
@@ -103,7 +114,7 @@
         {%- liquid
             case layout
                 when 'thumbnails'
-                    render 'product-gallery-thumbnails', images: gallery_items, gallery_id: id, thumb_position: thumb_position, thumbnail_size: thumbnail_size, zoom: zoom_enabled, magnifier: magnifier_enabled, magnifier_zoom_scale: magnifier_zoom_scale, magnifier_preview_width: magnifier_preview_width, magnifier_preview_height: magnifier_preview_height, magnifier_preview_max_width: magnifier_preview_max_width, aspect_ratio: aspect_ratio, max_height: max_height
+                    render 'product-gallery-thumbnails', images: gallery_items, gallery_id: id, thumb_position: thumb_position, thumbnail_size: thumbnail_size, initial_index: gallery_initial_index, zoom: zoom_enabled, magnifier: magnifier_enabled, magnifier_zoom_scale: magnifier_zoom_scale, magnifier_preview_width: magnifier_preview_width, magnifier_preview_height: magnifier_preview_height, magnifier_preview_max_width: magnifier_preview_max_width, aspect_ratio: aspect_ratio, max_height: max_height
                 when 'carousel'
                     render 'product-gallery-carousel', images: gallery_items, zoom: zoom_enabled, magnifier: magnifier_enabled, magnifier_zoom_scale: magnifier_zoom_scale, magnifier_preview_width: magnifier_preview_width, magnifier_preview_height: magnifier_preview_height, magnifier_preview_max_width: magnifier_preview_max_width, aspect_ratio: aspect_ratio, max_height: max_height, pagination: gallery_pagination
                 when 'stacked'
@@ -146,6 +157,15 @@
     }
 
     .product-gallery[data-gallery-aspect-mode='adapt'] .product-gallery__zoom-button.is-active {
+        position: relative;
+        inset: auto;
+        height: auto;
+    }
+
+    /* Until a slide is active (server render, before hydration), the initial slide sizes the panel so the page does not shift. */
+    .product-gallery[data-gallery-aspect-mode='adapt']
+        [role='tabpanel']:not(:has(> .product-gallery__zoom-button.is-active))
+        > .product-gallery__zoom-button[data-gallery-initial] {
         position: relative;
         inset: auto;
         height: auto;
@@ -201,7 +221,7 @@
         }
     }
 
-    .product-gallery [role='tabpanel'] > .product-gallery__zoom-button:first-child {
+    .product-gallery [role='tabpanel'] > .product-gallery__zoom-button[data-gallery-initial] {
         opacity: 1;
         z-index: 10;
         pointer-events: auto;
@@ -209,7 +229,7 @@
 
     .product-gallery[data-gallery-hydrated]
         [role='tabpanel']
-        > .product-gallery__zoom-button:first-child:not(.is-active) {
+        > .product-gallery__zoom-button[data-gallery-initial]:not(.is-active) {
         opacity: 0;
         z-index: 0;
         pointer-events: none;

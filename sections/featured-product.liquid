@@ -24,6 +24,12 @@
 {% if gallery_layout == 'carousel' %}
     {% assign featured_use_carousel = true %}
 {% endif %}
+{%- comment -%} Carousel under adapt: the frame takes the featured media ratio within the height cap, not a viewport-sized stage. {%- endcomment -%}
+{% assign featured_adapt_frame = false %}
+{% if featured_use_carousel and gallery_aspect_ratio == 'adapt' and featured_product != blank %}
+    {% assign featured_adapt_frame = true %}
+    {% assign featured_media_ratio = featured_product.featured_media.aspect_ratio | default: 0.75 %}
+{% endif %}
 
 {%- capture featured_product_children -%}
     <div
@@ -47,10 +53,14 @@
                 >
                     <div
                         class="featured-product__media-panel{% if featured_use_carousel %} featured-product__media-panel--carousel{% endif %}"
+                        {% if featured_adapt_frame %}
+                            style="--featured-media-ratio: {{ featured_media_ratio }}; --featured-media-max-height: {{ desktop_media_max_height | default: '90svh' }};"
+                        {% endif %}
                         data-product-media-panel
                     >
                         {% assign thumb_position = section.settings.thumb_position | default: 'left' %}
                         {%- assign gallery_id = 'product-gallery-featured-' | append: section.id -%}
+                        {%- assign gallery_initial_index = featured_product.selected_or_first_available_variant.featured_image.position | minus: 1 | at_least: 0 -%}
                         {%- if featured_product != blank -%}
                             {%- if featured_use_carousel -%}
                                 {%- render 'product-gallery',
@@ -69,6 +79,7 @@
                                     layout: 'thumbnails',
                                     thumb_position: thumb_position,
                                     thumbnail_size: section.settings.thumbnail_size,
+                                    initial_index: gallery_initial_index,
                                     aspect_ratio: gallery_aspect_ratio,
                                     max_height: desktop_media_max_height
                                 -%}
@@ -116,6 +127,9 @@
     assign featured_frame_root_class = ''
     if featured_use_carousel
         assign featured_frame_root_class = 'featured-product-section--carousel'
+    endif
+    if featured_adapt_frame
+        assign featured_frame_root_class = featured_frame_root_class | append: ' featured-product-section--adapt'
     endif
 -%}
 
@@ -177,6 +191,46 @@
         }
 
         .featured-product-section--carousel .featured-product__gallery img {
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .featured-product-section--carousel.featured-product-section--adapt
+            .featured-product__media-sticky {
+            height: auto;
+        }
+
+        .featured-product-section--carousel.featured-product-section--adapt
+            .featured-product__media-panel--carousel {
+            height: auto;
+            aspect-ratio: var(--featured-media-ratio);
+            max-height: var(--featured-media-max-height);
+        }
+
+        /* The frame sets the size: every slide fills it and its media is contained and centred
+           (outranks the gallery's own adapt sizing, which follows each image's natural height). */
+        .featured-product-section--carousel.featured-product-section--adapt
+            .featured-product__gallery[data-gallery-aspect-mode='adapt']
+            :is([data-gallery-swiper], .swiper-wrapper, .swiper-slide) {
+            height: 100%;
+        }
+
+        .featured-product-section--carousel.featured-product-section--adapt
+            .featured-product__gallery[data-gallery-aspect-mode='adapt']
+            [data-gallery-swiper]
+            .theme-image {
+            width: 100%;
+            height: 100%;
+            max-height: none;
+            margin-inline: 0;
+        }
+
+        .featured-product-section--carousel.featured-product-section--adapt
+            .featured-product__gallery[data-gallery-aspect-mode='adapt']
+            [data-gallery-swiper]
+            .theme-image
+            > .image_img {
+            width: 100%;
             height: 100%;
             object-fit: contain;
         }

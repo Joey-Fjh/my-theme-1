@@ -4,6 +4,7 @@
 
     @param {array}   images          - Image or media objects
     @param {string}  gallery_id      - Unique gallery id used to associate tabs and the active panel
+    @param {number}  [initial_index] - Index of the slide shown before hydration (default: 0)
     @param {string}  thumb_position  - 'left' | 'bottom'
     @param {string}  thumbnail_size - Shared thumbnail size: 'compact' | 'standard' | 'large'
     @param {boolean} zoom            - Enable click on main image
@@ -41,6 +42,7 @@
         {%- assign thumbnail_image_sizes = '(min-width: 48rem) 88px, 72px' -%}
 {%- endcase -%}
 {%- assign thumbnail_image_widths = '64,80,104,144,176,208,264,312' -%}
+{%- assign gallery_initial_index = initial_index | default: 0 -%}
 {%- assign gallery_adapt = false -%}
 {%- assign gallery_main_img_class = 'w-full h-full object-cover' -%}
 {%- assign gallery_main_mode = 'frame' -%}
@@ -215,6 +217,9 @@
                     aria-label="{{ 'accessibility.open_image_zoom' | t }}"
                     class="product-gallery__zoom-button"
                     data-gallery-index="{{ forloop.index0 }}"
+                    {% if forloop.index0 == gallery_initial_index %}
+                        data-gallery-initial
+                    {% endif %}
                     data-lightbox-index="{{ image_only_index }}"
                     :class="{ 'is-active': activeIndex === Number($el.dataset.galleryIndex) }"
                     :tabindex="activeIndex === Number($el.dataset.galleryIndex) ? 0 : -1"
@@ -228,6 +233,9 @@
                     type="button"
                     class="product-gallery__zoom-button"
                     data-gallery-index="{{ forloop.index0 }}"
+                    {% if forloop.index0 == gallery_initial_index %}
+                        data-gallery-initial
+                    {% endif %}
                     :class="{ 'is-active': activeIndex === Number($el.dataset.galleryIndex) }"
                     :tabindex="activeIndex === Number($el.dataset.galleryIndex) ? 0 : -1"
                     :aria-hidden="(activeIndex !== Number($el.dataset.galleryIndex)).toString()"
@@ -245,6 +253,9 @@
                 <div
                     class="product-gallery__zoom-button"
                     data-gallery-index="{{ forloop.index0 }}"
+                    {% if forloop.index0 == gallery_initial_index %}
+                        data-gallery-initial
+                    {% endif %}
                     :class="{ 'is-active': activeIndex === Number($el.dataset.galleryIndex) }"
                     :aria-hidden="(activeIndex !== Number($el.dataset.galleryIndex)).toString()"
                     :inert="activeIndex !== Number($el.dataset.galleryIndex)"
@@ -252,7 +263,7 @@
             {%- endif -%}
             {%- assign gallery_loading = 'lazy' -%}
             {%- assign gallery_fetchpriority = 'auto' -%}
-            {%- if forloop.first -%}
+            {%- if forloop.index0 == gallery_initial_index -%}
                 {%- assign gallery_loading = 'eager' -%}
                 {%- assign gallery_fetchpriority = 'high' -%}
             {%- endif -%}

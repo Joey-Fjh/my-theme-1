@@ -15,6 +15,9 @@ define('productGallery', () => ({
     init() {
         this._galleryRoot = this.$el;
         this.mediaCount = Number(this._galleryRoot.dataset.mediaCount) || 0;
+        // The server renders the selected variant's media first (thumbnails layout); start there so hydration does not swap it.
+        const initialIndex = Number(this._galleryRoot.dataset.initialIndex) || 0;
+        if (initialIndex > 0 && initialIndex < this.mediaCount) this.activeIndex = initialIndex;
         this._thumbnailMediaQuery = window.matchMedia('(min-width: 48rem)');
         this.on(this._thumbnailMediaQuery, 'change', () => this._syncThumbnailOrientation());
         this._syncThumbnailOrientation();

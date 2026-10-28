@@ -48,6 +48,8 @@
         {%- endcapture -%}
 
         {%- capture tab_content -%}
+            {%- comment -%} The panel tab-control opens first (strategy middle: floor(count / 2)) renders without x-cloak, so the section keeps its height before hydration. {%- endcomment -%}
+            {%- assign featured_initial_panel = section.blocks.size | divided_by: 2 -%}
             {%- for block in section.blocks -%}
                 <div
                     role="tabpanel"
@@ -55,7 +57,9 @@
                     aria-labelledby="featured-products-{{ section.id }}-tab-{{ forloop.index0 }}"
                     x-init="registerPanel($el)"
                     x-show="isActive(panelIndexFor($el))"
-                    x-cloak
+                    {% unless forloop.index0 == featured_initial_panel %}
+                        x-cloak
+                    {% endunless %}
                     class="flex flex-col items-center gap-step-l"
                     {{ block.shopify_attributes }}
                 >
