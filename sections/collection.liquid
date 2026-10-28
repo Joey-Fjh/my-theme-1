@@ -80,7 +80,7 @@
 
             <a
                 href="{% if collection_nav_sort_by != blank %}{{ nav_collection.url }}?sort_by={{ collection_nav_sort_by | url_param_escape }}{% else %}{{ nav_collection.url }}{% endif %}"
-                class="collection__nav-link tab-nav-item tab-nav-item--underline-opacity flex shrink-0 items-start whitespace-nowrap{% if nav_collection.handle == collection.handle %} is-active{% endif %}"
+                class="collection__nav-link tab-nav-item tab-nav-item--underline-opacity{% if nav_collection.handle == collection.handle %} is-active{% endif %}"
                 {% if nav_collection.handle == collection.handle %}
                     aria-current="page"
                 {% endif %}
@@ -274,10 +274,10 @@
                 aria-label="{{ 'accessibility.collection_navigation' | t }}"
                 class="collection-toolbar-nav border-b border-line copy-xl tablet:hidden"
             >
-                <div class="flex min-w-0 flex-nowrap items-end gap-step-s pb-step-xs">
+                <div class="collection-toolbar-nav__list collection-toolbar-nav__list--mobile">
                     <a
                         href="{{ all_products_nav_href }}"
-                        class="collection__nav-link tab-nav-item tab-nav-item--underline-opacity flex shrink-0 items-start{% if is_all_products_collection %} is-active{% endif %}"
+                        class="collection__nav-link tab-nav-item tab-nav-item--underline-opacity{% if is_all_products_collection %} is-active{% endif %}"
                         {% if is_all_products_collection %}
                             aria-current="page"
                         {% endif %}
@@ -295,7 +295,7 @@
                     {%- unless is_all_products_collection -%}
                         <a
                             href="{{ current_collection_nav_href }}"
-                            class="collection__nav-link tab-nav-item tab-nav-item--underline-opacity is-active flex min-w-0 flex-1 items-start"
+                            class="collection__nav-link collection__nav-link--grow tab-nav-item tab-nav-item--underline-opacity is-active"
                             aria-current="page"
                         >
                             <span class="flex min-w-0 items-start">
@@ -393,7 +393,7 @@
                         endif
                     -%}
 
-                    <div class="collection-toolbar flex w-full flex-col items-start gap-step-m tablet:gap-step-m">
+                    <div class="collection-toolbar">
                         <div class="{{ toolbar_outer_class }}">
                             <div class="shrink-0">
                                 {%- if enable_filtering and is_drawer_filter -%}
@@ -422,10 +422,10 @@
                                     aria-label="{{ 'accessibility.collection_navigation' | t }}"
                                     class="collection-toolbar-nav hidden min-w-max tablet:block"
                                 >
-                                    <div class="flex min-w-max flex-nowrap items-end pb-step-xs {{ toolbar_nav_class }} sup-room">
+                                    <div class="collection-toolbar-nav__list {{ toolbar_nav_class }} sup-room">
                                         <a
                                             href="{{ all_products_nav_href }}"
-                                            class="collection__nav-link tab-nav-item tab-nav-item--underline-opacity flex shrink-0 items-start whitespace-nowrap{% if is_all_products_collection %} is-active{% endif %}"
+                                            class="collection__nav-link tab-nav-item tab-nav-item--underline-opacity{% if is_all_products_collection %} is-active{% endif %}"
                                             {% if is_all_products_collection %}
                                                 aria-current="page"
                                             {% endif %}
@@ -764,6 +764,51 @@
     .collection-section .sort-by-dropdown__option {
         line-height: var(--font-body-line-height);
         font-size: calc(var(--font-body-scale) * var(--type-step-1));
+    }
+
+    :where(.collection-section .collection-toolbar) {
+        display: flex;
+        width: 100%;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-step-m);
+    }
+
+    :where(.collection-section .collection-toolbar [data-module-id='drag-scroll']) {
+        box-sizing: border-box;
+        margin-inline: calc(-1 * var(--page-inset));
+        padding-inline: var(--page-inset);
+        scroll-padding-inline: var(--page-inset);
+    }
+
+    :where(.collection-section .collection-toolbar-nav__list) {
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: flex-end;
+        padding-bottom: var(--spacing-step-xs);
+    }
+
+    :where(.collection-section .collection-toolbar-nav__list--mobile) {
+        min-width: 0;
+        gap: var(--spacing-step-s);
+    }
+
+    :where(
+        .collection-section .collection-toolbar-nav__list:not(.collection-toolbar-nav__list--mobile)
+    ) {
+        min-width: max-content;
+    }
+
+    :where(.collection-section .collection__nav-link) {
+        display: flex;
+        flex-shrink: 0;
+        align-items: flex-start;
+        white-space: nowrap;
+    }
+
+    :where(.collection-section .collection__nav-link--grow) {
+        flex: 1 1 auto;
+        min-width: 0;
     }
 {% endstylesheet %}
 
