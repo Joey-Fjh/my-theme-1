@@ -467,10 +467,14 @@ define('motionRevealSection', () => {
                     if (target.getAttribute('data-motion-state') !== 'pending') return;
                     if (!this._isTargetVisible(target)) return;
                     if (!this._isClipVisible(target)) return;
-                    const isInRevealViewport = allowViewportEdge
-                        ? this._isBoundInViewport(target)
-                        : this._isBoundInInsetViewport(target);
-                    if (!isInRevealViewport) return;
+                    // A cascade row is admitted once by its trigger; re-checking each target would test its
+                    // pending (offset, scaled) box and could leave part of a visible row hidden until the next scroll.
+                    if (!cascadeBatch) {
+                        const isInRevealViewport = allowViewportEdge
+                            ? this._isBoundInViewport(target)
+                            : this._isBoundInInsetViewport(target);
+                        if (!isInRevealViewport) return;
+                    }
                     this._revealTarget(target);
                 } finally {
                     this._releasePageLoadQueue(target);

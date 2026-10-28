@@ -36,7 +36,7 @@ Done: BP1 (`4e0884d`) and its defects in G7 (`8182efe`).
 
 ## Before submission 7b: card surface and depth
 
-- Card surface and depth: a card background role in the colour schemes (default white) shared by product and collection cards (collection cards hard-code `bg-white`); optional later a per-card metafield colour; hover depth from flat to raised (the reference image is no longer local; supply it again at the polish pass), with a layered shadow measured then; reconcile with `design.md` rule 3 (tinted backdrop, no grey drop shadow). Whether product cards get the raised hover too is decided at the polish pass. Source: user, 2026-10-05; moved before the second submission, 2026-10-28 (answers the design rejection). Surface: colour scheme schema, `product-card`, `collection-list`.
+Closed without change (user, 2026-10-28): CS1 put product cards on the white card surface as `home-1440.png` shows. In the browser the user preferred the cards as they were, so it was reverted before commit. Card surface stays as is.
 
 ## Before submission 8: readiness review
 
