@@ -48,6 +48,7 @@ Social links closed without change (2026-10-28). Shopify Theme Store requirement
 
 - Manual test checklist for the launch-blocking flows (variant change, add to cart, cart drawer, menu, dialogs with keyboard and focus), following Shopify's official testing checklist read through Shopify Dev MCP. Decided (user, 2026-10-12): a document, not automation; written with the readiness review. Source: 6-T3. Surface: a new document.
 - Cross-domain consolidation pass before the second submission (polish pass plus readiness review), and one read-only audit of the closed areas (JS runtime and modules, i18n, schema and settings, assets, `docs/references/` accuracy) by an external session, report outside the repo. Decided: user, 2026-10-09. Source: audit practice. Surface: read-only, then findings.
+- Clear the board's Deferred ideas at RR1-D: remove its five entries, keep one "Not planned" line in `docs/project.md`, details stay in git history; with the Pending migration lines approved, the board and context are empty at the submission. Source: user, 2026-10-29. Surface: `docs/agent/board.md`, `docs/project.md`.
 
 ## After submission
 
