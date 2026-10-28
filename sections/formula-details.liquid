@@ -287,6 +287,10 @@
 %}
 
 {% stylesheet %}
+    .formula-details__band {
+        overflow-x: clip;
+    }
+
     .formula-details__band-inner {
         padding-block: var(--spacing-step-xl);
         padding-inline: var(--page-inset);
@@ -375,7 +379,10 @@
     }
 
     @media (width >= 64rem) {
+        /* The grid keeps the page inset; only the band image runs past it to the viewport edge (LS2-B2).
+           100cqi is the grid's width, so (100vw - 100cqi) / 2 is the inset; the scrollbar share is clipped by the band. */
         .formula-details__band-grid {
+            container-type: inline-size;
             grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
             align-items: start;
             gap: var(--spacing-step-l);
@@ -398,6 +405,16 @@
         .formula-details__attribute:first-child {
             padding-inline-start: 0;
             border-inline-start: none;
+        }
+
+        .formula-details__band-media {
+            justify-self: start;
+            width: calc(100% + (100vw - 100cqi) / 2);
+        }
+
+        .formula-details__media--band {
+            border-start-end-radius: 0;
+            border-end-end-radius: 0;
         }
 
         .formula-details__ingredient-grid {

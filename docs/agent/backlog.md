@@ -24,10 +24,7 @@ Taken into plan LS2-B1 in `docs/agent/context.md` (user, 2026-10-28, scope B: th
 
 ## Before submission 5: product polish (collection reviewed with it)
 
-- LS2-B2 after LS2-B1 (user, 2026-10-28, scope B): the two items below, screenshot-led against `docs/design/product/` and `frontend-design`. Source: LS2-B scope, 2026-10-28. Surface: per item.
-- `mood-finder`: quadrant labels carry a backing box the design lacks; section 764px against about 700, wheel 408px against about 470 at 1440; below 80rem the botanical sits between wheel and card (the motion token part is in LS2-B1). Source: 6-P2. Surface: `sections/mood-finder.liquid`.
-- `formula-details`: band image stays inside the page margins while the design bleeds it to the edge; numbers' monospace italic follows the font-role item below. Source: 6-P4. Surface: `sections/formula-details.liquid`.
-- Product main: variant picker labels smaller than the design (user: leave for now); the rating row needs review data to show. Source: 6-P5 to 6-P7. Surface: `sections/main-product.liquid`.
+Taken into plan LS2-B2 in `docs/agent/context.md` (2026-10-28). The product main items (variant label size, rating row) stay as they are (user: leave).
 
 ## Before submission 6: optional sections
 
