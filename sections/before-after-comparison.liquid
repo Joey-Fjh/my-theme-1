@@ -34,7 +34,7 @@
         {% comment %} Mobile Layout (Stacked) {% endcomment %}
         <div class="flex flex-col gap-step-m tablet:hidden">
             <div>
-                <div class="relative overflow-hidden rounded-lg">
+                <div class="before-after__frame">
                     {%- assign image_alt = section.settings.before_img.alt
                         | default: section.settings.before_label
                         | escape
@@ -46,14 +46,14 @@
                         width: section.settings.before_img.width,
                         aspect_ratio: aspect_ratio,
                     -%}
-                    <div class="absolute bottom-4 left-4 z-10 rounded border-2 border-theme-text px-step-xs py-step-2xs copy-l backdrop-blur-sm">
+                    <div class="absolute bottom-4 left-4 z-10 rounded bg-scrim px-step-xs py-step-2xs copy-l text-on-scrim">
                         {{ section.settings.before_label }}
                     </div>
                 </div>
             </div>
 
             <div>
-                <div class="relative overflow-hidden rounded-lg">
+                <div class="before-after__frame">
                     {%- assign image_alt = section.settings.after_img.alt
                         | default: section.settings.after_label
                         | escape
@@ -65,7 +65,7 @@
                         width: section.settings.after_img.width,
                         aspect_ratio: aspect_ratio,
                     -%}
-                    <div class="absolute right-4 bottom-4 z-10 rounded border-2 border-theme-text px-step-xs py-step-2xs copy-l backdrop-blur-sm">
+                    <div class="absolute right-4 bottom-4 z-10 rounded bg-scrim px-step-xs py-step-2xs copy-l text-on-scrim">
                         {{ section.settings.after_label }}
                     </div>
                 </div>
@@ -78,85 +78,87 @@
             data-module-id="before-after-comparison"
             x-data="beforeAfterComparison()"
         >
-            <div
-                class="relative cursor-ew-resize touch-pan-y overflow-hidden rounded-lg select-none"
-                style="aspect-ratio: {{ aspect_ratio }};"
-                x-ref="container"
-                @pointerdown="startDrag($event)"
-                @pointermove="onDrag($event)"
-                @pointerup="endDrag($event)"
-                @pointercancel="endDrag($event)"
-                x-intersect:enter.once="animateToCenter()"
-            >
-                {% comment %} After Image (Background) {% endcomment %}
-                <div class="absolute inset-0 h-full w-full">
-                    {%- assign image_alt = section.settings.after_img.alt
-                        | default: section.settings.after_label
-                        | escape
-                    -%}
-                    {%- render 'image',
-                        image: section.settings.after_img,
-                        placeholder_key: 'lifestyle-2',
-                        alt: image_alt,
-                        width: section.settings.after_img.width,
-                        extra_attributes: 'draggable="false"',
-                    -%}
-                </div>
-
-                {% comment %} Before Image (Clipped) {% endcomment %}
+            <div class="before-after__frame">
                 <div
-                    class="absolute inset-0 h-full w-full"
-                    style="clip-path: inset(0 50% 0 0);"
-                    :style="`clip-path: inset(0 ${100 - position}% 0 0)`"
+                    class="relative cursor-ew-resize touch-pan-y select-none"
+                    style="aspect-ratio: {{ aspect_ratio }};"
+                    x-ref="container"
+                    @pointerdown="startDrag($event)"
+                    @pointermove="onDrag($event)"
+                    @pointerup="endDrag($event)"
+                    @pointercancel="endDrag($event)"
+                    x-intersect:enter.once="animateToCenter()"
                 >
-                    {%- assign image_alt = section.settings.before_img.alt
-                        | default: section.settings.before_label
-                        | escape
-                    -%}
-                    {%- render 'image',
-                        image: section.settings.before_img,
-                        placeholder_key: 'lifestyle-1',
-                        alt: image_alt,
-                        width: section.settings.before_img.width,
-                        extra_attributes: 'draggable="false"',
-                    -%}
-                </div>
+                    {% comment %} After Image (Background) {% endcomment %}
+                    <div class="absolute inset-0 h-full w-full">
+                        {%- assign image_alt = section.settings.after_img.alt
+                            | default: section.settings.after_label
+                            | escape
+                        -%}
+                        {%- render 'image',
+                            image: section.settings.after_img,
+                            placeholder_key: 'lifestyle-2',
+                            alt: image_alt,
+                            width: section.settings.after_img.width,
+                            extra_attributes: 'draggable="false"',
+                        -%}
+                    </div>
 
-                {% comment %} Silder Line {% endcomment %}
-                <div
-                    class="ease-out absolute top-0 bottom-0 z-10 w-2 -translate-x-1/2 bg-veil transition-[left] duration-75"
-                    style="left: 50%;"
-                    :class="{'transition-none' : isDragging }"
-                    :style="`left: ${position}%`"
-                >
-                    {% comment %} Handle {% endcomment %}
-                    <button
-                        type="button"
-                        class="
-                            absolute top-1/2 left-1/2 flex h-24 w-24 -translate-x-1/2 -translate-y-1/2 cursor-grab items-center justify-center gap-0 rounded-full bg-theme-bg focus-ring
-                            transition-transform duration-200 hover:scale-110 focus:outline-none active:cursor-grabbing
-                        "
-                        @keydown="handleKeydown($event)"
-                        role="slider"
-                        aria-valuemin="0"
-                        aria-valuemax="100"
-                        :aria-valuenow="Math.round(position)"
-                        aria-label="{{ 'accessibility.drag_to_compare' | t }}"
+                    {% comment %} Before Image (Clipped) {% endcomment %}
+                    <div
+                        class="absolute inset-0 h-full w-full"
+                        style="clip-path: inset(0 50% 0 0);"
+                        :style="`clip-path: inset(0 ${100 - position}% 0 0)`"
                     >
-                        {%- render 'icons', icon: 'icon-chevron-left' -%}
-                        {%- render 'icons', icon: 'icon-chevron-right', class: '-ms-step-2xs' -%}
-                    </button>
-                </div>
+                        {%- assign image_alt = section.settings.before_img.alt
+                            | default: section.settings.before_label
+                            | escape
+                        -%}
+                        {%- render 'image',
+                            image: section.settings.before_img,
+                            placeholder_key: 'lifestyle-1',
+                            alt: image_alt,
+                            width: section.settings.before_img.width,
+                            extra_attributes: 'draggable="false"',
+                        -%}
+                    </div>
 
-                {% comment %} Before Label {% endcomment %}
-                <div class="absolute bottom-10 left-10 z-10 rounded border-2 border-theme-text p-step-s copy-l backdrop-blur-sm">
-                    {{ section.settings.before_label }}
-                </div>
+                    {% comment %} Silder Line {% endcomment %}
+                    <div
+                        class="ease-out absolute top-0 bottom-0 z-10 w-2 -translate-x-1/2 bg-veil transition-[left] duration-75"
+                        style="left: 50%;"
+                        :class="{'transition-none' : isDragging }"
+                        :style="`left: ${position}%`"
+                    >
+                        {% comment %} Handle {% endcomment %}
+                        <button
+                            type="button"
+                            class="
+                                absolute top-1/2 left-1/2 flex h-24 w-24 -translate-x-1/2 -translate-y-1/2 cursor-grab items-center justify-center gap-0 rounded-full bg-theme-bg focus-ring
+                                transition-transform duration-200 hover:scale-110 active:cursor-grabbing
+                            "
+                            @keydown="handleKeydown($event)"
+                            role="slider"
+                            aria-valuemin="0"
+                            aria-valuemax="100"
+                            :aria-valuenow="Math.round(position)"
+                            aria-label="{{ 'accessibility.drag_to_compare' | t }}"
+                        >
+                            {%- render 'icons', icon: 'icon-chevron-left' -%}
+                            {%- render 'icons', icon: 'icon-chevron-right', class: '-ms-step-2xs' -%}
+                        </button>
+                    </div>
 
-                {% comment %} After Label {% endcomment %}
-                <div class="absolute right-10 bottom-10 z-10 rounded border-2 border-theme-text p-step-s copy-l backdrop-blur-sm">
-                    {{ section.settings.after_label }}
-                </div>
+                    {% comment %} Before Label {% endcomment %}
+                    <div class="absolute bottom-10 left-10 z-10 rounded bg-scrim p-step-s copy-l text-on-scrim">
+                        {{ section.settings.before_label }}
+                    </div>
+
+                    {% comment %} After Label {% endcomment %}
+                    <div class="absolute right-10 bottom-10 z-10 rounded bg-scrim p-step-s copy-l text-on-scrim">
+                        {{ section.settings.after_label }}
+                    </div>
+            </div>
             </div>
         </div>
     </div>
@@ -168,6 +170,14 @@
     motion: false,
     children: before_after_children
 %}
+
+{% stylesheet %}
+    .before-after__frame {
+        position: relative;
+        overflow: hidden;
+        border-radius: var(--radius-card);
+    }
+{% endstylesheet %}
 
 {% schema %}
 {

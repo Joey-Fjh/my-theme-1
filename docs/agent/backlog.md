@@ -41,8 +41,7 @@ Done 2026-10-26 in G3 (`fdfb7ba`); the plan and its reviews are in `git show fdf
 
 ## Before submission 6: optional sections
 
-- Optional sections design pass (review risk taken by plan OS1): `video-banner` play icon and `media-video` play button shadows against the flat rule, play icon hover not pointer-gated and literal focus outline; `before-after-comparison` 2px label borders and `rounded-lg`; labels and the `newsletter-banner` heading over images without a scrim; `promotion-countdown` call to action `underline` (hover-only) against the resting arrow link, px digit sizes, HTML comments in the output; `newsletter-banner` background alt falls back to the heading. Source: board topic OS1, 2026-10-27 (polish standard: user, 2026-10-11). Surface: `sections/video-banner.liquid`, `snippets/media-video.liquid`, `sections/before-after-comparison.liquid`, `sections/newsletter-banner.liquid`, `sections/promotion-countdown.liquid`.
-- Section heights for sections other than hero-type: only where height is not set by content (user, 2026-10-25); candidates the optional banner sections at their polish. Source: P1 discussion. Surface: those sections.
+Taken by plan OS2 (option B), 2026-10-28; the countdown px digit sizes stay with the migration ratchets under After submission.
 
 ## Before submission 7: consolidated browser pass
 

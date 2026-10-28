@@ -14,7 +14,7 @@
 -%}
 {%- capture newsletter_banner_children -%}
     <div
-        class="newsletter-banner__media"
+        class="newsletter-banner__media{% if newsletter_banner_has_background %} newsletter-banner__media--scrim{% endif %}"
         style="
             --newsletter-banner-aspect-mobile: {{ banner_aspect_mobile }};
             --newsletter-banner-aspect-desktop: {{ banner_aspect_desktop }};
@@ -22,10 +22,7 @@
     >
         <div class="newsletter-banner__media-clip pointer-events-none absolute inset-0 overflow-hidden{% unless newsletter_banner_has_background %} media-placeholder-frame{% endunless %}">
             {%- if newsletter_banner_has_background -%}
-                {%- assign image_alt = section.settings.background_image.alt
-                    | default: section.settings.heading
-                    | escape
-                -%}
+                {%- assign image_alt = section.settings.background_image.alt | escape -%}
                 {%- render 'image',
                     class: '!absolute inset-0',
                     image: section.settings.background_image,
@@ -61,9 +58,14 @@
                     "
                 ></div>
             {%- endif -%}
+
+            {%- if newsletter_banner_has_background -%}
+                <div class="absolute inset-0 bg-scrim" aria-hidden="true"></div>
+            {%- endif -%}
         </div>
 
         <div
+            data-newsletter-content
             class="newsletter-banner__content relative z-10 flex flex-col items-center justify-center gap-group px-step-s text-center tablet:px-step-s"
         >
             {%- capture newsletter_copy -%}
@@ -163,8 +165,18 @@
 %}
 
 {% stylesheet %}
+    /* The image ratio sets the height up to 80svh; min-height wins over max-height, so taller content still grows the box. */
     .newsletter-banner-section .newsletter-banner__media {
         aspect-ratio: var(--newsletter-banner-aspect-mobile, 9/16);
+        max-height: 80svh;
+        min-height: min-content;
+    }
+
+    /* Text over the photograph sits on the scrim in the fixed on-scrim colour (design.md: scrims are independent of the scheme). */
+    .newsletter-banner__media--scrim [data-newsletter-content] > :first-child,
+    .newsletter-banner__media--scrim [data-newsletter-content] > :first-child *,
+    .newsletter-banner__media--scrim [data-newsletter-status][role='status'] {
+        color: var(--color-on-scrim);
     }
 
     @media (width >= 48rem) {
