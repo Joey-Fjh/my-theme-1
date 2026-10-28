@@ -41,7 +41,7 @@ Done 2026-10-26 in G3 (`fdfb7ba`); the plan and its reviews are in `git show fdf
 
 ## Before submission 6: optional sections
 
-Taken by plan OS2 (option B), 2026-10-28; the countdown px digit sizes stay with the migration ratchets under After submission.
+Done 2026-10-28 in OS2 (`ba6ae10`); the plan and its reviews are in `git show ba6ae10:docs/agent/context.md`. The countdown px digit sizes stay with the migration ratchets under After submission.
 
 ## Before submission 7: consolidated browser pass
 
