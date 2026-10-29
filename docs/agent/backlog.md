@@ -40,7 +40,7 @@ Closed without change (user, 2026-10-28): CS1 put product cards on the white car
 
 ## Before submission 8: readiness review
 
-Done 2026-10-29: RR1-A, the ratchet tidy-up (`48b36cb`); RR1-B, the layout sweep and baseline 40 → 9 user-approved entries (`6103066`, with the testimonial author and the two unconfirmed entries classified there). RR1-C, the read-only audit, found no launch blocker (2026-10-29); its two code defects were fixed in RR1-E (`061a180`; the plan and its reviews are in `git show 061a180:docs/agent/context.md`). Left: RR1-D1 (records, plan in `docs/agent/context.md`) and RR1-D2 below.
+Done 2026-10-29: RR1-A, the ratchet tidy-up (`48b36cb`); RR1-B, the layout sweep and baseline 40 → 9 user-approved entries (`6103066`, with the testimonial author and the two unconfirmed entries classified there). RR1-C, the read-only audit, found no launch blocker (2026-10-29); its two code defects were fixed in RR1-E (`061a180`; the plan and its reviews are in `git show 061a180:docs/agent/context.md`). RR1-D1, the reference and record corrections and the Pending migration bundle, done in `99e61ce` (plan and review in `git show 99e61ce:docs/agent/context.md`). Left: RR1-D2 below.
 
 Section cleanup sweep closed without change (user, 2026-10-28): of the 32 addable sections, 29 are used in templates or section groups. The other three are `custom-liquid` (kept by decision), and `promotion-countdown` and `video-banner` (optional, polished in OS1 and OS2). Unused sections were removed earlier in R1 (`44c275d`).
 
