@@ -39,8 +39,6 @@ Do not add a parameter to a public method just to make a divergent case work.
 | Copy a hot snippet into a shared base class to make it reusable | Wait for a third real consumer before generalizing a JS abstraction (the CSS shared-layer threshold is in `docs/references/style-system/css-architecture.md`) |
 | Rename a near-copy instead of extending or splitting on purpose | New component, or an explicit extension when invariants match |
 
-The shared carousel indicator is an exception to that third-consumer threshold: extract it with the second real consumer (confirmed 2026-10-13). The indicator owns the presentation and accessibility of dots, the progress pill, bars, and the optional pause button (`aria-current`, 24px targets, scheme colours). Its API is set the active index, set progress, and report a selection. Whatever drives the index stays in the section.
-
 Decorative full-bleed shapes use the `section-frame` `background` slot with icon assets rendered through the `icons` snippet. `lint:theme` `raw-svg` forbids inline SVG in Liquid.
 
 ## Snippet API Semantics

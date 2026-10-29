@@ -57,7 +57,7 @@ Callers that already pass slash ratios (for example `3/4` or `16/9`) stay unchan
 
 `image.liquid` is the base image primitive. Frame mode is the default for product media, the product card, cart line items, collection and blog cards, and the article image. `sections/header.liquid` (logo), `sections/footer.liquid` (brush stroke), and `sections/scatter-gallery.liquid` (decoration) pass `mode: 'natural'`.
 
-`placeholder_style: 'plain'` is used by `sections/brand-statement.liquid`, `sections/newsletter-banner.liquid`, and `sections/slides-show.liquid`. `position` is used by `sections/brand-statement.liquid`, `sections/newsletter-banner.liquid`, and `sections/routine-showcase.liquid`. Keep both working when the snippet changes.
+`placeholder_style: 'plain'` is used by `sections/brand-statement.liquid`, `sections/newsletter-banner.liquid`, and `sections/slides-show.liquid`. `position` is used by `sections/newsletter-banner.liquid`. Keep both working when the snippet changes.
 
 ## Review
 
