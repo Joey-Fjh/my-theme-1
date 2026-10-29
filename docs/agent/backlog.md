@@ -46,7 +46,7 @@ Section cleanup sweep closed without change (user, 2026-10-28): of the 32 addabl
 
 Social links closed without change (2026-10-28). Shopify Theme Store requirements section 13 (Shopify Dev MCP) asks for a set of social icons, Open Graph and Twitter card tags, and empty social placeholder text, not Brand settings. The theme has 9 `social_*_link` settings with empty placeholders (`locales/en.default.schema.json`), and `og:` and `twitter:` tags in `snippets/meta-tags.liquid`.
 
-- RR1-D2 (user, 2026-10-29: option B, after RR1-D1; tier Show, the user reviews by running it; each item quotes the official checklist or accessibility line it covers, maps to this theme's sections and URLs at 390 and 1440 with keyboard; the official edge-case content tests run only on the CI store `ci-test`): manual test checklist for the launch-blocking flows (variant change, add to cart, cart drawer, menu, dialogs with keyboard and focus), following Shopify's official testing checklist read through Shopify Dev MCP. Decided (user, 2026-10-12): a document, not automation; written with the readiness review. Source: 6-T3. Surface: a new document.
+- RR1-D2: the user's own manual test pass of the launch-blocking flows (variant change, add to cart, cart drawer, menu, dialogs with keyboard and focus) before the second submission. Decided (user, 2026-10-29): the user runs it; no checklist document from the agent (this replaces the 2026-10-12 document decision). Each point the user raises is discussed first; nothing is recorded or changed until the user decides (user, 2026-10-29). Source: 6-T3, RR1-D. Surface: storefront, by hand.
 
 ## After submission
 
