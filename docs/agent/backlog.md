@@ -40,15 +40,15 @@ Closed without change (user, 2026-10-28): CS1 put product cards on the white car
 
 ## Before submission 8: readiness review
 
-Done 2026-10-29: RR1-A, the ratchet tidy-up (`48b36cb`); RR1-B, the layout sweep and baseline 40 → 9 user-approved entries (`6103066`, with the testimonial author and the two unconfirmed entries classified there). Left: RR1-C and RR1-D below.
+Done 2026-10-29: RR1-A, the ratchet tidy-up (`48b36cb`); RR1-B, the layout sweep and baseline 40 → 9 user-approved entries (`6103066`, with the testimonial author and the two unconfirmed entries classified there). RR1-C, the read-only audit, found no launch blocker (2026-10-29); its two code defects were fixed in RR1-E (`061a180`; the plan and its reviews are in `git show 061a180:docs/agent/context.md`). Left: RR1-D below.
 
 Section cleanup sweep closed without change (user, 2026-10-28): of the 32 addable sections, 29 are used in templates or section groups. The other three are `custom-liquid` (kept by decision), and `promotion-countdown` and `video-banner` (optional, polished in OS1 and OS2). Unused sections were removed earlier in R1 (`44c275d`).
 
 Social links closed without change (2026-10-28). Shopify Theme Store requirements section 13 (Shopify Dev MCP) asks for a set of social icons, Open Graph and Twitter card tags, and empty social placeholder text, not Brand settings. The theme has 9 `social_*_link` settings with empty placeholders (`locales/en.default.schema.json`), and `og:` and `twitter:` tags in `snippets/meta-tags.liquid`.
 
 - Manual test checklist for the launch-blocking flows (variant change, add to cart, cart drawer, menu, dialogs with keyboard and focus), following Shopify's official testing checklist read through Shopify Dev MCP. Decided (user, 2026-10-12): a document, not automation; written with the readiness review. Source: 6-T3. Surface: a new document.
-- Cross-domain consolidation pass before the second submission (polish pass plus readiness review), and one read-only audit of the closed areas (JS runtime and modules, i18n, schema and settings, assets, `docs/references/` accuracy) by an external session, report outside the repo. Decided: user, 2026-10-09. Source: audit practice. Surface: read-only, then findings.
 - Clear the board's Deferred ideas at RR1-D: remove its five entries, keep one "Not planned" line in `docs/project.md`, details stay in git history; with the Pending migration lines approved, the board and context are empty at the submission. Source: user, 2026-10-29. Surface: `docs/agent/board.md`, `docs/project.md`.
+- Correct the RR1-C record findings at RR1-D, with the user approval those files need: R1, `image-display-contract.md` "Current callers" names only `sections/newsletter-banner.liquid` as a `position` caller; R2, `abstraction-boundaries.md` drops the shared carousel indicator rule (dropped by the user, 2026-10-28); R3, `docs/project.md` Status layout baseline 40 → 9; R4, check through Shopify Dev MCP whether a resubmission bumps `theme_info.theme_version` (now `1.0.0`), then ask the user. Source: RR1-C, 2026-10-29. Surface: `docs/references/style-system/image-display-contract.md`, `docs/references/architecture/abstraction-boundaries.md`, `docs/project.md`, `config/settings_schema.json`.
 
 ## After submission
 
