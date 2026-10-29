@@ -2,7 +2,7 @@
 
 Accepted work that no batch has taken yet. One line per item: what, a source (the batch or date it came from), a surface (files, sections or pages), and the governing decision when there is one. Each line ends with labeled source and surface fields per the H1 plan format. An item leaves this file when a batch plan takes it into `docs/agent/context.md`; finished work leaves no record here (history is in Git). Undecided matters stay on `docs/agent/board.md`.
 
-Last updated: 2026-10-29.
+Last updated: 2026-10-30.
 
 Group 4 part A (contrast, `scroll-categories` touch, sticky overlap, `promo-bannder` link) done in HP1 (`38fc9d2`; plan and reviews in `git show 38fc9d2:docs/agent/context.md`). Part B composition (order, evening ritual, header logo left, full-width testimonials) done in HC1 (`a38077a`). Order (user, 2026-10-26): the numbered groups run in order before the second submission (target one to two weeks); in groups 4 and 5, items with review risk come first and design-fidelity details are done as time allows. The last group waits until after the submission.
 
@@ -40,13 +40,13 @@ Closed without change (user, 2026-10-28): CS1 put product cards on the white car
 
 ## Before submission 8: readiness review
 
-Done 2026-10-29: RR1-A, the ratchet tidy-up (`48b36cb`); RR1-B, the layout sweep and baseline 40 → 9 user-approved entries (`6103066`, with the testimonial author and the two unconfirmed entries classified there). RR1-C, the read-only audit, found no launch blocker (2026-10-29); its two code defects were fixed in RR1-E (`061a180`; the plan and its reviews are in `git show 061a180:docs/agent/context.md`). RR1-D1, the reference and record corrections and the Pending migration bundle, done in `99e61ce` (plan and review in `git show 99e61ce:docs/agent/context.md`). Left: RR1-D2 below.
+Done 2026-10-29: RR1-A, the ratchet tidy-up (`48b36cb`); RR1-B, the layout sweep and baseline 40 → 9 user-approved entries (`6103066`, with the testimonial author and the two unconfirmed entries classified there). RR1-C, the read-only audit, found no launch blocker (2026-10-29); its two code defects were fixed in RR1-E (`061a180`; the plan and its reviews are in `git show 061a180:docs/agent/context.md`). RR1-D1, the reference and record corrections and the Pending migration bundle, done in `99e61ce` (plan and review in `git show 99e61ce:docs/agent/context.md`). RR1-D2, the user's manual test pass, done in `e74e752` (plans RR1-D2b, RR1-D2c, RR1-D3 and RR1-I1 with their reviews in `git show e74e752:docs/agent/context.md`). Left: RR1-G below.
 
 Section cleanup sweep closed without change (user, 2026-10-28): of the 32 addable sections, 29 are used in templates or section groups. The other three are `custom-liquid` (kept by decision), and `promotion-countdown` and `video-banner` (optional, polished in OS1 and OS2). Unused sections were removed earlier in R1 (`44c275d`).
 
 Social links closed without change (2026-10-28). Shopify Theme Store requirements section 13 (Shopify Dev MCP) asks for a set of social icons, Open Graph and Twitter card tags, and empty social placeholder text, not Brand settings. The theme has 9 `social_*_link` settings with empty placeholders (`locales/en.default.schema.json`), and `og:` and `twitter:` tags in `snippets/meta-tags.liquid`.
 
-- RR1-D2: the user's own manual test pass of the launch-blocking flows (variant change, add to cart, cart drawer, menu, dialogs with keyboard and focus) before the second submission. Decided (user, 2026-10-29): the user runs it; no checklist document from the agent (this replaces the 2026-10-12 document decision). Each point the user raises is discussed first; nothing is recorded or changed until the user decides (user, 2026-10-29). Source: 6-T3, RR1-D. Surface: storefront, by hand.
+- RR1-G: the submission gate run: `npm.cmd run lint`, `npm.cmd test`, the full 57-width `test:layout`, and Lighthouse on home, product and collection, desktop and mobile, against the Theme Store bar; findings are discussed before any fix. Decided (user, 2026-10-30): runs from an external execution prompt. Source: RR1-D2 close. Surface: read-only.
 
 ## After submission
 
