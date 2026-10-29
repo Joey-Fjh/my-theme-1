@@ -717,28 +717,15 @@ define('motionRevealSection', () => {
             });
 
             if (window.Shopify?.designMode && ThemeEvents && typeof ThemeEvents.on === 'function') {
-                const self = this;
-                const el = this.$el;
-
-                const offSelect = ThemeEvents.on(
-                    'shopify:section:select',
-                    function (e) {
-                        if (self._matchesSection(e, el)) {
-                            self._refreshForThemeEditorSelect();
-                        }
-                    },
-                    { target: document },
-                );
-
-                const offReorder = ThemeEvents.on(
-                    'shopify:section:reorder',
-                    function (e) {
-                        if (self._matchesSection(e, el)) {
-                            self._refreshForThemeEditorSelect();
-                        }
-                    },
-                    { target: document },
-                );
+                // base.js forwards these only to module roots in the affected section.
+                const refresh = () => this._refreshForThemeEditorSelect();
+                const { SHOPIFY_SECTION_SELECT, SHOPIFY_SECTION_REORDER } = ThemeEvents.events;
+                const offSelect = ThemeEvents.on(SHOPIFY_SECTION_SELECT, refresh, {
+                    target: this.$el,
+                });
+                const offReorder = ThemeEvents.on(SHOPIFY_SECTION_REORDER, refresh, {
+                    target: this.$el,
+                });
 
                 this._cleanupEditor = function () {
                     offSelect();
@@ -749,20 +736,6 @@ define('motionRevealSection', () => {
                     passive: true,
                 });
             }
-        },
-
-        _matchesSection(event, el) {
-            const detail = event.detail;
-            if (detail && detail.sectionId) {
-                // Nested cascade roots carry no section id; read it from the section-frame root.
-                const sectionRoot = el.closest('[data-section-id]');
-                return sectionRoot?.dataset.sectionId === String(detail.sectionId);
-            }
-            const target = event.target;
-            if (target instanceof Node) {
-                return el.contains(target) || target.contains(el);
-            }
-            return false;
         },
 
         destroy() {

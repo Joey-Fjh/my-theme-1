@@ -1,12 +1,6 @@
 {% doc %}
-    Global-style-based pagination snippet with style variants.
-
-  Styles and behavior are controlled entirely by global theme settings
-  (config/settings_schema.json):
-
-    - settings.pagination_style          : 'default' | 'minimal' | 'outline'
-    - settings.pagination_font_size      : font size in px
-    - settings.pagination_border_radius  : border radius in px
+    Pagination for a surrounding `{% paginate %}` block. Font size follows
+    --font-pagination-ratio (snippets/css-variables.liquid); no theme settings.
 
   Usage (must pass a paginate object from within a `{% paginate %}` block):
 
@@ -19,10 +13,6 @@
 {% enddoc %}
 
 {%- liquid
-    assign pagination_style = settings.pagination_style | default: 'default'
-    assign pagination_font_size = settings.pagination_font_size | default: 13
-    assign pagination_border_radius = settings.pagination_border_radius | default: 4
-
     assign pagination_data = paginate_obj
 -%}
 
@@ -31,21 +21,20 @@
         class="pagination py-step-xl"
         role="navigation"
         data-pagination-nav
-        style="--pagination-font-size: {{ pagination_font_size }}px; --pagination-radius: {{ pagination_border_radius }}px;"
     >
         <div class="pagination__inner">
             {%- comment -%} PREVIOUS {%- endcomment -%}
             {%- if pagination_data.previous -%}
                 <a
                     href="{{ pagination_data.previous.url }}"
-                    class="pagination__button pagination__prev {% case pagination_style %}{% when 'minimal' %}pagination__button--hover-minimal{% when 'outline' %}pagination__button--hover-outline{% else %}pagination__button--hover-default{% endcase %}"
+                    class="pagination__button pagination__prev pagination__button--hover-default"
                 >
                     {%- render 'icons', icon: 'icon-chevron-left' -%}
                     <span>{{ 'pagination.previous' | t }}</span>
                 </a>
             {%- else -%}
                 <span
-                    class="pagination__button pagination__prev pagination__button--disabled {% if pagination_style == 'outline' %}pagination__button--outline{% endif %}"
+                    class="pagination__button pagination__prev pagination__button--disabled"
                     aria-disabled="true"
                 >
                     {%- render 'icons', icon: 'icon-chevron-left' -%}
@@ -59,14 +48,14 @@
                         {%- if part.is_link -%}
                             <a
                                 href="{{ part.url }}"
-                                class="pagination__page {% case pagination_style %}{% when 'minimal' %}pagination__page--hover-minimal{% when 'outline' %}pagination__page--hover-outline{% else %}pagination__page--hover-default{% endcase %}"
+                                class="pagination__page pagination__page--hover-default"
                             >
                                 {{- part.title -}}
                             </a>
                         {%- else -%}
                             {%- if part.title == pagination_data.current_page -%}
                                 <span
-                                    class="pagination__page pagination__page--current pagination__page--current--{{ pagination_style }}"
+                                    class="pagination__page pagination__page--current pagination__page--current--default"
                                     aria-current="page"
                                 >
                                     {{- part.title -}}
@@ -85,14 +74,14 @@
             {%- if pagination_data.next -%}
                 <a
                     href="{{ pagination_data.next.url }}"
-                    class="pagination__button pagination__next {% case pagination_style %}{% when 'minimal' %}pagination__button--hover-minimal{% when 'outline' %}pagination__button--hover-outline{% else %}pagination__button--hover-default{% endcase %}"
+                    class="pagination__button pagination__next pagination__button--hover-default"
                 >
                     <span>{{ 'pagination.next' | t }}</span>
                     {%- render 'icons', icon: 'icon-chevron-right' -%}
                 </a>
             {%- else -%}
                 <span
-                    class="pagination__button pagination__next pagination__button--disabled {% if pagination_style == 'outline' %}pagination__button--outline{% endif %}"
+                    class="pagination__button pagination__next pagination__button--disabled"
                     aria-disabled="true"
                 >
                     {%- render 'icons', icon: 'icon-chevron-right' -%}
@@ -118,12 +107,11 @@
         align-items: center;
         justify-content: center;
         gap: calc(var(--spacing) * 1);
-        border-radius: 0.25rem;
         padding-inline: calc(var(--spacing) * 2);
         white-space: nowrap;
         font-family: inherit;
         font-size: calc(var(--font-body-scale) * var(--type-step-0) * var(--font-pagination-ratio));
-        border-radius: var(--pagination-radius);
+        border-radius: 4px;
         transition:
             color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
             background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
@@ -155,31 +143,6 @@
             }
         }
     }
-    .pagination__button--hover-minimal {
-        @media (hover: hover) and (pointer: fine) {
-            &:hover:not(.pagination__button--disabled) {
-                text-decoration: underline;
-            }
-        }
-        &:focus-visible:not(.pagination__button--disabled) {
-            text-decoration: underline;
-        }
-    }
-    .pagination__button--outline {
-        border-style: solid;
-        border-width: 1px;
-        border-color: var(--color-line);
-    }
-    .pagination__button--hover-outline {
-        border-style: solid;
-        border-width: 1px;
-        border-color: var(--color-line);
-        @media (hover: hover) and (pointer: fine) {
-            &:hover:not(.pagination__button--disabled) {
-                background-color: var(--color-surface-muted);
-            }
-        }
-    }
     .pagination__page {
         display: inline-flex;
         height: calc(var(--spacing) * 10);
@@ -187,11 +150,10 @@
         flex-shrink: 0;
         align-items: center;
         justify-content: center;
-        border-radius: 0.25rem;
         padding-inline: calc(var(--spacing) * 2);
         font-family: inherit;
         font-size: calc(var(--font-body-scale) * var(--type-step-0) * var(--font-pagination-ratio));
-        border-radius: var(--pagination-radius);
+        border-radius: 4px;
         transition:
             color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
             background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
@@ -220,39 +182,9 @@
             }
         }
     }
-    .pagination__page--hover-minimal {
-        @media (hover: hover) and (pointer: fine) {
-            &:hover {
-                text-decoration: underline;
-            }
-        }
-        &:focus-visible {
-            text-decoration: underline;
-        }
-    }
-    .pagination__page--hover-outline {
-        border-style: solid;
-        border-width: 1px;
-        border-color: var(--color-line);
-        @media (hover: hover) and (pointer: fine) {
-            &:hover {
-                background-color: var(--color-surface-muted);
-            }
-        }
-    }
-    .pagination__page--current--minimal {
-        color: rgb(var(--color-foreground));
-        text-decoration: underline;
-    }
     .pagination__page--current--default {
         background-color: rgb(var(--color-foreground));
         color: rgb(var(--color-background));
-    }
-    .pagination__page--current--outline {
-        border-style: solid;
-        border-width: 1px;
-        border-color: rgb(var(--color-foreground));
-        color: rgb(var(--color-foreground));
     }
     .pagination__page--ellipsis {
         cursor: default;
