@@ -40,13 +40,12 @@ Closed without change (user, 2026-10-28): CS1 put product cards on the white car
 
 ## Before submission 8: readiness review
 
-Done 2026-10-29: RR1-A, the ratchet tidy-up (`48b36cb`); RR1-B, the layout sweep and baseline 40 → 9 user-approved entries (`6103066`, with the testimonial author and the two unconfirmed entries classified there). RR1-C, the read-only audit, found no launch blocker (2026-10-29); its two code defects were fixed in RR1-E (`061a180`; the plan and its reviews are in `git show 061a180:docs/agent/context.md`). RR1-D1, the reference and record corrections and the Pending migration bundle, done in `99e61ce` (plan and review in `git show 99e61ce:docs/agent/context.md`). RR1-D2, the user's manual test pass, done in `e74e752` (plans RR1-D2b, RR1-D2c, RR1-D3 and RR1-I1 with their reviews in `git show e74e752:docs/agent/context.md`). Left: RR1-G below.
+Done 2026-10-29: RR1-A, the ratchet tidy-up (`48b36cb`); RR1-B, the layout sweep and baseline 40 → 9 user-approved entries (`6103066`, with the testimonial author and the two unconfirmed entries classified there). RR1-C, the read-only audit, found no launch blocker (2026-10-29); its two code defects were fixed in RR1-E (`061a180`; the plan and its reviews are in `git show 061a180:docs/agent/context.md`). RR1-D1, the reference and record corrections and the Pending migration bundle, done in `99e61ce` (plan and review in `git show 99e61ce:docs/agent/context.md`). RR1-D2, the user's manual test pass, done in `e74e752` (plans RR1-D2b, RR1-D2c, RR1-D3 and RR1-I1 with their reviews in `git show e74e752:docs/agent/context.md`). Left: RR1-G, taken into plan RR1-G in `docs/agent/context.md` (2026-10-30).
 
 Section cleanup sweep closed without change (user, 2026-10-28): of the 32 addable sections, 29 are used in templates or section groups. The other three are `custom-liquid` (kept by decision), and `promotion-countdown` and `video-banner` (optional, polished in OS1 and OS2). Unused sections were removed earlier in R1 (`44c275d`).
 
 Social links closed without change (2026-10-28). Shopify Theme Store requirements section 13 (Shopify Dev MCP) asks for a set of social icons, Open Graph and Twitter card tags, and empty social placeholder text, not Brand settings. The theme has 9 `social_*_link` settings with empty placeholders (`locales/en.default.schema.json`), and `og:` and `twitter:` tags in `snippets/meta-tags.liquid`.
 
-- RR1-G: the submission gate run: `npm.cmd run lint`, `npm.cmd test`, the full 57-width `test:layout`, and Lighthouse on home, product and collection, desktop and mobile, against the Theme Store bar; findings are discussed before any fix. Decided (user, 2026-10-30): runs from an external execution prompt. Source: RR1-D2 close. Surface: read-only.
 
 ## After submission
 
