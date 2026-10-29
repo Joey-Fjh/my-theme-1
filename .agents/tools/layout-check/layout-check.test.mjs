@@ -143,6 +143,27 @@ test('tap targets positive and negatives', async () => {
     assert.equal(issues.length, 0);
 });
 
+test('image sizes positive and negative', async () => {
+    await openFixture('image-sizes-positive.html');
+    let issues = await runCheck('checkImageSizes');
+    assert.ok(hasCheck(issues, 'image-sizes'));
+    assert.match(issues.find((i) => i.check === 'image-sizes').detail || '', /declared=\d+px drawn=\d+px/);
+
+    await openFixture('image-sizes-negative.html');
+    issues = await runCheck('checkImageSizes');
+    assert.equal(issues.length, 0);
+
+    // Commas inside min()/max() belong to the length, not the sizes list.
+    await openFixture('image-sizes-functions-negative.html');
+    issues = await runCheck('checkImageSizes');
+    assert.equal(issues.length, 0);
+
+    // An inert copy that is drawn is still checked.
+    await openFixture('image-sizes-inert-positive.html');
+    issues = await runCheck('checkImageSizes');
+    assert.ok(hasCheck(issues, 'image-sizes'));
+});
+
 test('clipped text positive and negative', async () => {
     await openFixture('clipped-text-positive.html');
     let issues = await runCheck('checkClippedText');

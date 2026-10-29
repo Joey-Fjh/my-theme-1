@@ -3,8 +3,7 @@
     assign max_items = section.settings.max_items
     assign scroll_categories_heading_class = section.settings.heading_size | default: 'title-2xl'
     assign scroll_categories_row_title_class = section.settings.collection_heading_size | default: 'title-l'
-    assign scroll_categories_link_label_default = 'sections.scroll-categories.defaults.link_label' | t
-    assign scroll_categories_link_label = section.settings.link_label | default: scroll_categories_link_label_default
+    assign scroll_categories_link_label = section.settings.link_label
     assign scroll_categories_description_words = 24
     assign scroll_categories_row_link_attributes = '@pointerdown="onRowLinkPointerDown($event)" @click="onRowLinkClick($event)"'
 
@@ -44,9 +43,7 @@
 
     if section.settings.heading != blank
         assign scroll_categories_heading_text = section.settings.heading
-    elsif selected_collection != blank
-        assign scroll_categories_heading_text = selected_collection.title
-    else
+    elsif selected_collection == blank
         assign scroll_categories_heading_text = 'sections.scroll-categories.defaults.heading' | t
     endif
 -%}
@@ -65,12 +62,14 @@
         data-initial-active="1"
     >
         <div class="scroll-categories__header flex flex-col">
-            <h2
-                class="scroll-categories__heading {{ scroll_categories_heading_tiers }}"
-            >
-                <span>{{- scroll_categories_heading_text -}}</span>
-                <span class="shrink-0">({{ scroll_categories_count_label }})</span>
-            </h2>
+            {%- if scroll_categories_heading_text != blank -%}
+                <h2
+                    class="scroll-categories__heading {{ scroll_categories_heading_tiers }}"
+                >
+                    <span>{{- scroll_categories_heading_text -}}</span>
+                    <span class="shrink-0">({{ scroll_categories_count_label }})</span>
+                </h2>
+            {%- endif -%}
             <hr class="scroll-categories__divider" />
         </div>
 
@@ -109,7 +108,7 @@
                         {%- capture scroll_categories_row_title -%}
                             <h3 class="scroll-categories__row-heading flex min-w-0 flex-1 flex-col items-start gap-step-3xs desktop:flex-row desktop:items-baseline desktop:gap-step-m {{ scroll_categories_row_title_tiers }} text-theme-text">
                                 <span class="scroll-categories__index copy-m desktop:copy-s">{{ scroll_categories_index_label }}</span>
-                                <span class="scroll-categories__title">{{ product.title }}</span>
+                                <span class="scroll-categories__title" title="{{ product.title | escape }}">{{ product.title }}</span>
                             </h3>
                         {%- endcapture -%}
                         {%- render 'link',
@@ -128,10 +127,12 @@
                     >
                         <div class="scroll-categories__media">
                             {%- render 'image',
-                                class: 'h-full w-full object-cover',
+                                class: 'h-full w-full',
                                 image: scroll_categories_image,
                                 alt: scroll_categories_image_alt,
                                 loading: scroll_categories_image_loading,
+                                fit: 'contain',
+                                img_class: 'h-full w-full object-contain',
                                 sizes: '(min-width: 64rem) 45vw, 100vw',
                                 widths: '400,600,800,1000,1200,1600'
                             -%}
@@ -141,15 +142,17 @@
                             <p class="order-1 line-clamp-3 copy-xl text-theme-text desktop:order-2">{{ scroll_categories_description }}</p>
                         {%- endif -%}
 
-                        <div class="order-2 desktop:order-3">
-                            {%- render 'link',
-                                href: product.url,
-                                variant: 'default',
-                                class: 'link-with-icon-motion copy-s uppercase text-theme-text desktop:copy-s self-start',
-                                aria_label: scroll_categories_panel_aria_label,
-                                content: scroll_categories_panel_link_content
-                            -%}
-                        </div>
+                        {%- if scroll_categories_link_label != blank -%}
+                            <div class="order-2 desktop:order-3">
+                                {%- render 'link',
+                                    href: product.url,
+                                    variant: 'default',
+                                    class: 'link-with-icon-motion copy-s uppercase text-theme-text desktop:copy-s self-start',
+                                    aria_label: scroll_categories_panel_aria_label,
+                                    content: scroll_categories_panel_link_content
+                                -%}
+                            </div>
+                        {%- endif -%}
                     </div>
                 </article>
             {%- else -%}
@@ -184,7 +187,7 @@
                             {%- capture scroll_categories_placeholder_row_title -%}
                                 <h3 class="scroll-categories__row-heading flex min-w-0 flex-1 flex-col items-start gap-step-3xs desktop:flex-row desktop:items-baseline desktop:gap-step-m {{ scroll_categories_row_title_tiers }} text-theme-text">
                                     <span class="scroll-categories__index copy-m desktop:copy-s">{{ scroll_categories_index_label }}</span>
-                                    <span class="scroll-categories__title">{{ scroll_categories_placeholder_title }}</span>
+                                    <span class="scroll-categories__title" title="{{ scroll_categories_placeholder_title | escape }}">{{ scroll_categories_placeholder_title }}</span>
                                 </h3>
                             {%- endcapture -%}
                             {%- render 'link',
@@ -210,15 +213,17 @@
 
                             <p class="order-1 line-clamp-3 copy-xl text-theme-text desktop:order-2">{{ scroll_categories_placeholder_description }}</p>
 
-                            <div class="order-2 desktop:order-3">
-                                {%- render 'link',
-                                    href: routes.all_products_collection_url,
-                                    variant: 'default',
-                                    class: 'link-with-icon-motion copy-s uppercase text-theme-text desktop:copy-s self-start',
-                                    aria_label: scroll_categories_placeholder_panel_aria_label,
-                                    content: scroll_categories_panel_link_content
-                                -%}
-                            </div>
+                            {%- if scroll_categories_link_label != blank -%}
+                                <div class="order-2 desktop:order-3">
+                                    {%- render 'link',
+                                        href: routes.all_products_collection_url,
+                                        variant: 'default',
+                                        class: 'link-with-icon-motion copy-s uppercase text-theme-text desktop:copy-s self-start',
+                                        aria_label: scroll_categories_placeholder_panel_aria_label,
+                                        content: scroll_categories_panel_link_content
+                                    -%}
+                                </div>
+                            {%- endif -%}
                         </div>
                     </article>
                 {%- endfor -%}
@@ -307,8 +312,12 @@
             margin-block-end: 1.05em;
         }
 
+        /* One line beside the media column; a longer title ends in an ellipsis and shows in full on hover (title attribute). */
         .scroll-categories__title {
+            min-width: 0;
+            overflow: hidden;
             white-space: nowrap;
+            text-overflow: ellipsis;
         }
 
         .scroll-categories__row--desktop-pitch {

@@ -515,8 +515,10 @@ async function main() {
                     check: issue.check,
                     selector: issue.selector,
                     widths: [],
+                    detailByWidth: {},
                 };
                 if (!entry.widths.includes(width)) entry.widths.push(width);
+                if (issue.detail) entry.detailByWidth[width] = issue.detail;
                 issueMap.set(key, entry);
             }
         }
@@ -539,13 +541,19 @@ async function main() {
     await browser.close();
     const wallTimeMs = Date.now() - startMs;
 
-    const allIssues = [...issueMap.values()].map((i) => ({
-        page: i.page,
-        check: i.check,
-        selector: i.selector,
-        widths: mergeWidthRanges(i.widths, config.widthStep),
-        detail: i.detail,
-    }));
+    const allIssues = [...issueMap.values()].map((i) => {
+        const out = {
+            page: i.page,
+            check: i.check,
+            selector: i.selector,
+            widths: mergeWidthRanges(i.widths, config.widthStep),
+            detail: i.detail,
+        };
+        if (i.detailByWidth && Object.keys(i.detailByWidth).length) {
+            out.detailByWidth = i.detailByWidth;
+        }
+        return out;
+    });
 
     let baselineIssues = [];
     if (fs.existsSync(BASELINE_PATH)) {

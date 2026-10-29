@@ -43,11 +43,6 @@
         when 'title-xs'
             assign scatter_gallery_heading_desktop_class = 'tablet:title-xs'
     endcase
-    if section.settings.heading != blank
-        assign scatter_gallery_heading_text = section.settings.heading
-    else
-        assign scatter_gallery_heading_text = 'sections.scatter-gallery.defaults.heading' | t
-    endif
 -%}
 
 {%- capture scatter_gallery_children -%}
@@ -63,11 +58,13 @@
         data-spread-factor-mobile="0.16"
     >
         <div class="scatter-gallery__stage-wrap">
-            <h2
-                class="scatter-gallery__heading {{ scatter_gallery_heading_mobile_class }} {{ scatter_gallery_heading_desktop_class }}"
-            >
-                {{- scatter_gallery_heading_text -}}
-            </h2>
+            {%- if section.settings.heading != blank -%}
+                <h2
+                    class="scatter-gallery__heading {{ scatter_gallery_heading_mobile_class }} {{ scatter_gallery_heading_desktop_class }}"
+                >
+                    {{- section.settings.heading -}}
+                </h2>
+            {%- endif -%}
 
             <div class="scatter-gallery__stage">
                 {%- if section.settings.decoration_image != blank -%}

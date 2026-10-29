@@ -72,15 +72,11 @@
                                     {{ article.title }}
                                 </h3>
 
-                                {%- if article.url != blank -%}
-                                    {%- liquid
-                                        assign link_label = section.settings.link_text | strip
-                                        if link_label == blank
-                                            assign link_label = 'sections.blog-stories.defaults.link_text' | t
-                                        endif
-                                        assign read_more_aria = 'accessibility.read_more_about' | t: title: article.title
-                                    -%}
-
+                                {%- liquid
+                                    assign link_label = section.settings.link_text | strip
+                                    assign read_more_aria = 'accessibility.read_more_about' | t: title: article.title
+                                -%}
+                                {%- if article.url != blank and link_label != blank -%}
                                     {%- capture link_content -%}
                                         <span>{{ link_label }}</span>
                                         {% render 'icons', icon: 'icon-arrow2', class: 'ms-step-xs' %}
@@ -143,20 +139,16 @@
                                     {{ block.settings.title }}
                                 </h3>
 
-                                {%- if block.settings.link != blank -%}
-                                    {%- liquid
-                                        assign link_label = block.settings.article_link_text | strip
-                                        if link_label == blank
-                                            assign link_label = 'sections.blog-stories.defaults.link_text' | t
-                                        endif
-                                        assign block_title_plain = block.settings.title | strip_html | strip
-                                        if block_title_plain != blank
-                                            assign read_more_aria = 'accessibility.read_more_about' | t: title: block_title_plain
-                                        else
-                                            assign read_more_aria = link_label
-                                        endif
-                                    -%}
-
+                                {%- liquid
+                                    assign link_label = block.settings.article_link_text | strip
+                                    assign block_title_plain = block.settings.title | strip_html | strip
+                                    if block_title_plain != blank
+                                        assign read_more_aria = 'accessibility.read_more_about' | t: title: block_title_plain
+                                    else
+                                        assign read_more_aria = link_label
+                                    endif
+                                -%}
+                                {%- if block.settings.link != blank and link_label != blank -%}
                                     {%- capture link_content -%}
                                         <span>{{ link_label }}</span>
                                         {% render 'icons', icon: 'icon-arrow2', class: 'ms-step-xs' %}

@@ -8,6 +8,7 @@ const CHECK_UNCLIPPED_OVERFLOW = 'unclipped-overflow';
 const CHECK_PAGE_MARGIN = 'page-margin';
 const CHECK_TAP_TARGETS = 'tap-targets';
 const CHECK_CLIPPED_TEXT = 'clipped-text';
+const CHECK_IMAGE_SIZES = 'image-sizes';
 
 const TAP_SELECTOR =
     'button, input:not([type="hidden"]), select, textarea, summary, [role="button"], [role="tab"], a[href]';
@@ -119,6 +120,43 @@ export function checkTapTargets() {
     return issues;
 }
 
+export function checkImageSizes() {
+    const issues = [];
+    const seen = new Set();
+    const images = document.querySelectorAll('.theme-image img.image_img, img.image_img');
+
+    for (const img of images) {
+        if (!(img instanceof HTMLImageElement)) continue;
+        if (!isImageDrawnForSizesCheck(img)) continue;
+        if (img.closest('.svg-placeholder')) continue;
+
+        const rect = img.getBoundingClientRect();
+        if (rect.width < 40) continue;
+
+        const sizesAttr = img.getAttribute('sizes');
+        if (!sizesAttr || !sizesAttr.trim()) continue;
+
+        const declared = resolveSizesWidthPx(sizesAttr);
+        if (declared === null) continue;
+
+        const drawn = computeDrawnWidthPx(img);
+        if (drawn === null) continue;
+
+        if (declared >= drawn - 2) continue;
+
+        const selector = stableSelector(img);
+        const key = `${CHECK_IMAGE_SIZES}:${selector}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        issues.push({
+            check: CHECK_IMAGE_SIZES,
+            selector,
+            detail: `declared=${Math.round(declared)}px drawn=${Math.round(drawn)}px`,
+        });
+    }
+    return issues;
+}
+
 export function checkClippedText() {
     const issues = [];
     const seen = new Set();
@@ -157,6 +195,7 @@ export function runLayoutChecksInPage() {
         ...checkPageMargin(),
         ...checkTapTargets(),
         ...checkClippedText(),
+        ...checkImageSizes(),
     ];
 }
 
@@ -166,8 +205,112 @@ export const CHECK_NAMES = [
     CHECK_PAGE_MARGIN,
     CHECK_TAP_TARGETS,
     CHECK_CLIPPED_TEXT,
+    CHECK_IMAGE_SIZES,
     'runtime',
 ];
+
+function stripAutoSizesPrefix(sizes) {
+    let s = sizes.trim();
+    if (/^auto\s*,/i.test(s)) {
+        s = s.replace(/^auto\s*,\s*/i, '');
+    }
+    return s.trim();
+}
+
+/** Split at commas and whitespace outside parentheses, so `min(a, b)` and `calc(a + b)` stay whole. */
+function splitTopLevel(text, separator) {
+    const parts = [];
+    let depth = 0;
+    let start = 0;
+    for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (ch === '(') depth++;
+        else if (ch === ')') depth = Math.max(0, depth - 1);
+        else if (depth === 0 && separator.test(ch)) {
+            parts.push(text.slice(start, i));
+            start = i + 1;
+        }
+    }
+    parts.push(text.slice(start));
+    return parts.map((part) => part.trim()).filter(Boolean);
+}
+
+/** Parse a `sizes` attribute into `{ media, size }` entries in source order: the size is each entry's last component. */
+function parseSizesEntries(sizes) {
+    const entries = [];
+    for (const entry of splitTopLevel(stripAutoSizesPrefix(sizes), /,/)) {
+        const tokens = splitTopLevel(entry, /\s/);
+        const size = tokens.pop();
+        if (!size) continue;
+        entries.push({ media: tokens.length ? tokens.join(' ') : null, size });
+    }
+    return entries;
+}
+
+function pickSizesEntry(entries) {
+    for (const entry of entries) {
+        if (!entry.media) continue;
+        try {
+            if (window.matchMedia(entry.media).matches) return entry;
+        } catch {
+            /* invalid media query */
+        }
+    }
+    for (let i = entries.length - 1; i >= 0; i--) {
+        if (!entries[i].media) return entries[i];
+    }
+    return entries.length ? entries[entries.length - 1] : null;
+}
+
+function measureCssWidthPx(widthExpr) {
+    const probe = document.createElement('div');
+    probe.setAttribute('data-layout-check-probe', 'sizes');
+    probe.style.cssText =
+        'position:absolute;left:0;top:0;visibility:hidden;pointer-events:none;height:1px;width:' +
+        widthExpr +
+        ';';
+    document.body.appendChild(probe);
+    const width = probe.getBoundingClientRect().width;
+    probe.remove();
+    return width;
+}
+
+function resolveSizesWidthPx(sizesAttr) {
+    const entries = parseSizesEntries(sizesAttr);
+    const chosen = pickSizesEntry(entries);
+    if (!chosen?.size) return null;
+    const width = measureCssWidthPx(chosen.size);
+    return Number.isFinite(width) ? width : null;
+}
+
+function readIntrinsicRatio(img) {
+    const attrW = parseFloat(img.getAttribute('width') || '');
+    const attrH = parseFloat(img.getAttribute('height') || '');
+    if (attrW > 0 && attrH > 0) return attrW / attrH;
+    if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+        return img.naturalWidth / img.naturalHeight;
+    }
+    return null;
+}
+
+function computeDrawnWidthPx(img) {
+    const rect = img.getBoundingClientRect();
+    const boxW = rect.width;
+    const boxH = rect.height;
+    if (boxW <= 0 || boxH <= 0) return null;
+
+    const ratio = readIntrinsicRatio(img);
+    if (ratio === null) return boxW;
+
+    const objectFit = getComputedStyle(img).objectFit || 'fill';
+    if (objectFit === 'cover') {
+        return Math.max(boxW, boxH * ratio);
+    }
+    if (objectFit === 'contain' || objectFit === 'scale-down') {
+        return Math.min(boxW, boxH * ratio);
+    }
+    return boxW;
+}
 
 /** Resolved `--page-margin` in px; 0 is valid. Returns null when the property is undefined. */
 function readPageMarginPx() {
@@ -180,6 +323,32 @@ function readPageMarginPx() {
     const margin = probe.getBoundingClientRect().width;
     probe.remove();
     return defined ? margin : null;
+}
+
+/** Visible for `image-sizes`: layout-hidden only; `aria-hidden` and `inert` copies that are drawn stay in scope. */
+function isImageDrawnForSizesCheck(img) {
+    if (!(img instanceof HTMLImageElement)) return false;
+    if (img.closest('template')) return false;
+
+    const closedDialog = img.closest('dialog:not([open])');
+    if (closedDialog) return false;
+
+    const details = img.closest('details');
+    if (details && !details.open) {
+        const summary = details.querySelector('summary');
+        if (summary && !summary.contains(img) && img !== summary) return false;
+    }
+
+    let node = img;
+    while (node && node !== document.documentElement) {
+        const style = getComputedStyle(node);
+        if (style.display === 'none' || style.visibility === 'hidden') return false;
+        node = node.parentElement;
+    }
+
+    const rect = img.getBoundingClientRect();
+    if (rect.width === 0 && rect.height === 0) return false;
+    return true;
 }
 
 function isElementVisible(el) {

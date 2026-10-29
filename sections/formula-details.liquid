@@ -21,30 +21,6 @@
             assign formula_details_heading_tiers = 'title-m desktop:title-xl'
     endcase
 
-    if section.settings.band_heading != blank
-        assign formula_details_band_heading = section.settings.band_heading
-    else
-        assign formula_details_band_heading = 'sections.formula-details.defaults.band_heading' | t
-    endif
-
-    if section.settings.band_text != blank
-        assign formula_details_band_body = section.settings.band_text
-    else
-        assign formula_details_band_body = 'sections.formula-details.defaults.band_text' | t | prepend: '<p>' | append: '</p>'
-    endif
-
-    if section.settings.ingredients_heading != blank
-        assign formula_details_ingredients_heading = section.settings.ingredients_heading
-    else
-        assign formula_details_ingredients_heading = 'sections.formula-details.defaults.ingredients_heading' | t
-    endif
-
-    if section.settings.ingredients_subtitle != blank
-        assign formula_details_ingredients_subtitle = section.settings.ingredients_subtitle
-    else
-        assign formula_details_ingredients_subtitle = 'sections.formula-details.defaults.ingredients_subtitle' | t
-    endif
-
     assign formula_details_band_image = section.settings.band_image
     assign formula_details_band_image_alt = formula_details_band_image.alt | escape
 
@@ -72,12 +48,18 @@
         <div class="formula-details__band color-{{ section.settings.band_color_scheme }}">
             <div class="formula-details__band-inner">
                 <div class="formula-details__band-grid">
-                    <div class="flex flex-col gap-step-s">
-                        <h2 class="text-theme-text">
-                            <span class="{{ formula_details_heading_tiers }}">{{ formula_details_band_heading }}</span>
-                        </h2>
-                        <div class="rte copy-m text-theme-text">{{ formula_details_band_body }}</div>
-                    </div>
+                    {%- if section.settings.band_heading != blank or section.settings.band_text != blank -%}
+                        <div class="flex flex-col gap-step-s">
+                            {%- if section.settings.band_heading != blank -%}
+                                <h2 class="text-theme-text">
+                                    <span class="{{ formula_details_heading_tiers }}">{{ section.settings.band_heading }}</span>
+                                </h2>
+                            {%- endif -%}
+                            {%- if section.settings.band_text != blank -%}
+                                <div class="rte copy-m text-theme-text">{{ section.settings.band_text }}</div>
+                            {%- endif -%}
+                        </div>
+                    {%- endif -%}
 
                     <div class="formula-details__attributes" data-motion-cascade>
                         {%- if section.blocks.size > 0 -%}
@@ -93,15 +75,7 @@
                                         assign formula_details_attribute_number = formula_details_attribute_index | prepend: '0'
                                     endif
                                     assign formula_details_attribute_name = block.settings.name
-                                    if formula_details_attribute_name == blank
-                                        assign formula_details_attribute_name = 'sections.formula-details.defaults.attribute_name' | t: index: formula_details_attribute_index
-                                    endif
-                                    assign formula_details_attribute_text = block.settings.text
-                                    if formula_details_attribute_text == blank
-                                        assign formula_details_attribute_text = 'sections.formula-details.defaults.attribute_text' | t
-                                    else
-                                        assign formula_details_attribute_text = block.settings.text | escape
-                                    endif
+                                    assign formula_details_attribute_text = block.settings.text | escape
                                 -%}
                                 <div
                                     class="formula-details__attribute"
@@ -111,8 +85,12 @@
                                     <p class="copy-s text-theme-text">
                                         <span class="formula-details__number tabular-nums">{{ formula_details_attribute_number }}</span>
                                     </p>
-                                    <h3 class="title-s text-theme-text">{{ formula_details_attribute_name }}</h3>
-                                    <p class="copy-s text-theme-text">{{ formula_details_attribute_text }}</p>
+                                    {%- if formula_details_attribute_name != blank -%}
+                                        <h3 class="title-s text-theme-text">{{ formula_details_attribute_name }}</h3>
+                                    {%- endif -%}
+                                    {%- if block.settings.text != blank -%}
+                                        <p class="copy-s text-theme-text">{{ formula_details_attribute_text }}</p>
+                                    {%- endif -%}
                                 </div>
                             {%- endfor -%}
                         {%- else -%}
@@ -167,10 +145,18 @@
 
         <div class="formula-details__ingredients">
             <div class="formula-details__ingredients-inner">
-                <header class="flex flex-col gap-step-xs">
-                    <h2 class="title-l text-theme-text uppercase">{{ formula_details_ingredients_heading }}</h2>
-                    <p class="copy-m text-theme-text">{{ formula_details_ingredients_subtitle }}</p>
-                </header>
+                {%- if section.settings.ingredients_heading != blank
+                    or section.settings.ingredients_subtitle != blank
+                -%}
+                    <header class="flex flex-col gap-step-xs">
+                        {%- if section.settings.ingredients_heading != blank -%}
+                            <h2 class="title-l text-theme-text uppercase">{{ section.settings.ingredients_heading }}</h2>
+                        {%- endif -%}
+                        {%- if section.settings.ingredients_subtitle != blank -%}
+                            <p class="copy-m text-theme-text">{{ section.settings.ingredients_subtitle }}</p>
+                        {%- endif -%}
+                    </header>
+                {%- endif -%}
 
                 <div
                     class="formula-details__ingredient-grid"
@@ -189,15 +175,7 @@
                                     assign formula_details_ingredient_number = formula_details_ingredient_index | prepend: '0'
                                 endif
                                 assign formula_details_ingredient_name = block.settings.name
-                                if formula_details_ingredient_name == blank
-                                    assign formula_details_ingredient_name = 'sections.formula-details.defaults.ingredient_name' | t: index: formula_details_ingredient_index
-                                endif
-                                assign formula_details_ingredient_text = block.settings.text
-                                if formula_details_ingredient_text == blank
-                                    assign formula_details_ingredient_text = 'sections.formula-details.defaults.ingredient_text' | t
-                                else
-                                    assign formula_details_ingredient_text = block.settings.text | escape
-                                endif
+                                assign formula_details_ingredient_text = block.settings.text | escape
                                 assign formula_details_ingredient_image = block.settings.image
                                 assign formula_details_ingredient_alt = formula_details_ingredient_image.alt | escape
                                 assign formula_details_placeholder_mod = formula_details_ingredient_index | minus: 1 | modulo: 2 | plus: 1
@@ -235,8 +213,12 @@
                                     <p class="copy-s text-theme-text">
                                         <span class="formula-details__number tabular-nums">{{ formula_details_ingredient_number }}</span>
                                     </p>
-                                    <h3 class="title-s text-theme-text">{{ formula_details_ingredient_name }}</h3>
-                                    <p class="copy-s text-theme-text">{{ formula_details_ingredient_text }}</p>
+                                    {%- if formula_details_ingredient_name != blank -%}
+                                        <h3 class="title-s text-theme-text">{{ formula_details_ingredient_name }}</h3>
+                                    {%- endif -%}
+                                    {%- if block.settings.text != blank -%}
+                                        <p class="copy-s text-theme-text">{{ formula_details_ingredient_text }}</p>
+                                    {%- endif -%}
                                 </div>
                             </article>
                         {%- endfor -%}
@@ -453,7 +435,8 @@
         {
             "type": "text",
             "id": "band_heading",
-            "label": "t:sections.formula-details.settings.band_heading"
+            "label": "t:sections.formula-details.settings.band_heading",
+            "default": "t:sections.formula-details.defaults.band_heading"
         },
         {
             "type": "header",
@@ -502,7 +485,8 @@
         {
             "type": "richtext",
             "id": "band_text",
-            "label": "t:sections.formula-details.settings.band_text"
+            "label": "t:sections.formula-details.settings.band_text",
+            "default": "t:sections.formula-details.defaults.band_text"
         },
         {
             "type": "image_picker",
@@ -516,12 +500,14 @@
         {
             "type": "text",
             "id": "ingredients_heading",
-            "label": "t:sections.formula-details.settings.ingredients_heading"
+            "label": "t:sections.formula-details.settings.ingredients_heading",
+            "default": "t:sections.formula-details.defaults.ingredients_heading"
         },
         {
             "type": "text",
             "id": "ingredients_subtitle",
-            "label": "t:sections.formula-details.settings.ingredients_subtitle"
+            "label": "t:sections.formula-details.settings.ingredients_subtitle",
+            "default": "t:sections.formula-details.defaults.ingredients_subtitle"
         },
         {
             "type": "header",
@@ -556,12 +542,14 @@
                 {
                     "type": "text",
                     "id": "name",
-                    "label": "t:sections.formula-details.block_settings.name"
+                    "label": "t:sections.formula-details.block_settings.name",
+                    "default": "t:sections.formula-details.defaults.attribute_name"
                 },
                 {
                     "type": "text",
                     "id": "text",
-                    "label": "t:sections.formula-details.block_settings.text"
+                    "label": "t:sections.formula-details.block_settings.text",
+                    "default": "t:sections.formula-details.defaults.attribute_text"
                 }
             ]
         },
@@ -577,12 +565,14 @@
                 {
                     "type": "text",
                     "id": "name",
-                    "label": "t:sections.formula-details.block_settings.name"
+                    "label": "t:sections.formula-details.block_settings.name",
+                    "default": "t:sections.formula-details.defaults.ingredient_name"
                 },
                 {
                     "type": "text",
                     "id": "text",
-                    "label": "t:sections.formula-details.block_settings.text"
+                    "label": "t:sections.formula-details.block_settings.text",
+                    "default": "t:sections.formula-details.defaults.ingredient_text"
                 }
             ]
         }

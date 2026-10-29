@@ -36,9 +36,9 @@
                 <div class="absolute inset-0" aria-hidden="true">
                     {%- render 'image',
                         image: blank,
-                        placeholder_key: 'image',
+                        placeholder_key: 'lifestyle-1',
                         placeholder_style: 'plain',
-                        wrapper_class: '!absolute top-1/2 left-1/2 h-[76%] w-[54%] -translate-x-1/2 -translate-y-1/2 opacity-50 max-tablet:h-[48%] max-tablet:w-[105%]',
+                        wrapper_class: 'h-full w-full',
                     -%}
                 </div>
             {%- endif -%}
@@ -165,11 +165,19 @@
 %}
 
 {% stylesheet %}
-    /* The image ratio sets the height up to 80svh; min-height wins over max-height, so taller content still grows the box. */
+    /* The image ratio sets the height up to 80svh as a minimum, so taller content still grows the box.
+       Not aspect-ratio on the grid item: a capped height shrinks its width and leaves it start-aligned. */
     .newsletter-banner-section .newsletter-banner__media {
-        aspect-ratio: var(--newsletter-banner-aspect-mobile, 9/16);
-        max-height: 80svh;
-        min-height: min-content;
+        container-type: inline-size;
+    }
+
+    .newsletter-banner-section [data-newsletter-content] {
+        min-height: min(calc(100cqw / (var(--newsletter-banner-aspect-mobile, 9/16))), 80svh);
+    }
+
+    /* The placeholder drawing takes the frame's faint colour, so the copy over it stays legible. */
+    .newsletter-banner__media .svg-placeholder {
+        fill: currentColor;
     }
 
     /* Text over the photograph sits on the scrim in the fixed on-scrim colour (design.md: scrims are independent of the scheme). */
@@ -180,8 +188,8 @@
     }
 
     @media (width >= 48rem) {
-        .newsletter-banner-section .newsletter-banner__media {
-            aspect-ratio: var(--newsletter-banner-aspect-desktop, 16/9);
+        .newsletter-banner-section [data-newsletter-content] {
+            min-height: min(calc(100cqw / (var(--newsletter-banner-aspect-desktop, 16/9))), 80svh);
         }
     }
 

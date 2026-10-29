@@ -49,40 +49,32 @@
                 <div
                     class="color-{{ form_color_scheme }} flex flex-col justify-center px-step-m py-step-l text-theme-text tablet:px-step-xl tablet:py-step-xl wide:px-step-xl"
                 >
-                    {%- assign heading_fallback = 'sections.main-page-contact.defaults.heading'
-                        | t
-                    -%}
-                    <div>
-                        <h1
-                            class="{{ contact_heading_class }} text-center text-theme-text"
-                        >
-                            {{ section.settings.heading | default: heading_fallback }}
-                        </h1>
-                        <div
-                            class="rte rte--compact main-page-contact__rte"
-                        >
-                            {%- assign contact_description_fallback = 'contact.description_html'
-                                | t
-                            -%}
-                            {{
-                                section.settings.description
-                                | default: contact_description_fallback
-                            }}
+                    {%- if section.settings.heading != blank or section.settings.description != blank -%}
+                        <div>
+                            {%- if section.settings.heading != blank -%}
+                                <h1
+                                    class="{{ contact_heading_class }} text-center text-theme-text"
+                                >
+                                    {{ section.settings.heading }}
+                                </h1>
+                            {%- endif -%}
+                            {%- if section.settings.description != blank -%}
+                                <div
+                                    class="rte rte--compact main-page-contact__rte"
+                                >
+                                    {{ section.settings.description }}
+                                </div>
+                            {%- endif -%}
                         </div>
-                    </div>
+                    {%- endif -%}
 
                     {%- form 'contact',
                         return_to: 'back',
                         data-shopify-captcha: 'true',
                         class: 'mt-step-m flex flex-col gap-step-m tablet:mt-step-l tablet:gap-step-m'
                     -%}
-                        {%- assign success_message_fallback = 'sections.main-page-contact.defaults.success_message'
-                            | t
-                        -%}
-                        {%- assign success_message = section.settings.success_message
-                            | default: success_message_fallback
-                        -%}
-                        {%- if form.posted_successfully? -%}
+                        {%- assign success_message = section.settings.success_message -%}
+                        {%- if form.posted_successfully? and success_message != blank -%}
                             <div
                                 class="rounded p-step-s text-center"
                                 role="status"

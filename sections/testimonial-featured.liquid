@@ -20,11 +20,6 @@
         else
             assign testimonial_heading_class = 'title-xl tablet:title-2xl'
     endcase
-    assign testimonial_heading_text = section.settings.heading
-    if testimonial_heading_text == blank
-        assign testimonial_heading_text = 'sections.testimonial-featured.defaults.heading' | t
-    endif
-
     assign testimonial_marquee_direction = section.settings.marquee_direction | default: 'right_to_left'
     unless testimonial_marquee_direction == 'right_to_left' or testimonial_marquee_direction == 'left_to_right'
         assign testimonial_marquee_direction = 'right_to_left'
@@ -71,9 +66,11 @@
 
 {%- capture testimonial_featured_children -%}
     <div class="{{ testimonial_layout_class }}">
-        <h2 class="testimonial-featured__heading {{ testimonial_heading_class }}">
-            {{ testimonial_heading_text }}
-        </h2>
+        {%- if section.settings.heading != blank -%}
+            <h2 class="testimonial-featured__heading {{ testimonial_heading_class }}">
+                {{ section.settings.heading }}
+            </h2>
+        {%- endif -%}
 
         {%- if testimonial_block_count > 0 -%}
             <div
@@ -153,9 +150,6 @@
                                                                 assign testimonial_card_rating = testimonial_card_block.settings.rating | default: 5
                                                                 assign testimonial_card_quote = testimonial_card_block.settings.quote
                                                                 assign testimonial_card_author = testimonial_card_block.settings.author_name
-                                                                if testimonial_card_author == blank
-                                                                    assign testimonial_card_author = 'sections.testimonial-featured.defaults.author_name' | t
-                                                                endif
                                                                 assign testimonial_show_image = testimonial_card_block.settings.show_image | default: true, allow_false: true
                                                                 if testimonial_show_image == false or testimonial_show_image == 'false'
                                                                     assign testimonial_show_media = false
@@ -225,9 +219,11 @@
                                                                                     size: 'md',
                                                                                     wrapper_class: 'testimonial-featured__stars mb-0 inline-flex shrink-0 items-center'
                                                                                 -%}
-                                                                                <p class="testimonial-featured__author copy-m">
-                                                                                    — {{ testimonial_card_author }}
-                                                                                </p>
+                                                                                {%- if testimonial_card_author != blank -%}
+                                                                                    <p class="testimonial-featured__author copy-m">
+                                                                                        — {{ testimonial_card_author }}
+                                                                                    </p>
+                                                                                {%- endif -%}
                                                                             </div>
                                                                         </div>
                                                                     </div>
@@ -268,10 +264,23 @@
         --testimonial-card-ratio: 1.8;
     }
 
+    /* Narrower cards from wider screens: at 36vw a tablet card left no room for the quote. */
     @media (width >= 48rem) {
         .testimonial-featured-section {
-            --testimonial-card-width: 36vw;
+            --testimonial-card-width: 56vw;
             --testimonial-card-ratio: 2.209302;
+        }
+    }
+
+    @media (width >= 64rem) {
+        .testimonial-featured-section {
+            --testimonial-card-width: 44vw;
+        }
+    }
+
+    @media (width >= 80rem) {
+        .testimonial-featured-section {
+            --testimonial-card-width: 36vw;
         }
     }
 
@@ -489,9 +498,10 @@
         overflow: hidden;
     }
 
+    /* Only the divider towards the copy: a full square border shows inside the card's rounded corners. */
     .testimonial-featured__media--placeholder {
         overflow: hidden;
-        border: 1px solid var(--color-line);
+        border-inline-end: 1px solid var(--color-line);
         background-color: rgb(var(--color-background));
 
         @supports (background-color: color-mix(in oklab, white, black)) {
@@ -533,10 +543,10 @@
         flex: 1 1 auto;
         min-height: 0;
         overflow: hidden;
-        display: -webkit-box;
-        -webkit-box-orient: vertical;
-        -webkit-line-clamp: 5;
-        line-clamp: 5;
+        /* The quote fills the space above the stars; a longer quote fades out at its bottom instead of being cut.
+           No line clamp: the box is often taller than the clamp, which let the next line show under the ellipsis. */
+        -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 1.4em), transparent);
+        mask-image: linear-gradient(to bottom, black calc(100% - 1.4em), transparent);
     }
 
     .testimonial-featured__quote.rte em,
@@ -548,10 +558,11 @@
         margin: 0;
     }
 
+    /* The author moves under the stars when the row is too narrow, instead of being clipped by the card. */
     .testimonial-featured__meta {
         display: flex;
         flex-direction: row;
-        flex-wrap: nowrap;
+        flex-wrap: wrap;
         align-items: flex-end;
         justify-content: space-between;
         gap: 0.75em;
@@ -568,7 +579,9 @@
 
     .testimonial-featured__author {
         margin: 0;
+        margin-inline-start: auto;
         text-align: end;
+        overflow-wrap: anywhere;
     }
 
     @media (hover: hover) and (pointer: fine) {

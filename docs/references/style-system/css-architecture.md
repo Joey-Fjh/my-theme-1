@@ -246,7 +246,7 @@ This matches Shopify's own scope check (Theme Check `ValidScopedCSSClass`), and 
 
 (User decision, 2026-10-03: this replaces the stricter "every class owned" rule from 5-C2.)
 
-Every section with merchant padding settings uses `section-frame` for that padding and the section colour shell. `assets/base.css` has no `.layout` rules. `.section-frame__inner` is `position: relative` and sits inside the root padding, so it is the containing block for absolute children; a section whose absolute children must be placed against the root (main-page-about) passes `inner_class: 'static!'`, and a layer that must cover the root padding box goes in the `background` slot (main-page-contact's watermark).
+Every section with merchant padding settings uses `section-frame` for that padding and the section colour shell. `assets/base.css` has no `.layout` rules. `.section-frame__inner` is `position: relative` and sits inside the root padding, so it is the containing block for absolute children; a layer that must cover the root padding box goes in the `background` slot (main-page-contact's watermark).
 
 ## Layout levels (5-C3a)
 

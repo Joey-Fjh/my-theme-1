@@ -91,8 +91,8 @@
                                     mode: 'frame',
                                     fit: 'cover',
                                     loading: 'eager',
-                                    sizes: '(min-width: 64rem) 60vw, 100vw',
-                                    widths: '400,600,800,1000,1200,1600,2000',
+                                    sizes: '(min-width: 80rem) 960px, (min-width: 64rem) 72vw, 100vw',
+                                    widths: '400,600,800,1000,1200,1600,1920',
                                     wrapper_class: 'feature-tabs__image-wrap h-full w-full',
                                     img_class: 'h-full w-full object-cover'
                                 -%}
@@ -183,17 +183,9 @@
                     {%- endif -%}
                     {%- liquid
                         assign feature_tabs_item_heading = block.settings.heading
-                        if feature_tabs_item_heading == blank
-                            assign feature_tabs_item_heading = 'sections.feature-tabs.defaults.item_heading' | t: index: forloop.index
-                        endif
                         assign feature_tabs_item_label = block.settings.label
-                        if feature_tabs_item_label == blank
-                            assign feature_tabs_item_label = 'sections.feature-tabs.defaults.item_label' | t: index: forloop.index
-                        endif
                         assign feature_tabs_item_text = block.settings.text
-                        if feature_tabs_item_text == blank
-                            assign feature_tabs_item_text = 'sections.feature-tabs.defaults.item_text' | t
-                        endif
+                        assign feature_tabs_tab_aria = 'accessibility.tab_control_item' | t: index: forloop.index
                         assign feature_tabs_index_label = forloop.index
                         if forloop.index < 10
                             assign feature_tabs_index_label = forloop.index | prepend: '0'
@@ -217,15 +209,21 @@
                                 <span class="copy-m" aria-hidden="true"> / </span>
                                 <span class="feature-tabs__counter-total copy-m">{{ feature_tabs_total_label }}</span>
                             </p>
-                            <p class="feature-tabs__eyebrow">
-                                <span class="copy-m uppercase">{{ feature_tabs_item_label }}</span>
-                            </p>
-                            <h2 class="feature-tabs__heading">
-                                <span class="{{ feature_tabs_heading_tiers }}">{{ feature_tabs_item_heading }}</span>
-                            </h2>
-                            <div class="feature-tabs__body">
-                                <div class="rte copy-m">{{ feature_tabs_item_text }}</div>
-                            </div>
+                            {%- if feature_tabs_item_label != blank -%}
+                                <p class="feature-tabs__eyebrow">
+                                    <span class="copy-m uppercase">{{ feature_tabs_item_label }}</span>
+                                </p>
+                            {%- endif -%}
+                            {%- if feature_tabs_item_heading != blank -%}
+                                <h2 class="feature-tabs__heading">
+                                    <span class="{{ feature_tabs_heading_tiers }}">{{ feature_tabs_item_heading }}</span>
+                                </h2>
+                            {%- endif -%}
+                            {%- if feature_tabs_item_text != blank -%}
+                                <div class="feature-tabs__body">
+                                    <div class="rte copy-m">{{ feature_tabs_item_text }}</div>
+                                </div>
+                            {%- endif -%}
                         </div>
                     </div>
                 {%- endfor -%}
@@ -285,9 +283,7 @@
                         {%- endif -%}
                         {%- liquid
                             assign feature_tabs_item_label = block.settings.label
-                            if feature_tabs_item_label == blank
-                                assign feature_tabs_item_label = 'sections.feature-tabs.defaults.item_label' | t: index: forloop.index
-                            endif
+                            assign feature_tabs_tab_aria = 'accessibility.tab_control_item' | t: index: forloop.index
                             assign feature_tabs_row_number = forloop.index
                             if forloop.index < 10
                                 assign feature_tabs_row_number = forloop.index | prepend: '0'
@@ -305,11 +301,16 @@
                             :tabindex="isFocusable(tabIndexFor($el)) ? 0 : -1"
                             :aria-selected="isActive(tabIndexFor($el))"
                             :class="isActive(tabIndexFor($el)) && 'is-active'"
+                            {% if feature_tabs_item_label == blank %}
+                                aria-label="{{ feature_tabs_tab_aria | escape }}"
+                            {% endif %}
                             {{ block.shopify_attributes }}
                         >
                             <span class="feature-tabs__tab-number"><span class="copy-m">{{ feature_tabs_row_number }}</span></span>
-                            {%- # lint-allow typography-tier-heading: tab row label set in the heading face by design; a button, not a heading -%}
-                            <span class="feature-tabs__tab-label"><span class="title-s desktop:title-m">{{ feature_tabs_item_label }}</span></span>
+                            {%- if feature_tabs_item_label != blank -%}
+                                {%- # lint-allow typography-tier-heading: tab row label set in the heading face by design; a button, not a heading -%}
+                                <span class="feature-tabs__tab-label"><span class="title-s desktop:title-m">{{ feature_tabs_item_label }}</span></span>
+                            {%- endif -%}
                             <span class="feature-tabs__tab-mark" aria-hidden="true"></span>
                         </button>
                     {%- endfor -%}

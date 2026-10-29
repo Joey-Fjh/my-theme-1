@@ -22,6 +22,7 @@ The parameter list is the `{% doc %}` block in `snippets/image.liquid`.
 ## Sizes and widths
 
 - `sizes` is the width the image renders at. Derive it from the layout (for example the `grid-list` column count) across the `page_width` and `page_margin` ranges in `config/settings_schema.json`. At the browser's default font size it must not be smaller than the rendered width; a small overestimate is acceptable.
+- `test:layout` runs the `image-sizes` check (`.agents/tools/layout-check/checks.mjs`): it fails when the resolved `sizes` value at a viewport is more than 2px below the drawn width (cover uses the larger of box width and box height × intrinsic ratio; contain uses the box width capped by height × ratio).
 - `widths` covers about twice the largest rendered width (2x displays) in a few steps. More steps add no quality.
 - `image.liquid` prefixes `auto, ` on the `sizes` of every lazy image, so browsers that support `sizes="auto"` use the laid-out width and others use the given value (MDN, `<img>` `sizes`; `auto` is valid only with `loading="lazy"`). Eager images, such as the first card or the first gallery image, use the given value alone.
 - Known limitation: `grid-list` columns and page margins are in rem, so a larger default font widens columns. Browsers without `sizes="auto"` (Safari as of 2026-09) may then pick a source smaller than the rendered width. Declaring `100vw` below 1200px would avoid that and download more for every visitor, so the gap is accepted.

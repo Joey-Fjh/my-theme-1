@@ -2,11 +2,11 @@
     assign about_heading_class = section.settings.heading_size | default: 'title-2xl'
     assign about_subtitle_size = section.settings.subtitle_size | default: 'copy-l'
     assign about_subtitle_class = 'typo-subtitle ' | append: about_subtitle_size
+    assign about_ratio = section.settings.image.aspect_ratio | default: 1.778
+    assign about_ratio_style = '--main-page-about-ratio: ' | append: about_ratio | append: ';'
 -%}
 {%- capture about_children -%}
-    <div
-        class="absolute inset-0 h-full w-full tablet:static tablet:h-auto"
-    >
+    <div class="absolute inset-0">
         {%- capture sizes -%}
             (min-width: 80rem) 100vw, (min-width: 48rem) 1280px, 768px
         {%- endcapture -%}
@@ -23,14 +23,16 @@
             width: section.settings.image.width,
             sizes: sizes,
             widths: widths,
-            class: 'h-full w-full tablet:h-auto',
+            class: 'h-full w-full',
             img_class: 'h-full w-full object-cover object-center',
+            placeholder_key: 'lifestyle-1',
+            placeholder_style: 'plain',
         -%}
     </div>
 
-    <div class="section-frame__overlay-padding container-page absolute inset-0">
+    <div class="section-frame__overlay-padding container-page content-center">
         <div
-            class="mx-auto flex h-full w-full max-w-3xl flex-col items-center justify-start gap-step-xs px-step-m pt-step-4xl text-center tablet:max-w-1/2 tablet:justify-center tablet:gap-step-m tablet:pt-0"
+            class="mx-auto flex w-full max-w-3xl flex-col items-center gap-step-xs px-step-m text-center tablet:max-w-1/2 tablet:gap-step-m"
         >
             <p
                 class="{{ about_subtitle_class }}"
@@ -58,13 +60,29 @@
     height_kind: 'content',
     padding_mode: 'overlay',
     surface_section: false,
-    safe_top: false,
     motion: false,
-    root_class: 'relative overflow-hidden min-h-200 tablet:min-h-0 tablet:max-h-[80svh] tablet:overflow-hidden',
-    inner_class: 'static!',
+    root_style: about_ratio_style,
+    inner_class: 'main-page-about__stage grid min-h-200',
     root_attrs: '',
     children: about_children
 %}
+
+{% stylesheet %}
+    /* The fixed header covers the top of the page, so the image starts below it. */
+    main > .shopify-section:first-child > .main-page-about-section {
+        padding-top: calc(
+            var(--announcement-bar-offset, var(--announcement-bar-height, 0px)) +
+                var(--header-height, 0px)
+        );
+    }
+
+    /* Image ratio up to 80svh; taller copy still grows the stage. */
+    @media (width >= 48rem) {
+        .main-page-about__stage {
+            min-height: min(calc(100vw / var(--main-page-about-ratio)), 80svh);
+        }
+    }
+{% endstylesheet %}
 
 {% schema %}
 {

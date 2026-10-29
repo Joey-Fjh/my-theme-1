@@ -23,14 +23,8 @@
 
     assign routine_eyebrow = section.settings.eyebrow
     assign routine_heading = section.settings.heading
-    if routine_heading == blank
-        assign routine_heading = 'sections.routine-showcase.defaults.heading' | t
-    endif
     assign routine_description = section.settings.description
     assign routine_cta_text = section.settings.cta_text
-    if routine_cta_text == blank
-        assign routine_cta_text = 'sections.routine-showcase.defaults.cta_text' | t
-    endif
     assign routine_cta_link = section.settings.cta_link | default: routes.collections_url
 
     assign routine_autoplay = true
@@ -65,6 +59,10 @@
     <span class="uppercase">{{ routine_cta_text }}</span>
     {%- render 'icons', icon: 'icon-arrow2', class: 'ms-step-2xs', size: 'sm' -%}
 {%- endcapture -%}
+{%- assign routine_cta_ready = false -%}
+{%- if routine_cta_text != blank -%}
+    {%- assign routine_cta_ready = true -%}
+{%- endif -%}
 
 {%- capture routine_showcase_children -%}
     <div
@@ -103,9 +101,6 @@
                         {%- liquid
                             assign routine_step_index = routine_step_index | plus: 1
                             assign routine_step_label = block.settings.label
-                            if routine_step_label == blank
-                                assign routine_step_label = 'sections.routine-showcase.defaults.step_label' | t
-                            endif
                             assign routine_step_number = routine_step_index
                             if routine_step_number < 10
                                 assign routine_step_number_label = routine_step_number | prepend: '0'
@@ -192,15 +187,21 @@
                                         </a>
                                     {%- endif -%}
                                 </div>
-                                <p class="routine-showcase__mobile-eyebrow copy-s text-muted uppercase" aria-hidden="true">
-                                    {{ routine_eyebrow }}
-                                </p>
-                                <p class="routine-showcase__mobile-heading copy-xl text-theme-text uppercase max-tablet:copy-xl" aria-hidden="true">
-                                    {{ routine_heading }}
-                                </p>
+                                {%- if routine_eyebrow != blank -%}
+                                    <p class="routine-showcase__mobile-eyebrow copy-s text-muted uppercase" aria-hidden="true">
+                                        {{ routine_eyebrow }}
+                                    </p>
+                                {%- endif -%}
+                                {%- if routine_heading != blank -%}
+                                    <p class="routine-showcase__mobile-heading copy-xl text-theme-text uppercase max-tablet:copy-xl" aria-hidden="true">
+                                        {{ routine_heading }}
+                                    </p>
+                                {%- endif -%}
                                 <p class="routine-showcase__mobile-badge copy-s">
                                     {{ routine_step_number_label }}
-                                    {{ routine_step_label }}
+                                    {%- if routine_step_label != blank -%}
+                                        {{ routine_step_label }}
+                                    {%- endif -%}
                                 </p>
                                 <p class="routine-showcase__mobile-product-title copy-l text-theme-text uppercase">
                                     <a class="text-theme-text" href="{{ routine_product_url }}">{{ routine_product_title }}</a>
@@ -215,14 +216,16 @@
                                         {{ routine_product.price | money }}
                                     {%- endif -%}
                                 </p>
-                                <div class="routine-showcase__mobile-footer">
-                                    {%- render 'link',
-                                        href: routine_cta_link,
-                                        variant: 'default',
-                                        class: 'link-with-icon-motion copy-s uppercase text-theme-text self-start',
-                                        content: routine_cta_content
-                                    -%}
-                                </div>
+                                {%- if routine_cta_ready -%}
+                                    <div class="routine-showcase__mobile-footer">
+                                        {%- render 'link',
+                                            href: routine_cta_link,
+                                            variant: 'default',
+                                            class: 'link-with-icon-motion copy-s uppercase text-theme-text self-start',
+                                            content: routine_cta_content
+                                        -%}
+                                    </div>
+                                {%- endif -%}
                             </article>
                         </li>
                     {%- endfor -%}
@@ -266,20 +269,24 @@
                                         {{ routine_eyebrow }}
                                     </p>
                                 {%- endif -%}
-                                <h2 class="routine-showcase__heading {{ routine_heading_class }}">
-                                    {{ routine_heading }}
-                                </h2>
+                                {%- if routine_heading != blank -%}
+                                    <h2 class="routine-showcase__heading {{ routine_heading_class }}">
+                                        {{ routine_heading }}
+                                    </h2>
+                                {%- endif -%}
                                 {%- if routine_description != blank -%}
                                     <div class="routine-showcase__description rte copy-l text-muted">
                                         {{ routine_description }}
                                     </div>
                                 {%- endif -%}
-                                {%- render 'link',
-                                    href: routine_cta_link,
-                                    variant: 'default',
-                                    class: 'link-with-icon-motion copy-m tablet:copy-l uppercase text-theme-text self-start',
-                                    content: routine_cta_content
-                                -%}
+                                {%- if routine_cta_ready -%}
+                                    {%- render 'link',
+                                        href: routine_cta_link,
+                                        variant: 'default',
+                                        class: 'link-with-icon-motion copy-m tablet:copy-l uppercase text-theme-text self-start',
+                                        content: routine_cta_content
+                                    -%}
+                                {%- endif -%}
                             </div>
                             <div class="routine-showcase__info-stack">
                                 {%- assign routine_step_index = 0 -%}
@@ -414,7 +421,7 @@
                                                         mode: 'frame',
                                                         fit: 'cover',
                                                         loading: 'lazy',
-                                                        sizes: '(min-width: 64rem) 27vw, 70vw',
+                                                        sizes: '(min-width: 64rem) 35vw, 70vw',
                                                         widths: '400,600,800,1000,1200',
                                                         wrapper_class: 'routine-showcase__scene routine-showcase__scene-img h-full w-full',
                                                         img_class: 'h-full w-full object-cover'
@@ -426,7 +433,7 @@
                                                         mode: 'frame',
                                                         fit: 'cover',
                                                         loading: 'lazy',
-                                                        sizes: '(min-width: 64rem) 27vw, 70vw',
+                                                        sizes: '(min-width: 64rem) 35vw, 70vw',
                                                         widths: '400,600,800,1000,1200',
                                                         wrapper_class: 'routine-showcase__scene routine-showcase__scene-img h-full w-full',
                                                         img_class: 'h-full w-full object-cover'
@@ -467,8 +474,8 @@
                                                             mode: 'frame',
                                                             fit: 'contain',
                                                             loading: 'lazy',
-                                                            sizes: '(min-width: 64rem) 11vw, 40vw',
-                                                            widths: '240,360,480,640,800',
+                                                            sizes: '(min-width: 64rem) 30vw, 40vw',
+                                                            widths: '400,600,800,1000,1200',
                                                             wrapper_class: 'routine-showcase__product-img h-full w-full',
                                                             img_class: 'h-full w-full object-contain object-bottom'
                                                         -%}
@@ -529,22 +536,21 @@
                                         assign routine_step_index = routine_step_index | plus: 1
                                         assign routine_label_index = routine_step_index | minus: 1
                                         assign routine_step_label = block.settings.label
-                                        if routine_step_label == blank
-                                            assign routine_step_label = 'sections.routine-showcase.defaults.step_label' | t
-                                        endif
                                         assign routine_label_active = false
                                         if routine_label_index == 0
                                             assign routine_label_active = true
                                         endif
                                     -%}
-                                    <p
-                                        class="routine-showcase__side-label copy-s tablet:copy-m{% unless routine_label_active %} routine-showcase__side-label--inactive{% endunless %}{% if routine_label_active %} is-active{% endif %}"
-                                        data-routine-side-label
-                                        data-item-index="{{ routine_label_index }}"
-                                        :class="sideLabelClassFromEl($el)"
-                                    >
-                                        {{ routine_heading }}
-                                    </p>
+                                    {%- if routine_heading != blank -%}
+                                        <p
+                                            class="routine-showcase__side-label copy-s tablet:copy-m{% unless routine_label_active %} routine-showcase__side-label--inactive{% endunless %}{% if routine_label_active %} is-active{% endif %}"
+                                            data-routine-side-label
+                                            data-item-index="{{ routine_label_index }}"
+                                            :class="sideLabelClassFromEl($el)"
+                                        >
+                                            {{ routine_heading }}
+                                        </p>
+                                    {%- endif -%}
                                 {%- endfor -%}
                             </div>
 
@@ -564,15 +570,16 @@
                                         assign routine_step_index = routine_step_index | plus: 1
                                         assign routine_tab_index = routine_step_index | minus: 1
                                         assign routine_step_label = block.settings.label
-                                        if routine_step_label == blank
-                                            assign routine_step_label = 'sections.routine-showcase.defaults.step_label' | t
-                                        endif
                                         assign routine_product = block.settings.product
                                         assign routine_tab_product_title = routine_product.title
                                         if routine_product == blank
                                             assign routine_tab_product_title = 'sections.routine-showcase.placeholder_product_title' | t: index: routine_step_index
                                         endif
-                                        assign routine_tab_aria = 'sections.routine-showcase.accessibility.step_tab' | t: step: routine_step_index, label: routine_step_label, product: routine_tab_product_title
+                                        if routine_step_label != blank
+                                            assign routine_tab_aria = 'sections.routine-showcase.accessibility.step_tab' | t: step: routine_step_index, label: routine_step_label, product: routine_tab_product_title
+                                        else
+                                            assign routine_tab_aria = 'accessibility.step_control' | t: index: routine_step_index
+                                        endif
                                         assign routine_tab_selected = false
                                         if routine_tab_index == 0
                                             assign routine_tab_selected = true
@@ -615,10 +622,16 @@
                                             %}
                                             {%- endif -%}
                                         </span>
-                                        <span class="routine-showcase__tab-caption copy-s">
-                                            {{ routine_step_label }}
-                                        </span>
-                                        <span class="sr-only">{{ routine_tab_aria }}</span>
+                                        {%- if routine_step_label != blank -%}
+                                            <span class="routine-showcase__tab-caption copy-s">
+                                                {{ routine_step_label }}
+                                            </span>
+                                        {%- else -%}
+                                            <span class="sr-only">{{ routine_tab_aria }}</span>
+                                        {%- endif -%}
+                                        {%- if routine_step_label != blank -%}
+                                            <span class="sr-only">{{ routine_tab_aria }}</span>
+                                        {%- endif -%}
                                     </button>
                                 {%- endfor -%}
                             </div>

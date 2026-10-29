@@ -1,63 +1,82 @@
 {%- liquid
     assign not_found_heading_class = section.settings.heading_size | default: 'title-3xl'
-    assign fallback_heading_line2 = '404.heading_line_2' | t
-    assign fallback_description = '404.description_html' | t
-    assign not_found_description = section.settings.description | default: fallback_description
     assign heading_line1 = section.settings.heading_line1
-    if heading_line1 == blank
-        assign heading_line1 = '404.title' | t
+    assign heading_line2 = section.settings.heading_line2
+    assign not_found_description = section.settings.description
+    assign not_found_heading_ready = false
+    if heading_line1 != blank or heading_line2 != blank
+        assign not_found_heading_ready = true
+    endif
+    assign not_found_button_ready = false
+    if section.settings.show_button and section.settings.button_text != blank
+        assign not_found_button_ready = true
+    endif
+    assign not_found_copy_ready = false
+    if not_found_heading_ready or not_found_description != blank or not_found_button_ready
+        assign not_found_copy_ready = true
     endif
 -%}
 {%- capture not_found_heading_content -%}
-    {{ heading_line1 -}}
-    <br>
-    {{ section.settings.heading_line2 | default: fallback_heading_line2 }}
+    {%- if heading_line1 != blank -%}
+        {{ heading_line1 -}}
+    {%- endif -%}
+    {%- if heading_line1 != blank and heading_line2 != blank -%}
+        <br>
+    {%- endif -%}
+    {%- if heading_line2 != blank -%}
+        {{ heading_line2 }}
+    {%- endif -%}
 {%- endcapture -%}
 {%- capture not_found_children -%}
     <div class="not-found__stack">
-        <div
-            class="relative flex flex-col items-start gap-related p-step-xs"
-        >
-            {% render 'heading',
-                level: '1',
-                tier: not_found_heading_class,
-                content: not_found_heading_content,
-            %}
-            {% render 'text',
-                tier: 'copy-l',
-                element: 'div',
-                rte: true,
-                measure: '2/3',
-                class: 'tablet:max-w-1/3',
-                content: not_found_description,
-            %}
-
-            {%- if section.settings.show_button -%}
-                {%- liquid
-                    assign button_label = section.settings.button_text
-                    if button_label == blank
-                        assign button_label = '404.back_to_shopping' | t
-                    endif
-                    assign link_href = section.settings.button_link
-                    if link_href == blank or link_href == '/'
-                        assign link_href = routes.root_url
-                    endif
-                -%}
-                {%- capture button_content -%}
-                    {{ button_label }}
-                    {% render 'icons',
-                        icon: 'icon-arrow2',
-                        class: 'ms-step-xs'
+        {%- if not_found_copy_ready -%}
+            <div
+                class="relative flex flex-col items-start gap-related p-step-xs"
+            >
+                {%- if not_found_heading_ready -%}
+                    {% render 'heading',
+                        level: '1',
+                        tier: not_found_heading_class,
+                        content: not_found_heading_content,
                     %}
-                {%- endcapture -%}
-                {% render 'button',
-                    href: link_href,
-                    style: 'primary',
-                    size: 'xl',
-                    content: button_content
-                %}
-            {%- endif -%}
-        </div>
+                {%- endif -%}
+                {%- if not_found_description != blank -%}
+                    {% render 'text',
+                        tier: 'copy-l',
+                        element: 'div',
+                        rte: true,
+                        measure: '2/3',
+                        class: 'tablet:max-w-1/3',
+                        content: not_found_description,
+                    %}
+                {%- endif -%}
+
+                {%- if section.settings.show_button -%}
+                    {%- liquid
+                        assign button_label = section.settings.button_text
+                        assign link_href = section.settings.button_link
+                        if link_href == blank or link_href == '/'
+                            assign link_href = routes.root_url
+                        endif
+                    -%}
+                    {%- if button_label != blank -%}
+                        {%- capture button_content -%}
+                            {{ button_label }}
+                            {% render 'icons',
+                                icon: 'icon-arrow2',
+                                class: 'ms-step-xs'
+                            %}
+                        {%- endcapture -%}
+                        {% render 'button',
+                            href: link_href,
+                            style: 'primary',
+                            size: 'xl',
+                            content: button_content
+                        %}
+                    {%- endif -%}
+                {%- endif -%}
+            </div>
+        {%- endif -%}
 
         {% render 'watermark',
             container_class: 'relative w-full overflow-hidden pointer-events-none select-none',

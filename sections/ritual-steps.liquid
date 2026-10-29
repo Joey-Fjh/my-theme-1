@@ -4,11 +4,6 @@
         assign ritual_layout = 'sticky_media'
     endunless
 
-    assign ritual_heading = section.settings.heading
-    if ritual_heading == blank
-        assign ritual_heading = 'sections.ritual-steps.defaults.heading' | t
-    endif
-
     assign ritual_step_count = 0
     for ritual_block in section.blocks
         if ritual_block.type == 'step'
@@ -43,13 +38,15 @@
     >
         {%- if ritual_step_count > 0 -%}
             <div class="ritual-steps__mobile">
-                {% render 'heading',
-                    level: '2',
-                    tier: ritual_heading_tier,
-                    align: 'start',
-                    content: ritual_heading,
-                    class: 'ritual-steps__mobile-section-heading sr-only text-theme-text uppercase'
-                %}
+                {%- if section.settings.heading != blank -%}
+                    {% render 'heading',
+                        level: '2',
+                        tier: ritual_heading_tier,
+                        align: 'start',
+                        content: section.settings.heading,
+                        class: 'ritual-steps__mobile-section-heading sr-only text-theme-text uppercase'
+                    %}
+                {%- endif -%}
                 <ul
                     class="card-rail ritual-steps__mobile-rail"
                     data-ritual-mobile-rail
@@ -64,9 +61,7 @@
                             assign ritual_step_index = ritual_step_index | plus: 1
                             assign ritual_step_idx = ritual_step_index | minus: 1
                             assign ritual_label = block.settings.label
-                            if ritual_label == blank
-                                assign ritual_label = 'sections.ritual-steps.defaults.step_label' | t
-                            endif
+                            assign ritual_step_control_aria = 'accessibility.step_control' | t: index: ritual_step_index
                             if ritual_step_index < 10
                                 assign ritual_number_label = ritual_step_index | prepend: '0'
                             else
@@ -83,9 +78,6 @@
                             endif
                             assign ritual_product_url = ritual_product.url | default: routes.all_products_collection_url
                             assign ritual_link_label = block.settings.link_label
-                            if ritual_link_label == blank
-                                assign ritual_link_label = 'sections.ritual-steps.defaults.link_label' | t
-                            endif
                             assign ritual_link_href = block.settings.link
                             if ritual_link_href == blank and ritual_is_placeholder == false
                                 assign ritual_link_href = ritual_product_url
@@ -107,13 +99,7 @@
                             endif
                             assign ritual_placeholder_index = ritual_step_index | minus: 1 | modulo: 6 | plus: 1
                             assign ritual_placeholder_key = 'product-' | append: ritual_placeholder_index
-                            if ritual_is_placeholder
-                                assign ritual_body_text = block.settings.text
-                            elsif ritual_product.description != blank
-                                assign ritual_body_text = ritual_product.description | strip_html | strip | truncatewords: 18
-                            else
-                                assign ritual_body_text = block.settings.text
-                            endif
+                            assign ritual_body_text = block.settings.text
                         -%}
                         <li
                             class="card-rail__slot ritual-steps__mobile-slot"
@@ -177,19 +163,23 @@
                                     </div>
                                 {%- endif -%}
 
-                                <p class="ritual-steps__mobile-heading-copy {{ ritual_heading_tier }} text-theme-text uppercase" aria-hidden="true">
-                                    {{ ritual_heading }}
-                                </p>
+                                {%- if section.settings.heading != blank -%}
+                                    <p class="ritual-steps__mobile-heading-copy {{ ritual_heading_tier }} text-theme-text uppercase" aria-hidden="true">
+                                        {{ section.settings.heading }}
+                                    </p>
+                                {%- endif -%}
 
-                                {%- if ritual_layout == 'scroll_carousel' -%}
+                                {%- if ritual_layout == 'scroll_carousel' and section.settings.heading != blank -%}
                                     <p class="ritual-steps__mobile-eyebrow copy-s text-muted italic" aria-hidden="true">
-                                        {{ ritual_heading }}
+                                        {{ section.settings.heading }}
                                     </p>
                                 {%- endif -%}
 
                                 <p class="ritual-steps__badge copy-s tablet:copy-l">
                                     {{ ritual_number_label }}
-                                    {{ ritual_label }}
+                                    {%- if ritual_label != blank -%}
+                                        {{ ritual_label }}
+                                    {%- endif -%}
                                 </p>
 
                                 {%- if block.settings.heading != blank -%}
@@ -234,18 +224,20 @@
                                     {%- endunless -%}
                                 {%- endif -%}
 
-                                <div class="ritual-steps__mobile-cta">
-                                    {%- capture ritual_mobile_link -%}
-                                        <span class="uppercase">{{ ritual_link_label }}</span>
-                                        {%- render 'icons', icon: 'icon-arrow2', class: 'ms-step-2xs', size: 'sm' -%}
-                                    {%- endcapture -%}
-                                    {%- render 'link',
-                                        href: ritual_link_href,
-                                        variant: 'default',
-                                        class: 'copy-s uppercase text-theme-text',
-                                        content: ritual_mobile_link
-                                    -%}
-                                </div>
+                                {%- if ritual_link_label != blank -%}
+                                    <div class="ritual-steps__mobile-cta">
+                                        {%- capture ritual_mobile_link -%}
+                                            <span class="uppercase">{{ ritual_link_label }}</span>
+                                            {%- render 'icons', icon: 'icon-arrow2', class: 'ms-step-2xs', size: 'sm' -%}
+                                        {%- endcapture -%}
+                                        {%- render 'link',
+                                            href: ritual_link_href,
+                                            variant: 'default',
+                                            class: 'copy-s uppercase text-theme-text',
+                                            content: ritual_mobile_link
+                                        -%}
+                                    </div>
+                                {%- endif -%}
                             </article>
                         </li>
                     {%- endfor -%}
@@ -261,8 +253,11 @@
                             assign ritual_step_index = ritual_step_index | plus: 1
                             assign ritual_step_idx = ritual_step_index | minus: 1
                             assign ritual_label = block.settings.label
-                            if ritual_label == blank
-                                assign ritual_label = 'sections.ritual-steps.defaults.step_label' | t
+                            assign ritual_step_control_aria = 'accessibility.step_control' | t: index: ritual_step_index
+                            if ritual_label != blank
+                                assign ritual_dot_aria = 'sections.ritual-steps.accessibility.go_to_step' | t: step: ritual_step_index, label: ritual_label
+                            else
+                                assign ritual_dot_aria = ritual_step_control_aria
                             endif
                         -%}
                         <button
@@ -272,7 +267,7 @@
                             data-step-index="{{ ritual_step_idx }}"
                             :class="dotClassFromEl($el)"
                             :aria-current="dotAriaCurrentFromEl($el)"
-                            aria-label="{{ 'sections.ritual-steps.accessibility.go_to_step' | t: step: ritual_step_index, label: ritual_label }}"
+                            aria-label="{{ ritual_dot_aria | escape }}"
                         >
                             <span class="card-rail__dot-visual ritual-steps__dot-visual" aria-hidden="true"></span>
                         </button>
@@ -294,18 +289,12 @@
                                     assign ritual_step_index = ritual_step_index | plus: 1
                                     assign ritual_step_idx = ritual_step_index | minus: 1
                                     assign ritual_label = block.settings.label
-                                    if ritual_label == blank
-                                        assign ritual_label = 'sections.ritual-steps.defaults.step_label' | t
-                                    endif
                                     if ritual_step_index < 10
                                         assign ritual_number_label = ritual_step_index | prepend: '0'
                                     else
                                         assign ritual_number_label = ritual_step_index
                                     endif
                                     assign ritual_link_label = block.settings.link_label
-                                    if ritual_link_label == blank
-                                        assign ritual_link_label = 'sections.ritual-steps.defaults.link_label' | t
-                                    endif
                                     assign ritual_link_href = block.settings.link
                                     if ritual_link_href == blank and block.settings.product != blank
                                         assign ritual_link_href = block.settings.product.url
@@ -322,27 +311,31 @@
                                     :class="stepTextClassFromEl($el)"
                                     {{ block.shopify_attributes }}
                                 >
-                                    {%- if ritual_step_idx == 0 -%}
-                                        {% render 'heading',
-                                            level: '2',
-                                            tier: ritual_heading_tier,
-                                            align: 'start',
-                                            content: ritual_heading,
-                                            class: 'ritual-steps__section-heading text-theme-text uppercase'
-                                        %}
-                                    {%- else -%}
-                                        {% render 'heading',
-                                            level: '2',
-                                            tier: ritual_heading_tier,
-                                            align: 'start',
-                                            content: ritual_heading,
-                                            class: 'ritual-steps__section-heading text-theme-text uppercase',
-                                            attrs: 'aria-hidden="true"'
-                                        %}
+                                    {%- if section.settings.heading != blank -%}
+                                        {%- if ritual_step_idx == 0 -%}
+                                            {% render 'heading',
+                                                level: '2',
+                                                tier: ritual_heading_tier,
+                                                align: 'start',
+                                                content: section.settings.heading,
+                                                class: 'ritual-steps__section-heading text-theme-text uppercase'
+                                            %}
+                                        {%- else -%}
+                                            {% render 'heading',
+                                                level: '2',
+                                                tier: ritual_heading_tier,
+                                                align: 'start',
+                                                content: section.settings.heading,
+                                                class: 'ritual-steps__section-heading text-theme-text uppercase',
+                                                attrs: 'aria-hidden="true"'
+                                            %}
+                                        {%- endif -%}
                                     {%- endif -%}
                                     <p class="ritual-steps__badge copy-s tablet:copy-l">
                                         {{ ritual_number_label }}
-                                        {{ ritual_label }}
+                                        {%- if ritual_label != blank -%}
+                                            {{ ritual_label }}
+                                        {%- endif -%}
                                     </p>
                                     {%- if block.settings.heading != blank -%}
                                         {% render 'heading',
@@ -363,18 +356,20 @@
                                             class: 'text-muted'
                                         %}
                                     {%- endif -%}
-                                    <div class="ritual-steps__step-cta">
-                                        {%- capture ritual_step_link -%}
-                                            <span class="uppercase">{{ ritual_link_label }}</span>
-                                            {%- render 'icons', icon: 'icon-arrow2', class: 'ms-step-2xs', size: 'sm' -%}
-                                        {%- endcapture -%}
-                                        {%- render 'link',
-                                            href: ritual_link_href,
-                                            variant: 'default',
-                                            class: 'copy-s tablet:copy-m uppercase text-theme-text',
-                                            content: ritual_step_link
-                                        -%}
-                                    </div>
+                                    {%- if ritual_link_label != blank -%}
+                                        <div class="ritual-steps__step-cta">
+                                            {%- capture ritual_step_link -%}
+                                                <span class="uppercase">{{ ritual_link_label }}</span>
+                                                {%- render 'icons', icon: 'icon-arrow2', class: 'ms-step-2xs', size: 'sm' -%}
+                                            {%- endcapture -%}
+                                            {%- render 'link',
+                                                href: ritual_link_href,
+                                                variant: 'default',
+                                                class: 'copy-s tablet:copy-m uppercase text-theme-text',
+                                                content: ritual_step_link
+                                            -%}
+                                        </div>
+                                    {%- endif -%}
                                 </div>
                             {%- endfor -%}
                         </div>
@@ -430,13 +425,15 @@
                         <div class="ritual-steps__stage">
                             <div class="ritual-steps__carousel-grid">
                                 <div class="ritual-steps__carousel-col ritual-steps__carousel-col--text">
-                                    {% render 'heading',
-                                        level: '2',
-                                        tier: 'copy-s tablet:copy-m italic',
-                                        align: 'start',
-                                        content: ritual_heading,
-                                        class: 'ritual-steps__carousel-heading text-muted'
-                                    %}
+                                    {%- if section.settings.heading != blank -%}
+                                        {% render 'heading',
+                                            level: '2',
+                                            tier: 'copy-s tablet:copy-m italic',
+                                            align: 'start',
+                                            content: section.settings.heading,
+                                            class: 'ritual-steps__carousel-heading text-muted'
+                                        %}
+                                    {%- endif -%}
                                     <div class="ritual-steps__panel-stack">
                                         {%- assign ritual_step_index = 0 -%}
                                         {%- for block in section.blocks -%}
@@ -447,9 +444,6 @@
                                                 assign ritual_step_index = ritual_step_index | plus: 1
                                                 assign ritual_step_idx = ritual_step_index | minus: 1
                                                 assign ritual_label = block.settings.label
-                                                if ritual_label == blank
-                                                    assign ritual_label = 'sections.ritual-steps.defaults.step_label' | t
-                                                endif
                                                 if ritual_step_index < 10
                                                     assign ritual_number_label = ritual_step_index | prepend: '0'
                                                 else
@@ -466,9 +460,6 @@
                                                 endif
                                                 assign ritual_product_url = ritual_product.url | default: routes.all_products_collection_url
                                                 assign ritual_link_label = block.settings.link_label
-                                                if ritual_link_label == blank
-                                                    assign ritual_link_label = 'sections.ritual-steps.defaults.link_label' | t
-                                                endif
                                                 assign ritual_link_href = block.settings.link
                                                 if ritual_link_href == blank and ritual_is_placeholder == false
                                                     assign ritual_link_href = ritual_product_url
@@ -476,13 +467,7 @@
                                                 if ritual_link_href == blank
                                                     assign ritual_link_href = routes.all_products_collection_url
                                                 endif
-                                                if ritual_is_placeholder
-                                                    assign ritual_body_text = block.settings.text
-                                                elsif ritual_product.description != blank
-                                                    assign ritual_body_text = ritual_product.description | strip_html | strip | truncatewords: 18
-                                                else
-                                                    assign ritual_body_text = block.settings.text
-                                                endif
+                                                assign ritual_body_text = block.settings.text
                                             -%}
                                             <div
                                                 class="ritual-steps__panel{% if ritual_step_idx == 0 %} is-active{% endif %}"
@@ -504,7 +489,9 @@
                                                 <div class="ritual-steps__panel-detail">
                                                 <p class="ritual-steps__badge copy-s tablet:copy-l">
                                                     {{ ritual_number_label }}
-                                                    {{ ritual_label }}
+                                                    {%- if ritual_label != blank -%}
+                                                        {{ ritual_label }}
+                                                    {%- endif -%}
                                                 </p>
                                                 <h4 class="ritual-steps__product-title title-xs tablet:title-xs">
                                                     <a class="text-theme-text" href="{{ ritual_product_url }}">{{ ritual_product_title }}</a>
@@ -524,18 +511,20 @@
                                                         {{ ritual_product.price | money }}
                                                     </p>
                                                 {%- endunless -%}
-                                                <div class="ritual-steps__step-cta">
-                                                    {%- capture ritual_step_link -%}
-                                                        <span class="uppercase">{{ ritual_link_label }}</span>
-                                                        {%- render 'icons', icon: 'icon-arrow2', class: 'ms-step-2xs', size: 'sm' -%}
-                                                    {%- endcapture -%}
-                                                    {%- render 'link',
-                                                        href: ritual_link_href,
-                                                        variant: 'default',
-                                                        class: 'copy-s tablet:copy-m uppercase text-theme-text',
-                                                        content: ritual_step_link
-                                                    -%}
-                                                </div>
+                                                {%- if ritual_link_label != blank -%}
+                                                    <div class="ritual-steps__step-cta">
+                                                        {%- capture ritual_step_link -%}
+                                                            <span class="uppercase">{{ ritual_link_label }}</span>
+                                                            {%- render 'icons', icon: 'icon-arrow2', class: 'ms-step-2xs', size: 'sm' -%}
+                                                        {%- endcapture -%}
+                                                        {%- render 'link',
+                                                            href: ritual_link_href,
+                                                            variant: 'default',
+                                                            class: 'copy-s tablet:copy-m uppercase text-theme-text',
+                                                            content: ritual_step_link
+                                                        -%}
+                                                    </div>
+                                                {%- endif -%}
                                                 </div>
                                             </div>
                                         {%- endfor -%}
@@ -597,8 +586,8 @@
                                                             mode: 'frame',
                                                             fit: 'contain',
                                                             loading: 'lazy',
-                                                            sizes: '(min-width: 64rem) 38vw, 70vw',
-                                                            widths: '360,480,640,768,960',
+                                                            sizes: '(min-width: 80rem) 50vw, (min-width: 64rem) 48vw, 70vw',
+                                                            widths: '400,600,800,1000,1200,1300',
                                                             wrapper_class: 'h-full w-full',
                                                             img_class: 'h-full w-full object-contain'
                                                         -%}
@@ -620,13 +609,15 @@
                                         assign ritual_step_index = ritual_step_index | plus: 1
                                         assign ritual_step_idx = ritual_step_index | minus: 1
                                         assign ritual_label = block.settings.label
-                                        if ritual_label == blank
-                                            assign ritual_label = 'sections.ritual-steps.defaults.step_label' | t
-                                        endif
                                         if ritual_step_index < 10
                                             assign ritual_number_label = ritual_step_index | prepend: '0'
                                         else
                                             assign ritual_number_label = ritual_step_index
+                                        endif
+                                        if ritual_label != blank
+                                            assign ritual_nav_aria = 'sections.ritual-steps.accessibility.step_nav_button' | t: number: ritual_number_label, label: ritual_label
+                                        else
+                                            assign ritual_nav_aria = 'accessibility.step_control' | t: index: ritual_step_index
                                         endif
                                     -%}
                                     <button
@@ -636,7 +627,7 @@
                                         data-step-index="{{ ritual_step_idx }}"
                                         :class="navButtonClassFromEl($el)"
                                         :aria-current="navAriaCurrentFromEl($el)"
-                                        aria-label="{{ 'sections.ritual-steps.accessibility.step_nav_button' | t: number: ritual_number_label, label: ritual_label }}"
+                                        aria-label="{{ ritual_nav_aria | escape }}"
                                     >
                                         {{ ritual_number_label }}
                                     </button>

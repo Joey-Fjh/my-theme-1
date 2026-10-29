@@ -427,7 +427,7 @@
             {%- when 'collapsible_tab' -%}
                 {%- liquid
                     assign tab_page = block.settings.dynamic_content
-                    assign tab_heading = block.settings.collapsible_tab_heading | default: 'Collapsible tab'
+                    assign tab_heading = block.settings.collapsible_tab_heading
                     if block.settings.use_page_title and tab_page != blank
                         assign tab_heading = tab_page.title
                     endif
@@ -479,9 +479,18 @@
                                 size_px: icon_size,
                                 class: 'text-theme-text'
                             -%}
-                            <span class="min-w-0 {{ tab_heading_class }}">
-                                {{- tab_heading -}}
-                            </span>
+                            {%- if tab_heading != blank -%}
+                                <span class="min-w-0 {{ tab_heading_class }}">
+                                    {{- tab_heading -}}
+                                </span>
+                            {%- else -%}
+                                <span class="sr-only">
+                                    {{-
+                                        'accessibility.tab_control_item'
+                                        | t: index: forloop.index
+                                    -}}
+                                </span>
+                            {%- endif -%}
                         </span>
 
                         <span class="product-info-blocks__collapsible-toggle">

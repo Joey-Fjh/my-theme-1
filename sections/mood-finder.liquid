@@ -90,13 +90,8 @@
                                 {%- endif -%}
                                 {%- liquid
                                     assign mood_tab_eyebrow = block.settings.eyebrow
-                                    if mood_tab_eyebrow == blank
-                                        assign mood_tab_eyebrow = 'sections.mood-finder.defaults.mood_eyebrow' | t: index: forloop.index
-                                    endif
                                     assign mood_tab_phrase = block.settings.phrase
-                                    if mood_tab_phrase == blank
-                                        assign mood_tab_phrase = 'sections.mood-finder.defaults.mood_phrase' | t: index: forloop.index
-                                    endif
+                                    assign mood_tab_aria_label = 'accessibility.tab_control_item' | t: index: forloop.index
                                     assign mood_texture_alt = block.settings.image.alt
                                     if mood_texture_alt == blank
                                         assign mood_texture_alt = mood_tab_phrase | strip_html | strip | escape
@@ -116,6 +111,9 @@
                                     :tabindex="isFocusable(tabIndexFor($el)) ? 0 : -1"
                                     :aria-selected="isActive(tabIndexFor($el))"
                                     :class="{ 'is-active': isActive(tabIndexFor($el)), 'is-dimmed': !isActive(tabIndexFor($el)) }"
+                                    {% if mood_tab_eyebrow == blank and mood_tab_phrase == blank %}
+                                        aria-label="{{ mood_tab_aria_label | escape }}"
+                                    {% endif %}
                                     {{ block.shopify_attributes }}
                                 >
                                     <span class="mood-finder__tab-veil" aria-hidden="true"></span>
@@ -139,15 +137,21 @@
                                             %}
                                         </span>
                                     {%- endif -%}
-                                    <span class="mood-finder__tab-copy">
-                                        <span class="mood-finder__tab-eyebrow">
-                                            <span class="copy-xs uppercase">{{ mood_tab_eyebrow }}</span>
+                                    {%- if mood_tab_eyebrow != blank or mood_tab_phrase != blank -%}
+                                        <span class="mood-finder__tab-copy">
+                                            {%- if mood_tab_eyebrow != blank -%}
+                                                <span class="mood-finder__tab-eyebrow">
+                                                    <span class="copy-xs uppercase">{{ mood_tab_eyebrow }}</span>
+                                                </span>
+                                            {%- endif -%}
+                                            {%- if mood_tab_phrase != blank -%}
+                                                <span class="mood-finder__tab-phrase">
+                                                    {%- # lint-allow typography-tier-heading: quadrant phrase uses the heading face inside a tab button, not a heading -%}
+                                                    <span class="title-s">{{ mood_tab_phrase }}</span>
+                                                </span>
+                                            {%- endif -%}
                                         </span>
-                                        <span class="mood-finder__tab-phrase">
-                                            {%- # lint-allow typography-tier-heading: quadrant phrase uses the heading face inside a tab button, not a heading -%}
-                                            <span class="title-s">{{ mood_tab_phrase }}</span>
-                                        </span>
-                                    </span>
+                                    {%- endif -%}
                                 </button>
                             {%- endfor -%}
                         {%- else -%}
@@ -241,18 +245,9 @@
                             endif
 
                             assign mood_tag_line = block.settings.tag_line
-                            if mood_tag_line == blank and mood_is_placeholder == false
-                                assign mood_tag_line = mood_product.type
-                            endif
-                            if mood_tag_line == blank
-                                assign mood_tag_line = 'sections.mood-finder.defaults.tag_line' | t
-                            endif
 
                             assign mood_card_description = block.settings.description
-                            if mood_card_description == blank and mood_is_placeholder == false
-                                assign mood_card_description = mood_product.description | strip_html | strip | truncatewords: 28
-                            endif
-                            if mood_card_description == blank
+                            if mood_is_placeholder and mood_card_description == blank
                                 assign mood_card_description = 'sections.mood-finder.placeholder_description' | t
                             endif
 
@@ -319,13 +314,17 @@
                                             %}
                                         {%- endif -%}
                                     </div>
-                                    <p class="mood-finder__panel-tag">
-                                        <span class="copy-xs uppercase">{{ mood_tag_line }}</span>
-                                    </p>
+                                    {%- if mood_tag_line != blank -%}
+                                        <p class="mood-finder__panel-tag">
+                                            <span class="copy-xs uppercase">{{ mood_tag_line }}</span>
+                                        </p>
+                                    {%- endif -%}
                                     <h3 class="mood-finder__panel-title title-m">{{ mood_card_title }}</h3>
-                                    <p class="mood-finder__panel-description">
-                                        <span class="copy-m">{{ mood_card_description }}</span>
-                                    </p>
+                                    {%- if mood_card_description != blank -%}
+                                        <p class="mood-finder__panel-description">
+                                            <span class="copy-m">{{ mood_card_description }}</span>
+                                        </p>
+                                    {%- endif -%}
                                     {%- unless mood_is_placeholder -%}
                                         <div class="mood-finder__panel-price">
                                             {%- render 'product-card-price', product: mood_product, class: 'copy-m' -%}
@@ -383,13 +382,17 @@
                                             class: 'mood-finder__card-placeholder'
                                         %}
                                     </div>
-                                    <p class="mood-finder__panel-tag">
-                                        <span class="copy-xs uppercase">{{ mood_tag_line }}</span>
-                                    </p>
+                                    {%- if mood_tag_line != blank -%}
+                                        <p class="mood-finder__panel-tag">
+                                            <span class="copy-xs uppercase">{{ mood_tag_line }}</span>
+                                        </p>
+                                    {%- endif -%}
                                     <h3 class="mood-finder__panel-title title-m">{{ mood_card_title }}</h3>
-                                    <p class="mood-finder__panel-description">
-                                        <span class="copy-m">{{ mood_card_description }}</span>
-                                    </p>
+                                    {%- if mood_card_description != blank -%}
+                                        <p class="mood-finder__panel-description">
+                                            <span class="copy-m">{{ mood_card_description }}</span>
+                                        </p>
+                                    {%- endif -%}
                                     <div class="mood-finder__panel-footer">
                                         {%- render 'link',
                                             href: routes.all_products_collection_url,

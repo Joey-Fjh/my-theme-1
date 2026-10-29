@@ -21,18 +21,6 @@
             assign editorial_collage_heading_tiers = 'title-m desktop:title-xl'
     endcase
 
-    if section.settings.heading != blank
-        assign editorial_collage_heading_text = section.settings.heading
-    else
-        assign editorial_collage_heading_text = 'sections.editorial-collage.defaults.heading' | t
-    endif
-
-    if section.settings.text != blank
-        assign editorial_collage_body = section.settings.text
-    else
-        assign editorial_collage_body = 'sections.editorial-collage.defaults.text' | t | prepend: '<p>' | append: '</p>'
-    endif
-
     assign editorial_collage_texture = section.settings.texture_image
     assign editorial_collage_product = section.settings.product_image
     assign editorial_collage_detail = section.settings.detail_image
@@ -47,15 +35,21 @@
         class="grid grid-cols-1 gap-step-l desktop:grid-cols-[minmax(0,55fr)_minmax(0,42fr)]"
         data-motion-cascade
     >
-        <div
-            class="flex flex-col gap-step-s desktop:col-start-1 desktop:row-start-1"
-            data-motion-bound
-        >
-            <h2 class="text-theme-text">
-                <span class="{{ editorial_collage_heading_tiers }}">{{ editorial_collage_heading_text }}</span>
-            </h2>
-            <div class="rte copy-m text-theme-text">{{ editorial_collage_body }}</div>
-        </div>
+        {%- if section.settings.heading != blank or section.settings.text != blank -%}
+            <div
+                class="flex flex-col gap-step-s desktop:col-start-1 desktop:row-start-1"
+                data-motion-bound
+            >
+                {%- if section.settings.heading != blank -%}
+                    <h2 class="text-theme-text">
+                        <span class="{{ editorial_collage_heading_tiers }}">{{ section.settings.heading }}</span>
+                    </h2>
+                {%- endif -%}
+                {%- if section.settings.text != blank -%}
+                    <div class="rte copy-m text-theme-text">{{ section.settings.text }}</div>
+                {%- endif -%}
+            </div>
+        {%- endif -%}
 
         <div class="desktop:col-start-2 desktop:row-start-1" data-motion-bound>
             <div class="editorial-collage__media editorial-collage__media--texture">
@@ -222,7 +216,8 @@
         {
             "type": "text",
             "id": "heading",
-            "label": "t:sections.editorial-collage.settings.heading"
+            "label": "t:sections.editorial-collage.settings.heading",
+            "default": "t:sections.editorial-collage.defaults.heading"
         },
         {
             "type": "header",
@@ -271,7 +266,8 @@
         {
             "type": "richtext",
             "id": "text",
-            "label": "t:sections.editorial-collage.settings.text"
+            "label": "t:sections.editorial-collage.settings.text",
+            "default": "t:sections.editorial-collage.defaults.text"
         },
         {
             "type": "header",
