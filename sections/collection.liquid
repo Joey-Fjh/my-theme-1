@@ -1,19 +1,15 @@
-<div
-    data-section-id="{{ section.id }}"
-    class="collection-section full-width color-{{ section.settings.color_scheme }} surface-section"
-    style="
-        --section-padding-top: {{ section.settings.padding_top }}px;
-        --section-padding-bottom: {{ section.settings.padding_bottom }}px;
-    "
-    data-pagination-section-id="{{ section.id }}"
-    data-pagination-selectors='["[data-collection-dynamic-content]","[data-collection-drawer-shell]"]'
-    data-filters-form-id="CollectionFiltersForm-{{ section.id }}"
-    data-filters-dialog-id="collection-filters-{{ section.id }}"
-    x-data="collectionFilters()"
->
+{%- capture collection_children -%}
+    <div
+        data-pagination-section-id="{{ section.id }}"
+        data-pagination-selectors='["[data-collection-dynamic-content]","[data-collection-drawer-shell]"]'
+        data-filters-form-id="CollectionFiltersForm-{{ section.id }}"
+        data-filters-dialog-id="collection-filters-{{ section.id }}"
+        data-module-id="collection-filters"
+        x-data="collectionFilters()"
+    >
     {%- liquid
-        assign collection_heading_class = section.settings.heading_size | default: 'heading-4xl'
-        assign collection_subtitle_class = section.settings.subtitle_size | default: 'body-xl'
+        assign collection_heading_class = section.settings.heading_size | default: 'title-4xl'
+        assign collection_subtitle_class = section.settings.subtitle_size | default: 'copy-l'
         assign filters_form_id = 'CollectionFiltersForm-' | append: section.id
         assign filters_dialog_id = 'collection-filters-' | append: section.id
         assign filters_dialog_title_id = 'dialog-title-' | append: filters_dialog_id
@@ -84,7 +80,7 @@
 
             <a
                 href="{% if collection_nav_sort_by != blank %}{{ nav_collection.url }}?sort_by={{ collection_nav_sort_by | url_param_escape }}{% else %}{{ nav_collection.url }}{% endif %}"
-                class="collection__nav-link tab-nav-item tab-nav-item--underline-opacity flex shrink-0 items-start whitespace-nowrap{% if nav_collection.handle == collection.handle %} is-active{% endif %}"
+                class="collection__nav-link tab-nav-item tab-nav-item--underline-opacity{% if nav_collection.handle == collection.handle %} is-active{% endif %}"
                 {% if nav_collection.handle == collection.handle %}
                     aria-current="page"
                 {% endif %}
@@ -111,7 +107,7 @@
 
             <a
                 href="{% if collection_nav_sort_by != blank %}{{ nav_collection.url }}?sort_by={{ collection_nav_sort_by | url_param_escape }}{% else %}{{ nav_collection.url }}{% endif %}"
-                class="block py-2 body-md text-theme-text"
+                class="block py-step-2xs copy-m text-theme-text"
                 data-collection-navigation-item
                 data-collection-handle="{{ nav_collection.handle }}"
                 data-collection-navigation-base-path="{{ nav_collection.url }}"
@@ -127,7 +123,6 @@
             </a>
         {%- endfor -%}
     {%- endcapture -%}
-    <div class="layout layout-no-pb container-page pb-0">
         {%- liquid
             assign collection_hero_image = collection.image
             if collection_hero_image == blank
@@ -140,9 +135,7 @@
         -%}
         {%- comment -%} Hero: media as cover background; height from content + padding {%- endcomment -%}
         <div
-            class="relative mb-8 overflow-hidden rounded-sm color-{{ section.settings.header_color_scheme }} pc:mb-10"
-            x-data="motionRevealSection()"
-            data-motion-section
+            class="relative mb-step-l overflow-hidden rounded-sm color-{{ section.settings.header_color_scheme }} tablet:mb-step-xl"
         >
             <div class="pointer-events-none absolute inset-0" aria-hidden="true">
                 {%- if collection_hero_has_media -%}
@@ -158,9 +151,8 @@
                         fit: 'cover',
                         wrapper_class: '!absolute inset-0 h-full w-full',
                         img_class: 'h-full w-full object-cover',
-                        motion_reveal: false
                     -%}
-                    <div class="absolute inset-0 bg-black/45"></div>
+                    <div class="absolute inset-0 bg-scrim"></div>
                 {%- else -%}
                     <div class="absolute inset-0 bg-theme-bg"></div>
                 {%- endif -%}
@@ -168,11 +160,9 @@
 
             <div
                 class="
-                    relative z-10 flex flex-col items-center justify-center px-6 py-16 text-center
-                    pc:px-10 pc:py-24
+                    relative z-10 flex flex-col items-center justify-center px-step-m py-step-2xl text-center
+                    tablet:px-step-xl tablet:py-step-3xl
                 "
-                data-motion-reveal="content"
-                data-motion-critical
             >
                 <div class="mx-auto w-full max-w-3xl">
                     {%- render 'listing-page-hero-copy',
@@ -189,9 +179,7 @@
             </div>
 
             <div
-                class="absolute end-12 top-12 z-20 pc:end-6 pc:top-6"
-                data-motion-reveal="media"
-                data-motion-critical
+                class="absolute end-12 top-12 z-20 tablet:end-6 tablet:top-6"
             >
                 {%- render 'rotating-badge',
                     classes: 'relative',
@@ -205,18 +193,17 @@
                 -%}
             </div>
         </div>
-    </div>
 
-    <div class="layout layout-no-pt container-page overflow-clip!">
+        <div class="overflow-clip!">
         {%- liquid
             assign mobile_grid_class = 'grid-cols-1'
             if section.settings.mobile_card_columns == '2'
                 assign mobile_grid_class = 'grid-cols-2'
             endif
 
-            assign desktop_grid_class = 'pc:grid-cols-4'
+            assign desktop_grid_class = 'tablet:grid-cols-4'
             if section.settings.desktop_card_columns == '3'
-                assign desktop_grid_class = 'pc:grid-cols-3'
+                assign desktop_grid_class = 'tablet:grid-cols-3'
             endif
 
             assign enable_filtering = section.settings.enable_filtering
@@ -236,21 +223,25 @@
             endif
         -%}
 
-        <div data-collection-dynamic-content class="flex flex-col gap-6 pc:gap-6">
+        <div
+            data-collection-dynamic-content
+            class="flex flex-col gap-step-m tablet:gap-step-m"
+            tabindex="-1"
+        >
             {%- comment -%} Hidden form all filter/sort controls {%- endcomment -%}
-            <form id="{{ filters_form_id }}" class="hidden" @change="onChange()"></form>
+            <form id="{{ filters_form_id }}" class="hidden" @change="onChange($event)"></form>
 
             {%- comment -%}
                 Mobile-only (pc:hidden)
             {%- endcomment -%}
             {%- if enable_filtering or enable_sorting -%}
-                <div class="flex items-center justify-between gap-4 pc:hidden">
+                <div class="flex items-center justify-between gap-step-s tablet:hidden">
                     {%- if enable_filtering -%}
                         <button
                             type="button"
                             @click="$store.dialog.open($el.dataset.dialogId)"
                             data-dialog-id="{{ filters_dialog_id }}"
-                            class="collection-toolbar__action flex shrink-0 cursor-pointer items-center gap-3"
+                            class="collection-toolbar__action flex shrink-0 cursor-pointer items-center gap-step-xs"
                         >
                             {% render 'icons', icon: 'icon-filter' %}
                             <span>{{ 'collections.filter' | t }}</span>
@@ -268,16 +259,25 @@
                         -%}
                     {%- endif -%}
                 </div>
+
+                {%- if enable_filtering or enable_sorting -%}
+                    {%- render 'filters-noscript',
+                        filter_host: collection,
+                        form_action: collection.url,
+                        enable_filtering: enable_filtering,
+                        enable_sorting: enable_sorting
+                    -%}
+                {%- endif -%}
             {%- endif -%}
 
             <nav
                 aria-label="{{ 'accessibility.collection_navigation' | t }}"
-                class="collection-toolbar-nav border-b border-theme-border/20 body-3xl pc:hidden"
+                class="collection-toolbar-nav border-b border-line copy-xl tablet:hidden"
             >
-                <div class="flex min-w-0 flex-nowrap items-end gap-4 pb-3">
+                <div class="collection-toolbar-nav__list collection-toolbar-nav__list--mobile">
                     <a
                         href="{{ all_products_nav_href }}"
-                        class="collection__nav-link tab-nav-item tab-nav-item--underline-opacity flex shrink-0 items-start{% if is_all_products_collection %} is-active{% endif %}"
+                        class="collection__nav-link tab-nav-item tab-nav-item--underline-opacity{% if is_all_products_collection %} is-active{% endif %}"
                         {% if is_all_products_collection %}
                             aria-current="page"
                         {% endif %}
@@ -295,7 +295,7 @@
                     {%- unless is_all_products_collection -%}
                         <a
                             href="{{ current_collection_nav_href }}"
-                            class="collection__nav-link tab-nav-item tab-nav-item--underline-opacity is-active flex min-w-0 flex-1 items-start"
+                            class="collection__nav-link collection__nav-link--grow tab-nav-item tab-nav-item--underline-opacity is-active"
                             aria-current="page"
                         >
                             <span class="flex min-w-0 items-start">
@@ -311,7 +311,7 @@
 
                     <button
                         type="button"
-                        class="collection-toolbar__action collection__nav-more shrink-0 cursor-pointer"
+                        class="collection-toolbar__action collection__nav-more ms-auto shrink-0 cursor-pointer"
                         data-dialog-id="{{ collection_nav_dialog_id | escape }}"
                         @click="$store.dialog.open($el.dataset.dialogId)"
                         aria-haspopup="dialog"
@@ -327,8 +327,8 @@
             {%- endcomment -%}
             {%- if is_horizontal_filter -%}
                 {%- if enable_filtering or enable_sorting -%}
-                    <div class="hidden pc:flex pc:flex-col pc:gap-4">
-                        <div class="flex items-center justify-between gap-6">
+                    <div class="hidden tablet:flex tablet:flex-col tablet:gap-step-s">
+                        <div class="flex items-center justify-between gap-step-m">
                             {%- if enable_filtering -%}
                                 {%- render 'filter-horizontal',
                                     filter_source: collection,
@@ -361,14 +361,15 @@
             <div
                 class="
                     {% if enable_filtering and is_vertical_filter %}
-                        pc:grid pc:grid-cols-[30rem_minmax(0,1fr)] pc:gap-10
+                        tablet:grid tablet:grid-cols-[30rem_minmax(0,1fr)] tablet:gap-step-xl
                     {% endif %}
                 "
             >
                 {%- if enable_filtering and is_vertical_filter -%}
-                    <aside class="hidden pc:block">
+                    <aside class="hidden tablet:block">
                         <div
-                            class="sticky-viewport-panel border-e border-theme-border/20 pe-6"
+                            class="sticky-viewport-panel border-e border-line pe-step-m"
+                            data-module-id="sticky-viewport-panel"
                             x-data="stickyViewportPanel"
                         >
                             {%- render 'filter-vertical',
@@ -383,47 +384,48 @@
 
                 <div class="min-w-0">
                     {%- liquid
-                        assign toolbar_outer_class = 'w-full pc:grid pc:grid-cols-[max-content_minmax(0,1fr)_max-content_max-content] pc:items-end pc:gap-12'
-                        assign toolbar_nav_class = 'body-3xl gap-6 pc:gap-12 max-pc:border-b max-pc:border-theme-border/20'
+                        assign toolbar_outer_class = 'w-full tablet:grid tablet:grid-cols-[max-content_minmax(0,1fr)_max-content_max-content] tablet:items-end tablet:gap-step-xl'
+                        assign toolbar_nav_class = 'copy-xl gap-step-m tablet:gap-step-xl max-tablet:border-b max-tablet:border-line'
                         if is_horizontal_filter == false
-                            assign toolbar_outer_class = toolbar_outer_class | append: ' pc:border-b pc:border-theme-border/20'
+                            assign toolbar_outer_class = toolbar_outer_class | append: ' tablet:border-b tablet:border-line'
                         else
-                            assign toolbar_nav_class = toolbar_nav_class | append: ' pc:border-0'
+                            assign toolbar_nav_class = toolbar_nav_class | append: ' tablet:border-0'
                         endif
                     -%}
 
-                    <div class="collection-toolbar flex w-full flex-col items-start gap-6 pc:gap-6">
+                    <div class="collection-toolbar">
                         <div class="{{ toolbar_outer_class }}">
                             <div class="shrink-0">
                                 {%- if enable_filtering and is_drawer_filter -%}
-                                    <div class="hidden pc:flex pc:items-center pc:pb-3">
+                                    <div class="hidden tablet:flex tablet:items-center tablet:pb-step-xs">
                                         <button
                                             type="button"
                                             @click="$store.dialog.open($el.dataset.dialogId)"
                                             data-dialog-id="{{ filters_dialog_id }}"
-                                            class="collection-toolbar__action flex shrink-0 cursor-pointer items-center gap-2.5"
+                                            class="collection-toolbar__action flex shrink-0 cursor-pointer items-center gap-step-xs"
                                         >
                                             {% render 'icons', icon: 'icon-filter' %}
                                             <span>{{ 'collections.filter' | t }}</span>
                                         </button>
                                     </div>
                                 {%- else -%}
-                                    <div class="hidden pc:block"></div>
+                                    <div class="hidden tablet:block"></div>
                                 {%- endif -%}
                             </div>
 
                             <div
                                 class="no-scrollbar min-w-0 overflow-x-auto overscroll-x-contain"
+                                data-module-id="drag-scroll"
                                 x-data="dragScroll({ axis: 'x' })"
                             >
                                 <nav
                                     aria-label="{{ 'accessibility.collection_navigation' | t }}"
-                                    class="collection-toolbar-nav hidden min-w-max pc:block"
+                                    class="collection-toolbar-nav hidden min-w-max tablet:block"
                                 >
-                                    <div class="flex min-w-max flex-nowrap items-end pt-2 pb-3 {{ toolbar_nav_class }}">
+                                    <div class="collection-toolbar-nav__list {{ toolbar_nav_class }} sup-room">
                                         <a
                                             href="{{ all_products_nav_href }}"
-                                            class="collection__nav-link tab-nav-item tab-nav-item--underline-opacity flex shrink-0 items-start whitespace-nowrap{% if is_all_products_collection %} is-active{% endif %}"
+                                            class="collection__nav-link tab-nav-item tab-nav-item--underline-opacity{% if is_all_products_collection %} is-active{% endif %}"
                                             {% if is_all_products_collection %}
                                                 aria-current="page"
                                             {% endif %}
@@ -446,7 +448,7 @@
                                 </nav>
                             </div>
 
-                            <div class="hidden shrink-0 pc:flex pc:items-center pc:pb-3">
+                            <div class="hidden shrink-0 tablet:flex tablet:items-center tablet:pb-step-xs">
                                 <button
                                     type="button"
                                     class="collection-toolbar__action collection__nav-more tab-nav-item tab-nav-item--underline-opacity shrink-0 cursor-pointer whitespace-nowrap{% unless is_all_products_collection or current_in_first_n %} is-active{% endunless %}"
@@ -462,7 +464,7 @@
                             <div class="shrink-0">
                                 {%- if enable_sorting and is_horizontal_filter == false -%}
                                     {%- capture sort_id_prefix_desktop_v -%}{{ section.id }}-desktop-v{%- endcapture -%}
-                                    <div class="hidden pc:flex pc:items-center pc:justify-end pc:pb-3">
+                                    <div class="hidden tablet:flex tablet:items-center tablet:justify-end tablet:pb-step-xs">
                                         {%- render 'sort-by-dropdown',
                                             results: collection,
                                             form_id: filters_form_id,
@@ -471,7 +473,7 @@
                                         -%}
                                     </div>
                                 {%- else -%}
-                                    <div class="hidden pc:block"></div>
+                                    <div class="hidden tablet:block"></div>
                                 {%- endif -%}
                             </div>
                         </div>
@@ -484,7 +486,8 @@
                             -%}
                             {% paginate collection.products by section.settings.products_per_page %}
                                 <div
-                                    class="grid {{ mobile_grid_class }} {{ desktop_grid_class }} gap-x-4 gap-y-8 pb-10"
+                                    class="grid {{ mobile_grid_class }} {{ desktop_grid_class }} gap-x-step-s gap-y-step-l pb-step-xl"
+                                    data-module-id="motion-reveal"
                                     x-data="motionRevealSection()"
                                     data-motion-section
                                     data-motion-cascade
@@ -517,14 +520,14 @@
                                             </div>
                                         {%- endif -%}
                                     {%- else -%}
-                                        <div class="col-span-full py-20 text-center body-lg">
+                                        <div class="col-span-full py-step-3xl text-center copy-l">
                                             {{ 'collections.no_products' | t }}
                                         </div>
                                     {%- endfor -%}
                                 </div>
 
                                 <div
-                                    class="collection-pagination-wrapper mt-8"
+                                    class="collection-pagination-wrapper mt-step-l"
                                     @click="onPaginate($event)"
                                 >
                                     {% render 'pagination', paginate_obj: paginate %}
@@ -535,7 +538,7 @@
                 </div>
             </div>
         </div>
-    </div>
+        </div>
 
     {%- comment -%} Filters drawer dialog: only when enable_filtering {%- endcomment -%}
     {%- if enable_filtering -%}
@@ -556,7 +559,7 @@
                 type: 'drawer',
                 layer: 'drawer',
                 position: 'left',
-                top_class: 'top-[var(--announcement-bar-height)] pc:top-0',
+                top_class: 'top-[var(--announcement-bar-height)] tablet:top-0',
                 color_scheme: section.settings.color_scheme,
                 drawer_motion_sheet: true,
                 mobile_layout: 'inset',
@@ -578,6 +581,7 @@
             data-load-size="{{ collection_nav_load_more_size }}"
             data-initial-source-offset="{{ collection_nav_initial_source_offset }}"
             data-initial-has-more="{{ collection_nav_initial_has_more }}"
+            data-module-id="collection-navigation-catalog"
             x-data="collectionNavigationCatalog()"
             class="flex h-full min-h-0 flex-col"
         >
@@ -587,19 +591,19 @@
                 </h2>
             </div>
 
-            <div class="ui-dialog-overlay-body flex flex-col gap-6 overflow-hidden">
+            <div class="ui-dialog-overlay-body flex flex-col gap-step-m overflow-hidden">
                 <nav
                     aria-label="{{ 'accessibility.collection_navigation' | t }}"
-                    class="flex min-h-0 flex-1 flex-col gap-6"
+                    class="flex min-h-0 flex-1 flex-col gap-step-m"
                 >
                     {%- unless is_all_products_collection or current_in_first_n -%}
                         <div class="shrink-0">
-                            <p class="mb-2 body-sm tracking-wide uppercase opacity-60">
+                            <p class="mb-step-2xs copy-s typo-subtitle uppercase opacity-60">
                                 {{ 'collections.navigation.current_collection' | t }}
                             </p>
                             <a
                                 href="{{ current_collection_nav_href }}"
-                                class="block py-2 body-lg text-theme-text"
+                                class="block py-step-2xs copy-l text-theme-text"
                                 data-collection-navigation-item
                                 data-collection-handle="{{ collection.handle }}"
                                 data-collection-navigation-base-path="{{ collection.url }}"
@@ -614,14 +618,14 @@
                         </div>
                     {%- endunless -%}
 
-                    <div class="flex min-h-0 flex-1 flex-col gap-3{% unless is_all_products_collection or current_in_first_n %} border-t border-theme-border/20 pt-5{% endunless %}">
-                        <h3 class="shrink-0 body-sm tracking-wide uppercase opacity-60">
+                    <div class="flex min-h-0 flex-1 flex-col gap-step-xs{% unless is_all_products_collection or current_in_first_n %} border-t border-line pt-step-m{% endunless %}">
+                        <p class="shrink-0 copy-s typo-subtitle uppercase opacity-60" role="heading" aria-level="3">
                             {{ 'collections.navigation.all_collections' | t }}
-                        </h3>
-                        <div class="no-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-y-contain pe-1 pt-2">
+                        </p>
+                        <div class="no-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-y-contain pe-step-3xs sup-room">
                             <div
                                 data-collection-navigation-list
-                                class="grid grid-cols-1 gap-x-8 gap-y-1 pc:grid-cols-2"
+                                class="grid grid-cols-1 gap-x-step-l gap-y-step-3xs tablet:grid-cols-2"
                             >
                                 {{ collection_drawer_initial_links }}
                             </div>
@@ -631,13 +635,13 @@
             </div>
 
             <div
-                class="ui-dialog-overlay-footer flex flex-col gap-3"
+                class="ui-dialog-overlay-footer flex flex-col gap-step-xs"
                 x-show="!done || error || loading"
             >
                 <p
                     x-show="error"
                     x-cloak
-                    class="body-sm text-theme-text"
+                    class="copy-s text-theme-text"
                     role="status"
                 >
                     {{ 'collections.navigation.error' | t }}
@@ -646,7 +650,7 @@
                 <p
                     x-show="loading"
                     x-cloak
-                    class="body-sm opacity-80"
+                    class="copy-s opacity-80"
                     role="status"
                     aria-live="polite"
                 >
@@ -655,7 +659,7 @@
 
                 <button
                     type="button"
-                    class="btn-primary w-full cursor-pointer surface-inverted hover:opacity-90"
+                    class="btn-primary w-full cursor-pointer"
                     x-show="error"
                     x-cloak
                     @click="retry()"
@@ -665,7 +669,7 @@
 
                 <button
                     type="button"
-                    class="btn-primary w-full cursor-pointer surface-inverted hover:opacity-90"
+                    class="btn-primary w-full cursor-pointer"
                     x-show="!done && !error"
                     x-cloak
                     :disabled="loading"
@@ -685,7 +689,7 @@
         type: 'drawer',
         layer: 'drawer',
         position: 'right',
-        top_class: 'top-[var(--announcement-bar-height)] pc:top-0',
+        top_class: 'top-[var(--announcement-bar-height)] tablet:top-0',
         color_scheme: section.settings.color_scheme,
         drawer_motion_sheet: true,
         mobile_layout: 'inset',
@@ -694,7 +698,17 @@
         close_label: collection_nav_close_label,
         content: collection_nav_drawer_content
     -%}
-</div>
+    </div>
+{%- endcapture -%}
+
+{% render 'section-frame',
+    section: section,
+    section_class: 'collection-section',
+    width: 'page',
+    height_kind: 'content',
+    clip: false,
+    children: collection_children
+%}
 
 {% stylesheet %}
     .price-range-thumb {
@@ -729,7 +743,7 @@
         appearance: none;
         width: 1.25rem;
         height: 1.25rem;
-        border: 1.5px solid color-mix(in srgb, rgb(var(--color-foreground)) 30%, transparent);
+        border: 1.5px solid var(--color-line-strong);
         border-radius: 0.2rem;
         flex-shrink: 0;
         cursor: pointer;
@@ -744,6 +758,57 @@
         background-size: 100% 100%;
         background-position: center;
         background-repeat: no-repeat;
+    }
+
+    /* body-lg on the sort options; moved from tailwind.components.css (6-C6) so it still beats the sort-by-dropdown owner rule. */
+    .collection-section .sort-by-dropdown__option {
+        line-height: var(--font-body-line-height);
+        font-size: calc(var(--font-body-scale) * var(--type-step-1));
+    }
+
+    :where(.collection-section .collection-toolbar) {
+        display: flex;
+        width: 100%;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-step-m);
+    }
+
+    :where(.collection-section .collection-toolbar [data-module-id='drag-scroll']) {
+        box-sizing: border-box;
+        margin-inline: calc(-1 * var(--page-inset));
+        padding-inline: var(--page-inset);
+        scroll-padding-inline: var(--page-inset);
+    }
+
+    :where(.collection-section .collection-toolbar-nav__list) {
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: flex-end;
+        padding-bottom: var(--spacing-step-xs);
+    }
+
+    :where(.collection-section .collection-toolbar-nav__list--mobile) {
+        min-width: 0;
+        gap: var(--spacing-step-s);
+    }
+
+    :where(
+        .collection-section .collection-toolbar-nav__list:not(.collection-toolbar-nav__list--mobile)
+    ) {
+        min-width: max-content;
+    }
+
+    :where(.collection-section .collection__nav-link) {
+        display: flex;
+        flex-shrink: 0;
+        align-items: flex-start;
+        white-space: nowrap;
+    }
+
+    :where(.collection-section .collection__nav-link--grow) {
+        flex: 1 1 auto;
+        min-width: 0;
     }
 {% endstylesheet %}
 
@@ -778,47 +843,39 @@
             "label": "t:sections.slides-show.settings.heading_size",
             "options": [
                 {
-                    "value": "heading-4xl",
-                    "label": "t:sections.slides-show.options.heading_4xl"
+                    "value": "title-4xl",
+                    "label": "t:settings.type_size.title_4xl"
                 },
                 {
-                    "value": "heading-3xl",
-                    "label": "t:sections.slides-show.options.heading_3xl"
+                    "value": "title-3xl",
+                    "label": "t:settings.type_size.title_3xl"
                 },
                 {
-                    "value": "heading-2xl",
-                    "label": "t:sections.slides-show.options.heading_2xl"
+                    "value": "title-2xl",
+                    "label": "t:settings.type_size.title_2xl"
                 },
                 {
-                    "value": "heading-xl",
-                    "label": "t:sections.slides-show.options.heading_xl"
+                    "value": "title-xl",
+                    "label": "t:settings.type_size.title_xl"
                 },
                 {
-                    "value": "heading-h1",
-                    "label": "t:sections.slides-show.options.heading_h1"
+                    "value": "title-l",
+                    "label": "t:settings.type_size.title_l"
                 },
                 {
-                    "value": "heading-h2",
-                    "label": "t:sections.slides-show.options.heading_h2"
+                    "value": "title-m",
+                    "label": "t:settings.type_size.title_m"
                 },
                 {
-                    "value": "heading-h3",
-                    "label": "t:sections.slides-show.options.heading_h3"
+                    "value": "title-s",
+                    "label": "t:settings.type_size.title_s"
                 },
                 {
-                    "value": "heading-h4",
-                    "label": "t:sections.slides-show.options.heading_h4"
-                },
-                {
-                    "value": "heading-h5",
-                    "label": "t:sections.slides-show.options.heading_h5"
-                },
-                {
-                    "value": "heading-h6",
-                    "label": "t:sections.slides-show.options.heading_h6"
+                    "value": "title-xs",
+                    "label": "t:settings.type_size.title_xs"
                 }
             ],
-            "default": "heading-4xl"
+            "default": "title-4xl"
         },
         {
             "type": "inline_richtext",
@@ -848,35 +905,23 @@
             "label": "t:sections.scroll-categories.settings.subtitle_size",
             "options": [
                 {
-                    "value": "body-3xl",
-                    "label": "t:sections.scroll-categories.options.body_3xl"
+                    "value": "copy-xl",
+                    "label": "t:settings.type_size.copy_xl"
                 },
                 {
-                    "value": "body-2xl",
-                    "label": "t:sections.scroll-categories.options.body_2xl"
+                    "value": "copy-l",
+                    "label": "t:settings.type_size.copy_l"
                 },
                 {
-                    "value": "body-xl",
-                    "label": "t:sections.scroll-categories.options.body_xl"
+                    "value": "copy-m",
+                    "label": "t:settings.type_size.copy_m"
                 },
                 {
-                    "value": "body-lg",
-                    "label": "t:sections.scroll-categories.options.body_lg"
-                },
-                {
-                    "value": "body-md",
-                    "label": "t:sections.scroll-categories.options.body_md"
-                },
-                {
-                    "value": "body-sm",
-                    "label": "t:sections.scroll-categories.options.body_sm"
-                },
-                {
-                    "value": "body-xs",
-                    "label": "t:sections.scroll-categories.options.body_xs"
+                    "value": "copy-s",
+                    "label": "t:settings.type_size.copy_s"
                 }
             ],
-            "default": "body-xl"
+            "default": "copy-l"
         },
         {
             "type": "text",

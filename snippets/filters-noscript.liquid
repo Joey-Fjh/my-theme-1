@@ -1,0 +1,133 @@
+{% doc %}
+    Progressive-enhancement fallback for collection and search filtering and sorting.
+
+    @param {object} filter_host - Collection or search object exposing `filters` and sort fields.
+    @param {string} form_action - GET form action URL.
+    @param {boolean} [enable_filtering] - Render filter controls when true.
+    @param {boolean} [enable_sorting] - Render sort `<select>` when true.
+    @param {string} [hidden_fields_html] - Optional hidden inputs (search query, type, etc.).
+{% enddoc %}
+
+{%- liquid
+    assign ns_enable_filtering = false
+    if enable_filtering == true or enable_filtering == 'true'
+        assign ns_enable_filtering = true
+    endif
+    assign ns_enable_sorting = false
+    if enable_sorting == true or enable_sorting == 'true'
+        assign ns_enable_sorting = true
+    endif
+    assign ns_sort_options = filter_host.sort_options
+    assign ns_current_sort = filter_host.sort_by | default: filter_host.default_sort_by
+-%}
+
+<noscript>
+    <div class="filters-noscript mt-step-m flex flex-col gap-step-m border border-line p-step-m copy-s">
+        <h2 class="title-s">{{ 'collections.filters.filters' | t }}</h2>
+        <form
+            action="{{ form_action }}"
+            method="get"
+            class="flex flex-col gap-step-m"
+        >
+            {{ hidden_fields_html }}
+
+            {%- if ns_enable_filtering and filter_host.filters.size > 0 -%}
+                {%- for filter in filter_host.filters -%}
+                    <fieldset class="flex flex-col gap-step-xs">
+                        <legend class="copy-m">{{ filter.label | escape }}</legend>
+                        {%- case filter.type -%}
+                            {%- when 'boolean' -%}
+                                {%- for value in filter.values -%}
+                                    <label class="flex items-center gap-step-xs">
+                                        <input
+                                            type="checkbox"
+                                            name="{{ value.param_name }}"
+                                            value="{{ value.value }}"
+                                            {% if value.active %}
+                                                checked
+                                            {% endif %}
+                                        >
+                                        <span>{{ value.label | escape }}</span>
+                                    </label>
+                                {%- endfor -%}
+                            {%- when 'list' -%}
+                                {%- for value in filter.values -%}
+                                    {%- if value.count > 0 or value.active -%}
+                                        <label class="flex items-center gap-step-xs">
+                                            <input
+                                                type="checkbox"
+                                                name="{{ value.param_name }}"
+                                                value="{{ value.value }}"
+                                                {% if value.active %}
+                                                    checked
+                                                {% endif %}
+                                            >
+                                            <span>
+                                                {{- value.label | escape }} (
+                                                {{- value.count -}}
+                                                )</span
+                                            >
+                                        </label>
+                                    {%- endif -%}
+                                {%- endfor -%}
+                            {%- when 'price_range' -%}
+                                <div class="flex flex-wrap items-center gap-step-xs">
+                                    <label class="flex items-center gap-step-2xs">
+                                        <span class="sr-only">
+                                            {{- 'collections.filters.min' | t -}}
+                                        </span>
+                                        <input
+                                            type="number"
+                                            inputmode="decimal"
+                                            min="0"
+                                            name="{{ filter.min_value.param_name }}"
+                                            value="{{ filter.min_value.value | default: '' }}"
+                                            placeholder="{{ 'collections.filters.from' | t }}"
+                                            class="field w-24"
+                                        >
+                                    </label>
+                                    <span aria-hidden="true">–</span>
+                                    <label class="flex items-center gap-step-2xs">
+                                        <span class="sr-only">
+                                            {{- 'collections.filters.max' | t -}}
+                                        </span>
+                                        <input
+                                            type="number"
+                                            inputmode="decimal"
+                                            min="0"
+                                            name="{{ filter.max_value.param_name }}"
+                                            value="{{ filter.max_value.value | default: '' }}"
+                                            placeholder="{{ 'collections.filters.to' | t }}"
+                                            class="field w-24"
+                                        >
+                                    </label>
+                                </div>
+                        {%- endcase -%}
+                    </fieldset>
+                {%- endfor -%}
+            {%- endif -%}
+
+            {%- if ns_enable_sorting and ns_sort_options.size > 0 -%}
+                <label class="flex flex-col gap-step-2xs">
+                    <span>{{ 'collections.sort_by' | t }}</span>
+                    <select name="sort_by" class="field">
+                        {%- for option in ns_sort_options -%}
+                            <option
+                                value="{{ option.value | escape }}"
+                                {% if option.value == ns_current_sort %}
+                                    selected
+                                {% endif %}
+                            >
+                                {{ option.name | escape }}
+                            </option>
+                        {%- endfor -%}
+                    </select>
+                </label>
+            {%- endif -%}
+
+            <button type="submit" class="btn-primary btn w-full max-w-xs">
+                {{ 'collections.filters.view_result' | t }}
+            </button>
+        </form>
+    </div>
+</noscript>

@@ -14,6 +14,8 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
 
             - uses: actions/setup-node@v4
               with:
@@ -21,7 +23,12 @@ jobs:
                   cache: npm
 
             - run: npm ci
+            - run: npm run lint:merchant
+            - run: npm run build:tw
+            - run: git diff --exit-code -- assets/tailwind.output.css
             - run: npm run lint
+            - run: npm run test:validators
+            - run: npm run doctor:agent
 
     theme-check:
         name: Theme Check
@@ -33,3 +40,6 @@ jobs:
               uses: shopify/theme-check-action@v2
               with:
                   token: ${{ github.token }}
+                  # Shopify CLI 5.0.0 changed the JSON output the action parses ("e.filter is not a function");
+                  # pinned to the last 4.x until the action supports 5.x.
+                  version: '4.9.5'

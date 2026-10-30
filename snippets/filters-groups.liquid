@@ -19,13 +19,13 @@
 {%- assign wrapper_class = wrapper_class | default: '' -%}
 {%- assign show_more_limit = show_more_limit | default: 6 -%}
 {%- assign show_more_step = show_more_step | default: show_more_limit -%}
-{%- assign divider_class = divider_class | default: 'border-theme-border/20' -%}
-{%- assign muted_text_class = muted_text_class | default: 'body-lg' -%}
-{%- assign filter_label_class = filter_label_class | default: 'body-lg' -%}
-{%- assign count_text_class = count_text_class | default: 'body-lg' -%}
+{%- assign divider_class = divider_class | default: 'border-line' -%}
+{%- assign muted_text_class = muted_text_class | default: 'copy-l' -%}
+{%- assign filter_label_class = filter_label_class | default: 'copy-l' -%}
+{%- assign count_text_class = count_text_class | default: 'copy-l' -%}
 {%- assign filters_form_id = form_id | default: 'CollectionFiltersForm' -%}
 
-<div class="{{ wrapper_class }} flex flex-col gap-4">
+<div class="{{ wrapper_class }} flex flex-col gap-step-s">
     {% render 'active-filters', filter_source: filter_host, layout: active_layout %}
 
     {%- for filter in filter_host.filters -%}
@@ -46,16 +46,17 @@
             -%}
         {%- endcapture -%}
 
+        {%- capture filter_accordion_id_prefix -%}{{ scope_id }}-filter-{{ forloop.index0 }}{%- endcapture -%}
         {% render 'accordion',
             item_title: filter.label,
             item_content: filter_content,
             initial_active: 0,
-            id_prefix: scope_id,
+            id_prefix: filter_accordion_id_prefix,
             wrapper_class: 'flex flex-col gap-0',
             item_class: 'py-0',
             title_active_class: 'text-theme-text',
             title_inactive_class: 'text-theme-text',
-            content_class: 'pb-4 text-theme-text'
+            content_class: 'pb-step-s text-theme-text'
         %}
     {%- endfor -%}
 </div>

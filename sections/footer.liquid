@@ -1,8 +1,6 @@
 <footer
     data-section-id="{{ section.id }}"
     class="footer-section full-width relative color-{{ section.settings.color_scheme }}"
-    x-data="motionRevealSection()"
-    data-motion-section
 >
     {%- if section.settings.bg_image -%}
         {% render 'image',
@@ -14,22 +12,24 @@
     {%- endif -%}
 
     <div class="container-page">
-        <div class="relative overflow-hidden p-12">
+        <div class="relative overflow-hidden p-step-xl">
             {% comment %} Top Content Area {% endcomment %}
-            <div class="z-10 flex flex-col gap-12 pc:mb-24 pc:flex-row pc:justify-between">
+            <div class="z-10 flex flex-col gap-step-xl tablet:mb-step-3xl tablet:flex-row tablet:justify-between">
                 {%- comment -%} Navigation Link Columns {%- endcomment -%}
-                <div data-motion-bound>
+                <div>
                     <div
-                        class="grid grid-cols-3 gap-x-4 gap-y-10 pc:flex pc:gap-20 fw:gap-28"
-                        data-motion-reveal="content"
+                        class="grid grid-cols-3 gap-x-step-s gap-y-step-xl tablet:flex tablet:gap-step-3xl wide:gap-step-4xl"
                     >
                         {% for block in section.blocks %}
                             {% if block.type == 'link_column' %}
                                 <div {{ block.shopify_attributes }}>
-                                    <h2 class="mb-6 heading-h2 pc:mb-10">
-                                        {{ block.settings.heading }}
-                                    </h2>
-                                    <ul class="flex flex-col gap-3">
+                                    {% render 'heading',
+                                        level: '2',
+                                        tier: 'title-m',
+                                        class: 'mb-step-m tablet:mb-step-xl',
+                                        content: block.settings.heading
+                                    %}
+                                    <ul class="flex flex-col gap-step-xs">
                                         {% assign links_menu = block.settings.menu %}
                                         {% if links_menu != blank and links_menu.links != blank %}
                                             {% for link in links_menu.links %}
@@ -61,24 +61,28 @@
                 </div>
 
                 {%- comment -%} Right Content Block {%- endcomment -%}
-                <div class="flex max-w-3xl flex-col gap-8 pc:gap-12">
+                <div class="flex max-w-3xl flex-col gap-step-l tablet:gap-step-xl">
                     {% if section.settings.content_heading != blank
                         or section.settings.content_text != blank
                     %}
-                        <div data-motion-copy-bound>
+                        <div>
                             <div
-                                class="flex flex-col gap-8 pc:gap-12"
-                                data-motion-copy
+                                class="flex flex-col gap-step-l tablet:gap-step-xl"
                             >
                                 {% if section.settings.content_heading != blank %}
-                                    <h3 class="heading-h2">
-                                        {{ section.settings.content_heading }}
-                                    </h3>
+                                    {% render 'heading',
+                                        level: '3',
+                                        tier: 'title-m',
+                                        content: section.settings.content_heading
+                                    %}
                                 {% endif %}
                                 {% if section.settings.content_text != blank %}
-                                    <div class="rte rte--compact body-3xl">
-                                        {{ section.settings.content_text }}
-                                    </div>
+                                    {% render 'text',
+                                        element: 'div',
+                                        rte: true,
+                                        tier: 'copy-xl',
+                                        content: section.settings.content_text
+                                    %}
                                 {% endif %}
                             </div>
                         </div>
@@ -86,20 +90,20 @@
                     {% if section.settings.content_link != blank %}
                         {%- capture link_content -%}
                             <span>{{ section.settings.content_link_text }}</span>
-                            {% render 'icons', icon: 'icon-arrow2', class: 'ms-3' %}
+                            {% render 'icons', icon: 'icon-arrow2', class: 'ms-step-xs' %}
                         {%- endcapture -%}
 
                         {%- render 'link',
                             href: section.settings.content_link,
                             content: link_content,
-                            class: 'body-xl',
+                            class: 'copy-l',
                             variant: 'underline'
                         -%}
                     {% endif %}
                     {% if section.settings.enable_follow_on_shop
                         and shop.features.follow_on_shop?
                     %}
-                        <div class="flex flex-col gap-3">
+                        <div class="flex flex-col gap-step-xs">
                             <p>{{ 'footer.follow_on_shop' | t }}</p>
                             <div>
                                 {{ shop | login_button: action: 'follow' }}
@@ -111,8 +115,7 @@
 
             {%- comment -%} Large Brand Name with Brush Texture {%- endcomment -%}
             <div
-                class="z-0 mb-8 select-none pc:mb-12"
-                data-motion-reveal="content"
+                class="z-0 mb-step-l select-none tablet:mb-step-xl"
             >
                 {%- comment -%} Brush stroke decoration {%- endcomment -%}
                 {% if section.settings.brush_image != blank %}
@@ -123,8 +126,7 @@
                             alt: section.settings.brush_image.alt,
                             width: section.settings.brush_image.width,
                             mode: 'natural',
-                            fit: 'contain',
-                            motion_reveal: false
+                            fit: 'contain'
                         %}
                     </div>
                 {% endif %}
@@ -141,7 +143,7 @@
 
             {%- comment -%} Bottom Bar {%- endcomment -%}
             <div
-                class="z-10 grid grid-cols-2 gap-y-8 border-t border-theme-border/50 pt-6 pc:flex pc:flex-row pc:items-center pc:justify-between"
+                class="z-10 grid grid-cols-2 gap-y-step-l border-t border-line-strong pt-step-m tablet:flex tablet:flex-row tablet:items-center tablet:justify-between"
             >
                 {%- liquid
                     assign footer_location = section.settings.location
@@ -149,10 +151,10 @@
                         assign footer_location = 'footer.default_location' | t
                     endif
                 -%}
-                <span class="col-span-1 pc:order-first">
+                <span class="col-span-1 tablet:order-first">
                     {{ footer_location }}
                 </span>
-                <span class="col-span-1 text-end pc:order-0 pc:text-center">
+                <span class="col-span-1 text-end tablet:order-0 tablet:text-center">
                     {%- liquid
                         assign copyright_brand = section.settings.brand_name | strip_html
                         if copyright_brand == blank
@@ -166,8 +168,10 @@
                 </span>
                 <button
                     type="button"
-                    @click="window.__Theme__.Utils.scrollToTop()"
-                    class="footer__back-to-top col-span-2 pc:order-last pc:col-span-1"
+                    data-module-id="back-to-top"
+                    x-data="backToTop"
+                    @click="scrollToTop()"
+                    class="footer__back-to-top"
                 >
                     <span>{{ 'footer.back_to_top' | t }}</span>
                     {%- render 'icons', icon: 'icon-chevron-up' -%}
@@ -184,12 +188,12 @@
         align-items: center;
         justify-content: center;
         gap: 0.25rem;
-        opacity: 0.5;
-        transition: opacity var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease);
+        color: var(--color-subtle);
+        transition: color var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease);
     }
 
     .footer__back-to-top:hover {
-        opacity: 1;
+        color: rgb(var(--color-foreground));
     }
 
     .footer__back-to-top:focus-visible {
@@ -198,9 +202,19 @@
         outline-offset: var(--focus-ring-offset);
     }
 
-    @media (min-width: 48rem) {
+    @media (width >= 48rem) {
         .footer__back-to-top {
             justify-content: flex-end;
+        }
+    }
+
+    :where(.footer__back-to-top) {
+        grid-column: span 2 / span 2;
+        @media (width >= 48rem) {
+            order: 9999;
+        }
+        @media (width >= 48rem) {
+            grid-column: span 1 / span 1;
         }
     }
 {% endstylesheet %}

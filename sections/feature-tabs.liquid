@@ -1,0 +1,895 @@
+{%- liquid
+    assign feature_tabs_heading_class = section.settings.heading_size | default: 'title-xl'
+    case feature_tabs_heading_class
+        when 'title-4xl'
+            assign feature_tabs_heading_tiers = 'title-l desktop:title-4xl'
+        when 'title-3xl'
+            assign feature_tabs_heading_tiers = 'title-l desktop:title-3xl'
+        when 'title-2xl'
+            assign feature_tabs_heading_tiers = 'title-m desktop:title-2xl'
+        when 'title-xl'
+            assign feature_tabs_heading_tiers = 'title-m desktop:title-xl'
+        when 'title-l'
+            assign feature_tabs_heading_tiers = 'title-m desktop:title-l'
+        when 'title-m'
+            assign feature_tabs_heading_tiers = 'title-s desktop:title-m'
+        when 'title-s'
+            assign feature_tabs_heading_tiers = 'title-s desktop:title-s'
+        when 'title-xs'
+            assign feature_tabs_heading_tiers = 'title-xs desktop:title-xs'
+        else
+            assign feature_tabs_heading_tiers = 'title-m desktop:title-2xl'
+    endcase
+
+    assign feature_tabs_item_count = 0
+    for feature_tabs_block in section.blocks
+        if feature_tabs_block.type == 'item'
+            assign feature_tabs_item_count = feature_tabs_item_count | plus: 1
+        endif
+    endfor
+    if feature_tabs_item_count == 0
+        assign feature_tabs_item_count = 4
+    endif
+
+    if feature_tabs_item_count < 10
+        assign feature_tabs_total_label = feature_tabs_item_count | prepend: '0'
+    else
+        assign feature_tabs_total_label = feature_tabs_item_count
+    endif
+
+    assign feature_tabs_decorative = section.settings.decorative_image
+
+    assign feature_tabs_section_image = section.settings.image
+    if feature_tabs_section_image != blank
+        assign feature_tabs_image_aspect_ratio = feature_tabs_section_image.aspect_ratio
+    else
+        assign feature_tabs_image_aspect_ratio = 1.3333333333
+    endif
+
+    if feature_tabs_section_image != blank
+        assign feature_tabs_image_alt = feature_tabs_section_image.alt
+    endif
+    if feature_tabs_image_alt == blank
+        assign feature_tabs_image_alt = 'sections.feature-tabs.defaults.image_alt' | t
+    endif
+    assign feature_tabs_image_alt = feature_tabs_image_alt | escape
+-%}
+
+{%- assign feature_tabs_root_attrs = 'data-component-kind="section" data-component-type="feature-tabs" data-component-id="'
+    | append: section.id
+    | append: '"'
+-%}
+
+{%- capture feature_tabs_decoration_markup -%}
+    {%- render 'decorative-illustration',
+        show: section.settings.show_decoration,
+        image: feature_tabs_decorative,
+        mask_asset: 'feature-tabs-botanical.webp',
+        class: 'feature-tabs__decoration'
+    -%}
+{%- endcapture -%}
+
+{%- capture feature_tabs_children -%}
+    <div
+        class="feature-tabs__frame"
+        data-module-id="tab-control"
+        x-data="tabControl()"
+        data-tab-initial-strategy="first"
+    >
+        <div class="feature-tabs__layout">
+            <div class="feature-tabs__media">
+                <div class="feature-tabs__cover-box">
+                    <div
+                        class="feature-tabs__cover-inner"
+                        style="--feature-tabs-image-aspect-ratio: {{ feature_tabs_image_aspect_ratio }};"
+                    >
+                        <div class="feature-tabs__cover-image">
+                            {%- if feature_tabs_section_image != blank -%}
+                                {%- render 'image',
+                                    image: feature_tabs_section_image,
+                                    alt: feature_tabs_image_alt,
+                                    mode: 'frame',
+                                    fit: 'cover',
+                                    loading: 'eager',
+                                    sizes: '(min-width: 80rem) 960px, (min-width: 64rem) 72vw, 100vw',
+                                    widths: '400,600,800,1000,1200,1600,1920',
+                                    wrapper_class: 'feature-tabs__image-wrap h-full w-full',
+                                    img_class: 'h-full w-full object-cover'
+                                -%}
+                            {%- else -%}
+                                <div class="feature-tabs__image-wrap feature-tabs__image-wrap--placeholder">
+                                    {% render 'decorative-placeholder-svg',
+                                        placeholder_key: 'lifestyle-1',
+                                        class: 'feature-tabs__placeholder-svg'
+                                    %}
+                                </div>
+                            {%- endif -%}
+                        </div>
+                        <div class="feature-tabs__markers">
+                            {%- if section.blocks.size > 0 -%}
+                                {%- for block in section.blocks -%}
+                                    {%- if block.type != 'item' -%}
+                                        {%- continue -%}
+                                    {%- endif -%}
+                                    {%- liquid
+                                        assign feature_tabs_marker_number = forloop.index
+                                        if forloop.index < 10
+                                            assign feature_tabs_marker_number = forloop.index | prepend: '0'
+                                        endif
+                                        assign feature_tabs_marker_product = block.settings.product
+                                        assign feature_tabs_marker_x = block.settings.marker_x
+                                        assign feature_tabs_marker_y = block.settings.marker_y
+                                    -%}
+                                    {%- if feature_tabs_marker_product != blank -%}
+                                        {%- capture feature_tabs_marker_label -%}
+                                            {{- 'sections.feature-tabs.accessibility.marker_link' | t: index: feature_tabs_marker_number, title: feature_tabs_marker_product.title -}}
+                                        {%- endcapture -%}
+                                        <a
+                                            href="{{ feature_tabs_marker_product.url }}"
+                                            class="feature-tabs__marker focus-ring{% if forloop.first %} is-active{% endif %}"
+                                            data-tab-index="{{ forloop.index0 }}"
+                                            aria-label="{{ feature_tabs_marker_label | strip }}"
+                                            style="--feature-tabs-marker-x: {{ feature_tabs_marker_x }}; --feature-tabs-marker-y: {{ feature_tabs_marker_y }};"
+                                            :class="{ 'is-active': isActive(tabIndexFor($el)) }"
+                                        >
+                                            <span class="copy-m" aria-hidden="true">{{ feature_tabs_marker_number }}</span>
+                                        </a>
+                                    {%- else -%}
+                                        <span
+                                            class="feature-tabs__marker{% if forloop.first %} is-active{% endif %}"
+                                            data-tab-index="{{ forloop.index0 }}"
+                                            aria-hidden="true"
+                                            style="--feature-tabs-marker-x: {{ feature_tabs_marker_x }}; --feature-tabs-marker-y: {{ feature_tabs_marker_y }};"
+                                            :class="{ 'is-active': isActive(tabIndexFor($el)) }"
+                                        >
+                                            <span class="copy-m">{{ feature_tabs_marker_number }}</span>
+                                        </span>
+                                    {%- endif -%}
+                                {%- endfor -%}
+                            {%- else -%}
+                                {%- liquid
+                                    assign feature_tabs_marker_defaults = '22,28|78,22|28,72|72,68' | split: '|'
+                                -%}
+                                {%- for placeholder_index in (1..4) -%}
+                                    {%- liquid
+                                        assign feature_tabs_marker_number = placeholder_index
+                                        if placeholder_index < 10
+                                            assign feature_tabs_marker_number = placeholder_index | prepend: '0'
+                                        endif
+                                        assign feature_tabs_marker_pair = feature_tabs_marker_defaults[forloop.index0] | split: ','
+                                        assign feature_tabs_marker_x = feature_tabs_marker_pair[0]
+                                        assign feature_tabs_marker_y = feature_tabs_marker_pair[1]
+                                    -%}
+                                    <span
+                                        class="feature-tabs__marker{% if forloop.first %} is-active{% endif %}"
+                                        data-tab-index="{{ forloop.index0 }}"
+                                        aria-hidden="true"
+                                        style="--feature-tabs-marker-x: {{ feature_tabs_marker_x }}; --feature-tabs-marker-y: {{ feature_tabs_marker_y }};"
+                                        :class="{ 'is-active': isActive(tabIndexFor($el)) }"
+                                    >
+                                        <span class="copy-m">{{ feature_tabs_marker_number }}</span>
+                                    </span>
+                                {%- endfor -%}
+                            {%- endif -%}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {%- if section.blocks.size > 0 -%}
+                {%- for block in section.blocks -%}
+                    {%- if block.type != 'item' -%}
+                        {%- continue -%}
+                    {%- endif -%}
+                    {%- liquid
+                        assign feature_tabs_item_heading = block.settings.heading
+                        assign feature_tabs_item_label = block.settings.label
+                        assign feature_tabs_item_text = block.settings.text
+                        assign feature_tabs_tab_aria = 'accessibility.tab_control_item' | t: index: forloop.index
+                        assign feature_tabs_index_label = forloop.index
+                        if forloop.index < 10
+                            assign feature_tabs_index_label = forloop.index | prepend: '0'
+                        endif
+                    -%}
+                    <div
+                        role="tabpanel"
+                        id="feature-tabs-{{ section.id }}-panel-{{ forloop.index0 }}"
+                        aria-labelledby="feature-tabs-{{ section.id }}-tab-{{ forloop.index0 }}"
+                        class="feature-tabs__panel focus-ring-inset{% if forloop.first %} is-active{% endif %}"
+                        tabindex="0"
+                        x-init="registerPanel($el)"
+                        :class="{ 'is-active': isActive(panelIndexFor($el)) }"
+                        :hidden="!isActive(panelIndexFor($el))"
+                        {% unless forloop.first %}hidden{% endunless %}
+                    >
+                        <div class="feature-tabs__panel-inner{% if feature_tabs_decoration_markup != blank %} feature-tabs__panel-inner--decorated{% endif %}">
+                            {{- feature_tabs_decoration_markup -}}
+                            <p class="feature-tabs__counter">
+                                <span class="feature-tabs__counter-current copy-m">{{ feature_tabs_index_label }}</span>
+                                <span class="copy-m" aria-hidden="true"> / </span>
+                                <span class="feature-tabs__counter-total copy-m">{{ feature_tabs_total_label }}</span>
+                            </p>
+                            {%- if feature_tabs_item_label != blank -%}
+                                <p class="feature-tabs__eyebrow">
+                                    <span class="copy-m uppercase">{{ feature_tabs_item_label }}</span>
+                                </p>
+                            {%- endif -%}
+                            {%- if feature_tabs_item_heading != blank -%}
+                                <h2 class="feature-tabs__heading">
+                                    <span class="{{ feature_tabs_heading_tiers }}">{{ feature_tabs_item_heading }}</span>
+                                </h2>
+                            {%- endif -%}
+                            {%- if feature_tabs_item_text != blank -%}
+                                <div class="feature-tabs__body">
+                                    <div class="rte copy-m">{{ feature_tabs_item_text }}</div>
+                                </div>
+                            {%- endif -%}
+                        </div>
+                    </div>
+                {%- endfor -%}
+            {%- else -%}
+                {%- for placeholder_index in (1..4) -%}
+                    {%- liquid
+                        assign feature_tabs_item_heading = 'sections.feature-tabs.defaults.item_heading' | t: index: placeholder_index
+                        assign feature_tabs_item_label = 'sections.feature-tabs.defaults.item_label' | t: index: placeholder_index
+                        assign feature_tabs_item_text = 'sections.feature-tabs.defaults.item_text' | t
+                        assign feature_tabs_index_label = placeholder_index
+                        if placeholder_index < 10
+                            assign feature_tabs_index_label = placeholder_index | prepend: '0'
+                        endif
+                    -%}
+                    <div
+                        role="tabpanel"
+                        id="feature-tabs-{{ section.id }}-panel-{{ forloop.index0 }}"
+                        aria-labelledby="feature-tabs-{{ section.id }}-tab-{{ forloop.index0 }}"
+                        class="feature-tabs__panel focus-ring-inset{% if forloop.first %} is-active{% endif %}"
+                        tabindex="0"
+                        x-init="registerPanel($el)"
+                        :class="{ 'is-active': isActive(panelIndexFor($el)) }"
+                        :hidden="!isActive(panelIndexFor($el))"
+                        {% unless forloop.first %}hidden{% endunless %}
+                    >
+                        <div class="feature-tabs__panel-inner{% if feature_tabs_decoration_markup != blank %} feature-tabs__panel-inner--decorated{% endif %}">
+                            {{- feature_tabs_decoration_markup -}}
+                            <p class="feature-tabs__counter">
+                                <span class="feature-tabs__counter-current copy-m">{{ feature_tabs_index_label }}</span>
+                                <span class="copy-m" aria-hidden="true"> / </span>
+                                <span class="feature-tabs__counter-total copy-m">{{ feature_tabs_total_label }}</span>
+                            </p>
+                            <p class="feature-tabs__eyebrow">
+                                <span class="copy-m uppercase">{{ feature_tabs_item_label }}</span>
+                            </p>
+                            <h2 class="feature-tabs__heading">
+                                <span class="{{ feature_tabs_heading_tiers }}">{{ feature_tabs_item_heading }}</span>
+                            </h2>
+                            <div class="feature-tabs__body">
+                                <div class="rte copy-m">{{ feature_tabs_item_text }}</div>
+                            </div>
+                        </div>
+                    </div>
+                {%- endfor -%}
+            {%- endif -%}
+
+            <div
+                role="tablist"
+                aria-orientation="vertical"
+                aria-label="{{ 'sections.feature-tabs.accessibility.tablist' | t }}"
+                class="feature-tabs__tablist"
+            >
+                {%- if section.blocks.size > 0 -%}
+                    {%- for block in section.blocks -%}
+                        {%- if block.type != 'item' -%}
+                            {%- continue -%}
+                        {%- endif -%}
+                        {%- liquid
+                            assign feature_tabs_item_label = block.settings.label
+                            assign feature_tabs_tab_aria = 'accessibility.tab_control_item' | t: index: forloop.index
+                            assign feature_tabs_row_number = forloop.index
+                            if forloop.index < 10
+                                assign feature_tabs_row_number = forloop.index | prepend: '0'
+                            endif
+                        -%}
+                        <button
+                            type="button"
+                            role="tab"
+                            id="feature-tabs-{{ section.id }}-tab-{{ forloop.index0 }}"
+                            aria-controls="feature-tabs-{{ section.id }}-panel-{{ forloop.index0 }}"
+                            class="feature-tabs__tab"
+                            x-init="registerTab($el)"
+                            @click="setActive(tabIndexFor($el))"
+                            @focusin="setActive(tabIndexFor($el))"
+                            :tabindex="isFocusable(tabIndexFor($el)) ? 0 : -1"
+                            :aria-selected="isActive(tabIndexFor($el))"
+                            :class="isActive(tabIndexFor($el)) && 'is-active'"
+                            {% if feature_tabs_item_label == blank %}
+                                aria-label="{{ feature_tabs_tab_aria | escape }}"
+                            {% endif %}
+                            {{ block.shopify_attributes }}
+                        >
+                            <span class="feature-tabs__tab-number"><span class="copy-m">{{ feature_tabs_row_number }}</span></span>
+                            {%- if feature_tabs_item_label != blank -%}
+                                {%- # lint-allow typography-tier-heading: tab row label set in the heading face by design; a button, not a heading -%}
+                                <span class="feature-tabs__tab-label"><span class="title-s desktop:title-m">{{ feature_tabs_item_label }}</span></span>
+                            {%- endif -%}
+                            <span class="feature-tabs__tab-mark" aria-hidden="true"></span>
+                        </button>
+                    {%- endfor -%}
+                {%- else -%}
+                    {%- for placeholder_index in (1..4) -%}
+                        {%- liquid
+                            assign feature_tabs_item_label = 'sections.feature-tabs.defaults.item_label' | t: index: placeholder_index
+                            assign feature_tabs_row_number = placeholder_index
+                            if placeholder_index < 10
+                                assign feature_tabs_row_number = placeholder_index | prepend: '0'
+                            endif
+                        -%}
+                        <button
+                            type="button"
+                            role="tab"
+                            id="feature-tabs-{{ section.id }}-tab-{{ forloop.index0 }}"
+                            aria-controls="feature-tabs-{{ section.id }}-panel-{{ forloop.index0 }}"
+                            class="feature-tabs__tab"
+                            x-init="registerTab($el)"
+                            @click="setActive(tabIndexFor($el))"
+                            @focusin="setActive(tabIndexFor($el))"
+                            :tabindex="isFocusable(tabIndexFor($el)) ? 0 : -1"
+                            :aria-selected="isActive(tabIndexFor($el))"
+                            :class="isActive(tabIndexFor($el)) && 'is-active'"
+                        >
+                            <span class="feature-tabs__tab-number"><span class="copy-m">{{ feature_tabs_row_number }}</span></span>
+                            {%- # lint-allow typography-tier-heading: tab row label set in the heading face by design; a button, not a heading -%}
+                            <span class="feature-tabs__tab-label"><span class="title-s desktop:title-m">{{ feature_tabs_item_label }}</span></span>
+                            <span class="feature-tabs__tab-mark" aria-hidden="true"></span>
+                        </button>
+                    {%- endfor -%}
+                {%- endif -%}
+            </div>
+        </div>
+    </div>
+{%- endcapture -%}
+
+{% render 'section-frame',
+    section: section,
+    section_class: 'feature-tabs-section',
+    width: 'page',
+    height_kind: 'content',
+    motion: false,
+    root_attrs: feature_tabs_root_attrs,
+    children: feature_tabs_children
+%}
+
+{% stylesheet %}
+    .feature-tabs__frame {
+        border: 1px solid rgb(var(--color-foreground));
+        border-radius: var(--radius-card);
+        overflow: hidden;
+        background-color: rgb(var(--color-background));
+    }
+
+    .feature-tabs__layout {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .feature-tabs__media {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 4 / 3;
+        overflow: hidden;
+        background-color: rgb(var(--color-background));
+
+        @supports (background-color: color-mix(in oklab, white, black)) {
+            background-color: var(--color-surface-muted);
+        }
+    }
+
+    .feature-tabs__cover-box {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        container-type: size;
+    }
+
+    .feature-tabs__cover-inner {
+        position: relative;
+        flex-shrink: 0;
+        aspect-ratio: var(--feature-tabs-image-aspect-ratio, 4 / 3);
+        min-width: 100%;
+        min-height: 100%;
+    }
+
+    .feature-tabs__cover-image {
+        position: absolute;
+        inset: 0;
+    }
+
+    .feature-tabs__image-wrap {
+        height: 100%;
+        width: 100%;
+    }
+
+    .feature-tabs__markers {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        pointer-events: none;
+    }
+
+    /* 0 and 100 put the marker's edge on the image's edge; clamp keeps it inside the visible crop. */
+    .feature-tabs__marker {
+        --feature-tabs-marker-size: 3.6rem;
+        --feature-tabs-marker-gap: 0.8rem;
+        --feature-tabs-cover-w: max(100cqw, 100cqh * var(--feature-tabs-image-aspect-ratio, 4 / 3));
+        --feature-tabs-cover-h: max(100cqh, 100cqw / var(--feature-tabs-image-aspect-ratio, 4 / 3));
+        --feature-tabs-crop-x: calc((var(--feature-tabs-cover-w) - 100cqw) / 2);
+        --feature-tabs-crop-y: calc((var(--feature-tabs-cover-h) - 100cqh) / 2);
+        position: absolute;
+        left: clamp(
+            calc(var(--feature-tabs-crop-x) + var(--feature-tabs-marker-gap)),
+            calc(
+                var(--feature-tabs-marker-x, 50) / 100 *
+                    (var(--feature-tabs-cover-w) - var(--feature-tabs-marker-size))
+            ),
+            calc(
+                var(--feature-tabs-crop-x) + 100cqw - var(--feature-tabs-marker-size) -
+                    var(--feature-tabs-marker-gap)
+            )
+        );
+        top: clamp(
+            calc(var(--feature-tabs-crop-y) + var(--feature-tabs-marker-gap)),
+            calc(
+                var(--feature-tabs-marker-y, 50) / 100 *
+                    (var(--feature-tabs-cover-h) - var(--feature-tabs-marker-size))
+            ),
+            calc(
+                var(--feature-tabs-crop-y) + 100cqh - var(--feature-tabs-marker-size) -
+                    var(--feature-tabs-marker-gap)
+            )
+        );
+        z-index: 1;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: var(--feature-tabs-marker-size);
+        height: var(--feature-tabs-marker-size);
+        border: 1px solid rgb(var(--color-foreground));
+        border-radius: 999px;
+        background-color: rgb(var(--color-background));
+        color: rgb(var(--color-foreground));
+        text-decoration: none;
+        pointer-events: auto;
+        transition:
+            background-color var(--motion-duration-fast) var(--motion-ease-enter),
+            color var(--motion-duration-fast) var(--motion-ease-enter),
+            border-color var(--motion-duration-fast) var(--motion-ease-enter);
+    }
+
+    .feature-tabs__marker.is-active {
+        background-color: rgb(var(--color-foreground));
+        color: rgb(var(--color-background));
+        border-color: rgb(var(--color-foreground));
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+        .feature-tabs__marker:hover {
+            background-color: rgb(var(--color-foreground));
+            color: rgb(var(--color-background));
+            border-color: rgb(var(--color-foreground));
+        }
+    }
+
+    .feature-tabs__marker:focus-visible {
+        background-color: rgb(var(--color-foreground));
+        color: rgb(var(--color-background));
+        border-color: rgb(var(--color-foreground));
+        outline: var(--focus-ring-width) solid
+            rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+        outline-offset: var(--focus-ring-offset, 2px);
+    }
+
+    .feature-tabs__image-wrap--placeholder {
+        display: flex;
+        align-items: stretch;
+        border-bottom: 1px solid var(--color-line);
+    }
+
+    .feature-tabs__placeholder-svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+    }
+
+    .feature-tabs__panel-inner {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        padding: var(--spacing-step-l);
+    }
+
+    .feature-tabs__decoration {
+        display: none;
+        pointer-events: none;
+    }
+
+    @media (width >= 48rem) {
+        .feature-tabs__decoration {
+            display: block;
+            position: absolute;
+            top: var(--spacing-step-4xl);
+            right: var(--spacing-step-xl);
+            width: var(--feature-tabs-decoration-width);
+            z-index: 0;
+        }
+
+        /* Text keeps clear of the decoration at every width. */
+        .feature-tabs__panel-inner--decorated {
+            --feature-tabs-decoration-width: min(22%, 8rem);
+        }
+
+        .feature-tabs__panel-inner--decorated .feature-tabs__eyebrow,
+        .feature-tabs__panel-inner--decorated .feature-tabs__heading,
+        .feature-tabs__panel-inner--decorated .feature-tabs__body {
+            padding-inline-end: calc(var(--feature-tabs-decoration-width) + var(--spacing-step-m));
+        }
+
+        .feature-tabs__panel-inner > :not(.feature-tabs__decoration) {
+            position: relative;
+            z-index: 1;
+        }
+    }
+
+    .feature-tabs__counter {
+        margin-block-end: var(--spacing-step-2xl);
+        letter-spacing: 0.2em;
+        color: rgb(var(--color-foreground));
+        opacity: 0.72;
+    }
+
+    .feature-tabs__eyebrow {
+        margin-block-end: var(--spacing-step-l);
+        letter-spacing: 0.2em;
+        color: rgb(var(--color-foreground));
+        opacity: 0.85;
+    }
+
+    .feature-tabs__heading {
+        margin-block-end: var(--spacing-step-l);
+        color: rgb(var(--color-foreground));
+    }
+
+    .feature-tabs__body {
+        color: rgb(var(--color-foreground));
+        max-width: 40rem;
+    }
+
+    .feature-tabs__tablist {
+        display: flex;
+        flex-direction: column;
+        border-top: 1px solid var(--color-line);
+    }
+
+    .feature-tabs__tab {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items: center;
+        gap: var(--spacing-step-l);
+        width: 100%;
+        min-height: 4.4rem;
+        padding: var(--spacing-step-m) var(--spacing-step-l);
+        border: 0;
+        border-bottom: 1px solid var(--color-line);
+        background: transparent;
+        color: rgb(var(--color-foreground));
+        text-align: start;
+        cursor: pointer;
+        transition:
+            background-color var(--motion-duration-fast) var(--motion-ease-enter),
+            color var(--motion-duration-fast) var(--motion-ease-enter);
+    }
+
+    .feature-tabs__tab:last-child {
+        border-bottom: 0;
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+        .feature-tabs__tab:hover:not(.is-active) {
+            background-color: rgba(var(--color-foreground), var(--alpha-8, 0.08));
+        }
+    }
+
+    .feature-tabs__tab:focus-visible {
+        outline: var(--focus-ring-width) solid
+            rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+        outline-offset: calc(-1 * var(--focus-ring-width));
+    }
+
+    .feature-tabs__tab:focus-visible:not(.is-active) {
+        background-color: rgba(var(--color-foreground), var(--alpha-8, 0.08));
+    }
+
+    .feature-tabs__tab.is-active {
+        background-color: rgb(var(--color-foreground));
+        color: rgb(var(--color-background));
+    }
+
+    .feature-tabs__tab-number {
+        min-width: 2ch;
+    }
+
+    .feature-tabs__tab-label {
+        min-width: 0;
+    }
+
+    .feature-tabs__tab-label > span {
+        color: inherit;
+    }
+
+    .feature-tabs__tab-mark {
+        display: block;
+        width: 6.6rem;
+        height: 1px;
+        background-color: currentColor;
+        transform: scaleX(0);
+        transform-origin: right center;
+        transition: transform var(--motion-duration-fast) var(--motion-ease-enter);
+    }
+
+    .feature-tabs__tab.is-active .feature-tabs__tab-mark {
+        transform: scaleX(1);
+    }
+
+    @media (width >= 64rem) {
+        .feature-tabs__layout {
+            display: grid;
+            grid-template-columns: minmax(0, 60%) minmax(0, 40%);
+            grid-template-rows: minmax(0, 1fr) auto;
+        }
+
+        .feature-tabs__media {
+            grid-column: 1;
+            grid-row: 1 / -1;
+            aspect-ratio: 3 / 2;
+            min-height: 100%;
+        }
+
+        .feature-tabs__panel {
+            grid-column: 2;
+            grid-row: 1;
+            align-self: stretch;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            min-height: 0;
+        }
+
+        .feature-tabs__panel-inner {
+            flex: 1;
+            padding-block-start: var(--spacing-step-xl);
+        }
+
+        .feature-tabs__tablist {
+            grid-column: 2;
+            grid-row: 2;
+            align-self: end;
+            border-top: 1px solid var(--color-line);
+        }
+
+        .feature-tabs__image-wrap--placeholder {
+            border-bottom: 0;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .feature-tabs__marker,
+        .feature-tabs__tab,
+        .feature-tabs__tab-mark {
+            transition: none;
+        }
+    }
+{% endstylesheet %}
+
+{% schema %}
+{
+    "name": "t:sections.feature-tabs.name",
+    "tag": "section",
+    "class": "feature-tabs-section",
+    "enabled_on": {
+        "templates": ["product", "index", "page"]
+    },
+    "settings": [
+        {
+            "type": "header",
+            "content": "t:sections.feature-tabs.content.general"
+        },
+        {
+            "type": "color_scheme",
+            "id": "color_scheme",
+            "label": "t:sections.feature-tabs.settings.color_scheme",
+            "default": "scheme-2"
+        },
+        {
+            "type": "select",
+            "id": "heading_size",
+            "label": "t:sections.feature-tabs.settings.heading_size",
+            "options": [
+                {
+                    "value": "title-4xl",
+                    "label": "t:settings.type_size.title_4xl"
+                },
+                {
+                    "value": "title-3xl",
+                    "label": "t:settings.type_size.title_3xl"
+                },
+                {
+                    "value": "title-2xl",
+                    "label": "t:settings.type_size.title_2xl"
+                },
+                {
+                    "value": "title-xl",
+                    "label": "t:settings.type_size.title_xl"
+                },
+                {
+                    "value": "title-l",
+                    "label": "t:settings.type_size.title_l"
+                },
+                {
+                    "value": "title-m",
+                    "label": "t:settings.type_size.title_m"
+                },
+                {
+                    "value": "title-s",
+                    "label": "t:settings.type_size.title_s"
+                },
+                {
+                    "value": "title-xs",
+                    "label": "t:settings.type_size.title_xs"
+                }
+            ],
+            "default": "title-xl"
+        },
+        {
+            "type": "image_picker",
+            "id": "image",
+            "label": "t:sections.feature-tabs.settings.image"
+        },
+        {
+            "type": "checkbox",
+            "id": "show_decoration",
+            "label": "t:sections.feature-tabs.settings.show_decoration",
+            "default": true
+        },
+        {
+            "type": "image_picker",
+            "id": "decorative_image",
+            "label": "t:sections.feature-tabs.settings.decorative_image",
+            "info": "t:sections.feature-tabs.settings.decorative_image_info"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.feature-tabs.content.padding"
+        },
+        {
+            "type": "range",
+            "id": "padding_top",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "t:sections.feature-tabs.settings.padding_top",
+            "default": 32
+        },
+        {
+            "type": "range",
+            "id": "padding_bottom",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "t:sections.feature-tabs.settings.padding_bottom",
+            "default": 32
+        }
+    ],
+    "blocks": [
+        {
+            "type": "item",
+            "name": "t:sections.feature-tabs.blocks.item",
+            "settings": [
+                {
+                    "type": "product",
+                    "id": "product",
+                    "label": "t:sections.feature-tabs.block_settings.product"
+                },
+                {
+                    "type": "range",
+                    "id": "marker_x",
+                    "min": 0,
+                    "max": 100,
+                    "step": 1,
+                    "unit": "%",
+                    "label": "t:sections.feature-tabs.block_settings.marker_x",
+                    "default": 22
+                },
+                {
+                    "type": "range",
+                    "id": "marker_y",
+                    "min": 0,
+                    "max": 100,
+                    "step": 1,
+                    "unit": "%",
+                    "label": "t:sections.feature-tabs.block_settings.marker_y",
+                    "default": 28
+                },
+                {
+                    "type": "text",
+                    "id": "label",
+                    "label": "t:sections.feature-tabs.block_settings.label",
+                    "default": "t:sections.feature-tabs.blocks_defaults.label"
+                },
+                {
+                    "type": "inline_richtext",
+                    "id": "heading",
+                    "label": "t:sections.feature-tabs.block_settings.heading",
+                    "default": "t:sections.feature-tabs.blocks_defaults.heading"
+                },
+                {
+                    "type": "richtext",
+                    "id": "text",
+                    "label": "t:sections.feature-tabs.block_settings.text",
+                    "default": "t:sections.feature-tabs.blocks_defaults.text"
+                }
+            ]
+        }
+    ],
+    "max_blocks": 6,
+    "presets": [
+        {
+            "name": "t:sections.feature-tabs.presets.feature_tabs",
+            "blocks": [
+                {
+                    "type": "item",
+                    "settings": {
+                        "marker_x": 22,
+                        "marker_y": 28,
+                        "label": "Origin",
+                        "heading": "From seed to serum.",
+                        "text": "<p>Share a concise benefit, ingredient story, or ritual step that helps customers understand why this detail matters.</p>"
+                    }
+                },
+                {
+                    "type": "item",
+                    "settings": {
+                        "marker_x": 78,
+                        "marker_y": 22,
+                        "label": "Process",
+                        "heading": "Slow-crafted in small batches.",
+                        "text": "<p>Share a concise benefit, ingredient story, or ritual step that helps customers understand why this detail matters.</p>"
+                    }
+                },
+                {
+                    "type": "item",
+                    "settings": {
+                        "marker_x": 28,
+                        "marker_y": 72,
+                        "label": "Texture",
+                        "heading": "Lightweight, layerable finish.",
+                        "text": "<p>Share a concise benefit, ingredient story, or ritual step that helps customers understand why this detail matters.</p>"
+                    }
+                },
+                {
+                    "type": "item",
+                    "settings": {
+                        "marker_x": 72,
+                        "marker_y": 68,
+                        "label": "Ritual",
+                        "heading": "A moment of calm, daily.",
+                        "text": "<p>Share a concise benefit, ingredient story, or ritual step that helps customers understand why this detail matters.</p>"
+                    }
+                }
+            ]
+        }
+    ]
+}
+{% endschema %}

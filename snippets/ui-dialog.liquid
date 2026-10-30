@@ -1,18 +1,18 @@
-{% comment %}
-    ui-dialog — Reusable dialog shell (modal or drawer) driven by Alpine store.
-    --------------------------------------------------
-    @param {string} id          - Required. Unique dialog identifier (must match open(id)).
-    @param {string} [type]      - 'modal' | 'drawer' (default: 'modal').
-    @param {string} [position]  - For drawer only: 'left' | 'right' (default: 'right').
+{% doc %}
+    Reusable dialog shell (modal or drawer) driven by the dialog store.
+
+    @param {string} id - Required. Unique dialog identifier (must match open(id)).
+    @param {string} [type] - 'modal' | 'drawer' (default: 'modal').
+    @param {string} [position] - For drawer only: 'left' | 'right' (default: 'right').
     @param {string} [modal_placement] - For modal only: 'center' | 'bottom-left' | 'bottom-right' (default: 'center').
     @param {string} [dialog_motion_mode] - Modal motion only: 'origin' | 'edge' | 'none'. Auto: edge for bottom-*, origin for center.
     @param {string} [drawer_motion_mode] - Drawer motion only: 'slide' | 'none'. Default: slide for type drawer.
     @param {boolean} [drawer_motion_sheet] - Use bottom sheet motion below pc breakpoint (Cart/Filters mobile).
     @param {boolean} [drawer_desktop_layout] - Apply the shared desktop drawer shell preset (width + top). Horizontal anchor follows `position`.
-    @param {string} [layer]     - Semantic z-index layer: 'drawer' | 'modal' | 'modal-focus' (default: 'modal').
+    @param {string} [layer] - Semantic z-index layer: 'drawer' | 'modal' | 'modal-focus' (default: 'modal').
     @param {string} [top_class] - Viewport top offset class for overlay/wrapper (default: 'top-0').
     @param {string} [color_scheme] - Optional color scheme id (e.g. 'scheme-1'). Applied on `.ui-dialog-panel` as `color-{id}`.
-    @param {string} [overlay_class] - Tailwind classes for overlay background (default: 'bg-dialog-overlay').
+    @param {string} [overlay_class] - Tailwind classes for overlay background (default: 'bg-scrim').
     @param {boolean} [show_overlay] - Whether to render the overlay (default: true).
     @param {string} [root_class] - Extra classes for root wrapper (layout/positioning escape hatch).
     @param {string} [modal_wrapper_class] - Classes for modal outer wrapper.
@@ -20,14 +20,19 @@
     @param {string} [drawer_wrapper_class] - Classes for drawer wrapper, including width/position overrides.
     @param {string} [drawer_panel_class] - Extra classes for drawer panel.
     @param {string} [mobile_layout] - Mobile viewport shell preset: 'default' | 'inset' (default: 'default').
-    @param {string} [content]  - HTML content (use capture in parent and pass as content).
-{% endcomment %}
+    @param {boolean} [show_close_button] - Render the built-in close button (default: false).
+    @param {string} [close_label] - Accessible label for the close button (default: the translated 'accessibility.close_dialog').
+    @param {string} [content] - HTML content (use capture in parent and pass as content).
+
+    @example
+    {% render 'ui-dialog', id: 'cart-drawer', type: 'drawer', content: drawer_markup %}
+{% enddoc %}
 
 {%- assign dialog_type = type | default: 'modal' -%}
 {%- assign dialog_position = position | default: 'right' -%}
 {%- assign dialog_layer = layer | default: 'modal' -%}
 {%- assign dialog_top_class = top_class | default: 'top-0' -%}
-{%- assign overlay_bg = overlay_class | default: 'bg-dialog-overlay' -%}
+{%- assign overlay_bg = overlay_class | default: 'bg-scrim' -%}
 {%- assign dialog_show_overlay = show_overlay | default: true -%}
 
 {%- assign root_classes = root_class | default: '' -%}
@@ -36,7 +41,12 @@
 {%- assign drawer_wrapper_classes = drawer_wrapper_class | default: '' -%}
 {%- assign drawer_panel_classes = drawer_panel_class | default: '' -%}
 {%- assign dialog_show_close_button = show_close_button | default: false -%}
-{%- assign dialog_close_label = close_label | default: 'accessibility.close_dialog' | t -%}
+{%- liquid
+    assign dialog_close_label = close_label
+    if dialog_close_label == blank
+        assign dialog_close_label = 'accessibility.close_dialog' | t
+    endif
+-%}
 
 {%- comment -%} Resolve semantic z-index layer classes {%- endcomment -%}
 {%- case dialog_layer -%}
@@ -54,11 +64,11 @@
 {%- liquid
     assign mobile_layout_value = mobile_layout | default: 'default'
     assign mobile_layout_inset_class = ''
-    assign modal_shell_padding_class = 'p-4'
+    assign modal_shell_padding_class = 'p-step-s'
 
     if mobile_layout_value == 'inset'
         assign mobile_layout_inset_class = 'ui-dialog-mobile-layout-inset'
-        assign modal_shell_padding_class = 'max-pc:p-4'
+        assign modal_shell_padding_class = 'max-tablet:p-step-s'
     endif
 
     assign modal_panel_classes = 'ui-dialog-panel ui-dialog-modal-panel ui-dialog-modal-width-default ui-dialog-modal-height-default ' | append: modal_panel_classes | strip
@@ -134,10 +144,11 @@
 
 <div
     x-data="{}"
-    x-show="$store.dialog.active === $el.dataset.dialogId || $store.dialog.closing === $el.dataset.dialogId"
+    data-module-id="dialog-root"
+    x-show="$store.dialog.isShown($el.dataset.dialogId)"
     x-cloak
     class="fixed inset-0 {{ backdrop_z_class }} {{ root_classes }}"
-    @keydown.escape.window="$store.dialog.close()"
+    @keydown.escape.window="$store.dialog.close($el.dataset.dialogId)"
     data-dialog-root
     data-dialog-id="{{ id | escape }}"
     {% if dialog_motion_resolved != blank %}

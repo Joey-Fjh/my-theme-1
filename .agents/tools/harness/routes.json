@@ -1,0 +1,156 @@
+{
+    "merchant": ["config/settings_data.json", "templates/*.json", "sections/*-group.json"],
+    "merchantGuardFrom": "aa14969f5ad76e360dbe79e2d504610802c2817c",
+    "preapproved": [
+        "lint:theme",
+        "lint:liquid-syntax",
+        "lint:i18n",
+        "lint:compat",
+        "lint:doc-paths",
+        "lint:records",
+        "lint:merchant",
+        "doctor:agent",
+        "test:harness",
+        "test:merchant"
+    ],
+    "routes": [
+        {
+            "id": "liquid",
+            "paths": [
+                "layout/**/*.liquid",
+                "sections/**/*.liquid",
+                "snippets/**/*.liquid",
+                "blocks/**/*.liquid",
+                "templates/**/*.liquid",
+                "config/settings_schema.json"
+            ],
+            "validators": ["lint:theme", "test:theme-check", "lint:liquid-syntax", "lint:compat"],
+            "fast": ["lint:theme", "lint:liquid-syntax"],
+            "tier": "Ask",
+            "stylesheetTier": "Show",
+            "pointers": [
+                "docs/references/style-system/css-architecture.md",
+                "docs/references/architecture/abstraction-boundaries.md"
+            ]
+        },
+        {
+            "id": "locales",
+            "paths": ["locales/**"],
+            "validators": ["lint:i18n"],
+            "fast": ["lint:i18n"],
+            "tier": "Show",
+            "pointers": ["docs/references/code-review/i18n-checklist.md"]
+        },
+        {
+            "id": "css",
+            "paths": ["tailwind/**", "assets/base.css", "assets/gift-card.css"],
+            "validators": ["scan:compat", "lint:theme"],
+            "fast": ["lint:theme"],
+            "tier": "Show",
+            "pointers": [
+                "docs/references/style-system/css-architecture.md",
+                "docs/references/code-review/browser-compatibility.md"
+            ]
+        },
+        {
+            "id": "javascript",
+            "paths": ["assets/*.js"],
+            "validators": ["lint:compat", "lint:theme"],
+            "fast": ["lint:theme"],
+            "tier": "Ask",
+            "pointers": [
+                "docs/references/architecture/javascript-runtime.md",
+                "docs/references/code-review/browser-compatibility.md"
+            ]
+        },
+        {
+            "id": "image",
+            "paths": ["snippets/image.liquid"],
+            "validators": ["lint:theme"],
+            "fast": ["lint:theme"],
+            "tier": "Ask",
+            "pointers": ["docs/references/style-system/image-display-contract.md"]
+        },
+        {
+            "id": "motion",
+            "paths": ["**/*.css", "**/*.liquid", "tailwind/**"],
+            "diff": "@keyframes|\\btransition\\b|\\banimation\\b",
+            "validators": ["lint:theme"],
+            "fast": ["lint:theme"],
+            "tier": "Show",
+            "pointers": [
+                ".agents/skills/review-animations/SKILL.md",
+                ".agents/skills/review-animations/STANDARDS.md",
+                "docs/references/architecture/motion-architecture.md"
+            ]
+        },
+        {
+            "id": "gsap",
+            "paths": ["assets/motion-gsap.js", "assets/scatter-gallery.js"],
+            "validators": ["lint:theme", "lint:compat"],
+            "fast": ["lint:theme"],
+            "tier": "Ask",
+            "pointers": [
+                ".agents/skills/gsap-core/SKILL.md",
+                ".agents/skills/gsap-scrolltrigger/SKILL.md",
+                ".agents/skills/gsap-timeline/SKILL.md",
+                ".agents/skills/gsap-performance/SKILL.md"
+            ]
+        },
+        {
+            "id": "rules",
+            "paths": [
+                "AGENTS.md",
+                "CLAUDE.md",
+                "docs/project.md",
+                "docs/references/**",
+                ".agents/**",
+                ".claude/**",
+                "package.json",
+                ".github/**"
+            ],
+            "validators": ["lint:doc-paths", "doctor:agent"],
+            "fast": ["lint:doc-paths"],
+            "tier": "Ask",
+            "pointers": ["docs/references/code-review/launch-gate.md"]
+        },
+        {
+            "id": "layout",
+            "paths": [
+                "layout/**/*.liquid",
+                "sections/**/*.liquid",
+                "snippets/**/*.liquid",
+                "blocks/**/*.liquid",
+                "assets/**/*.js",
+                "assets/**/*.css",
+                "tailwind/**"
+            ],
+            "validators": ["test:layout"],
+            "fast": [],
+            "tier": "Show",
+            "pointers": ["docs/references/code-review/browser-compatibility.md"]
+        },
+        {
+            "id": "harness",
+            "paths": [
+                ".agents/tools/harness/**",
+                ".claude/claude-hook.mjs",
+                ".cursor/cursor-hook.mjs",
+                ".cursor/hooks.json",
+                ".codex/codex-hook.mjs"
+            ],
+            "validators": ["test:harness", "lint:records"],
+            "fast": ["lint:records"],
+            "tier": "Ask",
+            "pointers": [".agents/tools/harness/routes.json"]
+        },
+        {
+            "id": "merchant",
+            "paths": [".agents/tools/merchant-guard.mjs", ".agents/tools/merchant-guard.test.mjs"],
+            "validators": ["test:merchant"],
+            "fast": [],
+            "tier": "Ask",
+            "pointers": ["AGENTS.md"]
+        }
+    ]
+}

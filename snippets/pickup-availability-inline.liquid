@@ -1,6 +1,7 @@
 {% doc %}
     Inline pickup availability status for the product page.
     Renders loading, error/retry, and content states via the PickupAvailability Alpine component.
+    Loading is announced to screen readers only, so the area gains height only for a result or an error.
 
     Designed to be rendered inside buy-buttons when context is 'product'.
     The parent BuyButtons Alpine scope is not required; this snippet owns its own x-data.
@@ -13,7 +14,7 @@
 {% enddoc %}
 
 <div
-    class="mt-4"
+    class="mt-step-s"
     data-pickup-availability-root="{{ section_id }}"
     data-section-id="{{ section_id }}"
     data-root-url="{{ routes.root_url }}"
@@ -22,23 +23,22 @@
     data-error-text="{{ 'products.product.pickup_availability.error' | t | escape }}"
     data-retry-text="{{ 'products.product.pickup_availability.retry' | t | escape }}"
     x-data="PickupAvailability()"
+    data-module-id="pickup-availability"
 >
     <div
-        x-show="isLoading"
-        x-cloak
-        class="rounded-sm border border-theme-border/20 px-4 py-3 text-theme-text/70"
+        class="sr-only"
         role="status"
         aria-live="polite"
-        x-text="loadingText"
+        x-text="isLoading ? loadingText : ''"
     ></div>
 
     <div
         x-show="showError"
         x-cloak
-        class="flex flex-wrap items-center gap-3 rounded-sm border border-theme-border/20 px-4 py-3"
+        class="flex flex-wrap items-center gap-step-xs rounded-sm border border-line px-step-s py-step-xs"
     >
         <p
-            class="text-theme-text/70"
+            class="text-muted"
             role="status"
             aria-live="polite"
             x-text="errorText"
@@ -55,3 +55,20 @@
         <div data-pickup-availability-content></div>
     </div>
 </div>
+
+{% stylesheet %}
+    .pickup-availability-inline__retry-action {
+        font-weight: 400;
+        text-decoration: underline;
+        text-underline-offset: 4px;
+        &:focus-visible {
+            outline: var(--focus-ring-width) solid
+                rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+            outline-offset: var(--focus-ring-offset);
+        }
+        transition: opacity var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease);
+        &:hover {
+            opacity: 0.7;
+        }
+    }
+{% endstylesheet %}

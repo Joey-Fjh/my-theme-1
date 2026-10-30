@@ -24,6 +24,7 @@
         {% if is_homepage %}is-homepage{% else %}is-innerpage{% endif %}
     "
     x-data="stickyHeader"
+    data-module-id="sticky-header"
     :class="
         {
           'is-top': isTop,
@@ -35,13 +36,15 @@
     "
 >
     <div class="container-page">
-        <div class="header__cols header__cols-{{ logo_position }} grid py-5">
-            <div class="flex items-center pc:hidden" style="grid-area: mobile-menu">
+        <div class="header__cols header__cols-{{ logo_position }}">
+            <div class="flex items-center tablet:hidden" style="grid-area: mobile-menu">
                 {%- if has_header_menu -%}
                     {%- render 'header-mobile-menu-drawer',
                         popup_id: mobile_menu_popup_id,
                         menu_handle: header_menu.handle,
-                        color_scheme: section.settings.mobile_menu_color_scheme
+                        color_scheme: section.settings.mobile_menu_color_scheme,
+                        enable_country_selector: section.settings.enable_country_selector,
+                        enable_language_selector: section.settings.enable_language_selector
                     -%}
 
                     <button
@@ -51,13 +54,13 @@
                         @click="$store.dialog.open($el.dataset.dialogId)"
                         aria-label="{{ 'accessibility.mobile_menu' | t }}"
                     >
-                        {%- render 'icons', icon: 'icon-menu', class: 'ms-3' -%}
+                        {%- render 'icons', icon: 'icon-menu', class: 'ms-step-xs' -%}
                     </button>
                 {%- endif -%}
             </div>
 
             <div
-                class="header-logo flex items-center justify-start"
+                class="header-logo"
                 style="grid-area: logo; --header-logo-width: {{ settings.logo_width }}px"
             >
                 {%- assign logo_alt = settings.logo.alt | default: shop.name | escape -%}
@@ -97,7 +100,7 @@
             </div>
 
             <div
-                class="header-menu flex items-center justify-center max-pc:hidden"
+                class="header-menu"
                 style="grid-area: menu"
             >
                 {%- if has_header_menu -%}
@@ -110,7 +113,7 @@
             </div>
 
             <div
-                class="header-navigation flex items-center justify-end gap-3"
+                class="header-navigation"
                 style="grid-area:navigation"
             >
                 <button
@@ -197,7 +200,7 @@
     .site-header > header.is-menu-active,
     .site-header > header.is-mobile-menu-active,
     .site-header > header:has(.header-menu details.dropdown[open]) {
-        box-shadow: 0 1px 10px rgba(0, 0, 0, 0.06);
+        box-shadow: var(--shadow-sm);
     }
 
     .site-header
@@ -212,7 +215,7 @@
     .site-header > header.is-homepage.is-top:focus-within,
     .site-header > header.is-homepage.is-top.is-menu-active,
     .site-header > header.is-homepage.is-top.is-mobile-menu-active {
-        box-shadow: 0 1px 10px rgba(0, 0, 0, 0.06);
+        box-shadow: var(--shadow-sm);
     }
 
     .header-section {
@@ -248,7 +251,7 @@
             min-width: max-content;
         }
 
-        @media (min-width: 48rem) {
+        @media (width >= 48rem) {
             .header__cols {
                 grid-template-areas: 'logo menu navigation';
                 grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -445,7 +448,7 @@
                 background-color: transparent;
             }
 
-            @media (min-width: 64rem) {
+            @media (width >= 64rem) {
                 .header-super-menu-layout--with-series {
                     grid-template-columns:
                         minmax(0, var(--super-menu-primary-width))
@@ -495,7 +498,7 @@
                     opacity: 0;
                     visibility: hidden;
                     transform: translateX(-0.4rem);
-                    border-inline-start: 1px solid rgba(var(--color-border), 0.2);
+                    border-inline-start: 1px solid var(--color-line);
                     transition:
                         opacity 0.18s ease,
                         transform 0.18s ease,
@@ -529,6 +532,73 @@
         inset-inline-end: 0.25rem;
         transform: translate(50%, -50%);
         pointer-events: none;
+    }
+
+    :where(.header-logo) {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+    }
+
+    :where(.header-menu) {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        @media (width < 48rem) {
+            display: none;
+        }
+    }
+
+    :where(.header-navigation) {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: var(--spacing-step-xs);
+    }
+
+    :where(.header__cols) {
+        display: grid;
+        padding-block: var(--spacing-step-m);
+    }
+
+    /* Starting height before assets/base.js measures the header (the first section clears it):
+       row padding plus the taller of an icon button and a body line; the middle-center
+       layout adds its menu row from 48rem. An image logo taller than the row is corrected by the script. */
+    :root:has(.site-header .header__cols) {
+        --header-height: calc(
+            2 * var(--spacing-step-m) +
+                max(
+                    2.5rem,
+                    var(--font-body-size-mobile) * var(--font-body-scale) *
+                        var(--font-body-line-height)
+                )
+        );
+
+        @media (width >= 48rem) {
+            --header-height: calc(
+                2 * var(--spacing-step-m) +
+                    max(
+                        2.5rem,
+                        var(--font-body-size) * var(--font-body-scale) *
+                            var(--font-body-line-height)
+                    )
+            );
+        }
+    }
+
+    @media (width >= 48rem) {
+        :root:has(.site-header .header__cols-middle-center .header-menu nav) {
+            --header-height: calc(
+                2 * var(--spacing-step-m) +
+                    max(
+                        2.5rem,
+                        var(--font-body-size) * var(--font-body-scale) *
+                            var(--font-body-line-height)
+                    ) +
+                    10px + var(--font-body-size) * var(--font-body-scale) *
+                    var(--font-body-line-height)
+            );
+        }
     }
 {% endstylesheet %}
 
@@ -748,6 +818,24 @@
             "step": 1,
             "default": 6,
             "visible_if": "{{ section.settings.menu_type == 'super' and section.settings.enable_super_menu_series }}"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.header.content.localization"
+        },
+        {
+            "type": "checkbox",
+            "id": "enable_country_selector",
+            "default": true,
+            "label": "t:sections.header.settings.country_region_selector",
+            "info": "t:sections.announcement-bar.info.manage_countries_regions_admin_settings_"
+        },
+        {
+            "type": "checkbox",
+            "id": "enable_language_selector",
+            "default": true,
+            "label": "t:sections.header.settings.language_selector",
+            "info": "t:sections.announcement-bar.info.manage_languages_admin_settings_language"
         }
     ]
 }

@@ -39,13 +39,14 @@
 
 <div
     x-data="accordion"
+    data-module-id="accordion"
     data-initial-active="{% if has_single_item %}{% if init_state == 'null' %}null{% else %}0{% endif %}{% else %}{{ init_state }}{% endif %}"
     data-title-active-class="{{ title_active_class | default: 'accordion__title--active' | escape }}"
     data-title-inactive-class="{{ title_inactive_class | default: 'accordion__title--inactive' | escape }}"
-    class="{{ wrapper_class | default: 'flex flex-col gap-8' }}"
+    class="{{ wrapper_class | default: 'flex flex-col gap-step-l' }}"
 >
     {%- if has_single_item -%}
-        <div class="{{ item_class | default: 'border-t border-theme-border/20 first:border-t-0' }}">
+        <div class="{{ item_class | default: 'border-t border-line first:border-t-0' }}">
             <button
                 type="button"
                 data-index="0"
@@ -54,7 +55,7 @@
                 aria-controls="accordion-panel-{{ id_prefix | default: 'default' }}-0"
                 class="group accordion__trigger"
             >
-                <div class="flex min-w-0 flex-1 items-center gap-3">
+                <div class="flex min-w-0 flex-1 items-center gap-step-xs">
                     <h2
                         data-index="0"
                         class="accordion__title {{ title_class }}"
@@ -78,7 +79,7 @@
 
                 <span
                     data-index="0"
-                    class="ms-4 {{ icon_variant_class }}"
+                    class="ms-step-s {{ icon_variant_class }}"
                     :class="isActive($el.dataset.index) && 'is-active'"
                 >
                     {%- if icon_style == 'chevron' -%}
@@ -98,7 +99,7 @@
                 :aria-hidden="(!isActive($el.dataset.index)).toString()"
             >
                 <div class="accordion__panel-inner">
-                    <div class="{{ content_class | default: 'pb-5 pe-8' }}">
+                    <div class="{{ content_class | default: 'pb-step-m pe-step-l' }}">
                         {{ item_content }}
                     </div>
                 </div>
@@ -107,10 +108,10 @@
     {%- elsif blocks -%}
         {%- for block in blocks -%}
             {%- liquid
-                assign accordion_block_title_class = block.settings.title_size | default: title_class | default: 'heading-h2'
+                assign accordion_block_title_class = block.settings.title_size | default: title_class | default: 'title-m'
             -%}
             <div
-                class="{{ item_class | default: 'border-t border-theme-border/20 first:border-t-0' }}"
+                class="{{ item_class | default: 'border-t border-line first:border-t-0' }}"
                 {{ block.shopify_attributes }}
             >
                 <button
@@ -131,7 +132,7 @@
 
                     <span
                         data-index="{{ forloop.index0 }}"
-                        class="ms-4 {{ icon_variant_class }}"
+                        class="ms-step-s {{ icon_variant_class }}"
                         :class="isActive($el.dataset.index) && 'is-active'"
                     >
                         {%- if icon_style == 'chevron' -%}
@@ -151,7 +152,7 @@
                     :aria-hidden="(!isActive($el.dataset.index)).toString()"
                 >
                     <div class="accordion__panel-inner">
-                        <div class="{{ content_class | default: 'pb-5 pe-8' }}">
+                        <div class="{{ content_class | default: 'pb-step-m pe-step-l' }}">
                             {{ block.settings.text }}
                         </div>
                     </div>
@@ -163,7 +164,7 @@
         {%- assign content_array = contents | split: '|' -%}
 
         {%- for title in title_array -%}
-            <div class="{{ item_class | default: 'border-t border-theme-border/20 first:border-t-0' }}">
+            <div class="{{ item_class | default: 'border-t border-line first:border-t-0' }}">
                 <button
                     type="button"
                     data-index="{{ forloop.index0 }}"
@@ -182,7 +183,7 @@
 
                     <span
                         data-index="{{ forloop.index0 }}"
-                        class="ms-4 {{ icon_variant_class }}"
+                        class="ms-step-s {{ icon_variant_class }}"
                         :class="isActive($el.dataset.index) && 'is-active'"
                     >
                         {%- if icon_style == 'chevron' -%}
@@ -202,7 +203,7 @@
                     :aria-hidden="(!isActive($el.dataset.index)).toString()"
                 >
                     <div class="accordion__panel-inner">
-                        <div class="{{ content_class | default: 'pb-5 pe-8' }}">
+                        <div class="{{ content_class | default: 'pb-step-m pe-step-l' }}">
                             {{ content_array[forloop.index0] }}
                         </div>
                     </div>
@@ -211,3 +212,12 @@
         {%- endfor -%}
     {%- endif -%}
 </div>
+
+{% stylesheet %}
+    .accordion__title--active {
+        opacity: 1;
+    }
+    .accordion__title--inactive {
+        opacity: 0.7;
+    }
+{% endstylesheet %}

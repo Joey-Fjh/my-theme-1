@@ -18,7 +18,7 @@ Inline Submit Field
     }
 
     .inline-submit-field__button {
-        @apply btn-primary shrink-0;
+        @apply btn-primary shrink-0 focus-ring-inset;
         border-start-start-radius: 0;
         border-end-start-radius: 0;
     }
@@ -75,7 +75,7 @@ Localization Switcher
             max-width: min(24rem, calc(100vw - 1rem));
             max-height: min(24rem, calc(100dvh - var(--announcement-bar-height, 0px) - 1rem));
             scrollbar-width: thin;
-            scrollbar-color: rgb(var(--color-foreground) / 0.35) transparent;
+            scrollbar-color: var(--color-line-strong) transparent;
             scrollbar-gutter: stable;
 
             &::-webkit-scrollbar {
@@ -88,7 +88,7 @@ Localization Switcher
 
             &::-webkit-scrollbar-thumb {
                 border-radius: 999px;
-                background-color: rgb(var(--color-foreground) / 0.35);
+                background-color: var(--color-line-strong);
             }
 
             &.localization-menu--align-end {
@@ -208,9 +208,6 @@ Variants:
     }
 
     /* --- Scale from trigger (global default) --- */
-    .panel-motion-scale {
-        --panel-motion-dur: var(--panel-motion-duration-scale);
-    }
 
     details[open] > .panel-motion-scale,
     [aria-expanded='true'] > .panel-motion-scale,
@@ -236,115 +233,6 @@ Variants:
     /* --- Layered reveal (rich header panel) ---
        Super-menu replay is driven by Alpine via data-panel-motion='enter'.
        This stays independent from scroll/section reveal and global settings. */
-    .panel-motion-layered {
-        --panel-motion-dur: var(--panel-motion-duration-layered);
-        --panel-motion-shell-dur: calc(var(--panel-motion-dur) * 0.85);
-        --panel-motion-layered-shell-scale: 0.45;
-        --panel-motion-layered-content-offset: 12px;
-
-        padding: 0;
-        overflow: hidden;
-        background: transparent;
-        border-color: transparent;
-        box-shadow: none;
-    }
-
-    .panel-motion-layered .panel-motion-shell {
-        overflow: hidden;
-        transform: scaleY(1);
-        transform-origin: top center;
-        animation: none;
-    }
-
-    .panel-motion-layered .panel-motion-content > * {
-        opacity: 1;
-        transform: translateY(0);
-        animation: none;
-    }
-
-    details:not([open]) > .panel-motion-layered .panel-motion-shell,
-    [data-dropdown]:not([open]) > .panel-motion-layered .panel-motion-shell {
-        transform: scaleY(var(--panel-motion-layered-shell-scale));
-        animation: none;
-    }
-
-    details:not([open]) .panel-motion-layered .panel-motion-content > *,
-    [data-dropdown]:not([open]) .panel-motion-layered .panel-motion-content > * {
-        animation: none;
-        opacity: 0;
-        transform: translateY(var(--panel-motion-layered-content-offset));
-    }
-
-    details[open] > .panel-motion-layered[data-panel-motion='enter'] .panel-motion-shell,
-    [data-dropdown][open] > .panel-motion-layered[data-panel-motion='enter'] .panel-motion-shell {
-        animation: panel-motion-layered-shell-in var(--panel-motion-shell-dur)
-            var(--panel-motion-ease-enter) both;
-    }
-
-    details[open] > .panel-motion-layered[data-panel-motion='enter'],
-    [data-dropdown][open] > .panel-motion-layered[data-panel-motion='enter'] {
-        animation: panel-motion-layered-panel-in var(--panel-motion-dur)
-            var(--panel-motion-ease-enter) both;
-    }
-
-    details[open] .panel-motion-layered[data-panel-motion='enter'] .panel-motion-content > *,
-    [data-dropdown][open]
-        .panel-motion-layered[data-panel-motion='enter']
-        .panel-motion-content
-        > * {
-        animation: panel-motion-content-in var(--panel-motion-duration-item)
-            var(--panel-motion-ease-enter) both;
-    }
-
-    details[open]
-        .panel-motion-layered[data-panel-motion='enter']
-        .panel-motion-content
-        > *:nth-child(1),
-    [data-dropdown][open]
-        .panel-motion-layered[data-panel-motion='enter']
-        .panel-motion-content
-        > *:nth-child(1) {
-        animation-delay: var(--panel-motion-content-delay-layered);
-    }
-
-    details[open]
-        .panel-motion-layered[data-panel-motion='enter']
-        .panel-motion-content
-        > *:nth-child(2),
-    [data-dropdown][open]
-        .panel-motion-layered[data-panel-motion='enter']
-        .panel-motion-content
-        > *:nth-child(2) {
-        animation-delay: calc(
-            var(--panel-motion-content-delay-layered) + var(--panel-motion-stagger-step, 32ms)
-        );
-    }
-
-    details[open]
-        .panel-motion-layered[data-panel-motion='enter']
-        .panel-motion-content
-        > *:nth-child(3),
-    [data-dropdown][open]
-        .panel-motion-layered[data-panel-motion='enter']
-        .panel-motion-content
-        > *:nth-child(3) {
-        animation-delay: calc(
-            var(--panel-motion-content-delay-layered) + var(--panel-motion-stagger-step, 32ms) * 2
-        );
-    }
-
-    details[open]
-        .panel-motion-layered[data-panel-motion='enter']
-        .panel-motion-content
-        > *:nth-child(4),
-    [data-dropdown][open]
-        .panel-motion-layered[data-panel-motion='enter']
-        .panel-motion-content
-        > *:nth-child(4) {
-        animation-delay: calc(
-            var(--panel-motion-content-delay-layered) + var(--panel-motion-stagger-step, 32ms) * 3
-        );
-    }
 
     /* --- Compact snap (sort / filter / localization) --- */
     .panel-motion-compact {
@@ -371,25 +259,6 @@ Variants:
     }
 
     /* --- Directional flyout (nested submenu — inline axis) --- */
-    .panel-motion-flyout {
-        --panel-motion-dur: var(--panel-motion-duration-flyout);
-        transform-origin: top inline-start;
-    }
-
-    [dir='rtl'] .panel-motion-flyout {
-        transform-origin: top inline-end;
-    }
-
-    details[open] > .panel-motion-flyout[class*='inset-s-full'],
-    [data-dropdown][open] > .panel-motion-flyout[class*='inset-s-full'] {
-        animation: panel-motion-flyout-in var(--panel-motion-dur) var(--panel-motion-ease-enter)
-            both;
-    }
-
-    [dir='rtl'] details[open] > .panel-motion-flyout[class*='inset-s-full'],
-    [dir='rtl'] [data-dropdown][open] > .panel-motion-flyout[class*='inset-s-full'] {
-        animation-name: panel-motion-flyout-in-rtl;
-    }
 
     details[open] > .panel-motion-flyout:not([class*='inset-s-full']),
     [aria-expanded='true'] > .panel-motion-flyout:not([class*='inset-s-full']),
@@ -401,27 +270,8 @@ Variants:
     }
 
     /* --- Disclosure (details-based panels, e.g. password access) --- */
-    .panel-motion-disclosure {
-        --panel-motion-dur: var(--panel-motion-duration-disclosure);
-
-        overflow: hidden;
-        max-height: 0;
-        opacity: 0;
-        pointer-events: none;
-    }
-
-    details[open] > .panel-motion-disclosure {
-        max-height: var(--panel-motion-disclosure-max-height);
-        pointer-events: auto;
-        animation: panel-motion-disclosure-in var(--panel-motion-dur) var(--panel-motion-ease-soft)
-            both;
-    }
 
     /* Unbounded lists (e.g. pickup store list) — open state must not clip after enter. */
-    details[open] > .panel-motion-disclosure--fluid {
-        max-height: none;
-        overflow: visible;
-    }
 
     /* --- Child item stagger (open-state keyframe animations) --- */
     details[open]
@@ -433,17 +283,6 @@ Variants:
         > .localization-item {
         animation: panel-motion-item-in var(--panel-motion-duration-item)
             var(--panel-motion-ease-enter) both;
-    }
-
-    details[open] > .panel-motion-flyout > li,
-    [data-dropdown][open] > .panel-motion-flyout > li {
-        animation: panel-motion-item-flyout-in var(--panel-motion-duration-item)
-            var(--panel-motion-ease-enter) both;
-    }
-
-    [dir='rtl'] details[open] > .panel-motion-flyout > li,
-    [dir='rtl'] [data-dropdown][open] > .panel-motion-flyout > li {
-        animation-name: panel-motion-item-flyout-in-rtl;
     }
 
     :is(.panel-motion-scale, .panel-motion-compact)
@@ -521,11 +360,6 @@ Tab Control
     }
 
     /* 1. Generic Default (Mobile: horizontal scroll, Desktop: wrap) */
-    .tab-control-default {
-        @media (width >= theme(--breakpoint-pc)) {
-            gap: 4.8rem;
-        }
-    }
 
     .tab-control-default .tab-header-default,
     .tab-control-underlined .tab-header-underlined {
@@ -546,18 +380,10 @@ Tab Control
             padding-bottom: 0.3em;
         }
 
-        @media (width >= theme(--breakpoint-pc)) {
+        @media (width >= theme(--breakpoint-tablet)) {
             flex-wrap: wrap;
             white-space: normal;
             overflow-x: visible;
-        }
-    }
-
-    .tab-control-default .tab-header-default {
-        gap: 1.6rem;
-
-        @media (width >= theme(--breakpoint-pc)) {
-            gap: 3.2rem;
         }
     }
 
@@ -568,9 +394,9 @@ Tab Control
 
     .tab-control-underlined .tab-header-underlined {
         gap: 2.4rem;
-        @apply border-b border-theme-border/20;
+        @apply border-b border-line;
 
-        @media (width >= theme(--breakpoint-pc)) {
+        @media (width >= theme(--breakpoint-tablet)) {
             gap: 4rem;
         }
     }
@@ -592,12 +418,12 @@ Active contract: .is-active on trigger (Alpine tabControl).
 ========================================================= */
 @layer components {
     .tab-nav-item {
-        @apply cursor-pointer focus-ring;
+        @apply cursor-pointer focus-ring-inset;
     }
 
     .tab-nav-item--search {
         @apply border-b border-transparent pb-2;
-        color: rgb(var(--color-foreground) / 0.6);
+        color: var(--color-subtle);
         transition:
             color var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease),
             border-color var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease);
@@ -610,7 +436,7 @@ Active contract: .is-active on trigger (Alpine tabControl).
         &.is-active {
             border-color: rgb(var(--color-foreground));
             color: rgb(var(--color-foreground));
-            font-weight: 500;
+            font-weight: var(--font-body-weight);
         }
     }
 
@@ -618,45 +444,33 @@ Active contract: .is-active on trigger (Alpine tabControl).
         border-color: rgb(var(--color-border));
     }
 
+    /* Inactive items dim through the scheme's subtle text colour, not opacity, so they keep text contrast. */
     .tab-nav-item--underline-opacity {
         border-bottom: 2px solid transparent;
-        opacity: 0.5;
+        color: var(--color-subtle);
         transition:
-            opacity var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease),
+            color var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease),
             border-color var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease);
 
         &:hover,
         &:focus-visible {
-            opacity: 1;
+            color: rgb(var(--color-foreground));
         }
 
         &.is-active {
-            opacity: 1;
+            color: rgb(var(--color-foreground));
             border-color: currentColor;
         }
     }
 
     .tab-nav-item--underline-opacity.tab-nav-item--hover-muted {
-        opacity: 0.4;
-
         &:hover {
-            opacity: 0.6;
+            color: var(--color-muted);
         }
 
         &:focus-visible,
         &.is-active {
-            opacity: 1;
-        }
-    }
-
-    .tab-nav-item--opacity {
-        opacity: 0.4;
-        transition: opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
-
-        &:hover,
-        &:focus-visible,
-        &.is-active {
-            opacity: 1;
+            color: rgb(var(--color-foreground));
         }
     }
 }
@@ -679,14 +493,6 @@ Consumers: sections/promise-section, sections/cart, snippets/filters-groups
         transition:
             color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
             opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
-    }
-
-    .accordion__title--active {
-        opacity: 1;
-    }
-
-    .accordion__title--inactive {
-        opacity: 0.7;
     }
 
     .accordion__icon {
@@ -769,7 +575,7 @@ Section grid/carousel (.icon-with-text-section__*) and PDP wrappers stay in snip
         @apply min-w-0 leading-tight break-words;
     }
 
-    @media (width >= theme(--breakpoint-pc)) {
+    @media (width >= theme(--breakpoint-tablet)) {
         .icon-with-text-item__icon,
         .icon-with-text-item__image {
             width: var(--icon-with-text-icon-size, 24px);
@@ -781,11 +587,11 @@ Section grid/carousel (.icon-with-text-section__*) and PDP wrappers stay in snip
 /* =========================================================
 Dialog
 
-.ui-dialog-panel          – Single chrome primitive: border, radius, shadow, background.
+.ui-dialog-panel          — Single chrome primitive: border, radius, shadow-sm, background.
                              Consumed by all dialog panel variants via composition in markup.
-.ui-dialog-modal-panel    – Modal structural layout: pointer-events, relative, full-width, overflow-auto.
-.ui-dialog-drawer-panel   – Drawer structural layout: relative, full height/width, overflow-auto.
-.ui-dialog-drawer-shell   – Drawer positioning shell only; no chrome (transparent, clips via inner panel).
+.ui-dialog-modal-panel    — Modal structural layout: pointer-events, relative, full-width, overflow-auto.
+.ui-dialog-drawer-panel   — Drawer structural layout: relative, full height/width, overflow-auto.
+.ui-dialog-drawer-shell   — Drawer positioning shell only; no chrome (transparent, clips via inner panel).
 ========================================================= */
 @layer components {
     .ui-dialog-panel {
@@ -839,7 +645,7 @@ Dialog
         Enable via drawer_desktop_layout: true in ui-dialog call sites.
     */
     .ui-dialog-mobile-layout-inset {
-        @media (width < theme(--breakpoint-pc)) {
+        @media (width < theme(--breakpoint-tablet)) {
             @apply !right-auto !bottom-12 !left-1/2 !w-[calc(100%-2rem)] !max-w-none !-translate-x-1/2 !p-0;
 
             top: calc(var(--announcement-bar-height, 0px) + 3rem) !important;
@@ -849,39 +655,39 @@ Dialog
     }
 
     .ui-dialog-drawer-shell.ui-dialog-mobile-layout-inset {
-        @media (width < theme(--breakpoint-pc)) {
+        @media (width < theme(--breakpoint-tablet)) {
             @apply flex flex-col;
         }
     }
 
     .ui-dialog-mobile-layout-inset > .ui-dialog-panel {
-        @media (width < theme(--breakpoint-pc)) {
+        @media (width < theme(--breakpoint-tablet)) {
             @apply h-full min-h-0 flex-1;
         }
     }
 
     .ui-dialog-desktop-drawer {
-        @media (width >= theme(--breakpoint-pc)) {
+        @media (width >= theme(--breakpoint-tablet)) {
             @apply !bottom-0 !w-full !max-w-[40rem] !translate-x-0;
         }
 
-        @media (width >= theme(--breakpoint-pc)) {
+        @media (width >= theme(--breakpoint-tablet)) {
             top: var(--announcement-bar-height, 0px) !important;
         }
 
-        @media (width >= theme(--breakpoint-fw)) {
+        @media (width >= theme(--breakpoint-wide)) {
             @apply !max-w-[33vw];
         }
     }
 
     .ui-dialog-desktop-drawer--left {
-        @media (width >= theme(--breakpoint-pc)) {
+        @media (width >= theme(--breakpoint-tablet)) {
             @apply !right-auto !left-0;
         }
     }
 
     .ui-dialog-desktop-drawer--right {
-        @media (width >= theme(--breakpoint-pc)) {
+        @media (width >= theme(--breakpoint-tablet)) {
             @apply !right-0 !left-auto;
         }
     }
@@ -895,7 +701,7 @@ Dialog
     }
 
     .ui-dialog-overlay-header {
-        @apply flex shrink-0 items-center justify-between gap-4 border-b border-theme-border/20 px-6 py-5;
+        @apply flex shrink-0 items-center justify-between gap-4 border-b border-line px-6 py-5;
     }
 
     .ui-dialog-overlay-body {
@@ -903,7 +709,7 @@ Dialog
     }
 
     .ui-dialog-overlay-footer {
-        @apply shrink-0 border-t border-theme-border/20 px-6 py-5;
+        @apply shrink-0 border-t border-line px-6 py-5;
     }
 }
 
@@ -924,22 +730,6 @@ Toast
             min-width: 0;
             overflow-wrap: break-word;
         }
-    }
-
-    .toast--success {
-        @apply bg-success text-success-text;
-    }
-
-    .toast--warning {
-        @apply bg-warning text-warning-text;
-    }
-
-    .toast--error {
-        @apply bg-error text-error-text;
-    }
-
-    .toast--info {
-        @apply bg-info text-info-text;
     }
 }
 
@@ -1010,7 +800,7 @@ Used to style backend rich-text HTML output:
     }
 
     .rte :is(strong, b) {
-        font-weight: 700;
+        font-weight: var(--font-heading-weight);
     }
 
     .rte :is(em, i) {
@@ -1059,13 +849,13 @@ Used to style backend rich-text HTML output:
 
     .rte li::marker {
         color: currentColor;
-        font-weight: 500;
+        font-weight: var(--font-body-weight);
     }
 
     .rte li > :is(h1, h2, h3, h4, h5, h6):first-child {
         margin-top: 0;
         margin-bottom: 0.45em;
-        line-height: 1.25;
+        line-height: var(--font-body-line-height);
     }
 
     .rte li > p {
@@ -1097,7 +887,7 @@ Used to style backend rich-text HTML output:
     }
 
     .rte blockquote {
-        @apply border-s border-theme-border ps-5 text-theme-text/80 italic;
+        @apply border-s border-theme-border ps-5 text-muted italic;
     }
 
     .rte :is(p, div):has(> img:only-child) {
@@ -1119,6 +909,10 @@ Used to style backend rich-text HTML output:
         border-radius: 0.25rem;
     }
 
+    .rte :is(iframe, embed, object) {
+        max-width: 100%;
+    }
+
     .rte figure {
         margin: 1.5em auto;
         display: flex;
@@ -1133,21 +927,21 @@ Used to style backend rich-text HTML output:
     }
 
     .rte figcaption {
-        @apply body-sm text-theme-text/60;
+        @apply body-sm text-subtle;
 
         text-align: center;
     }
 
     .rte hr {
-        @apply border-theme-border/20;
+        @apply border-line;
 
         margin: 2em 0;
     }
 
     .rte :is(code, pre) {
-        @apply bg-theme-text/5 text-theme-text;
+        @apply bg-surface-muted text-theme-text;
 
-        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-family: var(--font-body-family);
         font-size: 0.9em;
     }
 
@@ -1174,14 +968,19 @@ Used to style backend rich-text HTML output:
     }
 
     .rte :is(th, td) {
-        @apply border border-theme-border/20;
+        @apply border border-line;
 
         padding: 0.75em 1em;
         text-align: start;
     }
 
     .rte th {
-        @apply bg-theme-text/5;
+        @apply bg-surface-muted;
+    }
+
+    /* Scroll containers clip outside rings; draw the ring inside the link. */
+    .rte :is(table, pre) :focus-visible {
+        outline-offset: -2px;
     }
 
     .rte > *:first-child {
@@ -1215,21 +1014,17 @@ placeholder family, placeholder selection, aspect ratio, and outer layout.
 ========================================================= */
 @layer components {
     .media-placeholder-frame {
-        @apply overflow-hidden rounded-md border border-theme-border/20;
+        @apply overflow-hidden rounded-md border border-line;
 
         background-color: rgb(var(--color-background));
 
         @supports (background-color: color-mix(in oklab, white, black)) {
-            background-color: color-mix(
-                in oklab,
-                rgb(var(--color-background)) 95%,
-                rgb(var(--color-foreground)) 5%
-            );
+            background-color: var(--color-surface-muted);
         }
     }
 
     .media-placeholder-frame .svg-placeholder {
-        @apply text-theme-text/20;
+        @apply text-faint;
     }
 }
 
@@ -1245,11 +1040,11 @@ Scene owners can add BEM classes for typography/order/color deltas.
     }
 
     .product-price__main {
-        @apply font-medium text-theme-text;
+        @apply font-normal text-theme-text;
     }
 
     .product-price__compare {
-        @apply text-theme-text/80 line-through;
+        @apply text-muted line-through;
     }
 }
 
@@ -1278,15 +1073,15 @@ Consumed via snippets/quantity-selector.liquid and inline in cart sections.
 
         @media (hover: hover) and (pointer: fine) {
             &:hover:not(:disabled):not([aria-disabled='true']) {
-                border-color: rgb(var(--color-foreground) / 0.16);
-                background-color: rgb(var(--color-foreground) / 0.1);
-                box-shadow: inset 0 0 0 1px rgb(var(--color-background) / 0.28);
+                border-color: var(--color-line);
+                background-color: var(--color-surface-strong);
+                box-shadow: inset 0 0 0 1px var(--color-line-inverse);
             }
         }
 
         &:active:not(:disabled):not([aria-disabled='true']) {
-            border-color: rgb(var(--color-foreground) / 0.22);
-            background-color: rgb(var(--color-foreground) / 0.16);
+            border-color: var(--color-line);
+            background-color: var(--color-surface-strong);
         }
 
         &:disabled,
@@ -1297,23 +1092,31 @@ Consumed via snippets/quantity-selector.liquid and inline in cart sections.
         }
     }
 
-    .quantity-selector__input {
-        @apply w-[4ch] appearance-none border-b border-current bg-transparent p-0 text-center text-current tabular-nums focus-ring [-moz-appearance:textfield] focus:ring-0 focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none;
-        font: inherit;
-
-        &:focus-visible {
-            position: relative;
-            z-index: 1;
-        }
-    }
-
     .quantity-selector--static .quantity-selector__button {
         @apply pointer-events-none cursor-default;
     }
 
-    .quantity-selector--static .quantity-selector__input {
-        @apply pointer-events-none cursor-default opacity-100;
-        -webkit-text-fill-color: currentColor;
+    .quantity-selector[data-qty-surface='product'] {
+        width: 16rem;
+        height: 4.4rem;
+        justify-content: space-between;
+        border-style: solid;
+        border-width: 1px;
+        border-radius: var(--radius-sm);
+        border-color: var(--color-line);
+        padding-inline: 0.75rem;
+    }
+
+    .quantity-selector[data-qty-surface='product'] .quantity-selector__button {
+        border-color: transparent;
+        background-color: transparent;
+        box-shadow: none;
+    }
+
+    .quantity-selector[data-qty-surface='product']
+        .quantity-selector__button:hover:not(:disabled):not([aria-disabled='true']) {
+        border-color: transparent;
+        background-color: var(--color-surface-muted);
     }
 }
 
@@ -1325,217 +1128,961 @@ Consumed via snippets/buy-buttons.liquid (render/API owner).
 Not included: pickup-availability-inline__retry-action (pickup owner delta in snippets.css, Phase 5D-2b).
 ========================================================= */
 @layer components {
-    .buy-buttons__actions--purchase-group {
-        @apply flex w-full flex-col gap-3;
-    }
-
-    .buy-buttons__primary-row {
-        @apply grid w-full grid-cols-1 items-stretch gap-3;
-    }
-
-    .buy-buttons__actions--with-quantity .buy-buttons__primary-row {
-        @apply grid-cols-[minmax(8.75rem,9.75rem)_minmax(0,1fr)] pc:grid-cols-[10.5rem_minmax(0,1fr)];
-    }
-
-    .buy-buttons__quantity {
-        @apply flex min-w-0 items-stretch;
-    }
-
-    .buy-buttons__quantity > * {
-        width: 100%;
-        justify-content: space-between;
-    }
-
-    .buy-buttons__submit--unavailable {
-        @apply border-theme-border/20 bg-theme-border/20 text-theme-text/45 opacity-100;
-    }
-
-    .buy-buttons__label {
-        @apply inline-block transition-opacity;
-    }
-
     .buy-buttons__label.is-loading {
         @apply opacity-0;
+    }
+
+    /* Colours, hover and motion: the secondary button rule in tailwind.elements.css (unlayered, like Shopify's own CSS). */
+    .buy-buttons__actions--purchase-group
+        button.shopify-payment-button__button--unbranded:focus-visible {
+        @apply focus-ring;
     }
 }
 
 /* =========================================================
-Pagination
-
-Reusable across: collection, blog, slides-show, announcement-bar,
-featured-products, collections, testimonial-featured, icon-with-text.
-Consumed via snippets/pagination.liquid.
+Owner: snippets/pagination.liquid (the rest lives in its {% stylesheet %})
+Consumers: article, blog, collection, collections, search results
 ========================================================= */
 @layer components {
     .pagination {
         list-style: none;
     }
+}
 
-    .pagination__inner {
-        @apply mx-auto flex w-fit max-w-full items-center;
-        gap: 0.25rem;
+/* =========================================================
+Shared multi-file components moved from tailwind.snippets.css (batch 5-C2).
+Kept in @layer components so their cascade position is unchanged.
+========================================================= */
+/* =========================================================
+Owner: snippets/active-filters.liquid
+Consumers: collection filters, search filters
+Layer: snippets temporary owner block
+========================================================= */
+/* =========================================================
+Owner: sections/collection.liquid
+Consumers: collection section tabs
+Layer: snippets — layout delta only (trigger chrome: tab-nav-item* in components.css, Phase 5A)
+========================================================= */
+@layer components {
+    .collection-section {
+        .collection-toolbar__action {
+            @apply body-3xl focus-ring-inset;
+        }
+
+        .filter-horizontal__label-row {
+            @apply body-3xl;
+        }
+
+        .filters-field__summary {
+            @apply body-3xl;
+        }
+
+        .sort-by-dropdown__trigger {
+            @apply body-3xl;
+        }
+    }
+}
+
+/* =========================================================
+Owner: sections/featured-products.liquid
+Consumers: featured products section tabs + brand watermark sizing
+Layer: snippets — tab layout delta; tab title uses section heading_size tier in markup
+========================================================= */
+@layer components {
+    .featured-products__brand-watermark {
+        --wm-bounce-duration: 2.4s;
+        --wm-bounce: 0.18em;
+        --wm-font-size: clamp(2.75rem, 14vw, 5.5rem);
+        margin-block: 0.5rem 0;
+        height: clamp(12rem, 38vw, 17rem);
+
+        @media (width >= theme(--breakpoint-tablet)) {
+            --wm-bounce: 0.22em;
+            --wm-font-size: calc(var(--wm-height, 380px) * 0.33);
+            margin-block: 0.75rem 0;
+            height: var(--wm-height, 380px);
+        }
+    }
+}
+
+/* =========================================================
+Owner: snippets/watermark.liquid
+Consumers: featured-products marquee watermark (and future marquee callers)
+Layer: snippets — marquee track structure/typography (motion keyframes in animates)
+========================================================= */
+/* =========================================================
+Owner: snippets/filters-field.liquid
+Consumers: collection/search filters
+Layer: snippets temporary owner block
+========================================================= */
+@layer components {
+    .filters-field__range-wrapper.is-loading {
+        @apply cursor-not-allowed opacity-50;
     }
 
-    /* ---- shared button base ---- */
-    .pagination__button {
-        @apply inline-flex h-10 shrink-0 items-center justify-center gap-1 rounded px-2 whitespace-nowrap;
+    .filters-field__range-input-wrapper.is-loading {
+        @apply cursor-not-allowed opacity-80;
+    }
+}
 
-        font-family: inherit;
-        font-size: var(--pagination-font-size);
-        border-radius: var(--pagination-radius);
-        transition:
-            color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
-            background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
-            border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
-            transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+/* =========================================================
+Owner: image lightbox snippet/overlay
+Consumers: product media lightbox
+Layer: snippets temporary owner block
+========================================================= */
+/* =========================================================
+Owner: snippets/content-icon.liquid
+Consumers: snippets/icon-with-text-item.liquid, snippets/product-info-blocks.liquid
+Layer: snippets temporary owner block
+========================================================= */
+@layer components {
+    .content-icon {
+        width: var(--content-icon-size, 20px);
+        height: var(--content-icon-size, 20px);
 
-        &:focus-visible {
+        .icons,
+        svg {
+            @apply size-full! max-h-full max-w-full;
+        }
+    }
+}
+
+/* =========================================================
+Owner: snippets/product-card.liquid
+Consumers: collection grids, featured products, recommendations,
+  snippets/predictive-search-product-card.liquid (product-card-shell__* only)
+Layer: snippets temporary owner block
+
+Shared primitives (valid cross-snippet — not orphans):
+- product-card-shell__* — lite shell shared by product-card and predictive-search-product-card
+- product-card__variant-* — same family; consumed by snippets/product-card-variant-panel.liquid
+========================================================= */
+@layer components {
+    .product-card-shell {
+        @apply flex flex-col gap-3 p-3;
+
+        border: var(--product-card-border-width, 0px) solid var(--color-line);
+        border-radius: var(--product-card-radius, 0px);
+        overflow: hidden;
+        box-shadow: var(--product-card-shadow-horizontal-offset, 0px)
+            var(--product-card-shadow-vertical-offset, 0px)
+            var(--product-card-shadow-blur-radius, 0px)
+            rgba(var(--color-foreground), var(--product-card-shadow-opacity, 0));
+
+        .product-card-shell__meta,
+        .product-card-shell__info {
+            @apply flex items-center justify-between;
+        }
+
+        .product-card-shell__meta {
+            @apply gap-3 text-muted;
+        }
+
+        .product-card-shell__brand {
+            text-transform: uppercase;
+            @apply min-w-0 truncate tracking-widest;
+        }
+
+        .product-card-shell__meta-side {
+            @apply flex shrink-0 items-center justify-end;
+        }
+
+        .product-card-shell__pagination {
+            @apply flex items-center gap-3;
+            transition: color var(--motion-duration-fast) var(--motion-ease-default);
+            scrollbar-width: none;
+            &::-webkit-scrollbar {
+                display: none;
+            }
+        }
+
+        /* 24px hit target; visual dot stays ~12px via ::before */
+        .product-card-shell__pagination-dot {
+            @apply relative inline-flex shrink-0 cursor-pointer items-center justify-center;
+            width: 1.5rem;
+            height: 1.5rem;
+            padding: 0;
+            border: none;
+            background: transparent;
+        }
+
+        .product-card-shell__pagination-dot::before {
+            content: '';
+            width: var(--control-dot-size, 0.75rem);
+            height: var(--control-dot-size, 0.75rem);
+            border-radius: 9999px;
+            background-color: var(--color-indicator);
+            transition:
+                width var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+                height var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+                background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+                border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+        }
+
+        @media (hover: hover) and (pointer: fine) {
+            .product-card-shell__pagination-dot:hover:not(:disabled):not(
+                    [aria-disabled='true']
+                )::before {
+                background-color: var(--color-indicator-strong);
+            }
+        }
+
+        .product-card-shell__pagination-dot:focus-visible {
             outline: var(--focus-ring-width) solid
                 rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
             outline-offset: var(--focus-ring-offset);
         }
 
-        &:active:not(.pagination__button--disabled) {
-            transform: scale(0.98);
+        .product-card-shell__pagination-dot.is-active::before {
+            width: 1rem;
+            height: 1rem;
+            background-color: transparent;
+            border: 1px solid currentColor;
         }
 
-        @media (prefers-reduced-motion: reduce) {
-            &:active:not(.pagination__button--disabled) {
-                transform: none;
+        .product-card-shell__pagination-dot.is-active::after {
+            content: '';
+            @apply absolute top-1/2 left-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-current;
+        }
+
+        .product-card-shell__pagination-numeric {
+            @apply flex items-center gap-3;
+        }
+
+        .product-card-shell__pagination-arrow {
+            @apply control-icon-compact;
+        }
+
+        .product-card-shell__pagination-text {
+            @apply text-center;
+        }
+
+        .product-card-shell__media {
+            @apply relative flex-1 overflow-hidden;
+            aspect-ratio: var(--pc-media-ratio, 1/1);
+        }
+
+        .product-card-shell__media-link {
+            @apply relative block h-full w-full;
+        }
+
+        .product-card-shell__media-frame {
+            @apply h-full w-full overflow-hidden;
+        }
+
+        .product-card-shell__media-frame:not(.media-placeholder-frame) {
+            @apply bg-theme-bg;
+        }
+
+        .product-card-shell__image {
+            @apply h-full w-full object-cover;
+        }
+
+        .product-card-shell__info {
+            @apply gap-3;
+        }
+
+        .product-card-shell__title {
+            @apply min-w-0 flex-1 body-xl font-normal break-words text-theme-text hover:underline;
+        }
+
+        .product-card-shell__price {
+            @apply shrink-0 body-xl font-normal text-theme-text;
+        }
+    }
+
+    .product-card {
+        @apply relative;
+        /* Hover actions size their type to the card, not the viewport (LS2-A). */
+        container: product-card / inline-size;
+
+        .product-card__category,
+        .product-card__info {
+            @apply cursor-pointer;
+        }
+
+        .product-card__info {
+            .product-card__info-title {
+                @apply body-xl font-normal text-theme-text;
+            }
+
+            .product-card__info-price {
+                @apply body-xl font-normal text-theme-text;
+            }
+        }
+
+        .product-card__image {
+            @apply media-interaction-scope;
+
+            .product-card__image-link {
+                @apply h-full w-full;
+            }
+
+            .product-card__carousel-slide {
+                @apply absolute inset-0;
+            }
+        }
+
+        .product-card__touch-actions-trigger {
+            @apply control-icon absolute end-3 top-3 z-20 hidden border border-theme-border bg-theme-bg text-theme-text shadow-sm;
+
+            @media not ((hover: hover) and (pointer: fine)) {
+                @apply inline-flex;
+            }
+
+            &.is-active {
+                @apply border-theme-border bg-theme-bg;
+            }
+
+            .product-card__touch-actions-trigger-icon {
+                @apply inline-flex items-center justify-center;
+            }
+        }
+
+        .product-card__touch-quick-view-trigger {
+            @apply control-icon absolute end-3 top-3 z-20 hidden border border-theme-border bg-theme-bg text-theme-text shadow-sm;
+
+            @media not ((hover: hover) and (pointer: fine)) {
+                @apply inline-flex items-center justify-center;
+            }
+        }
+
+        .product-card__hover-actions {
+            @apply absolute inset-x-0 bottom-0 z-10 m-3 flex flex-col gap-3 bg-theme-bg pt-3;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+
+            @media (hover: hover) and (pointer: fine) {
+                &.is-visible,
+                &:focus-within {
+                    opacity: 1;
+                    pointer-events: auto;
+                }
+            }
+
+            /* Touch: keep actions in document flow under title/price so they don't cover media. */
+            @media not ((hover: hover) and (pointer: fine)) {
+                @apply static m-0 hidden px-0 pt-0;
+
+                &.is-visible {
+                    @apply mt-3 flex;
+                    opacity: 1;
+                    pointer-events: auto;
+                }
+            }
+
+            .product-card__btn-primary {
+                @apply btn-primary body-2xl font-normal;
+            }
+
+            .product-card__btn-secondary {
+                @apply btn-secondary body-2xl font-normal;
+            }
+
+            .product-card__btn-secondary.is-disabled {
+                @apply border-line bg-surface-strong text-subtle opacity-100;
+            }
+
+            /* Narrow cards (for example four columns at 1440): a smaller type step so the actions cover less of the image. */
+            @container product-card (width < 32rem) {
+                .product-card__btn-primary,
+                .product-card__btn-secondary {
+                    @apply copy-m;
+                }
+            }
+        }
+
+        .product-card__quick-view-trigger {
+            @apply absolute top-1/2 left-1/2 z-10 flex h-18 w-18 -translate-x-1/2 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-theme-border bg-theme-bg text-theme-text shadow-md;
+            opacity: 0;
+            pointer-events: none;
+            transition:
+                opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+                transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+
+            @media not ((hover: hover) and (pointer: fine)) {
+                @apply hidden;
+            }
+
+            &.is-visible,
+            &:focus-visible {
+                opacity: 1;
+                pointer-events: auto;
+            }
+        }
+
+        .product-card__variant-shell {
+            @apply absolute inset-x-0 bottom-0 z-10 overflow-hidden bg-theme-bg px-3 pt-3 pb-3;
+            max-height: 100%;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(0.5rem);
+            transition:
+                transform var(--motion-duration-base) var(--motion-ease-enter),
+                opacity var(--motion-duration-base) var(--motion-ease-enter);
+
+            @media not ((hover: hover) and (pointer: fine)) {
+                @apply hidden;
+            }
+
+            &.is-visible {
+                opacity: 1;
+                pointer-events: auto;
+                transform: translateY(0);
+            }
+        }
+
+        .product-card__variant-panel {
+            @apply pt-1;
+        }
+
+        .product-card__variant-table-wrap {
+            @apply overflow-x-auto;
+            scrollbar-width: none;
+
+            &::-webkit-scrollbar {
+                display: none;
+            }
+        }
+
+        .product-card__variant-table {
+            @apply min-w-[18rem];
+        }
+
+        .product-card__variant-body {
+            @apply max-h-0 overflow-hidden opacity-0;
+            pointer-events: none;
+            scrollbar-width: none;
+            transition:
+                max-height var(--motion-duration-base) var(--motion-ease-enter),
+                opacity var(--motion-duration-fast) var(--motion-ease-enter);
+
+            &::-webkit-scrollbar {
+                display: none;
+            }
+        }
+
+        .product-card__variant-shell.is-visible .product-card__variant-body {
+            @apply max-h-[9.75rem] overflow-y-auto opacity-100;
+            pointer-events: auto;
+        }
+
+        .product-card__variant-row {
+            @apply grid grid-cols-[minmax(0,0.9fr)_minmax(0,1fr)_auto] items-center gap-3 border-b border-line py-3 body-sm pc:body-md;
+        }
+
+        .product-card__variant-cell {
+            @apply text-muted;
+        }
+
+        .product-card__variant-cell--label {
+            @apply min-w-0 truncate text-theme-text;
+        }
+
+        .product-card__variant-cell--value {
+            @apply whitespace-nowrap;
+        }
+
+        .product-card__variant-cell--color {
+            @apply inline-flex min-w-0 items-center gap-2 whitespace-nowrap;
+        }
+
+        .product-card__variant-cell--meta {
+            @apply text-end whitespace-nowrap;
+        }
+
+        .product-card__variant-cell--meta.is-unavailable {
+            @apply text-subtle;
+        }
+
+        .product-card__variant-swatch {
+            @apply h-3.5 w-3.5 shrink-0 rounded-full border border-line bg-surface-strong;
+        }
+
+        &[data-hover-mode='variants'] {
+            .product-card__info {
+                transition: transform var(--motion-duration-fast) var(--motion-ease-default);
+            }
+
+            .product-card__image {
+                @apply overflow-hidden;
+            }
+        }
+
+        &[data-hover-mode='variants']:hover {
+            .product-card__info {
+                transform: translateY(-0.45rem);
+            }
+        }
+
+        &.product-card--placeholder {
+            .product-card__category,
+            .product-card__info {
+                @apply cursor-default;
+            }
+
+            .product-card-shell__title {
+                text-decoration: none;
             }
         }
     }
+}
 
-    .pagination__button--disabled {
-        @apply pointer-events-none cursor-default;
-        opacity: 0.4;
-    }
+/* =========================================================
+Owner: snippets/product-gallery-thumbnails.liquid
+Consumers: PDP gallery, featured product gallery
+Layer: snippets temporary owner block
+========================================================= */
+@layer components {
+    .product-gallery__thumbnail-nav-button {
+        --control-icon-size: 4rem;
 
-    /* hover variants (applied alongside pagination__button) */
-    .pagination__button--hover-default {
-        @media (hover: hover) and (pointer: fine) {
-            &:hover:not(.pagination__button--disabled) {
-                background-color: rgb(var(--color-foreground) / 0.08);
-            }
+        .icons {
+            width: 2.4rem;
+            height: 2.4rem;
+        }
+
+        .icons svg {
+            width: 100%;
+            height: 100%;
         }
     }
 
-    .pagination__button--hover-minimal {
-        @media (hover: hover) and (pointer: fine) {
-            &:hover:not(.pagination__button--disabled) {
-                text-decoration: underline;
-            }
-        }
-
-        &:focus-visible:not(.pagination__button--disabled) {
-            text-decoration: underline;
-        }
-    }
-
-    .pagination__button--outline {
-        @apply border border-theme-border/20;
-    }
-
-    .pagination__button--hover-outline {
-        @apply border border-theme-border/20;
-
-        @media (hover: hover) and (pointer: fine) {
-            &:hover:not(.pagination__button--disabled) {
-                background-color: rgb(var(--color-foreground) / 0.08);
-            }
-        }
-    }
-
-    /* ---- page number base ---- */
-    .pagination__page {
-        @apply inline-flex h-10 min-w-10 shrink-0 items-center justify-center rounded px-2;
-
-        font-family: inherit;
-        font-size: var(--pagination-font-size);
-        border-radius: var(--pagination-radius);
+    .product-gallery__thumbnail {
+        @apply block shrink-0 cursor-pointer overflow-hidden rounded-sm border-2;
+        border-color: transparent;
         transition:
-            color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
-            background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
             border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
-            transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+            opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
 
-        &:focus-visible {
-            outline: var(--focus-ring-width) solid
-                rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
-            outline-offset: var(--focus-ring-offset);
+        &:hover {
+            border-color: var(--color-line);
+        }
+
+        &.is-active {
+            border-color: rgb(var(--color-foreground));
         }
     }
 
-    a.pagination__page {
-        &:active {
-            transform: scale(0.98);
+    .product-gallery__zoom-button {
+        @apply absolute inset-0 h-full w-full focus-ring-inset;
+        opacity: 0;
+        z-index: 0;
+        pointer-events: none;
+        transition: opacity var(--motion-duration-slow, 400ms) var(--motion-ease-exit, ease-out);
+
+        &.is-active {
+            opacity: 1;
+            z-index: 10;
+            pointer-events: auto;
         }
 
-        @media (prefers-reduced-motion: reduce) {
-            &:active {
-                transform: none;
+        /* The wrapper is a lightbox button, a media button or an inert div; only the lightbox zooms. */
+        &[data-lightbox-index] {
+            @apply cursor-zoom-in;
+        }
+
+        &[data-media-id] {
+            @apply cursor-pointer;
+        }
+    }
+
+    @media (width >= 64rem) {
+        .product-gallery-carousel--pagination-vertical {
+            position: relative;
+            height: 100%;
+            min-height: 100%;
+            aspect-ratio: auto;
+        }
+
+        .product-gallery-carousel--pagination-vertical .swiper-wrapper,
+        .product-gallery-carousel--pagination-vertical .swiper-slide {
+            height: 100%;
+        }
+
+        .product-gallery-carousel--pagination-vertical .product-gallery-carousel__pagination {
+            position: absolute;
+            top: 50%;
+            bottom: auto;
+            left: max(1rem, calc(var(--page-margin) * 0.5));
+            z-index: 2;
+            display: flex;
+            width: auto;
+            flex-direction: column;
+            align-items: center;
+            gap: 0;
+            margin-top: 0;
+            transform: translateY(-50%);
+        }
+
+        .product-gallery-carousel--pagination-vertical
+            .product-gallery-carousel__pagination.swiper-pagination-horizontal {
+            flex-direction: column;
+        }
+
+        .product-gallery-carousel--pagination-vertical
+            .product-gallery-carousel__pagination
+            .swiper-pagination-bullet {
+            margin: 0;
+        }
+    }
+}
+
+/* =========================================================
+Owner: snippets/product-info-blocks.liquid
+Block-driven consumers: PDP (sections/product.liquid), featured-product (sections/featured-product.liquid)
+Layer: snippets temporary owner block
+
+Parallel scene API (not product-info-blocks consumers):
+- product-quick-view + product-purchase-stack — independent quick-view stack; dual-class reuses price primitive only
+
+Shared primitives (valid cross-snippet — not orphans):
+- product-price* — components primitive consumed by product-info-blocks and quick view
+- product-info-blocks__price* — scene/API hooks; quick view dual-classes only for price primitive compatibility
+- product-info-blocks__title — layout hook; heading tier from title block heading_size in markup (PDP h1, featured h2)
+========================================================= */
+@layer components {
+    .product-info-blocks {
+        --product-block-row-gap: var(--spacing-step-2xl);
+        --product-block-row-gap-tight: var(--spacing-step-2xs);
+        --product-block-row-gap-box: var(--spacing-step-m);
+
+        @apply flex flex-col pc:max-h-full pc:min-h-0;
+
+        gap: var(--product-block-row-gap);
+
+        > * {
+            @apply pc:shrink-0;
+        }
+
+        /* Bound the height only: clip keeps the inline axis visible, so purchase buttons'
+           hover peak, focus ring and shadow are never cut at the column edge. */
+        @media (width >= 48rem) {
+            overflow-x: visible;
+            overflow-y: clip;
+
+            @supports not (overflow: clip) {
+                overflow: hidden;
             }
         }
     }
 
-    /* hover variants (applied alongside pagination__page) */
-    .pagination__page--hover-default {
-        @media (hover: hover) and (pointer: fine) {
-            &:hover {
-                background-color: rgb(var(--color-foreground) / 0.08);
-            }
+    .product-info-blocks__block--vendor + .product-info-blocks__block--title,
+    .product-info-blocks__block--title + .product-info-blocks__block--inventory_notice {
+        margin-top: calc(var(--product-block-row-gap-tight) - var(--product-block-row-gap));
+    }
+
+    .product-info-blocks__block--box + .product-info-blocks__block--box {
+        margin-top: calc(var(--product-block-row-gap-box) - var(--product-block-row-gap));
+    }
+
+    .featured-product-section--carousel
+        .product-info-blocks--featured
+        > .product-info-blocks__block {
+        margin-top: 0;
+    }
+
+    .product-info-blocks__title {
+        @apply min-w-0 text-muted;
+    }
+
+    .product-info-blocks__vendor {
+        @apply tracking-[0.04em];
+    }
+
+    .product-info-blocks--product .product-info-blocks__vendor {
+        @apply body-lg text-theme-text;
+    }
+
+    .product-info-blocks--featured .product-info-blocks__vendor {
+        @apply body-lg text-theme-text;
+    }
+
+    .product-info-blocks__description {
+        @apply max-w-none overscroll-contain pr-1 text-muted pc:overflow-y-auto;
+        scrollbar-width: thin;
+        scrollbar-color: var(--color-line-strong) transparent;
+
+        &::-webkit-scrollbar {
+            width: 0.375rem;
+        }
+
+        &::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            border-radius: 999px;
+            background-color: var(--color-line-strong);
+        }
+
+        &[data-product-description-scrollable] {
+            scrollbar-gutter: stable;
         }
     }
 
-    .pagination__page--hover-minimal {
-        @media (hover: hover) and (pointer: fine) {
-            &:hover {
-                text-decoration: underline;
-            }
+    .product-info-blocks__description.rte :is(h1, h2, h3, h4, h5, h6) {
+        @apply text-muted;
+    }
+
+    .product-info-blocks__description-block {
+        @apply pc:min-h-0 pc:shrink pc:overflow-hidden;
+    }
+
+    .product-info-blocks__purchase {
+        @apply mt-auto w-full;
+        padding-top: var(--spacing-step-m);
+    }
+
+    .product-info-blocks__quantity {
+        @apply flex min-w-0 items-stretch;
+    }
+
+    .product-info-blocks__quantity > * {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .product-info-blocks__inventory-notice {
+        @apply flex items-center gap-2;
+    }
+
+    .product-info-blocks__inventory-dot {
+        @apply h-2.5 w-2.5 shrink-0 rounded-full;
+        background-color: rgb(var(--color-warning-foreground));
+    }
+
+    .product-info-blocks__share-links {
+        @apply flex flex-wrap items-center gap-step-s text-theme-text;
+    }
+
+    /* Round icon buttons in the share box (design). */
+    .product-info-blocks__share-link {
+        @apply flex items-center justify-center border border-line transition-opacity hover:opacity-70;
+        width: 3.2rem;
+        height: 3.2rem;
+        border-radius: 50%;
+    }
+
+    .product-info-blocks__share-link .icons {
+        width: 1.6rem;
+        height: 1.6rem;
+    }
+
+    .product-info-blocks__callout {
+        @apply flex items-start gap-step-s;
+        background-color: rgb(var(--color-info-background));
+        color: rgb(var(--color-info-foreground));
+        padding: var(--spacing-step-s);
+    }
+
+    /* Bordered: the same box as payment icons and social links (design). */
+    .product-info-blocks__callout--bordered {
+        @apply border border-line;
+        border-radius: var(--radius-media);
+        padding: var(--spacing-step-m);
+        background-color: transparent;
+        color: rgb(var(--color-foreground));
+    }
+
+    .product-info-blocks__box {
+        @apply flex flex-col gap-step-s border border-line;
+        border-radius: var(--radius-media);
+        padding: var(--spacing-step-m);
+    }
+
+    .product-info-blocks__payment-icons-list {
+        @apply flex flex-wrap items-center gap-step-s;
+    }
+
+    /* Shopify's payment SVGs carry their own 38 x 24 card frame; keep that size. */
+    .product-info-blocks__payment-icons-list svg {
+        display: block;
+        width: 3.8rem;
+        height: 2.4rem;
+    }
+
+    .product-info-blocks__callout-icon {
+        @apply self-start;
+    }
+
+    .product-info-blocks__callout-content {
+        @apply min-w-0 flex-1;
+    }
+
+    .product-info-blocks__callout-text {
+        @apply max-w-none copy-s opacity-100;
+    }
+
+    .product-info-blocks__icon-with-text-group {
+        @apply grid grid-cols-3 items-start gap-3 px-3 py-4;
+    }
+
+    .product-info-blocks__icon-with-text-item {
+        @apply min-w-0;
+    }
+
+    .product-info-blocks__spacer {
+        @apply flex w-full items-center;
+        padding-top: var(--product-spacer-top, 1rem);
+        padding-bottom: var(--product-spacer-bottom, 1rem);
+    }
+
+    .product-info-blocks__spacer-line {
+        @apply h-px w-full bg-theme-border;
+    }
+
+    .product-info-blocks__collapsible-tab {
+        @apply border-t border-line;
+    }
+
+    .product-info-blocks__collapsible-tab + .product-info-blocks__collapsible-tab {
+        margin-top: calc(var(--product-block-row-gap) * -1);
+    }
+
+    .product-info-blocks__collapsible-summary {
+        @apply flex min-h-20 cursor-pointer list-none items-center justify-between gap-4 py-0 text-start;
+
+        &::-webkit-details-marker {
+            display: none;
+        }
+    }
+
+    .product-info-blocks__collapsible-heading {
+        @apply flex min-w-0 items-center gap-3;
+    }
+
+    .product-info-blocks__collapsible-toggle {
+        @apply flex h-6 w-6 shrink-0 items-center justify-center text-muted;
+        transition: transform var(--motion-duration-fast) var(--motion-ease-default);
+    }
+
+    .product-info-blocks__collapsible-tab[open] .product-info-blocks__collapsible-toggle {
+        @apply rotate-45;
+    }
+
+    .product-info-blocks__collapsible-content {
+        @apply flex flex-col gap-4 pb-5 text-muted;
+    }
+
+    .product-info-blocks__collapsible-rte {
+        @apply max-w-none;
+    }
+
+    .product-info-blocks__collapsible-rte :is(h1, h2, h3, h4, h5, h6) {
+        @apply text-muted;
+    }
+
+    .product-info-blocks__collapsible-image {
+        width: min(100%, var(--product-collapsible-image-width, 1000px));
+    }
+
+    /* Context: main/product page (PDP) */
+    .product-info-blocks--product {
+        > * {
+            @apply w-full;
         }
 
-        &:focus-visible {
-            text-decoration: underline;
+        .product-info-blocks__description {
+            max-width: 46ch;
         }
     }
 
-    .pagination__page--outline {
-        @apply border border-theme-border/20;
+    .product-info-blocks--featured .product-info-blocks__price-main,
+    .product-info-blocks--featured .product-info-blocks__price-compare {
+        @apply heading-h4 text-theme-text;
     }
 
-    .pagination__page--hover-outline {
-        @apply border border-theme-border/20;
+    .product-info-blocks--product .product-info-blocks__price-main,
+    .product-info-blocks--product .product-info-blocks__price-compare {
+        @apply heading-h4 text-theme-text;
+    }
 
-        @media (hover: hover) and (pointer: fine) {
-            &:hover {
-                background-color: rgb(var(--color-foreground) / 0.08);
-            }
+    .product-info-blocks__price-row {
+        @apply flex w-full items-end justify-between gap-4;
+    }
+
+    .product-info-blocks__rating {
+        @apply flex shrink-0 items-center gap-2;
+    }
+
+    .product-info-blocks__price-divider {
+        @apply mt-step-xs h-px w-full bg-line;
+    }
+
+    .product-info-blocks--gallery {
+        @apply overflow-visible pc:overflow-visible;
+
+        .product-info-blocks__description {
+            @apply pc:overflow-visible;
+            max-width: none;
+        }
+
+        .product-info-blocks__description.rte img,
+        .product-info-blocks__description.rte figure {
+            margin-inline: 0;
+        }
+    }
+}
+
+/* =========================================================
+Owner: snippets/product-quick-view.liquid
+Consumers: product quick view overlay (product-card ui-dialog panel)
+Layer: snippets temporary owner block
+========================================================= */
+@layer components {
+    .product-quick-view-dialog {
+        @apply relative isolate w-full !overflow-hidden;
+    }
+
+    /* Desktop: a centred dialog; the media column owns the height (its ratio, capped at 90svh) and the info column scrolls inside it (LS2-A). */
+    @media (width >= theme(--breakpoint-tablet)) {
+        .product-quick-view-dialog {
+            width: min(88rem, 100%);
+            max-width: 100%;
+            max-height: 90svh;
+        }
+
+        .product-quick-view__media,
+        .product-quick-view__info {
+            max-height: calc(90svh - 4rem);
         }
     }
 
-    /* current page variants */
-    .pagination__page--current--default {
-        @apply surface-inverted;
+    .product-quick-view-dialog > .close-button-corner {
+        z-index: var(--z-layer-lightbox-controls);
     }
 
-    .pagination__page--current--outline {
-        @apply border border-theme-text text-theme-text;
+    .product-quick-view {
+        @apply h-full bg-theme-bg text-theme-text;
     }
 
-    .pagination__page--current--minimal {
-        @apply text-theme-text underline;
+    .product-quick-view__layout {
+        @apply grid h-full min-h-0 grid-cols-1 items-start gap-6 p-4 pc:grid-cols-2 pc:items-stretch pc:gap-10 pc:p-6 fw:gap-12 fw:p-8;
     }
 
-    /* ellipsis */
-    .pagination__page--ellipsis {
-        @apply cursor-default;
-        font-size: var(--pagination-font-size);
+    .product-quick-view__media {
+        @apply min-h-0 min-w-0 overflow-hidden;
     }
 
-    /* ---- pages container ---- */
-    .pagination__pages-wrap {
-        @apply max-w-full min-w-0 overflow-x-auto;
-        -webkit-overflow-scrolling: touch;
+    .product-quick-view__media > * {
+        @apply pc:max-h-full;
+    }
+
+    @media (width >= 48rem) {
+        .product-quick-view__media > * {
+            height: auto !important;
+        }
+    }
+
+    .product-quick-view__info {
+        --product-block-row-gap: 1.25rem;
+
+        @apply flex min-h-0 min-w-0 flex-col overflow-y-auto;
+
+        gap: var(--product-block-row-gap);
+        padding-inline: var(--spacing-button-edge);
         scrollbar-width: none;
 
         &::-webkit-scrollbar {
@@ -1543,8 +2090,238 @@ Consumed via snippets/pagination.liquid.
         }
     }
 
-    .pagination__pages {
-        @apply mx-auto inline-flex min-w-max items-center;
-        gap: 0.25rem;
+    @media (width >= theme(--breakpoint-tablet)) {
+        .product-quick-view__info {
+            --product-block-row-gap: 1.5rem;
+
+            /* Takes no part in the row height, so the media sets it; a thin visible scrollbar shows there is more. */
+            contain: size;
+            scrollbar-width: thin;
+            scrollbar-color: var(--color-line) transparent;
+
+            &::-webkit-scrollbar {
+                display: block;
+                width: 0.6rem;
+            }
+
+            &::-webkit-scrollbar-thumb {
+                border-radius: 9999px;
+                background-color: var(--color-line);
+            }
+        }
+    }
+
+    /* From 1024px: a fixed frame (about 52vw by 72svh, with minimum and maximum), not one sized by either column.
+       The media fills its height at 3:4, its width follows, and the info takes the rest and scrolls (LS2-A). */
+    @media (width >= 64rem) {
+        .product-quick-view-dialog {
+            --quick-view-height: min(clamp(56rem, 72svh, 80rem), 90svh);
+
+            width: min(clamp(96rem, 52vw, 112rem), 100%);
+            height: var(--quick-view-height);
+        }
+
+        .product-quick-view__layout {
+            height: 100%;
+            grid-template-columns:
+                calc((var(--quick-view-height) - 4rem) * 3 / 4 + 6rem)
+                minmax(0, 1fr);
+        }
+
+        .product-quick-view__media {
+            height: 100%;
+        }
+    }
+
+    @media (width >= 64rem) and (width < 80rem) {
+        .product-quick-view__layout {
+            grid-template-columns:
+                calc((var(--quick-view-height) - 3rem) * 3 / 4 + 6rem)
+                minmax(0, 1fr);
+        }
+    }
+
+    .product-quick-view__brand {
+        @apply tracking-[0.2em] text-muted uppercase;
+    }
+
+    .product-quick-view__title {
+        @apply heading-h2;
+    }
+
+    .product-quick-view__price {
+        @apply flex-wrap;
+    }
+
+    .product-quick-view__price-main {
+        @apply heading-h4;
+    }
+
+    .product-quick-view__price-compare {
+        @apply body-lg text-subtle;
+    }
+
+    .product-quick-view__picker-shell {
+        @apply flex flex-col gap-4 ps-1;
+    }
+
+    .product-quick-view__purchase {
+        @apply mt-1;
+    }
+
+    .product-quick-view__footer {
+        @apply flex justify-end pt-2 pc:mt-auto;
+    }
+
+    .product-quick-view__details-link {
+        @apply inline-flex items-center gap-3 text-theme-text transition-opacity hover:opacity-70;
+    }
+
+    @media (width < theme(--breakpoint-tablet)) {
+        .product-quick-view-dialog {
+            @apply h-auto max-h-[calc(100dvh-1.5rem)];
+        }
+
+        .product-quick-view-dialog .product-quick-view {
+            @apply h-auto max-h-[calc(100dvh-1.5rem)];
+        }
+
+        .product-quick-view__layout {
+            @apply h-auto max-h-[calc(100dvh-1.5rem)] overflow-y-auto overscroll-contain pt-14;
+            scrollbar-width: none;
+
+            &::-webkit-scrollbar {
+                display: none;
+            }
+        }
+
+        .product-quick-view__info {
+            overflow-y: visible;
+        }
     }
 }
+
+/* =========================================================
+Mobile card rail (ritual-steps, routine-showcase)
+========================================================= */
+@layer components {
+    .card-rail {
+        display: flex;
+        gap: 0;
+        margin: 0;
+        padding: 0;
+        padding-bottom: 0.5rem;
+        list-style: none;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        align-items: stretch;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .card-rail::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* One card per view: each slot is one rail width; the page grid inset (page width and margin settings) sits inside it. */
+    .card-rail__slot {
+        flex: 0 0 100%;
+        box-sizing: border-box;
+        padding-inline: var(--page-inset);
+        scroll-snap-align: center;
+        display: flex;
+        align-items: stretch;
+        list-style: none;
+    }
+
+    .card-rail__slot > * {
+        flex: 1 1 auto;
+        width: 100%;
+        min-width: 0;
+        min-height: 100%;
+    }
+
+    .card-rail__dots {
+        display: flex;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.75rem var(--page-margin) 0;
+    }
+
+    .card-rail__dot {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 2.4rem;
+        min-height: 2.4rem;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        cursor: pointer;
+    }
+
+    .card-rail__dot-visual {
+        display: block;
+        width: 0.8rem;
+        height: 0.8rem;
+        border-radius: 999px;
+        background-color: var(--color-indicator);
+        transition:
+            transform 200ms ease,
+            background-color 200ms ease;
+    }
+
+    .card-rail__dot.is-active .card-rail__dot-visual {
+        transform: scale(1.15);
+        background-color: rgb(var(--color-foreground));
+    }
+}
+
+/* =========================================================
+Owner: carousel pagination dots (every Swiper consumer)
+Declared on the pagination element so the colours resolve in the section's
+colour scheme; a :root declaration would freeze the root scheme.
+========================================================= */
+@layer components {
+    .swiper-pagination {
+        --swiper-pagination-color: rgb(var(--color-foreground));
+        --swiper-pagination-bullet-inactive-color: rgb(var(--color-foreground));
+        --swiper-pagination-bullet-inactive-opacity: 0.3;
+        --swiper-pagination-bullet-size: 2.4rem;
+        --swiper-pagination-bullet-horizontal-gap: 0px;
+        --swiper-pagination-bullet-vertical-gap: 0px;
+    }
+
+    /* Touch target 24px (WCAG 2.5.8); the visible dot stays 8px. */
+    .swiper-pagination .swiper-pagination-bullet {
+        position: relative;
+        background: transparent;
+        opacity: 1;
+    }
+
+    .swiper-pagination .swiper-pagination-bullet::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0.8rem;
+        height: 0.8rem;
+        border-radius: 50%;
+        background: var(--swiper-pagination-bullet-inactive-color);
+        opacity: var(--swiper-pagination-bullet-inactive-opacity);
+        transform: translate(-50%, -50%);
+    }
+
+    .swiper-pagination .swiper-pagination-bullet-active::before {
+        background: var(--swiper-pagination-color);
+        opacity: 1;
+    }
+}
+
+/* =========================================================
+Owner: snippets/search-predictive-panel.liquid
+Consumers: header search predictive panel
+Layer: snippets — layout delta for tab; chrome in components.css (Phase 5A)
+========================================================= */

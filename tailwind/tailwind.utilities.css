@@ -1,13 +1,10 @@
 @utility container-page {
     @apply relative grid w-full;
 
-    grid-template-columns:
-        minmax(var(--page-margin), 1fr)
-        minmax(0, var(--page-width))
-        minmax(var(--page-margin), 1fr);
+    grid-template-columns: var(--page-grid-columns);
 
     & > * {
-        grid-column: 2;
+        grid-column: content;
     }
 }
 
@@ -16,9 +13,21 @@
     top: var(--sticky-viewport-top, 1rem);
 }
 
+@utility grid-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 28rem), 1fr));
+    align-items: start;
+    gap: 2rem;
+}
+
 @utility sup-badge {
     @apply ms-1 align-super;
-    font-size: var(--sup-badge-font-size, 0.75em);
+    font-size: calc(var(--font-body-scale) * 0.75em);
+}
+
+/* Room above a raised sup-badge inside a scroll container, which clips vertically too; em follows the text size. */
+@utility sup-room {
+    padding-block-start: 0.5em;
 }
 
 .place-top-left,
@@ -39,7 +48,7 @@
     @apply row-start-3 self-end justify-self-center;
 }
 
-@media (width >= theme(--breakpoint-pc)) {
+@media (width >= theme(--breakpoint-tablet)) {
     .place-top-left {
         @apply col-start-1 row-start-1 self-start justify-self-start;
     }

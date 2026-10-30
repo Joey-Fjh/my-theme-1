@@ -1,24 +1,15 @@
-<div
-    data-component-kind="section"
-    data-component-type="featured-products"
-    data-component-id="{{ section.id }}"
-    data-section-id="{{ section.id }}"
-    class="featured-products-section full-width color-{{ section.settings.color_scheme }} surface-section"
-    style="
-        --section-padding-top: {{ section.settings.padding_top }}px;
-        --section-padding-bottom: {{ section.settings.padding_bottom }}px;
-    "
-    x-data="motionRevealSection()"
-    data-motion-section
->
-    <div class="layout container-page">
+{%- assign featured_products_root_attrs = 'data-component-kind="section" data-component-type="featured-products" data-component-id="'
+    | append: section.id
+    | append: '"'
+-%}
+{%- capture featured_products_children -%}
         {%- liquid
-            assign featured_products_heading_class = section.settings.heading_size | default: 'heading-2xl'
+            assign featured_products_heading_class = section.settings.heading_size | default: 'title-2xl'
             assign pc_tab_header_behavior = section.settings.pc_tab_header_behavior | default: 'wrap'
-            assign tab_header_class = 'featured-products__tab-header pc:justify-center'
+            assign tab_header_class = 'featured-products__tab-header tablet:justify-center'
             assign tab_scroll_mode = 'mobile'
             if pc_tab_header_behavior != 'wrap'
-                assign tab_header_class = 'featured-products__tab-header pc:flex-nowrap pc:justify-center pc:overflow-x-auto pc:whitespace-nowrap'
+                assign tab_header_class = 'featured-products__tab-header tablet:flex-nowrap tablet:justify-center tablet:overflow-x-auto tablet:whitespace-nowrap'
                 assign tab_scroll_mode = 'always'
             endif
         -%}
@@ -28,24 +19,23 @@
                 <button
                     type="button"
                     role="tab"
-                    x-data="{ index: null }"
-                    x-init="index = registerTab($el)"
-                    :id="`featured-products-{{ section.id }}-tab-${index}`"
-                    :aria-controls="`featured-products-{{ section.id }}-panel-${index}`"
-                    @click="setActive(index)"
-                    :tabindex="isFocusable(index) ? 0 : -1"
-                    :aria-selected="isActive(index)"
-                    :class="isActive(index) && 'is-active'"
-                    class="featured-products__tab tab-nav-item tab-nav-item--opacity border-0 bg-transparent px-0 text-start text-theme-text"
+                    id="featured-products-{{ section.id }}-tab-{{ forloop.index0 }}"
+                    aria-controls="featured-products-{{ section.id }}-panel-{{ forloop.index0 }}"
+                    x-init="registerTab($el)"
+                    @click="setActive(tabIndexFor($el))"
+                    :tabindex="isFocusable(tabIndexFor($el)) ? 0 : -1"
+                    :aria-selected="isActive(tabIndexFor($el))"
+                    :class="isActive(tabIndexFor($el)) && 'is-active'"
+                    class="featured-products__tab tab-nav-item tab-nav-item--opacity"
                     {{ block.shopify_attributes }}
                 >
                     <div>
                         {%- if block.settings.collection_heading != blank -%}
-                            <span class="{{ featured_products_heading_class }}">
+                            <span class="featured-products__tab-title {{ featured_products_heading_class }}">
                                 {{- block.settings.collection_heading -}}
                             </span>
                         {%- else -%}
-                            <span class="{{ featured_products_heading_class }}">
+                            <span class="featured-products__tab-title {{ featured_products_heading_class }}">
                                 {{- block.settings.collection.title -}}
                             </span>
                         {%- endif -%}
@@ -58,20 +48,23 @@
         {%- endcapture -%}
 
         {%- capture tab_content -%}
+            {%- comment -%} The panel tab-control opens first (strategy middle: floor(count / 2)) renders without x-cloak, so the section keeps its height before hydration. {%- endcomment -%}
+            {%- assign featured_initial_panel = section.blocks.size | divided_by: 2 -%}
             {%- for block in section.blocks -%}
                 <div
                     role="tabpanel"
-                    x-data="{ index: null }"
-                    x-init="index = registerPanel($el)"
-                    :id="`featured-products-{{ section.id }}-panel-${index}`"
-                    :aria-labelledby="`featured-products-{{ section.id }}-tab-${index}`"
-                    x-show="isActive(index)"
-                    x-cloak
-                    class="flex flex-col items-center gap-8"
+                    id="featured-products-{{ section.id }}-panel-{{ forloop.index0 }}"
+                    aria-labelledby="featured-products-{{ section.id }}-tab-{{ forloop.index0 }}"
+                    x-init="registerPanel($el)"
+                    x-show="isActive(panelIndexFor($el))"
+                    {% unless forloop.index0 == featured_initial_panel %}
+                        x-cloak
+                    {% endunless %}
+                    class="flex flex-col items-center gap-step-l"
                     {{ block.shopify_attributes }}
                 >
                     {%- if block.settings.collection_content != blank -%}
-                        <p data-motion-reveal="content">
+                        <p>
                             {{ block.settings.collection_content }}
                         </p>
                     {%- endif -%}
@@ -86,7 +79,7 @@
                     -%}
 
                     <div
-                        class="{% if use_slider %}w-full relative{% else %}product-grid{% endif %}"
+                        class="{% if use_slider %}featured-products__slider-shell{% else %}product-grid{% endif %}"
                         data-motion-cascade
                         style="
                             --product-grid-columns: {{ section.settings.pc_items }};
@@ -95,7 +88,7 @@
                     >
                         {% if use_slider %}
                             <div
-                                class="swiper w-full"
+                                class="swiper featured-products__swiper"
                                 data-mobile-items="{{ section.settings.mobile_items }}"
                                 data-pc-items="{{ section.settings.pc_items }}"
                                 role="region"
@@ -113,7 +106,7 @@
                                     {%- endcapture -%}
                                     {%- for product in products limit: max_items -%}
                                         <div
-                                            class="{% if use_slider %}swiper-slide h-auto{% else %}group{% endif %}"
+                                            class="{% if use_slider %}swiper-slide featured-products__slide{% else %}group{% endif %}"
                                             data-motion-bound
                                         >
                                             {%- render 'product-card',
@@ -127,7 +120,7 @@
                                     {%- else -%}
                                         {%- for placeholder_index in (1..max_items) -%}
                                             <div
-                                                class="{% if use_slider %}swiper-slide h-auto{% else %}group{% endif %}"
+                                                class="{% if use_slider %}swiper-slide featured-products__slide{% else %}group{% endif %}"
                                                 data-motion-bound
                                             >
                                                 {%- render 'product-card',
@@ -147,9 +140,17 @@
                         {% endif %}
                     </div>
 
-                    {%- if use_slider -%}
-                        <div class="mt-4 flex w-full items-center justify-between pc:mt-6">
-                            <div class="flex items-center gap-4">
+                    {%- liquid
+                        assign featured_products_show_carousel_controls = false
+                        if use_slider
+                            if section.settings.show_navigation or section.settings.show_pagination
+                                assign featured_products_show_carousel_controls = true
+                            endif
+                        endif
+                    -%}
+                    {%- if featured_products_show_carousel_controls -%}
+                        <div class="mt-step-s flex w-full items-center justify-center tablet:mt-step-m">
+                            <div class="flex items-center gap-step-s">
                                 {%- if section.settings.show_navigation -%}
                                     <button
                                         type="button"
@@ -174,25 +175,51 @@
                                     </button>
                                 {%- endif -%}
                             </div>
+                        </div>
+                    {%- endif -%}
 
-                            {%- if section.settings.show_all and block.settings.collection != blank -%}
-                                <a href="{{ block.settings.collection.url }}" class="featured-products__view-all-link">
-                                    {{ 'collections.view_all' | t }}
-                                </a>
-                            {%- endif -%}
+                    {%- if section.settings.show_all -%}
+                        {%- liquid
+                            if block.settings.collection != blank
+                                assign featured_products_shop_all_href = block.settings.collection.url
+                            else
+                                assign featured_products_shop_all_href = routes.all_products_collection_url
+                            endif
+                        -%}
+                        <div class="featured-products__shop-all">
+                            {%- capture featured_products_shop_all_content -%}
+                                <span class="uppercase">{{ 'collections.shop_all' | t }}</span>
+                                {%- render 'icons',
+                                    icon: 'icon-arrow2',
+                                    class: 'ms-step-2xs',
+                                    size: 'sm'
+                                -%}
+                            {%- endcapture -%}
+                            {%- render 'link',
+                                href: featured_products_shop_all_href,
+                                variant: 'default',
+                                class: 'link-with-icon-motion copy-l uppercase text-theme-text tablet:copy-l',
+                                content: featured_products_shop_all_content
+                            -%}
                         </div>
                     {%- endif -%}
                 </div>
             {% endfor %}
         {%- endcapture -%}
 
-        {%- render 'tab-control',
-            initialTabStrategy: 'middle',
-            scroll_mode: tab_scroll_mode,
-            tab_header: tab_header,
-            header_class: tab_header_class,
-            tab_content: tab_content
-        %}
+        <div
+            data-module-id="featured-products"
+            x-data="featuredProducts()"
+            data-swiper-src="{{ 'vendor-swiper.min.js' | asset_url }}"
+        >
+            {%- render 'tab-control',
+                initialTabStrategy: 'middle',
+                scroll_mode: tab_scroll_mode,
+                tab_header: tab_header,
+                header_class: tab_header_class,
+                tab_content: tab_content
+            %}
+        </div>
 
         {%- if section.settings.brand_name != blank -%}
             {% render 'watermark',
@@ -206,8 +233,17 @@
                 container_class: 'featured-products__brand-watermark'
             %}
         {%- endif -%}
-    </div>
-</div>
+{%- endcapture -%}
+
+{% render 'section-frame',
+    section: section,
+    section_class: 'featured-products-section',
+    width: 'page',
+    height_kind: 'content',
+    motion: true,
+    root_attrs: featured_products_root_attrs,
+    children: featured_products_children
+%}
 
 {% stylesheet %}
     .featured-products-section {
@@ -217,7 +253,7 @@
             grid-template-columns: repeat(var(--product-grid-columns-mobile), minmax(0, 1fr));
             gap: 3px;
 
-            @media (min-width: 768px) {
+            @media (width >= 48rem) {
                 grid-template-columns: repeat(var(--product-grid-columns), minmax(0, 1fr));
                 gap: 8px;
             }
@@ -238,7 +274,7 @@
             );
             margin-right: 3px;
         }
-        @media (min-width: 768px) {
+        @media (width >= 48rem) {
             .swiper-slide {
                 width: calc(
                     (100% - (var(--product-grid-columns) - 1) * 8px) / var(--product-grid-columns)
@@ -247,13 +283,6 @@
             }
         }
 
-        .swiper-pagination-bullet {
-            background-color: currentColor;
-            opacity: 0.2;
-        }
-        .swiper-pagination-bullet-active {
-            opacity: 1;
-        }
         .swiper-button-disabled {
             opacity: 0.35;
             cursor: not-allowed;
@@ -276,84 +305,80 @@
             outline-offset: var(--focus-ring-offset);
         }
 
-        .featured-products__view-all-link {
-            text-decoration: underline;
-            text-underline-offset: 4px;
-            transition: opacity var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease);
+        .featured-products__shop-all {
+            padding-block-end: calc(2px + var(--focus-ring-width) + var(--focus-ring-offset));
+        }
+    }
+
+    .tab-nav-item--opacity {
+        color: var(--color-subtle);
+        transition: color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+        &:hover,
+        &:focus-visible,
+        &.is-active {
+            color: rgb(var(--color-foreground));
+        }
+    }
+
+    .featured-products__tab-header {
+        align-items: flex-start;
+        padding-block: 0.6rem;
+    }
+    .featured-products__tab {
+        padding-block: 0.12em;
+        --sup-badge-font-size: 1em;
+    }
+
+    /* The heading type class sets the foreground colour; the tab title follows the tab state instead. */
+    .featured-products__tab-title {
+        color: inherit;
+    }
+
+    :where(.featured-products__swiper) {
+        width: 100%;
+    }
+
+    :where(.featured-products__shop-all) {
+        display: flex;
+        width: 100%;
+        justify-content: center;
+    }
+
+    :where(.featured-products__tab) {
+        border-style: var(--tw-border-style);
+        border-width: 0px;
+        background-color: transparent;
+        padding-inline: calc(var(--spacing) * 0);
+        text-align: start;
+        color: rgb(var(--color-foreground));
+    }
+
+    :where(.featured-products__slide) {
+        height: auto;
+    }
+
+    :where(.featured-products__slider-shell) {
+        width: 100%;
+        position: relative;
+    }
+
+    @media (width >= 64rem) and (width < 80rem) {
+        .featured-products-section .product-card-shell__info {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: var(--spacing-step-3xs);
         }
 
-        .featured-products__view-all-link:hover {
-            opacity: 1;
+        .featured-products-section .product-card-shell__title {
+            flex: none;
+            width: 100%;
         }
 
-        .featured-products__view-all-link:focus-visible {
-            outline: var(--focus-ring-width) solid
-                rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
-            outline-offset: var(--focus-ring-offset);
+        .featured-products-section .product-card-shell__price {
+            width: 100%;
         }
     }
 {% endstylesheet %}
-
-{%- javascript -%}
-    (function () {
-        const Components = window.__Theme__?.Components;
-        if (!Components) return;
-
-        Components.register(
-            'featured-products',
-            {
-                init(el) {
-                    const swipers = [];
-                    const swiperEls = el.querySelectorAll('.swiper');
-
-                    if (swiperEls.length > 0 && typeof Swiper !== 'undefined') {
-                        swiperEls.forEach((swiperEl) => {
-                            const mobileItems =
-                                parseInt(swiperEl.getAttribute('data-mobile-items')) || 2;
-                            const pcItems = parseInt(swiperEl.getAttribute('data-pc-items')) || 4;
-
-                            const options = {
-                                slidesPerView: mobileItems,
-                                spaceBetween: 3,
-                                observer: true,
-                                observeParents: true,
-                                breakpoints: {
-                                    768: {
-                                        slidesPerView: pcItems,
-                                        spaceBetween: 8,
-                                    },
-                                },
-                            };
-
-                            // Link navigation and pagination to the panel's DOM controls
-                            const panel = swiperEl.closest('[role="tabpanel"]');
-                            const nextEl = panel?.querySelector('.swiper-button-next');
-                            const prevEl = panel?.querySelector('.swiper-button-prev');
-                            const paginationEl = panel?.querySelector('.swiper-pagination');
-
-                            if (nextEl && prevEl) {
-                                options.navigation = { nextEl, prevEl };
-                            }
-                            if (paginationEl) {
-                                options.pagination = { el: paginationEl, clickable: true };
-                            }
-
-                            swipers.push(new Swiper(swiperEl, options));
-                        });
-                    }
-
-                    return { swipers };
-                },
-                destroy(el, state) {
-                    if (state?.swipers) {
-                        state.swipers.forEach((s) => s.destroy(true, true));
-                    }
-                },
-            },
-            { lazy: true },
-        );
-    })();
-{%- endjavascript -%}
 
 {% schema %}
 {
@@ -388,47 +413,39 @@
             "label": "t:sections.slides-show.settings.heading_size",
             "options": [
                 {
-                    "value": "heading-4xl",
-                    "label": "t:sections.slides-show.options.heading_4xl"
+                    "value": "title-4xl",
+                    "label": "t:settings.type_size.title_4xl"
                 },
                 {
-                    "value": "heading-3xl",
-                    "label": "t:sections.slides-show.options.heading_3xl"
+                    "value": "title-3xl",
+                    "label": "t:settings.type_size.title_3xl"
                 },
                 {
-                    "value": "heading-2xl",
-                    "label": "t:sections.slides-show.options.heading_2xl"
+                    "value": "title-2xl",
+                    "label": "t:settings.type_size.title_2xl"
                 },
                 {
-                    "value": "heading-xl",
-                    "label": "t:sections.slides-show.options.heading_xl"
+                    "value": "title-xl",
+                    "label": "t:settings.type_size.title_xl"
                 },
                 {
-                    "value": "heading-h1",
-                    "label": "t:sections.slides-show.options.heading_h1"
+                    "value": "title-l",
+                    "label": "t:settings.type_size.title_l"
                 },
                 {
-                    "value": "heading-h2",
-                    "label": "t:sections.slides-show.options.heading_h2"
+                    "value": "title-m",
+                    "label": "t:settings.type_size.title_m"
                 },
                 {
-                    "value": "heading-h3",
-                    "label": "t:sections.slides-show.options.heading_h3"
+                    "value": "title-s",
+                    "label": "t:settings.type_size.title_s"
                 },
                 {
-                    "value": "heading-h4",
-                    "label": "t:sections.slides-show.options.heading_h4"
-                },
-                {
-                    "value": "heading-h5",
-                    "label": "t:sections.slides-show.options.heading_h5"
-                },
-                {
-                    "value": "heading-h6",
-                    "label": "t:sections.slides-show.options.heading_h6"
+                    "value": "title-xs",
+                    "label": "t:settings.type_size.title_xs"
                 }
             ],
-            "default": "heading-2xl"
+            "default": "title-2xl"
         },
         {
             "type": "header",

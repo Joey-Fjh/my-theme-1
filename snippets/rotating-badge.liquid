@@ -46,11 +46,13 @@
 -%}
 
 <div
-    x-data="{ inView: false }"
-    x-intersect.once="inView = true"
-    class="{{ classes }} h-(--badge-size-mb) w-(--badge-size-mb) pc:h-(--badge-size-pc) pc:w-(--badge-size-pc)"
+    data-module-id="rotating-badge"
+    x-data="rotatingBadge"
+    x-intersect.once="onIntersect()"
+    class="{{ classes }} h-(--badge-size-mb) w-(--badge-size-mb) tablet:h-(--badge-size-pc) tablet:w-(--badge-size-pc)"
     style="--badge-size-pc: {{ badge_size }}px; --badge-size-mb: {{ badge_size_mobile }}px; --badge-center-scale: {{ center_text_scale }};"
 >
+    {%- # lint-allow raw-svg: the circular text path renders merchant badge copy through Liquid, so it cannot be a static icon -%}
     <svg
         :class="inView && 'is-running'"
         class="absolute inset-0 h-full w-full {{ badge_class }} origin-center animate-spin-slow is-paused"
@@ -71,7 +73,7 @@
 
         <text
             xml:space="preserve"
-            class="fill-current font-semibold uppercase"
+            class="fill-current uppercase"
             font-size="12"
             letter-spacing="0.15em"
             text-anchor="middle"
@@ -87,8 +89,9 @@
     </svg>
 
     <div class="absolute inset-0 flex items-center justify-center">
+        {%- # lint-allow settings-chain-liquid: center text is sized from the merchant badge size and scale, not a typography tier -%}
         <span
-            class="{{ center_class }} translate-y-[2%] text-center text-[calc(var(--badge-size-mb)*var(--badge-center-scale))] leading-none font-bold whitespace-nowrap pc:text-[calc(var(--badge-size-pc)*var(--badge-center-scale))]"
+            class="{{ center_class }} translate-y-[2%] text-center text-[calc(var(--badge-size-mb)*var(--badge-center-scale))] leading-none whitespace-nowrap tablet:text-[calc(var(--badge-size-pc)*var(--badge-center-scale))]"
         >
             {{ center_text }}
         </span>

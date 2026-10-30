@@ -2,18 +2,12 @@
     assign terms = search.terms | strip
 -%}
 
-<div
-    data-section-id="{{ section.id }}"
-    class="search-section full-width min-h-[50vh] color-{{ section.settings.color_scheme }} surface-section"
-    style="
-        --section-padding-top: {{ section.settings.padding_top | default: 0 }}px;
-        --section-padding-bottom: {{ section.settings.padding_bottom | default: 0 }}px;
-    "
->
+{%- capture search_children -%}
     {%- comment -%} Search form: always visible, independent of results {%- endcomment -%}
-    <div class="layout container-page overflow-visible!{% unless search.performed %} flex min-h-[50vh] flex-col items-center justify-center{% endunless %}">
+    <div{% unless search.performed %} class="flex flex-col items-center justify-center"{% endunless %}>
         <div
-            class="mx-auto w-full px-4 pc:max-w-1/2 pc:px-0{% if search.performed %} py-10{% endif %}"
+            class="mx-auto w-full px-step-s tablet:max-w-1/2 tablet:px-0{% if search.performed %} py-step-xl{% endif %}"
+            data-module-id="predictive-search"
             x-data="predictiveSearch"
             data-predictive-search-enabled="{{ settings.predictive_search_enabled }}"
             data-search-url="{{ routes.search_url | escape }}"
@@ -35,7 +29,7 @@
             >
                 <input type="hidden" name="options[prefix]" value="last">
                 <input type="hidden" name="type" value="product">
-                <div class="mb-1 flex items-center gap-3 border-b border-theme-border pb-3 text-theme-text">
+                <div class="mb-step-3xs flex items-center gap-step-xs border-b border-theme-border pb-step-xs text-theme-text">
                     {%- render 'icons', icon: 'icon-search', class: 'shrink-0' -%}
                     <label class="sr-only" for="SearchInput-{{ section.id }}">
                         {{ 'search.search' | t }}
@@ -45,7 +39,7 @@
                         id="SearchInput-{{ section.id }}"
                         type="search"
                         name="q"
-                        class="w-full flex-1 appearance-none border-none bg-transparent body-xl text-theme-text focus-ring outline-none placeholder:text-theme-text/50"
+                        class="w-full flex-1 appearance-none border-none bg-transparent copy-l text-theme-text focus-ring outline-none placeholder:text-subtle"
                         autocomplete="off"
                         :aria-expanded="isOpen"
                         placeholder="{{ 'search.search' | t }}"
@@ -69,20 +63,51 @@
 
     {%- comment -%} Results tabs: only rendered after a search {%- endcomment -%}
     {% if search.performed %}
-        <div class="layout container-page overflow-visible!">
+        <div class="search-section__results">
             {%- liquid
                 assign q = search.terms | default: '' | strip | url_encode
 
-                # Current result type comes from search.types (driven by the type query param),
-                # not request.params.type, which is unreliable after Section Rendering refreshes.
-                assign param_type = 'product'
-                for search_type in search.types
-                    assign type_candidate = search_type | downcase | strip
+                # A `type` query param narrows search.types to that one type (request.params does not
+                # exist in Liquid, and search.types survives Section Rendering refreshes). Without it,
+                # search.types lists every type, so pick the first type that has results.
+                assign param_type = ''
+                if search.types.size == 1
+                    assign type_candidate = search.types.first | downcase | strip
                     if type_candidate == 'product' or type_candidate == 'article' or type_candidate == 'page'
                         assign param_type = type_candidate
-                        break
                     endif
-                endfor
+                endif
+
+                if param_type == ''
+                    for item in search.results
+                        if item.object_type == 'product'
+                            assign param_type = 'product'
+                            break
+                        endif
+                    endfor
+                endif
+
+                if param_type == ''
+                    for item in search.results
+                        if item.object_type == 'article'
+                            assign param_type = 'article'
+                            break
+                        endif
+                    endfor
+                endif
+
+                if param_type == ''
+                    for item in search.results
+                        if item.object_type == 'page'
+                            assign param_type = 'page'
+                            break
+                        endif
+                    endfor
+                endif
+
+                if param_type == ''
+                    assign param_type = 'product'
+                endif
 
                 assign active_tab_index = 0
                 if param_type == 'article'
@@ -110,9 +135,35 @@
             -%}
         </div>
     {% endif %}
-</div>
+{%- endcapture -%}
+
+{%- liquid
+    # Without results, the form centres in the 50svh minimum (padding included), as before the frame.
+    assign search_root_class = 'min-h-[50svh]'
+    assign search_inner_class = ''
+    unless search.performed
+        assign search_root_class = 'grid min-h-[50svh] grid-rows-[minmax(0,1fr)]'
+        assign search_inner_class = 'grid-rows-[minmax(0,1fr)]'
+    endunless
+-%}
+
+{% render 'section-frame',
+    section: section,
+    section_class: 'search-section',
+    root_class: search_root_class,
+    inner_class: search_inner_class,
+    width: 'page',
+    height_kind: 'content',
+    clip: false,
+    children: search_children
+%}
 
 {% stylesheet %}
+    /* Before the frame, the form and the results were two padded blocks: keep both paddings between them. */
+    .search-section__results {
+        padding-top: calc(var(--section-frame-padding-bottom) + var(--section-frame-padding-top));
+    }
+
     .search-section {
         .product-grid {
             width: 100%;
@@ -120,10 +171,39 @@
             grid-template-columns: repeat(var(--product-grid-columns-mobile), minmax(0, 1fr));
             gap: 3px;
 
-            @media (min-width: 768px) {
+            @media (width >= 48rem) {
                 grid-template-columns: repeat(var(--product-grid-columns), minmax(0, 1fr));
                 gap: 8px;
             }
+        }
+    }
+
+    .search-predictive-panel {
+        .product-card-shell__brand {
+            font-family: var(--font-body-family);
+            font-style: var(--font-body-style);
+            line-height: var(--font-body-line-height);
+            letter-spacing: var(--font-body-letter-spacing);
+            text-transform: var(--font-body-text-transform);
+            word-break: break-word;
+            font-size: calc(var(--font-body-scale) * var(--type-step--1));
+        }
+        .product-card-shell__title,
+        .product-card-shell__price {
+            font-family: var(--font-body-family);
+            font-style: var(--font-body-style);
+            line-height: var(--font-body-line-height);
+            letter-spacing: var(--font-body-letter-spacing);
+            text-transform: var(--font-body-text-transform);
+            word-break: break-word;
+            font-size: calc(var(--font-body-scale) * var(--type-step-0));
+            --tw-font-weight: var(--font-weight-medium);
+            font-weight: var(--font-weight-medium);
+        }
+        .predictive-search-product-card__title {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
     }
 {% endstylesheet %}

@@ -49,6 +49,7 @@
     data-search-result-type="{{ param_type | escape }}"
     data-filters-form-id="{{ filters_form_id }}"
     data-filters-dialog-id="{{ filters_dialog_id }}"
+    data-module-id="search-filters"
     x-data="searchFilters()"
 >
     <div
@@ -63,32 +64,29 @@
         data-search-type-shell
         data-tab-initial-strategy="first"
         data-tab-scroll-mode="always"
+        data-tab-initial-index="{{ active_tab_index }}"
+        data-section-scope="{{ section_id }}"
+        data-module-id="tab-control"
         x-data="tabControl()"
     >
         <div class="w-full">
             <div
                 role="tablist"
                 aria-label="{{ 'accessibility.tab_control' | t }}"
-                class="tab-header-underlined mx-auto flex max-w-3xl flex-nowrap items-center justify-center gap-4 border-none body-lg text-theme-text uppercase pc:flex-nowrap pc:gap-6 pc:overflow-x-auto"
+                class="tab-header-underlined mx-auto flex max-w-3xl flex-nowrap items-center justify-center gap-step-s border-none copy-l text-theme-text uppercase tablet:flex-nowrap tablet:gap-step-m tablet:overflow-x-auto"
             >
-                <span
-                    class="hidden"
-                    x-init="$nextTick(() => { setActive({{ active_tab_index }}) })"
-                ></span>
-
                 <a
                     href="{{ products_url }}"
                     role="tab"
-                    x-data="{ index: null }"
-                    x-init="index = registerTab($el);"
-                    :id="`search-{{ section_id }}-tab-${index}`"
+                    id="search-{{ section_id }}-tab-0"
+                    x-init="registerTab($el)"
                     aria-controls="search-{{ section_id }}-results-panel"
-                    @click.prevent="loadUrl($el.href); setActive(index)"
-                    @popstate.window="isUrlMatch($el.href) && setActive(index)"
-                    :tabindex="isFocusable(index) ? 0 : -1"
-                    :aria-selected="isActive(index)"
-                    class="search-results-tabs__tab tab-nav-item tab-nav-item--search whitespace-nowrap"
-                    :class="{ 'is-active': isActive(index) }"
+                    @click.prevent="onSearchResultTabClick($event)"
+                    @popstate.window="onSearchResultTabPopstate($el.href)"
+                    :tabindex="isFocusable(tabIndexFor($el)) ? 0 : -1"
+                    :aria-selected="isActive(tabIndexFor($el))"
+                    class="search-results-tabs__tab tab-nav-item tab-nav-item--search"
+                    :class="{ 'is-active': isActive(tabIndexFor($el)) }"
                 >
                     {{ 'search.products' | t }}
                 </a>
@@ -96,16 +94,15 @@
                 <a
                     href="{{ articles_url }}"
                     role="tab"
-                    x-data="{ index: null }"
-                    x-init="index = registerTab($el);"
-                    :id="`search-{{ section_id }}-tab-${index}`"
+                    id="search-{{ section_id }}-tab-1"
+                    x-init="registerTab($el)"
                     aria-controls="search-{{ section_id }}-results-panel"
-                    @click.prevent="loadUrl($el.href); setActive(index)"
-                    @popstate.window="isUrlMatch($el.href) && setActive(index)"
-                    :tabindex="isFocusable(index) ? 0 : -1"
-                    :aria-selected="isActive(index)"
-                    class="search-results-tabs__tab tab-nav-item tab-nav-item--search whitespace-nowrap"
-                    :class="{ 'is-active': isActive(index) }"
+                    @click.prevent="onSearchResultTabClick($event)"
+                    @popstate.window="onSearchResultTabPopstate($el.href)"
+                    :tabindex="isFocusable(tabIndexFor($el)) ? 0 : -1"
+                    :aria-selected="isActive(tabIndexFor($el))"
+                    class="search-results-tabs__tab tab-nav-item tab-nav-item--search"
+                    :class="{ 'is-active': isActive(tabIndexFor($el)) }"
                 >
                     {{ 'search.articles' | t }}
                 </a>
@@ -113,16 +110,15 @@
                 <a
                     href="{{ pages_url }}"
                     role="tab"
-                    x-data="{ index: null }"
-                    x-init="index = registerTab($el);"
-                    :id="`search-{{ section_id }}-tab-${index}`"
+                    id="search-{{ section_id }}-tab-2"
+                    x-init="registerTab($el)"
                     aria-controls="search-{{ section_id }}-results-panel"
-                    @click.prevent="loadUrl($el.href); setActive(index)"
-                    @popstate.window="isUrlMatch($el.href) && setActive(index)"
-                    :tabindex="isFocusable(index) ? 0 : -1"
-                    :aria-selected="isActive(index)"
-                    class="search-results-tabs__tab tab-nav-item tab-nav-item--search whitespace-nowrap"
-                    :class="{ 'is-active': isActive(index) }"
+                    @click.prevent="onSearchResultTabClick($event)"
+                    @popstate.window="onSearchResultTabPopstate($el.href)"
+                    :tabindex="isFocusable(tabIndexFor($el)) ? 0 : -1"
+                    :aria-selected="isActive(tabIndexFor($el))"
+                    class="search-results-tabs__tab tab-nav-item tab-nav-item--search"
+                    :class="{ 'is-active': isActive(tabIndexFor($el)) }"
                 >
                     {{ 'search.pages' | t }}
                 </a>
@@ -137,19 +133,32 @@
                     <input type="hidden" name="options[prefix]" value="last">
                 </form>
 
-                <div class="mt-6 flex items-center justify-start gap-4">
+                <div class="mt-step-m flex items-center justify-start gap-step-s">
                     <button
                         type="button"
                         data-search-filter-trigger
                         aria-haspopup="dialog"
                         data-dialog-id="{{ filters_dialog_id }}"
                         @click="$store.dialog.open($el.dataset.dialogId)"
-                        class="collection-toolbar__action flex shrink-0 cursor-pointer items-center gap-3"
+                        class="collection-toolbar__action flex shrink-0 cursor-pointer items-center gap-step-xs"
                     >
                         {% render 'icons', icon: 'icon-filter' %}
                         <span>{{ 'collections.filter' | t }}</span>
                     </button>
                 </div>
+
+                {%- capture search_noscript_hidden -%}
+                    <input type="hidden" name="q" value="{{ search.terms | escape }}">
+                    <input type="hidden" name="type" value="product">
+                    <input type="hidden" name="options[prefix]" value="last">
+                {%- endcapture -%}
+                {%- render 'filters-noscript',
+                    filter_host: search,
+                    form_action: routes.search_url,
+                    enable_filtering: true,
+                    enable_sorting: false,
+                    hidden_fields_html: search_noscript_hidden
+                -%}
             {%- endif -%}
         </div>
 
@@ -171,20 +180,19 @@
             <div
                 role="tabpanel"
                 id="search-{{ section_id }}-results-panel"
-                :aria-labelledby="`search-{{ section_id }}-tab-${activeIndex}`"
-                x-data="{ index: null }"
-                x-init="index = registerPanel($el)"
-                class="relative mt-6 w-full"
+                :aria-labelledby="panelAriaLabelledBy()"
+                x-init="registerPanel($el)"
+                class="relative mt-step-m w-full"
                 data-search-tabs-panel
             >
                 {% render 'loading', overlay: true, size: 'large' %}
 
                 {% unless search.results_count == 0 %}
-                    <div class="mb-6 text-theme-text">
-                        <p class="body-sm tracking-[0.16em] uppercase">
+                    <div class="mb-step-m text-theme-text">
+                        <p class="copy-s typo-subtitle uppercase">
                             <span>
                                 {{ 'search.search_for' | t }}
-                                <span class="truncate body-sm">"{{ search.terms | escape }}"</span>
+                                <span class="truncate copy-s">"{{ search.terms | escape }}"</span>
                                 : {{ search.results_count }}
                             </span>
                         </p>
@@ -193,7 +201,7 @@
 
                 {% paginate search.results by search_per_page %}
                     {%- if search.results_count == 0 -%}
-                        <div class="py-16 text-center text-theme-text">
+                        <div class="py-step-2xl text-center text-theme-text">
                             <p>{{ 'search.no_results_for' | t }} "{{ search.terms | escape }}"</p>
                         </div>
                     {%- else -%}
@@ -201,6 +209,7 @@
                             {%- when 'product' -%}
                                 <div
                                     class="product-grid"
+                                    data-module-id="motion-reveal"
                                     x-data="motionRevealSection()"
                                     data-motion-section
                                     data-motion-cascade
@@ -228,10 +237,10 @@
                                 </div>
 
                             {%- when 'article' -%}
-                                <ul class="space-y-4">
+                                <ul class="space-y-step-s">
                                     {%- for item in search.results -%}
                                         {%- if item.object_type == 'article' -%}
-                                            <li class="border-b border-theme-border/20 pb-3">
+                                            <li class="border-b border-line pb-step-xs">
                                                 <a
                                                     class="search-results-tabs__result-link interactive-link"
                                                     href="{{ item.url }}"
@@ -244,10 +253,10 @@
                                 </ul>
 
                             {%- when 'page' -%}
-                                <ul class="space-y-4">
+                                <ul class="space-y-step-s">
                                     {%- for item in search.results -%}
                                         {%- if item.object_type == 'page' -%}
-                                            <li class="border-b border-theme-border/20 pb-3">
+                                            <li class="border-b border-line pb-step-xs">
                                                 <a
                                                     class="search-results-tabs__result-link interactive-link"
                                                     href="{{ item.url }}"
@@ -261,14 +270,8 @@
                         {%- endcase -%}
 
                         <div
-                            class="mt-10"
-                            @click="
-                                let link = $event.target.closest('[data-pagination-nav] a');
-                                if (link) {
-                                    $event.preventDefault();
-                                    loadUrl(link.href);
-                                }
-                            "
+                            class="mt-step-xl"
+                            @click="onPaginationNavClick($event)"
                         >
                             {% render 'pagination', paginate_obj: paginate %}
                         </div>
@@ -297,7 +300,7 @@
                 type: 'drawer',
                 layer: 'drawer',
                 position: 'left',
-                top_class: 'top-[var(--announcement-bar-height)] pc:top-0',
+                top_class: 'top-[var(--announcement-bar-height)] tablet:top-0',
                 color_scheme: color_scheme,
                 drawer_motion_sheet: true,
                 mobile_layout: 'inset',
@@ -309,3 +312,18 @@
         {%- endif -%}
     </div>
 </div>
+
+{% stylesheet %}
+    .search-results-tabs__tab {
+        display: inline-flex;
+        align-items: baseline;
+        gap: calc(var(--spacing) * 1);
+    }
+
+    :where(.search-results-tabs__tab) {
+        white-space: nowrap;
+    }
+    .search-results-tabs__result-link {
+        color: rgb(var(--color-foreground));
+    }
+{% endstylesheet %}

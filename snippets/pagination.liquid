@@ -1,12 +1,6 @@
 {% doc %}
-    Global-style-based pagination snippet with style variants.
-
-  Styles and behavior are controlled entirely by global theme settings
-  (config/settings_schema.json):
-
-    - settings.pagination_style          : 'default' | 'minimal' | 'outline'
-    - settings.pagination_font_size      : font size in px
-    - settings.pagination_border_radius  : border radius in px
+    Pagination for a surrounding `{% paginate %}` block. Font size follows
+    --font-pagination-ratio (snippets/css-variables.liquid); no theme settings.
 
   Usage (must pass a paginate object from within a `{% paginate %}` block):
 
@@ -19,33 +13,28 @@
 {% enddoc %}
 
 {%- liquid
-    assign pagination_style = settings.pagination_style | default: 'default'
-    assign pagination_font_size = settings.pagination_font_size | default: 13
-    assign pagination_border_radius = settings.pagination_border_radius | default: 4
-
     assign pagination_data = paginate_obj
 -%}
 
 {%- if pagination_data and pagination_data.pages > 1 -%}
     <nav
-        class="pagination py-10"
+        class="pagination py-step-xl"
         role="navigation"
         data-pagination-nav
-        style="--pagination-font-size: {{ pagination_font_size }}px; --pagination-radius: {{ pagination_border_radius }}px;"
     >
         <div class="pagination__inner">
             {%- comment -%} PREVIOUS {%- endcomment -%}
             {%- if pagination_data.previous -%}
                 <a
                     href="{{ pagination_data.previous.url }}"
-                    class="pagination__button pagination__prev {% case pagination_style %}{% when 'minimal' %}pagination__button--hover-minimal{% when 'outline' %}pagination__button--hover-outline{% else %}pagination__button--hover-default{% endcase %}"
+                    class="pagination__button pagination__prev pagination__button--hover-default"
                 >
                     {%- render 'icons', icon: 'icon-chevron-left' -%}
                     <span>{{ 'pagination.previous' | t }}</span>
                 </a>
             {%- else -%}
                 <span
-                    class="pagination__button pagination__prev pagination__button--disabled {% if pagination_style == 'outline' %}pagination__button--outline{% endif %}"
+                    class="pagination__button pagination__prev pagination__button--disabled"
                     aria-disabled="true"
                 >
                     {%- render 'icons', icon: 'icon-chevron-left' -%}
@@ -59,14 +48,14 @@
                         {%- if part.is_link -%}
                             <a
                                 href="{{ part.url }}"
-                                class="pagination__page {% case pagination_style %}{% when 'minimal' %}pagination__page--hover-minimal{% when 'outline' %}pagination__page--hover-outline{% else %}pagination__page--hover-default{% endcase %}"
+                                class="pagination__page pagination__page--hover-default"
                             >
                                 {{- part.title -}}
                             </a>
                         {%- else -%}
                             {%- if part.title == pagination_data.current_page -%}
                                 <span
-                                    class="pagination__page pagination__page--current pagination__page--current--{{ pagination_style }}"
+                                    class="pagination__page pagination__page--current pagination__page--current--default"
                                     aria-current="page"
                                 >
                                     {{- part.title -}}
@@ -85,14 +74,14 @@
             {%- if pagination_data.next -%}
                 <a
                     href="{{ pagination_data.next.url }}"
-                    class="pagination__button pagination__next {% case pagination_style %}{% when 'minimal' %}pagination__button--hover-minimal{% when 'outline' %}pagination__button--hover-outline{% else %}pagination__button--hover-default{% endcase %}"
+                    class="pagination__button pagination__next pagination__button--hover-default"
                 >
                     <span>{{ 'pagination.next' | t }}</span>
                     {%- render 'icons', icon: 'icon-chevron-right' -%}
                 </a>
             {%- else -%}
                 <span
-                    class="pagination__button pagination__next pagination__button--disabled {% if pagination_style == 'outline' %}pagination__button--outline{% endif %}"
+                    class="pagination__button pagination__next pagination__button--disabled"
                     aria-disabled="true"
                 >
                     {%- render 'icons', icon: 'icon-chevron-right' -%}
@@ -101,3 +90,121 @@
         </div>
     </nav>
 {%- endif -%}
+
+{% stylesheet %}
+    .pagination__inner {
+        margin-inline: auto;
+        display: flex;
+        width: fit-content;
+        max-width: 100%;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    .pagination__button {
+        display: inline-flex;
+        height: calc(var(--spacing) * 10);
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        gap: calc(var(--spacing) * 1);
+        padding-inline: calc(var(--spacing) * 2);
+        white-space: nowrap;
+        font-family: inherit;
+        font-size: calc(var(--font-body-scale) * var(--type-step-0) * var(--font-pagination-ratio));
+        border-radius: 4px;
+        transition:
+            color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+            background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+            border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+            transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+        &:focus-visible {
+            outline: var(--focus-ring-width) solid
+                rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+            outline-offset: calc(-1 * var(--focus-ring-width));
+        }
+        &:active:not(.pagination__button--disabled) {
+            transform: scale(0.98);
+        }
+        @media (prefers-reduced-motion: reduce) {
+            &:active:not(.pagination__button--disabled) {
+                transform: none;
+            }
+        }
+    }
+    .pagination__button--disabled {
+        pointer-events: none;
+        cursor: default;
+        opacity: 0.4;
+    }
+    .pagination__button--hover-default {
+        @media (hover: hover) and (pointer: fine) {
+            &:hover:not(.pagination__button--disabled) {
+                background-color: var(--color-surface-muted);
+            }
+        }
+    }
+    .pagination__page {
+        display: inline-flex;
+        height: calc(var(--spacing) * 10);
+        min-width: calc(var(--spacing) * 10);
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        padding-inline: calc(var(--spacing) * 2);
+        font-family: inherit;
+        font-size: calc(var(--font-body-scale) * var(--type-step-0) * var(--font-pagination-ratio));
+        border-radius: 4px;
+        transition:
+            color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+            background-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+            border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease),
+            transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+        &:focus-visible {
+            outline: var(--focus-ring-width) solid
+                rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+            outline-offset: calc(-1 * var(--focus-ring-width));
+        }
+    }
+    a.pagination__page {
+        &:active {
+            transform: scale(0.98);
+        }
+        @media (prefers-reduced-motion: reduce) {
+            &:active {
+                transform: none;
+            }
+        }
+    }
+    .pagination__page--hover-default {
+        @media (hover: hover) and (pointer: fine) {
+            &:hover {
+                background-color: var(--color-surface-muted);
+            }
+        }
+    }
+    .pagination__page--current--default {
+        background-color: rgb(var(--color-foreground));
+        color: rgb(var(--color-background));
+    }
+    .pagination__page--ellipsis {
+        cursor: default;
+        font-size: calc(var(--font-body-scale) * var(--type-step-0) * var(--font-pagination-ratio));
+    }
+    .pagination__pages-wrap {
+        max-width: 100%;
+        min-width: calc(var(--spacing) * 0);
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        &::-webkit-scrollbar {
+            display: none;
+        }
+    }
+    .pagination__pages {
+        margin-inline: auto;
+        display: inline-flex;
+        min-width: max-content;
+        align-items: center;
+        gap: 0.25rem;
+    }
+{% endstylesheet %}

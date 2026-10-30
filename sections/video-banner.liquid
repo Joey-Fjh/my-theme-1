@@ -31,6 +31,15 @@
 
     assign aspect_ratio = section.settings.aspect_ratio | default: '16/9'
     assign container_width = section.settings.container_width | default: 'page'
+    assign video_banner_section_height = section.settings.section_height | default: 'adapt'
+
+    assign video_banner_frame_class = 'video-banner__frame'
+    assign video_banner_frame_style = ''
+    if video_banner_section_height == 'adapt'
+        assign video_banner_frame_style = 'aspect-ratio: ' | append: aspect_ratio | append: ';'
+    else
+        assign video_banner_frame_class = video_banner_frame_class | append: ' h-full min-h-0'
+    endif
 
     assign external_video_type = ''
     assign external_video_id = ''
@@ -52,18 +61,14 @@
     endif
 -%}
 
-<div
-    data-section-id="{{ section.id }}"
-    class="video-banner-section full-width color-{{ section.settings.color_scheme }} surface-section"
-    style="
-        --section-padding-top: {{ section.settings.padding_top }}px;
-        --section-padding-bottom: {{ section.settings.padding_bottom }}px;
-    "
-    x-data="motionRevealSection()"
-    data-motion-section
->
-    <div class="layout {% if container_width == 'page' %}container-page{% endif %}">
-        <div class="video-banner__frame" style="aspect-ratio: {{ aspect_ratio }};">
+{%- liquid
+    assign video_banner_width = 'full'
+    if container_width == 'page'
+        assign video_banner_width = 'page'
+    endif
+-%}
+{%- capture video_banner_children -%}
+        <div class="{{ video_banner_frame_class }}"{% if video_banner_frame_style != blank %} style="{{ video_banner_frame_style }}"{% endif %}>
             {%- if has_hosted_video -%}
                 {%- render 'media-video',
                     video: hosted_video,
@@ -81,8 +86,9 @@
             {%- elsif has_external_video -%}
                 {%- comment -%} External video (YouTube/Vimeo) with click-to-play. {%- endcomment -%}
                 <div
-                    x-data="{ playing: false }"
-                    class="video-banner__external relative h-full w-full bg-theme-bg/20"
+                    data-module-id="video-banner-external"
+                    x-data="videoBannerExternal()"
+                    class="video-banner__external"
                 >
                     <div x-show="!playing" class="absolute inset-0 z-10">
                         {%- render 'image',
@@ -93,7 +99,6 @@
                             fit: 'cover',
                             sizes: '100vw',
                             loading: 'lazy',
-                            motion_reveal: false,
                             placeholder_key: 'image',
                             wrapper_class: 'h-full w-full',
                             alt: ''
@@ -102,13 +107,13 @@
                         <button
                             type="button"
                             class="video-banner__play-button"
-                            @click="playing = true"
+                            @click="startPlay()"
                             aria-label="{{ 'accessibility.play_video' | t }}"
                         >
                             <span class="video-banner__play-icon">
                                 {%- render 'icons',
                                     icon: 'icon-play',
-                                    class: 'ms-1.5 h-8 w-8 pc:h-10 pc:w-10'
+                                    class: 'ms-step-2xs h-8 w-8 tablet:h-10 tablet:w-10'
                                 -%}
                             </span>
                         </button>
@@ -133,15 +138,22 @@
                     fit: 'cover',
                     sizes: '100vw',
                     loading: 'lazy',
-                    motion_reveal: false,
                     placeholder_key: 'image',
                     wrapper_class: 'h-full w-full',
                     alt: ''
                 -%}
             {%- endif -%}
         </div>
-    </div>
-</div>
+{%- endcapture -%}
+
+{% render 'section-frame',
+    section: section,
+    section_class: 'video-banner-section',
+    width: video_banner_width,
+    height_kind: 'media',
+    motion: false,
+    children: video_banner_children
+%}
 
 {% stylesheet %}
     .video-banner__frame {
@@ -149,7 +161,17 @@
         width: 100%;
         overflow: hidden;
         border-radius: var(--container-radius, 0.75rem);
-        background: rgb(var(--color-background) / 0.15);
+        background: var(--color-surface-muted);
+    }
+
+    /* The single row takes the stage height, so the media fills it instead of sizing it. */
+    .video-banner-section.section-frame--height-stage > .section-frame__inner {
+        grid-template-rows: minmax(0, 1fr);
+    }
+
+    .video-banner-section.section-frame--height-stage .video-banner__frame > * {
+        position: absolute;
+        inset: 0;
     }
 
     .video-banner__play-button {
@@ -174,27 +196,33 @@
         border-radius: 9999px;
         background: rgb(var(--color-background));
         color: rgb(var(--color-foreground));
-        box-shadow: 0 4px 16px rgb(0 0 0 / 0.12);
-        transition:
-            transform var(--motion-duration-fast) var(--motion-ease-default),
-            box-shadow var(--motion-duration-fast) var(--motion-ease-default);
+        transition: transform var(--motion-duration-fast) var(--motion-ease-default);
     }
 
-    @media (min-width: 48rem) {
+    @media (width >= 48rem) {
         .video-banner__play-icon {
             width: 6rem;
             height: 6rem;
         }
     }
 
-    .video-banner__play-button:hover .video-banner__play-icon {
-        transform: scale(1.08);
-        box-shadow: 0 6px 24px rgb(0 0 0 / 0.18);
+    @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+        .video-banner__play-button:hover .video-banner__play-icon {
+            transform: scale(1.08);
+        }
     }
 
     .video-banner__play-button:focus-visible .video-banner__play-icon {
-        outline: 2px solid rgb(var(--color-focus-ring));
-        outline-offset: 3px;
+        outline: var(--focus-ring-width) solid
+            rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+        outline-offset: var(--focus-ring-offset);
+    }
+
+    :where(.video-banner__external) {
+        position: relative;
+        height: 100%;
+        width: 100%;
+        background-color: var(--color-surface-muted);
     }
 
     .video-banner__external iframe {
@@ -219,6 +247,34 @@
             "id": "color_scheme",
             "label": "t:sections.video-banner.settings.color_scheme",
             "default": "scheme-2"
+        },
+        {
+            "type": "select",
+            "id": "section_height",
+            "label": "t:sections.video-banner.settings.section_height",
+            "options": [
+                {
+                    "value": "adapt",
+                    "label": "t:options.section_height.adapt"
+                },
+                {
+                    "value": "small",
+                    "label": "t:options.section_height.small"
+                },
+                {
+                    "value": "medium",
+                    "label": "t:options.section_height.medium"
+                },
+                {
+                    "value": "large",
+                    "label": "t:options.section_height.large"
+                },
+                {
+                    "value": "full",
+                    "label": "t:options.section_height.full"
+                }
+            ],
+            "default": "adapt"
         },
         {
             "type": "header",

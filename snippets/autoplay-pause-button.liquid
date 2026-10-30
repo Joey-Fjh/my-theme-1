@@ -1,0 +1,95 @@
+{%- comment -%}
+    Pause/play toggle for autoplay that has no other pause on a device that cannot hover.
+
+    The button is hidden until its module removes `hidden`, and only when autoplay can run.
+    A fine pointer with hover never sees it: that device pauses by hover and keyboard focus.
+
+    Accepts:
+    - class: {String} Placement class on the button (optional)
+
+    Usage:
+    {% render 'autoplay-pause-button', class: 'slides-show__autoplay-pause' %}
+{%- endcomment -%}
+
+<button
+    type="button"
+    class="autoplay-pause-button focus-ring{% if class != blank %} {{ class }}{% endif %}"
+    data-autoplay-pause
+    aria-pressed="false"
+    aria-label="{{ 'accessibility.autoplay_pause' | t }}"
+    hidden
+></button>
+
+{% stylesheet %}
+    /* 2.4rem is 24px on the 62.5% root: the WCAG 2.5.8 target. The glyph uses currentcolor. */
+    .autoplay-pause-button {
+        position: relative;
+        display: inline-flex;
+        flex: 0 0 auto;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        width: 2.4rem;
+        min-width: 2.4rem;
+        height: 2.4rem;
+        min-height: 2.4rem;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: currentcolor;
+        cursor: pointer;
+    }
+
+    .autoplay-pause-button[hidden] {
+        display: none;
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+        .autoplay-pause-button {
+            display: none;
+        }
+    }
+
+    .autoplay-pause-button::before,
+    .autoplay-pause-button::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        width: 0.2rem;
+        height: 1rem;
+        margin-top: -0.5rem;
+        border-radius: 1px;
+        background: currentcolor;
+    }
+
+    .autoplay-pause-button::before {
+        left: calc(50% - 0.35rem);
+    }
+
+    .autoplay-pause-button::after {
+        left: calc(50% + 0.15rem);
+    }
+
+    .autoplay-pause-button[aria-pressed='true']::after {
+        content: none;
+        width: 0;
+        height: 0;
+        margin-top: 0;
+        border-radius: 0;
+        background: none;
+    }
+
+    .autoplay-pause-button[aria-pressed='true']::before {
+        content: '';
+        width: 0;
+        height: 0;
+        left: calc(50% - 0.35rem);
+        top: 50%;
+        margin-top: -0.5rem;
+        border-radius: 0;
+        background: none;
+        border-style: solid;
+        border-width: 0.5rem 0 0.5rem 0.85rem;
+        border-color: transparent transparent transparent currentcolor;
+    }
+{% endstylesheet %}

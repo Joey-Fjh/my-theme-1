@@ -10,41 +10,31 @@
         endif
     endif
 
-    assign before_after_heading_class = section.settings.heading_size | default: 'heading-2xl'
-    assign before_after_subtitle_size = section.settings.subtitle_size | default: 'body-3xl'
-    assign before_after_subtitle_class = 'typo-subtitle ' | append: before_after_subtitle_size
+    assign before_after_heading_class = section.settings.heading_size | default: 'title-2xl'
+    assign before_after_subtitle_size = section.settings.subtitle_size | default: 'copy-xl'
 -%}
 
-<div
-    data-section-id="{{ section.id }}"
-    class="before-after-comparison-section full-width color-{{ section.settings.color_scheme }} surface-section"
-    style="
-        --section-padding-top: {{ section.settings.padding_top }}px;
-        --section-padding-bottom: {{ section.settings.padding_bottom }}px;
-    "
-    x-data="motionRevealSection()"
-    data-motion-section
->
-    <div class="layout container-page">
-        <div class="flex flex-col gap-6 text-center" data-motion-sequence>
-            <p
-                class="{{ before_after_subtitle_class }}"
-                data-motion-reveal="content"
-            >
-                {{ section.settings.sub_heading }}
-            </p>
-            <h2
-                class="{{ before_after_heading_class }}"
-                data-motion-reveal="content"
-            >
-                {{ section.settings.heading }}
-            </h2>
+{%- capture before_after_children -%}
+    <div class="flex flex-col gap-step-xl tablet:gap-step-3xl">
+        <div class="flex flex-col gap-step-m text-center">
+            {% render 'text',
+                tier: before_after_subtitle_size,
+                subtitle: true,
+                align: 'center',
+                content: section.settings.sub_heading
+            %}
+            {% render 'heading',
+                level: '2',
+                tier: before_after_heading_class,
+                align: 'center',
+                content: section.settings.heading
+            %}
         </div>
 
         {% comment %} Mobile Layout (Stacked) {% endcomment %}
-        <div class="mt-10 flex flex-col gap-6 pc:hidden">
-            <div data-motion-bound>
-                <div class="relative overflow-hidden rounded-lg" data-motion-reveal="media">
+        <div class="flex flex-col gap-step-m tablet:hidden">
+            <div>
+                <div class="before-after__frame">
                     {%- assign image_alt = section.settings.before_img.alt
                         | default: section.settings.before_label
                         | escape
@@ -55,16 +45,15 @@
                         alt: image_alt,
                         width: section.settings.before_img.width,
                         aspect_ratio: aspect_ratio,
-                        motion_reveal: false
                     -%}
-                    <div class="absolute bottom-4 left-4 z-10 rounded border-2 border-theme-text px-3 py-2 body-xl backdrop-blur-sm">
+                    <div class="absolute bottom-4 left-4 z-10 rounded bg-scrim px-step-xs py-step-2xs copy-l text-on-scrim">
                         {{ section.settings.before_label }}
                     </div>
                 </div>
             </div>
 
-            <div data-motion-bound>
-                <div class="relative overflow-hidden rounded-lg" data-motion-reveal="media">
+            <div>
+                <div class="before-after__frame">
                     {%- assign image_alt = section.settings.after_img.alt
                         | default: section.settings.after_label
                         | escape
@@ -75,9 +64,8 @@
                         alt: image_alt,
                         width: section.settings.after_img.width,
                         aspect_ratio: aspect_ratio,
-                        motion_reveal: false
                     -%}
-                    <div class="absolute right-4 bottom-4 z-10 rounded border-2 border-theme-text px-3 py-2 body-xl backdrop-blur-sm">
+                    <div class="absolute right-4 bottom-4 z-10 rounded bg-scrim px-step-xs py-step-2xs copy-l text-on-scrim">
                         {{ section.settings.after_label }}
                     </div>
                 </div>
@@ -86,99 +74,110 @@
 
         {% comment %} Desktop Layout (Slider) {% endcomment %}
         <div
-            class="mt-25 hidden pc:block"
+            class="hidden tablet:block"
+            data-module-id="before-after-comparison"
             x-data="beforeAfterComparison()"
         >
-            <div
-                class="relative cursor-ew-resize overflow-hidden rounded-lg select-none"
-                style="aspect-ratio: {{ aspect_ratio }};"
-                x-ref="container"
-                @mousedown="startDrag($event)"
-                @touchstart.passive="startDrag($event)"
-                @mousemove="onDrag($event)"
-                @touchmove.passive="onDrag($event)"
-                @mouseup="endDrag()"
-                @touchend="endDrag()"
-                @mouseleave="endDrag()"
-                x-intersect:enter.once="animateToCenter()"
-            >
-                {% comment %} After Image (Background) {% endcomment %}
-                <div class="absolute inset-0 h-full w-full">
-                    {%- assign image_alt = section.settings.after_img.alt
-                        | default: section.settings.after_label
-                        | escape
-                    -%}
-                    {%- render 'image',
-                        image: section.settings.after_img,
-                        placeholder_key: 'lifestyle-2',
-                        alt: image_alt,
-                        width: section.settings.after_img.width,
-                        extra_attributes: 'draggable="false"',
-                        motion_reveal: false
-                    -%}
-                </div>
-
-                {% comment %} Before Image (Clipped) {% endcomment %}
+            <div class="before-after__frame">
                 <div
-                    class="absolute inset-0 h-full w-full"
-                    style="clip-path: inset(0 50% 0 0);"
-                    :style="`clip-path: inset(0 ${100 - position}% 0 0)`"
+                    class="relative cursor-ew-resize touch-pan-y select-none"
+                    style="aspect-ratio: {{ aspect_ratio }};"
+                    x-ref="container"
+                    @pointerdown="startDrag($event)"
+                    @pointermove="onDrag($event)"
+                    @pointerup="endDrag($event)"
+                    @pointercancel="endDrag($event)"
+                    x-intersect:enter.once="animateToCenter()"
                 >
-                    {%- assign image_alt = section.settings.before_img.alt
-                        | default: section.settings.before_label
-                        | escape
-                    -%}
-                    {%- render 'image',
-                        image: section.settings.before_img,
-                        placeholder_key: 'lifestyle-1',
-                        alt: image_alt,
-                        width: section.settings.before_img.width,
-                        extra_attributes: 'draggable="false"',
-                        motion_reveal: false
-                    -%}
-                </div>
+                    {% comment %} After Image (Background) {% endcomment %}
+                    <div class="absolute inset-0 h-full w-full">
+                        {%- assign image_alt = section.settings.after_img.alt
+                            | default: section.settings.after_label
+                            | escape
+                        -%}
+                        {%- render 'image',
+                            image: section.settings.after_img,
+                            placeholder_key: 'lifestyle-2',
+                            alt: image_alt,
+                            width: section.settings.after_img.width,
+                            extra_attributes: 'draggable="false"',
+                        -%}
+                    </div>
 
-                {% comment %} Silder Line {% endcomment %}
-                <div
-                    class="absolute top-0 bottom-0 z-10 w-2 -translate-x-1/2 bg-theme-bg/80 transition-[left] duration-75 ease-out"
-                    style="left: 50%;"
-                    :class="{'transition-none' : isDragging }"
-                    :style="`left: ${position}%`"
-                >
-                    {% comment %} Handle {% endcomment %}
-                    <button
-                        type="button"
-                        class="
-                            absolute top-1/2 left-1/2 flex h-24 w-24 -translate-x-1/2 -translate-y-1/2 cursor-grab items-center justify-center gap-0 rounded-full bg-theme-bg focus-ring
-                            transition-transform duration-200 hover:scale-110 focus:outline-none active:cursor-grabbing
-                        "
-                        @mousedown.stop="startDrag($event)"
-                        @touchstart.stop.passive="startDrag($event)"
-                        @keydown="handleKeydown($event)"
-                        role="slider"
-                        aria-valuemin="0"
-                        aria-valuemax="100"
-                        :aria-valuenow="Math.round(position)"
-                        aria-label="{{ 'accessibility.drag_to_compare' | t }}"
+                    {% comment %} Before Image (Clipped) {% endcomment %}
+                    <div
+                        class="absolute inset-0 h-full w-full"
+                        style="clip-path: inset(0 50% 0 0);"
+                        :style="`clip-path: inset(0 ${100 - position}% 0 0)`"
                     >
-                        {%- render 'icons', icon: 'icon-chevron-left' -%}
-                        {%- render 'icons', icon: 'icon-chevron-right', class: '-ms-2' -%}
-                    </button>
-                </div>
+                        {%- assign image_alt = section.settings.before_img.alt
+                            | default: section.settings.before_label
+                            | escape
+                        -%}
+                        {%- render 'image',
+                            image: section.settings.before_img,
+                            placeholder_key: 'lifestyle-1',
+                            alt: image_alt,
+                            width: section.settings.before_img.width,
+                            extra_attributes: 'draggable="false"',
+                        -%}
+                    </div>
 
-                {% comment %} Before Label {% endcomment %}
-                <div class="absolute bottom-10 left-10 z-10 rounded border-2 border-theme-text p-4 body-xl backdrop-blur-sm">
-                    {{ section.settings.before_label }}
-                </div>
+                    {% comment %} Silder Line {% endcomment %}
+                    <div
+                        class="ease-out absolute top-0 bottom-0 z-10 w-2 -translate-x-1/2 bg-veil transition-[left] duration-75"
+                        style="left: 50%;"
+                        :class="{'transition-none' : isDragging }"
+                        :style="`left: ${position}%`"
+                    >
+                        {% comment %} Handle {% endcomment %}
+                        <button
+                            type="button"
+                            class="
+                                absolute top-1/2 left-1/2 flex h-24 w-24 -translate-x-1/2 -translate-y-1/2 cursor-grab items-center justify-center gap-0 rounded-full bg-theme-bg focus-ring
+                                transition-transform duration-200 hover:scale-110 active:cursor-grabbing
+                            "
+                            @keydown="handleKeydown($event)"
+                            role="slider"
+                            aria-valuemin="0"
+                            aria-valuemax="100"
+                            :aria-valuenow="Math.round(position)"
+                            aria-label="{{ 'accessibility.drag_to_compare' | t }}"
+                        >
+                            {%- render 'icons', icon: 'icon-chevron-left' -%}
+                            {%- render 'icons', icon: 'icon-chevron-right', class: '-ms-step-2xs' -%}
+                        </button>
+                    </div>
 
-                {% comment %} After Label {% endcomment %}
-                <div class="absolute right-10 bottom-10 z-10 rounded border-2 border-theme-text p-4 body-xl backdrop-blur-sm">
-                    {{ section.settings.after_label }}
-                </div>
+                    {% comment %} Before Label {% endcomment %}
+                    <div class="absolute bottom-10 left-10 z-10 rounded bg-scrim p-step-s copy-l text-on-scrim">
+                        {{ section.settings.before_label }}
+                    </div>
+
+                    {% comment %} After Label {% endcomment %}
+                    <div class="absolute right-10 bottom-10 z-10 rounded bg-scrim p-step-s copy-l text-on-scrim">
+                        {{ section.settings.after_label }}
+                    </div>
+            </div>
             </div>
         </div>
     </div>
-</div>
+{%- endcapture -%}
+
+{% render 'section-frame',
+    section: section,
+    section_class: 'before-after-comparison-section',
+    motion: false,
+    children: before_after_children
+%}
+
+{% stylesheet %}
+    .before-after__frame {
+        position: relative;
+        overflow: hidden;
+        border-radius: var(--radius-card);
+    }
+{% endstylesheet %}
 
 {% schema %}
 {
@@ -209,47 +208,39 @@
             "label": "t:sections.slides-show.settings.heading_size",
             "options": [
                 {
-                    "value": "heading-4xl",
-                    "label": "t:sections.slides-show.options.heading_4xl"
+                    "value": "title-4xl",
+                    "label": "t:settings.type_size.title_4xl"
                 },
                 {
-                    "value": "heading-3xl",
-                    "label": "t:sections.slides-show.options.heading_3xl"
+                    "value": "title-3xl",
+                    "label": "t:settings.type_size.title_3xl"
                 },
                 {
-                    "value": "heading-2xl",
-                    "label": "t:sections.slides-show.options.heading_2xl"
+                    "value": "title-2xl",
+                    "label": "t:settings.type_size.title_2xl"
                 },
                 {
-                    "value": "heading-xl",
-                    "label": "t:sections.slides-show.options.heading_xl"
+                    "value": "title-xl",
+                    "label": "t:settings.type_size.title_xl"
                 },
                 {
-                    "value": "heading-h1",
-                    "label": "t:sections.slides-show.options.heading_h1"
+                    "value": "title-l",
+                    "label": "t:settings.type_size.title_l"
                 },
                 {
-                    "value": "heading-h2",
-                    "label": "t:sections.slides-show.options.heading_h2"
+                    "value": "title-m",
+                    "label": "t:settings.type_size.title_m"
                 },
                 {
-                    "value": "heading-h3",
-                    "label": "t:sections.slides-show.options.heading_h3"
+                    "value": "title-s",
+                    "label": "t:settings.type_size.title_s"
                 },
                 {
-                    "value": "heading-h4",
-                    "label": "t:sections.slides-show.options.heading_h4"
-                },
-                {
-                    "value": "heading-h5",
-                    "label": "t:sections.slides-show.options.heading_h5"
-                },
-                {
-                    "value": "heading-h6",
-                    "label": "t:sections.slides-show.options.heading_h6"
+                    "value": "title-xs",
+                    "label": "t:settings.type_size.title_xs"
                 }
             ],
-            "default": "heading-2xl"
+            "default": "title-2xl"
         },
         {
             "type": "inline_richtext",
@@ -267,31 +258,23 @@
             "label": "t:sections.scroll-categories.settings.subtitle_size",
             "options": [
                 {
-                    "value": "body-3xl",
-                    "label": "t:sections.scroll-categories.options.body_3xl"
+                    "value": "copy-xl",
+                    "label": "t:settings.type_size.copy_xl"
                 },
                 {
-                    "value": "body-2xl",
-                    "label": "t:sections.scroll-categories.options.body_2xl"
+                    "value": "copy-l",
+                    "label": "t:settings.type_size.copy_l"
                 },
                 {
-                    "value": "body-xl",
-                    "label": "t:sections.scroll-categories.options.body_xl"
+                    "value": "copy-m",
+                    "label": "t:settings.type_size.copy_m"
                 },
                 {
-                    "value": "body-lg",
-                    "label": "t:sections.scroll-categories.options.body_lg"
-                },
-                {
-                    "value": "body-md",
-                    "label": "t:sections.scroll-categories.options.body_md"
-                },
-                {
-                    "value": "body-sm",
-                    "label": "t:sections.scroll-categories.options.body_sm"
+                    "value": "copy-s",
+                    "label": "t:settings.type_size.copy_s"
                 }
             ],
-            "default": "body-3xl"
+            "default": "copy-xl"
         },
         {
             "type": "inline_richtext",
@@ -337,13 +320,13 @@
             "type": "text",
             "id": "before_label",
             "label": "t:sections.before-after-comparison.settings.before_label",
-            "default": "BEFORE"
+            "default": "t:sections.before-after-comparison.defaults.before_label"
         },
         {
             "type": "text",
             "id": "after_label",
             "label": "t:sections.before-after-comparison.settings.after_label",
-            "default": "AFTER"
+            "default": "t:sections.before-after-comparison.defaults.after_label"
         },
         {
             "type": "header",

@@ -13,6 +13,8 @@
     @param {string} [alignment] - Text and item alignment: 'left', 'center', or 'right'.
     @param {string} [class] - Optional extra classes for the root element.
     @param {string} [title_class] - Optional extra classes for the title element.
+    @param {string} [text] - Optional description rendered below the title; title and description are then wrapped in `icon-with-text-item__body`.
+    @param {string} [text_class] - Optional extra classes for the description element.
 {% enddoc %}
 
 {%- liquid
@@ -27,6 +29,8 @@
     assign item_alignment = alignment | default: 'center'
     assign extra_class = class | default: ''
     assign extra_title_class = title_class | default: ''
+    assign item_text = text
+    assign extra_text_class = text_class | default: ''
 
     assign direction_class = 'icon-with-text-item--vertical'
     if item_direction == 'horizontal'
@@ -61,9 +65,20 @@
                 class: 'icon-with-text-item__icon'
             -%}
         {%- endif -%}
-        <div class="icon-with-text-item__title {{ extra_title_class }}">
-            {{ item_title }}
-        </div>
+        {%- if item_text != blank -%}
+            <div class="icon-with-text-item__body">
+                <div class="icon-with-text-item__title {{ extra_title_class }}">
+                    {{ item_title }}
+                </div>
+                <div class="icon-with-text-item__text {{ extra_text_class }}">
+                    {{ item_text }}
+                </div>
+            </div>
+        {%- else -%}
+            <div class="icon-with-text-item__title {{ extra_title_class }}">
+                {{ item_title }}
+            </div>
+        {%- endif -%}
     {%- endcapture -%}
 
     {%- if item_link != blank -%}

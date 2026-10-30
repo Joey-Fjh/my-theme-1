@@ -19,6 +19,7 @@
 <div
     class="product-card-shell {{ predictive_card_class }}"
     x-data="cardGallery"
+    data-module-id="card-gallery"
 >
     <div class="product-card-shell__meta">
         <span
@@ -35,7 +36,7 @@
             data-show-image-label="{{ 'accessibility.show_image' | t: index: '__INDEX__' }}"
         >
             <template x-if="product.images && product.images.length <= 3">
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-step-xs">
                     <template
                         x-for="(image, imageIndex) in product.images"
                         :key="image.url || imageIndex"
@@ -90,12 +91,14 @@
                         x-show="activeImageIndex === imageIndex"
                     >
                         <div class="product-card-shell__media-frame {{ predictive_frame_class }}">
+                            {%- # lint-allow bare-img: predictive search results are JSON-driven; image.liquid has no URL at render time -%}
                             <img
-                                class="product-card-shell__image"
-                                :src="image.url"
-                                :alt="image.alt || product.title"
+                                class="product-card-shell__image h-full w-full object-contain"
                                 width="120"
                                 height="120"
+                                loading="lazy"
+                                :src="image.url"
+                                :alt="image.alt || product.title"
                             >
                         </div>
                     </div>
@@ -104,12 +107,14 @@
 
             <template x-if="!product.images || !product.images.length">
                 <div class="product-card-shell__media-frame {{ predictive_frame_class }}">
+                    {%- # lint-allow bare-img: predictive search results are JSON-driven; image.liquid has no URL at render time -%}
                     <img
-                        class="product-card-shell__image"
-                        :src="product.image"
-                        :alt="product.title"
+                        class="product-card-shell__image h-full w-full object-contain"
                         width="120"
                         height="120"
+                        loading="lazy"
+                        :src="product.image"
+                        :alt="product.title"
                     >
                 </div>
             </template>

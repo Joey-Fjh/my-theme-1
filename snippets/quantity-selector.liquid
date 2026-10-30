@@ -1,6 +1,6 @@
 {% doc %}
     Reusable quantity selector (Tailwind + Alpine.js).
-    Constraint math lives in `quantity-constraints` and `__Theme__.QuantityConstraints`.
+    Constraint math lives in `quantity-constraints`.
 
     @param {number} [value] - Initial quantity (default: computed min when variant is passed, else 1)
     @param {number} [min] - Minimum when variant is omitted (default: 1)
@@ -17,6 +17,7 @@
     @param {string} [button_class] - Escape hatch button classes
     @param {string} [input_class] - Escape hatch input classes
     @param {string} [label] - Accessible label
+    @param {string} [focus_key] - Optional stable `data-focus-key` for section refresh focus restore
     @param {boolean} [interactive] - Set false for a static visual state without form or Alpine behavior
 {% enddoc %}
 
@@ -145,12 +146,16 @@
     data-qty-msg-above-max="{{ 'toast.quantity_above_max' | t: max: '%%MAX%%' | escape }}"
     {% if qty_interactive %}
         x-data="QuantitySelector()"
+        data-module-id="quantity-selector"
     {% endif %}
     class="quantity-selector{% unless qty_interactive %} quantity-selector--static{% endunless %} {{ wrapper_class }}"
 >
     <button
         type="button"
         class="quantity-selector__button {{ button_class }}"
+        {% if focus_key != blank %}
+            data-focus-key="{{ focus_key | append: '-decrease' | escape }}"
+        {% endif %}
         {% if qty_interactive %}
             aria-label="{{ 'accessibility.decrease_quantity' | t }}"
             @click="decrement()"
@@ -170,6 +175,9 @@
         type="number"
         {% if qty_input_id != blank %}
             id="{{ qty_input_id }}"
+        {% endif %}
+        {% if focus_key != blank %}
+            data-focus-key="{{ focus_key | escape }}"
         {% endif %}
         name="{{ name | default: 'quantity' }}"
         class="quantity-selector__input {{ input_class }}"
@@ -203,6 +211,9 @@
     <button
         type="button"
         class="quantity-selector__button {{ button_class }}"
+        {% if focus_key != blank %}
+            data-focus-key="{{ focus_key | append: '-increase' | escape }}"
+        {% endif %}
         {% if qty_interactive %}
             aria-label="{{ 'accessibility.increase_quantity' | t }}"
             @click="increment()"
@@ -215,3 +226,56 @@
         {%- render 'icons', icon: 'icon-plus' -%}
     </button>
 </div>
+
+{% stylesheet %}
+    .quantity-selector__input {
+        width: 4ch;
+        appearance: none;
+        border-bottom-style: solid;
+        border-bottom-width: 1px;
+        border-color: currentcolor;
+        background-color: transparent;
+        padding: calc(var(--spacing) * 0);
+        text-align: center;
+        color: currentcolor;
+        font-variant-numeric: tabular-nums;
+        &:focus-visible {
+            outline: var(--focus-ring-width) solid
+                rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+            outline-offset: var(--focus-ring-offset);
+        }
+        -moz-appearance: textfield;
+        &:focus {
+            box-shadow: none;
+        }
+        /* Mouse focus only: keyboard focus keeps the :focus-visible outline above. */
+        &:focus:not(:focus-visible) {
+            --tw-outline-style: none;
+            outline-style: none;
+        }
+        &::-webkit-inner-spin-button {
+            appearance: none;
+        }
+        &::-webkit-outer-spin-button {
+            appearance: none;
+        }
+        font: inherit;
+        &:focus-visible {
+            position: relative;
+            z-index: 1;
+        }
+    }
+    .quantity-selector--static .quantity-selector__input {
+        pointer-events: none;
+        cursor: default;
+        opacity: 100%;
+        -webkit-text-fill-color: currentColor;
+    }
+
+    /* Product surface input: moved from tailwind.components.css (6-C6) so it still beats the base input rule. */
+    .quantity-selector[data-qty-surface='product'] .quantity-selector__input {
+        width: 3ch;
+        flex: 1 1 auto;
+        border-bottom-width: 0;
+    }
+{% endstylesheet %}

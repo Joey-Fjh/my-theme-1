@@ -1,21 +1,12 @@
-<div
-    data-section-id="{{ section.id }}"
-    class="article-section full-width color-{{ section.settings.color_scheme }} surface-section"
-    style="
-        --section-padding-top: {{ section.settings.padding_top }}px;
-        --section-padding-bottom: {{ section.settings.padding_bottom }}px;
-    "
-    x-data="motionRevealSection()"
-    data-motion-section
->
-    {%- liquid
-        assign article_heading_class = section.settings.heading_size | default: 'heading-2xl'
-        assign article_subtitle_size = section.settings.subtitle_size | default: 'body-xl'
-        assign article_subtitle_class = 'typo-subtitle ' | append: article_subtitle_size
-        assign article_title_text = article.title | strip_html | strip
-        assign article_heading_override = section.settings.heading | strip_html | strip
-    -%}
-    <div class="article-hero relative overflow-hidden color-{{ section.settings.header_color_scheme }} pc:max-h-200">
+{%- liquid
+    assign article_heading_class = section.settings.heading_size | default: 'title-2xl'
+    assign article_subtitle_size = section.settings.subtitle_size | default: 'copy-l'
+    assign article_subtitle_class = 'typo-subtitle ' | append: article_subtitle_size
+    assign article_title_text = article.title | strip_html | strip
+    assign article_heading_override = section.settings.heading | strip_html | strip
+-%}
+{%- capture article_children -%}
+    <div class="article-hero color-{{ section.settings.header_color_scheme }}">
         {%- capture sizes -%}
             (min-width: 80rem) 100vw, (min-width: 48rem) 1280px, 768px
         {%- endcapture -%}
@@ -39,14 +30,11 @@
             img_class: 'h-full w-full object-cover object-center',
             sizes: sizes,
             widths: widths,
-            motion_reveal: false
         -%}
 
         <div class="article-hero__overlay absolute inset-0 z-10">
             <div
-                class="article-hero__content mx-auto flex h-full w-full max-w-lg flex-col items-center justify-center gap-4 px-6 text-center pc:max-w-1/2 pc:gap-5"
-                data-motion-reveal="content"
-                data-motion-critical
+                class="article-hero__content"
             >
                 {%- if section.settings.eyebrow != blank -%}
                     <p class="{{ article_subtitle_class }}">
@@ -69,14 +57,18 @@
         </div>
     </div>
 
-    <div class="layout layout-no-pt container-page mt-12 overflow-clip!">
-        <div class="flex flex-col gap-16 pc:flex-row pc:gap-24 fw:gap-32">
+    <div class="section-frame__overlay-padding-top section-frame__overlay-padding-bottom container-page relative overflow-clip!">
+        <div class="flex flex-col gap-step-2xl tablet:flex-row tablet:gap-step-3xl wide:gap-step-4xl">
             {% comment %} Aside Bar {% endcomment %}
-            <aside class="shrink-0 body-xl max-pc:hidden pc:w-72 fw:w-80">
-                <nav class="pc:sticky-viewport-panel" x-data="stickyViewportPanel">
+            <aside class="shrink-0 copy-l max-tablet:hidden tablet:w-72 wide:w-80">
+                <nav
+                    class="tablet:sticky-viewport-panel"
+                    x-data="stickyViewportPanel"
+                    data-module-id="sticky-viewport-panel"
+                >
                     <ul
                         id="toc-container"
-                        class="flex w-fit max-w-full flex-row gap-9 overflow-x-auto pc:w-full pc:flex-col pc:overflow-x-hidden"
+                        class="flex w-fit max-w-full flex-row gap-step-l overflow-x-auto tablet:w-full tablet:flex-col tablet:overflow-x-hidden"
                     >
                         {% # theme-check-disable-next-line LiquidHTMLSyntaxError %}
                         {%- for a in blog.articles limit: section.settings.max_items -%}
@@ -84,11 +76,11 @@
                                 <a
                                     href="{{ a.url }}"
                                     class="
-                                        article-sidebar__link inline-block max-w-full truncate underline-offset-4 hover:underline
+                                        article-sidebar__link
                                         {% if a.id == article.id %}
-                                          text-theme-text/80 underline
+                                          article-sidebar__link--current
                                         {% else %}
-                                          text-theme-text/50 hover:text-theme-text/80
+                                          article-sidebar__link--other
                                         {% endif %}
                                     "
                                 >
@@ -103,49 +95,48 @@
             {% comment %} Article  {% endcomment %}
             <article class="article-content min-w-0 flex-1">
                 <div
-                    class="flex items-center justify-end border-b border-theme-border/20 pb-3 body-xl"
-                    data-motion-reveal="content"
+                    class="flex items-center justify-end border-b border-line pb-step-xs copy-l"
                 >
                     {%- assign date = article.published_at | time_tag: format: 'date' -%}
                     <p>
                         {{ 'blog.article_metadata_html' | t: date: date, author: article.author }}
                     </p>
                 </div>
-                <div class="rte py-10">
+                <div class="rte py-step-xl">
                     {{ article.content }}
                 </div>
-                <div class="flex flex-col gap-3 border-t border-theme-border/20 pt-3">
+                <div class="flex flex-col gap-step-xs border-t border-line pt-step-xs">
                     {%- if section.settings.show_social -%}
-                        {%- render 'social-icons', type: 'icon', class: 'body-xl self-end' -%}
+                        {%- render 'social-icons', type: 'icon', class: 'copy-l self-end' -%}
                     {%- endif -%}
                 </div>
 
                 {%- if blog.comments_enabled? -%}
                     <section
                         id="ArticleComments-{{ section.id }}"
-                        class="article-comments mt-14"
+                        class="article-comments mt-step-2xl"
                         aria-labelledby="ArticleCommentsHeading-{{ section.id }}"
                     >
                         <h2
                             id="ArticleCommentsHeading-{{ section.id }}"
-                            class="mb-8 heading-h3"
+                            class="mb-step-l title-s"
                         >
                             {{ 'blog.comments_count_heading' | t: count: article.comments_count }}
                         </h2>
 
                         {% paginate article.comments by 5 %}
                             {%- if article.comments.size > 0 -%}
-                                <ol class="article-comments__list flex list-none flex-col gap-5">
+                                <ol class="article-comments__list flex list-none flex-col gap-step-m">
                                     {%- for comment in article.comments -%}
                                         <li>
                                             <article
                                                 id="comment-{{ comment.id }}"
-                                                class="article-comments__item flex flex-col gap-3 rounded-sm bg-theme-text/5 p-5 pc:p-6"
+                                                class="article-comments__item flex flex-col gap-step-xs rounded-sm bg-surface-muted p-step-m tablet:p-step-m"
                                             >
-                                                <div class="rte body-lg text-theme-text">
+                                                <div class="rte copy-l text-theme-text">
                                                     {{ comment.content }}
                                                 </div>
-                                                <p class="body-sm text-theme-text/70">
+                                                <p class="copy-s text-muted">
                                                     {%- liquid
                                                         assign comment_author = comment.author | escape
                                                         assign comment_date = comment.created_at | time_tag: format: 'date'
@@ -168,15 +159,15 @@
                             {%- endif -%}
                         {% endpaginate %}
 
-                        <div class="article-comments__form mt-10">
-                            <h3 class="mb-6 heading-h4">
+                        <div class="article-comments__form mt-step-xl">
+                            <h3 class="mb-step-m title-xs">
                                 {{ 'blog.comment_form_title' | t }}
                             </h3>
 
-                            {%- form 'new_comment', article, class: 'flex flex-col gap-5' -%}
+                            {%- form 'new_comment', article, class: 'flex flex-col gap-step-m' -%}
                                 {%- if form.posted_successfully? -%}
                                     <div
-                                        class="rounded border border-theme-border/20 bg-theme-bg/50 p-4 body-lg text-theme-text"
+                                        class="rounded border border-line bg-surface-muted p-step-s copy-l text-theme-text"
                                         role="status"
                                         aria-live="polite"
                                         tabindex="-1"
@@ -193,15 +184,15 @@
                                 {%- if form.errors -%}
                                     <div
                                         id="CommentFormErrors-{{ section.id }}"
-                                        class="rounded border border-theme-border/20 bg-theme-bg/50 p-4 text-theme-text"
+                                        class="rounded border border-line bg-surface-muted p-step-s text-theme-text"
                                         role="alert"
                                         tabindex="-1"
                                         autofocus
                                     >
-                                        <h4 class="body-lg font-medium">
+                                        <h4 class="title-xs">
                                             {{ 'blog.comment_form_error_title' | t }}
                                         </h4>
-                                        <ul class="mt-3 list-disc ps-5 body-sm">
+                                        <ul class="mt-step-xs list-disc ps-step-m copy-s">
                                             {%- for field in form.errors -%}
                                                 {%- if field == 'form' -%}
                                                     <li>
@@ -241,7 +232,7 @@
                                     </div>
                                 {%- endif -%}
 
-                                <div class="flex flex-col gap-1.5">
+                                <div class="flex flex-col gap-step-2xs">
                                     <label for="CommentFormAuthor-{{ section.id }}">
                                         {{- 'blog.comment_form_name' | t -}}
                                     </label>
@@ -261,14 +252,14 @@
                                     {%- if form.errors contains 'author' -%}
                                         <p
                                             id="CommentFormAuthor-error-{{ section.id }}"
-                                            class="body-sm text-theme-text"
+                                            class="copy-s text-theme-text"
                                         >
                                             {{ form.errors.messages.author }}
                                         </p>
                                     {%- endif -%}
                                 </div>
 
-                                <div class="flex flex-col gap-1.5">
+                                <div class="flex flex-col gap-step-2xs">
                                     <label for="CommentFormEmail-{{ section.id }}">
                                         {{- 'blog.comment_form_email' | t -}}
                                     </label>
@@ -288,14 +279,14 @@
                                     {%- if form.errors contains 'email' -%}
                                         <p
                                             id="CommentFormEmail-error-{{ section.id }}"
-                                            class="body-sm text-theme-text"
+                                            class="copy-s text-theme-text"
                                         >
                                             {{ form.errors.messages.email }}
                                         </p>
                                     {%- endif -%}
                                 </div>
 
-                                <div class="flex flex-col gap-1.5">
+                                <div class="flex flex-col gap-step-2xs">
                                     <label for="CommentFormBody-{{ section.id }}">
                                         {{- 'blog.comment_form_body' | t -}}
                                     </label>
@@ -313,7 +304,7 @@
                                     {%- if form.errors contains 'body' -%}
                                         <p
                                             id="CommentFormBody-error-{{ section.id }}"
-                                            class="body-sm text-theme-text"
+                                            class="copy-s text-theme-text"
                                         >
                                             {{ form.errors.messages.body }}
                                         </p>
@@ -332,7 +323,7 @@
 
                 {%- if blog.previous_article or blog.next_article or blog.url != blank -%}
                     <nav
-                        class="article-mobile-nav mt-14 pc:hidden"
+                        class="article-mobile-nav"
                         aria-label="{{ 'blog.article_navigation' | t }}"
                     >
                         {%- if blog.previous_article or blog.next_article -%}
@@ -385,7 +376,19 @@
             </article>
         </div>
     </div>
-</div>
+{%- endcapture -%}
+
+{% render 'section-frame',
+    section: section,
+    section_class: 'article-section',
+    width: 'full',
+    height_kind: 'content',
+    motion: false,
+    clip: false,
+    safe_top: false,
+    padding_mode: 'overlay',
+    children: article_children
+%}
 
 {%- stylesheet -%}
     .article-hero {
@@ -394,10 +397,13 @@
     }
 
     .article-hero__content {
-        padding-top: calc(var(--announcement-bar-height) + var(--header-height) + 1.5rem);
+        padding-top: calc(
+            var(--announcement-bar-offset, var(--announcement-bar-height, 0px)) +
+                var(--header-height, 0px) + 1.5rem
+        );
     }
 
-    @media (min-width: 48rem) {
+    @media (width >= 48rem) {
         .article-hero {
             height: auto;
             min-height: 0;
@@ -410,6 +416,34 @@
 
     .article-sidebar__link {
         transition: color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+    }
+
+    .article-sidebar__link--current {
+        color: var(--color-muted);
+        text-decoration: underline;
+    }
+
+    .article-sidebar__link--other {
+        color: var(--color-subtle);
+    }
+
+    :where(.article-sidebar__link) {
+        display: inline-block;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        text-underline-offset: 4px;
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+        :where(.article-sidebar__link):hover {
+            text-decoration: underline;
+        }
+
+        :where(.article-sidebar__link--other):hover {
+            color: var(--color-muted);
+        }
     }
 
     .article-mobile-nav__row {
@@ -458,6 +492,41 @@
 
     .article-mobile-nav:not(:has(.article-mobile-nav__row)) .article-mobile-nav__back {
         padding-top: 0;
+    }
+
+    :where(.article-hero__content) {
+        margin-inline: auto;
+        display: flex;
+        height: 100%;
+        width: 100%;
+        max-width: var(--container-lg);
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: var(--spacing-step-s);
+        padding-inline: var(--spacing-step-m);
+        text-align: center;
+        @media (width >= 48rem) {
+            max-width: calc(1 / 2 * 100%);
+        }
+        @media (width >= 48rem) {
+            gap: var(--spacing-step-m);
+        }
+    }
+
+    :where(.article-mobile-nav) {
+        margin-top: var(--spacing-step-2xl);
+        @media (width >= 48rem) {
+            display: none;
+        }
+    }
+
+    :where(.article-hero) {
+        position: relative;
+        overflow: hidden;
+        @media (width >= 48rem) {
+            max-height: calc(var(--spacing) * 200);
+        }
     }
 {%- endstylesheet -%}
 
@@ -508,52 +577,44 @@
             "label": "t:sections.slides-show.settings.heading_size",
             "options": [
                 {
-                    "value": "heading-4xl",
-                    "label": "t:sections.slides-show.options.heading_4xl"
+                    "value": "title-4xl",
+                    "label": "t:settings.type_size.title_4xl"
                 },
                 {
-                    "value": "heading-3xl",
-                    "label": "t:sections.slides-show.options.heading_3xl"
+                    "value": "title-3xl",
+                    "label": "t:settings.type_size.title_3xl"
                 },
                 {
-                    "value": "heading-2xl",
-                    "label": "t:sections.slides-show.options.heading_2xl"
+                    "value": "title-2xl",
+                    "label": "t:settings.type_size.title_2xl"
                 },
                 {
-                    "value": "heading-xl",
-                    "label": "t:sections.slides-show.options.heading_xl"
+                    "value": "title-xl",
+                    "label": "t:settings.type_size.title_xl"
                 },
                 {
-                    "value": "heading-h1",
-                    "label": "t:sections.slides-show.options.heading_h1"
+                    "value": "title-l",
+                    "label": "t:settings.type_size.title_l"
                 },
                 {
-                    "value": "heading-h2",
-                    "label": "t:sections.slides-show.options.heading_h2"
+                    "value": "title-m",
+                    "label": "t:settings.type_size.title_m"
                 },
                 {
-                    "value": "heading-h3",
-                    "label": "t:sections.slides-show.options.heading_h3"
+                    "value": "title-s",
+                    "label": "t:settings.type_size.title_s"
                 },
                 {
-                    "value": "heading-h4",
-                    "label": "t:sections.slides-show.options.heading_h4"
-                },
-                {
-                    "value": "heading-h5",
-                    "label": "t:sections.slides-show.options.heading_h5"
-                },
-                {
-                    "value": "heading-h6",
-                    "label": "t:sections.slides-show.options.heading_h6"
+                    "value": "title-xs",
+                    "label": "t:settings.type_size.title_xs"
                 }
             ],
-            "default": "heading-2xl"
+            "default": "title-2xl"
         },
         {
             "type": "inline_richtext",
             "id": "eyebrow",
-            "default": "categories",
+            "default": "t:sections.article.defaults.eyebrow",
             "label": "t:sections.article.settings.eyebrow_text"
         },
         {
@@ -566,35 +627,23 @@
             "label": "t:sections.scroll-categories.settings.subtitle_size",
             "options": [
                 {
-                    "value": "body-3xl",
-                    "label": "t:sections.scroll-categories.options.body_3xl"
+                    "value": "copy-xl",
+                    "label": "t:settings.type_size.copy_xl"
                 },
                 {
-                    "value": "body-2xl",
-                    "label": "t:sections.scroll-categories.options.body_2xl"
+                    "value": "copy-l",
+                    "label": "t:settings.type_size.copy_l"
                 },
                 {
-                    "value": "body-xl",
-                    "label": "t:sections.scroll-categories.options.body_xl"
+                    "value": "copy-m",
+                    "label": "t:settings.type_size.copy_m"
                 },
                 {
-                    "value": "body-lg",
-                    "label": "t:sections.scroll-categories.options.body_lg"
-                },
-                {
-                    "value": "body-md",
-                    "label": "t:sections.scroll-categories.options.body_md"
-                },
-                {
-                    "value": "body-sm",
-                    "label": "t:sections.scroll-categories.options.body_sm"
-                },
-                {
-                    "value": "body-xs",
-                    "label": "t:sections.scroll-categories.options.body_xs"
+                    "value": "copy-s",
+                    "label": "t:settings.type_size.copy_s"
                 }
             ],
-            "default": "body-xl"
+            "default": "copy-l"
         },
         {
             "type": "range",

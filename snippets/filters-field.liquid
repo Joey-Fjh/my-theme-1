@@ -7,7 +7,6 @@
     @param {string} [filter_index] - Optional index used by horizontal Alpine toggle state.
     @param {string} [scope_id] - Optional unique scope used to generate form control IDs.
     @param {string} [form_id] - Optional external form id for filter controls. Default: CollectionFiltersForm.
-    @param {boolean} [is_first] - Optional. Adds left offset class to the first horizontal item.
     @param {string} [divider_class] - Optional divider class token.
     @param {string} [muted_text_class] - Optional helper text classes.
     @param {string} [filter_label_class] - Optional label text classes.
@@ -20,7 +19,6 @@
 {%- assign field_index = filter_index | default: 0 -%}
 {%- assign field_scope_id = scope_id | default: render_mode -%}
 {%- assign filters_form_id = form_id | default: 'CollectionFiltersForm' -%}
-{%- assign field_is_first = is_first | default: false -%}
 {%- assign effective_ui_variant = ui_variant -%}
 
 {%- if effective_ui_variant == blank -%}
@@ -31,10 +29,10 @@
     {%- endif -%}
 {%- endif -%}
 
-{%- assign divider_class = divider_class | default: 'border-theme-border/20' -%}
-{%- assign muted_text_class = muted_text_class | default: 'body-lg' -%}
-{%- assign filter_label_class = filter_label_class | default: 'body-lg' -%}
-{%- assign count_text_class = count_text_class | default: 'body-lg' -%}
+{%- assign divider_class = divider_class | default: 'border-line' -%}
+{%- assign muted_text_class = muted_text_class | default: 'copy-l' -%}
+{%- assign filter_label_class = filter_label_class | default: 'copy-l' -%}
+{%- assign count_text_class = count_text_class | default: 'copy-l' -%}
 {%- assign show_more_limit = show_more_limit | default: 6 -%}
 {%- assign show_more_step = show_more_step | default: show_more_limit -%}
 {%- assign active_filter_count = filter.active_values.size -%}
@@ -53,10 +51,12 @@
 
             {%- if effective_ui_variant == 'panel' -%}
                 <div
+                    data-module-id="progressive-list"
                     x-data="progressiveList()"
                     data-visible-count="{{ show_more_limit }}"
                     data-step-count="{{ show_more_step }}"
-                    class="flex flex-col gap-3 pt-1"
+                    data-total-count="{{ sorted_values.size }}"
+                    class="flex flex-col gap-step-xs pt-step-3xs"
                 >
                     {%- for value in sorted_values -%}
                         {%- assign is_disabled = false -%}
@@ -67,9 +67,10 @@
 
                         <label
                             for="{{ option_id }}"
-                            x-show="isVisible({{ forloop.index0 }})"
-                            class="flex items-center gap-3 {% if is_disabled %}filters-field__option--disabled{% endif %}"
-                            :class="{ 'hidden': !isVisible({{ forloop.index0 }}) }"
+                            data-item-index="{{ forloop.index0 }}"
+                            x-show="isVisibleFor($el)"
+                            class="filters-field__option{% if is_disabled %} filters-field__option--disabled{% endif %}"
+                            :class="visibilityClassFor($el)"
                             {% if is_disabled %}
                                 aria-disabled="true"
                             {% endif %}
@@ -80,6 +81,7 @@
                                 class="filter-checkbox focus-ring focus-visible:relative focus-visible:z-1"
                                 name="{{ value.param_name }}"
                                 value="{{ value.value }}"
+                                data-focus-key="filter-{{ value.param_name | escape }}-{{ value.value | escape }}"
                                 form="{{ filters_form_id }}"
                                 {% if value.active %}checked{% endif %}
                                 {% if is_disabled %}disabled{% endif %}
@@ -97,22 +99,26 @@
                     {%- if sorted_values.size > show_more_limit -%}
                         <button
                             type="button"
-                            @click.stop="canShowMore({{ sorted_values.size }}) ? showMore({{ sorted_values.size }}) : showLess()"
+                            @click.stop="toggleShowMoreFromDataset()"
                             data-show-more-label="{{ 'collections.filters.show_more' | t | escape }}"
                             data-show-less-label="{{ 'collections.filters.show_less' | t | escape }}"
                             class="filters-field__show-more filters-field__show-more--panel"
                         >
                             {% render 'show-more-icon' %}
-                            <span x-text="canShowMore({{ sorted_values.size }}) ? $el.parentElement.dataset.showMoreLabel : $el.parentElement.dataset.showLessLabel"></span>
+                            <span x-text="showMoreToggleLabelFromDataset()">
+                                {{- 'collections.filters.show_more' | t -}}
+                            </span>
                         </button>
                     {%- endif -%}
                 </div>
             {%- else -%}
                 <div
+                    data-module-id="progressive-list"
                     x-data="progressiveList()"
                     data-visible-count="{{ show_more_limit }}"
                     data-step-count="{{ show_more_step }}"
-                    class="flex flex-col gap-2"
+                    data-total-count="{{ sorted_values.size }}"
+                    class="flex flex-col gap-step-2xs"
                 >
                     {%- for value in sorted_values -%}
                         {%- assign is_disabled = false -%}
@@ -123,9 +129,10 @@
 
                         <label
                             for="{{ option_id }}"
-                            x-show="isVisible({{ forloop.index0 }})"
-                            class="flex items-center gap-2"
-                            :class="{ 'hidden': !isVisible({{ forloop.index0 }}) }"
+                            data-item-index="{{ forloop.index0 }}"
+                            x-show="isVisibleFor($el)"
+                            class="flex items-center gap-step-2xs"
+                            :class="visibilityClassFor($el)"
                             {% if is_disabled %}
                                 aria-disabled="true"
                             {% endif %}
@@ -135,6 +142,7 @@
                                 type="checkbox"
                                 name="{{ value.param_name }}"
                                 value="{{ value.value }}"
+                                data-focus-key="filter-{{ value.param_name | escape }}-{{ value.value | escape }}"
                                 form="{{ filters_form_id }}"
                                 {% if value.active %}checked{% endif %}
                                 {% if is_disabled %}disabled{% endif %}
@@ -153,13 +161,15 @@
                     {%- if sorted_values.size > show_more_limit -%}
                         <button
                             type="button"
-                            @click.stop="canShowMore({{ sorted_values.size }}) ? showMore({{ sorted_values.size }}) : showLess()"
+                            @click.stop="toggleShowMoreFromDataset()"
                             data-show-more-label="{{ 'collections.filters.show_more' | t | escape }}"
                             data-show-less-label="{{ 'collections.filters.show_less' | t | escape }}"
                             class="filters-field__show-more filters-field__show-more--horizontal"
                         >
                             {% render 'show-more-icon' %}
-                            <span x-text="canShowMore({{ sorted_values.size }}) ? $el.parentElement.dataset.showMoreLabel : $el.parentElement.dataset.showLessLabel"></span>
+                            <span x-text="showMoreToggleLabelFromDataset()">
+                                {{- 'collections.filters.show_more' | t -}}
+                            </span>
                         </button>
                     {%- endif -%}
                 </div>
@@ -177,10 +187,11 @@
                 {%- capture number_max_id -%}Filter-{{ field_scope_id }}-{{ field_index }}-LTE{%- endcapture -%}
 
                 <div
-                    class="flex flex-col gap-3 pt-1"
+                    class="flex flex-col gap-step-xs pt-step-3xs"
                     data-filter-min="{{ current_min }}"
                     data-filter-max="{{ current_max }}"
                     data-filter-ceil="{{ range_max }}"
+                    data-module-id="collection-filter-field"
                     x-data="collectionFilterField()"
                 >
                     <div
@@ -202,7 +213,7 @@
                             :max="ceil"
                             x-model.number="min"
                             @input="clampMin()"
-                            @change.debounce.500ms="$refs.inputMin.value = min; onChange($refs.inputMin)"
+                            @change.debounce.500ms="onRangeMinCommit()"
                             :disabled="isLoading"
                             :class="(min === max && max === ceil) ? 'z-30' : 'z-10'"
                             class="price-range-thumb pointer-events-none absolute inset-x-0 w-full appearance-none bg-transparent"
@@ -217,17 +228,17 @@
                             :max="ceil"
                             x-model.number="max"
                             @input="clampMax()"
-                            @change.debounce.500ms="$refs.inputMax.value = max; onChange($refs.inputMax)"
+                            @change.debounce.500ms="onRangeMaxCommit()"
                             :disabled="isLoading"
                             :class="(min === max && min === 0) ? 'z-30' : 'z-20'"
                             class="price-range-thumb pointer-events-none absolute inset-x-0 w-full appearance-none bg-transparent"
                         >
                     </div>
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-2 gap-step-xs">
                         <div>
-                            <label class="mb-1 block {{ muted_text_class }}" for="{{ number_min_id }}">{{ 'collections.filters.from' | t }}</label>
+                            <label class="mb-step-3xs block {{ muted_text_class }}" for="{{ number_min_id }}">{{ 'collections.filters.from' | t }}</label>
                             <div class="filters-field__range-input-wrapper {{ divider_class }}" :class="{ 'is-loading': isLoading }">
-                                <span class="me-1">$</span>
+                                <span class="me-step-3xs">$</span>
                                 <input
                                     x-ref="inputMin"
                                     id="{{ number_min_id }}"
@@ -238,16 +249,16 @@
                                     max="{{ range_max }}"
                                     placeholder="0"
                                     form="{{ filters_form_id }}"
-                                    @input.debounce.500ms="setMinFromInput($el.value); $el.value = min; onChange($el)"
+                                    @input.debounce.500ms="onNumberMinInput()"
                                     :disabled="isLoading"
                                     class="w-full appearance-none bg-transparent focus-ring outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                 >
                             </div>
                         </div>
                         <div>
-                            <label class="mb-1 block {{ muted_text_class }}" for="{{ number_max_id }}">{{ 'collections.filters.to' | t }}</label>
+                            <label class="mb-step-3xs block {{ muted_text_class }}" for="{{ number_max_id }}">{{ 'collections.filters.to' | t }}</label>
                             <div class="filters-field__range-input-wrapper {{ divider_class }}" :class="{ 'is-loading': isLoading }">
-                                <span class="me-1">$</span>
+                                <span class="me-step-3xs">$</span>
                                 <input
                                     x-ref="inputMax"
                                     id="{{ number_max_id }}"
@@ -258,7 +269,7 @@
                                     max="{{ range_max }}"
                                     placeholder="{{ range_max }}"
                                     form="{{ filters_form_id }}"
-                                    @input.debounce.500ms="setMaxFromInput($el.value); $el.value = max; onChange($el)"
+                                    @input.debounce.500ms="onNumberMaxInput()"
                                     :disabled="isLoading"
                                     class="w-full appearance-none bg-transparent focus-ring outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                 >
@@ -269,8 +280,8 @@
             {%- else -%}
                 {%- capture fallback_min_id -%}Filter-{{ field_scope_id }}-{{ field_index }}-Fallback-GTE{%- endcapture -%}
                 {%- capture fallback_max_id -%}Filter-{{ field_scope_id }}-{{ field_index }}-Fallback-LTE{%- endcapture -%}
-                <div class="grid grid-cols-2 gap-3">
-                    <label class="flex flex-col gap-1" for="{{ fallback_min_id }}">
+                <div class="grid grid-cols-2 gap-step-xs">
+                    <label class="flex flex-col gap-step-3xs" for="{{ fallback_min_id }}">
                         <span>{{ 'collections.filters.min' | t }}</span>
                         <input
                             id="{{ fallback_min_id }}"
@@ -285,7 +296,7 @@
                             class="field"
                         >
                     </label>
-                    <label class="flex flex-col gap-1" for="{{ fallback_max_id }}">
+                    <label class="flex flex-col gap-step-3xs" for="{{ fallback_max_id }}">
                         <span>{{ 'collections.filters.max' | t }}</span>
                         <input
                             id="{{ fallback_max_id }}"
@@ -311,10 +322,7 @@
     <details
         {% if render_mode == 'horizontal' %}
             data-filter-dropdown
-            @click.outside="
-                activeFilter = null;
-                $el.open = false;
-            "
+            @click.outside="closeHorizontalFilterOutside($event)"
         {% endif %}
         class="group {% if render_mode == 'horizontal' %}relative{% endif %}"
     >
@@ -323,23 +331,16 @@
             class="
                 filters-field__summary
                 {% if render_mode == 'horizontal' %}
-                    w-fit min-w-0 justify-between rounded-full border border-theme-border/20 bg-theme-bg px-5 py-3
+                    filters-field__summary--horizontal
                 {% else %}
                     h2
                 {% endif %}
             "
             {% if render_mode == 'horizontal' %}
-                @click.prevent="
-                    const details = $el.parentElement;
-                    const shouldOpen = !details.open;
-                    activeFilter = shouldOpen ? $el.dataset.fieldIndex : null;
-                    $root.querySelectorAll('[data-filter-dropdown]').forEach((dropdown) => {
-                        dropdown.open = dropdown === details && shouldOpen;
-                    });
-                "
+                @click.prevent="toggleHorizontalFilterSummary($event)"
             {% endif %}
         >
-            <span class="inline-flex items-center gap-3">
+            <span class="inline-flex items-center gap-step-xs">
                 <span>{{ filter.label }}</span>
                 {%- if render_mode == 'horizontal' and active_filter_count > 0 -%}
                     <span class="filter-count-badge">
@@ -352,16 +353,16 @@
 
         <div
             class="
-                mt-3
+                mt-step-xs
                 {% if render_mode == 'horizontal' %}
-                    absolute top-full left-0 z-layer-popover panel-motion panel-motion-compact rounded-lg border border-theme-border/20 bg-theme-bg p-5
+                    absolute top-full left-0 z-layer-popover panel-motion panel-motion-compact rounded-lg border border-line bg-theme-bg p-step-m
                     {% if filter.type == 'price_range' %}
-                        min-w-[24rem] pc:max-w-[36rem]
+                        min-w-[24rem] tablet:max-w-[36rem]
                     {% else %}
                         min-w-[24rem]
                     {% endif %}
                 {% else %}
-                    rounded-lg border border-theme-border/20 p-4
+                    rounded-lg border border-line p-step-s
                 {% endif %}
             "
         >
@@ -369,3 +370,100 @@
         </div>
     </details>
 {%- endif -%}
+
+{% stylesheet %}
+    .filter-count-badge {
+        display: inline-flex;
+        height: calc(var(--spacing) * 8);
+        min-width: calc(var(--spacing) * 8);
+        align-items: center;
+        justify-content: center;
+        border-radius: calc(infinity * 1px);
+        background-color: rgb(var(--color-foreground));
+        padding-inline: calc(var(--spacing) * 2);
+    }
+    .filters-field__show-more {
+        display: inline-flex;
+        cursor: pointer;
+        align-items: center;
+        gap: calc(var(--spacing) * 3);
+        transition-property: opacity;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        transition-duration: 150ms;
+        &:hover {
+            @media (hover: hover) and (pointer: fine) {
+                opacity: 80%;
+            }
+        }
+    }
+    .filters-field__show-more--panel {
+        padding-top: calc(var(--spacing) * 1);
+    }
+    .filters-field__show-more--horizontal {
+        padding-top: calc(var(--spacing) * 2);
+    }
+    .filters-field__summary {
+        display: flex;
+        cursor: pointer;
+        list-style-type: none;
+        align-items: center;
+        gap: calc(var(--spacing) * 3);
+        &::-webkit-details-marker {
+            display: none;
+        }
+        transition: border-color var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+        &:hover {
+            border-color: rgb(var(--color-foreground));
+        }
+    }
+    details[open] > .filters-field__summary {
+        border-color: rgb(var(--color-foreground));
+    }
+    .filters-field__summary-icon {
+        flex-shrink: 0;
+        transition: transform var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+    }
+    details[open] > .filters-field__summary .filters-field__summary-icon {
+        transform: rotate(180deg);
+    }
+    .filters-field__range-wrapper {
+        position: relative;
+        display: flex;
+        height: calc(var(--spacing) * 8);
+        width: 100%;
+        align-items: center;
+        transition: opacity var(--motion-duration-fast, 250ms) var(--motion-ease-default, ease);
+    }
+    .filters-field__range-input-wrapper {
+        display: flex;
+        align-items: center;
+        border-bottom-style: solid;
+        border-bottom-width: 1px;
+        background-color: var(--color-surface-strong);
+        padding-inline: calc(var(--spacing) * 3);
+        padding-block: calc(var(--spacing) * 2);
+    }
+    .filters-field__option--disabled {
+        cursor: not-allowed;
+        opacity: 50%;
+    }
+
+    :where(.filters-field__option:not(.hidden)) {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-step-xs);
+    }
+
+    :where(.filters-field__summary--horizontal) {
+        width: fit-content;
+        min-width: calc(var(--spacing) * 0);
+        justify-content: space-between;
+        border-radius: calc(infinity * 1px);
+        border-style: var(--tw-border-style);
+        border-width: 1px;
+        border-color: var(--color-line);
+        background-color: rgb(var(--color-background));
+        padding-inline: var(--spacing-step-m);
+        padding-block: var(--spacing-step-xs);
+    }
+{% endstylesheet %}

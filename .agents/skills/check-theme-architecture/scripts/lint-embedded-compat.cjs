@@ -2,11 +2,9 @@
 
 const fs = require('node:fs/promises');
 const path = require('node:path');
-const process = require('node:process');
 const { ESLint } = require('eslint');
 const fg = require('fast-glob');
 
-const ROOT = process.cwd();
 const LIQUID_GLOBS = [
     'layout/**/*.liquid',
     'sections/**/*.liquid',
@@ -15,8 +13,29 @@ const LIQUID_GLOBS = [
     'templates/**/*.liquid',
 ];
 
+function parseRootArg(argv) {
+    const index = argv.indexOf('--root');
+
+    if (index !== -1 && argv[index + 1]) {
+        return path.resolve(argv[index + 1]);
+    }
+
+    return process.cwd();
+}
+
 function lineAt(text, offset) {
     return text.slice(0, offset).split(/\r\n|\r|\n/).length;
+}
+
+function formatPath(file) {
+    return file.replaceAll('\\', '/');
+}
+
+function encodeLiquidPath(file) {
+    return formatPath(file)
+        .replace(/\.liquid$/i, '-liquid')
+        .replace(/[^\w.-]+/g, '-')
+        .replace(/^-+|-+$/g, '');
 }
 
 function extractBlocks(text, tagName) {
@@ -35,26 +54,30 @@ function extractBlocks(text, tagName) {
     return blocks;
 }
 
-function syntheticAssetPath(file, index, extension) {
-    const safeName = file.replaceAll(/[^\w.-]/g, '-');
-    return path.join(ROOT, 'assets', `__compat-${safeName}-${index}.${extension}`);
+function virtualEmbeddedJsPath(liquidFile, index) {
+    return `assets/__embedded-${encodeLiquidPath(liquidFile)}-${index}.js`;
 }
 
-async function main() {
+function virtualEmbeddedCssPath(liquidFile, index) {
+    const normalized = formatPath(liquidFile);
+    const directory = path.posix.dirname(normalized);
+    return `${directory}/__embedded-${encodeLiquidPath(normalized)}-${index}.css`;
+}
+
+async function runEmbeddedCompatLint(root) {
     const stylelint = (await import('stylelint')).default;
     const eslint = new ESLint({
-        cwd: ROOT,
-        overrideConfigFile: path.join(ROOT, 'eslint.config.cjs'),
+        cwd: root,
+        overrideConfigFile: path.join(root, 'eslint.config.cjs'),
     });
     const issues = [];
     let stylesheetCount = 0;
     let javascriptCount = 0;
-
-    const files = await fg(LIQUID_GLOBS, { cwd: ROOT, onlyFiles: true });
+    const files = await fg(LIQUID_GLOBS, { cwd: root, onlyFiles: true });
 
     for (const file of files) {
-        const normalizedFile = file.replaceAll('\\', '/');
-        const text = await fs.readFile(path.join(ROOT, file), 'utf8');
+        const normalizedFile = formatPath(file);
+        const text = await fs.readFile(path.join(root, file), 'utf8');
         const stylesheetBlocks = extractBlocks(text, 'stylesheet');
         const javascriptBlocks = extractBlocks(text, 'javascript');
 
@@ -62,8 +85,8 @@ async function main() {
             stylesheetCount += 1;
             const result = await stylelint.lint({
                 code: block.code,
-                codeFilename: syntheticAssetPath(normalizedFile, index, 'css'),
-                configFile: path.join(ROOT, 'stylelint.config.cjs'),
+                codeFilename: virtualEmbeddedCssPath(normalizedFile, index),
+                configFile: path.join(root, 'stylelint.config.cjs'),
             });
 
             for (const warning of result.results.flatMap((entry) => entry.warnings)) {
@@ -77,8 +100,9 @@ async function main() {
 
         for (const [index, block] of javascriptBlocks.entries()) {
             javascriptCount += 1;
+            const virtualPath = virtualEmbeddedJsPath(normalizedFile, index);
             const results = await eslint.lintText(block.code, {
-                filePath: syntheticAssetPath(normalizedFile, index, 'js'),
+                filePath: virtualPath,
                 warnIgnored: false,
             });
 
@@ -92,6 +116,13 @@ async function main() {
         }
     }
 
+    return { issues, stylesheetCount, javascriptCount };
+}
+
+async function main(argv = process.argv) {
+    const root = parseRootArg(argv);
+    const { issues, stylesheetCount, javascriptCount } = await runEmbeddedCompatLint(root);
+
     if (issues.length === 0) {
         console.log(
             `Embedded compatibility lint passed (${stylesheetCount} stylesheet blocks, ${javascriptCount} javascript blocks).`,
@@ -103,10 +134,22 @@ async function main() {
     for (const issue of issues) {
         console.error(`${issue.file}:${issue.line}: ${issue.message}`);
     }
+
     process.exitCode = 1;
 }
 
-main().catch((error) => {
-    console.error(error);
-    process.exitCode = 1;
-});
+if (require.main === module) {
+    main().catch((error) => {
+        console.error(error);
+        process.exitCode = 1;
+    });
+}
+
+module.exports = {
+    encodeLiquidPath,
+    extractBlocks,
+    lineAt,
+    runEmbeddedCompatLint,
+    virtualEmbeddedCssPath,
+    virtualEmbeddedJsPath,
+};

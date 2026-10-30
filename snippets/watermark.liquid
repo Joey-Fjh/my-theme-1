@@ -8,7 +8,7 @@
     @param {string} [container_class] - Optional additional classes for the outer container.
     @param {string} [svg_class] - Optional additional classes for the SVG element (svg variant).
     @param {string} [text_class] - Optional additional classes for the text element.
-    @param {string} [html_attr] - Optional raw HTML attributes to forward to the outer container (for example, data-motion-reveal="media").
+    @param {string} [html_attr] - Optional raw HTML attributes to forward to the outer container (for example,).
     @param {string} [svg_attr] - Optional raw HTML attributes to forward to the SVG element.
     @param {string} [text_attr] - Optional raw HTML attributes to forward to the SVG text element.
     @param {number} [font_size] - Base font size for watermark text in SVG units.
@@ -30,7 +30,7 @@
         text: shop.name,
         container_class: 'section-watermark',
         text_class: 'section-watermark__text',
-        html_attr: 'data-motion-reveal="media"'
+        html_attr: ''
     %}
     @example
     {% render 'watermark',
@@ -179,6 +179,7 @@
             {{- html_attr -}}
         {% endif %}
     >
+        {%- # lint-allow raw-svg: the SVG text renders merchant watermark copy through Liquid, so it cannot be a static icon -%}
         <svg
             class="block h-auto w-full {{ svg_class }}"
             viewBox="0 0 {{ watermark_view_box_width }} {{ watermark_view_box_height }}"
@@ -211,3 +212,41 @@
         </svg>
     </div>
 {%- endif -%}
+
+{% stylesheet %}
+    .watermark-marquee {
+        pointer-events: none;
+        position: relative;
+        display: flex;
+        width: 100%;
+        align-items: center;
+        overflow: hidden;
+        -webkit-user-select: none;
+        user-select: none;
+        height: 100%;
+    }
+    [data-marquee-pause-on-hover='true'].watermark-marquee {
+        pointer-events: auto;
+    }
+    .watermark-marquee__track {
+        display: flex;
+        height: 100%;
+        width: max-content;
+        align-items: center;
+        gap: var(--wm-gap, clamp(2rem, 6vw, 8rem));
+        will-change: transform;
+    }
+    .watermark-marquee__item {
+        flex: none;
+        font-family: var(--font-heading-family);
+        line-height: 1;
+        white-space: nowrap;
+        color: currentcolor;
+        opacity: 20%;
+        font-size: calc(var(--font-heading-scale) * var(--type-step-8) * 0.8);
+    }
+    .watermark-marquee__item-inner {
+        display: inline-block;
+        will-change: transform;
+    }
+{% endstylesheet %}

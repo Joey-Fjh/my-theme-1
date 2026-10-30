@@ -1,0 +1,33 @@
+{% doc %}
+    Payment icons block for product-info-blocks (PDP only).
+
+    @param {object} block - Payment icons block
+{% enddoc %}
+
+{%- if shop.enabled_payment_types.size > 0 -%}
+    {%- liquid
+        assign payment_icons_heading = block.settings.heading
+        if payment_icons_heading == blank
+            assign payment_icons_heading = 'products.product.payment_icons_heading' | t
+        endif
+    -%}
+    <div
+        class="product-info-blocks__box product-info-blocks__block product-info-blocks__block--box product-info-blocks__block--payment_icons product-info-blocks__payment-icons"
+        {{ block.shopify_attributes }}
+    >
+        <p class="copy-m text-theme-text">{{ payment_icons_heading }}</p>
+        <ul
+            class="product-info-blocks__payment-icons-list"
+            role="list"
+        >
+            {%- for payment_type in shop.enabled_payment_types -%}
+                <li class="flex items-center">
+                    {{
+                        payment_type
+                        | payment_type_svg_tag: class: 'product-info-blocks__payment-icon'
+                    }}
+                </li>
+            {%- endfor -%}
+        </ul>
+    </div>
+{%- endif -%}

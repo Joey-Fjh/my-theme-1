@@ -5,6 +5,12 @@
     margin: 0;
 }
 
+:root {
+    --page-inset: max(var(--page-margin), calc((100% - var(--page-width)) / 2));
+    --page-grid-columns: [full-start] minmax(var(--page-margin), 1fr) [content-start]
+        minmax(0, var(--page-width)) [content-end] minmax(var(--page-margin), 1fr) [full-end];
+}
+
 html {
     scrollbar-gutter: stable;
     --sticky-viewport-gap: 1rem;
@@ -63,7 +69,7 @@ body {
     grid-template-columns: 100%;
     min-height: 100dvh;
     margin: 0;
-    color: rgba(var(--color-foreground), 0.8);
+    color: var(--color-muted);
     background-color: rgb(var(--color-background));
     font-size: calc(var(--font-body-size-mobile) * var(--font-body-scale));
     font-family: var(--font-body-family);
@@ -74,7 +80,7 @@ body {
     word-break: break-word;
 }
 
-@media (width >= theme(--breakpoint-pc)) {
+@media (width >= theme(--breakpoint-tablet)) {
     body {
         font-size: calc(var(--font-body-size) * var(--font-body-scale));
     }
@@ -127,7 +133,7 @@ h6 {
     font-size: calc(var(--font-heading-scale) * 1.1rem);
 }
 
-@media (width >= theme(--breakpoint-pc)) {
+@media (width >= theme(--breakpoint-tablet)) {
     h1 {
         font-size: calc(var(--font-heading-scale) * 4rem);
     }
@@ -153,47 +159,28 @@ h6 {
     }
 }
 
-.layout {
-    position: relative;
-    overflow: hidden;
-}
-
-.layout:not(.layout-no-pt) {
-    padding-top: var(--section-padding-top);
-}
-
-.layout:not(.layout-no-pb) {
-    padding-bottom: var(--section-padding-bottom);
-}
-
-main > section:first-child .layout:first-child:not(.layout-no-safe):not(.layout-no-pt) {
-    padding-top: calc(
-        var(--announcement-bar-height) + var(--header-height) + var(--section-padding-top)
-    );
-}
-
-.layout-safe-top:not(.layout-no-safe):not(.layout-no-pt) {
-    padding-top: calc(
-        var(--announcement-bar-height) + var(--header-height) + var(--section-padding-top)
-    );
-}
-
 .shopify-section {
     position: relative;
     display: grid;
     width: 100%;
-    grid-template-columns:
-        minmax(var(--page-margin), 1fr)
-        minmax(0, var(--page-width))
-        minmax(var(--page-margin), 1fr);
+    grid-template-columns: var(--page-grid-columns);
 }
 
 .shopify-section > * {
-    grid-column: 2;
+    grid-column: content;
 }
 
 .shopify-section > .full-width {
-    grid-column: 1 / -1;
+    grid-column: full;
+}
+
+body > main {
+    flex-grow: 1;
+}
+
+:focus-visible {
+    outline: 2px solid rgb(var(--color-foreground));
+    outline-offset: 2px;
 }
 
 [x-cloak] {

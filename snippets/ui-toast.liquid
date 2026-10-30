@@ -34,6 +34,7 @@
 
 <div
     x-data="toastContainer"
+    data-module-id="toast-container"
     data-toast-duration="{{ toast_duration_ms }}"
     data-toast-preview="{{ toast_preview }}"
     data-toast-preview-type="{{ toast_preview_type }}"
@@ -44,13 +45,13 @@
     data-cart-toast-server-error="{{ 'toast.server_error' | t | escape }}"
     data-cart-toast-timeout="{{ 'toast.timeout' | t | escape }}"
     data-cart-toast-network-error="{{ 'toast.network_error' | t | escape }}"
-    class="z-layer-toast pointer-events-none fixed flex gap-3 {{ toast_position_class }} {{ toast_stacking }}"
+    class="z-layer-toast pointer-events-none fixed flex gap-step-xs {{ toast_position_class }} {{ toast_stacking }}"
 >
     <template x-for="msg in $store.toast.messages" :key="msg.id">
         <div
             :role="msg.type === 'error' || msg.type === 'warning' ? 'alert' : 'status'"
             :aria-live="msg.type === 'error' || msg.type === 'warning' ? 'assertive' : 'polite'"
-            class="toast pointer-events-auto max-w-[calc(100vw-2.5rem)] border border-[rgba(var(--color-foreground),0.08)] px-4 py-3 backdrop-blur-sm pc:max-w-95"
+            class="toast pointer-events-auto max-w-[calc(100vw-2.5rem)] border border-line px-step-s py-step-xs backdrop-blur-sm tablet:max-w-95"
             :class="
                 msg.type === 'error'   ? 'toast--error'   :
                 msg.type === 'success' ? 'toast--success' :
@@ -74,7 +75,7 @@
 
             <button
                 type="button"
-                class="close-button -me-1"
+                class="close-button -me-step-3xs"
                 @click="$store.toast.remove(msg.id)"
                 aria-label="{{ 'accessibility.dismiss' | t }}"
             >
@@ -83,3 +84,22 @@
         </div>
     </template>
 </div>
+
+{% stylesheet %}
+    .toast--success {
+        background-color: rgb(var(--color-success-background));
+        color: rgb(var(--color-success-foreground));
+    }
+    .toast--warning {
+        background-color: rgb(var(--color-warning-background));
+        color: rgb(var(--color-warning-foreground));
+    }
+    .toast--error {
+        background-color: rgb(var(--color-error-background));
+        color: rgb(var(--color-error-foreground));
+    }
+    .toast--info {
+        background-color: rgb(var(--color-info-background));
+        color: rgb(var(--color-info-foreground));
+    }
+{% endstylesheet %}

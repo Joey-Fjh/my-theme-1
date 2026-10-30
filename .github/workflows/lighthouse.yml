@@ -1,0 +1,37 @@
+name: Lighthouse
+
+# Runs only where it gates a merge: pull requests into main, pushes to main,
+# and manual runs. Development branch pushes do not trigger it.
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+concurrency:
+    group: lighthouse-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    lighthouse:
+        name: Lighthouse
+        # Fork pull requests get no secrets, so the job is skipped for them.
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Lighthouse
+              uses: shopify/lighthouse-ci-action@v1
+              with:
+                  store: ${{ secrets.SHOP_STORE }}
+                  access_token: ${{ secrets.SHOP_ACCESS_TOKEN }}
+                  password: ${{ secrets.SHOP_PASSWORD }}
+                  product_handle: amazing-cotton-bag-collection15
+                  collection_handle: collection1
+                  lhci_min_score_performance: 0.6
+                  lhci_min_score_accessibility: 0.9

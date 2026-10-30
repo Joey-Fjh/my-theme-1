@@ -72,6 +72,10 @@
             {%- assign native_qty_blocked = true -%}
         {%- endif -%}
     {%- endif -%}
+    {%- assign payment_button_hidden = true -%}
+    {%- if current_variant.available and native_qty_blocked == false -%}
+        {%- assign payment_button_hidden = false -%}
+    {%- endif -%}
     {%- assign use_secondary_add_button = false -%}
     {%- if context == 'product' -%}
         {%- if show_buy_now == true or show_buy_now == 'true' -%}
@@ -103,6 +107,7 @@
         data-unavailable-text="{{ 'products.product.unavailable' | t | escape }}"
         data-request-sections="{% if request_sections == false or request_sections == 'false' %}{% else %}{{ request_sections | join: ',' | escape }}{% endif %}"
         x-data="BuyButtons()"
+        data-module-id="buy-buttons"
         {{ block.shopify_attributes }}
     >
         {%- form 'product',
@@ -166,7 +171,7 @@
                     <button
                         type="submit"
                         name="add"
-                        class="btn relative w-full"
+                        class="buy-buttons__cart-submit btn"
                         data-available-class="{{ available_classes | escape }}"
                         data-unavailable-class="{{ unavailable_classes | escape }}"
                         :class="
@@ -199,9 +204,7 @@
                             class="absolute inset-0 flex items-center justify-center"
                             aria-hidden="true"
                         >
-                            <span
-                                class="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent"
-                            ></span>
+                            <span class="spinner"></span>
                         </span>
                     </button>
                 </div>
@@ -209,7 +212,7 @@
                 {%- if show_buy_now == true or show_buy_now == 'true' -%}
                     <button
                         type="button"
-                        class="btn-primary relative w-full"
+                        class="buy-buttons__submit--buy-now btn-primary"
                         :disabled="!available || !canPurchaseQuantity || isLoading"
                         :aria-busy="isLoading"
                         @click.prevent="buyNow()"
@@ -223,7 +226,9 @@
                 {%- if show_dynamic_checkout -%}
                     <div
                         class="shopify-payment-button-wrapper"
-                        hidden
+                        {% if payment_button_hidden %}
+                            hidden
+                        {% endif %}
                         :hidden="!available || !canPurchaseQuantity"
                         :class="{ 'hidden': !available || !canPurchaseQuantity }"
                     >
@@ -233,10 +238,10 @@
             </div>
         {%- endform -%}
 
-        <div x-show="false">
+        <noscript>
             {%- if product.gift_card? -%}
                 {%- assign fallback_option_count = 0 -%}
-                <div class="flex flex-col gap-2">
+                <div class="flex flex-col gap-step-2xs">
                     {%- for variant in product.variants -%}
                         {%- unless variant.available -%}
                             {%- continue -%}
@@ -277,7 +282,7 @@
                             {% endif %}
                         >
                             <summary
-                                class="cursor-pointer list-none body-md font-medium text-theme-text [&::-webkit-details-marker]:hidden"
+                                class="cursor-pointer list-none copy-m text-theme-text [&::-webkit-details-marker]:hidden"
                             >
                                 {%- if product.has_only_default_variant -%}
                                     {{ product.title | escape }}
@@ -298,7 +303,11 @@
                                     section_id: gift_card_fallback_section_id,
                                     product_form_id: gift_card_fallback_form_id
                                 -%}
-                                <button type="submit" name="add" class="btn-primary w-full">
+                                <button
+                                    type="submit"
+                                    name="add"
+                                    class="buy-buttons__submit btn-primary"
+                                >
                                     {{ 'products.product.add_to_cart' | t }}
                                 </button>
                             {%- endform -%}
@@ -307,7 +316,7 @@
                     {%- if fallback_option_count == 0 -%}
                         <button
                             type="button"
-                            class="buy-buttons__submit--unavailable w-full"
+                            class="buy-buttons__submit--unavailable"
                             disabled
                         >
                             {{ 'products.product.unavailable' | t }}
@@ -317,10 +326,10 @@
             {%- elsif product.requires_selling_plan -%}
                 {%- assign fallback_option_count = 0 -%}
                 <fieldset class="selling-plan-picker__fieldset m-0 border-0 p-0">
-                    <legend class="mb-3 body-sm font-medium text-theme-text">
+                    <legend class="mb-step-xs copy-s text-theme-text">
                         {{ 'products.product.selling_plan.purchase_options' | t }}
                     </legend>
-                    <div class="flex flex-col gap-2">
+                    <div class="flex flex-col gap-step-2xs">
                         {%- for variant in product.variants -%}
                             {%- unless variant.available -%}
                                 {%- continue -%}
@@ -363,7 +372,11 @@
                                         name="selling_plan"
                                         value="{{ allocation.selling_plan.id }}"
                                     >
-                                    <button type="submit" name="add" class="btn-primary w-full">
+                                    <button
+                                        type="submit"
+                                        name="add"
+                                        class="buy-buttons__submit btn-primary"
+                                    >
                                         {{ variant.title | escape }} —
                                         {{ allocation.selling_plan.name | escape }} —
                                         {{ 'products.product.add_to_cart' | t }}
@@ -374,7 +387,7 @@
                         {%- if fallback_option_count == 0 -%}
                             <button
                                 type="button"
-                                class="buy-buttons__submit--unavailable w-full"
+                                class="buy-buttons__submit--unavailable"
                                 disabled
                             >
                                 {{ 'products.product.unavailable' | t }}
@@ -384,7 +397,7 @@
                 </fieldset>
             {%- else -%}
                 {%- assign fallback_option_count = 0 -%}
-                <div class="flex flex-col gap-2">
+                <div class="flex flex-col gap-step-2xs">
                     {%- for variant in product.variants -%}
                         {%- unless variant.available -%}
                             {%- continue -%}
@@ -415,7 +428,11 @@
                         {%- form 'product', product, id: fallback_form_id -%}
                             <input type="hidden" name="id" value="{{ variant.id }}">
                             <input type="hidden" name="quantity" value="{{ fallback_quantity }}">
-                            <button type="submit" name="add" class="btn-primary w-full">
+                            <button
+                                type="submit"
+                                name="add"
+                                class="buy-buttons__submit btn-primary"
+                            >
                                 {{ variant.title | escape }} —
                                 {{ 'products.product.add_to_cart' | t }}
                             </button>
@@ -424,7 +441,7 @@
                     {%- if fallback_option_count == 0 -%}
                         <button
                             type="button"
-                            class="buy-buttons__submit--unavailable w-full"
+                            class="buy-buttons__submit--unavailable"
                             disabled
                         >
                             {{ 'products.product.unavailable' | t }}
@@ -432,7 +449,7 @@
                     {%- endif -%}
                 </div>
             {%- endif -%}
-        </div>
+        </noscript>
 
         {%- if context == 'product' and current_variant != blank -%}
             {%- render 'pickup-availability-inline',
@@ -454,7 +471,7 @@
                 {%- endif -%}
 
                 <span
-                    class="{% if show_dynamic_checkout or show_buy_now == true or show_buy_now == 'true' %}btn-secondary{% else %}btn-primary{% endif %} pointer-events-none relative w-full cursor-default"
+                    class="buy-buttons__submit--placeholder {% if show_dynamic_checkout or show_buy_now == true or show_buy_now == 'true' %}btn-secondary{% else %}btn-primary{% endif %}"
                     aria-hidden="true"
                 >
                     {{ 'products.product.add_to_cart' | t }}
@@ -463,7 +480,7 @@
 
             {%- if show_dynamic_checkout or show_buy_now == true or show_buy_now == 'true' -%}
                 <span
-                    class="btn-primary pointer-events-none relative w-full cursor-default"
+                    class="buy-buttons__submit--placeholder {% if show_dynamic_checkout %}btn-secondary{% else %}btn-primary{% endif %}"
                     aria-hidden="true"
                 >
                     {{ 'products.product.buy_it_now' | t }}
@@ -478,3 +495,90 @@
         </button>
     </div>
 {%- endif -%}
+
+{% stylesheet %}
+    .buy-buttons__actions--purchase-group {
+        display: flex;
+        width: 100%;
+        flex-direction: column;
+        gap: calc(var(--spacing) * 3);
+    }
+    .buy-buttons__primary-row {
+        display: grid;
+        width: 100%;
+        grid-template-columns: repeat(1, minmax(0, 1fr));
+        align-items: stretch;
+        gap: calc(var(--spacing) * 3);
+    }
+    .buy-buttons__actions--with-quantity .buy-buttons__primary-row {
+        grid-template-columns: 12rem minmax(0, 1fr);
+        @media (width >= 48rem) {
+            grid-template-columns: 12rem minmax(0, 1fr);
+        }
+    }
+    .buy-buttons__quantity {
+        display: flex;
+        min-width: calc(var(--spacing) * 0);
+        align-items: stretch;
+    }
+    .buy-buttons__quantity > * {
+        width: 100%;
+        height: auto;
+        justify-content: space-between;
+    }
+    .buy-buttons__submit--unavailable {
+        border-color: var(--color-line);
+        background-color: var(--color-surface-strong);
+        color: var(--color-subtle);
+        opacity: 100%;
+    }
+    .buy-buttons__label {
+        display: inline-block;
+        transition-property: opacity;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        transition-duration: 150ms;
+    }
+
+    .buy-buttons__actions--purchase-group .btn[data-available-class='btn-primary'],
+    .buy-buttons__actions--purchase-group .btn-primary {
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .buy-buttons__actions--purchase-group .shopify-payment-button__button--unbranded {
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    :where(.buy-buttons__submit--buy-now) {
+        position: relative;
+        width: 100%;
+    }
+
+    :where(.buy-buttons__submit) {
+        width: 100%;
+    }
+
+    :where(.buy-buttons__submit--unavailable) {
+        width: 100%;
+    }
+
+    :where(.buy-buttons__cart-submit) {
+        position: relative;
+        width: 100%;
+    }
+
+    :where(.buy-buttons__submit--placeholder) {
+        pointer-events: none;
+        position: relative;
+        width: 100%;
+        cursor: default;
+    }
+
+    .buy-buttons__actions--purchase-group
+        button.shopify-payment-button__button--unbranded:focus-visible {
+        outline: var(--focus-ring-width) solid
+            rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+        outline-offset: var(--focus-ring-offset);
+    }
+{% endstylesheet %}

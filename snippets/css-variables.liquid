@@ -4,9 +4,17 @@
         assign body_font_italic = settings.type_body_font | font_modify: 'style', 'italic'
         assign body_font_bold_italic = body_font_bold | font_modify: 'style', 'italic'
 
+        assign heading_font_selected = settings.type_header_font | font_modify: 'weight', settings.heading_weight
         assign heading_font_bold = settings.type_header_font | font_modify: 'weight', 'bold'
         assign heading_font_italic = settings.type_header_font | font_modify: 'style', 'italic'
         assign heading_font_bold_italic = heading_font_bold | font_modify: 'style', 'italic'
+
+        if settings.subtitle_font_source == 'body'
+            assign subtitle_font_source = settings.type_body_font
+        else
+            assign subtitle_font_source = settings.type_header_font
+        endif
+        assign subtitle_font_selected = subtitle_font_source | font_modify: 'weight', settings.subtitle_weight
     %}
 
     {{ settings.type_body_font | font_face: font_display: 'swap' }}
@@ -21,6 +29,9 @@
     {%- endif -%}
 
     {{ settings.type_header_font | font_face: font_display: 'swap' }}
+    {%- if heading_font_selected -%}
+        {{ heading_font_selected | font_face: font_display: 'swap' }}
+    {%- endif -%}
     {%- if heading_font_bold -%}
         {{ heading_font_bold | font_face: font_display: 'swap' }}
     {%- endif -%}
@@ -29,6 +40,10 @@
     {%- endif -%}
     {%- if heading_font_bold_italic -%}
         {{ heading_font_bold_italic | font_face: font_display: 'swap' }}
+    {%- endif -%}
+
+    {%- if subtitle_font_selected -%}
+        {{ subtitle_font_selected | font_face: font_display: 'swap' }}
     {%- endif -%}
 
     {% comment %} color schemes (last result: :root, .color-scheme-1{} .color-scheme-2{} ...) {% endcomment %}
@@ -68,6 +83,10 @@
             --color-badge-foreground: {{ scheme.settings.badge_label_color.red }}, {{ scheme.settings.badge_label_color.green }}, {{ scheme.settings.badge_label_color.blue }};
             --color-badge-border: {{ scheme.settings.badge_border_color.red }}, {{ scheme.settings.badge_border_color.green }}, {{ scheme.settings.badge_border_color.blue }};
 
+            --color-accent: {{ scheme.settings.accent_color.red }}, {{ scheme.settings.accent_color.green }}, {{ scheme.settings.accent_color.blue }};
+
+            --color-card-background: {{ scheme.settings.card_background_color.red }}, {{ scheme.settings.card_background_color.green }}, {{ scheme.settings.card_background_color.blue }};
+
             --color-success-background: {{ scheme.settings.success_background_color.red }}, {{ scheme.settings.success_background_color.green }}, {{ scheme.settings.success_background_color.blue }};
             --color-success-foreground: {{ scheme.settings.success_foreground_color.red }}, {{ scheme.settings.success_foreground_color.green }}, {{ scheme.settings.success_foreground_color.blue }};
             --color-warning-background: {{ scheme.settings.warning_background_color.red }}, {{ scheme.settings.warning_background_color.green }}, {{ scheme.settings.warning_background_color.blue }};
@@ -76,27 +95,94 @@
             --color-error-foreground: {{ scheme.settings.error_foreground_color.red }}, {{ scheme.settings.error_foreground_color.green }}, {{ scheme.settings.error_foreground_color.blue }};
             --color-info-background: {{ scheme.settings.info_background_color.red }}, {{ scheme.settings.info_background_color.green }}, {{ scheme.settings.info_background_color.blue }};
             --color-info-foreground: {{ scheme.settings.info_foreground_color.red }}, {{ scheme.settings.info_foreground_color.green }}, {{ scheme.settings.info_foreground_color.blue }};
+
+            {% comment %} Shadow steps rise on dark backgrounds; tint steps are one set on :root {% endcomment %}
+            {%- assign scheme_brightness = scheme.settings.background_color | color_brightness -%}
+            {%- if scheme_brightness < 128 -%}
+                --alpha-shadow-sm: 0.28;
+                --alpha-shadow-md: 0.45;
+                --alpha-shadow-lg: 0.6;
+            {%- else -%}
+                --alpha-shadow-sm: 0.06;
+                --alpha-shadow-md: 0.1;
+                --alpha-shadow-lg: 0.16;
+            {%- endif %}
+
+            {% comment %} Scheme-dependent colour roles, re-declared here so var() consumers resolve against this scheme. Same values as tailwind.input.css (lint:theme colour-role-sync). {% endcomment %}
+            --color-muted: rgba(var(--color-foreground), var(--alpha-80));
+            --color-subtle: rgba(var(--color-foreground), var(--alpha-72));
+            --color-faint: rgba(var(--color-foreground), var(--alpha-20));
+            --color-line: rgba(var(--color-border), var(--alpha-20));
+            --color-line-strong: rgba(var(--color-border), var(--alpha-35));
+            --color-line-inverse: rgba(var(--color-background), var(--alpha-20));
+            --color-surface-muted: rgba(var(--color-foreground), var(--alpha-5));
+            --color-surface-strong: rgba(var(--color-foreground), var(--alpha-10));
+            --color-indicator: rgba(var(--color-foreground), var(--alpha-35));
+            --color-indicator-strong: rgba(var(--color-foreground), var(--alpha-50));
+            --color-veil: rgba(var(--color-background), var(--alpha-80));
+            --color-card: rgb(var(--color-card-background));
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, var(--alpha-shadow-sm));
+            --shadow-md: 0 8px 24px rgba(0, 0, 0, var(--alpha-shadow-md));
+            --shadow-lg: 0 14px 36px rgba(0, 0, 0, var(--alpha-shadow-lg));
         }
     {% endfor %}
 
     {% comment %} last result: body, .color-sheme-1{}, .color-sheme-2{} ... {% endcomment %}
     {{ scheme_classes | prepend: 'body' }} {
-        color: rgba(var(--color-foreground), 0.8);
+        color: rgba(var(--color-foreground), var(--alpha-80));
         background-color: rgb(var(--color-background));
     }
 
     :root {
+        {% comment %} Colour steps (layer 1); roles in tailwind.input.css consume them {% endcomment %}
+        --alpha-5: 0.05;
+        --alpha-10: 0.1;
+        --alpha-20: 0.2;
+        --alpha-35: 0.35;
+        --alpha-50: 0.5;
+        --alpha-72: 0.72;
+        --alpha-80: 0.8;
+
         {%- comment -%} global Variables {%- endcomment -%}
         --announcement-bar-height: 0px;
         --header-height: 0px;
 
         {% comment %} layout Variables {% endcomment %}
         --page-width: {{ settings.page_width | divided_by: 10}}rem;
-        --page-margin: {{ settings.page_margin | divided_by: 10 }}rem;
+        {%- liquid
+            assign page_margin_v = settings.page_margin | plus: 0
+            assign page_margin_min_px = 16
+            if page_margin_v < page_margin_min_px
+                assign page_margin_min_px = page_margin_v
+            endif
+            assign page_margin_min_r = page_margin_min_px | times: 1.0 | divided_by: 10
+            assign page_margin_max_r = page_margin_v | times: 1.0 | divided_by: 10
+            if page_margin_min_r == page_margin_max_r
+                assign page_margin_clamp = page_margin_max_r | append: 'rem'
+            else
+                assign page_margin_diff_r = page_margin_max_r | minus: page_margin_min_r
+                assign page_margin_b_vw = page_margin_diff_r | divided_by: 0.905
+                assign page_margin_b_at_min = page_margin_b_vw | times: 0.375
+                assign page_margin_a_rem = page_margin_min_r | minus: page_margin_b_at_min
+                capture page_margin_clamp
+                    echo 'clamp('
+                    echo page_margin_min_r | round: 4
+                    echo 'rem, '
+                    echo page_margin_a_rem | round: 4
+                    echo 'rem + '
+                    echo page_margin_b_vw | round: 4
+                    echo 'vw, '
+                    echo page_margin_max_r | round: 4
+                    echo 'rem)'
+                endcapture
+            endif
+        -%}
+        --page-margin: {{ page_margin_clamp }};
 
         {% comment %} font Variables {% endcomment %}
         --font-body-family: {{ settings.type_body_font.family }}, {{ settings.type_body_font.fallback_families }};
         --font-body-style: {{ settings.type_body_font.style }};
+        --font-body-weight: {{ settings.type_body_font.weight }};
         {%- liquid
             assign theme_body_font_size = settings.body_font_size | default: 16
             assign theme_body_font_size_mobile = settings.body_font_size_mobile | default: 14
@@ -116,6 +202,36 @@
         --font-heading-text-transform: {{ settings.heading_text_transform }};
         --font-heading-scale: {{ settings.heading_scale | divided_by: 100.0 }};
 
+        {%- comment -%} Fluid type steps (6-C8): base × ratio^n, ratio 1.2→1.25 from 375px to 1280px {%- endcomment -%}
+        {%- assign type_step_keys = '-2,-1,0,1,2,3,4,5,6,7,8' | split: ',' -%}
+        {%- for step_key in type_step_keys -%}
+            {%- liquid
+                assign step_num = step_key | plus: 0
+                assign mob_micro = theme_body_font_size_mobile | times: 10000
+                assign desk_micro = theme_body_font_size | times: 10000
+                if step_num < 0
+                    assign abs_n = step_num | times: -1
+                    for i in (1..abs_n)
+                        assign mob_micro = mob_micro | times: 10 | divided_by: 12
+                        assign desk_micro = desk_micro | times: 100 | divided_by: 125
+                    endfor
+                elsif step_num > 0
+                    for i in (1..step_num)
+                        assign mob_micro = mob_micro | times: 12 | divided_by: 10
+                        assign desk_micro = desk_micro | times: 125 | divided_by: 100
+                    endfor
+                endif
+                assign min_r = mob_micro | times: 1.0 | divided_by: 100000
+                assign max_r = desk_micro | times: 1.0 | divided_by: 100000
+                assign diff_r = max_r | minus: min_r
+                assign b_vw = diff_r | divided_by: 0.905
+                assign b_at_min = b_vw | times: 0.375
+                assign a_rem = min_r | minus: b_at_min
+                assign type_step_token = 'type-step-' | append: step_key
+            -%}
+        --{{ type_step_token }}: clamp({{ min_r | round: 4 }}rem, {{ a_rem | round: 4 }}rem + {{ b_vw | round: 4 }}vw, {{ max_r | round: 4 }}rem);
+        {%- endfor -%}
+
         {% if settings.subtitle_font_source == 'body' %}
             --font-subtitle-family: var(--font-body-family);
             --font-subtitle-style: var(--font-body-style);
@@ -127,6 +243,10 @@
         --font-subtitle-line-height: {{ settings.subtitle_line_height }};
         --font-subtitle-letter-spacing: {{ settings.subtitle_letter_spacing }};
         --font-subtitle-text-transform: {{ settings.subtitle_text_transform }};
+
+        --font-pagination-ratio: calc(
+            13 / {{ theme_body_font_size_mobile }}
+        );
 
         {% comment %} input Variables {% endcomment %}
         --input-radius: {{ settings.input_radius }}px;
@@ -164,6 +284,8 @@
         {% comment %} Product card Variables {% endcomment %}
         --product-card-border-width: {{ settings.product_card_border_thickness }}px;
         --product-card-radius: {{ settings.product_card_radius }}px;
+        --radius-card: {{ settings.card_radius }}px;
+        --radius-media: {{ settings.card_radius | divided_by: 2 }}px;
 
         --product-card-shadow-opacity: {{ settings.product_card_shadow_opacity | divided_by: 100.0 }};
         --product-card-shadow-horizontal-offset: {{ settings.product_card_shadow_horizontal_offset }}px;
@@ -179,46 +301,21 @@
         --toast-shadow-blur-radius: {{ settings.toast_shadow_blur }}px;
 
         {% comment %} Motion Variables {% endcomment %}
-        --motion-duration: 500ms;
         --motion-duration-fast: 250ms;
         --motion-duration-base: 400ms;
         --motion-duration-slow: 500ms;
 
-        {% case settings.motion_speed %}
-            {% when 'slow' %}
-                --motion-reveal-duration: 1340ms;
-                --motion-reveal-duration-base: 1340ms;
-                --motion-reveal-opacity-duration: 760ms;
-                --motion-reveal-stagger: 210ms;
-            {% when 'fast' %}
-                --motion-reveal-duration: 820ms;
-                --motion-reveal-duration-base: 820ms;
-                --motion-reveal-opacity-duration: 480ms;
-                --motion-reveal-stagger: 130ms;
-            {% else %}
-                --motion-reveal-duration: 1080ms;
-                --motion-reveal-duration-base: 1080ms;
-                --motion-reveal-opacity-duration: 620ms;
-                --motion-reveal-stagger: 170ms;
-        {% endcase %}
-
-        {% comment %} Style-owned reveal amplitude; motion_speed controls timing only. {% endcomment %}
+        --motion-reveal-duration-base: 1080ms;
+        --motion-reveal-opacity-duration: 620ms;
+        --motion-reveal-stagger: 170ms;
         --motion-reveal-rise-distance: clamp(40px, 5vw, 64px);
         --motion-reveal-cascade-scale: 0.97;
-        --motion-reveal-zoom-scale: 0.92;
-        --motion-slide-content-distance-x: 0rem;
-        --motion-slide-content-distance-y: clamp(32px, 4vw, 52px);
-        --motion-slide-content-clip-from: inset(100% 0 0 0);
-        --motion-slide-media-distance-x: clamp(40px, 6vw, 80px);
-        --motion-slide-media-distance-y: 0rem;
-        --motion-slide-media-scale: 1.035;
-        --motion-slide-media-clip-from: inset(0 100% 0 0);
+        --motion-reveal-ease: cubic-bezier(0.25, 0.4, 0.4, 1);
 
         --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
         --motion-ease-default: var(--motion-ease);
         --motion-ease-enter: cubic-bezier(0.22, 1, 0.36, 1);
         --motion-ease-exit: cubic-bezier(0.55, 0, 1, 0.45);
-        --motion-reveal-ease: cubic-bezier(0.25, 0.4, 0.4, 1);
 
         {% comment %} Focus Ring {% endcomment %}
         --focus-ring-width: {{ settings.focus_ring_width | default: 2 }}px;

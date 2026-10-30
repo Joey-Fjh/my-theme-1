@@ -1,0 +1,1318 @@
+{%- liquid
+    assign ritual_layout = section.settings.layout | default: 'sticky_media'
+    unless ritual_layout == 'sticky_media' or ritual_layout == 'scroll_carousel'
+        assign ritual_layout = 'sticky_media'
+    endunless
+
+    assign ritual_step_count = 0
+    for ritual_block in section.blocks
+        if ritual_block.type == 'step'
+            assign ritual_step_count = ritual_step_count | plus: 1
+        endif
+    endfor
+
+    if ritual_layout == 'sticky_media'
+        assign ritual_heading_tier = 'title-xl tablet:title-4xl'
+        assign ritual_step_heading_tier = 'title-xs tablet:title-2xl'
+    else
+        assign ritual_heading_tier = 'title-l italic tablet:title-3xl italic'
+        assign ritual_step_heading_tier = 'title-s tablet:title-2xl'
+    endif
+-%}
+
+{%- assign ritual_root_attrs = 'data-component-kind="section" data-component-type="ritual-steps" data-component-id="'
+    | append: section.id
+    | append: '"'
+-%}
+
+{%- capture ritual_steps_children -%}
+    <div
+        class="ritual-steps__root color-{{ section.settings.color_scheme }} ritual-steps__root--{{ ritual_layout | replace: '_', '-' }}"
+        data-module-id="ritual-steps"
+        x-data="ritualSteps()"
+        data-layout="{{ ritual_layout }}"
+        data-section-id="{{ section.id }}"
+        data-step-count="{{ ritual_step_count }}"
+        data-initial-active="0"
+        style="--ritual-step-count: {{ ritual_step_count }};"
+    >
+        {%- if ritual_step_count > 0 -%}
+            <div class="ritual-steps__mobile">
+                {%- if section.settings.heading != blank -%}
+                    {% render 'heading',
+                        level: '2',
+                        tier: ritual_heading_tier,
+                        align: 'start',
+                        content: section.settings.heading,
+                        class: 'ritual-steps__mobile-section-heading sr-only text-theme-text uppercase'
+                    %}
+                {%- endif -%}
+                <ul
+                    class="card-rail ritual-steps__mobile-rail"
+                    data-ritual-mobile-rail
+                    role="list"
+                >
+                    {%- assign ritual_step_index = 0 -%}
+                    {%- for block in section.blocks -%}
+                        {%- if block.type != 'step' -%}
+                            {%- continue -%}
+                        {%- endif -%}
+                        {%- liquid
+                            assign ritual_step_index = ritual_step_index | plus: 1
+                            assign ritual_step_idx = ritual_step_index | minus: 1
+                            assign ritual_label = block.settings.label
+                            assign ritual_step_control_aria = 'accessibility.step_control' | t: index: ritual_step_index
+                            if ritual_step_index < 10
+                                assign ritual_number_label = ritual_step_index | prepend: '0'
+                            else
+                                assign ritual_number_label = ritual_step_index
+                            endif
+                            assign ritual_product = block.settings.product
+                            assign ritual_is_placeholder = false
+                            if ritual_product == blank
+                                assign ritual_is_placeholder = true
+                            endif
+                            assign ritual_product_title = ritual_product.title
+                            if ritual_is_placeholder
+                                assign ritual_product_title = 'sections.ritual-steps.placeholder_product_title' | t: index: ritual_step_index
+                            endif
+                            assign ritual_product_url = ritual_product.url | default: routes.all_products_collection_url
+                            assign ritual_link_label = block.settings.link_label
+                            assign ritual_link_href = block.settings.link
+                            if ritual_link_href == blank and ritual_is_placeholder == false
+                                assign ritual_link_href = ritual_product_url
+                            endif
+                            if ritual_link_href == blank
+                                assign ritual_link_href = routes.all_products_collection_url
+                            endif
+                            assign ritual_scene_image = block.settings.image
+                            assign ritual_lifestyle_index = ritual_step_index | modulo: 2 | plus: 1
+                            assign ritual_lifestyle_key = 'lifestyle-' | append: ritual_lifestyle_index
+                            assign ritual_scene_alt = block.settings.heading | default: ritual_label | escape
+                            assign ritual_float_image = block.settings.product_image
+                            if ritual_float_image == blank and ritual_is_placeholder == false
+                                assign ritual_float_image = ritual_product.featured_image
+                            endif
+                            assign ritual_product_image_alt = ritual_product_title | escape
+                            if ritual_float_image.alt != blank
+                                assign ritual_product_image_alt = ritual_float_image.alt | escape
+                            endif
+                            assign ritual_placeholder_index = ritual_step_index | minus: 1 | modulo: 6 | plus: 1
+                            assign ritual_placeholder_key = 'product-' | append: ritual_placeholder_index
+                            assign ritual_body_text = block.settings.text
+                        -%}
+                        <li
+                            class="card-rail__slot ritual-steps__mobile-slot"
+                            data-ritual-block-id="{{ block.id }}"
+                            data-step-index="{{ ritual_step_idx }}"
+                            {{ block.shopify_attributes }}
+                        >
+                            <article
+                                class="ritual-steps__mobile-card"
+                                data-ritual-mobile-card
+                                data-step-index="{{ ritual_step_idx }}"
+                            >
+                                {%- if ritual_layout == 'sticky_media' -%}
+                                    <div class="ritual-steps__oval-scene ritual-steps__oval-scene--mobile">
+                                        <div class="ritual-steps__oval-ring" aria-hidden="true"></div>
+                                        <div class="ritual-steps__oval-sparkle" aria-hidden="true">
+                                            {%- render 'icons', icon: 'icon-sparkle', size: 'sm' -%}
+                                        </div>
+                                        <div class="ritual-steps__oval-clip">
+                                            {%- render 'image',
+                                                image: ritual_scene_image,
+                                                placeholder_key: ritual_lifestyle_key,
+                                                alt: ritual_scene_alt,
+                                                mode: 'frame',
+                                                fit: 'cover',
+                                                loading: 'lazy',
+                                                sizes: '85vw',
+                                                widths: '360,480,640,768',
+                                                wrapper_class: 'h-full w-full',
+                                                img_class: 'h-full w-full object-cover'
+                                            -%}
+                                        </div>
+                                    </div>
+                                {%- else -%}
+                                    <div class="ritual-steps__mobile-product-stage">
+                                        <span
+                                            class="ritual-steps__outline-num ritual-steps__outline-num--mobile"
+                                            aria-hidden="true"
+                                        >{{ ritual_number_label }}</span>
+                                        <div class="ritual-steps__mobile-packshot">
+                                            {%- if ritual_float_image == blank -%}
+                                                {% render 'decorative-placeholder-svg',
+                                                    placeholder_key: ritual_placeholder_key,
+                                                    class: 'ritual-steps__placeholder-svg'
+                                                %}
+                                            {%- else -%}
+                                                {%- render 'image',
+                                                    image: ritual_float_image,
+                                                    placeholder_key: ritual_placeholder_key,
+                                                    alt: ritual_product_image_alt,
+                                                    mode: 'frame',
+                                                    fit: 'contain',
+                                                    loading: 'lazy',
+                                                    sizes: '70vw',
+                                                    widths: '240,360,480,640',
+                                                    wrapper_class: 'h-full w-full',
+                                                    img_class: 'h-full w-full object-contain'
+                                                -%}
+                                            {%- endif -%}
+                                        </div>
+                                    </div>
+                                {%- endif -%}
+
+                                {%- if section.settings.heading != blank -%}
+                                    <p class="ritual-steps__mobile-heading-copy {{ ritual_heading_tier }} text-theme-text uppercase" aria-hidden="true">
+                                        {{ section.settings.heading }}
+                                    </p>
+                                {%- endif -%}
+
+                                {%- if ritual_layout == 'scroll_carousel' and section.settings.heading != blank -%}
+                                    <p class="ritual-steps__mobile-eyebrow copy-s text-muted italic" aria-hidden="true">
+                                        {{ section.settings.heading }}
+                                    </p>
+                                {%- endif -%}
+
+                                <p class="ritual-steps__badge copy-s tablet:copy-l">
+                                    {{ ritual_number_label }}
+                                    {%- if ritual_label != blank -%}
+                                        {{ ritual_label }}
+                                    {%- endif -%}
+                                </p>
+
+                                {%- if block.settings.heading != blank -%}
+                                    {% render 'heading',
+                                        level: '3',
+                                        tier: ritual_step_heading_tier,
+                                        align: 'start',
+                                        content: block.settings.heading,
+                                        class: 'ritual-steps__step-heading text-theme-text uppercase'
+                                    %}
+                                {%- endif -%}
+
+                                {%- if ritual_layout == 'sticky_media' -%}
+                                    {%- if block.settings.text != blank -%}
+                                        {% render 'text',
+                                            element: 'div',
+                                            rte: true,
+                                            tier: 'copy-s tablet:copy-m',
+                                            align: 'start',
+                                            content: block.settings.text,
+                                            class: 'text-muted'
+                                        %}
+                                    {%- endif -%}
+                                {%- else -%}
+                                    <h4 class="ritual-steps__mobile-product-title ritual-steps__product-title title-xs">
+                                        <a class="text-theme-text" href="{{ ritual_product_url }}">{{ ritual_product_title }}</a>
+                                    </h4>
+                                    {%- if ritual_body_text != blank -%}
+                                        {% render 'text',
+                                            element: 'div',
+                                            rte: false,
+                                            tier: 'copy-s',
+                                            align: 'start',
+                                            content: ritual_body_text,
+                                            class: 'text-muted'
+                                        %}
+                                    {%- endif -%}
+                                    {%- unless ritual_is_placeholder -%}
+                                        <p class="ritual-steps__mobile-price copy-s text-theme-text tabular-nums">
+                                            {{ ritual_product.price | money }}
+                                        </p>
+                                    {%- endunless -%}
+                                {%- endif -%}
+
+                                {%- if ritual_link_label != blank -%}
+                                    <div class="ritual-steps__mobile-cta">
+                                        {%- capture ritual_mobile_link -%}
+                                            <span class="uppercase">{{ ritual_link_label }}</span>
+                                            {%- render 'icons', icon: 'icon-arrow2', class: 'ms-step-2xs', size: 'sm' -%}
+                                        {%- endcapture -%}
+                                        {%- render 'link',
+                                            href: ritual_link_href,
+                                            variant: 'default',
+                                            class: 'copy-s uppercase text-theme-text',
+                                            content: ritual_mobile_link
+                                        -%}
+                                    </div>
+                                {%- endif -%}
+                            </article>
+                        </li>
+                    {%- endfor -%}
+                </ul>
+
+                <div class="card-rail__dots ritual-steps__dots" role="group" aria-label="{{ 'sections.ritual-steps.accessibility.step_dots' | t }}">
+                    {%- assign ritual_step_index = 0 -%}
+                    {%- for block in section.blocks -%}
+                        {%- if block.type != 'step' -%}
+                            {%- continue -%}
+                        {%- endif -%}
+                        {%- liquid
+                            assign ritual_step_index = ritual_step_index | plus: 1
+                            assign ritual_step_idx = ritual_step_index | minus: 1
+                            assign ritual_label = block.settings.label
+                            assign ritual_step_control_aria = 'accessibility.step_control' | t: index: ritual_step_index
+                            if ritual_label != blank
+                                assign ritual_dot_aria = 'sections.ritual-steps.accessibility.go_to_step' | t: step: ritual_step_index, label: ritual_label
+                            else
+                                assign ritual_dot_aria = ritual_step_control_aria
+                            endif
+                        -%}
+                        <button
+                            type="button"
+                            class="card-rail__dot ritual-steps__dot focus-ring"
+                            data-ritual-nav-button
+                            data-step-index="{{ ritual_step_idx }}"
+                            :class="dotClassFromEl($el)"
+                            :aria-current="dotAriaCurrentFromEl($el)"
+                            aria-label="{{ ritual_dot_aria | escape }}"
+                        >
+                            <span class="card-rail__dot-visual ritual-steps__dot-visual" aria-hidden="true"></span>
+                        </button>
+                    {%- endfor -%}
+                </div>
+            </div>
+
+            <div class="ritual-steps__desktop">
+                {%- if ritual_layout == 'sticky_media' -%}
+                    <div class="ritual-steps__sticky-grid">
+                        <div class="ritual-steps__sticky-col ritual-steps__sticky-col--text">
+
+                            {%- assign ritual_step_index = 0 -%}
+                            {%- for block in section.blocks -%}
+                                {%- if block.type != 'step' -%}
+                                    {%- continue -%}
+                                {%- endif -%}
+                                {%- liquid
+                                    assign ritual_step_index = ritual_step_index | plus: 1
+                                    assign ritual_step_idx = ritual_step_index | minus: 1
+                                    assign ritual_label = block.settings.label
+                                    if ritual_step_index < 10
+                                        assign ritual_number_label = ritual_step_index | prepend: '0'
+                                    else
+                                        assign ritual_number_label = ritual_step_index
+                                    endif
+                                    assign ritual_link_label = block.settings.link_label
+                                    assign ritual_link_href = block.settings.link
+                                    if ritual_link_href == blank and block.settings.product != blank
+                                        assign ritual_link_href = block.settings.product.url
+                                    endif
+                                    if ritual_link_href == blank
+                                        assign ritual_link_href = routes.all_products_collection_url
+                                    endif
+                                -%}
+                                <div
+                                    class="ritual-steps__step-text{% if ritual_step_idx == 0 %} is-active{% endif %}"
+                                    data-ritual-step-text
+                                    data-ritual-block-id="{{ block.id }}"
+                                    data-step-index="{{ ritual_step_idx }}"
+                                    :class="stepTextClassFromEl($el)"
+                                    {{ block.shopify_attributes }}
+                                >
+                                    {%- if section.settings.heading != blank -%}
+                                        {%- if ritual_step_idx == 0 -%}
+                                            {% render 'heading',
+                                                level: '2',
+                                                tier: ritual_heading_tier,
+                                                align: 'start',
+                                                content: section.settings.heading,
+                                                class: 'ritual-steps__section-heading text-theme-text uppercase'
+                                            %}
+                                        {%- else -%}
+                                            {% render 'heading',
+                                                level: '2',
+                                                tier: ritual_heading_tier,
+                                                align: 'start',
+                                                content: section.settings.heading,
+                                                class: 'ritual-steps__section-heading text-theme-text uppercase',
+                                                attrs: 'aria-hidden="true"'
+                                            %}
+                                        {%- endif -%}
+                                    {%- endif -%}
+                                    <p class="ritual-steps__badge copy-s tablet:copy-l">
+                                        {{ ritual_number_label }}
+                                        {%- if ritual_label != blank -%}
+                                            {{ ritual_label }}
+                                        {%- endif -%}
+                                    </p>
+                                    {%- if block.settings.heading != blank -%}
+                                        {% render 'heading',
+                                            level: '3',
+                                            tier: ritual_step_heading_tier,
+                                            align: 'start',
+                                            content: block.settings.heading,
+                                            class: 'ritual-steps__step-heading text-theme-text uppercase'
+                                        %}
+                                    {%- endif -%}
+                                    {%- if block.settings.text != blank -%}
+                                        {% render 'text',
+                                            element: 'div',
+                                            rte: true,
+                                            tier: 'copy-m tablet:copy-l',
+                                            align: 'start',
+                                            content: block.settings.text,
+                                            class: 'text-muted'
+                                        %}
+                                    {%- endif -%}
+                                    {%- if ritual_link_label != blank -%}
+                                        <div class="ritual-steps__step-cta">
+                                            {%- capture ritual_step_link -%}
+                                                <span class="uppercase">{{ ritual_link_label }}</span>
+                                                {%- render 'icons', icon: 'icon-arrow2', class: 'ms-step-2xs', size: 'sm' -%}
+                                            {%- endcapture -%}
+                                            {%- render 'link',
+                                                href: ritual_link_href,
+                                                variant: 'default',
+                                                class: 'copy-s tablet:copy-m uppercase text-theme-text',
+                                                content: ritual_step_link
+                                            -%}
+                                        </div>
+                                    {%- endif -%}
+                                </div>
+                            {%- endfor -%}
+                        </div>
+
+                        <div class="ritual-steps__sticky-col ritual-steps__sticky-col--media">
+                            <div class="ritual-steps__media-frame">
+                                {%- assign ritual_step_index = 0 -%}
+                                {%- for block in section.blocks -%}
+                                    {%- if block.type != 'step' -%}
+                                        {%- continue -%}
+                                    {%- endif -%}
+                                    {%- liquid
+                                        assign ritual_step_index = ritual_step_index | plus: 1
+                                        assign ritual_step_idx = ritual_step_index | minus: 1
+                                        assign ritual_scene_image = block.settings.image
+                                        assign ritual_lifestyle_index = ritual_step_index | modulo: 2 | plus: 1
+                                        assign ritual_lifestyle_key = 'lifestyle-' | append: ritual_lifestyle_index
+                                        assign ritual_scene_alt = block.settings.heading | default: block.settings.label | escape
+                                    -%}
+                                    <div
+                                        class="ritual-steps__scene-layer{% if ritual_step_idx == 0 %} is-active{% endif %}"
+                                        data-ritual-scene-layer
+                                        data-step-index="{{ ritual_step_idx }}"
+                                        :class="sceneLayerClassFromEl($el)"
+                                    >
+                                        <div class="ritual-steps__oval-scene">
+                                            <div class="ritual-steps__oval-ring" aria-hidden="true"></div>
+                                            <div class="ritual-steps__oval-sparkle" aria-hidden="true">
+                                                {%- render 'icons', icon: 'icon-sparkle', size: 'sm' -%}
+                                            </div>
+                                            <div class="ritual-steps__oval-clip">
+                                                {%- render 'image',
+                                                    image: ritual_scene_image,
+                                                    placeholder_key: ritual_lifestyle_key,
+                                                    alt: ritual_scene_alt,
+                                                    mode: 'frame',
+                                                    fit: 'cover',
+                                                    loading: 'lazy',
+                                                    sizes: '(min-width: 64rem) 42vw, 85vw',
+                                                    widths: '480,640,768,960,1200',
+                                                    wrapper_class: 'h-full w-full',
+                                                    img_class: 'h-full w-full object-cover'
+                                                -%}
+                                            </div>
+                                        </div>
+                                    </div>
+                                {%- endfor -%}
+                            </div>
+                        </div>
+                    </div>
+                {%- else -%}
+                    <div class="ritual-steps__pin">
+                        <div class="ritual-steps__stage">
+                            <div class="ritual-steps__carousel-grid">
+                                <div class="ritual-steps__carousel-col ritual-steps__carousel-col--text">
+                                    {%- if section.settings.heading != blank -%}
+                                        {% render 'heading',
+                                            level: '2',
+                                            tier: 'copy-s tablet:copy-m italic',
+                                            align: 'start',
+                                            content: section.settings.heading,
+                                            class: 'ritual-steps__carousel-heading text-muted'
+                                        %}
+                                    {%- endif -%}
+                                    <div class="ritual-steps__panel-stack">
+                                        {%- assign ritual_step_index = 0 -%}
+                                        {%- for block in section.blocks -%}
+                                            {%- if block.type != 'step' -%}
+                                                {%- continue -%}
+                                            {%- endif -%}
+                                            {%- liquid
+                                                assign ritual_step_index = ritual_step_index | plus: 1
+                                                assign ritual_step_idx = ritual_step_index | minus: 1
+                                                assign ritual_label = block.settings.label
+                                                if ritual_step_index < 10
+                                                    assign ritual_number_label = ritual_step_index | prepend: '0'
+                                                else
+                                                    assign ritual_number_label = ritual_step_index
+                                                endif
+                                                assign ritual_product = block.settings.product
+                                                assign ritual_is_placeholder = false
+                                                if ritual_product == blank
+                                                    assign ritual_is_placeholder = true
+                                                endif
+                                                assign ritual_product_title = ritual_product.title
+                                                if ritual_is_placeholder
+                                                    assign ritual_product_title = 'sections.ritual-steps.placeholder_product_title' | t: index: ritual_step_index
+                                                endif
+                                                assign ritual_product_url = ritual_product.url | default: routes.all_products_collection_url
+                                                assign ritual_link_label = block.settings.link_label
+                                                assign ritual_link_href = block.settings.link
+                                                if ritual_link_href == blank and ritual_is_placeholder == false
+                                                    assign ritual_link_href = ritual_product_url
+                                                endif
+                                                if ritual_link_href == blank
+                                                    assign ritual_link_href = routes.all_products_collection_url
+                                                endif
+                                                assign ritual_body_text = block.settings.text
+                                            -%}
+                                            <div
+                                                class="ritual-steps__panel{% if ritual_step_idx == 0 %} is-active{% endif %}"
+                                                data-ritual-panel
+                                                data-ritual-block-id="{{ block.id }}"
+                                                data-step-index="{{ ritual_step_idx }}"
+                                                :class="panelClassFromEl($el)"
+                                                {{ block.shopify_attributes }}
+                                            >
+                                                {%- if block.settings.heading != blank -%}
+                                                    {% render 'heading',
+                                                        level: '3',
+                                                        tier: ritual_step_heading_tier,
+                                                        align: 'start',
+                                                        content: block.settings.heading,
+                                                        class: 'ritual-steps__step-heading text-theme-text uppercase'
+                                                    %}
+                                                {%- endif -%}
+                                                <div class="ritual-steps__panel-detail">
+                                                <p class="ritual-steps__badge copy-s tablet:copy-l">
+                                                    {{ ritual_number_label }}
+                                                    {%- if ritual_label != blank -%}
+                                                        {{ ritual_label }}
+                                                    {%- endif -%}
+                                                </p>
+                                                <h4 class="ritual-steps__product-title title-xs tablet:title-xs">
+                                                    <a class="text-theme-text" href="{{ ritual_product_url }}">{{ ritual_product_title }}</a>
+                                                </h4>
+                                                {%- if ritual_body_text != blank -%}
+                                                    {% render 'text',
+                                                        element: 'div',
+                                                        rte: false,
+                                                        tier: 'copy-s tablet:copy-m',
+                                                        align: 'start',
+                                                        content: ritual_body_text,
+                                                        class: 'text-muted'
+                                                    %}
+                                                {%- endif -%}
+                                                {%- unless ritual_is_placeholder -%}
+                                                    <p class="ritual-steps__product-price copy-l text-theme-text tabular-nums tablet:copy-l">
+                                                        {{ ritual_product.price | money }}
+                                                    </p>
+                                                {%- endunless -%}
+                                                {%- if ritual_link_label != blank -%}
+                                                    <div class="ritual-steps__step-cta">
+                                                        {%- capture ritual_step_link -%}
+                                                            <span class="uppercase">{{ ritual_link_label }}</span>
+                                                            {%- render 'icons', icon: 'icon-arrow2', class: 'ms-step-2xs', size: 'sm' -%}
+                                                        {%- endcapture -%}
+                                                        {%- render 'link',
+                                                            href: ritual_link_href,
+                                                            variant: 'default',
+                                                            class: 'copy-s tablet:copy-m uppercase text-theme-text',
+                                                            content: ritual_step_link
+                                                        -%}
+                                                    </div>
+                                                {%- endif -%}
+                                                </div>
+                                            </div>
+                                        {%- endfor -%}
+                                    </div>
+                                </div>
+
+                                <div class="ritual-steps__carousel-col ritual-steps__carousel-col--media">
+                                    <div class="ritual-steps__packshot-stack">
+                                        {%- assign ritual_step_index = 0 -%}
+                                        {%- for block in section.blocks -%}
+                                            {%- if block.type != 'step' -%}
+                                                {%- continue -%}
+                                            {%- endif -%}
+                                            {%- liquid
+                                                assign ritual_step_index = ritual_step_index | plus: 1
+                                                assign ritual_step_idx = ritual_step_index | minus: 1
+                                                if ritual_step_index < 10
+                                                    assign ritual_number_label = ritual_step_index | prepend: '0'
+                                                else
+                                                    assign ritual_number_label = ritual_step_index
+                                                endif
+                                                assign ritual_product = block.settings.product
+                                                assign ritual_is_placeholder = false
+                                                if ritual_product == blank
+                                                    assign ritual_is_placeholder = true
+                                                endif
+                                                assign ritual_float_image = block.settings.product_image
+                                                if ritual_float_image == blank and ritual_is_placeholder == false
+                                                    assign ritual_float_image = ritual_product.featured_image
+                                                endif
+                                                assign ritual_product_image_alt = ritual_product.title | default: '' | escape
+                                                if ritual_float_image.alt != blank
+                                                    assign ritual_product_image_alt = ritual_float_image.alt | escape
+                                                endif
+                                                assign ritual_placeholder_index = ritual_step_index | minus: 1 | modulo: 6 | plus: 1
+                                                assign ritual_placeholder_key = 'product-' | append: ritual_placeholder_index
+                                            -%}
+                                            <div
+                                                class="ritual-steps__packshot-layer{% if ritual_step_idx == 0 %} is-active{% endif %}"
+                                                data-step-index="{{ ritual_step_idx }}"
+                                                :class="sceneLayerClassFromEl($el)"
+                                            >
+                                                <span class="ritual-steps__outline-num" aria-hidden="true">{{ ritual_number_label }}</span>
+                                                <div
+                                                    class="ritual-steps__packshot"
+                                                    data-ritual-packshot
+                                                    data-step-index="{{ ritual_step_idx }}"
+                                                >
+                                                    {%- if ritual_float_image == blank -%}
+                                                        {% render 'decorative-placeholder-svg',
+                                                    placeholder_key: ritual_placeholder_key,
+                                                    class: 'ritual-steps__placeholder-svg'
+                                                %}
+                                                    {%- else -%}
+                                                        {%- render 'image',
+                                                            image: ritual_float_image,
+                                                            placeholder_key: ritual_placeholder_key,
+                                                            alt: ritual_product_image_alt,
+                                                            mode: 'frame',
+                                                            fit: 'contain',
+                                                            loading: 'lazy',
+                                                            sizes: '(min-width: 80rem) 50vw, (min-width: 64rem) 48vw, 70vw',
+                                                            widths: '400,600,800,1000,1200,1300',
+                                                            wrapper_class: 'h-full w-full',
+                                                            img_class: 'h-full w-full object-contain'
+                                                        -%}
+                                                    {%- endif -%}
+                                                </div>
+                                            </div>
+                                        {%- endfor -%}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <nav class="ritual-steps__nav" aria-label="{{ 'sections.ritual-steps.accessibility.step_numbers' | t }}">
+                                {%- assign ritual_step_index = 0 -%}
+                                {%- for block in section.blocks -%}
+                                    {%- if block.type != 'step' -%}
+                                        {%- continue -%}
+                                    {%- endif -%}
+                                    {%- liquid
+                                        assign ritual_step_index = ritual_step_index | plus: 1
+                                        assign ritual_step_idx = ritual_step_index | minus: 1
+                                        assign ritual_label = block.settings.label
+                                        if ritual_step_index < 10
+                                            assign ritual_number_label = ritual_step_index | prepend: '0'
+                                        else
+                                            assign ritual_number_label = ritual_step_index
+                                        endif
+                                        if ritual_label != blank
+                                            assign ritual_nav_aria = 'sections.ritual-steps.accessibility.step_nav_button' | t: number: ritual_number_label, label: ritual_label
+                                        else
+                                            assign ritual_nav_aria = 'accessibility.step_control' | t: index: ritual_step_index
+                                        endif
+                                    -%}
+                                    <button
+                                        type="button"
+                                        class="ritual-steps__nav-btn copy-s focus-ring"
+                                        data-ritual-nav-button
+                                        data-step-index="{{ ritual_step_idx }}"
+                                        :class="navButtonClassFromEl($el)"
+                                        :aria-current="navAriaCurrentFromEl($el)"
+                                        aria-label="{{ ritual_nav_aria | escape }}"
+                                    >
+                                        {{ ritual_number_label }}
+                                    </button>
+                                {%- endfor -%}
+                            </nav>
+                        </div>
+
+                        <div class="ritual-steps__sentinel-track" aria-hidden="true">
+                            {%- assign ritual_step_index = 0 -%}
+                            {%- for block in section.blocks -%}
+                                {%- if block.type != 'step' -%}
+                                    {%- continue -%}
+                                {%- endif -%}
+                                {%- liquid
+                                    assign ritual_step_index = ritual_step_index | plus: 1
+                                    assign ritual_step_idx = ritual_step_index | minus: 1
+                                -%}
+                                <div
+                                    class="ritual-steps__sentinel"
+                                    data-ritual-sentinel
+                                    data-step-index="{{ ritual_step_idx }}"
+                                ></div>
+                            {%- endfor -%}
+                        </div>
+                    </div>
+                {%- endif -%}
+            </div>
+        {%- endif -%}
+    </div>
+{%- endcapture -%}
+
+{% render 'section-frame',
+    section: section,
+    section_class: 'ritual-steps-section',
+    surface_section: false,
+    width: 'full',
+    clip: false,
+    motion: false,
+    root_attrs: ritual_root_attrs,
+    children: ritual_steps_children
+%}
+
+{% stylesheet %}
+    .ritual-steps-section {
+        overflow: visible;
+    }
+
+    .ritual-steps__root {
+        color: rgb(var(--color-foreground));
+    }
+
+    .ritual-steps__badge {
+        display: inline-flex;
+        align-self: flex-start;
+        width: fit-content;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.4em 0.85em;
+        border-radius: 0.375rem;
+        background-color: rgb(var(--color-foreground));
+        color: rgb(var(--color-background));
+    }
+
+    :where(.ritual-steps__badge) {
+        text-transform: uppercase;
+        font-variant-numeric: tabular-nums;
+    }
+
+    :where(.ritual-steps__product-title) {
+        color: rgb(var(--color-foreground));
+        text-transform: uppercase;
+    }
+
+    .ritual-steps__mobile {
+        width: 100%;
+    }
+
+    .ritual-steps__mobile-card {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-step-s);
+        padding: var(--spacing-step-m) 0;
+        box-sizing: border-box;
+    }
+
+    .ritual-steps__oval-scene {
+        position: relative;
+        width: min(100%, 18rem);
+        margin-inline: auto;
+        aspect-ratio: 0.72;
+        height: auto;
+        max-height: 70%;
+    }
+
+    .ritual-steps__oval-scene--mobile {
+        max-height: none;
+        margin-bottom: 0.5rem;
+    }
+
+    .ritual-steps__oval-clip {
+        position: absolute;
+        inset: 5% 7%;
+        border-radius: 50%;
+        overflow: hidden;
+        transform: rotate(-18deg);
+        z-index: 1;
+    }
+
+    .ritual-steps__oval-clip :is(img, svg) {
+        transform: rotate(18deg) scale(1.28);
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .ritual-steps__oval-ring {
+        position: absolute;
+        inset: 3% 4% 2% 9%;
+        border-radius: 50%;
+        border: 1px solid var(--color-line-strong);
+        transform: rotate(-18deg);
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    .ritual-steps__oval-sparkle {
+        position: absolute;
+        top: 3%;
+        right: 12%;
+        z-index: 2;
+        color: rgb(var(--color-foreground));
+        opacity: 0.85;
+    }
+
+    .ritual-steps__mobile-product-stage {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 14rem;
+    }
+
+    .ritual-steps__mobile-packshot {
+        position: relative;
+        z-index: 1;
+        width: 62%;
+        aspect-ratio: 3 / 4;
+    }
+
+    .ritual-steps__outline-num {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: calc(var(--font-heading-scale) * var(--type-step-8) * 1.15);
+        line-height: 1;
+        font-weight: 400;
+        color: transparent;
+        -webkit-text-stroke: 1px var(--color-line);
+        paint-order: stroke fill;
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    .ritual-steps__outline-num--mobile {
+        font-size: calc(var(--font-heading-scale) * var(--type-step-7));
+    }
+
+    .ritual-steps__placeholder-svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    .ritual-steps__desktop {
+        display: none;
+        width: 100%;
+    }
+
+    @media (width >= 64rem) {
+        .ritual-steps__mobile {
+            display: none;
+        }
+
+        .ritual-steps__desktop {
+            display: block;
+        }
+    }
+
+    .ritual-steps__sticky-grid,
+    .ritual-steps__carousel-grid {
+        padding-inline: var(--page-inset);
+    }
+
+    .ritual-steps__sticky-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 48%) minmax(0, 52%);
+        gap: clamp(1rem, 3vw, 2.5rem);
+        align-items: stretch;
+    }
+
+    .ritual-steps__section-heading {
+        margin-bottom: clamp(0.5rem, 2vw, 1.5rem);
+    }
+
+    .ritual-steps__root--sticky-media .ritual-steps__section-heading,
+    .ritual-steps__step-heading,
+    .ritual-steps__product-title {
+        text-transform: uppercase;
+    }
+
+    .ritual-steps__step-text {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 2rem;
+        min-height: var(--screen-height);
+        padding-block: 3rem;
+        color: rgb(var(--color-foreground));
+    }
+
+    .ritual-steps--enhanced .ritual-steps__step-text:not(.is-active) {
+        color: var(--color-subtle);
+    }
+
+    .ritual-steps--enhanced .ritual-steps__step-text:not(.is-active) > :not(.ritual-steps__badge) {
+        color: inherit;
+    }
+
+    .ritual-steps--enhanced
+        .ritual-steps__step-text:not(.is-active)
+        .ritual-steps__step-cta
+        :where(a, span) {
+        color: inherit;
+    }
+
+    .ritual-steps--enhanced .ritual-steps__step-text.is-active {
+        color: rgb(var(--color-foreground));
+    }
+
+    .ritual-steps--enhanced.ritual-steps--motion .ritual-steps__step-text {
+        transition: color 500ms ease-in-out;
+    }
+
+    .ritual-steps__media-frame {
+        position: sticky;
+        top: var(--sticky-viewport-top, 1rem);
+        height: var(--screen-height);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .ritual-steps__scene-layer {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        visibility: hidden;
+    }
+
+    .ritual-steps__scene-layer.is-active {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .ritual-steps--enhanced.ritual-steps--motion .ritual-steps__scene-layer {
+        transition:
+            opacity 500ms ease-in-out,
+            visibility 500ms ease-in-out;
+    }
+
+    .ritual-steps--enhanced.ritual-steps--motion .ritual-steps__scene-layer:not(.is-active) {
+        transition-delay: 0ms, 500ms;
+    }
+
+    .ritual-steps__sticky-col--media {
+        position: relative;
+        min-height: var(--screen-height);
+    }
+
+    @media (width >= 64rem) {
+        .ritual-steps__oval-scene:not(.ritual-steps__oval-scene--mobile) {
+            width: auto;
+            height: 76%;
+            max-width: 92%;
+            max-height: none;
+            aspect-ratio: 0.7;
+        }
+    }
+
+    .ritual-steps__pin {
+        position: relative;
+    }
+
+    .ritual-steps__sentinel-track {
+        position: absolute;
+        inset: 50svh 0 0;
+        display: flex;
+        flex-direction: column;
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    .ritual-steps__sentinel {
+        height: 0;
+        width: 100%;
+        flex: 0 0 auto;
+    }
+
+    .ritual-steps__root.ritual-steps--enhanced.ritual-steps__root--scroll-carousel
+        .ritual-steps__pin {
+        height: calc(var(--ritual-step-count) * var(--screen-height));
+    }
+
+    .ritual-steps__root.ritual-steps--enhanced.ritual-steps__root--scroll-carousel
+        .ritual-steps__sentinel {
+        height: calc(
+            (var(--ritual-step-count) - 1) / var(--ritual-step-count) * var(--screen-height)
+        );
+    }
+
+    .ritual-steps__stage {
+        position: relative;
+        height: var(--screen-height);
+        z-index: 1;
+    }
+
+    .ritual-steps__root.ritual-steps--enhanced.ritual-steps__root--scroll-carousel
+        .ritual-steps__stage {
+        position: sticky;
+        top: var(--sticky-viewport-top, 1rem);
+    }
+
+    .ritual-steps__carousel-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 48%) minmax(0, 52%);
+        gap: clamp(1rem, 3vw, 2.5rem);
+        height: 100%;
+        align-items: stretch;
+        padding-block: 9svh 11svh;
+        box-sizing: border-box;
+    }
+
+    .ritual-steps__carousel-col--text {
+        position: relative;
+        min-height: 0;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        /* Grows with the stage height so a tall screen leaves less empty space around the group (LS2-A). */
+        gap: clamp(var(--spacing-step-l), 8svh, var(--spacing-step-3xl));
+    }
+
+    /* Heading and panels form one group, centred by auto margins (stays top-aligned if it overflows). */
+    .ritual-steps__carousel-heading {
+        flex: 0 0 auto;
+        margin-block-start: auto;
+    }
+
+    .ritual-steps__panel-stack {
+        position: relative;
+        display: grid;
+        flex: 0 0 auto;
+        margin-block-end: auto;
+    }
+
+    /* Panels share one grid cell, so the stack takes the tallest panel's height. */
+    .ritual-steps__panel {
+        position: relative;
+        grid-area: 1 / 1;
+        display: flex;
+        flex-direction: column;
+        gap: clamp(var(--spacing-step-3xl), 18svh, calc(var(--spacing-step-4xl) * 2.5));
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(1rem);
+    }
+
+    .ritual-steps__panel.is-active {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+    }
+
+    .ritual-steps--enhanced .ritual-steps__panel:not(.is-active) {
+        transform: translateY(1rem);
+    }
+
+    .ritual-steps--enhanced .ritual-steps__panel.is-active {
+        transform: translateY(0);
+    }
+
+    .ritual-steps--enhanced.ritual-steps--motion .ritual-steps__panel {
+        transition:
+            opacity var(--motion-duration-base) var(--motion-ease-exit),
+            transform var(--motion-duration-base) var(--motion-ease-exit),
+            visibility var(--motion-duration-base) var(--motion-ease-exit);
+    }
+
+    .ritual-steps--enhanced.ritual-steps--motion .ritual-steps__panel:not(.is-active) {
+        transition-delay: 0ms, 0ms, var(--motion-duration-base);
+    }
+
+    .ritual-steps--enhanced:not(.ritual-steps--motion) .ritual-steps__panel:not(.is-active) {
+        transform: translateY(0);
+    }
+
+    .ritual-steps__panel-detail {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1.75rem;
+    }
+
+    .ritual-steps__carousel-col--media {
+        position: relative;
+        container-type: size;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .ritual-steps__packshot-stack {
+        position: relative;
+        width: 100%;
+        height: 100%;
+    }
+
+    .ritual-steps__carousel-col--media .ritual-steps__outline-num {
+        inset: 16% 0 0;
+        font-size: calc(var(--font-heading-scale) * var(--type-step-8) * 5);
+        font-style: italic;
+        white-space: nowrap;
+    }
+
+    .ritual-steps__packshot-layer {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        visibility: hidden;
+    }
+
+    .ritual-steps__packshot-layer.is-active {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .ritual-steps--enhanced.ritual-steps--motion .ritual-steps__packshot-layer {
+        transition:
+            opacity var(--motion-duration-slow) var(--motion-ease-default),
+            visibility var(--motion-duration-slow) var(--motion-ease-default);
+    }
+
+    .ritual-steps--enhanced.ritual-steps--motion .ritual-steps__packshot-layer:not(.is-active) {
+        transition-delay: 0ms, var(--motion-duration-slow);
+    }
+
+    .ritual-steps__packshot {
+        position: absolute;
+        inset: 10% 0 0;
+        z-index: 1;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        transform-origin: 50% 100%;
+    }
+
+    .ritual-steps__packshot :is(img, svg) {
+        object-position: bottom center;
+    }
+
+    @keyframes ritual-steps-swing {
+        0% {
+            transform: rotate(-10deg) translateY(-3%);
+        }
+        30% {
+            transform: rotate(7deg);
+        }
+        55% {
+            transform: rotate(-4deg);
+        }
+        78% {
+            transform: rotate(1.5deg);
+        }
+        100% {
+            transform: rotate(0deg);
+        }
+    }
+
+    .ritual-steps--motion .ritual-steps__packshot.is-swinging {
+        animation: ritual-steps-swing 1100ms cubic-bezier(0.3, 0.7, 0.4, 1);
+    }
+
+    .ritual-steps__nav {
+        display: none;
+        position: absolute;
+        right: var(--page-inset);
+        bottom: 4svh;
+        gap: 0.75rem;
+        align-items: center;
+    }
+
+    .ritual-steps__root.ritual-steps--enhanced.ritual-steps__root--scroll-carousel
+        .ritual-steps__nav {
+        display: flex;
+    }
+
+    .ritual-steps__nav-btn {
+        border: 0;
+        background: transparent;
+        padding: 0.25rem 0.35rem;
+        cursor: pointer;
+        color: var(--color-subtle);
+    }
+
+    .ritual-steps__nav-btn.is-active {
+        color: rgb(var(--color-foreground));
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .ritual-steps--motion .ritual-steps__packshot.is-swinging {
+            animation: none;
+        }
+
+        .ritual-steps--enhanced.ritual-steps--motion .ritual-steps__step-text,
+        .ritual-steps--enhanced.ritual-steps--motion .ritual-steps__scene-layer,
+        .ritual-steps--enhanced.ritual-steps--motion .ritual-steps__panel,
+        .ritual-steps--enhanced.ritual-steps--motion .ritual-steps__packshot-layer {
+            transition: none;
+        }
+    }
+{% endstylesheet %}
+
+{% schema %}
+{
+    "name": "t:sections.ritual-steps.name",
+    "tag": "section",
+    "class": "section",
+    "max_blocks": 5,
+    "disabled_on": {
+        "groups": ["header", "footer", "custom.overlay"]
+    },
+    "settings": [
+        {
+            "type": "select",
+            "id": "layout",
+            "label": "t:sections.ritual-steps.settings.layout",
+            "default": "sticky_media",
+            "options": [
+                {
+                    "value": "sticky_media",
+                    "label": "t:sections.ritual-steps.options.layout_sticky_media"
+                },
+                {
+                    "value": "scroll_carousel",
+                    "label": "t:sections.ritual-steps.options.layout_scroll_carousel"
+                }
+            ]
+        },
+        {
+            "type": "inline_richtext",
+            "id": "heading",
+            "label": "t:sections.ritual-steps.settings.heading",
+            "default": "t:sections.ritual-steps.defaults.heading"
+        },
+        {
+            "type": "color_scheme",
+            "id": "color_scheme",
+            "label": "t:sections.ritual-steps.settings.color_scheme",
+            "default": "scheme-2"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.ritual-steps.content.padding"
+        },
+        {
+            "type": "range",
+            "id": "padding_top",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "t:sections.ritual-steps.settings.padding_top",
+            "default": 32
+        },
+        {
+            "type": "range",
+            "id": "padding_bottom",
+            "min": 0,
+            "max": 100,
+            "step": 4,
+            "unit": "px",
+            "label": "t:sections.ritual-steps.settings.padding_bottom",
+            "default": 32
+        }
+    ],
+    "blocks": [
+        {
+            "type": "step",
+            "name": "t:sections.ritual-steps.blocks.step.name",
+            "settings": [
+                {
+                    "type": "text",
+                    "id": "label",
+                    "label": "t:sections.ritual-steps.blocks.step.settings.label",
+                    "default": "t:sections.ritual-steps.defaults.step_label"
+                },
+                {
+                    "type": "inline_richtext",
+                    "id": "heading",
+                    "label": "t:sections.ritual-steps.blocks.step.settings.heading",
+                    "default": "t:sections.ritual-steps.defaults.step_heading"
+                },
+                {
+                    "type": "inline_richtext",
+                    "id": "text",
+                    "label": "t:sections.ritual-steps.blocks.step.settings.text",
+                    "default": "t:sections.ritual-steps.defaults.step_text"
+                },
+                {
+                    "type": "image_picker",
+                    "id": "image",
+                    "label": "t:sections.ritual-steps.blocks.step.settings.image"
+                },
+                {
+                    "type": "product",
+                    "id": "product",
+                    "label": "t:sections.ritual-steps.blocks.step.settings.product"
+                },
+                {
+                    "type": "image_picker",
+                    "id": "product_image",
+                    "label": "t:sections.ritual-steps.blocks.step.settings.product_image",
+                    "info": "t:sections.ritual-steps.blocks.step.settings.product_image_info"
+                },
+                {
+                    "type": "text",
+                    "id": "link_label",
+                    "label": "t:sections.ritual-steps.blocks.step.settings.link_label",
+                    "default": "t:sections.ritual-steps.defaults.link_label"
+                },
+                {
+                    "type": "url",
+                    "id": "link",
+                    "label": "t:sections.ritual-steps.blocks.step.settings.link"
+                }
+            ]
+        }
+    ],
+    "presets": [
+        {
+            "name": "t:sections.ritual-steps.presets.ritual_steps",
+            "blocks": [
+                {
+                    "type": "step",
+                    "settings": {
+                        "label": "Cleanse",
+                        "heading": "Remove the unnecessary.",
+                        "text": "Gentle cleansing for fresh, balanced skin."
+                    }
+                },
+                {
+                    "type": "step",
+                    "settings": {
+                        "label": "Treat",
+                        "heading": "Restore what matters.",
+                        "text": "Targeted care for clearer, calmer skin."
+                    }
+                },
+                {
+                    "type": "step",
+                    "settings": {
+                        "label": "Protect",
+                        "heading": "Seal in the balance.",
+                        "text": "Daily protection that keeps skin comfortable."
+                    }
+                }
+            ]
+        }
+    ]
+}
+{% endschema %}

@@ -26,119 +26,124 @@
 {%- endif -%}
 
 {%- if modal_media_count > 0 -%}
-    <div
-        data-dialog-root
-        data-dialog-id="{{ id }}"
-        data-dialog-motion-mode="origin"
-    >
+    {%- comment -%} Teleported to body: a sticky gallery column would otherwise trap the dialog's z-index. {%- endcomment -%}
+    <template x-teleport="body">
         <div
-            data-dialog-id="{{ id | escape }}"
-            x-show="$store.dialog.active === $el.dataset.dialogId || $store.dialog.closing === $el.dataset.dialogId"
-            x-cloak
-            class="ui-dialog-modal-shell--origin z-layer-lightbox fixed inset-0 flex items-center justify-center"
-            role="dialog"
-            aria-modal="true"
-            aria-label="{{ 'accessibility.product_media_viewer' | t }}"
-            tabindex="-1"
-            @keydown.escape.window="($store.dialog.active === $el.dataset.dialogId || $store.dialog.closing === $el.dataset.dialogId) && $store.dialog.close()"
-            data-dialog-panel
+            data-dialog-root
+            data-dialog-id="{{ id }}"
+            data-dialog-stack
+            data-dialog-motion-mode="origin"
         >
             <div
-                class="absolute inset-0 bg-black/80"
-                aria-hidden="true"
-                data-dialog-motion-backdrop
-                @click="$store.dialog.close()"
-            ></div>
-
-            <button
-                type="button"
-                @click="$store.dialog.close()"
-                class="z-layer-lightbox-controls close-button absolute top-4 right-4 close-button-on-overlay"
-                aria-label="{{ 'accessibility.close' | t }}"
-            >
-                {%- render 'icons', icon: 'icon-close' -%}
-            </button>
-
-            <div
-                class="product-media-modal__content relative z-10 max-h-[90vh] max-w-[90vw] overflow-hidden"
-                data-dialog-motion-target
-                data-dialog-motion-mode="origin"
                 data-dialog-id="{{ id | escape }}"
-                x-data="productMediaModal()"
+                x-show="$store.dialog.isShown($el.dataset.dialogId)"
+                x-cloak
+                class="ui-dialog-modal-shell--origin z-layer-lightbox fixed inset-0 flex items-center justify-center"
+                role="dialog"
+                aria-modal="true"
+                aria-label="{{ 'accessibility.product_media_viewer' | t }}"
+                tabindex="-1"
+                @keydown.escape.window="$store.dialog.isShown($el.dataset.dialogId) && $store.dialog.close($el.dataset.dialogId)"
+                data-dialog-panel
             >
-                {%- for media_item in media_items -%}
-                    {%- case media_item.media_type -%}
-                        {%- when 'model' -%}
-                            <div
-                                x-show="activeMediaId === {{ media_item.id }}"
-                                class="flex items-center justify-center"
-                                data-product-media-id="{{ media_item.id }}"
-                                data-product-media-type="model"
-                            >
-                                {{
-                                    media_item
-                                    | model_viewer_tag:
-                                        class: 'max-w-[90vw] max-h-[85vh]',
-                                        interaction-policy: 'allow-when-focused',
-                                        camera-controls: true
-                                }}
-                            </div>
+                <div
+                    class="absolute inset-0 bg-scrim-strong"
+                    aria-hidden="true"
+                    data-dialog-motion-backdrop
+                    @click="$store.dialog.close()"
+                ></div>
 
-                        {%- when 'external_video' -%}
-                            <div
-                                x-show="activeMediaId === {{ media_item.id }}"
-                                class="flex items-center justify-center"
-                                data-product-media-id="{{ media_item.id }}"
-                                data-product-media-type="external_video"
-                            >
-                                <template data-external-video-template>
-                                    {%- if media_item.host == 'youtube' -%}
-                                        {{
-                                            media_item
-                                            | external_video_url: autoplay: '1', muted: '1'
-                                            | external_video_tag:
-                                                class: 'w-[80vw] aspect-video pc:w-[70vw]'
-                                        }}
-                                    {%- elsif media_item.host == 'vimeo' -%}
-                                        {{
-                                            media_item
-                                            | external_video_url: autoplay: '1', muted: '1'
-                                            | external_video_tag:
-                                                class: 'w-[80vw] aspect-video pc:w-[70vw]'
-                                        }}
-                                    {%- else -%}
-                                        {{
-                                            media_item
-                                            | external_video_tag:
-                                                class: 'w-[80vw] aspect-video pc:w-[70vw]'
-                                        }}
-                                    {%- endif -%}
-                                </template>
-                                <div data-external-video-host></div>
-                            </div>
+                <button
+                    type="button"
+                    @click="$store.dialog.close()"
+                    class="z-layer-lightbox-controls close-button absolute top-4 right-4 close-button-on-overlay"
+                    aria-label="{{ 'accessibility.close' | t }}"
+                >
+                    {%- render 'icons', icon: 'icon-close' -%}
+                </button>
 
-                        {%- when 'video' -%}
-                            <div
-                                x-show="activeMediaId === {{ media_item.id }}"
-                                class="flex items-center justify-center"
-                                data-product-media-id="{{ media_item.id }}"
-                                data-product-media-type="video"
-                            >
-                                {{
-                                    media_item
-                                    | video_tag:
-                                        class: 'max-w-[90vw] max-h-[85vh]',
-                                        controls: true,
-                                        autoplay: false,
-                                        width: media_item.preview_image.width,
-                                        height: media_item.preview_image.height
-                                }}
-                            </div>
-                    {%- endcase -%}
-                {%- endfor -%}
+                <div
+                    class="product-media-modal__content"
+                    data-dialog-motion-target
+                    data-dialog-motion-mode="origin"
+                    data-dialog-id="{{ id | escape }}"
+                    x-data="productMediaModal()"
+                    data-module-id="product-media-modal"
+                >
+                    {%- for media_item in media_items -%}
+                        {%- case media_item.media_type -%}
+                            {%- when 'model' -%}
+                                <div
+                                    x-show="isActiveMedia($el)"
+                                    class="flex items-center justify-center"
+                                    data-product-media-id="{{ media_item.id }}"
+                                    data-product-media-type="model"
+                                >
+                                    {{
+                                        media_item
+                                        | model_viewer_tag:
+                                            class: 'max-w-[90vw] max-h-[85vh]',
+                                            interaction-policy: 'allow-when-focused',
+                                            camera-controls: true
+                                    }}
+                                </div>
+
+                            {%- when 'external_video' -%}
+                                <div
+                                    x-show="isActiveMedia($el)"
+                                    class="flex items-center justify-center"
+                                    data-product-media-id="{{ media_item.id }}"
+                                    data-product-media-type="external_video"
+                                >
+                                    <template data-external-video-template>
+                                        {%- if media_item.host == 'youtube' -%}
+                                            {{
+                                                media_item
+                                                | external_video_url: autoplay: '1', muted: '1'
+                                                | external_video_tag:
+                                                    class: 'w-[80vw] aspect-video tablet:w-[70vw]'
+                                            }}
+                                        {%- elsif media_item.host == 'vimeo' -%}
+                                            {{
+                                                media_item
+                                                | external_video_url: autoplay: '1', muted: '1'
+                                                | external_video_tag:
+                                                    class: 'w-[80vw] aspect-video tablet:w-[70vw]'
+                                            }}
+                                        {%- else -%}
+                                            {{
+                                                media_item
+                                                | external_video_tag:
+                                                    class: 'w-[80vw] aspect-video tablet:w-[70vw]'
+                                            }}
+                                        {%- endif -%}
+                                    </template>
+                                    <div data-external-video-host></div>
+                                </div>
+
+                            {%- when 'video' -%}
+                                <div
+                                    x-show="isActiveMedia($el)"
+                                    class="flex items-center justify-center"
+                                    data-product-media-id="{{ media_item.id }}"
+                                    data-product-media-type="video"
+                                >
+                                    {{
+                                        media_item
+                                        | video_tag:
+                                            class: 'max-w-[90vw] max-h-[85vh]',
+                                            controls: true,
+                                            autoplay: false,
+                                            width: media_item.preview_image.width,
+                                            height: media_item.preview_image.height
+                                    }}
+                                </div>
+                        {%- endcase -%}
+                    {%- endfor -%}
+                </div>
             </div>
         </div>
-    </div>
+    </template>
 {%- endif -%}
 
 {% stylesheet %}
@@ -151,7 +156,10 @@
         height: min(85vh, 600px);
     }
 
+    /* Auto size keeps the video's ratio under both caps, so the controls match the picture. */
     .product-media-modal__content video {
+        width: auto;
+        height: auto;
         max-width: 90vw;
         max-height: 85vh;
     }
@@ -159,5 +167,13 @@
     .product-media-modal__content iframe {
         width: min(80vw, 960px);
         aspect-ratio: 16 / 9;
+    }
+
+    :where(.product-media-modal__content) {
+        position: relative;
+        z-index: 10;
+        max-height: 90vh;
+        max-width: 90vw;
+        overflow: hidden;
     }
 {% endstylesheet %}

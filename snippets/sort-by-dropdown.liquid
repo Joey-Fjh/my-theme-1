@@ -30,14 +30,16 @@
 -%}
 
 <div
+    data-module-id="dropdown"
     x-data="dropdown"
-    @click.outside="close(0)"
-    @keydown.escape.window="if (openEls[0]) { close(0); $nextTick(() => $refs.sortTrigger?.focus()) }"
+    @click.outside="onSortByClickOutside()"
+    @keydown.escape.window="onSortByEscapeWindow($event)"
     {% if wrapper_class != blank %}
         class="{{ wrapper_class }}"
     {% endif %}
 >
     <div
+        data-module-id="sort-by-dropdown"
         x-data="sortByDropdown"
         data-current-sort="{{ current_sort | escape }}"
         data-form-id="{{ form_id | default: '' | escape }}"
@@ -81,15 +83,16 @@
         >
             {%- for option in sort_options -%}
                 <div
-                    class="px-4 py-2"
+                    class="px-step-s py-step-2xs"
                 >
                     <button
                         type="button"
                         class="{{ option_class }}"
                         data-option-value="{{ option.value | escape }}"
+                        data-focus-key="sort-by-{{ option.value | escape }}"
                         :aria-pressed="isSelected($el.dataset.optionValue)"
                         :class="isSelected($el.dataset.optionValue) ? optionActiveClass : optionInactiveClass"
-                        @click="select($el.dataset.optionValue); close(0)"
+                        @click="selectAndClose($el.dataset.optionValue, 0)"
                     >
                         {{ option.name | escape }}
                     </button>
@@ -98,3 +101,58 @@
         </div>
     </div>
 </div>
+
+{% stylesheet %}
+    .sort-by-dropdown__trigger {
+        display: flex;
+        cursor: pointer;
+        align-items: center;
+        gap: calc(var(--spacing) * 3);
+        color: rgb(var(--color-foreground));
+        &:focus-visible {
+            outline: var(--focus-ring-width) solid
+                rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+            outline-offset: calc(-1 * var(--focus-ring-width));
+        }
+        /* Mouse focus only: keyboard focus keeps the :focus-visible outline above. */
+        &:focus:not(:focus-visible) {
+            --tw-outline-style: none;
+            outline-style: none;
+        }
+    }
+    .sort-by-dropdown__panel {
+        position: absolute;
+        top: 100%;
+        right: calc(var(--spacing) * 0);
+        min-width: calc(var(--spacing) * 100);
+        border-radius: var(--radius-lg);
+        border-style: solid;
+        border-width: 1px;
+        border-color: var(--color-line);
+        background-color: rgb(var(--color-background));
+        z-index: var(--z-layer-dropdown);
+    }
+    .sort-by-dropdown__option {
+        display: block;
+        width: 100%;
+        text-align: start;
+        font-family: var(--font-body-family);
+        font-style: var(--font-body-style);
+        letter-spacing: var(--font-body-letter-spacing);
+        text-transform: var(--font-body-text-transform);
+        word-break: break-word;
+        font-size: calc(var(--font-body-scale) * var(--type-step-0));
+        color: currentcolor;
+        transition: opacity var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease);
+    }
+    .sort-by-dropdown__option--active {
+        font-weight: 700;
+        text-decoration: underline;
+    }
+    .sort-by-dropdown__option--inactive {
+        opacity: 60%;
+    }
+    .sort-by-dropdown__option--inactive:hover {
+        opacity: 100%;
+    }
+{% endstylesheet %}

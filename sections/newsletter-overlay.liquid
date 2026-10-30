@@ -29,12 +29,12 @@
             class="z-layer-modal-backdrop fixed inset-0"
             data-overlay-visual-preview="newsletter"
         >
-            <div class="z-layer-modal-backdrop fixed inset-x-0 top-0 bottom-0 bg-black/60"></div>
+            <div class="z-layer-modal-backdrop fixed inset-x-0 top-0 bottom-0 bg-scrim"></div>
             <div
                 class="
-                    z-layer-modal pointer-events-none fixed inset-x-0 top-0 bottom-0 flex max-pc:p-4
+                    z-layer-modal pointer-events-none fixed inset-x-0 top-0 bottom-0 flex max-tablet:p-step-s
                     {{ modal_placement_classes }}
-                    ui-dialog-mobile-layout-inset pc:p-8 fw:p-10
+                    ui-dialog-mobile-layout-inset tablet:p-step-l wide:p-step-xl
                 "
                 role="dialog"
                 aria-modal="true"
@@ -44,7 +44,7 @@
                     class="
                         ui-dialog-panel ui-dialog-modal-panel ui-dialog-modal-width-default ui-dialog-modal-height-default
                         ui-dialog-mobile-layout-panel pointer-events-auto h-full w-full max-w-full
-                        pc:h-auto pc:max-w-[600px] fw:max-w-[680px]
+                        tablet:h-auto tablet:max-w-[600px] wide:max-w-[680px]
                         color-{{ section.settings.color_scheme }} surface-component
                     "
                 >
@@ -58,8 +58,8 @@
                             {% render 'icons', icon: 'icon-close' %}
                         </button>
 
-                        <div class="grid h-full min-h-0 grid-cols-1 grid-rows-[minmax(0,3fr)_minmax(0,2fr)] pc:min-h-[320px] pc:grid-cols-[36%_minmax(0,1fr)] pc:grid-rows-1">
-                            <div class="min-h-0 overflow-hidden pc:h-full">
+                        <div class="grid h-full min-h-0 grid-cols-1 grid-rows-[minmax(0,3fr)_minmax(0,2fr)] tablet:min-h-[320px] tablet:grid-cols-[36%_minmax(0,1fr)] tablet:grid-rows-1">
+                            <div class="min-h-0 overflow-hidden tablet:h-full">
                                 {%- render 'image',
                                     class: 'w-full h-full',
                                     img_class: 'w-full h-full object-cover',
@@ -69,31 +69,40 @@
                                 -%}
                             </div>
 
-                            <div class="flex min-h-0 w-full flex-col justify-between gap-3 overflow-y-auto px-6 pt-5 pb-5 pc:justify-around pc:gap-0 pc:px-6 pc:py-10 text-{{ section.settings.alignment }}">
+                            <div class="flex min-h-0 w-full flex-col justify-between gap-step-xs overflow-y-auto px-step-m pt-step-m pb-step-m tablet:justify-around tablet:gap-0 tablet:px-step-m tablet:py-step-xl text-{{ section.settings.alignment }}">
                                 {%- for block in section.blocks -%}
                                     {%- case block.type -%}
                                         {%- when 'text' -%}
                                             {%- liquid
-                                                assign overlay_text_class = block.settings.body_text_size | default: 'body-lg'
+                                                assign overlay_text_class = block.settings.body_text_size | default: 'copy-l'
+                                                capture overlay_text_attrs
+                                                    echo block.shopify_attributes
+                                                endcapture
                                             -%}
-                                            <div
-                                                class="rte rte--compact mb-0 pc:mb-2 {{ overlay_text_class }}"
-                                                {{ block.shopify_attributes }}
-                                            >
-                                                {{ block.settings.text }}
-                                            </div>
+                                            {% render 'text',
+                                                element: 'div',
+                                                rte: true,
+                                                tier: overlay_text_class,
+                                                class: 'mb-0 tablet:mb-step-2xs',
+                                                content: block.settings.text,
+                                                attrs: overlay_text_attrs
+                                            %}
 
                                         {%- when 'heading' -%}
                                             {%- liquid
-                                                assign overlay_heading_class = block.settings.heading_text_size | default: 'heading-h2'
+                                                assign overlay_heading_class = block.settings.heading_text_size | default: 'title-m'
+                                                capture overlay_heading_attrs
+                                                    echo 'id="dialog-title-' | append: popup_id | append: '" '
+                                                    echo block.shopify_attributes
+                                                endcapture
                                             -%}
-                                            <h2
-                                                id="dialog-title-{{ popup_id }}"
-                                                class="mb-0 pc:mb-3 {{ overlay_heading_class }}"
-                                                {{ block.shopify_attributes }}
-                                            >
-                                                {{ block.settings.heading }}
-                                            </h2>
+                                            {% render 'heading',
+                                                level: '2',
+                                                tier: overlay_heading_class,
+                                                class: 'mb-0 tablet:mb-step-xs',
+                                                content: block.settings.heading,
+                                                attrs: overlay_heading_attrs
+                                            %}
 
                                         {%- when 'form' -%}
                                             <div
@@ -149,7 +158,7 @@
       data-newsletter-success-message="{{ section.settings.success_message | escape }}"
       data-newsletter-error-message="{{ section.settings.error_message | escape }}"
       x-data="newsletterOverlay()"
-      @keydown.escape.window="hide()"
+      data-module-id="newsletter-overlay"
     >
       <button
         type="button"
@@ -160,8 +169,8 @@
         {% render 'icons', icon: 'icon-close' %}
       </button>
 
-      <div class="grid h-full min-h-0 grid-cols-1 grid-rows-[minmax(0,3fr)_minmax(0,2fr)] pc:min-h-[320px] pc:grid-cols-[36%_minmax(0,1fr)] pc:grid-rows-1">
-        <div class="min-h-0 overflow-hidden pc:h-full">
+      <div class="grid h-full min-h-0 grid-cols-1 grid-rows-[minmax(0,3fr)_minmax(0,2fr)] tablet:min-h-[320px] tablet:grid-cols-[36%_minmax(0,1fr)] tablet:grid-rows-1">
+        <div class="min-h-0 overflow-hidden tablet:h-full">
           {%- render 'image',
             class: 'w-full h-full',
             img_class: 'w-full h-full object-cover',
@@ -171,31 +180,40 @@
           -%}
         </div>
 
-        <div class="flex min-h-0 w-full flex-col justify-between gap-3 overflow-y-auto px-6 pt-5 pb-5 pc:justify-around pc:gap-0 pc:px-6 pc:py-10 text-{{ section.settings.alignment }}">
+        <div class="flex min-h-0 w-full flex-col justify-between gap-step-xs overflow-y-auto px-step-m pt-step-m pb-step-m tablet:justify-around tablet:gap-0 tablet:px-step-m tablet:py-step-xl text-{{ section.settings.alignment }}">
         {%- for block in section.blocks -%}
             {%- case block.type -%}
                 {%- when 'text' -%}
                     {%- liquid
-                        assign overlay_text_class = block.settings.body_text_size | default: 'body-lg'
+                        assign overlay_text_class = block.settings.body_text_size | default: 'copy-l'
+                        capture overlay_text_attrs
+                            echo block.shopify_attributes
+                        endcapture
                     -%}
-                    <div
-                        class="rte rte--compact mb-0 pc:mb-2 {{ overlay_text_class }}"
-                        {{ block.shopify_attributes }}
-                    >
-                        {{ block.settings.text }}
-                    </div>
+                    {% render 'text',
+                        element: 'div',
+                        rte: true,
+                        tier: overlay_text_class,
+                        class: 'mb-0 tablet:mb-step-2xs',
+                        content: block.settings.text,
+                        attrs: overlay_text_attrs,
+                    %}
 
                 {%- when 'heading' -%}
                     {%- liquid
-                        assign overlay_heading_class = block.settings.heading_text_size | default: 'heading-h2'
+                        assign overlay_heading_class = block.settings.heading_text_size | default: 'title-m'
+                        capture overlay_heading_attrs
+                            echo 'id="dialog-title-' | append: popup_id | append: '" '
+                            echo block.shopify_attributes
+                        endcapture
                     -%}
-                    <h2
-                        id="dialog-title-{{ popup_id }}"
-                        class="mb-0 pc:mb-3 {{ overlay_heading_class }}"
-                        {{ block.shopify_attributes }}
-                    >
-                        {{ block.settings.heading }}
-                    </h2>
+                    {% render 'heading',
+                        level: '2',
+                        tier: overlay_heading_class,
+                        class: 'mb-0 tablet:mb-step-xs',
+                        content: block.settings.heading,
+                        attrs: overlay_heading_attrs,
+                    %}
 
                 {%- when 'form' -%}
                     <div class="newsletter-form" {{ block.shopify_attributes }}>
@@ -226,6 +244,11 @@
                                     placeholder="{{ section.settings.placeholder | escape }}"
                                     autocomplete="email"
                                     required
+                                    data-newsletter-email
+                                    {% if form.errors %}
+                                        aria-invalid="true"
+                                        aria-describedby="newsletter-status-{{ section.id }}"
+                                    {% endif %}
                                 >
 
                                 <button
@@ -236,6 +259,19 @@
                                     {%- render 'icons', icon: 'icon-arrow2' -%}
                                 </button>
                             </div>
+
+                            {%- if form.errors -%}
+                                <div
+                                    id="newsletter-status-{{ section.id }}"
+                                    class="mt-step-s copy-s text-error-text"
+                                    role="alert"
+                                    data-newsletter-status
+                                    data-newsletter-form-error
+                                >
+                                    <p>{{ section.settings.error_message }}</p>
+                                    {{ form.errors | default_errors }}
+                                </div>
+                            {%- endif -%}
                         {%- endform -%}
                     </div>
             {%- endcase -%}
@@ -251,10 +287,10 @@
             layer: 'modal',
             color_scheme: section.settings.color_scheme,
             modal_placement: section.settings.modal_placement,
-            overlay_class: 'bg-black/60',
+            overlay_class: 'bg-scrim',
             mobile_layout: 'inset',
-            modal_wrapper_class: 'pc:p-8 fw:p-10',
-            modal_panel_class: 'h-full w-full max-w-full pc:h-auto pc:max-w-[600px] fw:max-w-[680px]',
+            modal_wrapper_class: 'tablet:p-step-l wide:p-step-xl',
+            modal_panel_class: 'h-full w-full max-w-full tablet:h-auto tablet:max-w-[600px] wide:max-w-[680px]',
             content: dialog_content
         -%}
     {%- endif -%}
@@ -351,7 +387,7 @@
             "type": "text",
             "id": "alignment",
             "label": "t:sections.newsletter-overlay.settings.text_alignment",
-            "default": "left"
+            "default": "t:sections.newsletter-overlay.defaults.text_alignment"
         },
         {
             "type": "text",
@@ -400,35 +436,23 @@
                     "label": "t:sections.newsletter-overlay.block_settings.text_size",
                     "options": [
                         {
-                            "value": "body-3xl",
-                            "label": "t:sections.scroll-categories.options.body_3xl"
+                            "value": "copy-xl",
+                            "label": "t:settings.type_size.copy_xl"
                         },
                         {
-                            "value": "body-2xl",
-                            "label": "t:sections.scroll-categories.options.body_2xl"
+                            "value": "copy-l",
+                            "label": "t:settings.type_size.copy_l"
                         },
                         {
-                            "value": "body-xl",
-                            "label": "t:sections.scroll-categories.options.body_xl"
+                            "value": "copy-m",
+                            "label": "t:settings.type_size.copy_m"
                         },
                         {
-                            "value": "body-lg",
-                            "label": "t:sections.scroll-categories.options.body_lg"
-                        },
-                        {
-                            "value": "body-md",
-                            "label": "t:sections.scroll-categories.options.body_md"
-                        },
-                        {
-                            "value": "body-sm",
-                            "label": "t:sections.scroll-categories.options.body_sm"
-                        },
-                        {
-                            "value": "body-xs",
-                            "label": "t:sections.scroll-categories.options.body_xs"
+                            "value": "copy-s",
+                            "label": "t:settings.type_size.copy_s"
                         }
                     ],
-                    "default": "body-lg"
+                    "default": "copy-l"
                 }
             ]
         },
@@ -448,47 +472,39 @@
                     "label": "t:sections.slides-show.settings.heading_size",
                     "options": [
                         {
-                            "value": "heading-4xl",
-                            "label": "t:sections.slides-show.options.heading_4xl"
+                            "value": "title-4xl",
+                            "label": "t:settings.type_size.title_4xl"
                         },
                         {
-                            "value": "heading-3xl",
-                            "label": "t:sections.slides-show.options.heading_3xl"
+                            "value": "title-3xl",
+                            "label": "t:settings.type_size.title_3xl"
                         },
                         {
-                            "value": "heading-2xl",
-                            "label": "t:sections.slides-show.options.heading_2xl"
+                            "value": "title-2xl",
+                            "label": "t:settings.type_size.title_2xl"
                         },
                         {
-                            "value": "heading-xl",
-                            "label": "t:sections.slides-show.options.heading_xl"
+                            "value": "title-xl",
+                            "label": "t:settings.type_size.title_xl"
                         },
                         {
-                            "value": "heading-h1",
-                            "label": "t:sections.slides-show.options.heading_h1"
+                            "value": "title-l",
+                            "label": "t:settings.type_size.title_l"
                         },
                         {
-                            "value": "heading-h2",
-                            "label": "t:sections.slides-show.options.heading_h2"
+                            "value": "title-m",
+                            "label": "t:settings.type_size.title_m"
                         },
                         {
-                            "value": "heading-h3",
-                            "label": "t:sections.slides-show.options.heading_h3"
+                            "value": "title-s",
+                            "label": "t:settings.type_size.title_s"
                         },
                         {
-                            "value": "heading-h4",
-                            "label": "t:sections.slides-show.options.heading_h4"
-                        },
-                        {
-                            "value": "heading-h5",
-                            "label": "t:sections.slides-show.options.heading_h5"
-                        },
-                        {
-                            "value": "heading-h6",
-                            "label": "t:sections.slides-show.options.heading_h6"
+                            "value": "title-xs",
+                            "label": "t:settings.type_size.title_xs"
                         }
                     ],
-                    "default": "heading-h2"
+                    "default": "title-m"
                 }
             ]
         },

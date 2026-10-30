@@ -1,11 +1,5 @@
 [agents]
-enabled = true
 max_concurrent_threads_per_session = 3
-default_subagent_model = "gpt-5.6-terra"
-default_subagent_reasoning_effort = "medium"
-
-[features]
-hooks = true
 
 [mcp_servers.shopify-dev-mcp]
 command = "npx"
@@ -14,3 +8,44 @@ args = ["-y", "@shopify/dev-mcp@latest"]
 [mcp_servers.context7]
 command = "npx"
 args = ["-y", "@upstash/context7-mcp"]
+
+[mcp_servers.chrome-devtools]
+command = "npx"
+args = ["-y", "chrome-devtools-mcp@latest", "--isolated"]
+env = { SystemRoot = "C:\\Windows", PROGRAMFILES = "C:\\Program Files" }
+startup_timeout_ms = 20_000
+
+# Harness hooks: .codex/codex-hook.mjs maps them onto .agents/tools/harness/core.mjs.
+# Codex runs hook commands from the session cwd (cmd.exe on Windows), so start Codex at
+# the repository root.
+[[hooks.SessionStart]]
+[[hooks.SessionStart.hooks]]
+type = "command"
+command = "node .codex/codex-hook.mjs sessionStart"
+timeout = 20
+
+[[hooks.UserPromptSubmit]]
+[[hooks.UserPromptSubmit.hooks]]
+type = "command"
+command = "node .codex/codex-hook.mjs prompt"
+timeout = 5
+
+[[hooks.PreToolUse]]
+matcher = "^(Bash|apply_patch)$"
+[[hooks.PreToolUse.hooks]]
+type = "command"
+command = "node .codex/codex-hook.mjs preToolUse"
+timeout = 30
+
+[[hooks.PostToolUse]]
+matcher = "^apply_patch$"
+[[hooks.PostToolUse.hooks]]
+type = "command"
+command = "node .codex/codex-hook.mjs postToolUse"
+timeout = 5
+
+[[hooks.Stop]]
+[[hooks.Stop.hooks]]
+type = "command"
+command = "node .codex/codex-hook.mjs stop"
+timeout = 100

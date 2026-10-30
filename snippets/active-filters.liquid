@@ -36,7 +36,7 @@
     -%}
 
     {%- if active_layout == 'horizontal' -%}
-        <div class="flex flex-wrap items-center gap-3">
+        <div class="flex flex-wrap items-center gap-step-xs">
             {%- if show_label -%}
                 <span class="shrink-0">{{ 'collections.filters.active_label' | t }}</span>
             {%- endif -%}
@@ -47,7 +47,7 @@
                         href="{{ value.url_to_remove }}"
                         class="active-filter-chip"
                         aria-label="{{ 'collections.filters.remove_filter' | t: filter: filter.label | escape }}"
-                        @click.prevent="if (typeof buildFilterActionUrl === 'function' && typeof loadUrl === 'function') { loadUrl(buildFilterActionUrl($el.href)); } else { window.location.assign($el.href); }"
+                        @click.prevent="loadFilterAction($event)"
                     >
                         <span>{{ value.label }}</span>
                         {% render 'icons', icon: 'icon-close' %}
@@ -60,7 +60,7 @@
                             href="{{ filter.url_to_remove }}"
                             class="active-filter-chip"
                             aria-label="{{ 'collections.filters.remove_filter' | t: filter: filter.label | escape }}"
-                            @click.prevent="if (typeof buildFilterActionUrl === 'function' && typeof loadUrl === 'function') { loadUrl(buildFilterActionUrl($el.href)); } else { window.location.assign($el.href); }"
+                            @click.prevent="loadFilterAction($event)"
                         >
                             <span>
                                 {{ filter.min_value.value | default: 0 | money }} -
@@ -74,15 +74,15 @@
 
             <a
                 href="{{ clear_all_url }}"
-                class="active-filters__clear-action shrink-0"
-                @click.prevent="if (typeof buildFilterActionUrl === 'function' && typeof loadUrl === 'function') { loadUrl(buildFilterActionUrl($el.href)); } else { window.location.assign($el.href); }"
+                class="active-filters__clear-action active-filters__clear-action--no-shrink"
+                @click.prevent="loadFilterAction($event)"
             >
                 {{ 'collections.filters.clear_all' | t }}
             </a>
         </div>
     {%- else -%}
-        <div class="flex flex-col gap-4 border-b border-theme-border/20 pb-6">
-            <div class="flex items-center justify-between gap-4">
+        <div class="flex flex-col gap-step-s border-b border-line pb-step-m">
+            <div class="flex items-center justify-between gap-step-s">
                 {%- if show_label -%}
                     <span class="shrink-0">
                         {{- 'collections.filters.active_label' | t -}}
@@ -92,20 +92,20 @@
                 <a
                     href="{{ clear_all_url }}"
                     class="active-filters__clear-action"
-                    @click.prevent="if (typeof buildFilterActionUrl === 'function' && typeof loadUrl === 'function') { loadUrl(buildFilterActionUrl($el.href)); } else { window.location.assign($el.href); }"
+                    @click.prevent="loadFilterAction($event)"
                 >
                     {{ 'collections.filters.clear_all' | t }}
                 </a>
             </div>
 
-            <div class="flex flex-wrap gap-3">
+            <div class="flex flex-wrap gap-step-xs">
                 {%- for filter in filter_host.filters -%}
                     {%- for value in filter.active_values -%}
                         <a
                             href="{{ value.url_to_remove }}"
                             class="active-filter-chip"
                             aria-label="{{ 'collections.filters.remove_filter' | t: filter: filter.label | escape }}"
-                            @click.prevent="if (typeof buildFilterActionUrl === 'function' && typeof loadUrl === 'function') { loadUrl(buildFilterActionUrl($el.href)); } else { window.location.assign($el.href); }"
+                            @click.prevent="loadFilterAction($event)"
                         >
                             <span>{{ filter.label }}: {{ value.label }}</span>
                             {% render 'icons', icon: 'icon-close' %}
@@ -120,7 +120,7 @@
                                 href="{{ filter.url_to_remove }}"
                                 class="active-filter-chip"
                                 aria-label="{{ 'collections.filters.remove_filter' | t: filter: filter.label | escape }}"
-                                @click.prevent="if (typeof buildFilterActionUrl === 'function' && typeof loadUrl === 'function') { loadUrl(buildFilterActionUrl($el.href)); } else { window.location.assign($el.href); }"
+                                @click.prevent="loadFilterAction($event)"
                             >
                                 <span>
                                     {{ filter.min_value.value | default: 0 | money }} -
@@ -135,3 +135,43 @@
         </div>
     {%- endif -%}
 {%- endif -%}
+
+{% stylesheet %}
+    .active-filter-chip {
+        display: inline-flex;
+        min-height: calc(var(--spacing) * 10);
+        align-items: center;
+        gap: calc(var(--spacing) * 2);
+        border-radius: calc(infinity * 1px);
+        border-style: solid;
+        border-width: 1px;
+        border-color: var(--color-line);
+        padding-inline: calc(var(--spacing) * 4);
+        padding-block: calc(var(--spacing) * 2);
+        transition-property:
+            color, background-color, border-color, outline-color, text-decoration-color, fill,
+            stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        transition-duration: 150ms;
+        &:hover {
+            border-color: rgb(var(--color-foreground));
+        }
+    }
+    .active-filters__clear-action {
+        text-decoration: underline;
+        text-underline-offset: 4px;
+        &:focus-visible {
+            outline: var(--focus-ring-width) solid
+                rgba(var(--color-focus-ring), var(--focus-ring-opacity, 0.4));
+            outline-offset: var(--focus-ring-offset);
+        }
+        transition: opacity var(--motion-duration-fast, 250ms) var(--motion-ease-enter, ease);
+        &:hover {
+            opacity: 0.8;
+        }
+    }
+
+    :where(.active-filters__clear-action--no-shrink) {
+        flex-shrink: 0;
+    }
+{% endstylesheet %}

@@ -1,57 +1,48 @@
-<section
-    data-section-id="{{ section.id }}"
-    class="product-comparison-table-section full-width color-{{ section.settings.color_scheme }} surface-section"
-    style="
-        --section-padding-top: {{ section.settings.padding_top | default: 0 }}px;
-        --section-padding-bottom: {{ section.settings.padding_bottom | default: 0 }}px;
-        --comparison-column-bg-color: {{ section.settings.comparison_column_bg_color | default: '#F4F1E8' }};
-        --comparison-success-color: {{ section.settings.comparison_success_color | default: '#228E58' }};
-        --comparison-danger-color: {{ section.settings.comparison_danger_color | default: '#E04A4A' }};
-    "
-    data-component-kind="section"
-    data-component-type="product-comparison-table"
-    data-component-id="{{ section.id }}"
-    x-data="motionRevealSection()"
-    data-motion-section
->
-    {%- liquid
-        assign comparison_heading_class = section.settings.heading_size | default: 'heading-2xl'
-        assign comparison_products = section.settings.products
-        assign comparison_columns = comparison_products
-        assign comparison_item_count = comparison_products.size
-        assign has_comparison_products = false
-        if comparison_item_count > 0
-            assign has_comparison_products = true
-        else
-            assign comparison_columns = '1,2,3,4,5,6' | split: ','
-            assign comparison_item_count = comparison_columns.size
-        endif
-    -%}
+{%- liquid
+    assign comparison_heading_class = section.settings.heading_size | default: 'title-2xl'
+    assign comparison_products = section.settings.products
+    assign comparison_columns = comparison_products
+    assign comparison_item_count = comparison_products.size
+    assign has_comparison_products = false
+    if comparison_item_count > 0
+        assign has_comparison_products = true
+    else
+        assign comparison_columns = '1,2,3,4,5,6' | split: ','
+        assign comparison_item_count = comparison_columns.size
+    endif
+-%}
+{%- assign comparison_root_attrs = 'data-component-kind="section" data-component-type="product-comparison-table" data-component-id="'
+    | append: section.id
+    | append: '"'
+-%}
+{%- capture product_comparison_children -%}
     <div
-        class="layout container-page mx-auto pb-8"
+        class="mx-auto flex flex-col gap-step-xl pb-step-l tablet:gap-step-2xl"
         style="
             --comparison-table-width-mobile: {{ comparison_item_count | times: 140 | plus: 116 }}px;
             --comparison-table-width-pc: {{ comparison_item_count | times: 280 | plus: 156 }}px;
         "
+        x-data="productComparisonTable()"
+        data-module-id="product-comparison-table"
     >
         {% if section.settings.heading != blank %}
-            <h1
-                class="mb-10 text-center pc:mb-16 {{ comparison_heading_class }}"
-                data-motion-reveal="content"
-            >
-                {{ section.settings.heading }}
-            </h1>
+            {% render 'heading',
+                level: '1',
+                tier: comparison_heading_class,
+                align: 'center',
+                content: section.settings.heading
+            %}
         {% endif %}
         {% if section.blocks.size > 0 %}
             <div
-                class="comparison-table-scroll overflow-x-auto"
+                class="comparison-table-scroll"
                 tabindex="0"
                 role="group"
                 aria-label="{{ 'accessibility.scroll_to_compare' | t }}"
                 data-comparison-scroll
             >
                 <table
-                    class="comparison-table table-fixed border-collapse text-start"
+                    class="comparison-table"
                     aria-label="{{ 'accessibility.product_comparison' | t }}"
                 >
                     <tbody>
@@ -63,11 +54,8 @@
                                     class="
                                         comparison-table__sticky-col
                                         comparison-table__row-header
-                                        sticky left-0 z-10
-                                        border border-theme-border/20 bg-theme-bg
-                                        px-4 py-5 align-middle whitespace-normal shadow-[2px_0_6px_-2px_rgba(0,0,0,0.06)]
-                                        pc:px-6 pc:py-7
-                                        {% unless block.type == 'metafield_text' %}body-lg{% endunless %}
+                                        comparison-table__sticky-col-shadow
+                                        {% unless block.type == 'metafield_text' %}copy-l{% endunless %}
                                     "
                                 >
                                     {% case block.type %}
@@ -78,7 +66,9 @@
                                         {% when 'rating' %}
                                             {{ 'products.comparison.rating' | t }}
                                         {% when 'metafield_text' %}
-                                            {{ block.settings.row_title | default: '—' }}
+                                            {%- if block.settings.row_title != blank -%}
+                                                {{ block.settings.row_title }}
+                                            {%- endif -%}
                                         {% when 'availability' %}
                                             {{ 'products.comparison.availability' | t }}
                                         {% else %}
@@ -104,17 +94,16 @@
                                     <td
                                         class="
                                             comparison-table__product-cell
-                                            border border-theme-border/20 p-3 align-middle pc:p-6
-                                            {% if is_highlight %}bg-(--comparison-column-bg-color){% else %}bg-transparent{% endif %}
-                                            {% if block.type != 'header' and block.type != 'metafield_text' %}body-lg{% endif %}
+                                            {% if is_highlight %}comparison-table__product-cell--highlight{% endif %}
+                                            {% if block.type != 'header' and block.type != 'metafield_text' %}copy-l{% endif %}
                                         "
                                     >
                                         {% case block.type %}
                                             {% when 'header' %}
                                                 {%- if is_placeholder -%}
-                                                    <div class="flex w-full flex-col items-center text-inherit">
-                                                        <div class="mb-4 flex h-44 w-full items-center justify-center pc:mb-6 pc:h-[260px]">
-                                                            <div class="h-full w-full max-w-[76%] pc:max-w-[74%]">
+                                                    <div class="flex w-full flex-col items-center gap-step-s text-inherit tablet:gap-step-m">
+                                                        <div class="flex h-44 w-full items-center justify-center tablet:h-[260px]">
+                                                            <div class="h-full w-full max-w-[76%] tablet:max-w-[74%]">
                                                                 {%- render 'image',
                                                                     image: blank,
                                                                     placeholder_key: placeholder_key,
@@ -122,11 +111,10 @@
                                                                     mode: 'frame',
                                                                     fit: 'contain',
                                                                     wrapper_class: 'h-full w-full',
-                                                                    motion_reveal: false
                                                                 -%}
                                                             </div>
                                                         </div>
-                                                        <span class="block w-full text-center body-xl">
+                                                        <span class="block w-full text-center copy-l">
                                                             {{-
                                                                 'products.comparison.example_product'
                                                                 | t: index: column_index
@@ -136,10 +124,10 @@
                                                 {%- else -%}
                                                     <a
                                                         href="{{ item.url }}"
-                                                        class="comparison-table-product-link media-interaction flex w-full cursor-pointer flex-col items-center text-inherit no-underline"
+                                                        class="comparison-table-product-link media-interaction"
                                                     >
-                                                        <div class="mb-4 flex h-44 w-full items-center justify-center pc:mb-6 pc:h-[260px]">
-                                                            <div class="h-full w-full max-w-[76%] pc:max-w-[74%]">
+                                                        <div class="flex h-44 w-full items-center justify-center tablet:h-[260px]">
+                                                            <div class="h-full w-full max-w-[76%] tablet:max-w-[74%]">
                                                                 {%- assign image_alt = item.featured_image.alt
                                                                     | default: item.title
                                                                 -%}
@@ -153,7 +141,6 @@
                                                                         class: 'w-full h-full',
                                                                         img_class: 'image_img w-full h-full object-contain object-center',
                                                                         alt: image_alt,
-                                                                        motion_reveal: false
                                                                     -%}
                                                                 {%- else -%}
                                                                     {%- render 'image',
@@ -163,19 +150,18 @@
                                                                         mode: 'frame',
                                                                         fit: 'contain',
                                                                         wrapper_class: 'h-full w-full',
-                                                                        motion_reveal: false
                                                                     -%}
                                                                 {%- endif -%}
                                                             </div>
                                                         </div>
-                                                        <span class="block w-full text-center body-xl">
+                                                        <span class="block w-full text-center copy-l">
                                                             {{- item.title -}}
                                                         </span>
                                                     </a>
                                                 {%- endif -%}
 
                                             {% when 'price' %}
-                                                <div class="flex flex-wrap items-baseline gap-2">
+                                                <div class="flex flex-wrap items-baseline gap-step-2xs">
                                                     <span>
                                                         {%- if is_placeholder -%}
                                                             {{- 1999 | money -}}
@@ -194,13 +180,13 @@
                                                 </div>
 
                                             {% when 'rating' %}
-                                                <div class="comparison-table__rating inline-flex items-center gap-1 whitespace-nowrap">
+                                                <div class="comparison-table__rating">
                                                     {%- render 'starts',
                                                         rating: 4.5,
                                                         max: 5,
                                                         wrapper_class: 'mb-0 inline-flex items-center flex-none comparison-table__rating-stars'
                                                     -%}
-                                                    <span class="comparison-table__rating-value shrink-0"
+                                                    <span class="comparison-table__rating-value"
                                                         >4.5</span
                                                     >
                                                 </div>
@@ -242,15 +228,15 @@
 
                                             {% when 'availability' %}
                                                 {% if is_placeholder %}
-                                                    <span class="text-theme-text/60">
+                                                    <span class="text-subtle">
                                                         {{- 'products.product.unavailable' | t -}}
                                                     </span>
                                                 {% elsif item.available %}
-                                                    <span class="text-(--comparison-success-color)">
+                                                    <span class="comparison-table__availability--success">
                                                         {{- 'products.comparison.in_stock' | t -}}
                                                     </span>
                                                 {% else %}
-                                                    <span class="text-(--comparison-danger-color)">
+                                                    <span class="comparison-table__availability--danger">
                                                         {{-
                                                             'products.comparison.out_of_stock'
                                                             | t
@@ -269,117 +255,20 @@
                 </table>
             </div>
         {% else %}
-            <div class="py-12 text-center text-theme-text/60">
+            <div class="py-step-xl text-center text-subtle">
                 <p>{{ 'products.comparison.no_blocks' | t }}</p>
             </div>
         {% endif %}
     </div>
-</section>
+{%- endcapture -%}
 
-{%- javascript -%}
-    (function () {
-        const Components = window.__Theme__?.Components;
-        if (!Components) return;
-
-        Components.register(
-            'product-comparison-table',
-            {
-                init(el) {
-                    const scrollEl = el.querySelector('[data-comparison-scroll]');
-                    if (!scrollEl) return {};
-
-                    var Events = window.__Theme__?.Events;
-                    if (!Events?.createScope) return {};
-
-                    var scope = Events.createScope({ target: window });
-                    var timeoutRef = { id: null };
-                    var showDelayMs = 1000;
-                    var dragThresholdPx = 5;
-
-                    function showScrollbar() {
-                        scrollEl.classList.add('is-scrolling');
-                        if (timeoutRef.id) clearTimeout(timeoutRef.id);
-                        timeoutRef.id = setTimeout(function () {
-                            scrollEl.classList.remove('is-scrolling');
-                            timeoutRef.id = null;
-                        }, showDelayMs);
-                    }
-
-                    function onScroll() {
-                        showScrollbar();
-                    }
-
-                    scrollEl.addEventListener('scroll', onScroll, { passive: true });
-
-                    var dragStartX = 0;
-                    var dragStartScrollLeft = 0;
-                    var isPointerDown = false;
-                    var didDrag = false;
-
-                    scope.on(
-                        'mousemove',
-                        function (e) {
-                            if (!isPointerDown) return;
-                            var dx = dragStartX - e.clientX;
-                            scrollEl.scrollLeft = dragStartScrollLeft + dx;
-                            if (Math.abs(e.clientX - dragStartX) >= dragThresholdPx) {
-                                didDrag = true;
-                                scrollEl.classList.add('is-dragging');
-                                showScrollbar();
-                            }
-                        },
-                        { passive: true },
-                    );
-
-                    scope.on('mouseup', function () {
-                        isPointerDown = false;
-                        scrollEl.classList.remove('is-dragging');
-                        setTimeout(function () {
-                            didDrag = false;
-                        }, 0);
-                    });
-
-                    function onPointerDown(e) {
-                        if (e.button !== 0) return;
-                        isPointerDown = true;
-                        didDrag = false;
-                        dragStartX = e.clientX;
-                        dragStartScrollLeft = scrollEl.scrollLeft;
-                    }
-
-                    scrollEl.addEventListener('mousedown', onPointerDown);
-
-                    function onLinkClick(e) {
-                        if (didDrag && e.target.closest('.comparison-table-product-link')) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                        }
-                    }
-
-                    scrollEl.addEventListener('click', onLinkClick, true);
-
-                    return {
-                        scope: scope,
-                        scrollEl: scrollEl,
-                        onScroll: onScroll,
-                        timeoutRef: timeoutRef,
-                        onPointerDown: onPointerDown,
-                        onLinkClick: onLinkClick,
-                    };
-                },
-                destroy(el, state) {
-                    if (!state?.scrollEl) return;
-                    state.scrollEl.removeEventListener('scroll', state.onScroll);
-                    if (state.timeoutRef?.id) clearTimeout(state.timeoutRef.id);
-                    state.scrollEl.removeEventListener('mousedown', state.onPointerDown);
-                    state.scrollEl.removeEventListener('click', state.onLinkClick, true);
-                    state?.scope?.dispose();
-                },
-            },
-            { lazy: true },
-        );
-    })();
-{%- endjavascript -%}
+{% render 'section-frame',
+    section: section,
+    section_class: 'product-comparison-table-section',
+    motion: false,
+    root_attrs: comparison_root_attrs,
+    children: product_comparison_children
+%}
 
 {% stylesheet %}
     .product-comparison-table-section {
@@ -405,21 +294,30 @@
         .comparison-table tbody tr:first-child .comparison-table__product-cell {
             height: 250px;
         }
+        .comparison-table__sticky-col-shadow {
+            box-shadow: var(--shadow-sm);
+        }
         .comparison-table__rating {
             max-width: 100%;
-            line-height: 1;
+            line-height: inherit;
         }
         .comparison-table__rating-stars {
             gap: 0.2rem;
             margin-bottom: 0;
-            line-height: 1;
+            line-height: inherit;
+        }
+        .comparison-table__availability--success {
+            color: rgb(var(--color-success-foreground));
+        }
+        .comparison-table__availability--danger {
+            color: rgb(var(--color-error-foreground));
         }
         .comparison-table__rating .stars__icon {
             width: 1.35rem;
             height: 1.35rem;
         }
         .comparison-table__rating-value {
-            line-height: 1;
+            line-height: inherit;
         }
         @media (width >= 48rem) {
             .comparison-table {
@@ -478,14 +376,14 @@
             height: 8px;
         }
         .comparison-table-scroll.is-scrolling {
-            scrollbar-color: rgba(var(--color-foreground), 0.25) transparent;
+            scrollbar-color: var(--color-line) transparent;
         }
         .comparison-table-scroll::-webkit-scrollbar-track {
             background: transparent;
             border-radius: 4px;
         }
         .comparison-table-scroll::-webkit-scrollbar-thumb {
-            background: rgba(var(--color-foreground), 0.25);
+            background: var(--color-line);
             border-radius: 4px;
             opacity: 0;
             transition: opacity 0.25s ease-out;
@@ -494,12 +392,87 @@
             opacity: 1;
         }
         .comparison-table-scroll.is-scrolling::-webkit-scrollbar-thumb:hover {
-            background: rgba(var(--color-foreground), 0.35);
+            background: var(--color-line-strong);
         }
         .comparison-table-scroll:focus-visible {
-            outline: 2px solid var(--color-theme-text);
+            outline: 2px solid rgb(var(--color-foreground));
             outline-offset: -2px;
         }
+    }
+
+    :where(.comparison-table-scroll) {
+        overflow-x: auto;
+    }
+
+    :where(.comparison-table) {
+        table-layout: fixed;
+        border-collapse: collapse;
+        text-align: start;
+    }
+
+    :where(.comparison-table__rating) {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--spacing-step-3xs);
+        white-space: nowrap;
+    }
+
+    :where(.comparison-table__row-header) {
+        position: sticky;
+        left: calc(var(--spacing) * 0);
+        z-index: 10;
+        border-style: var(--tw-border-style);
+        border-width: 1px;
+        border-color: var(--color-line);
+        background-color: rgb(var(--color-background));
+        padding-inline: var(--spacing-step-s);
+        padding-block: var(--spacing-step-m);
+        vertical-align: middle;
+        white-space: normal;
+        @media (width >= 48rem) {
+            padding-inline: var(--spacing-step-m);
+            padding-block: var(--spacing-step-l);
+        }
+    }
+
+    :where(.comparison-table__product-cell) {
+        border-style: var(--tw-border-style);
+        border-width: 1px;
+        border-color: var(--color-line);
+        padding: var(--spacing-step-xs);
+        vertical-align: middle;
+        background-color: transparent;
+        @media (width >= 48rem) {
+            padding: var(--spacing-step-m);
+        }
+    }
+
+    :where(.comparison-table__product-cell--highlight) {
+        background-color: rgb(var(--color-card-background));
+    }
+
+    :where(.comparison-table-product-link) {
+        display: flex;
+        width: 100%;
+        cursor: pointer;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--spacing-step-s);
+        color: inherit;
+        text-decoration: none;
+        @media (width >= 48rem) {
+            gap: var(--spacing-step-m);
+        }
+    }
+
+    :where(.comparison-table__rating-value) {
+        flex-shrink: 0;
+    }
+
+    :where(.product-comparison-table-section .section-frame__inner > div) {
+        box-sizing: border-box;
+        width: 100%;
+        padding-inline: var(--page-inset);
     }
 {% endstylesheet %}
 
@@ -534,65 +507,39 @@
             "label": "t:sections.slides-show.settings.heading_size",
             "options": [
                 {
-                    "value": "heading-4xl",
-                    "label": "t:sections.slides-show.options.heading_4xl"
+                    "value": "title-4xl",
+                    "label": "t:settings.type_size.title_4xl"
                 },
                 {
-                    "value": "heading-3xl",
-                    "label": "t:sections.slides-show.options.heading_3xl"
+                    "value": "title-3xl",
+                    "label": "t:settings.type_size.title_3xl"
                 },
                 {
-                    "value": "heading-2xl",
-                    "label": "t:sections.slides-show.options.heading_2xl"
+                    "value": "title-2xl",
+                    "label": "t:settings.type_size.title_2xl"
                 },
                 {
-                    "value": "heading-xl",
-                    "label": "t:sections.slides-show.options.heading_xl"
+                    "value": "title-xl",
+                    "label": "t:settings.type_size.title_xl"
                 },
                 {
-                    "value": "heading-h1",
-                    "label": "t:sections.slides-show.options.heading_h1"
+                    "value": "title-l",
+                    "label": "t:settings.type_size.title_l"
                 },
                 {
-                    "value": "heading-h2",
-                    "label": "t:sections.slides-show.options.heading_h2"
+                    "value": "title-m",
+                    "label": "t:settings.type_size.title_m"
                 },
                 {
-                    "value": "heading-h3",
-                    "label": "t:sections.slides-show.options.heading_h3"
+                    "value": "title-s",
+                    "label": "t:settings.type_size.title_s"
                 },
                 {
-                    "value": "heading-h4",
-                    "label": "t:sections.slides-show.options.heading_h4"
-                },
-                {
-                    "value": "heading-h5",
-                    "label": "t:sections.slides-show.options.heading_h5"
-                },
-                {
-                    "value": "heading-h6",
-                    "label": "t:sections.slides-show.options.heading_h6"
+                    "value": "title-xs",
+                    "label": "t:settings.type_size.title_xs"
                 }
             ],
-            "default": "heading-2xl"
-        },
-        {
-            "type": "color",
-            "id": "comparison_column_bg_color",
-            "label": "t:sections.product-comparison-table.settings.highlight_column_background",
-            "default": "#F4F1E8"
-        },
-        {
-            "type": "color",
-            "id": "comparison_success_color",
-            "label": "t:sections.product-comparison-table.settings.availability_in_stock_color",
-            "default": "#228E58"
-        },
-        {
-            "type": "color",
-            "id": "comparison_danger_color",
-            "label": "t:sections.product-comparison-table.settings.availability_out_of_stock_color",
-            "default": "#E04A4A"
+            "default": "title-2xl"
         },
         {
             "type": "product_list",
@@ -665,7 +612,7 @@
                     "type": "text",
                     "id": "metafield_key",
                     "label": "t:sections.product-comparison-table.block_settings.metafield_key_namespace_key",
-                    "default": "custom.ingredients",
+                    "default": "t:sections.product-comparison-table.blocks_defaults.metafield_key",
                     "info": "t:sections.product-comparison-table.block_info.e_g_custom_ingredients"
                 }
             ]

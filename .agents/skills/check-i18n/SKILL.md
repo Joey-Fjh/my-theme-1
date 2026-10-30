@@ -1,33 +1,15 @@
 ---
 name: check-i18n
-description: Validate Shopify theme internationalization and locale keys. Use when user-facing text, locales, or schema labels change.
+description: Validate Shopify theme internationalization and locale keys. Use when user-visible copy, locale JSON files, schema labels, or translated Liquid strings change.
 when_to_use: >
   Locale JSON files, translated Liquid strings, schema translation keys, duplicate keys,
-  hardcoded copy, ARIA labels, alt text, placeholders, or npm.cmd run lint:i18n.
+  hardcoded copy, ARIA labels, alt text, or placeholders changed.
 ---
 
 # Check I18n
 
-Use this skill for translation and locale validation. Read `docs/references/code-review/i18n-checklist.md` when the task involves user-facing copy, schema text, accessibility labels, or launch-readiness review.
+Use this skill when locale files, translated Liquid, schema copy, or hardcoded user-visible text change. Read `docs/references/code-review/i18n-checklist.md` for ownership and the review gaps. Which command to run: `AGENTS.md` Validation (`npm.cmd run lint:i18n`). Run `npm.cmd run test:i18n` after validator changes.
 
-## Command
+`lint:i18n` (`.agents/skills/check-i18n/scripts/lint-i18n.js`, tests in `scripts/lint-i18n.test.js`) guards duplicate keys, missing project locale keys, unused keys (`lint-i18n-unused.js`; intentional keeps go in its `ALLOWLISTED_PREFIXES` with a reason), hardcoded user-visible copy, and the schema/preset boundary. Shopify Theme Check remains the platform authority. Merchant-owned content, product data, and runtime variables are out of scope. Do not rewrite theme files just to satisfy the linter.
 
-- Run i18n lint: `npm.cmd run lint:i18n`
-- Aggregate gate that includes i18n lint: `npm.cmd run lint`
-
-`npm.cmd run lint:i18n` uses this skill resource:
-
-```text
-.agents/skills/check-i18n/scripts/lint-i18n.js
-```
-
-## Selection Rules
-
-1. Run `npm.cmd run lint:i18n` after changes to `locales/**/*.json`, Liquid visible text, schema labels/defaults, `aria-label`, `alt`, `placeholder`, or `title` text.
-2. Update locale files when adding user-facing strings.
-3. Classify hardcoded copy findings through `AGENTS.md`; do not silently change merchant-owned content.
-4. Use the checklist reference for review context, not as a replacement for the lint command.
-
-## Reporting
-
-Report missing keys, duplicate keys, and hardcoded text findings with file and line. State whether failures are new, touched, or pre-existing when that is clear.
+Report missing keys, duplicate keys, hardcoded text, and preset or default `t:` misuse with file and line. State whether failures are new, touched, or pre-existing when that is clear.

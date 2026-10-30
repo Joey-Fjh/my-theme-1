@@ -10,6 +10,7 @@
     class="header-dropdown-menu"
     data-desktop-menu-trigger="{{ desktop_menu_trigger }}"
     x-data="dropdown"
+    data-module-id="dropdown"
     @mouseenter="onHeaderEnter()"
     @click.capture="onMenuTriggerClickEvent($event)"
     @mouseover="openOnHoverEvent($event)"
@@ -17,9 +18,9 @@
     @focusin="onHeaderFocusIn()"
     @focusout="onHeaderFocusOut($event)"
     @click.outside="closeAndDeactivate()"
-    @keydown.escape.window="closeAndDeactivate()"
+    @keydown.escape.window="onMenuKeydown($event)"
 >
-    <ul class="flex items-center gap-6" role="list">
+    <ul class="flex items-center gap-step-m" role="list">
         {%- for link in section.settings.menu.links -%}
             <li class="relative">
                 {%- if link.links != blank -%}
@@ -29,39 +30,40 @@
                         data-deep="1"
                     >
                         <summary
-                            class="dropdown-trigger flex items-center gap-1"
+                            class="dropdown-trigger flex items-center gap-step-3xs"
                             id="HeaderMenu-{{ link.handle }}"
-                            :aria-expanded="$el.parentElement.open"
                         >
-                            {% capture link_content %}
-                                <span>
-                                    {{ link.title | escape }}
-                                </span>
+                            <span class="link-with-icon-motion links-underline links flex items-center gap-step-xs">
+                                <span>{{ link.title | escape }}</span>
                                 {% render 'icons',
                                     icon: 'icon-arrow',
                                     class: 'dropdown-icon dropdown-icon--down'
                                 %}
-                            {% endcapture %}
-
-                            {% render 'link',
-                                content: link_content,
-                                variant: 'underline',
-                                class: 'flex items-center gap-3'
-                            %}
+                            </span>
                         </summary>
 
                         <ul
-                            class="dropdown-panel dropdown-open panel-motion panel-motion-scale color-{{ section.settings.menu_color_scheme }} [inset-inline-start:0] top-[calc(100%+1.5rem)] mt-0 min-w-56 rounded-md surface-component p-3"
+                            class="dropdown-panel dropdown-open panel-motion panel-motion-scale color-{{ section.settings.menu_color_scheme }} surface-component"
                             role="list"
                             tabindex="-1"
-                            @mouseenter="cancelHoverClose(); cancelHoverOpen(); onHeaderEnter()"
+                            @mouseenter="onDropdownPanelMouseEnter()"
                         >
+                            {%- if link.url != blank -%}
+                                <li class="mb-step-2xs border-b border-line pb-step-2xs">
+                                    {%- render 'link',
+                                        text: link.title,
+                                        href: link.url,
+                                        variant: 'underline',
+                                        class: 'block w-full whitespace-nowrap px-step-s py-step-2xs text-theme-text'
+                                    -%}
+                                </li>
+                            {%- endif -%}
                             {%- for childlink in link.links -%}
                                 <li class="w-full{% if childlink.links != blank %} relative{% endif %}">
                                     {%- if childlink.links == blank -%}
                                         {% capture childlink_classes %}
-                                            block w-full whitespace-nowrap px-4 py-2 text-theme-text
-                                            {% if childlink.current %} font-medium {% endif %}
+                                            block w-full whitespace-nowrap px-step-s py-step-2xs text-theme-text
+                                            {% if childlink.current %} font-normal {% endif %}
                                         {% endcapture %}
 
                                         {%- capture childlink_attributes -%}
@@ -85,11 +87,10 @@
                                             data-deep="2"
                                         >
                                             <summary
-                                                class="dropdown-trigger flex w-full items-center justify-between gap-6 px-4 py-2"
+                                                class="dropdown-trigger flex w-full items-center justify-between gap-step-m px-step-s py-step-2xs"
                                                 id="HeaderMenu-{{ childlink.handle }}"
-                                                :aria-expanded="$el.parentElement.open"
                                             >
-                                                <span class="whitespace-nowrap text-theme-text{% if childlink.current %} font-medium{% endif %}">
+                                                <span class="whitespace-nowrap text-theme-text{% if childlink.current %} font-normal{% endif %}">
                                                     {{ childlink.title | escape }}
                                                 </span>
                                                 {% render 'icons',
@@ -99,15 +100,15 @@
                                             </summary>
 
                                             <ul
-                                                class="dropdown-panel dropdown-open panel-motion panel-motion-flyout inset-s-full [inset-inline-start:calc(100%+1.5rem)] top-0 mt-0 p-3 color-{{ section.settings.menu_color_scheme }} surface-component"
+                                                class="dropdown-panel dropdown-open panel-motion panel-motion-flyout inset-s-full color-{{ section.settings.menu_color_scheme }} surface-component"
                                                 role="list"
-                                                @mouseenter="cancelHoverClose(); onHeaderEnter()"
+                                                @mouseenter="onNestedDropdownPanelMouseEnter()"
                                             >
                                                 {%- for grandChildLink in childlink.links -%}
                                                     <li>
                                                         {%- capture grand_child_link_classes -%}
-                                                            block w-full whitespace-nowrap px-4 py-2 text-theme-text
-                                                            {% if grandChildLink.current %} font-medium {% endif %}
+                                                            block w-full whitespace-nowrap px-step-s py-step-2xs text-theme-text
+                                                            {% if grandChildLink.current %} font-normal {% endif %}
                                                         {%- endcapture -%}
 
                                                         {%- capture grand_child_link_attributes -%}
@@ -154,3 +155,55 @@
         {%- endfor -%}
     </ul>
 </nav>
+
+{% stylesheet %}
+    .panel-motion-scale {
+        --panel-motion-dur: var(--panel-motion-duration-scale);
+    }
+    .panel-motion-flyout {
+        --panel-motion-dur: var(--panel-motion-duration-flyout);
+        transform-origin: top inline-start;
+    }
+    [dir='rtl'] .panel-motion-flyout {
+        transform-origin: top inline-end;
+    }
+    /* Open down-flyouts keep the components-layer origin (tailwind.components.css, directional flyout). */
+    :is(details[open], [aria-expanded='true'], .is-open, [data-dropdown][open])
+        > .panel-motion-flyout:not([class*='inset-s-full']) {
+        transform-origin: top center;
+    }
+    details[open] > .panel-motion-flyout[class*='inset-s-full'],
+    [data-dropdown][open] > .panel-motion-flyout[class*='inset-s-full'] {
+        animation: panel-motion-flyout-in var(--panel-motion-dur) var(--panel-motion-ease-enter)
+            both;
+    }
+    [dir='rtl'] details[open] > .panel-motion-flyout[class*='inset-s-full'],
+    [dir='rtl'] [data-dropdown][open] > .panel-motion-flyout[class*='inset-s-full'] {
+        animation-name: panel-motion-flyout-in-rtl;
+    }
+    details[open] > .panel-motion-flyout > li,
+    [data-dropdown][open] > .panel-motion-flyout > li {
+        animation: panel-motion-item-flyout-in var(--panel-motion-duration-item)
+            var(--panel-motion-ease-enter) both;
+    }
+    [dir='rtl'] details[open] > .panel-motion-flyout > li,
+    [dir='rtl'] [data-dropdown][open] > .panel-motion-flyout > li {
+        animation-name: panel-motion-item-flyout-in-rtl;
+    }
+
+    :where(.panel-motion-scale) {
+        inset-inline-start: 0;
+        top: calc(100% + 1.5rem);
+        margin-top: calc(var(--spacing) * 0);
+        min-width: calc(var(--spacing) * 56);
+        border-radius: var(--radius-md);
+        padding: var(--spacing-step-xs);
+    }
+
+    :where(.panel-motion-flyout) {
+        inset-inline-start: calc(100% + 1.5rem);
+        top: calc(var(--spacing) * 0);
+        margin-top: calc(var(--spacing) * 0);
+        padding: var(--spacing-step-xs);
+    }
+{% endstylesheet %}

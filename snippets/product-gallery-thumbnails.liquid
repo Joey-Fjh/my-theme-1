@@ -4,6 +4,7 @@
 
     @param {array}   images          - Image or media objects
     @param {string}  gallery_id      - Unique gallery id used to associate tabs and the active panel
+    @param {number}  [initial_index] - Index of the slide shown before hydration (default: 0)
     @param {string}  thumb_position  - 'left' | 'bottom'
     @param {string}  thumbnail_size - Shared thumbnail size: 'compact' | 'standard' | 'large'
     @param {boolean} zoom            - Enable click on main image
@@ -14,7 +15,6 @@
     @param {number}  magnifier_preview_max_width - Maximum magnifier preview width in pixels
     @param {string}  aspect_ratio    - Optional CSS aspect-ratio (fallback when first image has no ratio)
     @param {string}  max_height      - Optional desktop max height for the main gallery media box
-    @param {boolean} motion_reveal   - Allow nested image reveal hooks
 {% endcomment %}
 
 {%- assign is_left = true -%}
@@ -29,42 +29,62 @@
 {%- assign thumbnail_size = thumbnail_size | default: 'standard' -%}
 {%- case thumbnail_size -%}
     {%- when 'compact' -%}
-        {%- assign thumbnail_width_class = 'w-16 pc:w-18' -%}
-        {%- assign thumbnail_grid_class = 'pc:grid-cols-[4.5rem_minmax(0,1fr)]' -%}
+        {%- assign thumbnail_width_class = 'w-16 tablet:w-18' -%}
+        {%- assign thumbnail_grid_class = 'tablet:grid-cols-[4.5rem_minmax(0,1fr)]' -%}
         {%- assign thumbnail_image_sizes = '(min-width: 48rem) 72px, 64px' -%}
     {%- when 'large' -%}
-        {%- assign thumbnail_width_class = 'w-20 pc:w-26' -%}
-        {%- assign thumbnail_grid_class = 'pc:grid-cols-[6.5rem_minmax(0,1fr)]' -%}
+        {%- assign thumbnail_width_class = 'w-20 tablet:w-26' -%}
+        {%- assign thumbnail_grid_class = 'tablet:grid-cols-[6.5rem_minmax(0,1fr)]' -%}
         {%- assign thumbnail_image_sizes = '(min-width: 48rem) 104px, 80px' -%}
     {%- else -%}
-        {%- assign thumbnail_width_class = 'w-18 pc:w-22' -%}
-        {%- assign thumbnail_grid_class = 'pc:grid-cols-[5.5rem_minmax(0,1fr)]' -%}
+        {%- assign thumbnail_width_class = 'w-18 tablet:w-22' -%}
+        {%- assign thumbnail_grid_class = 'tablet:grid-cols-[5.5rem_minmax(0,1fr)]' -%}
         {%- assign thumbnail_image_sizes = '(min-width: 48rem) 88px, 72px' -%}
 {%- endcase -%}
 {%- assign thumbnail_image_widths = '64,80,104,144,176,208,264,312' -%}
+{%- assign gallery_initial_index = initial_index | default: 0 -%}
+{%- assign gallery_adapt = false -%}
+{%- assign gallery_main_img_class = 'w-full h-full object-cover' -%}
+{%- assign gallery_main_mode = 'frame' -%}
+{%- assign gallery_main_fit = blank -%}
+{%- assign gallery_magnifier_fit = blank -%}
+{%- assign thumbnail_aspect = aspect_ratio -%}
 {%- assign gallery_aspect = aspect_ratio -%}
-{%- if gallery_aspect == blank and first_img.width != blank and first_img.height != blank -%}
+{%- if aspect_ratio == 'adapt' -%}
+    {%- assign gallery_adapt = true -%}
+    {%- assign gallery_main_img_class = 'w-full h-auto max-h-full object-contain' -%}
+    {%- assign gallery_main_mode = 'natural' -%}
+    {%- assign gallery_main_fit = 'contain' -%}
+    {%- assign gallery_magnifier_fit = 'contain' -%}
+    {%- assign thumbnail_aspect = '3/4' -%}
+    {%- assign gallery_aspect = blank -%}
+{%- endif -%}
+{%- if gallery_aspect == blank
+    and gallery_adapt == false
+    and first_img.width != blank
+    and first_img.height != blank
+-%}
     {%- assign gallery_aspect = first_img.width | append: '/' | append: first_img.height -%}
-{%- elsif gallery_aspect == blank -%}
+{%- elsif gallery_aspect == blank and gallery_adapt == false -%}
     {%- assign gallery_aspect = images.first.aspect_ratio | default: '3/4' -%}
 {%- endif -%}
 <div
     class="
         {% if is_left %}
-          flex flex-col pc:grid {{ thumbnail_grid_class }} gap-4 pc:gap-2 min-w-0 w-full h-full
+          flex flex-col tablet:grid {{ thumbnail_grid_class }} gap-step-s tablet:gap-step-2xs min-w-0 w-full h-full
         {% else %}
-          flex flex-col gap-3 min-w-0 w-full
+          flex flex-col gap-step-xs min-w-0 w-full
         {% endif %}
     "
 >
     <div
-        class="order-last w-full min-w-0{% if is_left %} pc:relative pc:order-first pc:min-h-0{% endif %}"
+        class="order-last w-full min-w-0{% if is_left %} tablet:relative tablet:order-first tablet:min-h-0{% endif %}"
     >
-        <div class="flex w-full min-w-0 items-center gap-2{% if is_left %} pc:absolute pc:inset-0 pc:min-h-0 pc:flex-col{% endif %}">
+        <div class="flex w-full min-w-0 items-center gap-step-2xs{% if is_left %} tablet:absolute tablet:inset-0 tablet:min-h-0 tablet:flex-col{% endif %}">
             {%- if media_count > 1 -%}
                 <button
                     type="button"
-                    class="control-icon product-gallery__thumbnail-nav-button{% if is_left %} hidden pc:inline-flex{% endif %}"
+                    class="control-icon product-gallery__thumbnail-nav-button{% if is_left %} hidden tablet:inline-flex{% endif %}"
                     aria-label="{{ 'accessibility.previous_image' | t }}"
                     aria-controls="{{ gallery_scope_id | escape }}-panel"
                     @click="prev()"
@@ -80,14 +100,15 @@
             <div
                 {% unless is_left %}
                     x-data="dragScroll({ axis: 'x' })"
+                    data-module-id="drag-scroll"
                 {% endunless %}
                 data-gallery-thumbnails
                 class="
                     relative z-0 min-w-0 flex-1
                     {% if is_left %}
-                      no-scrollbar flex flex-nowrap gap-2 overflow-x-auto pc:min-h-0 pc:w-full pc:flex-col pc:overflow-y-auto pc:overflow-x-hidden
+                      no-scrollbar flex flex-nowrap gap-step-2xs overflow-x-auto tablet:min-h-0 tablet:w-full tablet:flex-col tablet:overflow-y-auto tablet:overflow-x-hidden
                     {% else %}
-                      no-scrollbar flex flex-nowrap gap-2 overflow-x-auto
+                      no-scrollbar flex flex-nowrap gap-step-2xs overflow-x-auto
                     {% endif %}
                 "
                 role="tablist"
@@ -106,36 +127,37 @@
                         aria-controls="{{ gallery_scope_id | escape }}-panel"
                         aria-label="{{ 'accessibility.show_media' | t: index: forloop.index | escape }}"
                         data-gallery-thumbnail="{{ forloop.index0 }}"
-                        :tabindex="activeIndex === {{ forloop.index0 }} ? 0 : -1"
-                        :aria-selected="activeIndex === {{ forloop.index0 }}"
-                        @click="setActive({{ forloop.index0 }})"
+                        data-gallery-index="{{ forloop.index0 }}"
+                        :tabindex="activeIndex === Number($el.dataset.galleryIndex) ? 0 : -1"
+                        :aria-selected="activeIndex === Number($el.dataset.galleryIndex)"
+                        @click="setActive(Number($el.dataset.galleryIndex))"
                         class="product-gallery__thumbnail media-interaction-subtle relative block {{ thumbnail_width_class }} shrink-0"
-                        style="aspect-ratio: {{ gallery_aspect }};"
-                        :class="activeIndex === {{ forloop.index0 }} && 'is-active'"
+                        style="aspect-ratio: {{ thumbnail_aspect }};"
+                        :class="{ 'is-active': activeIndex === Number($el.dataset.galleryIndex) }"
                     >
                         {%- render 'image',
                             image: media_image,
                             width: 320,
-                            img_class: 'w-full h-full object-cover overflow-hidden rounded-[inherit]',
+                            img_class: 'w-full h-full object-contain overflow-hidden rounded-[inherit]',
                             alt: media_image.alt,
                             sizes: thumbnail_image_sizes,
                             widths: thumbnail_image_widths,
                             loading: 'lazy',
-                            aspect_ratio: gallery_aspect,
-                            motion_reveal: false
+                            aspect_ratio: thumbnail_aspect,
+                            fit: 'contain'
                         -%}
                         {%- if media_type != 'image' -%}
                             <span class="pointer-events-none absolute inset-0 flex items-center justify-center">
                                 {%- if media_type == 'video' or media_type == 'external_video' -%}
-                                    <span class="flex h-7 w-7 items-center justify-center rounded-full bg-theme-bg/80 text-theme-text shadow backdrop-blur-sm">
+                                    <span class="flex h-7 w-7 items-center justify-center rounded-full bg-veil text-theme-text shadow-sm backdrop-blur-sm">
                                         {%- render 'icons',
                                             icon: 'icon-play',
-                                            class: 'ms-0.5',
+                                            class: 'ms-step-3xs',
                                             size: 'xs'
                                         -%}
                                     </span>
                                 {%- elsif media_type == 'model' -%}
-                                    <span class="flex h-7 w-7 items-center justify-center rounded-full bg-theme-bg/80 text-theme-text shadow backdrop-blur-sm">
+                                    <span class="flex h-7 w-7 items-center justify-center rounded-full bg-veil text-theme-text shadow-sm backdrop-blur-sm">
                                         {%- render 'icons', icon: 'icon-3d-model', size: 'xs' -%}
                                     </span>
                                 {%- endif -%}
@@ -148,7 +170,7 @@
             {%- if media_count > 1 -%}
                 <button
                     type="button"
-                    class="control-icon product-gallery__thumbnail-nav-button{% if is_left %} hidden pc:inline-flex{% endif %}"
+                    class="control-icon product-gallery__thumbnail-nav-button{% if is_left %} hidden tablet:inline-flex{% endif %}"
                     aria-label="{{ 'accessibility.next_image' | t }}"
                     aria-controls="{{ gallery_scope_id | escape }}-panel"
                     @click="next()"
@@ -166,13 +188,15 @@
     <div
         class="
             relative min-w-0 flex-1 overflow-hidden rounded-sm bg-theme-bg
-            pc:w-full
+            tablet:w-full
             {% if max_height != blank %}
-              pc:max-h-(--product-gallery-max-height)
+              tablet:max-h-(--product-gallery-max-height)
             {% endif %}
         "
         style="
-            aspect-ratio: {{ gallery_aspect }};
+            {% unless gallery_adapt %}
+                aspect-ratio: {{ gallery_aspect }};
+            {% endunless %}
             {% if max_height != blank %}
                 --product-gallery-max-height: {{ max_height }};
             {% endif %}
@@ -192,22 +216,31 @@
                     type="button"
                     aria-label="{{ 'accessibility.open_image_zoom' | t }}"
                     class="product-gallery__zoom-button"
-                    :class="activeIndex === {{ forloop.index0 }} && 'is-active'"
-                    :tabindex="activeIndex === {{ forloop.index0 }} ? 0 : -1"
-                    :aria-hidden="(activeIndex !== {{ forloop.index0 }}).toString()"
-                    :inert="activeIndex !== {{ forloop.index0 }}"
-                    @click="openLightbox({{ image_only_index }})"
+                    data-gallery-index="{{ forloop.index0 }}"
+                    {% if forloop.index0 == gallery_initial_index %}
+                        data-gallery-initial
+                    {% endif %}
+                    data-lightbox-index="{{ image_only_index }}"
+                    :class="{ 'is-active': activeIndex === Number($el.dataset.galleryIndex) }"
+                    :tabindex="activeIndex === Number($el.dataset.galleryIndex) ? 0 : -1"
+                    :aria-hidden="(activeIndex !== Number($el.dataset.galleryIndex)).toString()"
+                    :inert="activeIndex !== Number($el.dataset.galleryIndex)"
+                    @click="openLightbox(Number($el.dataset.lightboxIndex))"
                 >
                     {%- assign image_only_index = image_only_index | plus: 1 -%}
             {%- elsif media_type != 'image' -%}
                 <button
                     type="button"
                     class="product-gallery__zoom-button"
-                    :class="activeIndex === {{ forloop.index0 }} && 'is-active'"
-                    :tabindex="activeIndex === {{ forloop.index0 }} ? 0 : -1"
-                    :aria-hidden="(activeIndex !== {{ forloop.index0 }}).toString()"
-                    :inert="activeIndex !== {{ forloop.index0 }}"
-                    @click="activateMediaById({{ image.id }})"
+                    data-gallery-index="{{ forloop.index0 }}"
+                    {% if forloop.index0 == gallery_initial_index %}
+                        data-gallery-initial
+                    {% endif %}
+                    :class="{ 'is-active': activeIndex === Number($el.dataset.galleryIndex) }"
+                    :tabindex="activeIndex === Number($el.dataset.galleryIndex) ? 0 : -1"
+                    :aria-hidden="(activeIndex !== Number($el.dataset.galleryIndex)).toString()"
+                    :inert="activeIndex !== Number($el.dataset.galleryIndex)"
+                    @click="activateMediaById($el.dataset.mediaId)"
                     data-media-id="{{ image.id }}"
                     data-media-type="{{ media_type }}"
                     {% if media_type == 'model' %}
@@ -219,14 +252,18 @@
             {%- else -%}
                 <div
                     class="product-gallery__zoom-button"
-                    :class="activeIndex === {{ forloop.index0 }} && 'is-active'"
-                    :aria-hidden="(activeIndex !== {{ forloop.index0 }}).toString()"
-                    :inert="activeIndex !== {{ forloop.index0 }}"
+                    data-gallery-index="{{ forloop.index0 }}"
+                    {% if forloop.index0 == gallery_initial_index %}
+                        data-gallery-initial
+                    {% endif %}
+                    :class="{ 'is-active': activeIndex === Number($el.dataset.galleryIndex) }"
+                    :aria-hidden="(activeIndex !== Number($el.dataset.galleryIndex)).toString()"
+                    :inert="activeIndex !== Number($el.dataset.galleryIndex)"
                 >
             {%- endif -%}
             {%- assign gallery_loading = 'lazy' -%}
             {%- assign gallery_fetchpriority = 'auto' -%}
-            {%- if forloop.first -%}
+            {%- if forloop.index0 == gallery_initial_index -%}
                 {%- assign gallery_loading = 'eager' -%}
                 {%- assign gallery_fetchpriority = 'high' -%}
             {%- endif -%}
@@ -236,40 +273,42 @@
                     {%- render 'image-magnifier',
                         image: media_image,
                         width: 1200,
-                        img_class: 'w-full h-full object-cover',
+                        img_class: gallery_main_img_class,
                         alt: media_image.alt,
-                        sizes: '(min-width: 48rem) 50vw, 100vw',
-                        widths: '400,600,800,1200',
+                        sizes: '(min-width: 80rem) 920px, (min-width: 64rem) 56vw, 100vw',
+                        widths: '400,600,800,1000,1200,1600,1840',
                         loading: gallery_loading,
                         fetchpriority: gallery_fetchpriority,
                         zoom_scale: magnifier_zoom_scale,
                         preview_width: magnifier_preview_width,
                         preview_height: magnifier_preview_height,
                         preview_max_width: magnifier_preview_max_width,
-                        motion_reveal: motion_reveal
+                        fit: gallery_magnifier_fit
                     -%}
                 {%- else -%}
                     {%- render 'image',
                         image: media_image,
                         width: 1200,
-                        img_class: 'w-full h-full object-cover',
+                        img_class: gallery_main_img_class,
                         alt: media_image.alt,
-                        sizes: '(min-width: 48rem) 50vw, 100vw',
-                        widths: '400,600,800,1200',
+                        sizes: '(min-width: 80rem) 920px, (min-width: 64rem) 56vw, 100vw',
+                        widths: '400,600,800,1000,1200,1600,1840',
                         loading: gallery_loading,
                         fetchpriority: gallery_fetchpriority,
-                        motion_reveal: motion_reveal
+                        mode: gallery_main_mode,
+                        fit: gallery_main_fit
                     -%}
                 {%- endif -%}
             {%- else -%}
                 {%- render 'product-media',
                     media: image,
                     aspect_ratio: gallery_aspect,
-                    sizes: '(min-width: 48rem) 50vw, 100vw',
-                    widths: '400,600,800,1200',
+                    sizes: '(min-width: 80rem) 920px, (min-width: 64rem) 56vw, 100vw',
+                    widths: '400,600,800,1000,1200,1600,1840',
                     loading: gallery_loading,
                     fetchpriority: gallery_fetchpriority,
-                    motion_reveal: motion_reveal
+                    img_class: gallery_main_img_class,
+                    adapt: gallery_adapt
                 -%}
             {%- endif -%}
 

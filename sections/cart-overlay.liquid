@@ -41,6 +41,7 @@
             data-cart-sections='["{{ section.id }}"]'
             data-section-id="{{ section.id }}"
             x-data="cartOverlay()"
+            data-module-id="cart-overlay"
             @keydown.escape.window="$store.dialog.close()"
             :class="{ 'opacity-80': $store.cart.loading && showItems }"
         >
@@ -54,6 +55,7 @@
                 <button
                     type="button"
                     class="close-button"
+                    data-focus-key="cart-overlay-close"
                     @click="$store.dialog.close()"
                     aria-label="{{ 'accessibility.close_cart_drawer' | t }}"
                 >
@@ -61,7 +63,7 @@
                 </button>
             </div>
 
-            <div class="ui-dialog-overlay-body pc:px-6 pc:py-4">
+            <div class="ui-dialog-overlay-body tablet:px-step-m tablet:py-step-s">
                 <div
                     x-show="showInitialLoading"
                     class="flex h-full items-center justify-center text-center"
@@ -75,37 +77,39 @@
                     <p>{{ 'cart.empty' | t }}</p>
                 </div>
 
-                <ul x-show="showItems" class="flex flex-col divide-y divide-theme-border/20">
+                <ul
+                    x-show="showItems"
+                    class="flex flex-col divide-y divide-line"
+                    data-cart-overlay-lines
+                >
                     <template x-for="item in items" :key="item.key">
                         <li
-                            class="grid grid-cols-[minmax(6rem,0.95fr)_minmax(0,1.35fr)_auto] gap-4 py-3"
+                            class="grid grid-cols-[minmax(6rem,0.95fr)_minmax(0,1.35fr)_auto] gap-step-s py-step-xs"
                             data-cart-product-alt="{{ 'cart.product_alt' | t | escape }}"
                             data-cart-item-fallback="{{ 'general.item' | t | escape }}"
                         >
                             <a
                                 :href="item.url"
-                                class="flex aspect-square w-full items-center justify-center overflow-hidden bg-theme-bg/50"
+                                class="flex aspect-square w-full items-center justify-center overflow-hidden bg-surface-muted"
                             >
-                                <img
-                                    class="h-full w-full object-contain p-3"
-                                    :src="typeof item.image === 'string' ? item.image : (item.image?.url || item.featured_image?.url || '')"
-                                    :alt="item.product_title || item.title || $el.closest('li').dataset.cartProductAlt"
-                                    width="120"
-                                    height="120"
-                                    loading="lazy"
-                                >
+                                <span
+                                    class="block h-full w-full bg-contain bg-center bg-no-repeat p-step-xs"
+                                    role="img"
+                                    :style="itemImageStyle(item)"
+                                    :aria-label="itemImageAlt(item, $el.closest('li').dataset.cartProductAlt)"
+                                ></span>
                             </a>
 
-                            <div class="flex min-w-0 flex-col py-1">
-                                <p class="body-sm uppercase" x-text="item.vendor || ''"></p>
+                            <div class="flex min-w-0 flex-col py-step-3xs">
+                                <p class="copy-s uppercase" x-text="item.vendor || ''"></p>
                                 <a
                                     :href="item.url"
-                                    class="cart-overlay__product-link mt-3 line-clamp-2 body-lg interactive-link"
+                                    class="cart-overlay__product-link mt-step-xs line-clamp-2 copy-l interactive-link"
                                     x-text="item.product_title || item.title"
                                 >
                                 </a>
                                 <template x-if="normalizedOptions(item).length > 0">
-                                    <ul class="mt-1 body-xs text-theme-text/80">
+                                    <ul class="mt-step-3xs copy-s text-muted">
                                         <template
                                             x-for="option in normalizedOptions(item)"
                                             :key="option.key"
@@ -118,13 +122,13 @@
                                 </template>
                                 <template x-if="item.selling_plan_allocation && item.selling_plan_allocation.selling_plan">
                                     <p
-                                        class="mt-1 body-xs text-theme-text/80"
+                                        class="mt-step-3xs copy-s text-muted"
                                         data-selling-plan-label="{{ 'cart.selling_plan_label' | t | escape }}"
                                         x-text="$el.dataset.sellingPlanLabel + ': ' + item.selling_plan_allocation.selling_plan.name"
                                     ></p>
                                 </template>
                                 <template x-if="publicProperties(item).length > 0">
-                                    <ul class="mt-1 body-xs text-theme-text/80">
+                                    <ul class="mt-step-3xs copy-s text-muted">
                                         <template
                                             x-for="property in publicProperties(item)"
                                             :key="property.key"
@@ -133,20 +137,20 @@
                                                 <span x-text="property.label + ':'"></span>
                                                 <template x-if="property.uploadUrl">
                                                     <a
-                                                        class="ms-1 interactive-link"
+                                                        class="ms-step-3xs interactive-link"
                                                         :href="property.uploadUrl"
                                                         x-text="property.fileName || property.value"
                                                     ></a>
                                                 </template>
                                                 <template x-if="!property.uploadUrl">
-                                                    <span class="ms-1" x-text="property.value"></span>
+                                                    <span class="ms-step-3xs" x-text="property.value"></span>
                                                 </template>
                                             </li>
                                         </template>
                                     </ul>
                                 </template>
-                                <div class="mt-auto pt-4">
-                                    <p class="body-xs text-theme-text/80">
+                                <div class="mt-auto pt-step-s">
+                                    <p class="copy-s text-muted">
                                         <template x-if="Number(item.original_price || 0) > Number(item.final_price || 0)">
                                             <span>
                                                 <span
@@ -154,7 +158,7 @@
                                                     x-text="formatMoney(item.original_price)"
                                                 ></span>
                                                 <span
-                                                    class="ms-1"
+                                                    class="ms-step-3xs"
                                                     x-text="formatMoney(item.final_price)"
                                                 ></span>
                                             </span>
@@ -166,11 +170,11 @@
                                     <template x-if="item.original_line_price > item.final_line_price">
                                         <p>
                                             <span
-                                                class="text-theme-text/80 line-through"
+                                                class="text-muted line-through"
                                                 x-text="formatMoney(item.original_line_price)"
                                             ></span>
                                             <span
-                                                class="ms-1"
+                                                class="ms-step-3xs"
                                                 x-text="formatMoney(item.final_line_price)"
                                             ></span>
                                         </p>
@@ -180,18 +184,18 @@
                                     </template>
                                     <template x-if="unitPriceText(item)">
                                         <p
-                                            class="mt-1 body-xs text-theme-text/80"
+                                            class="mt-step-3xs copy-s text-muted"
                                             x-text="unitPriceText(item)"
                                         ></p>
                                     </template>
                                     <template x-if="item.line_level_discount_allocations && item.line_level_discount_allocations.length > 0">
-                                        <ul class="mt-1">
+                                        <ul class="mt-step-3xs">
                                             <template
                                                 x-for="alloc in item.line_level_discount_allocations"
                                                 :key="alloc.discount_application.title"
                                             >
                                                 <li
-                                                    class="body-xs text-theme-text/80"
+                                                    class="copy-s text-muted"
                                                     x-text="alloc.discount_application.title + ' (-' + formatMoney(alloc.amount) + ')'"
                                                 ></li>
                                             </template>
@@ -200,12 +204,13 @@
                                 </div>
                             </div>
 
-                            <div class="flex shrink-0 flex-col items-end justify-between py-1">
+                            <div class="flex shrink-0 flex-col items-end justify-between py-step-3xs">
                                 <button
                                     type="button"
                                     class="cart-overlay__remove-button"
                                     @click="remove(item)"
                                     :disabled="$store.cart.loading || pending[item.key] === true"
+                                    :data-focus-key="'cart-overlay-remove-' + item.key"
                                     data-remove-item-label="{{ 'accessibility.remove_item' | t: item: '__ITEM__' | escape }}"
                                     :aria-label="$el.dataset.removeItemLabel.replace('__ITEM__', item.product_title || item.title || $el.closest('li').dataset.cartItemFallback)"
                                 >
@@ -218,6 +223,7 @@
                                         class="quantity-selector__button"
                                         @click="decrement(item)"
                                         :disabled="$store.cart.loading || pending[item.key] || !canDecrement(item)"
+                                        :data-focus-key="'cart-overlay-qty-dec-' + item.key"
                                         aria-label="{{ 'accessibility.decrease_quantity' | t }}"
                                     >
                                         {% render 'icons', icon: 'icon-minus' %}
@@ -234,6 +240,7 @@
                                         class="quantity-selector__button"
                                         @click="increment(item)"
                                         :disabled="$store.cart.loading || pending[item.key] || !canIncrement(item)"
+                                        :data-focus-key="'cart-overlay-qty-inc-' + item.key"
                                         aria-label="{{ 'accessibility.increase_quantity' | t }}"
                                     >
                                         {% render 'icons', icon: 'icon-plus' %}
@@ -244,7 +251,7 @@
                     </template>
                 </ul>
 
-                <div x-show="showItems" class="pt-4 text-center">
+                <div x-show="showItems" class="pt-step-s text-center">
                     {%- assign link_text = 'cart.add_more_product' | t -%}
                     {%- render 'link',
                         text: link_text,
@@ -254,13 +261,13 @@
                 </div>
             </div>
 
-            <div class="ui-dialog-overlay-footer mt-auto pc:px-6 pc:py-4">
+            <div class="ui-dialog-overlay-footer mt-auto tablet:px-step-m tablet:py-step-s">
                 <template x-if="$store.cart.cart_level_discount_applications && $store.cart.cart_level_discount_applications.length > 0">
-                    <div class="mb-3">
-                        <p class="body-sm font-medium">{{ 'cart.discounts' | t }}</p>
-                        <ul class="mt-2 space-y-1">
+                    <div class="mb-step-xs">
+                        <p class="copy-s">{{ 'cart.discounts' | t }}</p>
+                        <ul class="mt-step-2xs space-y-step-3xs">
                             <template x-for="disc in $store.cart.cart_level_discount_applications" :key="disc.title">
-                                <li class="flex items-baseline justify-between gap-4 body-sm text-theme-text/80">
+                                <li class="flex items-baseline justify-between gap-step-s copy-s text-muted">
                                     <span x-text="disc.title"></span>
                                     <span x-text="'-' + formatMoney(disc.total_allocated_amount)"></span>
                                 </li>
@@ -270,21 +277,21 @@
                 </template>
 
                 <template x-if="$store.cart.total_discount > 0">
-                    <div class="mb-3 flex items-center justify-between body-sm">
+                    <div class="mb-step-xs flex items-center justify-between copy-s">
                         <span>{{ 'cart.you_saved' | t }}</span>
-                        <span class="text-theme-text/80" x-text="'-' + formatMoney($store.cart.total_discount)"></span>
+                        <span class="text-muted" x-text="'-' + formatMoney($store.cart.total_discount)"></span>
                     </div>
                 </template>
 
-                <div class="mb-3 flex items-center justify-between">
+                <div class="mb-step-xs flex items-center justify-between">
                     <p>{{ 'cart.total' | t }}</p>
                     <p x-text="formatMoney($store.cart.total_price)"></p>
                 </div>
 
-                <div class="grid grid-cols-1 gap-2">
+                <div class="grid grid-cols-1 gap-step-2xs">
                     <a
                         href="{{ routes.cart_url }}"
-                        class="btn-secondary inline-flex w-full items-center justify-center gap-2"
+                        class="btn-secondary inline-flex w-full items-center justify-center gap-step-2xs"
                     >
                         <span>{{ 'cart.view_cart' | t }}</span>
                         {%- render 'icons', icon: 'icon-arrow2' -%}
@@ -315,14 +322,14 @@
             data-overlay-visual-preview="cart"
         >
             <div
-                class="z-layer-drawer-backdrop fixed inset-x-0 top-[var(--announcement-bar-height)] bottom-0 bg-dialog-overlay pc:top-0"
+                class="z-layer-drawer-backdrop fixed inset-x-0 top-[var(--announcement-bar-height)] bottom-0 bg-scrim tablet:top-0"
             ></div>
             <div
                 class="
                     ui-dialog-drawer-shell ui-dialog-drawer-width-default ui-dialog-desktop-drawer
                     ui-dialog-desktop-drawer--{{ drawer_position }} ui-dialog-mobile-layout-inset
                     z-layer-drawer fixed top-[var(--announcement-bar-height)] bottom-0 w-full
-                    {{ drawer_side_class }} pc:top-0
+                    {{ drawer_side_class }} tablet:top-0
                 "
                 role="dialog"
                 aria-modal="true"
@@ -343,7 +350,7 @@
                                 {% render 'icons', icon: 'icon-close' %}
                             </button>
                         </div>
-                        <div class="ui-dialog-overlay-body flex h-full items-center justify-center text-center pc:px-6 pc:py-4">
+                        <div class="ui-dialog-overlay-body flex h-full items-center justify-center text-center tablet:px-step-m tablet:py-step-s">
                             <p>{{ 'cart.empty' | t }}</p>
                         </div>
                     </div>
@@ -356,7 +363,7 @@
             type: 'drawer',
             layer: 'drawer',
             position: section.settings.drawer_position,
-            top_class: 'top-[var(--announcement-bar-height)] pc:top-0',
+            top_class: 'top-[var(--announcement-bar-height)] tablet:top-0',
             color_scheme: section.settings.color_scheme,
             drawer_motion_sheet: true,
             mobile_layout: 'inset',

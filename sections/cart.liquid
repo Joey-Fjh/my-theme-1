@@ -1,40 +1,47 @@
-<div
-    data-section-id="{{ section.id }}"
-    class="cart-section full-width color-{{ section.settings.color_scheme }} surface-section"
-    style="
-        --section-padding-top: {{ section.settings.padding_top }}px;
-        --section-padding-bottom: {{ section.settings.padding_bottom }}px;
-    "
-    x-data="cartPage()"
-    data-shipping-msg-calculating="{{ 'cart.shipping_calculating' | t | escape }}"
-    data-shipping-msg-rates="{{ 'cart.shipping_rates' | t | escape }}"
-    data-shipping-msg-empty="{{ 'cart.shipping_no_rates' | t | escape }}"
-    data-shipping-msg-error="{{ 'cart.shipping_error' | t | escape }}"
-    data-shipping-msg-timeout="{{ 'cart.shipping_timeout' | t | escape }}"
-    data-shipping-msg-country-required="{{ 'cart.shipping_country_required' | t | escape }}"
-    :class="{ 'opacity-50 pointer-events-none': $store.cart.loading }"
->
-    {%- liquid
-        assign cart_heading_class = section.settings.heading_size | default: 'heading-3xl'
-        assign cart_shop_more_link = section.settings.shop_more_link
-        if cart_shop_more_link == blank or cart_shop_more_link == '/'
-            assign cart_shop_more_link = routes.root_url
-        endif
-    -%}
-    <div class="layout container-page">
-        <div class="grid grid-cols-1 gap-10 pc:grid-cols-[minmax(0,1fr)_auto]">
+{%- liquid
+    assign cart_heading_class = section.settings.heading_size | default: 'title-3xl'
+    assign cart_shop_more_link = section.settings.shop_more_link
+    if cart_shop_more_link == blank or cart_shop_more_link == '/'
+        assign cart_shop_more_link = routes.root_url
+    endif
+-%}
+{%- capture cart_children -%}
+    <div
+        data-section-id="{{ section.id }}"
+        x-data="cartPage()"
+        data-module-id="cart-page"
+        data-shipping-msg-calculating="{{ 'cart.shipping_calculating' | t | escape }}"
+        data-shipping-msg-rates="{{ 'cart.shipping_rates' | t | escape }}"
+        data-shipping-msg-empty="{{ 'cart.shipping_no_rates' | t | escape }}"
+        data-shipping-msg-error="{{ 'cart.shipping_error' | t | escape }}"
+        data-shipping-msg-timeout="{{ 'cart.shipping_timeout' | t | escape }}"
+        data-shipping-msg-country-required="{{ 'cart.shipping_country_required' | t | escape }}"
+        :class="{ 'opacity-50 pointer-events-none': $store.cart.loading }"
+    >
+        <div class="grid grid-cols-1 gap-step-xl tablet:grid-cols-[minmax(0,1fr)_auto]">
             {%- comment -%} Left: Cart list (Liquid-rendered for SRA) {%- endcomment -%}
-            <div class="flex flex-col gap-10 pc:gap-30">
-                <h1 class="{{ cart_heading_class }}">{{ 'cart.title' | t }}</h1>
+            <div class="flex flex-col gap-step-xl tablet:gap-step-4xl">
+                {%- capture cart_title_content -%}{{ 'cart.title' | t }}{%- endcapture -%}
+                {% render 'heading',
+                    level: '1',
+                    tier: cart_heading_class,
+                    content: cart_title_content,
+                    attrs: 'data-cart-page-heading tabindex="-1"'
+                %}
 
                 {%- if cart.item_count == 0 -%}
                     <p>{{ 'cart.empty' | t }}</p>
                 {%- endif -%}
 
-                <ul class="flex flex-col">
+                <form
+                    action="{{ routes.cart_url }}"
+                    method="post"
+                    id="cart-update-form-{{ section.id }}"
+                >
+                <ul class="flex flex-col" data-cart-lines>
                     {%- for item in cart.items -%}
-                        <li class="grid grid-cols-3 gap-x-2 gap-y-3 border-b border-theme-border/20 py-3 first:pt-0 pc:grid-cols-[minmax(7.75rem,1fr)_minmax(0,3fr)_minmax(8rem,1fr)] pc:gap-6 pc:py-6">
-                            <div class="flex aspect-square w-full items-center justify-center overflow-hidden bg-theme-bg/50">
+                        <li class="grid grid-cols-3 gap-x-step-2xs gap-y-step-xs border-b border-line py-step-xs first:pt-0 tablet:grid-cols-[minmax(7.75rem,1fr)_minmax(0,3fr)_minmax(8rem,1fr)] tablet:gap-step-m tablet:py-step-m">
+                            <div class="flex aspect-square w-full items-center justify-center overflow-hidden bg-surface-muted">
                                 {%- if item.image -%}
                                     {% render 'image',
                                         url: item.url,
@@ -44,7 +51,7 @@
                                         width: 120,
                                         height: 120,
                                         crop: 'center',
-                                        img_class: 'object-contain p-3'
+                                        img_class: 'object-contain p-step-xs'
                                     %}
                                 {%- else -%}
                                     {%- assign cart_placeholder_index = forloop.index0
@@ -57,29 +64,28 @@
                                     {% render 'image',
                                         wrapper_class: 'h-full w-full',
                                         placeholder_key: cart_placeholder_key,
-                                        placeholder_class: 'text-theme-text/20',
+                                        placeholder_class: 'text-faint',
                                         alt: '',
                                         width: 120,
                                         height: 120,
                                         fit: 'contain',
-                                        motion_reveal: false
                                     %}
                                 {%- endif -%}
                             </div>
 
-                            <div class="flex min-w-0 flex-col py-1">
+                            <div class="flex min-w-0 flex-col py-step-3xs">
                                 <p class="uppercase">
                                     {{ item.vendor | default: ' ' }}
                                 </p>
                                 <a
                                     href="{{ item.url }}"
-                                    class="cart__product-link mt-3 block body-xl interactive-link pc:mt-5"
+                                    class="cart__product-link mt-step-xs block copy-l interactive-link tablet:mt-step-m"
                                 >
                                     {{ item.product.title }}
                                 </a>
 
                                 {%- unless item.product.has_only_default_variant -%}
-                                    <ul class="mt-1 text-theme-text/80">
+                                    <ul class="mt-step-3xs text-muted">
                                         {%- for option in item.options_with_values -%}
                                             <li>
                                                 {{ option.name | escape }}:
@@ -90,7 +96,7 @@
                                 {%- endunless -%}
 
                                 {%- if item.selling_plan_allocation -%}
-                                    <p class="mt-1 text-theme-text/80">
+                                    <p class="mt-step-3xs text-muted">
                                         {{ 'cart.selling_plan_label' | t }}:
                                         {{ item.selling_plan_allocation.selling_plan.name }}
                                     </p>
@@ -186,12 +192,12 @@
                                                     {%- if property_upload_url != blank -%}
                                                         <a
                                                             href="{{ property_upload_url | escape }}"
-                                                            class="ms-1 interactive-link"
+                                                            class="ms-step-3xs interactive-link"
                                                         >
                                                             {{- property_upload_filename | escape -}}
                                                         </a>
                                                     {%- else -%}
-                                                        <span class="ms-1">
+                                                        <span class="ms-step-3xs">
                                                             {{- property_value | escape -}}
                                                         </span>
                                                     {%- endif -%}
@@ -203,31 +209,31 @@
                                         | strip
                                     -%}
                                     {%- if cart_item_properties_html != blank -%}
-                                        <ul class="mt-1 text-theme-text/80">
+                                        <ul class="mt-step-3xs text-muted">
                                             {{ cart_item_properties_html }}
                                         </ul>
                                     {%- endif -%}
                                 {%- endif -%}
 
-                                <div class="mt-auto pt-2 pc:pt-4">
-                                    <p class="body-sm text-theme-text/80">
+                                <div class="mt-auto pt-step-2xs tablet:pt-step-s">
+                                    <p class="copy-s text-muted">
                                         {%- if item.original_price > item.final_price -%}
                                             <span class="line-through">
                                                 {{- item.original_price | money -}}
                                             </span>
-                                            <span class="ms-1">
+                                            <span class="ms-step-3xs">
                                                 {{- item.final_price | money -}}
                                             </span>
                                         {%- else -%}
                                             {{- item.final_price | money -}}
                                         {%- endif -%}
                                     </p>
-                                    <p class="body-lg">
+                                    <p class="copy-l">
                                         {%- if item.original_line_price > item.final_line_price -%}
-                                            <span class="text-theme-text/80 line-through">
+                                            <span class="text-muted line-through">
                                                 {{- item.original_line_price | money -}}
                                             </span>
-                                            <span class="ms-1">
+                                            <span class="ms-step-3xs">
                                                 {{- item.final_line_price | money -}}
                                             </span>
                                         {%- else -%}
@@ -236,15 +242,15 @@
                                     </p>
                                     {%- render 'unit-price',
                                         target: item,
-                                        class: 'mt-1 block body-sm text-theme-text/80'
+                                        class: 'mt-step-3xs block copy-s text-muted'
                                     -%}
                                     {%- if item.line_level_discount_allocations.size > 0 -%}
                                         <ul
-                                            class="mt-1"
+                                            class="mt-step-3xs"
                                             aria-label="{{ 'cart.discounts' | t }}"
                                         >
                                             {%- for allocation in item.line_level_discount_allocations -%}
-                                                <li class="text-theme-text/80">
+                                                <li class="text-muted">
                                                     {{ allocation.discount_application.title }}
                                                     (-{{ allocation.amount | money }})
                                                 </li>
@@ -254,20 +260,21 @@
                                 </div>
                             </div>
 
-                            <div class="flex items-center justify-end self-end py-1 pc:col-span-1">
+                            <div class="flex items-center justify-end self-end py-step-3xs tablet:col-span-1">
                                 <a
                                     href="{{ item.url_to_remove }}"
                                     class="inline-flex items-center justify-center text-current opacity-50 transition-opacity hover:opacity-100"
                                     aria-label="{{ 'accessibility.remove_item' | t: item: item.product.title | escape }}"
                                     data-item-key="{{ item.key | escape }}"
                                     data-section-id="{{ section.id }}"
+                                    data-focus-key="cart-remove-{{ item.key | escape }}"
                                     @click.prevent="$store.cart.change($el.dataset.itemKey, 0, [$el.dataset.sectionId])"
                                 >
                                     {% render 'icons', icon: 'icon-trash' %}
                                 </a>
 
                                 <span
-                                    class="mx-5 h-5 border-s border-theme-border/20 pc:mx-10 pc:h-10"
+                                    class="mx-step-m h-5 border-s border-line tablet:mx-step-xl tablet:h-10"
                                     aria-hidden="true"
                                 ></span>
 
@@ -279,12 +286,15 @@
                                     {%- capture cart_quantity_input_id -%}
                                         CartQuantity-{{ section.id }}-{{ forloop.index0 }}
                                     {%- endcapture -%}
+                                    {%- assign cart_qty_focus_key = 'cart-qty-' | append: item.key -%}
                                     {%- render 'quantity-selector',
                                         variant: item.variant,
                                         surface: 'cart',
                                         value: item.quantity,
                                         label: item.product.title,
-                                        input_id: cart_quantity_input_id
+                                        input_id: cart_quantity_input_id,
+                                        focus_key: cart_qty_focus_key,
+                                        name: 'updates[]'
                                     -%}
                                 </div>
                             </div>
@@ -292,21 +302,30 @@
                     {%- endfor -%}
                 </ul>
 
+                <noscript>
+                    <div class="mt-step-m">
+                        <button type="submit" name="update" class="btn-primary btn">
+                            {{ 'cart.update_quantities' | t }}
+                        </button>
+                    </div>
+                </noscript>
+                </form>
+
                 <div class="text-center">
                     {%- assign link_text = 'cart.shop_more' | t -%}
                     {%- render 'link',
                         text: link_text,
                         href: cart_shop_more_link,
                         variant: 'underline',
-                        class: 'body-xl'
+                        class: 'copy-l'
                     -%}
                 </div>
             </div>
 
             {%- comment -%} Right: Order Summary card {%- endcomment -%}
             <aside class="self-start">
-                <div class="w-full p-5 pc:p-6">
-                    <h2 class="heading-h2">{{ 'cart.order_summary' | t }}</h2>
+                <div class="w-full p-step-m tablet:p-step-m">
+                    <h2 class="title-m">{{ 'cart.order_summary' | t }}</h2>
 
                     {%- comment -%} Accordion: Order Special Instruction + Estimate Shipping {%- endcomment -%}
                     {%- capture note_html -%}
@@ -324,12 +343,12 @@
 
                     {%- capture shipping_html -%}
                         <form
-                            class="space-y-6"
+                            class="space-y-step-m"
                             data-shipping-estimate-form
                             @submit.prevent="estimateShipping($event)"
                             :aria-busy="shippingStatus === 'loading'"
                         >
-                            <div class="grid grid-cols-2 gap-6">
+                            <div class="grid grid-cols-2 gap-step-m">
                                 <div>
                                     <label
                                         class="sr-only"
@@ -386,16 +405,16 @@
 
                             <button
                                 type="submit"
-                                class="btn-secondary w-full body-xl"
+                                class="btn-secondary w-full copy-l"
                                 data-shipping-estimate-submit
                                 :disabled="shippingStatus === 'loading'"
                             >
                                 {{ 'cart.get_estimate' | t }}
                             </button>
 
-                            <div class="space-y-3" data-shipping-result>
+                            <div class="space-y-step-xs" data-shipping-result>
                                 <p
-                                    class="body-sm"
+                                    class="copy-s"
                                     role="status"
                                     aria-live="polite"
                                     aria-atomic="true"
@@ -403,7 +422,7 @@
                                     x-text="shippingMessage"
                                 ></p>
                                 <ul
-                                    class="space-y-3"
+                                    class="space-y-step-xs"
                                     aria-label="{{ 'cart.shipping_rates' | t | escape }}"
                                     x-show="shippingStatus === 'success' && shippingRates.length > 0"
                                 >
@@ -411,7 +430,7 @@
                                         x-for="(rate, index) in shippingRates"
                                         :key="(rate.code || rate.name || 'rate') + '-' + index"
                                     >
-                                        <li class="flex items-baseline justify-between gap-4 body-sm">
+                                        <li class="flex items-baseline justify-between gap-step-s copy-s">
                                             <span x-text="shippingRateLabel(rate)"></span>
                                             <span x-text="formatShippingPrice(rate.price)"></span>
                                         </li>
@@ -431,13 +450,13 @@
                         shipping_content: shipping_html
                     %}
 
-                    <div class="mt-10 border-t border-theme-border/20 pt-10">
+                    <div class="mt-step-xl border-t border-line pt-step-xl">
                         {%- if cart.cart_level_discount_applications.size > 0 -%}
-                            <div class="mb-4">
-                                <p class="font-medium">{{ 'cart.discounts' | t }}</p>
-                                <ul class="mt-2 space-y-1" aria-label="{{ 'cart.discounts' | t }}">
+                            <div class="mb-step-s">
+                                <p class="copy-l">{{ 'cart.discounts' | t }}</p>
+                                <ul class="mt-step-2xs space-y-step-3xs" aria-label="{{ 'cart.discounts' | t }}">
                                     {%- for discount_application in cart.cart_level_discount_applications -%}
-                                        <li class="flex items-baseline justify-between gap-4 text-theme-text/80">
+                                        <li class="flex items-baseline justify-between gap-step-s text-muted">
                                             <span>{{ discount_application.title }}</span>
                                             <span
                                                 >-
@@ -453,15 +472,15 @@
                         {%- endif -%}
 
                         {%- if cart.total_discount > 0 -%}
-                            <div class="mb-4 flex items-baseline justify-between gap-4">
+                            <div class="mb-step-s flex items-baseline justify-between gap-step-s">
                                 <span>{{ 'cart.you_saved' | t }}</span>
-                                <span class="text-theme-text/80"
+                                <span class="text-muted"
                                     >-{{ cart.total_discount | money -}}
                                 </span>
                             </div>
                         {%- endif -%}
 
-                        <div class="flex items-baseline justify-between gap-4 body-lg">
+                        <div class="flex items-baseline justify-between gap-step-s copy-l">
                             <span>
                                 {{- 'cart.estimate_total' | t -}}
                             </span>
@@ -469,14 +488,14 @@
                                 {{- cart.total_price | money -}}
                             </span>
                         </div>
-                        {%- render 'product-tax-note', class: 'mt-10 text-theme-text/80' -%}
+                        {%- render 'product-tax-note', class: 'mt-step-xl text-muted' -%}
                     </div>
 
-                    <form action="{{ routes.cart_url }}" method="post" class="mt-5">
+                    <form action="{{ routes.cart_url }}" method="post" class="mt-step-m">
                         <button
                             type="submit"
                             name="checkout"
-                            class="btn-primary w-full body-xl"
+                            class="btn-primary w-full copy-l"
                         >
                             {{ 'cart.checkout' | t }}
                             <sup class="sup-badge">( {{ cart.item_count | default: 0 }} )</sup>
@@ -484,7 +503,7 @@
                     </form>
 
                     {%- if additional_checkout_buttons -%}
-                        <div class="additional-checkout-buttons mt-4">
+                        <div class="additional-checkout-buttons mt-step-s">
                             {{ content_for_additional_checkout_buttons }}
                         </div>
                     {%- endif -%}
@@ -492,7 +511,15 @@
             </aside>
         </div>
     </div>
-</div>
+{%- endcapture -%}
+
+{% render 'section-frame',
+    section: section,
+    section_class: 'cart-section',
+    width: 'page',
+    height_kind: 'content',
+    children: cart_children
+%}
 
 {% schema %}
 {
@@ -519,47 +546,39 @@
             "label": "t:sections.slides-show.settings.heading_size",
             "options": [
                 {
-                    "value": "heading-4xl",
-                    "label": "t:sections.slides-show.options.heading_4xl"
+                    "value": "title-4xl",
+                    "label": "t:settings.type_size.title_4xl"
                 },
                 {
-                    "value": "heading-3xl",
-                    "label": "t:sections.slides-show.options.heading_3xl"
+                    "value": "title-3xl",
+                    "label": "t:settings.type_size.title_3xl"
                 },
                 {
-                    "value": "heading-2xl",
-                    "label": "t:sections.slides-show.options.heading_2xl"
+                    "value": "title-2xl",
+                    "label": "t:settings.type_size.title_2xl"
                 },
                 {
-                    "value": "heading-xl",
-                    "label": "t:sections.slides-show.options.heading_xl"
+                    "value": "title-xl",
+                    "label": "t:settings.type_size.title_xl"
                 },
                 {
-                    "value": "heading-h1",
-                    "label": "t:sections.slides-show.options.heading_h1"
+                    "value": "title-l",
+                    "label": "t:settings.type_size.title_l"
                 },
                 {
-                    "value": "heading-h2",
-                    "label": "t:sections.slides-show.options.heading_h2"
+                    "value": "title-m",
+                    "label": "t:settings.type_size.title_m"
                 },
                 {
-                    "value": "heading-h3",
-                    "label": "t:sections.slides-show.options.heading_h3"
+                    "value": "title-s",
+                    "label": "t:settings.type_size.title_s"
                 },
                 {
-                    "value": "heading-h4",
-                    "label": "t:sections.slides-show.options.heading_h4"
-                },
-                {
-                    "value": "heading-h5",
-                    "label": "t:sections.slides-show.options.heading_h5"
-                },
-                {
-                    "value": "heading-h6",
-                    "label": "t:sections.slides-show.options.heading_h6"
+                    "value": "title-xs",
+                    "label": "t:settings.type_size.title_xs"
                 }
             ],
-            "default": "heading-3xl"
+            "default": "title-3xl"
         },
         {
             "type": "url",

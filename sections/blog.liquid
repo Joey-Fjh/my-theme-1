@@ -1,32 +1,35 @@
-<div
-    data-section-id="{{ section.id }}"
-    class="blog-section full-width relative"
-    style="
-        --section-padding-top: {{ section.settings.padding_top }}px;
-        --section-padding-bottom: {{ section.settings.padding_bottom }}px;
-    "
-    data-pagination-section-id="{{ section.id }}"
-    data-pagination-selectors='["[role=&quot;tabpanel&quot;]",".sup-badge"]'
-    x-data="sectionPagination()"
->
-    {%- liquid
-        assign blog_heading_class = section.settings.heading_size | default: 'heading-3xl'
-        assign blog_subtitle_class = section.settings.subtitle_size | default: 'body-xl'
-    -%}
+{%- liquid
+    assign blog_heading_class = section.settings.heading_size | default: 'title-3xl'
+    assign blog_subtitle_class = section.settings.subtitle_size | default: 'copy-l'
+    assign active_tab_index = 0
+    if current_tags != blank
+        for tag in blog.all_tags
+            if current_tags contains tag
+                assign active_tab_index = forloop.index
+                break
+            endif
+        endfor
+    endif
+-%}
+{%- capture blog_children -%}
     <div
-        class="
-            layout layout-no-pb container-page
-            color-{{ section.settings.header_color_scheme }}
-        "
+        class="relative"
+        data-pagination-section-id="{{ section.id }}"
+        data-pagination-selectors='["[role=&quot;tabpanel&quot;]",".sup-badge"]'
+        data-module-id="section-pagination"
+        data-blog-tab-initial-index="{{ active_tab_index }}"
+        x-data="sectionPagination()"
     >
-        {%- comment -%} Hero {%- endcomment -%}
         <div
-            class="relative py-20 pc:py-40"
-            x-data="motionRevealSection()"
-            data-motion-section
+            class="
+                section-frame__overlay-padding-top section-frame__overlay-safe-top container-page relative overflow-hidden
+                color-{{ section.settings.header_color_scheme }}
+            "
         >
+        {%- comment -%} Hero {%- endcomment -%}
+        <div class="relative py-step-3xl tablet:py-step-4xl">
             <div class="flex items-start justify-between">
-                <div data-motion-reveal="content" data-motion-critical>
+                <div>
                     {%- render 'listing-page-hero-copy',
                         setting_header: section.settings.header,
                         object_title: blog.title,
@@ -39,8 +42,7 @@
                 </div>
 
                 <div
-                    class="absolute top-8 right-0 z-10 pc:static"
-                    data-motion-reveal="media"
+                    class="absolute top-8 right-0 z-10 tablet:static"
                 >
                     {%- render 'rotating-badge',
                         classes: 'relative justify-self-center',
@@ -55,46 +57,30 @@
                 </div>
             </div>
         </div>
-    </div>
+        </div>
 
-    <div
-        class="
-            layout layout-no-pt container-page
-            color-{{ section.settings.color_scheme }} surface-section
-            pt-6 pc:pt-8
-        "
-        style="--body-size-custom: 24px; --body-size-custom-pc: 32px;"
-    >
+        <div
+            class="
+                section-frame__overlay-padding-bottom container-page relative overflow-hidden
+                color-{{ section.settings.color_scheme }} surface-section
+                pt-step-m tablet:pt-step-l
+            "
+            style="--body-size-custom: 24px; --body-size-custom-pc: 32px;"
+        >
         <div class="relative flex items-center justify-between">
             {%- comment -%} Tab Header (Router Trigger) + Tab Content (fetch replace) {%- endcomment -%}
             <div class="min-w-0 flex-1">
-                {%- liquid
-                    assign active_tab_index = 0
-                    if current_tags != blank
-                        for tag in blog.all_tags
-                            if current_tags contains tag
-                                assign active_tab_index = forloop.index
-                                break
-                            endif
-                        endfor
-                    endif
-                -%}
-
                 {% capture tab_header %}
-                    <span class="hidden" x-init="$nextTick(() => { setActive({{ active_tab_index }}) })"></span>
-
                     <a
                         href="{{ blog.url }}"
                         role="tab"
-                        x-data="{ index: null }"
-                        x-init="index = registerTab($el);"
-                        :id="`blog-{{ section.id }}-tab-${index}`"
+                        id="blog-{{ section.id }}-tab-0"
+                        data-blog-pagination-tab
                         aria-controls="blog-{{ section.id }}-panel"
-                        @click.prevent="loadUrl($el.href); setActive(index)"
-                        @popstate.window="isUrlMatch($el.href) && setActive(index)"
-                        :tabindex="isFocusable(index) ? 0 : -1"
-                        :aria-selected="isActive(index)"
-                        :class="isActive(index) && 'is-active'"
+                        x-init="registerTab($el)"
+                        :tabindex="isFocusable(tabIndexFor($el)) ? 0 : -1"
+                        :aria-selected="isActive(tabIndexFor($el))"
+                        :class="isActive(tabIndexFor($el)) && 'is-active'"
                         class="blog__tab tab-nav-item tab-nav-item--underline-opacity tab-nav-item--hover-muted"
                     >
                         {{ 'collections.all' | t }} <sup class="sup-badge">({{ blog.articles_count | default: 0 }})</sup>
@@ -104,15 +90,13 @@
                         <a
                             href="{{ blog.url }}/tagged/{{ tag | handle }}"
                             role="tab"
-                            x-data="{ index: null }"
-                            x-init="index = registerTab($el);"
-                            :id="`blog-{{ section.id }}-tab-${index}`"
+                            id="blog-{{ section.id }}-tab-{{ forloop.index }}"
+                            data-blog-pagination-tab
                             aria-controls="blog-{{ section.id }}-panel"
-                            @click.prevent="loadUrl($el.href); setActive(index)"
-                            @popstate.window="isUrlMatch($el.href) && setActive(index)"
-                            :tabindex="isFocusable(index) ? 0 : -1"
-                            :aria-selected="isActive(index)"
-                            :class="isActive(index) && 'is-active'"
+                            x-init="registerTab($el)"
+                            :tabindex="isFocusable(tabIndexFor($el)) ? 0 : -1"
+                            :aria-selected="isActive(tabIndexFor($el))"
+                            :class="isActive(tabIndexFor($el)) && 'is-active'"
                             class="blog__tab tab-nav-item tab-nav-item--underline-opacity tab-nav-item--hover-muted"
                         >
                             {{ tag }}
@@ -124,17 +108,17 @@
                     <div
                         role="tabpanel"
                         id="blog-{{ section.id }}-panel"
-                        :aria-labelledby="`blog-{{ section.id }}-tab-${activeIndex}`"
-                        x-data="{ index: null }"
-                        x-init="index = registerPanel($el)"
+                        aria-labelledby="blog-{{ section.id }}-tab-{{ active_tab_index }}"
+                        x-init="registerPanel($el)"
                         class="relative w-full"
                     >
                         {% render 'loading', overlay: true, size: 'large' %}
 
                         {% paginate blog.articles by section.settings.articles_per_page %}
                             <div
-                                class="grid grid-cols-1 gap-8 pb-10 pc:grid-cols-3"
+                                class="grid grid-cols-1 gap-step-l pb-step-xl tablet:grid-cols-3"
                                 x-data="motionRevealSection()"
+                                data-module-id="motion-reveal"
                                 data-motion-section
                                 data-motion-cascade
                             >
@@ -145,16 +129,16 @@
                                     -%}
                                     <article
                                         class="group"
-                                        data-motion-reveal="content"
+                                        data-motion-bound
                                     >
-                                        <div class="mb-4 block aspect-4/3 overflow-hidden rounded-sm">
+                                        <div class="mb-step-s block aspect-4/3 overflow-hidden rounded-sm">
                                             {% comment %} Image {% endcomment %}
                                             {%- capture sizes -%}
-                                                (max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw
+                                                (min-width: 80rem) 600px, (min-width: 64rem) 36vw, (min-width: 40rem) 800px, 105vw
                                             {%- endcapture -%}
-                                            
+
                                             {%- capture widths -%}
-                                                400, 700
+                                                400,700,1000,1200,1600
                                             {%- endcapture -%}
 
                                             {%- render 'image',
@@ -167,17 +151,16 @@
                                                 width: article.image.width,
                                                 sizes: sizes,
                                                 widths: widths,
-                                                motion_reveal: false
                                             -%}
                                         </div>
 
-                                        <div data-motion-copy-bound>
-                                            <div data-motion-copy>
-                                                <p class="my-6">
+                                        <div>
+                                            <div>
+                                                <p class="my-step-m">
                                                     {{ article.tags | first }}
                                                 </p>
 
-                                                <h2 class="my-6 heading-h2">
+                                                <h2 class="my-step-m title-m">
                                                     <a href="{{ article.url }}">{{ article.title }}</a>
                                                 </h2>
 
@@ -185,7 +168,7 @@
                                                     assign article_excerpt = article.excerpt_or_content | strip_html | strip | truncatewords: 30
                                                 -%}
                                                 {%- if article_excerpt != blank -%}
-                                                    <p class="my-6 body-lg text-theme-text/80">
+                                                    <p class="my-step-m copy-l text-muted">
                                                         {{- article_excerpt | escape_once -}}
                                                     </p>
                                                 {%- endif -%}
@@ -193,14 +176,14 @@
                                                 {%- if article.url !=blank -%}
                                                     {%- capture link_content -%}
                                                         <span>{{ section.settings.link_text }}</span>
-                                                        {% render 'icons', icon: 'icon-arrow2', class: 'ms-3' %}
+                                                        {% render 'icons', icon: 'icon-arrow2', class: 'ms-step-xs' %}
                                                     {%- endcapture -%}
 
                                                     {%- render 'link',
                                                         href: article.url,
                                                         content: link_content,
                                                         variant: 'underline',
-                                                        class: 'body-xl'
+                                                        class: 'copy-l'
                                                     -%}
                                                 {%- endif -%}
                                             </div>
@@ -211,13 +194,7 @@
 
                             <div
                                 class="blog-pagination-wrapper"
-                                @click="
-                                    let link = $event.target.closest('[data-pagination-nav] a');
-                                    if (link) { 
-                                        $event.preventDefault(); 
-                                        loadUrl(link.href); 
-                                    }
-                                "
+                                @click="onNavClick($event)"
                             >
                                 {% render 'pagination', paginate_obj: paginate %}
                             </div>
@@ -228,13 +205,36 @@
                 {%- render 'tab-control',
                     custom_class: 'items-start',
                     tab_header: tab_header,
-                    header_class: 'body-size-custom gap-9',
+                    header_class: 'body-size-custom gap-step-l',
                     tab_content: tab_content
                 -%}
             </div>
         </div>
+        </div>
     </div>
-</div>
+{%- endcapture -%}
+
+{% render 'section-frame',
+    section: section,
+    section_class: 'blog-section',
+    width: 'full',
+    height_kind: 'content',
+    padding_mode: 'overlay',
+    scheme_target: 'none',
+    surface_section: false,
+    root_class: 'relative',
+    children: blog_children
+%}
+
+{% stylesheet %}
+    .blog__tab {
+        display: inline-flex;
+        flex-wrap: nowrap;
+        align-items: center;
+        column-gap: calc(var(--spacing) * 4);
+        white-space: nowrap;
+    }
+{% endstylesheet %}
 
 {% schema %}
 {
@@ -261,47 +261,39 @@
             "label": "t:sections.slides-show.settings.heading_size",
             "options": [
                 {
-                    "value": "heading-4xl",
-                    "label": "t:sections.slides-show.options.heading_4xl"
+                    "value": "title-4xl",
+                    "label": "t:settings.type_size.title_4xl"
                 },
                 {
-                    "value": "heading-3xl",
-                    "label": "t:sections.slides-show.options.heading_3xl"
+                    "value": "title-3xl",
+                    "label": "t:settings.type_size.title_3xl"
                 },
                 {
-                    "value": "heading-2xl",
-                    "label": "t:sections.slides-show.options.heading_2xl"
+                    "value": "title-2xl",
+                    "label": "t:settings.type_size.title_2xl"
                 },
                 {
-                    "value": "heading-xl",
-                    "label": "t:sections.slides-show.options.heading_xl"
+                    "value": "title-xl",
+                    "label": "t:settings.type_size.title_xl"
                 },
                 {
-                    "value": "heading-h1",
-                    "label": "t:sections.slides-show.options.heading_h1"
+                    "value": "title-l",
+                    "label": "t:settings.type_size.title_l"
                 },
                 {
-                    "value": "heading-h2",
-                    "label": "t:sections.slides-show.options.heading_h2"
+                    "value": "title-m",
+                    "label": "t:settings.type_size.title_m"
                 },
                 {
-                    "value": "heading-h3",
-                    "label": "t:sections.slides-show.options.heading_h3"
+                    "value": "title-s",
+                    "label": "t:settings.type_size.title_s"
                 },
                 {
-                    "value": "heading-h4",
-                    "label": "t:sections.slides-show.options.heading_h4"
-                },
-                {
-                    "value": "heading-h5",
-                    "label": "t:sections.slides-show.options.heading_h5"
-                },
-                {
-                    "value": "heading-h6",
-                    "label": "t:sections.slides-show.options.heading_h6"
+                    "value": "title-xs",
+                    "label": "t:settings.type_size.title_xs"
                 }
             ],
-            "default": "heading-3xl"
+            "default": "title-3xl"
         },
         {
             "type": "inline_richtext",
@@ -325,35 +317,23 @@
             "label": "t:sections.scroll-categories.settings.subtitle_size",
             "options": [
                 {
-                    "value": "body-3xl",
-                    "label": "t:sections.scroll-categories.options.body_3xl"
+                    "value": "copy-xl",
+                    "label": "t:settings.type_size.copy_xl"
                 },
                 {
-                    "value": "body-2xl",
-                    "label": "t:sections.scroll-categories.options.body_2xl"
+                    "value": "copy-l",
+                    "label": "t:settings.type_size.copy_l"
                 },
                 {
-                    "value": "body-xl",
-                    "label": "t:sections.scroll-categories.options.body_xl"
+                    "value": "copy-m",
+                    "label": "t:settings.type_size.copy_m"
                 },
                 {
-                    "value": "body-lg",
-                    "label": "t:sections.scroll-categories.options.body_lg"
-                },
-                {
-                    "value": "body-md",
-                    "label": "t:sections.scroll-categories.options.body_md"
-                },
-                {
-                    "value": "body-sm",
-                    "label": "t:sections.scroll-categories.options.body_sm"
-                },
-                {
-                    "value": "body-xs",
-                    "label": "t:sections.scroll-categories.options.body_xs"
+                    "value": "copy-s",
+                    "label": "t:settings.type_size.copy_s"
                 }
             ],
-            "default": "body-xl"
+            "default": "copy-l"
         },
         {
             "type": "color_scheme",

@@ -1,5 +1,22 @@
 {%- assign popup_id = popup_id | default: 'header-mobile-menu-drawer' -%}
 {%- assign menu_handle = menu_handle | default: blank -%}
+{%- assign enable_country_selector = enable_country_selector | default: true, allow_false: true -%}
+{%- assign enable_language_selector = enable_language_selector
+    | default: true, allow_false: true
+-%}
+{%- liquid
+    assign show_country_selector = false
+    if enable_country_selector and localization.available_countries.size > 1
+        assign show_country_selector = true
+    endif
+    assign show_language_selector = false
+    if enable_language_selector and localization.available_languages.size > 1
+        assign show_language_selector = true
+    endif
+    # Long lists get a filter field (Dawn and Horizon do the same for many countries).
+    assign localization_filter_min = 10
+    assign country_currencies = localization.available_countries | map: 'currency' | map: 'iso_code' | uniq
+-%}
 {%- assign menu_obj = linklists[menu_handle] -%}
 {%- assign color_scheme = color_scheme | default: '' -%}
 {%- assign account_href = routes.account_login_url -%}
@@ -12,9 +29,10 @@
         <div
             class="flex h-full flex-col"
             x-data="mobileMenuDrawer"
+            data-module-id="mobile-menu-drawer"
             @keydown.escape.window="$store.dialog.close()"
         >
-            <div class="ui-dialog-overlay-header border-theme-text/30">
+            <div class="ui-dialog-overlay-header border-line-strong">
                 <h2 id="dialog-title-{{ popup_id }}">
                     {{ 'accessibility.menu' | t }}
                 </h2>
@@ -30,9 +48,10 @@
             </div>
 
             <div class="ui-dialog-overlay-body">
+                <div x-show="!localizationPanel">
                 <template x-if="!thirdLevelLinks.length">
                     <nav aria-label="{{ 'accessibility.mobile_menu' | t }}">
-                        <ul x-ref="topMenu" class="space-y-4" role="list">
+                        <ul x-ref="topMenu" class="space-y-step-s" role="list">
                             {%- for link in menu_obj.links -%}
                                 <li data-has-children="{% if link.links != blank %}true{% else %}false{% endif %}">
                                     {%- if link.links == blank -%}
@@ -53,7 +72,7 @@
                                     {%- else -%}
                                         <button
                                             type="button"
-                                            class="inline-flex cursor-pointer items-center gap-2"
+                                            class="inline-flex cursor-pointer items-center gap-step-2xs"
                                             data-index="{{ forloop.index0 }}"
                                             aria-controls="mobile-sub-{{ forloop.index0 }}"
                                             @click="openTop(Number($el.dataset.index))"
@@ -61,7 +80,7 @@
                                         >
                                             <span>{{ link.title | escape }}</span>
                                             <span
-                                                class="header-mobile-menu-drawer__chevron inline-flex"
+                                                class="header-mobile-menu-drawer__chevron"
                                                 data-index="{{ forloop.index0 }}"
                                                 :class="activeTopIndex === Number($el.dataset.index) ? 'rotate-180' : ''"
                                             >
@@ -73,11 +92,11 @@
                                             id="mobile-sub-{{ forloop.index0 }}"
                                             x-show="activeTopIndex === Number($el.dataset.index)"
                                             data-index="{{ forloop.index0 }}"
-                                            class="pt-4"
+                                            class="pt-step-s"
                                         >
-                                            <ul class="space-y-4" role="list">
+                                            <ul class="space-y-step-s" role="list">
                                                 {%- for child in link.links -%}
-                                                    <li class="text-theme-text/50">
+                                                    <li class="text-subtle">
                                                         {%- if child.links == blank -%}
                                                             {%- capture child_attributes -%}
                                                                 {%- if child.current -%}
@@ -90,7 +109,7 @@
                                                                 text: link_text,
                                                                 href: child.url,
                                                                 variant: 'underline',
-                                                                class: 'inline-flex items-center body-lg',
+                                                                class: 'inline-flex items-center copy-l',
                                                                 attributes: child_attributes
                                                             %}
                                                         {%- else -%}
@@ -107,7 +126,7 @@
 
                                                             <button
                                                                 type="button"
-                                                                class="inline-flex cursor-pointer items-end gap-1 body-lg"
+                                                                class="inline-flex cursor-pointer items-end gap-step-3xs copy-l"
                                                                 data-third-payload="{{ third_payload | strip | escape }}"
                                                                 @click="openThirdLevelFromButton($el)"
                                                             >
@@ -131,7 +150,7 @@
                     <div class="h-full">
                         <button
                             type="button"
-                            class="mb-6 inline-flex cursor-pointer items-center gap-3"
+                            class="mb-step-m inline-flex cursor-pointer items-center gap-step-xs"
                             @click="backToSecondLevel()"
                             aria-label="{{ 'accessibility.back_to_second_level' | t }}"
                         >
@@ -141,7 +160,7 @@
                             <span x-text="thirdLevelParentTitle"></span>
                         </button>
 
-                        <ul class="space-y-4" role="list">
+                        <ul class="space-y-step-s" role="list">
                             <template x-for="item in thirdLevelLinks" :key="item.url + item.title">
                                 <li>
                                     <a
@@ -154,9 +173,146 @@
                         </ul>
                     </div>
                 </template>
+                </div>
+
+                {%- if show_country_selector -%}
+                    {%- assign country_count = localization.available_countries.size -%}
+                    <div
+                        class="mobile-localization-panel"
+                        data-localization-panel="country"
+                        x-show="localizationPanel === 'country'"
+                        x-cloak
+                    >
+                        <button
+                            type="button"
+                            class="mobile-localization-panel__back"
+                            @click="closeLocalization()"
+                            aria-label="{{ 'localization.back_to_menu' | t }}"
+                        >
+                            <span class="inline-flex rotate-90">
+                                {% render 'icons', icon: 'icon-arrow' %}
+                            </span>
+                            <span>{{ 'localization.country_label' | t }}</span>
+                        </button>
+
+                        {%- if country_count > localization_filter_min -%}
+                            <input
+                                type="search"
+                                class="mobile-localization-panel__filter"
+                                placeholder="{{ 'localization.search_countries' | t }}"
+                                aria-label="{{ 'localization.search_countries' | t }}"
+                                autocomplete="off"
+                                x-model="localizationQuery"
+                            >
+                        {%- endif -%}
+
+                        {%- form 'localization', id: 'MobileMenuCountryForm', class: 'mobile-localization-panel__form' -%}
+                            <ul class="mobile-localization-panel__list" role="list">
+                                {%- for country in localization.available_countries -%}
+                                    <li
+                                        data-filter-text="{{ country.name | downcase | escape }} {{ country.iso_code | downcase }} {{ country.currency.iso_code | downcase }}"
+                                        x-show="matchesLocalization($el)"
+                                    >
+                                        <button
+                                            type="submit"
+                                            name="country_code"
+                                            value="{{ country.iso_code }}"
+                                            class="mobile-localization-panel__option"
+                                            {% if country.iso_code == localization.country.iso_code %}
+                                                aria-current="true"
+                                            {% endif %}
+                                        >
+                                            <span>{{ country.name }}</span>
+                                            {%- if country_currencies.size > 1 -%}
+                                                <span class="text-subtle">
+                                                    {{- country.currency.iso_code }}
+                                                    {{ country.currency.symbol -}}
+                                                </span>
+                                            {%- endif -%}
+                                            {%- if country.iso_code == localization.country.iso_code -%}
+                                                {%- render 'localization-selected-icon' -%}
+                                            {%- endif -%}
+                                        </button>
+                                    </li>
+                                {%- endfor -%}
+                            </ul>
+                        {%- endform -%}
+
+                        {%- if country_count > localization_filter_min -%}
+                            <p class="text-subtle" x-show="localizationEmpty" x-cloak role="status">
+                                {{ 'localization.no_results' | t }}
+                            </p>
+                        {%- endif -%}
+                    </div>
+                {%- endif -%}
+
+                {%- if show_language_selector -%}
+                    {%- assign language_count = localization.available_languages.size -%}
+                    <div
+                        class="mobile-localization-panel"
+                        data-localization-panel="language"
+                        x-show="localizationPanel === 'language'"
+                        x-cloak
+                    >
+                        <button
+                            type="button"
+                            class="mobile-localization-panel__back"
+                            @click="closeLocalization()"
+                            aria-label="{{ 'localization.back_to_menu' | t }}"
+                        >
+                            <span class="inline-flex rotate-90">
+                                {% render 'icons', icon: 'icon-arrow' %}
+                            </span>
+                            <span>{{ 'localization.language_label' | t }}</span>
+                        </button>
+
+                        {%- if language_count > localization_filter_min -%}
+                            <input
+                                type="search"
+                                class="mobile-localization-panel__filter"
+                                placeholder="{{ 'localization.search_languages' | t }}"
+                                aria-label="{{ 'localization.search_languages' | t }}"
+                                autocomplete="off"
+                                x-model="localizationQuery"
+                            >
+                        {%- endif -%}
+
+                        {%- form 'localization', id: 'MobileMenuLanguageForm', class: 'mobile-localization-panel__form' -%}
+                            <ul class="mobile-localization-panel__list" role="list">
+                                {%- for language in localization.available_languages -%}
+                                    <li
+                                        data-filter-text="{{ language.endonym_name | downcase | escape }} {{ language.name | downcase | escape }} {{ language.iso_code | downcase }}"
+                                        x-show="matchesLocalization($el)"
+                                    >
+                                        <button
+                                            type="submit"
+                                            name="locale_code"
+                                            value="{{ language.iso_code }}"
+                                            class="mobile-localization-panel__option"
+                                            {% if language.iso_code == localization.language.iso_code %}
+                                                aria-current="true"
+                                            {% endif %}
+                                        >
+                                            <span>{{ language.endonym_name | capitalize }}</span>
+                                            {%- if language.iso_code == localization.language.iso_code -%}
+                                                {%- render 'localization-selected-icon' -%}
+                                            {%- endif -%}
+                                        </button>
+                                    </li>
+                                {%- endfor -%}
+                            </ul>
+                        {%- endform -%}
+
+                        {%- if language_count > localization_filter_min -%}
+                            <p class="text-subtle" x-show="localizationEmpty" x-cloak role="status">
+                                {{ 'localization.no_results' | t }}
+                            </p>
+                        {%- endif -%}
+                    </div>
+                {%- endif -%}
             </div>
 
-            <div class="ui-dialog-overlay-footer flex items-center gap-9 border-theme-text/30">
+            <div class="ui-dialog-overlay-footer flex items-center gap-step-l border-line-strong">
                 {%- capture search_content -%}
                     {% render 'icons', icon: 'icon-search' %}
                 {%- endcapture -%}
@@ -198,6 +354,44 @@
                     class: 'header-icon-button',
                     attributes: '@click="$store.dialog.close()"'
                 -%}
+
+                {%- if show_country_selector or show_language_selector -%}
+                    <div class="ms-auto flex items-center gap-step-2xs">
+                        {%- if show_country_selector -%}
+                            {%- capture country_trigger_label -%}
+                                {{- localization.country.name -}}
+                                {%- if country_currencies.size > 1 %}, {{ localization.country.currency.iso_code }}{% endif -%}
+                            {%- endcapture -%}
+                            <button
+                                type="button"
+                                class="mobile-localization-trigger"
+                                data-localization-trigger="country"
+                                @click="openLocalization($el.dataset.localizationTrigger)"
+                                :aria-expanded="localizationPanel === 'country'"
+                                aria-label="{{ 'localization.current_country' | t: country: country_trigger_label }}"
+                            >
+                                {{ localization.country.iso_code }}
+                                {%- if country_currencies.size > 1 %}
+                                    | {{ localization.country.currency.iso_code }}
+                                    {{ localization.country.currency.symbol }}
+                                {%- endif -%}
+                            </button>
+                        {%- endif -%}
+
+                        {%- if show_language_selector -%}
+                            <button
+                                type="button"
+                                class="mobile-localization-trigger"
+                                data-localization-trigger="language"
+                                @click="openLocalization($el.dataset.localizationTrigger)"
+                                :aria-expanded="localizationPanel === 'language'"
+                                aria-label="{{ 'localization.current_language' | t: language: localization.language.endonym_name }}"
+                            >
+                                {{ localization.language.iso_code | upcase }}
+                            </button>
+                        {%- endif -%}
+                    </div>
+                {%- endif -%}
             </div>
         </div>
     {%- endcapture -%}
@@ -218,5 +412,62 @@
 {% stylesheet %}
     .header-mobile-menu-drawer__chevron {
         transition: transform var(--motion-duration-base, 300ms) var(--motion-ease-default, ease);
+    }
+
+    :where(.header-mobile-menu-drawer__chevron) {
+        display: inline-flex;
+    }
+
+    .mobile-localization-trigger {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--spacing-step-3xs);
+        min-height: 4.4rem;
+        padding-inline: var(--spacing-step-2xs);
+        white-space: nowrap;
+        cursor: pointer;
+    }
+
+    .mobile-localization-trigger[aria-expanded='true'] {
+        text-decoration: underline;
+        text-underline-offset: 0.3em;
+    }
+
+    .mobile-localization-panel {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-step-s);
+    }
+
+    .mobile-localization-panel__back {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--spacing-step-xs);
+        align-self: flex-start;
+        cursor: pointer;
+    }
+
+    .mobile-localization-panel__filter {
+        width: 100%;
+        min-height: 4.4rem;
+        padding-inline: var(--spacing-step-xs);
+        border: 1px solid var(--color-line-strong);
+        background: transparent;
+        color: inherit;
+    }
+
+    .mobile-localization-panel__option {
+        display: flex;
+        width: 100%;
+        align-items: center;
+        gap: var(--spacing-step-xs);
+        min-height: 4.4rem;
+        border-bottom: 1px solid var(--color-line);
+        text-align: start;
+        cursor: pointer;
+    }
+
+    .mobile-localization-panel__option > :first-child {
+        flex: 1 1 auto;
     }
 {% endstylesheet %}

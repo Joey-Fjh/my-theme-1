@@ -17,6 +17,15 @@
 {%- assign context_modifier = 'product-info-blocks--' | append: context -%}
 {%- assign column_modifier = 'product-info-blocks--' | append: render_column -%}
 {%- assign purchase_anchor_type = '' -%}
+{%- if settings.cart_type == 'drawer' -%}
+    {%- assign purchase_open_cart = true -%}
+    {%- assign purchase_dialog_id = 'cart-overlay-drawer' -%}
+    {%- assign purchase_success_msg = '' -%}
+{%- else -%}
+    {%- assign purchase_open_cart = false -%}
+    {%- assign purchase_dialog_id = '' -%}
+    {%- assign purchase_success_msg = 'toast.added_to_cart' | t -%}
+{%- endif -%}
 {%- if render_column == 'form' -%}
     {%- for candidate_block in section.blocks -%}
         {%- if candidate_block.type == 'quantity_selector' -%}
@@ -68,7 +77,7 @@
             {%- when 'vendor' -%}
                 {%- if product_data != blank and product_data.vendor != blank -%}
                     <div
-                        class="product-info-blocks__vendor"
+                        class="product-info-blocks__vendor product-info-blocks__block product-info-blocks__block--vendor"
                         {{ block.shopify_attributes }}
                     >
                         {{ product_data.vendor }}
@@ -80,13 +89,18 @@
                     assign product_title_heading_class = block.settings.heading_size
                     if product_title_heading_class == blank
                         if context == 'product'
-                            assign product_title_heading_class = 'heading-h1'
+                            assign product_title_heading_class = 'title-l'
+                        elsif context == 'featured'
+                            assign product_title_heading_class = 'title-xl desktop:title-2xl'
                         else
-                            assign product_title_heading_class = 'heading-h2'
+                            assign product_title_heading_class = 'title-m'
                         endif
                     endif
                 -%}
-                <div {{ block.shopify_attributes }}>
+                <div
+                    class="product-info-blocks__block product-info-blocks__block--title"
+                    {{ block.shopify_attributes }}
+                >
                     {%- if product_data != blank -%}
                         {%- if context == 'product' -%}
                             <h1 class="product-info-blocks__title {{ product_title_heading_class }}">
@@ -105,7 +119,16 @@
                 </div>
 
             {%- when 'price' -%}
-                <div {{ block.shopify_attributes }}>
+                {%- liquid
+                    assign show_product_rating = true
+                    if block.settings.show_rating == false
+                        assign show_product_rating = false
+                    endif
+                -%}
+                <div
+                    class="product-info-blocks__block product-info-blocks__block--price"
+                    {{ block.shopify_attributes }}
+                >
                     {%- if product_data != blank -%}
                         {%- assign current_variant = product_data.selected_or_first_available_variant -%}
                         {%- capture unit_prices_json -%}
@@ -120,44 +143,84 @@
                             {%- endfor -%}
                             }
                         {%- endcapture -%}
-                        <div
-                            class="product-price product-info-blocks__price"
-                            data-section-id="{{ section.id }}"
-                            data-variant-id="{{ current_variant.id }}"
-                            data-price="{{ current_variant.price | default: 0 }}"
-                            data-compare-price="{{ current_variant.compare_at_price | default: 0 }}"
-                            data-currency="{{ cart.currency.iso_code }}"
-                            data-unit-prices="{{ unit_prices_json | strip | escape }}"
-                            x-data="ProductPrice()"
-                        >
-                            <span
-                                class="product-price__main product-info-blocks__price-main{% if context == 'product' or context == 'featured' %} body-3xl text-theme-text{% else %} body-lg{% endif %}"
-                                x-text="formattedPrice"
+                        {%- liquid
+                            assign review_rating_metafield = product_data.metafields.reviews.rating.value
+                            assign review_rating_count = product_data.metafields.reviews.rating_count.value
+                            assign review_rating_value = blank
+                            if review_rating_metafield != blank
+                                assign review_rating_value = review_rating_metafield.rating | default: review_rating_metafield
+                            endif
+                        -%}
+                        <div class="product-info-blocks__price-row">
+                            <div
+                                class="product-price product-info-blocks__price"
+                                data-section-id="{{ section.id }}"
+                                data-variant-id="{{ current_variant.id }}"
+                                data-price="{{ current_variant.price | default: 0 }}"
+                                data-compare-price="{{ current_variant.compare_at_price | default: 0 }}"
+                                data-currency="{{ cart.currency.iso_code }}"
+                                data-unit-prices="{{ unit_prices_json | strip | escape }}"
+                                x-data="ProductPrice()"
+                                data-module-id="product-price"
                             >
-                                {{- current_variant.price | money -}}
-                            </span>
-                            <s
-                                class="product-price__compare product-info-blocks__price-compare{% if context == 'product' or context == 'featured' %} body-3xl{% endif %}"
-                                x-show="hasComparePrice"
-                                x-text="formattedComparePrice"
-                            >
-                                {%- if current_variant.compare_at_price > current_variant.price -%}
-                                    {{- current_variant.compare_at_price | money -}}
-                                {%- endif -%}
-                            </s>
-                            <span
-                                class="product-price__unit product-info-blocks__price-unit block body-sm text-theme-text/80"
-                                x-show="hasUnitPrice"
-                                x-text="unitPriceText"
-                            >
-                                {%- if current_variant.unit_price_measurement -%}
-                                    {{-
-                                        current_variant.unit_price
-                                        | unit_price_with_measurement: current_variant.unit_price_measurement
-                                    -}}
-                                {%- endif -%}
-                            </span>
+                                <span
+                                    class="product-price__main product-info-blocks__price-main{% if context == 'featured' %} title-xl desktop:title-2xl text-theme-text{% elsif context == 'product' %} title-l text-theme-text{% else %} copy-l{% endif %}"
+                                    x-text="formattedPrice"
+                                >
+                                    {{- current_variant.price | money -}}
+                                </span>
+                                <s
+                                    class="product-price__compare product-info-blocks__price-compare{% if context == 'product' or context == 'featured' %} title-xs{% endif %}"
+                                    x-show="hasComparePrice"
+                                    x-text="formattedComparePrice"
+                                >
+                                    {%- if current_variant.compare_at_price > current_variant.price
+                                    -%}
+                                        {{- current_variant.compare_at_price | money -}}
+                                    {%- endif -%}
+                                </s>
+                                <span
+                                    class="product-price__unit product-info-blocks__price-unit block copy-s text-muted"
+                                    x-show="hasUnitPrice"
+                                    x-text="unitPriceText"
+                                >
+                                    {%- if current_variant.unit_price_measurement -%}
+                                        {{-
+                                            current_variant.unit_price
+                                            | unit_price_with_measurement: current_variant.unit_price_measurement
+                                        -}}
+                                    {%- endif -%}
+                                </span>
+                            </div>
+                            {%- if show_product_rating and review_rating_value != blank -%}
+                                <div class="product-info-blocks__rating">
+                                    {%- render 'starts',
+                                        rating: review_rating_value,
+                                        size: 'sm',
+                                        wrapper_class: 'mb-0'
+                                    -%}
+                                    {%- if review_rating_count != blank -%}
+                                        <span class="product-info-blocks__rating-count copy-s text-muted">
+                                            <span aria-hidden="true"
+                                                >({{ review_rating_count }})</span
+                                            >
+                                            <span class="sr-only">
+                                                {{
+                                                    'products.product.rating_accessible'
+                                                    | t:
+                                                        rating: review_rating_value,
+                                                        count: review_rating_count
+                                                }}
+                                            </span>
+                                        </span>
+                                    {%- endif -%}
+                                </div>
+                            {%- endif -%}
                         </div>
+                        <div
+                            class="product-info-blocks__price-divider"
+                            aria-hidden="true"
+                        ></div>
                         {%- assign payment_terms_form_id = 'product-payment-terms-'
                             | append: section.id
                             | append: '-'
@@ -168,6 +231,7 @@
                                 class="product-payment-terms product-info-blocks__payment-terms"
                                 data-section-id="{{ section.id }}"
                                 x-data="ProductPaymentTerms()"
+                                data-module-id="product-payment-terms"
                             >
                                 <input
                                     type="hidden"
@@ -177,11 +241,17 @@
                                 {{ form | payment_terms }}
                             </div>
                         {%- endform -%}
-                        {%- render 'product-tax-note', class: 'mt-2 body-sm text-theme-text/80' -%}
+                        {%- render 'product-tax-note', class: 'mt-step-2xs copy-s text-muted' -%}
                     {%- else -%}
-                        <p class="product-price__main product-info-blocks__price-main{% if context == 'featured' %} body-3xl text-theme-text{% else %} body-lg{% endif %}">
-                            {{ 'products.product.example_price' | t }}
-                        </p>
+                        <div class="product-info-blocks__price-row">
+                            <p class="product-price__main product-info-blocks__price-main{% if context == 'featured' %} title-xl desktop:title-2xl text-theme-text{% else %} copy-l{% endif %}">
+                                {{ 'products.product.example_price' | t }}
+                            </p>
+                        </div>
+                        <div
+                            class="product-info-blocks__price-divider"
+                            aria-hidden="true"
+                        ></div>
                     {%- endif -%}
                 </div>
 
@@ -193,18 +263,18 @@
                 >
                     {%- if product_data != blank and product_data.description != blank -%}
                         <div
-                            class="product-info-blocks__description focus-ring{% if context != 'featured' %} rte{% endif %}"
+                            class="product-info-blocks__description focus-ring-inset{% if context != 'featured' %} rte{% endif %}"
                             data-product-description
                         >
                             {%- if context == 'featured' -%}
-                                {{ product_data.description | strip_html }}
+                                {{ product_data.description | strip_html | truncatewords: 26 }}
                             {%- else -%}
                                 {{ product_data.description }}
                             {%- endif -%}
                         </div>
                     {%- else -%}
                         <div
-                            class="product-info-blocks__description focus-ring"
+                            class="product-info-blocks__description focus-ring-inset"
                             data-product-description
                         >
                             {{ 'products.product.example_description' | t }}
@@ -232,23 +302,23 @@
                     assign callout_icon_size = block.settings.callout_icon_size | default: 24 | plus: 0
                     assign callout_heading_class = 'text-current'
                     if block.settings.bold
-                        assign callout_heading_class = callout_heading_class | append: ' font-semibold'
+                        assign callout_heading_class = callout_heading_class | append: ' font-bold'
                     endif
                     assign callout_border_class = ''
+                    assign callout_block_class = 'product-info-blocks__block product-info-blocks__block--callout'
                     if block.settings.show_border
                         assign callout_border_class = 'product-info-blocks__callout--bordered'
+                        assign callout_block_class = callout_block_class | append: ' product-info-blocks__block--box'
                     endif
                 -%}
                 <div
-                    class="product-info-blocks__callout {{ callout_border_class }}"
-                    style="--product-callout-bg: {{ block.settings.background_color }}; --product-callout-text: {{ block.settings.text_color }};"
+                    class="product-info-blocks__callout {{ callout_border_class }} {{ callout_block_class }}"
                     {{ block.shopify_attributes }}
                 >
                     {%- render 'content-icon',
                         icon: block.settings.callout_icon,
                         size_px: callout_icon_size,
-                        color: block.settings.text_color,
-                        class: 'product-info-blocks__callout-icon'
+                        class: 'product-info-blocks__callout-icon text-current'
                     -%}
                     <div class="product-info-blocks__callout-content">
                         {%- if block.settings.callout_heading != blank -%}
@@ -274,11 +344,12 @@
                         assign icon_with_text_gap = block.settings.icon_text_gap | default: 8 | plus: 0
                     -%}
                     <div
-                        class="product-info-blocks__icon-with-text-group"
+                        class="product-info-blocks__icon-with-text-group product-info-blocks__block product-info-blocks__block--icon_with_text_group"
                         {{ block.shopify_attributes }}
                     >
                         {%- render 'icon-with-text-item',
                             title: block.settings.item_1_title,
+                            text: block.settings.item_1_text,
                             icon: block.settings.item_1_icon,
                             link: block.settings.item_1_link,
                             icon_size: 24,
@@ -286,10 +357,12 @@
                             gap: icon_with_text_gap,
                             alignment: 'center',
                             class: 'product-info-blocks__icon-with-text-item',
-                            title_class: 'body-sm font-medium'
+                            title_class: 'copy-s font-normal',
+                            text_class: 'copy-s text-muted'
                         -%}
                         {%- render 'icon-with-text-item',
                             title: block.settings.item_2_title,
+                            text: block.settings.item_2_text,
                             icon: block.settings.item_2_icon,
                             link: block.settings.item_2_link,
                             icon_size: 24,
@@ -297,10 +370,12 @@
                             gap: icon_with_text_gap,
                             alignment: 'center',
                             class: 'product-info-blocks__icon-with-text-item',
-                            title_class: 'body-sm font-medium'
+                            title_class: 'copy-s font-normal',
+                            text_class: 'copy-s text-muted'
                         -%}
                         {%- render 'icon-with-text-item',
                             title: block.settings.item_3_title,
+                            text: block.settings.item_3_text,
                             icon: block.settings.item_3_icon,
                             link: block.settings.item_3_link,
                             icon_size: 24,
@@ -308,7 +383,8 @@
                             gap: icon_with_text_gap,
                             alignment: 'center',
                             class: 'product-info-blocks__icon-with-text-item',
-                            title_class: 'body-sm font-medium'
+                            title_class: 'copy-s font-normal',
+                            text_class: 'copy-s text-muted'
                         -%}
                     </div>
                 {%- endif -%}
@@ -351,7 +427,7 @@
             {%- when 'collapsible_tab' -%}
                 {%- liquid
                     assign tab_page = block.settings.dynamic_content
-                    assign tab_heading = block.settings.collapsible_tab_heading | default: 'Collapsible tab'
+                    assign tab_heading = block.settings.collapsible_tab_heading
                     if block.settings.use_page_title and tab_page != blank
                         assign tab_heading = tab_page.title
                     endif
@@ -363,17 +439,17 @@
 
                     assign tab_size = block.settings.collapsible_tab_size | default: 'md'
                     assign icon_size = 20
-                    assign tab_heading_class = 'body-md'
+                    assign tab_heading_class = 'copy-m'
                     case tab_size
                         when 'sm'
                             assign icon_size = 16
-                            assign tab_heading_class = 'body-sm'
+                            assign tab_heading_class = 'copy-s'
                         when 'lg'
                             assign icon_size = 24
-                            assign tab_heading_class = 'body-lg'
+                            assign tab_heading_class = 'copy-l'
                         when 'xl'
                             assign icon_size = 28
-                            assign tab_heading_class = 'body-xl'
+                            assign tab_heading_class = 'copy-l'
                     endcase
                     assign image_width = block.settings.image_width | default: 1000 | plus: 0
                     assign has_tab_body = false
@@ -401,12 +477,20 @@
                             {%- render 'content-icon',
                                 icon: block.settings.collapsible_tab_icon,
                                 size_px: icon_size,
-                                color: block.settings.icon_color,
-                                class: 'text-theme-text/80'
+                                class: 'text-theme-text'
                             -%}
-                            <span class="min-w-0 {{ tab_heading_class }}">
-                                {{- tab_heading -}}
-                            </span>
+                            {%- if tab_heading != blank -%}
+                                <span class="min-w-0 {{ tab_heading_class }}">
+                                    {{- tab_heading -}}
+                                </span>
+                            {%- else -%}
+                                <span class="sr-only">
+                                    {{-
+                                        'accessibility.tab_control_item'
+                                        | t: index: forloop.index
+                                    -}}
+                                </span>
+                            {%- endif -%}
                         </span>
 
                         <span class="product-info-blocks__collapsible-toggle">
@@ -423,6 +507,7 @@
                             {%- endif -%}
 
                             {%- if block.settings.image != blank -%}
+                                {%- capture collapsible_image_sizes -%}(min-width: 48rem) min(100vw, {{ image_width }}px), 100vw{%- endcapture -%}
                                 <div
                                     class="product-info-blocks__collapsible-image"
                                     style="--product-collapsible-image-width: {{ image_width }}px;"
@@ -436,7 +521,7 @@
                                         | image_tag:
                                             loading: 'lazy',
                                             widths: '200, 320, 480, 640, 800, 1000',
-                                            sizes: '(min-width: 48rem) min(100vw, var(--product-collapsible-image-width)), 100vw',
+                                            sizes: collapsible_image_sizes,
                                             class: 'block h-auto w-full rounded-sm'
                                     }}
                                     {%- if block.settings.link != blank -%}
@@ -460,21 +545,23 @@
                             assign variant_gallery_id = 'product-gallery-featured-' | append: section.id
                         endif
                     -%}
-                    {%- render 'product-variant-picker',
-                        product: product_data,
-                        block: block,
-                        product_form_id: product_form_id,
-                        section_id: section.id,
-                        context: context,
-                        gallery_id: variant_gallery_id,
-                        update_url: variant_update_url
-                    -%}
+                    <div class="product-info-blocks__block product-info-blocks__block--variant_picker">
+                        {%- render 'product-variant-picker',
+                            product: product_data,
+                            block: block,
+                            product_form_id: product_form_id,
+                            section_id: section.id,
+                            context: context,
+                            gallery_id: variant_gallery_id,
+                            update_url: variant_update_url
+                        -%}
+                    </div>
                 {%- endif -%}
 
             {%- when 'quantity_selector' -%}
                 {%- if purchase_anchor_type == 'quantity_selector' -%}
                     {%- if buy_buttons_block != blank -%}
-                        <div class="product-info-blocks__purchase">
+                        <div class="product-info-blocks__purchase product-info-blocks__block product-info-blocks__block--purchase">
                             {%- render 'buy-buttons',
                                 product: product_data,
                                 block: buy_buttons_block,
@@ -482,11 +569,14 @@
                                 section_id: section.id,
                                 context: context,
                                 quantity_block: quantity_block,
+                                open_cart_on_add: purchase_open_cart,
+                                open_dialog_id: purchase_dialog_id,
+                                success_message: purchase_success_msg,
                                 cart_type: settings.cart_type
                             -%}
                         </div>
                     {%- else -%}
-                        <div class="product-info-blocks__purchase">
+                        <div class="product-info-blocks__purchase product-info-blocks__block product-info-blocks__block--purchase">
                             <div
                                 class="product-info-blocks__quantity"
                                 {{ block.shopify_attributes }}
@@ -508,7 +598,7 @@
 
             {%- when 'buy_buttons' -%}
                 {%- if purchase_anchor_type == 'buy_buttons' -%}
-                    <div class="product-info-blocks__purchase">
+                    <div class="product-info-blocks__purchase product-info-blocks__block product-info-blocks__block--purchase">
                         {%- render 'buy-buttons',
                             product: product_data,
                             block: block,
@@ -516,48 +606,24 @@
                             section_id: section.id,
                             context: context,
                             quantity_block: quantity_block,
+                            open_cart_on_add: purchase_open_cart,
+                            open_dialog_id: purchase_dialog_id,
+                            success_message: purchase_success_msg,
                             cart_type: settings.cart_type
                         -%}
                     </div>
                 {%- endif -%}
 
-            {%- when 'inventory_notice' -%}
-                {%- liquid
-                    assign current_variant = product_data.selected_or_first_available_variant
-                    assign low_stock_threshold = block.settings.low_stock_threshold | default: 5 | plus: 0
-                    assign show_inventory_notice = false
-                    assign inventory_quantity = current_variant.inventory_quantity | default: 0 | plus: 0
-                    assign alignment = block.settings.alignment | default: 'left'
-                    assign alignment_class = 'justify-start text-start'
-
-                    if alignment == 'center'
-                        assign alignment_class = 'justify-center text-center'
-                    elsif alignment == 'right'
-                        assign alignment_class = 'justify-end text-end'
-                    endif
-
-                    if current_variant.inventory_management != blank and current_variant.inventory_policy == 'deny' and inventory_quantity > 0 and inventory_quantity <= low_stock_threshold
-                        assign show_inventory_notice = true
-                    endif
-                -%}
-                {%- if show_inventory_notice -%}
-                    <div
-                        class="product-info-blocks__inventory-notice {{ alignment_class }}"
-                        {{ block.shopify_attributes }}
-                    >
-                        <span class="product-info-blocks__inventory-dot" aria-hidden="true"></span>
-                        <span>
-                            {%- if block.settings.show_stock_number -%}
-                                {{
-                                    'products.product.only_in_stock_html'
-                                    | t: quantity: inventory_quantity
-                                }}
-                            {%- else -%}
-                                {{ 'products.product.low_stock' | t }}
-                            {%- endif -%}
-                        </span>
-                    </div>
+            {%- when 'payment_icons' -%}
+                {%- if context == 'product' -%}
+                    {%- render 'product-info-payment-icons', block: block -%}
                 {%- endif -%}
+
+            {%- when 'inventory_notice' -%}
+                {%- render 'product-info-inventory-notice',
+                    product_data: product_data,
+                    block: block
+                -%}
 
             {%- else -%}
                 <div {{ block.shopify_attributes }}>

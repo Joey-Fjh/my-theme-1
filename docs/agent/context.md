@@ -1,8 +1,7 @@
-# Current Project Context
+# Project Context
 
-Short cross-session handoff. `AGENTS.md` is the rule source.
+Holds the plan currently under execution and its status. Nothing else. Unresolved discussion lives in `docs/agent/board.md`; accepted, unscheduled work lives in `docs/agent/backlog.md`; identity, accepted direction, and overall status live in `docs/project.md`; durable contracts live in `AGENTS.md`, the matching reference, code, or configuration.
 
-## Status
+Last updated: 2026-10-30.
 
-- Branch: `develop`.
-- Review: Shopify Theme Store submission in progress.
+No plan under execution.

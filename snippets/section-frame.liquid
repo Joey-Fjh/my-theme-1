@@ -1,0 +1,321 @@
+{% doc %}
+    Section frame: color scheme, fluid merchant padding, width, height kind, and captured children.
+
+    Root carries CAP-01 section reveal when `motion` is true (literal mount attributes only).
+    Plain CSS lives in this file's stylesheet block.
+
+    @param {section} section - Section object (padding and color_scheme settings)
+    @param {string} children - Captured inner HTML
+    @param {string} [background] - Optional captured markup rendered before the inner wrapper (full-bleed behind padding)
+    @param {string} [section_class] - BEM section class on the root (for example `brand-statement-section`)
+    @param {string} [width] - `page` (default) or `full`
+    @param {string} [height_kind] - Base layout: `content` (default), `media`, `stage`, or `stage-pc` (desktop-only stage). Combined with `section.settings.section_height` when present.
+    @param {string} [padding_mode] - `default` (root padding) or `overlay` (expose `--section-frame-padding-*` on root; apply via `section-frame__overlay-padding` or the one-sided `section-frame__overlay-padding-top` / `section-frame__overlay-padding-bottom` on descendants)
+    @param {boolean} [motion] - When true, mounts `motionRevealSection` for `data-motion-cascade` lists inside the section
+    @param {boolean} [safe_top] - When false, adds `section-frame--no-safe-top` (skips first-section header offset)
+    @param {string} [root_class] - Extra classes on the root element
+    @param {string} [root_style] - Extra inline declarations appended on the root `style` attribute
+    @param {string} [root_attrs] - Extra attributes on the root element (for example `data-component-kind="section"`). Must not include `data-module-id`, `x-data`, `x-on:*`, or other Alpine mount attributes; import-map and Alpine lints read literal markup on the section file and frame root.
+    @param {string} [inner_class] - Extra classes on the page-width inner wrapper
+    @param {boolean} [surface_section] - When true (default), adds `surface-section`
+    @param {string} [scheme_target] - Where the colour scheme class goes: `root` (default), `inner` (the page-width inner wrapper, which then also takes the padding when `scheme_target: inner`), or `none` (the section applies `color-{{ section.settings.color_scheme }}` itself, which the section-color-scheme lint then reads in the section)
+    @param {boolean} [clip] - When false, root and inner wrapper use `overflow: visible` so `position: sticky` descendants are not clipped (default true)
+    @param {string} [element] - Root tag: `div` (default), `main`, `header`, or `footer` (any other value falls back to `div`)
+{% enddoc %}
+
+{%- liquid
+    assign width_mode = width | default: 'page'
+    assign height_kind = height_kind | default: 'content'
+    assign section_height_setting = section.settings.section_height
+    assign effective_height_kind = height_kind
+    assign section_stage_min_height = ''
+
+    case section_height_setting
+        when 'adapt'
+            if height_kind == 'stage'
+                assign effective_height_kind = 'media'
+            endif
+        when 'small'
+            assign effective_height_kind = 'stage'
+            assign section_stage_min_height = 'calc(50 * var(--screen-height) / 100)'
+        when 'medium'
+            assign effective_height_kind = 'stage'
+            assign section_stage_min_height = 'calc(65 * var(--screen-height) / 100)'
+        when 'large'
+            assign effective_height_kind = 'stage'
+            assign section_stage_min_height = 'calc(80 * var(--screen-height) / 100)'
+        when 'full'
+            assign effective_height_kind = 'stage'
+            assign section_stage_min_height = 'var(--screen-height)'
+    endcase
+
+    assign padding_mode = padding_mode | default: 'default'
+    assign scheme_target = scheme_target | default: 'root'
+    assign pad_top_v = section.settings.padding_top | default: 0 | plus: 0
+    assign pad_bottom_v = section.settings.padding_bottom | default: 0 | plus: 0
+
+    assign pad_top_clamp = '0'
+    assign pad_bottom_clamp = '0'
+
+    assign pad_slots = 'top,bottom' | split: ','
+    for pad_slot in pad_slots
+        if pad_slot == 'top'
+            assign v = pad_top_v
+        else
+            assign v = pad_bottom_v
+        endif
+
+        capture clamp_out
+            if v == 0
+                echo '0'
+            else
+                assign b_num = v | times: 40.0 | divided_by: 905.0 | round: 3
+                assign v_half = v | times: 600.0 | divided_by: 1000.0
+                assign b_offset = b_num | times: 3.75
+                assign a_num = v_half | minus: b_offset | round: 3
+                assign low_num = v_half | round: 3
+                assign high_num = v | round: 3
+                echo 'clamp('
+                echo low_num
+                echo 'px, '
+                echo a_num
+                echo 'px + '
+                echo b_num
+                echo 'vw, '
+                echo high_num
+                echo 'px)'
+            endif
+        endcapture
+
+        if pad_slot == 'top'
+            assign pad_top_clamp = clamp_out | strip
+        else
+            assign pad_bottom_clamp = clamp_out | strip
+        endif
+    endfor
+
+    assign use_surface = true
+    if surface_section == false or surface_section == 'false'
+        assign use_surface = false
+    endif
+
+    assign clip_overflow = true
+    if clip == false or clip == 'false'
+        assign clip_overflow = false
+    endif
+
+    assign root_classes = 'section-frame--height-' | append: effective_height_kind | append: ' full-width'
+    if scheme_target == 'inner'
+        assign root_classes = root_classes | append: ' section-frame--padding-inner'
+    endif
+    if padding_mode == 'overlay'
+        assign root_classes = root_classes | append: ' section-frame--padding-overlay'
+    endif
+    if use_surface
+        assign root_classes = root_classes | append: ' surface-section'
+    endif
+    if safe_top == false or safe_top == 'false'
+        assign root_classes = root_classes | append: ' section-frame--no-safe-top'
+    endif
+    if section_class != blank
+        assign root_classes = root_classes | append: ' ' | append: section_class
+    endif
+    if root_class != blank
+        assign root_classes = root_classes | append: ' ' | append: root_class
+    endif
+    unless clip_overflow
+        assign root_classes = root_classes | append: ' section-frame--no-clip'
+    endunless
+
+    assign inner_classes = 'section-frame__inner'
+    if width_mode == 'page'
+        assign inner_classes = inner_classes | append: ' container-page'
+    endif
+    if effective_height_kind == 'stage' or effective_height_kind == 'stage-pc'
+        assign inner_classes = inner_classes | append: ' section-frame__stage'
+    endif
+
+    assign frame_root_style = root_style | default: ''
+    if section_stage_min_height != blank
+        assign frame_root_style = frame_root_style | append: '--section-stage-min-height: ' | append: section_stage_min_height | append: ';'
+    endif
+    if inner_class != blank
+        assign inner_classes = inner_classes | append: ' ' | append: inner_class
+    endif
+
+    assign frame_element = element | default: 'div' | strip | downcase
+    unless frame_element == 'div' or frame_element == 'main' or frame_element == 'header' or frame_element == 'footer'
+        assign frame_element = 'div'
+    endunless
+-%}
+
+<{{ frame_element }}
+    data-section-id="{{ section.id }}"
+    class="section-frame{% if section.settings.color_scheme != blank and scheme_target == 'root' %} color-{{ section.settings.color_scheme }}{% endif %} {{ root_classes }}"
+    style="
+        --section-frame-padding-top: {{ pad_top_clamp }};
+        --section-frame-padding-bottom: {{ pad_bottom_clamp }};
+        {% if frame_root_style != blank %}{{ frame_root_style }}{% endif %}
+    "
+    {% if motion == true or motion == 'true' %}
+        data-module-id="motion-reveal"
+        x-data="motionRevealSection()"
+        data-motion-section
+    {% endif %}
+    {{ root_attrs }}
+>
+    {%- if background != blank -%}
+        <div class="section-frame__background">
+            {{ background }}
+        </div>
+    {%- endif -%}
+    <div class="{{ inner_classes }}{% if section.settings.color_scheme != blank and scheme_target == 'inner' %} color-{{ section.settings.color_scheme }}{% endif %}">
+        {{ children }}
+    </div>
+</{{ frame_element }}>
+
+{% stylesheet %}
+    .section-frame {
+        position: relative;
+        overflow: hidden;
+        box-sizing: border-box;
+        padding-top: var(--section-frame-padding-top, 0);
+        padding-bottom: var(--section-frame-padding-bottom, 0);
+    }
+
+    .section-frame--no-clip,
+    .section-frame--no-clip > .section-frame__inner {
+        overflow-x: clip;
+        overflow-y: visible;
+    }
+
+    /* scheme_target: 'inner' paints the inner wrapper, so the padding moves there with it. */
+    .section-frame--padding-inner {
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+
+    .section-frame--padding-inner > .section-frame__inner {
+        padding-top: var(--section-frame-padding-top, 0);
+        padding-bottom: var(--section-frame-padding-bottom, 0);
+    }
+
+    main
+        > .shopify-section:first-child
+        > .section-frame--padding-inner:not(.section-frame--no-safe-top)
+        > .section-frame__inner {
+        padding-top: calc(
+            var(--announcement-bar-offset, var(--announcement-bar-height, 0px)) +
+                var(--header-height, 0px) + var(--section-frame-padding-top, 0)
+        );
+    }
+
+    .section-frame--padding-overlay {
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+
+    .section-frame__overlay-padding {
+        padding-top: var(--section-frame-padding-top, 0);
+        padding-bottom: var(--section-frame-padding-bottom, 0);
+    }
+
+    /* One-sided: set only their own side, so a layered utility on the other side still applies. */
+    .section-frame__overlay-padding-top {
+        padding-top: var(--section-frame-padding-top, 0);
+    }
+
+    .section-frame__overlay-padding-bottom {
+        padding-bottom: var(--section-frame-padding-bottom, 0);
+    }
+
+    .section-frame__overlay-padding.section-frame__overlay-safe-top {
+        padding-top: calc(
+            var(--announcement-bar-offset, var(--announcement-bar-height, 0px)) +
+                var(--header-height, 0px) + var(--section-frame-padding-top, 0)
+        );
+    }
+
+    .section-frame__background {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        overflow: hidden;
+    }
+
+    /* No z-index: a stacking context here would trap fixed overlays (drawers, modals) below the header.
+       Tree order already paints the inner wrapper above the z-index: 0 background. */
+    .section-frame__inner {
+        position: relative;
+    }
+
+    main
+        > .shopify-section:first-child
+        > .section-frame:not(.section-frame--no-safe-top):not(.section-frame--padding-overlay):not(
+            .section-frame--padding-inner
+        ) {
+        padding-top: calc(
+            var(--announcement-bar-offset, var(--announcement-bar-height, 0px)) +
+                var(--header-height, 0px) + var(--section-frame-padding-top, 0)
+        );
+    }
+
+    main
+        > .shopify-section:first-child
+        > .section-frame.section-frame--padding-overlay:not(.section-frame--no-safe-top)
+        .section-frame__overlay-safe-top {
+        padding-top: calc(
+            var(--announcement-bar-offset, var(--announcement-bar-height, 0px)) +
+                var(--header-height, 0px) + var(--section-frame-padding-top, 0)
+        );
+    }
+
+    .section-frame--height-stage {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: minmax(0, 1fr);
+        min-height: var(--section-stage-min-height);
+    }
+
+    .section-frame--height-stage .section-frame__inner {
+        min-height: 0;
+    }
+
+    /* Height only: the inner wrapper keeps its own display (container-page stays a grid). */
+    .section-frame--height-stage .section-frame__stage {
+        min-height: 0;
+        height: 100%;
+    }
+
+    .section-frame--height-stage .section-frame__stage--center {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    @media (width >= 48rem) {
+        .section-frame--height-stage-pc {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            grid-template-rows: minmax(0, 1fr);
+            min-height: var(--section-stage-min-height);
+        }
+
+        .section-frame--height-stage-pc .section-frame__inner {
+            min-height: 0;
+        }
+
+        /* Height only: the inner wrapper keeps its own display (container-page stays a grid). */
+        .section-frame--height-stage-pc .section-frame__stage {
+            min-height: 0;
+            height: 100%;
+        }
+
+        .section-frame--height-stage-pc .section-frame__stage--center {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+    }
+{% endstylesheet %}

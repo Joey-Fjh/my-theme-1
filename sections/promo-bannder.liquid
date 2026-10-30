@@ -1,185 +1,324 @@
 {%- liquid
-    assign promo_banner_heading_class = section.settings.heading_size | default: 'heading-xl'
-    assign promo_banner_subtitle_size = section.settings.subtitle_size | default: 'body-xl'
-    assign promo_banner_subtitle_class = 'typo-subtitle ' | append: promo_banner_subtitle_size
+    assign promo_heading_size = section.settings.heading_size | default: 'title-xl'
+    case promo_heading_size
+        when 'title-4xl'
+            assign promo_heading_class = 'title-xl tablet:title-4xl'
+        when 'title-3xl'
+            assign promo_heading_class = 'title-xl tablet:title-3xl'
+        when 'title-2xl'
+            assign promo_heading_class = 'title-xl tablet:title-2xl'
+        when 'title-xl'
+            assign promo_heading_class = 'title-xl tablet:title-xl'
+        when 'title-l'
+            assign promo_heading_class = 'title-l tablet:title-l'
+        when 'title-m'
+            assign promo_heading_class = 'title-m tablet:title-m'
+        when 'title-s'
+            assign promo_heading_class = 'title-s tablet:title-s'
+        when 'title-xs'
+            assign promo_heading_class = 'title-xs tablet:title-xs'
+        else
+            assign promo_heading_class = 'title-xl tablet:title-xl'
+    endcase
 -%}
 
-<div
-    data-section-id="{{ section.id }}"
-    class="promo-banner-section full-width color-{{ section.settings.color_scheme }}"
-    style="
-        --section-padding-top: {{ section.settings.padding_top }}px;
-        --section-padding-bottom: {{ section.settings.padding_bottom }}px;
-    "
-    x-data="motionRevealSection()"
-    data-motion-section
->
-    <div class="layout container-page">
-        {% comment %} Hero Banner {% endcomment %}
-        <div
-            class="
-                relative mb-2 aspect-4/5 overflow-hidden
-                pc:aspect-16/7 fw:aspect-16/6
-                {% if section.settings.hero_link != blank %}media-interaction-scope{% endif %}
-            "
-        >
-            {%- assign iamge_alt = section.settings.hero_image.alt
-                | default: section.settings.hero_heading
-                | default: shop.name
-                | escape
-            -%}
-            {%- assign hero_image_url = section.settings.hero_link -%}
-            {%- render 'image',
-                url: hero_image_url,
-                wrapper_class: 'block h-full w-full',
-                image: section.settings.hero_image,
-                alt: iamge_alt,
-                width: section.settings.hero_image.width,
-                img_class: 'h-full w-full object-cover',
-                loading: 'lazy',
-                placeholder_key: 'lifestyle-1'
-            -%}
+{%- assign promo_bannder_root_attrs = 'data-component-kind="section" data-component-type="promo-bannder" data-component-id="'
+    | append: section.id
+    | append: '"'
+-%}
 
-            {%- if section.settings.show_badge -%}
-                {%- render 'rotating-badge',
-                    classes: 'absolute right-4 top-4 z-10 pc:right-20 pc:top-20',
-                    unique_id: section.id,
-                    size: 100,
-                    size_mobile: 76,
-                    badge_text: section.settings.badge_text,
-                    center_text: section.settings.badge_value
-                -%}
+{%- capture promo_bannder_children -%}
+    <div
+        class="promo-bannder__root"
+        data-module-id="promo-bannder"
+        x-data="promoBannder()"
+    >
+        {%- for block in section.blocks -%}
+            {%- if block.type != 'card' -%}
+                {%- continue -%}
             {%- endif -%}
-
-            <div
-                class="
-                    absolute inset-0 z-10 flex flex-col justify-end gap-6 p-6
-                    pc:p-10 fw:p-14
-                    {% if section.settings.hero_link != blank %}pointer-events-none{% endif %}
-                "
-                data-motion-sequence
+            {%- liquid
+                assign promo_panel_scheme = block.settings.color_scheme | default: 'scheme-4'
+                assign promo_placeholder_index = forloop.index0 | modulo: 2 | plus: 1
+                assign promo_placeholder_key = 'lifestyle-' | append: promo_placeholder_index
+                assign promo_image_alt = block.settings.image.alt | default: block.settings.heading | escape
+                if block.settings.image == blank and block.settings.heading == blank
+                    assign promo_image_alt = ''
+                endif
+                assign promo_small_alt = block.settings.image_small.alt | default: block.settings.heading | escape
+                if block.settings.image_small == blank and block.settings.heading == blank
+                    assign promo_small_alt = ''
+                endif
+                assign promo_show_link = false
+                if block.settings.link != blank and block.settings.link_text != blank
+                    assign promo_show_link = true
+                endif
+                if forloop.first
+                    assign promo_main_loading = 'eager'
+                else
+                    assign promo_main_loading = 'lazy'
+                endif
+                assign promo_image_on_right = forloop.index | modulo: 2
+            -%}
+            <article
+                class="promo-bannder__panel color-{{ promo_panel_scheme }}{% if promo_image_on_right == 0 %} promo-bannder__panel--image-right{% endif %}"
+                data-promo-bannder-panel
+                style="--promo-bannder-z: {{ forloop.index }};"
+                {{ block.shopify_attributes }}
             >
-                {%- if section.settings.hero_subtitle != blank -%}
-                    <p
-                        class="{{ promo_banner_subtitle_class }}"
-                        data-motion-reveal="content"
-                    >
-                        {{ section.settings.hero_subtitle }}
-                    </p>
-                {%- endif -%}
-
-                {%- if section.settings.hero_heading != blank -%}
-                    <h2
-                        class="{{ promo_banner_heading_class }}"
-                        data-motion-reveal="content"
-                    >
-                        {{ section.settings.hero_heading }}
-                    </h2>
-                {%- endif -%}
-
-                {%- if section.settings.hero_link != blank -%}
-                    {%- capture link_content -%}
-                        <span>{{ section.settings.hero_link_text }}</span>
-                        {% render 'icons', icon: 'icon-arrow2', class: 'ms-3' %}
-                    {%- endcapture -%}
-
-                    <div
-                        class="pointer-events-auto relative z-10 w-fit"
-                        data-motion-bound
-                    >
-                        <div data-motion-reveal="content">
-                            {%- render 'link',
-                                href: section.settings.hero_link,
-                                content: link_content,
-                                variant: 'underline',
-                                class: 'body-xl'
+                <div class="promo-bannder__panel-inner">
+                    <div class="promo-bannder__media">
+                        <div class="promo-bannder__media-scale"{% if block.settings.image == blank %} aria-hidden="true"{% endif %}>
+                            {%- render 'image',
+                                image: block.settings.image,
+                                placeholder_key: promo_placeholder_key,
+                                alt: promo_image_alt,
+                                width: block.settings.image.width,
+                                mode: 'frame',
+                                fit: 'cover',
+                                sizes: '(min-width: 64rem) 50vw, 100vw',
+                                wrapper_class: 'promo-bannder__media-frame h-full w-full',
+                                img_class: 'h-full w-full object-cover',
+                                loading: promo_main_loading
                             -%}
                         </div>
                     </div>
-                {%- endif -%}
-            </div>
-        </div>
 
-        {% comment %} Two Column Cards {% endcomment %}
-        <div class="grid grid-cols-1 gap-2 pc:grid-cols-2" data-motion-cascade>
-            {%- for block in section.blocks -%}
-                {%- liquid
-                    assign promo_placeholder_index = forloop.index0 | modulo: 2 | plus: 1
-                    assign promo_placeholder_key = 'lifestyle-' | append: promo_placeholder_index
-                -%}
-                <div
-                    class="
-                        pc:aspect-4/3.5 relative aspect-square overflow-hidden
-                        {% if block.settings.link != blank %}media-interaction-scope{% endif %}
-                    "
-                    data-motion-reveal="content"
-                    {{ block.shopify_attributes }}
-                >
-                    {%- assign image_alt = block.settings.image.alt
-                        | default: block.settings.heading
-                        | escape
-                    -%}
-                    {%- assign card_image_url = block.settings.link -%}
-                    {%- render 'image',
-                        url: card_image_url,
-                        wrapper_class: 'block h-full w-full',
-                        image: block.settings.image,
-                        placeholder_key: promo_placeholder_key,
-                        alt: image_alt,
-                        width: block.settings.image.width,
-                        sizes: '(max-width: 767px) 100vw, 50vw',
-                        img_class: 'h-full w-full object-cover',
-                        loading: 'lazy',
-                        motion_reveal: false
-                    -%}
+                    <div class="promo-bannder__content">
+                        <div class="promo-bannder__content-copy">
+                            {%- if block.settings.heading != blank -%}
+                                {% render 'heading',
+                                    level: '2',
+                                    tier: promo_heading_class,
+                                    align: 'center',
+                                    content: block.settings.heading
+                                %}
+                            {%- endif -%}
 
-                    <div
-                        class="
-                            absolute inset-0 z-10 flex flex-col justify-end p-6 pc:p-8
-                            {% if block.settings.link != blank %}pointer-events-none{% endif %}
-                        "
-                    >
-                        <div data-motion-copy-bound>
-                            <div class="flex flex-col gap-6" data-motion-copy>
-                                {%- if block.settings.subtitle != blank -%}
-                                    <p class="{{ promo_banner_subtitle_class }} mb-1">
-                                        {{ block.settings.subtitle }}
-                                    </p>
-                                {%- endif -%}
-
-                                {%- if block.settings.heading != blank -%}
-                                    <h2 class="{{ promo_banner_heading_class }}">
-                                        {{ block.settings.heading }}
-                                    </h2>
-                                {%- endif -%}
-
-                                {%- if block.settings.link != blank -%}
-                                    {%- capture link_content -%}
-                                        <span>{{ block.settings.link_text }}</span>
-                                        {% render 'icons', icon: 'icon-arrow2', class: 'ms-3' %}
-                                    {%- endcapture -%}
-
-                                    {%- render 'link',
-                                        href: block.settings.link,
-                                        content: link_content,
-                                        variant: 'underline',
-                                        class: 'body-xl pointer-events-auto relative z-10 w-fit'
-                                    -%}
-                                {%- endif -%}
-                            </div>
+                            {%- if block.settings.description != blank -%}
+                                {% render 'text',
+                                    element: 'div',
+                                    rte: true,
+                                    tier: 'copy-m tablet:copy-l',
+                                    align: 'center',
+                                    content: block.settings.description
+                                %}
+                            {%- endif -%}
                         </div>
+
+                        <div class="promo-bannder__small-wrap"{% if block.settings.image_small == blank %} aria-hidden="true"{% endif %}>
+                            {%- render 'image',
+                                image: block.settings.image_small,
+                                placeholder_key: promo_placeholder_key,
+                                alt: promo_small_alt,
+                                width: block.settings.image_small.width,
+                                mode: 'frame',
+                                fit: 'cover',
+                                aspect_ratio: '17/10',
+                                placeholder_aspect_ratio: '17/10',
+                                sizes: '(min-width: 64rem) 10vw, 45vw',
+                                wrapper_class: 'h-full w-full',
+                                img_class: 'h-full w-full object-cover',
+                                loading: 'lazy'
+                            -%}
+                        </div>
+
+                        {%- if promo_show_link -%}
+                            {%- capture promo_link_content -%}
+                                <span class="uppercase">{{ block.settings.link_text }}</span>
+                                {%- render 'icons', icon: 'icon-arrow2', class: 'ms-step-2xs', size: 'sm' -%}
+                            {%- endcapture -%}
+                            <div class="promo-bannder__link">
+                                {%- render 'link',
+                                    href: block.settings.link,
+                                    content: promo_link_content,
+                                    variant: 'underline',
+                                    class: 'copy-s tablet:copy-m'
+                                -%}
+                            </div>
+                        {%- endif -%}
                     </div>
                 </div>
-            {%- endfor -%}
-        </div>
+            </article>
+        {%- endfor -%}
     </div>
-</div>
+{%- endcapture -%}
+
+{% render 'section-frame',
+    section: section,
+    section_class: 'promo-bannder-section',
+    surface_section: false,
+    width: 'full',
+    clip: false,
+    motion: false,
+    root_attrs: promo_bannder_root_attrs,
+    children: promo_bannder_children
+%}
+
+{% stylesheet %}
+    .promo-bannder-section {
+        overflow: visible;
+    }
+
+    .promo-bannder__root {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .promo-bannder__panel {
+        position: relative;
+        z-index: var(--promo-bannder-z, 1);
+        background-color: rgb(var(--color-background));
+        color: rgb(var(--color-foreground));
+    }
+
+    @media (width >= 64rem) {
+        .promo-bannder__panel {
+            --promo-bannder-panel-height: max(40rem, var(--screen-height));
+            position: sticky;
+            top: var(--sticky-viewport-top, 1rem);
+            min-height: var(--promo-bannder-panel-height);
+        }
+    }
+
+    .promo-bannder__panel-inner {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        min-height: inherit;
+    }
+
+    @media (width >= 64rem) {
+        .promo-bannder__panel-inner {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            height: var(--promo-bannder-panel-height);
+        }
+    }
+
+    @media (width >= 64rem) {
+        .promo-bannder__panel--image-right .promo-bannder__media {
+            order: 2;
+        }
+
+        .promo-bannder__panel--image-right .promo-bannder__content {
+            order: 1;
+        }
+    }
+
+    .promo-bannder__media {
+        position: relative;
+        overflow: hidden;
+        aspect-ratio: 4 / 5;
+    }
+
+    /* Tablet portrait: a full-width portrait image is taller than the screen. */
+    @media (width >= 48rem) and (width < 64rem) {
+        .promo-bannder__media {
+            aspect-ratio: 4 / 3;
+        }
+    }
+
+    @media (width >= 64rem) {
+        .promo-bannder__media {
+            aspect-ratio: auto;
+            height: 100%;
+        }
+    }
+
+    .promo-bannder__media-scale {
+        height: 100%;
+        width: 100%;
+        transform-origin: center center;
+    }
+
+    .promo-bannder--motion .promo-bannder__media-scale {
+        transform: scale(1.2);
+        transition: transform 600ms ease-in-out;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .promo-bannder--motion .promo-bannder__media-scale {
+            transform: none;
+            transition: none;
+        }
+    }
+
+    .promo-bannder--motion .promo-bannder__panel.is-in-view .promo-bannder__media-scale {
+        transform: scale(1);
+    }
+
+    .promo-bannder__media-frame {
+        height: 100%;
+    }
+
+    .promo-bannder__content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 1.5rem;
+        padding: 12vw max(1.25rem, var(--page-inset)) 16vw;
+        min-height: 100vw;
+        box-sizing: border-box;
+    }
+
+    @media (width >= 64rem) {
+        .promo-bannder__content {
+            justify-content: flex-start;
+            gap: 2rem;
+            min-height: 0;
+            /* The small image sits at the bottom (margin-top: auto), so the bottom padding sets where it ends: 85% of the panel. */
+            padding: calc(var(--promo-bannder-panel-height) * 0.24) 2.5rem
+                calc(var(--promo-bannder-panel-height) * 0.15);
+            height: 100%;
+        }
+    }
+
+    .promo-bannder__content-copy {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        width: 100%;
+        max-width: 28rem;
+        overflow-wrap: normal;
+        word-break: normal;
+    }
+
+    @media (width >= 64rem) {
+        .promo-bannder__content-copy {
+            max-width: 65%;
+        }
+    }
+
+    .promo-bannder__small-wrap {
+        width: 45%;
+        max-width: 100%;
+        margin-top: auto;
+    }
+
+    @media (width >= 64rem) {
+        .promo-bannder__small-wrap {
+            width: 30%;
+        }
+    }
+
+    .promo-bannder__link {
+        margin-top: 0.25rem;
+    }
+
+    @media (width >= 64rem) {
+        .promo-bannder__link {
+            margin-top: 0;
+        }
+    }
+{% endstylesheet %}
 
 {% schema %}
 {
     "name": "t:sections.promo-bannder.name",
     "tag": "section",
     "class": "section",
+    "max_blocks": 5,
     "disabled_on": {
         "groups": ["header", "footer", "custom.overlay"]
     },
@@ -204,137 +343,39 @@
             "label": "t:sections.slides-show.settings.heading_size",
             "options": [
                 {
-                    "value": "heading-4xl",
-                    "label": "t:sections.slides-show.options.heading_4xl"
+                    "value": "title-4xl",
+                    "label": "t:settings.type_size.title_4xl"
                 },
                 {
-                    "value": "heading-3xl",
-                    "label": "t:sections.slides-show.options.heading_3xl"
+                    "value": "title-3xl",
+                    "label": "t:settings.type_size.title_3xl"
                 },
                 {
-                    "value": "heading-2xl",
-                    "label": "t:sections.slides-show.options.heading_2xl"
+                    "value": "title-2xl",
+                    "label": "t:settings.type_size.title_2xl"
                 },
                 {
-                    "value": "heading-xl",
-                    "label": "t:sections.slides-show.options.heading_xl"
+                    "value": "title-xl",
+                    "label": "t:settings.type_size.title_xl"
                 },
                 {
-                    "value": "heading-h1",
-                    "label": "t:sections.slides-show.options.heading_h1"
+                    "value": "title-l",
+                    "label": "t:settings.type_size.title_l"
                 },
                 {
-                    "value": "heading-h2",
-                    "label": "t:sections.slides-show.options.heading_h2"
+                    "value": "title-m",
+                    "label": "t:settings.type_size.title_m"
                 },
                 {
-                    "value": "heading-h3",
-                    "label": "t:sections.slides-show.options.heading_h3"
+                    "value": "title-s",
+                    "label": "t:settings.type_size.title_s"
                 },
                 {
-                    "value": "heading-h4",
-                    "label": "t:sections.slides-show.options.heading_h4"
-                },
-                {
-                    "value": "heading-h5",
-                    "label": "t:sections.slides-show.options.heading_h5"
-                },
-                {
-                    "value": "heading-h6",
-                    "label": "t:sections.slides-show.options.heading_h6"
+                    "value": "title-xs",
+                    "label": "t:settings.type_size.title_xs"
                 }
             ],
-            "default": "heading-xl"
-        },
-        {
-            "type": "header",
-            "content": "t:sections.scroll-categories.content.subtitle"
-        },
-        {
-            "type": "select",
-            "id": "subtitle_size",
-            "label": "t:sections.scroll-categories.settings.subtitle_size",
-            "options": [
-                {
-                    "value": "body-3xl",
-                    "label": "t:sections.scroll-categories.options.body_3xl"
-                },
-                {
-                    "value": "body-2xl",
-                    "label": "t:sections.scroll-categories.options.body_2xl"
-                },
-                {
-                    "value": "body-xl",
-                    "label": "t:sections.scroll-categories.options.body_xl"
-                },
-                {
-                    "value": "body-lg",
-                    "label": "t:sections.scroll-categories.options.body_lg"
-                },
-                {
-                    "value": "body-md",
-                    "label": "t:sections.scroll-categories.options.body_md"
-                },
-                {
-                    "value": "body-sm",
-                    "label": "t:sections.scroll-categories.options.body_sm"
-                }
-            ],
-            "default": "body-xl"
-        },
-        {
-            "type": "header",
-            "content": "t:sections.promo-bannder.content.hero_banner"
-        },
-        {
-            "type": "image_picker",
-            "id": "hero_image",
-            "label": "t:sections.promo-bannder.settings.hero_image"
-        },
-        {
-            "type": "inline_richtext",
-            "id": "hero_subtitle",
-            "label": "t:sections.promo-bannder.settings.subtitle",
-            "default": "t:sections.promo-bannder.defaults.subtitle"
-        },
-        {
-            "type": "inline_richtext",
-            "id": "hero_heading",
-            "label": "t:sections.promo-bannder.settings.heading",
-            "default": "t:sections.promo-bannder.defaults.heading"
-        },
-        {
-            "type": "url",
-            "id": "hero_link",
-            "label": "t:sections.promo-bannder.settings.link"
-        },
-        {
-            "type": "text",
-            "id": "hero_link_text",
-            "label": "t:sections.promo-bannder.settings.link_text",
-            "default": "t:sections.promo-bannder.defaults.link_text"
-        },
-        {
-            "type": "header",
-            "content": "t:sections.promo-bannder.content.badge"
-        },
-        {
-            "type": "checkbox",
-            "id": "show_badge",
-            "label": "t:sections.promo-bannder.settings.show_badge",
-            "default": true
-        },
-        {
-            "type": "text",
-            "id": "badge_text",
-            "label": "t:sections.promo-bannder.settings.badge_text",
-            "default": "t:sections.promo-bannder.defaults.badge_text"
-        },
-        {
-            "type": "text",
-            "id": "badge_value",
-            "label": "t:sections.promo-bannder.settings.badge_value",
-            "default": "t:sections.promo-bannder.defaults.badge_value"
+            "default": "title-xl"
         },
         {
             "type": "header",
@@ -373,15 +414,20 @@
                 },
                 {
                     "type": "inline_richtext",
-                    "id": "subtitle",
-                    "label": "t:sections.promo-bannder.block_settings.subtitle",
-                    "default": "t:sections.promo-bannder.blocks.defaults.subtitle"
-                },
-                {
-                    "type": "inline_richtext",
                     "id": "heading",
                     "label": "t:sections.promo-bannder.block_settings.heading",
                     "default": "t:sections.promo-bannder.blocks.defaults.heading"
+                },
+                {
+                    "type": "inline_richtext",
+                    "id": "description",
+                    "label": "t:sections.promo-bannder.block_settings.description",
+                    "default": "t:sections.promo-bannder.blocks.defaults.description"
+                },
+                {
+                    "type": "image_picker",
+                    "id": "image_small",
+                    "label": "t:sections.promo-bannder.block_settings.image_small"
                 },
                 {
                     "type": "url",
@@ -393,6 +439,12 @@
                     "id": "link_text",
                     "label": "t:sections.promo-bannder.block_settings.link_text",
                     "default": "t:sections.promo-bannder.blocks.defaults.link_text"
+                },
+                {
+                    "type": "color_scheme",
+                    "id": "color_scheme",
+                    "label": "t:sections.promo-bannder.block_settings.color_scheme",
+                    "default": "scheme-4"
                 }
             ]
         }

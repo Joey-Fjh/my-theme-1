@@ -1,0 +1,42 @@
+{% doc %}
+    Semantic heading with an independent visual tier class.
+
+    @param {string} level - Heading level `1`–`6`
+    @param {string} tier - Visual tier class (for example `title-2xl`, `title-m`)
+    @param {string} [align] - Alignment utility: `start`, `center`, or `end` (default `start`)
+    @param {string} content - Inner HTML (escaped plain text or controlled markup from settings)
+    @param {string} [class] - Escape hatch classes
+    @param {string} [attrs] - Static root attributes only (`id`, `{{ block.shopify_attributes }}`, and similar). Never `data-module-id`, `x-*`, `@*`, or `:*`.
+{% enddoc %}
+
+{%- liquid
+    assign heading_level = level | default: '2' | plus: 0
+    if heading_level < 1
+        assign heading_level = 1
+    elsif heading_level > 6
+        assign heading_level = 6
+    endif
+
+    assign align_class = ''
+    if align == 'center'
+        assign align_class = 'text-center'
+    elsif align == 'end'
+        assign align_class = 'text-end'
+    endif
+
+    assign heading_classes = tier | default: 'title-m'
+    if align_class != blank
+        assign heading_classes = heading_classes | append: ' ' | append: align_class
+    endif
+    if class != blank
+        assign heading_classes = heading_classes | append: ' ' | append: class
+    endif
+    assign heading_classes = heading_classes | strip
+-%}
+
+<h{{ heading_level }}
+    class="{{ heading_classes }}"
+    {{ attrs }}
+>
+    {{ content }}
+</h{{ heading_level }}>

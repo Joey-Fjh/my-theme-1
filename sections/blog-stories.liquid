@@ -1,47 +1,38 @@
 {%- liquid
-    assign blog_stories_heading_class = section.settings.heading_size | default: 'heading-2xl'
-    assign blog_stories_subtitle_size = section.settings.subtitle_size | default: 'body-lg'
-    assign blog_stories_subtitle_class = 'typo-subtitle ' | append: blog_stories_subtitle_size
-    assign blog_stories_card_title_class = 'heading-h2'
-    assign blog_stories_card_subtitle_class = 'typo-subtitle body-lg'
+    assign blog_stories_heading_class = section.settings.heading_size | default: 'title-2xl'
+    assign blog_stories_subtitle_size = section.settings.subtitle_size | default: 'copy-l'
+    assign blog_stories_card_title_class = 'title-m'
+    assign blog_stories_card_subtitle_class = 'typo-subtitle copy-l'
 -%}
 
-<div
-    data-section-id="{{ section.id }}"
-    class="blog-stories-section full-width color-{{ section.settings.color_scheme }} surface-section"
-    style="
-        --section-padding-top: {{ section.settings.padding_top }}px;
-        --section-padding-bottom: {{ section.settings.padding_bottom }}px;
-    "
-    x-data="motionRevealSection()"
-    data-motion-section
->
-    <div class="layout container-page">
+{%- capture blog_stories_children -%}
         {% comment %} Header {% endcomment %}
         <div
-            class="mb-12 flex flex-col justify-between gap-8 pc:flex-row pc:items-start"
-            data-motion-sequence
+            class="mb-step-xl flex flex-col justify-between gap-step-l tablet:flex-row tablet:items-start"
         >
-            <h2
-                class="pc:w-1/2 {{ blog_stories_heading_class }}"
-                data-motion-reveal="content"
-            >
-                {{ section.settings.heading }}
-            </h2>
+            {% render 'heading',
+                level: '2',
+                tier: blog_stories_heading_class,
+                class: 'tablet:w-1/2',
+                content: section.settings.heading
+            %}
 
             <div
-                class="flex items-start gap-4 pc:w-1/3"
-                data-motion-reveal="content"
+                class="flex items-start gap-step-s tablet:w-1/3"
             >
-                <div class="rte rte--compact {{ blog_stories_subtitle_class }}">
-                    {{ section.settings.description }}
-                </div>
-                <span class="mt-2 h-3 w-3 shrink-0 rounded-full bg-theme-text"></span>
+                {% render 'text',
+                    tier: blog_stories_subtitle_size,
+                    element: 'div',
+                    rte: true,
+                    subtitle: true,
+                    content: section.settings.description,
+                %}
+                <span class="mt-step-2xs h-3 w-3 shrink-0 rounded-full bg-theme-text"></span>
             </div>
         </div>
 
         {% comment %} Article Grid {% endcomment %}
-        <div class="grid gap-6 pc:grid-cols-3" data-motion-cascade>
+        <div class="grid gap-step-m tablet:grid-cols-3" data-motion-cascade>
             {%- if section.settings.blog != blank -%}
                 {%- for article in section.settings.blog.articles
                     limit: section.settings.articles_limit
@@ -52,51 +43,47 @@
                     -%}
                     <article
                         class="group"
-                        data-motion-reveal="content"
+                        data-motion-bound
                     >
-                        <div class="relative mb-4 aspect-4/3 overflow-hidden">
+                        <div class="relative mb-step-s aspect-4/3 overflow-hidden">
                             {%- assign image_alt = article.title | escape -%}
                             {%- assign card_image_url = article.url -%}
                             {%- render 'image',
                                 url: card_image_url,
+                                duplicate_link: true,
                                 wrapper_class: 'block h-full w-full',
                                 image: article.image,
                                 placeholder_key: editorial_placeholder_key,
                                 alt: image_alt,
                                 width: article.image.width,
                                 img_class: 'h-full w-full object-cover',
-                                motion_reveal: false
                             -%}
                         </div>
 
-                        <div data-motion-copy-bound>
-                            <div data-motion-copy>
-                                <p class="mb-3 {{ blog_stories_card_subtitle_class }}">
+                        <div>
+                            <div>
+                                <p class="mb-step-xs {{ blog_stories_card_subtitle_class }}">
                                     {{ article.tags | first }}
                                 </p>
                                 <h3
-                                    class="mb-3 line-clamp-1 min-w-0 {{ blog_stories_card_title_class }}"
+                                    class="mb-step-xs line-clamp-1 min-w-0 {{ blog_stories_card_title_class }}"
                                     title="{{ article.title | escape }}"
                                 >
                                     {{ article.title }}
                                 </h3>
 
-                                {%- if article.url != blank -%}
-                                    {%- liquid
-                                        assign link_label = section.settings.link_text | strip
-                                        if link_label == blank
-                                            assign link_label = 'sections.blog-stories.defaults.link_text' | t
-                                        endif
-                                        assign read_more_aria = 'accessibility.read_more_about' | t: title: article.title
-                                    -%}
-
+                                {%- liquid
+                                    assign link_label = section.settings.link_text | strip
+                                    assign read_more_aria = 'accessibility.read_more_about' | t: title: article.title
+                                -%}
+                                {%- if article.url != blank and link_label != blank -%}
                                     {%- capture link_content -%}
                                         <span>{{ link_label }}</span>
-                                        {% render 'icons', icon: 'icon-arrow2', class: 'ms-3' %}
+                                        {% render 'icons', icon: 'icon-arrow2', class: 'ms-step-xs' %}
                                     {%- endcapture -%}
 
                                     {%- render 'link',
-                                        class: 'body-xl hover:opacity-100 transition-opacity',
+                                        class: 'copy-l hover:opacity-100 transition-opacity',
                                         href: article.url,
                                         content: link_content,
                                         aria_label: read_more_aria,
@@ -110,18 +97,18 @@
             {%- else -%}
                 {%- for block in section.blocks -%}
                     {%- liquid
-                        assign block_subtitle_size = block.settings.card_subtitle_size | default: 'body-lg'
+                        assign block_subtitle_size = block.settings.card_subtitle_size | default: 'copy-l'
                         assign block_subtitle_class = 'typo-subtitle ' | append: block_subtitle_size
-                        assign block_title_class = block.settings.card_title_size | default: 'heading-h2'
+                        assign block_title_class = block.settings.card_title_size | default: 'title-m'
                         assign editorial_placeholder_index = forloop.index0 | modulo: 2 | plus: 1
                         assign editorial_placeholder_key = 'lifestyle-' | append: editorial_placeholder_index
                     -%}
                     <article
                         class="group"
-                        data-motion-reveal="content"
+                        data-motion-bound
                         {{ block.shopify_attributes }}
                     >
-                        <div class="relative mb-4 aspect-4/3 overflow-hidden">
+                        <div class="relative mb-step-s aspect-4/3 overflow-hidden">
                             {%- assign image_alt = block.settings.image.alt
                                 | default: block.settings.title
                                 | escape
@@ -129,50 +116,46 @@
                             {%- assign card_image_url = block.settings.link -%}
                             {%- render 'image',
                                 url: card_image_url,
+                                duplicate_link: true,
                                 wrapper_class: 'block h-full w-full',
                                 image: block.settings.image,
                                 placeholder_key: editorial_placeholder_key,
                                 alt: image_alt,
                                 width: block.settings.image.width,
                                 img_class: 'h-full w-full object-cover',
-                                motion_reveal: false
                             -%}
                         </div>
 
-                        <div data-motion-copy-bound>
-                            <div data-motion-copy>
-                                <p class="mb-3 {{ block_subtitle_class }}">
+                        <div>
+                            <div>
+                                <p class="mb-step-xs {{ block_subtitle_class }}">
                                     {{ block.settings.subtitle }}
                                 </p>
 
                                 <h3
-                                    class="mb-3 line-clamp-1 min-w-0 {{ block_title_class }}"
+                                    class="mb-step-xs line-clamp-1 min-w-0 {{ block_title_class }}"
                                     title="{{ block.settings.title | strip_html | strip | escape }}"
                                 >
                                     {{ block.settings.title }}
                                 </h3>
 
-                                {%- if block.settings.link != blank -%}
-                                    {%- liquid
-                                        assign link_label = block.settings.article_link_text | strip
-                                        if link_label == blank
-                                            assign link_label = 'sections.blog-stories.defaults.link_text' | t
-                                        endif
-                                        assign block_title_plain = block.settings.title | strip_html | strip
-                                        if block_title_plain != blank
-                                            assign read_more_aria = 'accessibility.read_more_about' | t: title: block_title_plain
-                                        else
-                                            assign read_more_aria = link_label
-                                        endif
-                                    -%}
-
+                                {%- liquid
+                                    assign link_label = block.settings.article_link_text | strip
+                                    assign block_title_plain = block.settings.title | strip_html | strip
+                                    if block_title_plain != blank
+                                        assign read_more_aria = 'accessibility.read_more_about' | t: title: block_title_plain
+                                    else
+                                        assign read_more_aria = link_label
+                                    endif
+                                -%}
+                                {%- if block.settings.link != blank and link_label != blank -%}
                                     {%- capture link_content -%}
                                         <span>{{ link_label }}</span>
-                                        {% render 'icons', icon: 'icon-arrow2', class: 'ms-3' %}
+                                        {% render 'icons', icon: 'icon-arrow2', class: 'ms-step-xs' %}
                                     {%- endcapture -%}
 
                                     {%- render 'link',
-                                        class: 'body-xl hover:opacity-100 transition-opacity',
+                                        class: 'copy-l hover:opacity-100 transition-opacity',
                                         href: block.settings.link,
                                         content: link_content,
                                         aria_label: read_more_aria,
@@ -185,8 +168,16 @@
                 {%- endfor -%}
             {%- endif -%}
         </div>
-    </div>
-</div>
+{%- endcapture -%}
+
+{% render 'section-frame',
+    section: section,
+    section_class: 'blog-stories-section',
+    width: 'page',
+    height_kind: 'content',
+    motion: true,
+    children: blog_stories_children
+%}
 
 {% schema %}
 {
@@ -217,47 +208,39 @@
             "label": "t:sections.slides-show.settings.heading_size",
             "options": [
                 {
-                    "value": "heading-4xl",
-                    "label": "t:sections.slides-show.options.heading_4xl"
+                    "value": "title-4xl",
+                    "label": "t:settings.type_size.title_4xl"
                 },
                 {
-                    "value": "heading-3xl",
-                    "label": "t:sections.slides-show.options.heading_3xl"
+                    "value": "title-3xl",
+                    "label": "t:settings.type_size.title_3xl"
                 },
                 {
-                    "value": "heading-2xl",
-                    "label": "t:sections.slides-show.options.heading_2xl"
+                    "value": "title-2xl",
+                    "label": "t:settings.type_size.title_2xl"
                 },
                 {
-                    "value": "heading-xl",
-                    "label": "t:sections.slides-show.options.heading_xl"
+                    "value": "title-xl",
+                    "label": "t:settings.type_size.title_xl"
                 },
                 {
-                    "value": "heading-h1",
-                    "label": "t:sections.slides-show.options.heading_h1"
+                    "value": "title-l",
+                    "label": "t:settings.type_size.title_l"
                 },
                 {
-                    "value": "heading-h2",
-                    "label": "t:sections.slides-show.options.heading_h2"
+                    "value": "title-m",
+                    "label": "t:settings.type_size.title_m"
                 },
                 {
-                    "value": "heading-h3",
-                    "label": "t:sections.slides-show.options.heading_h3"
+                    "value": "title-s",
+                    "label": "t:settings.type_size.title_s"
                 },
                 {
-                    "value": "heading-h4",
-                    "label": "t:sections.slides-show.options.heading_h4"
-                },
-                {
-                    "value": "heading-h5",
-                    "label": "t:sections.slides-show.options.heading_h5"
-                },
-                {
-                    "value": "heading-h6",
-                    "label": "t:sections.slides-show.options.heading_h6"
+                    "value": "title-xs",
+                    "label": "t:settings.type_size.title_xs"
                 }
             ],
-            "default": "heading-2xl"
+            "default": "title-2xl"
         },
         {
             "type": "inline_richtext",
@@ -275,31 +258,23 @@
             "label": "t:sections.scroll-categories.settings.subtitle_size",
             "options": [
                 {
-                    "value": "body-3xl",
-                    "label": "t:sections.scroll-categories.options.body_3xl"
+                    "value": "copy-xl",
+                    "label": "t:settings.type_size.copy_xl"
                 },
                 {
-                    "value": "body-2xl",
-                    "label": "t:sections.scroll-categories.options.body_2xl"
+                    "value": "copy-l",
+                    "label": "t:settings.type_size.copy_l"
                 },
                 {
-                    "value": "body-xl",
-                    "label": "t:sections.scroll-categories.options.body_xl"
+                    "value": "copy-m",
+                    "label": "t:settings.type_size.copy_m"
                 },
                 {
-                    "value": "body-lg",
-                    "label": "t:sections.scroll-categories.options.body_lg"
-                },
-                {
-                    "value": "body-md",
-                    "label": "t:sections.scroll-categories.options.body_md"
-                },
-                {
-                    "value": "body-sm",
-                    "label": "t:sections.scroll-categories.options.body_sm"
+                    "value": "copy-s",
+                    "label": "t:settings.type_size.copy_s"
                 }
             ],
-            "default": "body-lg"
+            "default": "copy-l"
         },
         {
             "type": "richtext",
@@ -373,31 +348,39 @@
                     "label": "t:sections.slides-show.settings.heading_size",
                     "options": [
                         {
-                            "value": "heading-h1",
-                            "label": "t:sections.slides-show.options.heading_h1"
+                            "value": "title-4xl",
+                            "label": "t:settings.type_size.title_4xl"
                         },
                         {
-                            "value": "heading-h2",
-                            "label": "t:sections.slides-show.options.heading_h2"
+                            "value": "title-3xl",
+                            "label": "t:settings.type_size.title_3xl"
                         },
                         {
-                            "value": "heading-h3",
-                            "label": "t:sections.slides-show.options.heading_h3"
+                            "value": "title-2xl",
+                            "label": "t:settings.type_size.title_2xl"
                         },
                         {
-                            "value": "heading-h4",
-                            "label": "t:sections.slides-show.options.heading_h4"
+                            "value": "title-xl",
+                            "label": "t:settings.type_size.title_xl"
                         },
                         {
-                            "value": "heading-h5",
-                            "label": "t:sections.slides-show.options.heading_h5"
+                            "value": "title-l",
+                            "label": "t:settings.type_size.title_l"
                         },
                         {
-                            "value": "heading-h6",
-                            "label": "t:sections.slides-show.options.heading_h6"
+                            "value": "title-m",
+                            "label": "t:settings.type_size.title_m"
+                        },
+                        {
+                            "value": "title-s",
+                            "label": "t:settings.type_size.title_s"
+                        },
+                        {
+                            "value": "title-xs",
+                            "label": "t:settings.type_size.title_xs"
                         }
                     ],
-                    "default": "heading-h2"
+                    "default": "title-m"
                 },
                 {
                     "type": "header",
@@ -409,31 +392,23 @@
                     "label": "t:sections.scroll-categories.settings.subtitle_size",
                     "options": [
                         {
-                            "value": "body-3xl",
-                            "label": "t:sections.scroll-categories.options.body_3xl"
+                            "value": "copy-xl",
+                            "label": "t:settings.type_size.copy_xl"
                         },
                         {
-                            "value": "body-2xl",
-                            "label": "t:sections.scroll-categories.options.body_2xl"
+                            "value": "copy-l",
+                            "label": "t:settings.type_size.copy_l"
                         },
                         {
-                            "value": "body-xl",
-                            "label": "t:sections.scroll-categories.options.body_xl"
+                            "value": "copy-m",
+                            "label": "t:settings.type_size.copy_m"
                         },
                         {
-                            "value": "body-lg",
-                            "label": "t:sections.scroll-categories.options.body_lg"
-                        },
-                        {
-                            "value": "body-md",
-                            "label": "t:sections.scroll-categories.options.body_md"
-                        },
-                        {
-                            "value": "body-sm",
-                            "label": "t:sections.scroll-categories.options.body_sm"
+                            "value": "copy-s",
+                            "label": "t:settings.type_size.copy_s"
                         }
                     ],
-                    "default": "body-lg"
+                    "default": "copy-l"
                 },
                 {
                     "type": "image_picker",

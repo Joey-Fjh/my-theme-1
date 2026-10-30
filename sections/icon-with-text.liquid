@@ -7,30 +7,39 @@
     assign item_gap = section.settings.item_gap | default: 32 | plus: 0
     assign direction = section.settings.direction | default: 'vertical'
     assign enable_carousel = section.settings.enable_carousel
+    assign item_alignment = section.settings.alignment | default: 'center'
 -%}
 
-<div
-    data-section-id="{{ section.id }}"
-    class="icon-with-text-section full-width color-{{ section.settings.color_scheme }} surface-section"
-    style="
-        --section-padding-top: {{ section.settings.padding_top | default: 0 }}px;
-        --section-padding-bottom: {{ section.settings.padding_bottom | default: 0 }}px;
-        --icon-with-text-columns: {{ desktop_columns }};
-        --icon-with-text-columns-mobile: {{ mobile_columns }};
-        --icon-with-text-item-gap: {{ item_gap }}px;
-    "
-    data-component-kind="section"
-    data-component-type="icon-with-text"
-    data-component-id="{{ section.id }}"
-    data-enable-carousel="{{ enable_carousel }}"
-    data-desktop-columns="{{ desktop_columns }}"
-    data-mobile-columns="{{ mobile_columns }}"
-    data-item-gap="{{ item_gap }}"
-    x-data="motionRevealSection()"
-    data-motion-section
->
-    <div class="layout container-page">
+{%- capture icon_with_text_background -%}
+    {%- if section.settings.show_wave -%}
+        <div
+            class="icon-with-text-section__wave color-{{ section.settings.wave_color_scheme | default: 'scheme-2' }}"
+            aria-hidden="true"
+        >
+            {%- render 'icons', icon: 'icon-divider-wave', size: 'fill', class: 'icon-with-text-section__wave-shape' -%}
+        </div>
+    {%- endif -%}
+{%- endcapture -%}
+
+{%- capture icon_with_text_root_style -%}
+--icon-with-text-columns: {{ desktop_columns }}; --icon-with-text-columns-mobile: {{ mobile_columns }}; --icon-with-text-item-gap: {{ item_gap }}px;
+{%- endcapture -%}
+{%- assign icon_with_text_root_attrs = 'data-component-kind="section" data-component-type="icon-with-text" data-component-id="'
+    | append: section.id
+    | append: '"'
+-%}
+{%- capture icon_with_text_children -%}
+    <div
+        data-module-id="icon-with-text"
+        x-data="iconWithText()"
+        data-swiper-src="{{ 'vendor-swiper.min.js' | asset_url }}"
+        data-enable-carousel="{{ enable_carousel }}"
+        data-desktop-columns="{{ desktop_columns }}"
+        data-mobile-columns="{{ mobile_columns }}"
+        data-item-gap="{{ item_gap }}"
+    >
         {%- if enable_carousel -%}
+            <div class="flex flex-col gap-step-l">
             <div class="icon-with-text-section__carousel-header">
                 <div
                     class="icon-with-text-section__pagination"
@@ -47,7 +56,7 @@
                         {%- if block.settings.title != blank -%}
                             <div
                                 class="swiper-slide"
-                                data-motion-reveal="content"
+                                data-motion-bound
                                 {{ block.shopify_attributes }}
                             >
                                 {%- render 'icon-with-text-item',
@@ -59,21 +68,24 @@
                                     icon_size_mobile: icon_size_mobile,
                                     direction: direction,
                                     gap: icon_text_gap,
-                                    alignment: 'center',
+                                    alignment: item_alignment,
                                     class: 'icon-with-text-section__item',
-                                    title_class: 'body-xl font-medium'
+                                    title_class: 'title-xs tablet:title-xs uppercase',
+                                    text: block.settings.text,
+                                    text_class: 'copy-s tablet:copy-m'
                                 -%}
                             </div>
                         {%- endif -%}
                     {%- endfor -%}
                 </div>
             </div>
+            </div>
         {%- else -%}
             <div class="icon-with-text-section__grid" data-motion-cascade>
                 {%- for block in section.blocks -%}
                     {%- if block.settings.title != blank -%}
                         <div
-                            data-motion-reveal="content"
+                            data-motion-bound
                             {{ block.shopify_attributes }}
                         >
                             {%- render 'icon-with-text-item',
@@ -85,9 +97,11 @@
                                 icon_size_mobile: icon_size_mobile,
                                 direction: direction,
                                 gap: icon_text_gap,
-                                alignment: 'center',
+                                alignment: item_alignment,
                                 class: 'icon-with-text-section__item',
-                                title_class: 'body-xl'
+                                title_class: 'title-xs tablet:title-xs uppercase',
+                                text: block.settings.text,
+                                text_class: 'copy-s tablet:copy-m'
                             -%}
                         </div>
                     {%- endif -%}
@@ -95,64 +109,91 @@
             </div>
         {%- endif -%}
     </div>
-</div>
+{%- endcapture -%}
 
-{%- javascript -%}
-    (function () {
-        const Components = window.__Theme__?.Components;
-        if (!Components) return;
+{% render 'section-frame',
+    section: section,
+    section_class: 'icon-with-text-section',
+    motion: true,
+    background: icon_with_text_background,
+    root_style: icon_with_text_root_style,
+    root_attrs: icon_with_text_root_attrs,
+    children: icon_with_text_children
+%}
 
-        Components.register(
-            'icon-with-text',
-            {
-                init(el) {
-                    if (el.getAttribute('data-enable-carousel') !== 'true') return {};
+{% stylesheet %}
+    .icon-with-text-section .icon-with-text-item__body {
+        display: flex;
+        min-width: 0;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
 
-                    const swiperEl = el.querySelector('[data-icon-with-text-swiper]');
-                    if (!swiperEl || typeof Swiper === 'undefined') return {};
+    .icon-with-text-section .icon-with-text-section__wave {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        height: clamp(2.5rem, 5vw, 4.5rem);
+        background-color: transparent;
+        color: rgb(var(--color-background));
+    }
 
-                    const desktopColumns =
-                        parseInt(el.getAttribute('data-desktop-columns'), 10) || 3;
-                    const mobileColumns = parseInt(el.getAttribute('data-mobile-columns'), 10) || 1;
-                    const itemGap = parseInt(el.getAttribute('data-item-gap'), 10) || 32;
-                    const paginationEl = el.querySelector('[data-icon-with-text-pagination]');
+    .icon-with-text-section__wave-shape,
+    .icon-with-text-section__wave-shape svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
 
-                    const swiper = new Swiper(swiperEl, {
-                        initialSlide: 0,
-                        slidesPerView: mobileColumns,
-                        slidesPerGroup: mobileColumns,
-                        spaceBetween: itemGap,
-                        autoHeight: true,
-                        observer: true,
-                        observeParents: true,
-                        resizeObserver: true,
-                        watchOverflow: true,
-                        pagination: paginationEl
-                            ? {
-                                  el: paginationEl,
-                                  clickable: true,
-                              }
-                            : false,
-                        breakpoints: {
-                            768: {
-                                slidesPerView: desktopColumns,
-                                slidesPerGroup: desktopColumns,
-                                spaceBetween: itemGap,
-                            },
-                        },
-                    });
+    .icon-with-text-section__grid {
+        display: grid;
+        align-items: start;
+        grid-template-columns: repeat(var(--icon-with-text-columns-mobile, 1), minmax(0, 1fr));
+        gap: var(--icon-with-text-item-gap, 2rem);
+    }
 
-                    return { swiper };
-                },
+    .icon-with-text-section__carousel-header {
+        display: flex;
+        min-height: calc(var(--spacing) * 4);
+        align-items: center;
+        justify-content: flex-start;
+    }
 
-                destroy(_el, state) {
-                    state?.swiper?.destroy?.(true, true);
-                },
-            },
-            { lazy: true },
-        );
-    })();
-{%- endjavascript -%}
+    .icon-with-text-section__pagination {
+        position: static;
+        display: flex;
+        width: auto;
+        align-items: center;
+        justify-content: flex-start;
+        gap: calc(var(--spacing) * 2);
+    }
+
+    .icon-with-text-section__pagination .swiper-pagination-bullet {
+        margin: 0;
+        height: calc(var(--spacing) * 2);
+        width: calc(var(--spacing) * 2);
+    }
+
+    .icon-with-text-section__carousel {
+        width: 100%;
+        overflow: hidden;
+    }
+
+    .icon-with-text-section__carousel .swiper-wrapper {
+        align-items: flex-start;
+    }
+
+    .icon-with-text-section__carousel .swiper-slide {
+        height: auto;
+    }
+
+    @media (width >= 48rem) {
+        .icon-with-text-section__grid {
+            grid-template-columns: repeat(var(--icon-with-text-columns, 3), minmax(0, 1fr));
+        }
+    }
+{% endstylesheet %}
 
 {% schema %}
 {
@@ -280,6 +321,38 @@
             "default": 16
         },
         {
+            "type": "select",
+            "id": "alignment",
+            "label": "t:sections.icon-with-text.settings.alignment",
+            "options": [
+                {
+                    "value": "left",
+                    "label": "t:sections.icon-with-text.options.left"
+                },
+                {
+                    "value": "center",
+                    "label": "t:sections.icon-with-text.options.center"
+                }
+            ],
+            "default": "center"
+        },
+        {
+            "type": "header",
+            "content": "t:sections.icon-with-text.content.wave"
+        },
+        {
+            "type": "checkbox",
+            "id": "show_wave",
+            "label": "t:sections.icon-with-text.settings.show_wave",
+            "default": false
+        },
+        {
+            "type": "color_scheme",
+            "id": "wave_color_scheme",
+            "label": "t:sections.icon-with-text.settings.wave_color_scheme",
+            "default": "scheme-2"
+        },
+        {
             "type": "header",
             "content": "t:sections.icon-with-text.content.padding"
         },
@@ -314,6 +387,11 @@
                     "id": "title",
                     "label": "t:sections.icon-with-text.block_settings.title",
                     "default": "t:sections.icon-with-text.blocks_defaults.title"
+                },
+                {
+                    "type": "inline_richtext",
+                    "id": "text",
+                    "label": "t:sections.icon-with-text.block_settings.text"
                 },
                 {
                     "type": "select",
@@ -385,6 +463,11 @@
                             "group": "t:sections.icon-with-text.option_groups.service_and_information"
                         },
                         {
+                            "value": "icon-content-shield-check",
+                            "label": "t:sections.icon-with-text.options.shield_check",
+                            "group": "t:sections.icon-with-text.option_groups.service_and_information"
+                        },
+                        {
                             "value": "icon-content-check",
                             "label": "t:sections.icon-with-text.options.check",
                             "group": "t:sections.icon-with-text.option_groups.values_and_lifestyle"
@@ -392,6 +475,11 @@
                         {
                             "value": "icon-content-heart",
                             "label": "t:sections.icon-with-text.options.heart",
+                            "group": "t:sections.icon-with-text.option_groups.values_and_lifestyle"
+                        },
+                        {
+                            "value": "icon-content-hand-heart",
+                            "label": "t:sections.icon-with-text.options.hand_heart",
                             "group": "t:sections.icon-with-text.option_groups.values_and_lifestyle"
                         },
                         {

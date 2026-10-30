@@ -11,30 +11,59 @@
     @param {number}  magnifier_preview_max_width - Maximum magnifier preview width in pixels
     @param {string}  aspect_ratio - Optional CSS aspect-ratio (fallback when first image has no ratio)
     @param {string}  max_height   - Optional desktop max height for the carousel media box
-    @param {boolean} motion_reveal - Allow nested image reveal hooks
+    @param {string}  pagination   - Optional pagination layout: `vertical` stacks dots on the left (desktop)
 {% endcomment %}
 
+{%- assign gallery_pagination = pagination | default: '' -%}
+{%- assign gallery_pagination_vertical = false -%}
+{%- if gallery_pagination == 'vertical' -%}
+    {%- assign gallery_pagination_vertical = true -%}
+{%- endif -%}
+
 {%- assign first_img = images.first -%}
+{%- assign gallery_adapt = false -%}
+{%- assign gallery_main_img_class = 'w-full h-full object-cover' -%}
+{%- assign gallery_main_mode = 'frame' -%}
+{%- assign gallery_main_fit = blank -%}
+{%- assign gallery_magnifier_fit = blank -%}
 {%- assign gallery_aspect = aspect_ratio -%}
-{%- if gallery_aspect == blank and first_img.width != blank and first_img.height != blank -%}
+{%- if aspect_ratio == 'adapt' -%}
+    {%- assign gallery_adapt = true -%}
+    {%- assign gallery_main_img_class = 'w-full h-auto max-h-full object-contain' -%}
+    {%- assign gallery_main_mode = 'natural' -%}
+    {%- assign gallery_main_fit = 'contain' -%}
+    {%- assign gallery_magnifier_fit = 'contain' -%}
+    {%- assign gallery_aspect = blank -%}
+{%- endif -%}
+{%- if gallery_aspect == blank
+    and gallery_adapt == false
+    and first_img.width != blank
+    and first_img.height != blank
+-%}
     {%- assign gallery_aspect = first_img.width | append: '/' | append: first_img.height -%}
-{%- elsif gallery_aspect == blank -%}
+{%- elsif gallery_aspect == blank and gallery_adapt == false -%}
     {%- assign gallery_aspect = images.first.aspect_ratio | default: '3/4' -%}
 {%- endif -%}
 
 <div
     class="
         swiper w-full min-w-0 overflow-hidden rounded-sm
+        {% if gallery_pagination_vertical %}product-gallery-carousel--pagination-vertical{% endif %}
         {% if max_height != blank %}
-          pc:max-h-(--product-gallery-max-height)
+          tablet:max-h-(--product-gallery-max-height)
         {% endif %}
     "
     data-gallery-swiper
+    {% if gallery_pagination_vertical %}
+        data-gallery-pagination="vertical"
+    {% endif %}
     role="group"
     aria-label="{{ 'accessibility.product_gallery_carousel' | t }}"
     aria-roledescription="{{ 'accessibility.carousel' | t }}"
     style="
-        aspect-ratio: {{ gallery_aspect }};
+        {% unless gallery_adapt %}
+            aspect-ratio: {{ gallery_aspect }};
+        {% endunless %}
         {% if max_height != blank %}
             --product-gallery-max-height: {{ max_height }};
         {% endif %}
@@ -52,14 +81,15 @@
                         type="button"
                         class="block h-full w-full cursor-zoom-in"
                         aria-label="{{ 'accessibility.open_image_zoom' | t }}"
-                        @click="openLightbox({{ image_only_index }})"
+                        data-lightbox-index="{{ image_only_index }}"
+                        @click="openLightbox(Number($el.dataset.lightboxIndex))"
                     >
                         {%- assign image_only_index = image_only_index | plus: 1 -%}
                 {%- elsif media_type != 'image' -%}
                     <button
                         type="button"
                         class="block h-full w-full"
-                        @click="activateMediaById({{ image.id }})"
+                        @click="activateMediaById($el.dataset.mediaId)"
                         data-media-id="{{ image.id }}"
                         data-media-type="{{ media_type }}"
                         {% if media_type == 'model' %}
@@ -82,7 +112,7 @@
                         {%- render 'image-magnifier',
                             image: media_image,
                             width: 1200,
-                            img_class: 'w-full h-full object-cover',
+                            img_class: gallery_main_img_class,
                             alt: media_image.alt,
                             sizes: '100vw',
                             widths: '400,600,800,1200',
@@ -92,19 +122,20 @@
                             preview_width: magnifier_preview_width,
                             preview_height: magnifier_preview_height,
                             preview_max_width: magnifier_preview_max_width,
-                            motion_reveal: motion_reveal
+                            fit: gallery_magnifier_fit
                         -%}
                     {%- else -%}
                         {%- render 'image',
                             image: media_image,
                             width: 1200,
-                            img_class: 'w-full h-full object-cover',
+                            img_class: gallery_main_img_class,
                             alt: media_image.alt,
                             sizes: '100vw',
                             widths: '400,600,800,1200',
                             loading: gallery_loading,
                             fetchpriority: gallery_fetchpriority,
-                            motion_reveal: motion_reveal
+                            mode: gallery_main_mode,
+                            fit: gallery_main_fit
                         -%}
                     {%- endif -%}
                 {%- else -%}
@@ -115,7 +146,8 @@
                         widths: '400,600,800,1200',
                         loading: gallery_loading,
                         fetchpriority: gallery_fetchpriority,
-                        motion_reveal: motion_reveal
+                        img_class: gallery_main_img_class,
+                        adapt: gallery_adapt
                     -%}
                 {%- endif -%}
 
@@ -127,5 +159,7 @@
             </div>
         {%- endfor -%}
     </div>
-    <div class="swiper-pagination mt-4"></div>
+    <div
+        class="swiper-pagination mt-step-s{% if gallery_pagination_vertical %} desktop:mt-0 product-gallery-carousel__pagination{% endif %}"
+    ></div>
 </div>
