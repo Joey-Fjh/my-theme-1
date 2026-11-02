@@ -132,12 +132,26 @@
             if collection_hero_image != blank
                 assign collection_hero_has_media = true
             endif
+            assign collection_hero_img_class = 'h-full w-full object-cover'
+            assign collection_hero_blur_style = ''
+            if collection_hero_has_media and section.settings.image_blur > 0
+                assign collection_hero_img_class = 'h-full w-full object-cover collection-hero-img-blur'
+                capture collection_hero_blur_style
+                    echo '--collection-hero-blur: ' | append: section.settings.image_blur | append: 'px'
+                endcapture
+            endif
         -%}
         {%- comment -%} Hero: media as cover background; height from content + padding {%- endcomment -%}
         <div
             class="relative mb-step-l overflow-hidden rounded-sm color-{{ section.settings.header_color_scheme }} tablet:mb-step-xl"
         >
-            <div class="pointer-events-none absolute inset-0" aria-hidden="true">
+            <div
+                class="pointer-events-none absolute inset-0"
+                aria-hidden="true"
+                {% if collection_hero_blur_style != blank %}
+                    style="{{ collection_hero_blur_style }}"
+                {% endif %}
+            >
                 {%- if collection_hero_has_media -%}
                     {%- render 'image',
                         image: collection_hero_image,
@@ -150,9 +164,14 @@
                         mode: 'frame',
                         fit: 'cover',
                         wrapper_class: '!absolute inset-0 h-full w-full',
-                        img_class: 'h-full w-full object-cover',
+                        img_class: collection_hero_img_class,
                     -%}
-                    <div class="absolute inset-0 bg-scrim"></div>
+                    {%- if section.settings.image_scrim_opacity > 0 -%}
+                        <div
+                            class="absolute inset-0 bg-scrim-solid"
+                            style="opacity: {{ section.settings.image_scrim_opacity | divided_by: 100.0 }}"
+                        ></div>
+                    {%- endif -%}
                 {%- else -%}
                     <div class="absolute inset-0 bg-theme-bg"></div>
                 {%- endif -%}
@@ -711,6 +730,16 @@
 %}
 
 {% stylesheet %}
+    .theme-image > .image_img.collection-hero-img-blur {
+        position: absolute;
+        top: calc(-2 * var(--collection-hero-blur));
+        left: calc(-2 * var(--collection-hero-blur));
+        width: calc(100% + 4 * var(--collection-hero-blur));
+        height: calc(100% + 4 * var(--collection-hero-blur));
+        max-width: none;
+        filter: blur(var(--collection-hero-blur));
+    }
+
     .price-range-thumb {
         -webkit-appearance: none;
         appearance: none;
@@ -894,6 +923,28 @@
             "id": "fallback_image",
             "label": "t:sections.collection.settings.fallback_image",
             "info": "t:sections.collection.info.fallback_image"
+        },
+        {
+            "type": "range",
+            "id": "image_blur",
+            "min": 0,
+            "max": 20,
+            "step": 1,
+            "unit": "px",
+            "default": 10,
+            "label": "t:sections.collection.settings.image_blur",
+            "info": "t:sections.collection.info.image_blur"
+        },
+        {
+            "type": "range",
+            "id": "image_scrim_opacity",
+            "min": 0,
+            "max": 100,
+            "step": 5,
+            "unit": "%",
+            "default": 50,
+            "label": "t:sections.collection.settings.image_scrim_opacity",
+            "info": "t:sections.collection.info.image_scrim_opacity"
         },
         {
             "type": "header",
