@@ -14,7 +14,7 @@ colors:
 # Ceylune Design Language
 
 Status: complete draft, agreed by the user section by section (2026-10-11). Values are provisional and tuned at the browser look; the roles and rules are what this document fixes.
-Visual reference: the home design (`docs/design/home/`), read for look, arrangement and hierarchy, never for values.
+Visual source: the original home design (historical snapshot in Git, commit `405d2b1`), read for look, arrangement and hierarchy, never for values. Completed section inputs were retired on 2026-11-06; their accepted design intent remains here.
 Pattern references: `docs/design/references/` (Isla Beauty, Beautiful, ARTU), read for character, never for values.
 
 ## Overview
@@ -293,7 +293,7 @@ Rules across widths:
 
 ## Design Defects
 
-What the home design shows but `design.md` does not follow, so nobody copies it later:
+What the home design shows but `DESIGN.md` does not follow, so nobody copies it later:
 
 - No colour or text styles in the file; every value is hardcoded, with near-duplicates (six greens, three limes). Colours come from the five schemes instead.
 - The 375 frame is the desktop scaled to 60% (19.2px, 11.2px and 31.02px sizes); its values are unusable, only its arrangement is read. No tablet frame exists.

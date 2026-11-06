@@ -2,7 +2,7 @@
 
 Accepted work that no batch has taken yet. One line per item: what, a source (the batch or date it came from), a surface (files, sections or pages), and the governing decision when there is one. Each line ends with labeled source and surface fields per the H1 plan format. An item leaves this file when a batch plan takes it into `docs/agent/context.md`; finished work leaves no record here (history is in Git). Undecided matters stay on `docs/agent/board.md`.
 
-Last updated: 2026-10-30.
+Last updated: 2026-11-06.
 
 Group 4 part A (contrast, `scroll-categories` touch, sticky overlap, `promo-bannder` link) done in HP1 (`38fc9d2`; plan and reviews in `git show 38fc9d2:docs/agent/context.md`). Part B composition (order, evening ritual, header logo left, full-width testimonials) done in HC1 (`a38077a`). Order (user, 2026-10-26): the numbered groups run in order before the second submission (target one to two weeks); in groups 4 and 5, items with review risk come first and design-fidelity details are done as time allows. The last group waits until after the submission.
 
@@ -49,6 +49,6 @@ Social links closed without change (2026-10-28). Shopify Theme Store requirement
 
 ## After submission
 
-After the second submission the project takes no further architecture or feature work (user, 2026-10-28). Dropped then: the shared component CSS rework, the `motion-reveal` rewrite, link style variants, the shared carousel indicator (its accessibility part, the 24px dots, is in the group 8 layout baseline), the `design.md` pass, the sticky add-to-cart bar, more one-card mobile rails, and the collection tab bar.
+After the second submission the project takes no further architecture or feature work (user, 2026-10-28). Dropped then: the shared component CSS rework, the `motion-reveal` rewrite, link style variants, the shared carousel indicator (its accessibility part, the 24px dots, is in the group 8 layout baseline), the `DESIGN.md` pass, the sticky add-to-cart bar, more one-card mobile rails, and the collection tab bar.
 
 - Confirm the 400 from hosted `account.js` disappears once the store password is removed (a check, not work). Source: 6-F1 review, 2026-10-13; moved from group 7 by BP1, 2026-10-27. Surface: store settings.

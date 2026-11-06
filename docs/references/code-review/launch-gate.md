@@ -52,7 +52,7 @@ Do not redesign a section, rename a schema identifier, change business logic whi
 - Prefer a minimal diff. Separate a structural refactor from a behavior change.
 - `.shopifyignore` is Shopify CLI upload scope. `.gitignore` is version-control scope. `.prettierignore` is formatting scope only.
 
-Tracked governance files (`AGENTS.md`, `.agents/`, `docs/references/`) stay in Git and stay out of the Shopify upload. Do not add an ignore pattern that hides source, runtime files, schemas, locales, sections, snippets, templates, or config from review. Merchant-owned JSON that the Shopify GitHub integration writes back (`templates/*.json`, `config/settings_data.json`, `sections/*-group.json`) is the formatting exception: `.prettierignore` excludes it, and it stays tracked in Git and in review.
+Root `AGENTS.md` and `DESIGN.md` stay in Git and in the theme's upload/package scope as [Shopify theme context files](https://shopify.dev/docs/storefronts/themes/agentic-workflows); CLI support starts at 4.8.4. Internal development files (`.agents/`, `docs/`, the client configuration directories, and `CLAUDE.md`) stay in Git and stay out of Shopify CLI sync/package scope. Do not add an ignore pattern that hides source, runtime files, schemas, locales, sections, snippets, templates, or config from review. Merchant-owned JSON that the Shopify GitHub integration writes back (`templates/*.json`, `config/settings_data.json`, `sections/*-group.json`) is the formatting exception: `.prettierignore` excludes it, and it stays tracked in Git and in review.
 
 ## Review Output
 
