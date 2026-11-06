@@ -21,10 +21,10 @@ Third-party libraries are vendored files behind project adapters, not npm runtim
 
 ## Agent Adapters
 
-- `.agents/skills/` is the single source of project skills and `.agents/roles/` holds the canonical Implementer and Verifier roles. `CLAUDE.md` and `.claude/skills` are symlinks to them; Cursor reads `.agents/skills/` directly, so do not add `.cursor/skills/`.
-- The six files under `.claude/agents/`, `.cursor/agents/`, and `.codex/agents/` are per-client permission shims, not duplicates of the roles. Do not symlink them to the roles or merge them across clients.
-- Tool-specific configuration stays in `.claude/`, `.codex/`, or `.cursor/`. Never copy rule or skill files into adapter paths. If an adapter appears as a plain file, that is a local setup problem: run `npm.cmd run doctor:agent` and follow `README.md`.
-- Hooks are project-level: each client keeps its hook config and a thin adapter in its own directory (`.claude/settings.json` + `.claude/claude-hook.mjs`, `.cursor/hooks.json` + `.cursor/cursor-hook.mjs`, `.codex/config.toml` + `.codex/codex-hook.mjs`). Adapters only map events and outputs; decisions live in `.agents/tools/harness/core.mjs` and route data in `.agents/tools/harness/routes.json`.
+- `.agents/skills/` is the single source of project skills and `.agents/roles/` holds the canonical Implementer and Verifier roles. `CLAUDE.md` and `.claude/skills` are symlinks to them.
+- The four files under `.claude/agents/` and `.codex/agents/` are per-client permission shims, not duplicates of the roles. Do not symlink them to the roles or merge them across clients.
+- Tool-specific configuration stays in `.claude/` or `.codex/`. Never copy rule or skill files into adapter paths. If an adapter appears as a plain file, that is a local setup problem: run `npm.cmd run doctor:agent` and follow `README.md`.
+- Hooks are project-level: each client keeps its hook config and a thin adapter in its own directory (`.claude/settings.json` + `.claude/claude-hook.mjs`, `.codex/config.toml` + `.codex/codex-hook.mjs`). Adapters only map events and outputs; decisions live in `.agents/tools/harness/core.mjs` and route data in `.agents/tools/harness/routes.json`.
 
 ## Core Rules
 
@@ -113,6 +113,7 @@ Delegating a step does not transfer execution authority. Do not spawn a subagent
 
 Read only the matching reference for the current task:
 
+- Design intent, visual hierarchy, and component appearance: `DESIGN.md` at the theme root.
 - JS runtime, lifecycle, events, HTTP, SectionRefresher, `{% block %}` / `{% partial %}` adoption, Alpine stores/components, Swiper/GSAP adoption: `docs/references/architecture/javascript-runtime.md`
 - Motion policy, choreography, reduced motion, animation ownership, duplication: `docs/references/architecture/motion-architecture.md`
 - Shared abstraction boundaries, snippet parameter API, and whether to extend an existing utility/component: `docs/references/architecture/abstraction-boundaries.md`
@@ -148,7 +149,7 @@ Run scripts through `npm.cmd` in this Windows PowerShell workspace. Default to t
 | `assets/*.js`, embedded Liquid blocks | `npm.cmd run lint:compat` + `npm.cmd run lint:theme` |
 | Strict Liquid output parsing (filter-arg guard) | `npm.cmd run lint:liquid-syntax` |
 | Agent rules, skills, roles, adapters, references | Link/syntax check on changed files + `npm.cmd run lint:doc-paths` + `npm.cmd run doctor:agent` |
-| `.agents/tools/harness/**` and the hook adapters (`.claude/claude-hook.mjs`, `.cursor/cursor-hook.mjs`, `.codex/codex-hook.mjs`) | `npm.cmd run test:harness` + `npm.cmd run lint:records` |
+| `.agents/tools/harness/**` and the hook adapters (`.claude/claude-hook.mjs`, `.codex/codex-hook.mjs`) | `npm.cmd run test:harness` + `npm.cmd run lint:records` |
 | `.agents/tools/merchant-guard.mjs` | `npm.cmd run test:merchant` |
 | Liquid, CSS, or JS that can move layout (end of batch) | `npm.cmd run test:layout` with `npm.cmd run shopify:dev` running; 0 new issues. The baseline may only shrink (`--prune-baseline`); growing it needs the user's approval. |
 | Release / PR / Theme Store gate | `npm.cmd run lint` and `npm.cmd run test` |

@@ -26,7 +26,6 @@ for (const adapter of adapters) {
 // Each client keeps its own MCP config format, so the server lists can drift; CLI mode checks they match.
 const mcpConfigs = [
     { relative: '.mcp.json', format: 'json' },
-    { relative: '.cursor/mcp.json', format: 'json' },
     { relative: '.codex/config.toml', format: 'toml' },
 ];
 
@@ -124,7 +123,7 @@ if (mcpFailures.length > 0) {
 
 ${formatFailures(mcpFailures)}
 
-Declare the same servers in .mcp.json, .cursor/mcp.json, and .codex/config.toml. See README.md ("MCP servers").
+Declare the same servers in .mcp.json and .codex/config.toml. See README.md ("MCP servers").
 `);
 }
 

@@ -361,10 +361,9 @@ test('preapproved validators are read-only scripts allowed only by exact rules',
         '.claude/settings.json allows only exact npm.cmd run rules',
     );
 
-    // Cursor's terminal allowlist and Codex rules match by prefix, so an entry would also allow
-    // extra arguments, and several validators write files when given one
-    // (`lint:theme -- --shrink-migration-baseline`). Neither client gets a committed list.
-    assert.equal(fs.existsSync(path.join(REPO, '.cursor/permissions.json')), false);
+    // Codex rules match by prefix, so an entry would also allow extra arguments,
+    // and several validators write files when given one
+    // (`lint:theme -- --shrink-migration-baseline`). Codex gets no committed list.
     assert.equal(fs.existsSync(path.join(REPO, '.codex/rules')), false);
 });
 
@@ -605,7 +604,6 @@ test('a git failure in the whitespace check fails open', () => {
     }
 });
 
-const CURSOR_HOOK = path.join(REPO, '.cursor', 'cursor-hook.mjs');
 const CODEX_HOOK = path.join(REPO, '.codex', 'codex-hook.mjs');
 
 // Runs an adapter with a payload object, or with raw stdin bytes (Buffer or string).
@@ -686,7 +684,6 @@ test('core names no client field, tool or product', () => {
         'apply_patch',
         'StrReplace',
         'Bash',
-        'Cursor',
         'Codex',
         'Claude',
     ]) {
@@ -694,109 +691,17 @@ test('core names no client field, tool or product', () => {
     }
 });
 
-test('cursor guards: merchant writes, asked shell commands and subagents deny, others allow', () => {
-    const stateDir = fs.mkdtempSync(path.join(os.tmpdir(), 'harness-state-'));
-    const uriRoot = `/${REPO.replace(/\\/g, '/')}`;
-    const call = (event, payload) =>
-        output(
-            runAdapter(
-                CURSOR_HOOK,
-                event,
-                { workspace_roots: [uriRoot], conversation_id: 'cursor', ...payload },
-                stateDir,
-            ),
-        );
-    try {
-        for (const [tool, toolInput] of [
-            ['Write', { file_path: 'templates/index.json', content: '{}' }],
-            ['StrReplace', { file_path: 'config/settings_data.json', new_string: 'x' }],
-            ['Delete', { path: 'sections/header-group.json' }],
-            ['Write', { file_path: path.join(REPO, 'templates', 'product.json') }],
-            ['Write', JSON.stringify({ file_path: 'templates/index.json' })],
-        ]) {
-            const result = call('preToolUse', { tool_name: tool, tool_input: toolInput });
-            assert.equal(result.permission, 'deny', `${tool} ${JSON.stringify(toolInput)}`);
-            assert.match(result.agent_message, /Merchant-owned path/);
-        }
-        const snippet = { file_path: 'snippets/loading.liquid', new_string: 'x' };
-        assert.equal(
-            call('preToolUse', { tool_name: 'StrReplace', tool_input: snippet }).permission,
-            'allow',
-        );
-        assert.equal(call('preToolUse', { tool_name: 'Read', tool_input: {} }).permission, 'allow');
-        assert.equal(call('preToolUse', { tool_name: 'Task', tool_input: {} }).permission, 'deny');
-        assert.equal(call('subagentStart', { task: 'look' }).permission, 'deny');
-        // Every ask is a deny in Cursor (the live check ran an asked shell command).
-        const pull = { tool_name: 'Shell', tool_input: { command: 'shopify theme pull' } };
-        assert.equal(call('preToolUse', pull).permission, 'deny');
-        const shell = call('beforeShellExecution', { command: 'shopify theme pull' });
-        assert.equal(shell.permission, 'deny');
-        assert.match(shell.agent_message, /Command runs shopify theme pull/);
-        assert.equal(call('beforeShellExecution', { command: 'git status' }).permission, 'allow');
-    } finally {
-        removeRepo(stateDir);
-    }
-});
-
-test('cursor stdin: a BOM is accepted; malformed input denies guards and is quiet elsewhere', () => {
-    const stateDir = fs.mkdtempSync(path.join(os.tmpdir(), 'harness-state-'));
-    try {
-        const payload = JSON.stringify({
-            workspace_roots: [REPO],
-            tool_name: 'Write',
-            tool_input: { file_path: 'templates/index.json' },
-        });
-        for (const buffer of [
-            Buffer.concat([BOM, Buffer.from(payload)]),
-            utf16le(payload, true),
-        ]) {
-            const result = output(runAdapter(CURSOR_HOOK, 'preToolUse', buffer, stateDir));
-            assert.equal(result.permission, 'deny');
-        }
-        for (const event of ['preToolUse', 'beforeShellExecution', 'subagentStart']) {
-            const result = output(runAdapter(CURSOR_HOOK, event, '{', stateDir));
-            assert.equal(result.permission, 'deny', event);
-            assert.match(result.agent_message, /cursor-hook: malformed stdin/);
-        }
-        for (const event of ['postToolUse', 'stop', 'sessionStart']) {
-            assert.equal(output(runAdapter(CURSOR_HOOK, event, '{', stateDir)), null, event);
-        }
-        const unknown = runAdapter(CURSOR_HOOK, 'nope', '{}', stateDir);
-        assert.equal(unknown.status, 0);
-        assert.match(unknown.stderr, /cursor-hook: unknown event nope/);
-    } finally {
-        removeRepo(stateDir);
-    }
-});
-
 test('guards deny empty stdin and a missing root; Claude stays fail-open', () => {
     const stateDir = fs.mkdtempSync(path.join(os.tmpdir(), 'harness-state-'));
     try {
         for (const stdin of ['', ' \r\n', '{}']) {
-            for (const event of ['preToolUse', 'beforeShellExecution', 'subagentStart']) {
-                const result = output(runAdapter(CURSOR_HOOK, event, stdin, stateDir));
-                assert.equal(result.permission, 'deny', `cursor ${event} ${JSON.stringify(stdin)}`);
-            }
             const codex = output(runAdapter(CODEX_HOOK, 'preToolUse', stdin, stateDir));
             assert.equal(codex.hookSpecificOutput.permissionDecision, 'deny', JSON.stringify(stdin));
         }
-        const cursorWrite = {
-            tool_name: 'Write',
-            tool_input: { file_path: 'snippets/loading.liquid' },
-        };
-        const noRoot = output(runAdapter(CURSOR_HOOK, 'preToolUse', cursorWrite, stateDir));
-        assert.equal(noRoot.permission, 'deny');
-        assert.match(noRoot.agent_message, /no workspace root/);
-        const shell = output(
-            runAdapter(CURSOR_HOOK, 'beforeShellExecution', { command: 'git status' }, stateDir),
-        );
-        assert.equal(shell.permission, 'deny');
         const codexPatch = { tool_name: 'apply_patch', tool_input: { command: SNIPPET_PATCH } };
         const codex = output(runAdapter(CODEX_HOOK, 'preToolUse', codexPatch, stateDir));
         assert.equal(codex.hookSpecificOutput.permissionDecision, 'deny');
         assert.match(codex.hookSpecificOutput.permissionDecisionReason, /no workspace root/);
-        // Non-guard events without a root stay quiet.
-        assert.equal(output(runAdapter(CURSOR_HOOK, 'postToolUse', cursorWrite, stateDir)), null);
         // Claude: empty stdin is a no-op, and the subagent reason is unchanged.
         assert.equal(output(runAdapter(HOOK, 'pre', '', stateDir)), null);
         const agent = output(runHook('pre', { tool_name: 'Agent', tool_input: {} }, stateDir));
@@ -809,40 +714,11 @@ test('guards deny empty stdin and a missing root; Claude stays fail-open', () =>
     }
 });
 
-test('cursor context: session start carries the plan once, route hints once', () => {
-    const stateDir = fs.mkdtempSync(path.join(os.tmpdir(), 'harness-state-'));
-    try {
-        const base = { workspace_roots: [REPO], conversation_id: 'context' };
-        const start = output(runAdapter(CURSOR_HOOK, 'sessionStart', base, stateDir));
-        assert.match(start.additional_context, /docs\/agent\/context\.md/);
-        const edit = {
-            ...base,
-            tool_name: 'StrReplace',
-            tool_input: { file_path: 'sections/main-product.liquid', new_string: 'x' },
-        };
-        const first = output(runAdapter(CURSOR_HOOK, 'postToolUse', edit, stateDir));
-        assert.match(first.additional_context, /lint:theme/);
-        assert.equal(output(runAdapter(CURSOR_HOOK, 'postToolUse', edit, stateDir)), null);
-    } finally {
-        removeRepo(stateDir);
-    }
-});
-
-test('cursor and codex deny a failing git push', () => {
+test('codex denies a failing git push', () => {
     const { root, remote } = repoWithFailingPush();
     const stateDir = fs.mkdtempSync(path.join(os.tmpdir(), 'harness-state-'));
     const command = 'git push origin HEAD';
     try {
-        const cursor = output(
-            runAdapter(
-                CURSOR_HOOK,
-                'beforeShellExecution',
-                { workspace_roots: [root], command },
-                stateDir,
-            ),
-        );
-        assert.equal(cursor.permission, 'deny');
-        assert.match(cursor.agent_message, /completion record/);
         const codex = output(
             runAdapter(
                 CODEX_HOOK,
@@ -860,32 +736,17 @@ test('cursor and codex deny a failing git push', () => {
     }
 });
 
-test('cursor and codex stop: failures continue the turn once', () => {
+test('codex stop: failures continue the turn once', () => {
     const root = initRepo(records());
     const stateDir = fs.mkdtempSync(path.join(os.tmpdir(), 'harness-state-'));
     const board = path.join(root, 'docs/agent/board.md');
-    const cursor = (extra) =>
-        output(
-            runAdapter(
-                CURSOR_HOOK,
-                'stop',
-                { workspace_roots: [root], conversation_id: 'stop', status: 'completed', ...extra },
-                stateDir,
-            ),
-        );
     const codex = (extra) =>
         output(
             runAdapter(CODEX_HOOK, 'stop', { cwd: root, session_id: 'codex-stop', ...extra }, stateDir),
         );
     try {
-        assert.equal(cursor({}), null);
         assert.equal(codex({}), null);
         fs.appendFileSync(board, '\n**Done: x**\n');
-        assert.equal(cursor({ status: 'aborted' }), null, 'an aborted turn is skipped');
-        assert.match(cursor({}).followup_message, /completion record/);
-        assert.equal(cursor({}), null, 'an unchanged worktree is not reported twice');
-        fs.appendFileSync(board, '\n**Done: y**\n');
-        assert.equal(cursor({ loop_count: 1 }), null, 'a continued turn does not continue again');
         const blocked = codex({});
         assert.equal(blocked.decision, 'block');
         assert.match(blocked.reason, /completion record/);
